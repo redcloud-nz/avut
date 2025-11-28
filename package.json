@@ -19,7 +19,11 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
     "@date-fns/utc": "^2.1.1",
@@ -84,9 +88,13 @@
     "dotenv-cli": "^7.4.2",
     "eslint": "^9.38.0",
     "eslint-config-next": "^16.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
+    "lint-staged": "^16.2.7",
     "openapi-typescript": "^7.4.2",
     "postcss": "^8",
+    "prettier": "3.7.1",
     "prisma": "^6.16.2",
     "prismock": "^1.35.4",
     "tailwindcss": "^4.1.17",
