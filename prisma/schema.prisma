@@ -1,0 +1,397 @@
+// Copyright (c) 2025 A.V.U.T. Project.
+// Licensed under the MIT License. See LICENSE.md in the project root for license information.
+//
+// Schema for the avut Database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// Authentication Models
+
+model User {
+  id            String               @id
+  name          String
+  email         String
+  emailVerified Boolean              @default(false)
+  image         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  teamMembers   TeamMember[]
+  members       OrganizationMember[]
+  invitations   Invitation[]
+
+  authoredNotes Note[]
+  logEntries    OrganizationLogEntry[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+  activeTeamId         String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("user_acounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("user_verification")
+}
+
+model Organization {
+  id        String   @id
+  name      String
+  slug      String
+  logo      String?
+  createdAt DateTime
+  metadata  String?
+
+  invitations Invitation[]
+  teams       Team[]
+  members     OrganizationMember[]
+
+  // Owned records
+  logEntries                OrganizationLogEntry[]
+  notes                     Note[]
+  skillChecks               SkillCheck[]
+  skillCheckSessions        SkillCheckSession[]
+  skillPackages             SkillPackage[]
+  skillPackageSubscriptions SkillPackageSubscription[]
+  personnel                 Person[]
+
+  @@unique([slug])
+  @@map("organizations")
+}
+
+model Team {
+  id             String       @id
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime
+  updatedAt      DateTime?    @updatedAt
+  teammembers    TeamMember[]
+
+  @@index([organizationId])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String    @id
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime?
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model OrganizationMember {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  teamId         String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitations")
+}
+
+// Loggin Models
+model OrganizationLogEntry {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action         String
+  objectType     String
+  objectId       String
+  timestamp      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([objectType, objectId])
+  @@map("organization_log_entries")
+}
+
+enum RecordStatus {
+  Active
+  Archived
+  Deleted
+}
+
+model Person {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String
+  tags           String[]     @default([])
+  properties     Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  status         RecordStatus @default(Active)
+
+  skillChecksAsAssessee        SkillCheck[]        @relation("skill_check_assessee")
+  skillChecksAsAssessor        SkillCheck[]        @relation("skill_check_assessor")
+  skillCheckSessionsAsAssessee SkillCheckSession[] @relation("session_assessees")
+  skillCheckSessionsAsAssessor SkillCheckSession[] @relation("session_assessors")
+
+  @@index([organizationId])
+  @@map("personnel")
+}
+
+// Notes models
+
+model Note {
+  id             String        @id
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content        String
+  tags           String[]      @default([])
+  properties     Json          @default("{}")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([authorId])
+  @@map("notes")
+}
+
+// Skill tracking models
+
+model SkillPackage {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  tags           String[]     @default([])
+  properties     Json         @default("{}")
+  status         RecordStatus @default(Active)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  groups        SkillGroup[]
+  skills        Skill[]
+  subscriptions SkillPackageSubscription[]
+
+  @@index([organizationId])
+  @@map("skill_packages")
+}
+
+model SkillGroup {
+  id              String       @id
+  skillPackageId  String
+  skillPackage    SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  parentGroupId   String?
+  parentGroup     SkillGroup?  @relation("skill_group_parent", fields: [parentGroupId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  tags            String[]     @default([])
+  properties      Json         @default("{}")
+  sequence        Int
+  defaultIncluded Boolean      @default(true)
+  status          RecordStatus @default(Active)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  childGroups           SkillGroup[]                            @relation("skill_group_parent")
+  skills                Skill[]
+  subscriptionOverrides SkillPackageSubscriptionGroupOverride[]
+
+  @@index([skillPackageId])
+  @@map("skill_groups")
+}
+
+model Skill {
+  id              String       @id
+  skillPackageId  String
+  skillPackage    SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  skillGroupId    String?
+  skillGroup      SkillGroup?  @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  tags            String[]     @default([])
+  properties      Json         @default("{}")
+  sequence        Int
+  frequency       Int          @default(12) // revalidation frequency in months
+  defaultInclude  Boolean      @default(true)
+  defaultRequired Boolean      @default(false)
+  status          RecordStatus @default(Active)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  checks                SkillCheck[]
+  sessions              SkillCheckSession[]                     @relation("session_skills")
+  subscriptionOverrides SkillPackageSubscriptionSkillOverride[]
+
+  @@index([skillPackageId])
+  @@map("skills")
+}
+
+enum SkillCheckStatus {
+  Draft
+  Include
+  Exclude
+}
+
+model SkillCheckSession {
+  id             String           @id
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessees      Person[]         @relation("session_assessees")
+  assessors      Person[]         @relation("session_assessors")
+  skills         Skill[]          @relation("session_skills")
+  startedAt      DateTime?
+  endedAt        DateTime?
+  notes          String?
+  status         SkillCheckStatus @default(Draft)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([organizationId])
+  @@map("skill_check_sessions")
+}
+
+model SkillCheck {
+  id             String           @id
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assesseeId     String
+  assessee       Person           @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
+  assessorId     String
+  assessor       Person           @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  result         String
+  notes          String
+  status         SkillCheckStatus @default(Draft)
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId])
+  @@index([assesseeId])
+  @@index([assessorId])
+  @@index([skillId])
+  @@map("skill_checks")
+}
+
+model SkillPackageSubscription {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  skillPackageId String
+  skillPackage   SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  groupOverrides SkillPackageSubscriptionGroupOverride[]
+  skillOverrides SkillPackageSubscriptionSkillOverride[]
+
+  @@index([organizationId])
+  @@index([skillPackageId])
+  @@map("skill_package_subscriptions")
+}
+
+model SkillPackageSubscriptionGroupOverride {
+  subscriptionId String
+  subscription   SkillPackageSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  skillGroupId   String
+  skillGroup     SkillGroup               @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
+  description    String?
+  include        Boolean
+
+  @@unique([subscriptionId, skillGroupId])
+  @@index([subscriptionId])
+  @@index([skillGroupId])
+  @@map("skill_group_subscriptions")
+}
+
+model SkillPackageSubscriptionSkillOverride {
+  subscriptionId String
+  subscription   SkillPackageSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill                    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  description    String?
+  frequency      Int?
+  include        Boolean
+
+  @@unique([subscriptionId, skillId])
+  @@index([subscriptionId])
+  @@index([skillId])
+  @@map("skill_subscriptions")
+}
