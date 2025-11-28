@@ -31,6 +31,7 @@ model User {
 
   authoredNotes Note[]
   logEntries    OrganizationLogEntry[]
+  personnel     Person[]
 
   @@unique([email])
   @@map("user")
@@ -169,7 +170,7 @@ model Invitation {
   @@map("invitations")
 }
 
-// Loggin Models
+// Logging Models
 model OrganizationLogEntry {
   id             String       @id
   organizationId String
@@ -179,6 +180,7 @@ model OrganizationLogEntry {
   action         String
   objectType     String
   objectId       String
+  changes        Json         @default("{}")
   timestamp      DateTime     @default(now())
 
   @@index([organizationId])
@@ -196,6 +198,8 @@ model Person {
   id             String       @id
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   name           String
   email          String
   tags           String[]     @default([])

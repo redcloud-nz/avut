@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
+import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { auth, AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
@@ -17,6 +18,9 @@ import prisma from "@/server/prisma";
 // Artificial delay in development to simulate real-world conditions
 const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
 
+/**
+ * Create the inner tRPC context.
+ */
 export function createInnerTrpcContext({
     authSession,
     hasPermission,
@@ -41,18 +45,20 @@ export const createTrpcContext = cache(async () => {
 
     return createInnerTrpcContext({
         authSession,
-        hasPermission: async (permissions: Permissions) => {
+        hasPermission: async (requiredPermissions: Permissions) => {
             try {
                 await auth.api.hasPermission({
                     headers,
                     body: {
-                        permissions,
+                        permissions: requiredPermissions,
                     },
                 });
             } catch (error) {
                 throw new TRPCError({
                     code: "FORBIDDEN",
-                    message: "Insufficient permissions.",
+                    message:
+                        "Insufficient permissions. Action requires: " +
+                        JSON.stringify(requiredPermissions),
                     cause: error,
                 });
             }
@@ -137,5 +143,34 @@ export const organizationProcedure = authenticatedProcedure
             });
         }
 
-        return opts.next({});
+        async function logEvent({
+            action,
+            objectType,
+            objectId,
+        }: LogEventOptions) {
+            await opts.ctx.prisma.organizationLogEntry.create({
+                data: {
+                    id: nanoId16(),
+                    organizationId: opts.input.organizationId,
+                    userId: opts.ctx.authSession.user.id,
+                    action,
+                    objectType,
+                    objectId,
+                },
+            });
+        }
+
+        return opts.next({
+            ctx: {
+                ...opts.ctx,
+                organizationId: opts.input.organizationId,
+                logEvent,
+            },
+        });
     });
+
+interface LogEventOptions {
+    action: "Create" | "Update" | "Delete";
+    objectType: "Person";
+    objectId: string;
+}
