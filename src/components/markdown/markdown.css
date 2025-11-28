@@ -1,0 +1,47 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Styling for the MDX Editor.
+ */
+
+.mdxeditor:not(:focus-within) .mdxeditor-toolbar {
+  opacity: 0.5;
+}
+
+.mdxeditor-toolbar {
+  background-color: transparent;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.mdxeditor-toolbar button {
+  padding: 0.25rem;
+}
+
+.markdown-content {
+  font-family: var(--font-geist-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  padding: calc(var(--spacing) * 2);
+  overflow-y: auto;
+}
+
+.markdown-content ul {
+  list-style: disc;
+  margin-top: calc(var(--spacing) * 2);
+  margin-bottom: calc(var(--spacing) * 2);
+  padding-inline-start: calc(var(--spacing) * 5.5);
+}
+
+.markdown-content ol {
+  list-style: decimal;
+  margin-top: calc(var(--spacing) * 2);
+  margin-bottom: calc(var(--spacing) * 2);
+  padding-inline-start: calc(var(--spacing) * 5.5);
+}
+
+.markdown-content li {
+  margin-top: var(--spacing);
+  margin-bottom: var(--spacing);
+}
