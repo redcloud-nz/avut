@@ -5,6 +5,7 @@
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins/organization";
 
 import { nanoId16 } from "@/lib/id";
@@ -17,6 +18,7 @@ export const auth = betterAuth({
         accountLinking: {
             enabled: true,
         },
+        modelName: "user_accounts",
     },
     advanced: {
         database: {
@@ -35,16 +37,49 @@ export const auth = betterAuth({
     },
 
     plugins: [
+        nextCookies(),
         organization({
             ac,
             roles: { owner, admin, member },
+            schema: {
+                organization: {
+                    modelName: "organizations",
+                },
+                membership: {
+                    modelName: "organization_members",
+                },
+                invitation: {
+                    modelName: "organization_invitations",
+                },
+                team: {
+                    modelName: "teams",
+                },
+                teamMembership: {
+                    modelName: "team_members",
+                },
+                teamInvitation: {
+                    modelName: "team_invitations",
+                },
+            },
             teams: {
                 enabled: true,
             },
         }),
     ],
 
+    session: {
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60, // 5 minutes
+        },
+    },
+
     user: {
         modelName: "users",
     },
+    verification: {
+        modelName: "user_verification",
+    },
 });
+
+export type AuthSession = typeof auth.$Infer.Session;

@@ -30,3 +30,7 @@ export const admin = ac.newRole({
 export const member = ac.newRole({
     ...memberAc.statements,
 });
+
+export type Permissions = {
+    [K in keyof typeof statement]?: (typeof statement)[K][number][];
+};
