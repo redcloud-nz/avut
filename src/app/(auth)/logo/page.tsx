@@ -1,0 +1,28 @@
+import Image from "next/image";
+
+export default function LogoPage() {
+    return (
+        <div className="p-4">
+            <div className="w-full my-4 mx-auto bg-blue-100 aspect-4/1">
+                <Logo />
+            </div>
+        </div>
+    );
+}
+
+function Logo() {
+    // 27 1   10 49 = 17 48
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 150 50"
+        >
+            <path
+                d="M 3 49  L 21 1 H 29.5 L 46.5 49 H 40 L 25 6.5 L 16.75 30 H 31.25 L 33.25 35.5 H 14.75 L 10 49 H 3 Z   M 31.5 1 H 38 L 53 43.25 L 68.5 1 H 75 L 57 49 H 49 Z   M 75 4.5 V 34 A 10 9 180 1 0 99 34 V 1 H 105.5 V 33 A 10 9 180 1 1 68.5 33 V 22.5 Z  M 107 1 H 148 V 6.5 H 130.5 V 49 H 124.5 V 6.5 H 107 V 1 Z "
+                fill="black"
+                strokeWidth={0.2}
+            />
+        </svg>
+    );
+}

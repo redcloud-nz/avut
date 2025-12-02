@@ -8,6 +8,26 @@ export const about = {
     href: "/about",
 } as const;
 
+export const auth = {
+    forgotPassword: {
+        label: "Forgot Password",
+        href: "/forgot-password",
+    },
+    signIn: {
+        label: "Sign In",
+        href: "/sign-in",
+    },
+    signUp: {
+        label: "Sign Up",
+        href: "/sign-up",
+    },
+    verifyEmail: (email: string) =>
+        ({
+            label: "Verify Email",
+            href: `/verify-email/${encodeURIComponent(email)}`,
+        }) as const,
+} as const;
+
 export const dashboard = {
     label: "Dashboard",
     href: "/dashboard",

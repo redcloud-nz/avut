@@ -34,7 +34,7 @@ model User {
   personnel     Person[]
 
   @@unique([email])
-  @@map("user")
+  @@map("users")
 }
 
 model Session {

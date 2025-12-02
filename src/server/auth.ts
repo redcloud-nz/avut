@@ -6,8 +6,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { organization } from "better-auth/plugins/organization";
+import { emailOTP, organization } from "better-auth/plugins";
 
+import OneTimePasswordTemplate from "@/emails/one-time-password";
+import { NoReplyEmailAddress, sendEmail } from "@/lib/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, owner, admin, member } from "@/lib/permissions";
 
@@ -18,7 +20,7 @@ export const auth = betterAuth({
         accountLinking: {
             enabled: true,
         },
-        modelName: "user_accounts",
+        modelName: "Account",
     },
     advanced: {
         database: {
@@ -31,34 +33,52 @@ export const auth = betterAuth({
 
     emailAndPassword: {
         enabled: true,
+        requireEmailVerification: true,
     },
     experimental: {
         joins: true,
     },
 
     plugins: [
+        emailOTP({
+            overrideDefaultEmailVerification: true,
+            sendVerificationOnSignUp: true,
+            async sendVerificationOTP({ email, otp, type }) {
+                console.log("Sending verification OTP to:", email, otp, type);
+                sendEmail({
+                    from: NoReplyEmailAddress,
+                    to: email,
+                    subject: "Your verification code",
+                    react: OneTimePasswordTemplate({
+                        email,
+                        otp,
+                        type,
+                    }),
+                });
+            },
+        }),
         nextCookies(),
         organization({
             ac,
             roles: { owner, admin, member },
             schema: {
                 organization: {
-                    modelName: "organizations",
+                    modelName: "Organization",
                 },
                 membership: {
-                    modelName: "organization_members",
+                    modelName: "OrganizationMember",
                 },
                 invitation: {
-                    modelName: "organization_invitations",
+                    modelName: "Invitation",
                 },
                 team: {
-                    modelName: "teams",
+                    modelName: "Team",
                 },
                 teamMembership: {
-                    modelName: "team_members",
+                    modelName: "TeamMember",
                 },
                 teamInvitation: {
-                    modelName: "team_invitations",
+                    modelName: "TeamInvitation",
                 },
             },
             teams: {
@@ -73,12 +93,18 @@ export const auth = betterAuth({
             maxAge: 5 * 60, // 5 minutes
         },
     },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_OAUTH_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET as string,
+        },
+    },
 
     user: {
-        modelName: "users",
+        modelName: "User",
     },
     verification: {
-        modelName: "user_verification",
+        modelName: "Verification",
     },
 });
 

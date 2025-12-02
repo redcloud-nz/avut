@@ -10,6 +10,7 @@ import localFont from "next/font/local";
 import { Jersey_10 } from "next/font/google";
 
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -29,12 +30,12 @@ const jersey10 = Jersey_10({
 });
 
 export const metadata: Metadata = {
-    applicationName: "RT+",
+    applicationName: "AVUT",
     title: {
-        template: "%s | RT+",
-        default: "RT+",
+        template: "%s | AVUT",
+        default: "AVUT",
     },
-    description: "RT+ App",
+    description: "Assorted Vaguely Useful Tools",
 };
 
 export default async function Root_Layout({
@@ -45,6 +46,7 @@ export default async function Root_Layout({
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
+                <Toaster richColors />
                 {children}
             </body>
         </html>
