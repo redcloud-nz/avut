@@ -37,7 +37,7 @@ import * as Paths from "@/paths";
  * Card for verifying user's email with OTP code.
  * @param email - The email address to verify.
  */
-export function Auth_VerifyEmail_Card({ email }: { email: string }) {
+export function VerifyEmail_Card({ email }: { email: string }) {
     const router = useRouter();
 
     const [inProgress, setInProgress] = useState(false);

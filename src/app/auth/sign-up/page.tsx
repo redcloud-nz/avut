@@ -9,7 +9,7 @@ import { Argus } from "@/components/blocks/argus";
 import { Link } from "@/components/ui/link";
 import * as Paths from "@/paths";
 
-import { Auth_SignUp_Card } from "./sign-up";
+import { Auth_SignUp_Card } from "../../../components/cards/sign-up";
 
 export const metadata = { title: "Sign Up" };
 

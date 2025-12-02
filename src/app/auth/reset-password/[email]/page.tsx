@@ -4,10 +4,16 @@ import { Argus } from "@/components/blocks/argus";
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /forgot-password
+ * Path: /auth/reset-password/[email]
  */
 
-export default function Auth_ForgotPassword_Page() {
+export const metadata = { title: "Reset Password" };
+
+export default async function Auth_ResetPassword_Page(
+    page: PageProps<"/auth/reset-password/[email]">,
+) {
+    const { email } = await page.params;
+
     return (
         <Argus.Root>
             <Argus.Column>

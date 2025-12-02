@@ -11,20 +11,25 @@ export const about = {
 export const auth = {
     forgotPassword: {
         label: "Forgot Password",
-        href: "/forgot-password",
+        href: "/auth/forgot-password",
     },
+    resetPassword: (email: string) =>
+        ({
+            label: "Reset Password",
+            href: `/auth/reset-password/${encodeURIComponent(email)}`,
+        }) as const,
     signIn: {
         label: "Sign In",
-        href: "/sign-in",
+        href: "/auth/sign-in",
     },
     signUp: {
         label: "Sign Up",
-        href: "/sign-up",
+        href: "/auth/sign-up",
     },
     verifyEmail: (email: string) =>
         ({
             label: "Verify Email",
-            href: `/verify-email/${encodeURIComponent(email)}`,
+            href: `/auth/verify-email/${encodeURIComponent(email)}`,
         }) as const,
 } as const;
 

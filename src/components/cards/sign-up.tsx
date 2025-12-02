@@ -12,6 +12,7 @@ import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { S2_Button } from "@/components/ui/s2-button";
 import {
     S2_Card,
     S2_CardContent,
@@ -19,7 +20,6 @@ import {
     S2_CardHeader,
     S2_CardTitle,
 } from "@/components/ui/s2-card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     Field,
     FieldDescription,
@@ -29,33 +29,35 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { S2_Input } from "@/components/ui/s2-input";
-import { S2_Button } from "@/components/ui/s2-button";
 import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
 import * as Paths from "@/paths";
 
-import { Auth_SocialSignIn } from "../social-sign-in";
+import { SocialSignInButtons_Field } from "./sign-in";
 
-export function Auth_SignIn_Card() {
+export function Auth_SignUp_Card() {
     return (
         <S2_Card>
             <S2_CardHeader>
-                <S2_CardTitle>Login to your account</S2_CardTitle>
+                <S2_CardTitle>Create an account</S2_CardTitle>
                 <S2_CardDescription>
-                    Enter your email below to login to your account
+                    Enter your details to sign up.
                 </S2_CardDescription>
             </S2_CardHeader>
             <S2_CardContent>
                 <FieldGroup>
-                    <AuthEmailPasswordSignIn_Form />
+                    <Auth_EmailPasswordSignUp_Form />
+
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
-                    <Auth_SocialSignIn />
+
+                    <SocialSignInButtons_Field />
+
                     <FieldDescription className="text-center">
-                        Don't have an account?{" "}
-                        <Link to={Paths.auth.signUp}>Sign Up</Link>
+                        Already have an account?{" "}
+                        <Link to={Paths.auth.signIn}>Sign in</Link>
                     </FieldDescription>
                 </FieldGroup>
             </S2_CardContent>
@@ -63,21 +65,26 @@ export function Auth_SignIn_Card() {
     );
 }
 
-function AuthEmailPasswordSignIn_Form() {
+/**
+ * Form form signing up with email and password.
+ */
+function Auth_EmailPasswordSignUp_Form() {
     const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(
             z.object({
+                name: z.string().min(2, "Name is required."),
                 email: z.email("Invalid email address"),
-                password: z.string(),
-                rememberMe: z.boolean(),
+                password: z
+                    .string()
+                    .min(8, "Password must be at least 8 characters long"),
             }),
         ),
         defaultValues: {
+            name: "",
             email: "",
             password: "",
-            rememberMe: true,
         },
     });
 
@@ -86,47 +93,67 @@ function AuthEmailPasswordSignIn_Form() {
         null,
     );
 
-    const handleSignIn = form.handleSubmit(async (formData) => {
+    const handleSignUp = form.handleSubmit(async (formData) => {
+        setSubmitError(null);
+        setInProgress(true);
+
         try {
-            setInProgress(true);
-            const { data, error } = await authClient.signIn.email(formData);
+            const { data, error } = await authClient.signUp.email(formData);
 
             if (error) {
-                console.error("Sign in error", error);
+                // We're assuming this is an expected error (like email already in use)
+                console.log("Sign up error", error);
                 setSubmitError(error);
             } else {
-                console.log("Sign in successful", data);
-
-                if (data.user.emailVerified) {
-                    router.push(Paths.orgs.select.href);
-                } else {
-                    router.push(Paths.auth.verifyEmail(data.user.email).href);
-                }
+                // Successful signup. BetterAuth automatically sends a verification email.
+                console.log("Sign up successful", data);
+                router.push(Paths.auth.verifyEmail(data.user.email).href);
             }
         } catch (error) {
-            console.error("Sign in error", error);
-            toast.error("An error occured during sign in. Please try again.");
-        } finally {
-            setInProgress(false);
+            // We're assuming this is an unexpected error
+            console.error("Sign up error", error);
+            toast.error("An error occured during sign up. Please try again.");
         }
+
+        setInProgress(false);
     });
 
     return (
-        <form id="sign-in-form" onSubmit={handleSignIn}>
+        <form id="sign-up-form" onSubmit={handleSignUp}>
             <FieldGroup>
+                <Controller
+                    name="name"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="sign-up-name">Name</FieldLabel>
+                            <S2_Input
+                                id="sign-up-name"
+                                placeholder="Your full name"
+                                aria-invalid={fieldState.invalid}
+                                disabled={inProgress}
+                                {...field}
+                            />
+                            {fieldState.invalid && (
+                                <FieldError errors={[fieldState.error]} />
+                            )}
+                        </Field>
+                    )}
+                />
                 <Controller
                     name="email"
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-in-email">
+                            <FieldLabel htmlFor="email">
                                 Email Address
                             </FieldLabel>
                             <S2_Input
-                                id="sign-in-email"
+                                id="email"
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder="Your email address"
                                 aria-invalid={fieldState.invalid}
+                                disabled={inProgress}
                                 {...field}
                             />
                             {fieldState.invalid && (
@@ -140,48 +167,20 @@ function AuthEmailPasswordSignIn_Form() {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <div className="flex items-center">
-                                <FieldLabel htmlFor="sign-in-password">
-                                    Password
-                                </FieldLabel>
-                                <Link
-                                    to={Paths.auth.forgotPassword}
-                                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                >
-                                    Forgot password?
-                                </Link>
-                            </div>
-
+                            <FieldLabel htmlFor="sign-up-password">
+                                Password
+                            </FieldLabel>
                             <S2_Input
-                                id="sign-in-password"
+                                id="sign-up-password"
                                 type="password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
+                                disabled={inProgress}
                                 {...field}
                             />
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
-                        </Field>
-                    )}
-                />
-                <Controller
-                    name="rememberMe"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                        <Field
-                            data-invalid={fieldState.invalid}
-                            orientation="horizontal"
-                        >
-                            <Checkbox
-                                id="sign-in-rememberMe"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                aria-invalid={fieldState.invalid}
-                            />
-                            <FieldLabel htmlFor="sign-in-rememberMe">
-                                Remember me
-                            </FieldLabel>
+                            <FieldDescription>
+                                Must be at least 8 characters long.
+                            </FieldDescription>
                             {fieldState.invalid && (
                                 <FieldError errors={[fieldState.error]} />
                             )}
@@ -191,13 +190,13 @@ function AuthEmailPasswordSignIn_Form() {
                 <Field>
                     <S2_Button
                         type="submit"
-                        form="sign-in-form"
+                        form="sign-up-form"
                         disabled={inProgress}
                     >
-                        {inProgress ? "Signing in..." : "Login"}
+                        {inProgress ? "Creating account..." : "Sign Up"}
                     </S2_Button>
+                    {submitError && <FieldError errors={[submitError]} />}
                 </Field>
-                {submitError && <FieldError errors={[submitError]} />}
             </FieldGroup>
         </form>
     );
