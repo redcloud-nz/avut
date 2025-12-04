@@ -11,7 +11,7 @@ import { SignIn_Card } from "@/components/cards/sign-in";
 
 export const metadata = { title: "Sign In" };
 
-export default function SignInPage() {
+export default function SignIn_Page(props: PageProps<"/auth/sign-in">) {
     return (
         <Argus.Root>
             <Argus.Column>

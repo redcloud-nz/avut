@@ -65,7 +65,7 @@ export const auth = betterAuth({
                 organization: {
                     modelName: "Organization",
                 },
-                membership: {
+                member: {
                     modelName: "OrganizationMember",
                 },
                 invitation: {

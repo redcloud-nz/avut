@@ -2,14 +2,14 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /sign-up
+ * Path: /auth/sign-up
  */
 
 import { Argus } from "@/components/blocks/argus";
 import { Link } from "@/components/ui/link";
 import * as Paths from "@/paths";
 
-import { Auth_SignUp_Card } from "../../../components/cards/sign-up";
+import { SignUp_Card } from "@/components/cards/sign-up";
 
 export const metadata = { title: "Sign Up" };
 
@@ -18,7 +18,7 @@ export default function Auth_SignUp_Page() {
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <Auth_SignUp_Card />
+                <SignUp_Card />
                 <Argus.Footer>
                     By clicking continue, you agree to our{" "}
                     <Link to={Paths.marketing.termsOfService} target="_blank">

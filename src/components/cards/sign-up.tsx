@@ -36,7 +36,7 @@ import * as Paths from "@/paths";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
-export function Auth_SignUp_Card() {
+export function SignUp_Card() {
     return (
         <S2_Card>
             <S2_CardHeader>
@@ -57,7 +57,7 @@ export function Auth_SignUp_Card() {
 
                     <FieldDescription className="text-center">
                         Already have an account?{" "}
-                        <Link to={Paths.auth.signIn}>Sign in</Link>
+                        <Link to={Paths.auth.signIn()}>Sign in</Link>
                     </FieldDescription>
                 </FieldGroup>
             </S2_CardContent>

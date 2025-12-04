@@ -24,11 +24,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import {
-    InputOTP,
-    InputOTPGroup,
-    InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP } from "@/components/ui/input-otp";
 
 import { authClient } from "@/lib/auth-client";
 import * as Paths from "@/paths";
@@ -40,21 +36,22 @@ import * as Paths from "@/paths";
 export function VerifyEmail_Card({ email }: { email: string }) {
     const router = useRouter();
 
-    const [inProgress, setInProgress] = useState(false);
     const [code, setCode] = useState<string>("");
-    const [verifyError, setVerifyError] = useState<{ message?: string } | null>(
-        null,
-    );
+
+    const [state, setState] = useState<
+        | { status: "Ready" | "InProgress" }
+        | { status: "Error"; error: { message?: string } }
+    >({ status: "Ready" });
 
     async function handleVerify() {
         try {
-            setInProgress(true);
+            setState({ status: "InProgress" });
             const { data, error } = await authClient.emailOtp.verifyEmail({
                 email: email,
                 otp: code,
             });
             if (error) {
-                setVerifyError(error);
+                setState({ status: "Error", error });
                 console.log("Email verification error", error);
             } else {
                 console.log("Email verified successfully", data);
@@ -65,8 +62,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
             toast.error(
                 "An error occured during email verification. Please try again.",
             );
-        } finally {
-            setInProgress(false);
+            setState({ status: "Ready" });
         }
     }
 
@@ -90,22 +86,22 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                 <FieldGroup>
                     <Field>
                         <FieldLabel>Verification Code</FieldLabel>
-                        <InputOTP
+                        <InputOTP.Root
                             maxLength={6}
                             value={code}
                             onChange={setCode}
                             pattern={REGEXP_ONLY_DIGITS}
-                            disabled={inProgress}
+                            disabled={state.status === "InProgress"}
                         >
-                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                        </InputOTP>
+                            <InputOTP.Group className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                <InputOTP.Slot index={0} />
+                                <InputOTP.Slot index={1} />
+                                <InputOTP.Slot index={2} />
+                                <InputOTP.Slot index={3} />
+                                <InputOTP.Slot index={4} />
+                                <InputOTP.Slot index={5} />
+                            </InputOTP.Group>
+                        </InputOTP.Root>
                         <FieldDescription>
                             Enter the 6-digit code sent to your email.
                         </FieldDescription>
@@ -114,12 +110,18 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                         <S2_Button
                             type="submit"
                             onClick={handleVerify}
-                            disabled={code.length < 6 || inProgress}
+                            disabled={
+                                code.length < 6 || state.status === "InProgress"
+                            }
                         >
-                            {inProgress ? "Verifying..." : "Verify"}
+                            {state.status === "InProgress"
+                                ? "Verifying..."
+                                : "Verify"}
                         </S2_Button>
                     </Field>
-                    {verifyError && <FieldError errors={[verifyError]} />}
+                    {state.status === "Error" && (
+                        <FieldError errors={[state.error]} />
+                    )}
                     <FieldDescription className="text-center">
                         Didn't receive the code?{" "}
                         <a onClick={handleResend}>Resend</a>

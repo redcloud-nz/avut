@@ -73,7 +73,7 @@ export function ForgotPassword_Card() {
             <S2_CardHeader>
                 <S2_CardTitle>Forgot Password</S2_CardTitle>
                 <S2_CardDescription>
-                    Enter your email to reset your password.
+                    Enter your email to get an a reset code sent to you.
                 </S2_CardDescription>
             </S2_CardHeader>
             <S2_CardContent>

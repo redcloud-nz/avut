@@ -16,12 +16,14 @@ export const auth = {
     resetPassword: (email: string) =>
         ({
             label: "Reset Password",
-            href: `/auth/reset-password/${encodeURIComponent(email)}`,
+            href: `/auth/reset-password?e=${encodeURIComponent(email)}`,
         }) as const,
-    signIn: {
+    signIn: (email?: string) => ({
         label: "Sign In",
-        href: "/auth/sign-in",
-    },
+        href: email
+            ? `/auth/sign-in?e=${encodeURIComponent(email)}`
+            : "/auth/sign-in",
+    }),
     signUp: {
         label: "Sign Up",
         href: "/auth/sign-up",
@@ -29,7 +31,7 @@ export const auth = {
     verifyEmail: (email: string) =>
         ({
             label: "Verify Email",
-            href: `/auth/verify-email/${encodeURIComponent(email)}`,
+            href: `/auth/verify-email?e=${encodeURIComponent(email)}`,
         }) as const,
 } as const;
 
