@@ -6,25 +6,46 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { S2_Button } from "../ui/s2-button";
 import {
     S2_Card,
     S2_CardContent,
     S2_CardDescription,
     S2_CardHeader,
     S2_CardTitle,
-} from "../ui/s2-card";
-import { Field, FieldGroup, FieldLabel } from "../ui/field";
-import { S2_Input } from "../ui/s2-input";
+} from "@/components/ui/s2-card";
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from "@/components/ui/field";
+import { S2_Input } from "@/components/ui/s2-input";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from "@/components/ui/input-group";
+import { Spinner } from "@/components/ui/spinner";
+
+import { authClient } from "@/lib/auth-client";
+import * as Paths from "@/paths";
 
 /**
  * Card for creating a new organization.
  */
 export function CreateOrganization_Card() {
+    const router = useRouter();
+
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -39,6 +60,65 @@ export function CreateOrganization_Card() {
         ),
     });
 
+    const [slugCheckStatus, setSlugCheckStatus] = useState<
+        "Ready" | "Checking" | "Available" | "Unavailable"
+    >("Ready");
+
+    /**
+     * Check the availability of the given slug, setting the slug check status accordingly.
+     * @param slug The slug to check.
+     */
+    async function handleCheckSlugAvailability(slug: string) {
+        if (slug.length == 0) return;
+
+        setSlugCheckStatus("Checking");
+        try {
+            const { data, error } = await authClient.organization.checkSlug({
+                slug,
+            });
+
+            if (error) {
+                toast.error(
+                    "Failed to check slug availability. " + error.message,
+                );
+                setSlugCheckStatus("Ready");
+            } else {
+                setSlugCheckStatus(data.status ? "Available" : "Unavailable");
+                if (!data.status) {
+                    form.setError("slug", {
+                        type: "custom",
+                        message: "Slug is already taken.",
+                    });
+                }
+            }
+        } catch (error) {
+            toast.error("Failed to check slug availability.");
+            setSlugCheckStatus("Ready");
+            return;
+        }
+    }
+
+    const handleSubmit = form.handleSubmit(async (formData) => {
+        try {
+            const { data, error } = await authClient.organization.create({
+                name: formData.name,
+                slug: formData.slug,
+            });
+
+            if (error) {
+                console.error("Organization creation error:", error);
+                toast.error("Failed to create organization. " + error.message);
+            } else {
+                console.log("Organization created", data);
+                toast.success("Organization created successfully.");
+                router.push(Paths.org(data.slug).dashboard.href);
+            }
+        } catch (error) {
+            console.error("Organization creation error:", error);
+            toast.error("Failed to create organization.");
+        }
+    });
+
     return (
         <S2_Card>
             <S2_CardHeader>
@@ -48,18 +128,91 @@ export function CreateOrganization_Card() {
                 </S2_CardDescription>
             </S2_CardHeader>
             <S2_CardContent>
-                <form>
+                <form id="create-organization-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Organization Name</FieldLabel>
-                                    <S2_Input {...field} />
+                                    <FieldLabel htmlFor="name">
+                                        Organization Name
+                                    </FieldLabel>
+                                    <S2_Input id={"name"} {...field} />
+                                    {fieldState.error && (
+                                        <FieldError
+                                            errors={[fieldState.error]}
+                                        />
+                                    )}
                                 </Field>
                             )}
                         />
+                        <Controller
+                            name="slug"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="slug">Slug</FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupInput
+                                            id="slug"
+                                            value={field.value}
+                                            onChange={(ev) => {
+                                                const value = ev.target.value
+                                                    .toLowerCase()
+                                                    .replace(/\s+/g, "-")
+                                                    .replace(
+                                                        /[^a-z0-9\-]/g,
+                                                        "",
+                                                    );
+                                                field.onChange(value);
+                                                setSlugCheckStatus("Ready");
+                                            }}
+                                            onBlur={() =>
+                                                handleCheckSlugAvailability(
+                                                    field.value,
+                                                )
+                                            }
+                                        />
+                                        <InputGroupAddon align="inline-end">
+                                            {slugCheckStatus === "Checking" && (
+                                                <Spinner />
+                                            )}
+                                            {slugCheckStatus ===
+                                                "Available" && (
+                                                <span className="text-green-600">
+                                                    Available
+                                                </span>
+                                            )}
+                                            {slugCheckStatus ===
+                                                "Unavailable" && (
+                                                <span className="text-red-600">
+                                                    Unavailable
+                                                </span>
+                                            )}
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                    <FieldDescription>
+                                        The uniquer identifier for your
+                                        organization for use in URLs. Lowercase
+                                        letters, numbers, and hyphens only.
+                                    </FieldDescription>
+                                    {fieldState.error && (
+                                        <FieldError
+                                            errors={[fieldState.error]}
+                                        />
+                                    )}
+                                </Field>
+                            )}
+                        />
+                        <Field>
+                            <S2_Button
+                                type="submit"
+                                form="create-organization-form"
+                            >
+                                Create Organization
+                            </S2_Button>
+                        </Field>
                     </FieldGroup>
                 </form>
             </S2_CardContent>
