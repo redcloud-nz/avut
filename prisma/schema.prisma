@@ -95,6 +95,7 @@ model Organization {
   createdAt DateTime
   metadata  String?
 
+  configs     OrganizationConfig[]
   invitations Invitation[]
   teams       Team[]
   members     OrganizationMember[]
@@ -112,6 +113,16 @@ model Organization {
   @@map("organizations")
 }
 
+model OrganizationConfig {
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  key String 
+  value Json
+
+  @@unique([organizationId, key])
+  @@map("organization_config")
+}
+
 model Team {
   id             String       @id
   name           String
@@ -119,10 +130,21 @@ model Team {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime
   updatedAt      DateTime?    @updatedAt
+  configs        TeamConfig[]
   teammembers    TeamMember[]
 
   @@index([organizationId])
   @@map("teams")
+}
+
+model TeamConfig {
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  key    String
+  value  Json
+
+  @@unique([teamId, key])
+  @@map("team_config")
 }
 
 model TeamMember {

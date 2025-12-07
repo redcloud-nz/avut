@@ -7,14 +7,14 @@ import "server-only";
 import { cacheTag, revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
-import { Person } from "@/lib/schemas/person";
+import { PersonData } from "@/lib/schemas/person";
 
 import prisma from "./prisma";
 
 export async function getPerson(
     organizationId: string,
     personId: string,
-): Promise<Person> {
+): Promise<PersonData> {
     "use cache";
     cacheTag(`person-${personId}`);
 
@@ -25,7 +25,7 @@ export async function getPerson(
 
     if (!person) return notFound();
 
-    return Person.fromRecord(person);
+    return PersonData.fromRecord(person);
 }
 
 export async function revalidatePerson(personId: string) {

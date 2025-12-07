@@ -2,11 +2,7 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-"use client";
 
-import { Protect } from "@clerk/nextjs";
-
-import { Show } from "@/components/show";
 import {
     AdminModuleIcon,
     D4HModuleIcon,
@@ -15,17 +11,21 @@ import {
     SkillsModuleIcon,
     SkillPackageManagerModuleIcon,
 } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Show } from "@/components/show";
 import { S2_SidebarGroup, S2_SidebarMenu } from "@/components/ui/s2-sidebar";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { isModuleEnabled } from "@/lib/modules";
+import { OrganizationWithSettings } from "@/lib/schemas/organization";
 import * as Paths from "@/paths";
 
 import { NavCollapsible, NavItem, NavSubItem } from "./nav-section";
 
-export function NavOrganizationMenu() {
-    const organization = useOrganization();
-
+export function NavOrganizationMenu({
+    organization,
+}: {
+    organization: OrganizationWithSettings;
+}) {
     const orgPrefix = Paths.org(organization.slug);
 
     return (
@@ -40,7 +40,10 @@ export function NavOrganizationMenu() {
                     icon={<AdminModuleIcon />}
                     prefix={orgPrefix.admin.href}
                 >
-                    <Protect role="org:admin">
+                    <Protect
+                        permissions={{ invitation: ["create"] }}
+                        orgId={organization.id}
+                    >
                         <NavSubItem path={orgPrefix.admin.invitations} />
                     </Protect>
                     <NavSubItem path={orgPrefix.admin.profile} />
@@ -48,7 +51,10 @@ export function NavOrganizationMenu() {
                     <NavSubItem path={orgPrefix.admin.settings} />
                     {/* <NavSubItem path={prefix.admin.skillPackages}/> */}
                     <NavSubItem path={orgPrefix.admin.teams} />
-                    <Protect role="org:admin">
+                    <Protect
+                        permissions={{ member: ["create"] }}
+                        orgId={organization.id}
+                    >
                         <NavSubItem path={orgPrefix.admin.users} />
                     </Protect>
                 </NavCollapsible>

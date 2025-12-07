@@ -9,7 +9,7 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
-import { Person, PersonId } from "@/lib/schemas/person";
+import { PersonData, PersonId } from "@/lib/schemas/person";
 
 import { revalidatePerson } from "@/server/person";
 
@@ -30,13 +30,13 @@ export const personnelRouter = createTrpcRouter({
      */
     createPerson: organizationProcedure
         .input(
-            Person.schema.omit({
+            PersonData.schema.omit({
                 createdAt: true,
                 updatedAt: true,
                 status: true,
             }),
         )
-        .output(Person.schema)
+        .output(PersonData.schema)
         .mutation(async ({ ctx, input: person }) => {
             // Verify required permissions
             await ctx.hasPermission({ person: ["create"] });
@@ -88,7 +88,7 @@ export const personnelRouter = createTrpcRouter({
                 },
             });
 
-            return Person.fromRecord(created);
+            return PersonData.fromRecord(created);
         }),
 
     /**
@@ -104,7 +104,7 @@ export const personnelRouter = createTrpcRouter({
         .output(
             z.object({
                 deletionType: z.enum(["Soft", "Hard"]),
-                person: Person.schema,
+                person: PersonData.schema,
             }),
         )
         .mutation(async ({ ctx, input: { personId } }) => {
@@ -144,7 +144,10 @@ export const personnelRouter = createTrpcRouter({
 
                 return {
                     deletionType: "Soft",
-                    person: Person.fromRecord({ ...person, status: "Deleted" }),
+                    person: PersonData.fromRecord({
+                        ...person,
+                        status: "Deleted",
+                    }),
                 };
             } else {
                 // Hard delete the person if they are not referenced anywhere
@@ -154,7 +157,10 @@ export const personnelRouter = createTrpcRouter({
 
                 return {
                     deletionType: "Hard",
-                    person: Person.fromRecord({ ...person, status: "Deleted" }),
+                    person: PersonData.fromRecord({
+                        ...person,
+                        status: "Deleted",
+                    }),
                 };
             }
         }),
@@ -169,7 +175,7 @@ export const personnelRouter = createTrpcRouter({
      */
     updatePerson: organizationProcedure
         .input(
-            Person.schema.pick({
+            PersonData.schema.pick({
                 id: true,
                 name: true,
                 email: true,
@@ -177,7 +183,7 @@ export const personnelRouter = createTrpcRouter({
                 properties: true,
             }),
         )
-        .output(Person.schema)
+        .output(PersonData.schema)
         .mutation(
             async ({
                 ctx,
@@ -214,7 +220,7 @@ export const personnelRouter = createTrpcRouter({
 
                 // Calculate changes from existing record
                 const changes = diffObject(
-                    Person.schema
+                    PersonData.schema
                         .pick({
                             name: true,
                             email: true,
@@ -225,7 +231,7 @@ export const personnelRouter = createTrpcRouter({
                     update,
                 );
 
-                if (changes.length == 0) return Person.fromRecord(existing); // No changes
+                if (changes.length == 0) return PersonData.fromRecord(existing); // No changes
 
                 const updated = await ctx.prisma.person.update({
                     where: { organizationId: ctx.organizationId, id: personId },
@@ -241,7 +247,7 @@ export const personnelRouter = createTrpcRouter({
                 // Clear cached data
                 revalidatePerson(personId);
 
-                return Person.fromRecord(updated);
+                return PersonData.fromRecord(updated);
             },
         ),
 });

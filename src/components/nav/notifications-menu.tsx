@@ -5,8 +5,6 @@
 
 "use client";
 
-import { useOrganizationList } from "@clerk/nextjs";
-
 import { NotificationsIcon } from "@/components/icons";
 import { S2_Button } from "@/components/ui/s2-button";
 import { Link } from "@/components/ui/link";
@@ -31,14 +29,6 @@ import {
 import * as Paths from "@/paths";
 
 export function NotificationsMenu() {
-    const { isLoaded, userInvitations } = useOrganizationList({
-        userInvitations: { status: "pending" },
-    });
-
-    const invitations = isLoaded ? (userInvitations.data ?? []) : [];
-
-    const notificationCount = invitations.length;
-
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -48,11 +38,11 @@ export function NotificationsMenu() {
                     className="relative size-8"
                 >
                     <NotificationsIcon className="size-5" />
-                    {notificationCount > 0 && (
+                    {/* {notificationCount > 0 && (
                         <span className="absolute -top-1 -right-1 size-4 flex items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-white">
                             {notificationCount > 9 ? "9+" : notificationCount}
                         </span>
-                    )}
+                    )} */}
                 </S2_Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="rounded-md w-120 p-0">
@@ -60,7 +50,7 @@ export function NotificationsMenu() {
                     <h3 className="text-sm font-semibold">Notifications</h3>
                 </div>
                 <Notifications className="max-h-[400px] overflow-y-auto">
-                    {notificationCount === 0 ? (
+                    {/* {notificationCount === 0 ? (
                         <NotificationsEmpty />
                     ) : (
                         <div className="divide-y">
@@ -94,7 +84,7 @@ export function NotificationsMenu() {
                                 </Notification>
                             ))}
                         </div>
-                    )}
+                    )} */}
                 </Notifications>
             </PopoverContent>
         </Popover>

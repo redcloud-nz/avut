@@ -14,6 +14,7 @@ import { nanoId16 } from "@/lib/id";
 import { ac, owner, admin, member } from "@/lib/permissions";
 
 import prisma from "./prisma";
+import { revalidateOrganization } from "./organization";
 
 export const auth = betterAuth({
     account: {
@@ -60,6 +61,12 @@ export const auth = betterAuth({
         nextCookies(),
         organization({
             ac,
+            organizationHooks: {
+                async afterUpdateOrganization({ organization }) {
+                    // Revalidate organization cache
+                    revalidateOrganization(organization!.slug);
+                },
+            },
             roles: { owner, admin, member },
             schema: {
                 organization: {

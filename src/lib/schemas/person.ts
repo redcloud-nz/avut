@@ -35,10 +35,10 @@ const personSchema = z.object({
     status: recordStatusSchema,
 });
 
-export const Person = {
+export const PersonData = {
     schema: personSchema,
 
-    fromRecord: (record: PersonRecord): Person =>
+    fromRecord: (record: PersonRecord): PersonData =>
         personSchema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
@@ -46,4 +46,4 @@ export const Person = {
         }),
 } as const;
 
-export type Person = z.infer<typeof personSchema>;
+export type PersonData = z.infer<typeof personSchema>;

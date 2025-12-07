@@ -7,8 +7,6 @@
 
 import { LogOutIcon } from "lucide-react";
 
-import { useClerk, useUser } from "@clerk/nextjs";
-
 import {
     PersonalD4HAccessTokensIcon,
     PersonalProfileIcon,
@@ -31,20 +29,22 @@ import { Link } from "@/components/ui/link";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
+import { authClient } from "@/lib/auth-client";
 
 export function UserMenu({ organization }: { organization: OrganizationData }) {
-    const { user } = useUser();
+    const { data: session } = authClient.useSession();
+    if (!session) return null;
 
-    const clerk = useClerk();
-    const fullName = user?.fullName || "";
-    const initials = getUserInitials(fullName);
+    const user = session.user;
+
+    const initials = getUserInitials(user.name);
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <S2_Button variant="ghost" size="icon" className="size-8">
                     <Avatar className="size-6 rounded-full">
-                        <AvatarImage src={user?.imageUrl} alt={fullName} />
+                        <AvatarImage src={user.image ?? ""} alt={user.name} />
                         <AvatarFallback className="rounded-full">
                             {initials}
                         </AvatarFallback>
@@ -55,17 +55,20 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
                 <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                         <Avatar className="h-8 w-8 rounded-full">
-                            <AvatarImage src={user?.imageUrl} alt={fullName} />
+                            <AvatarImage
+                                src={user.image ?? ""}
+                                alt={user.name}
+                            />
                             <AvatarFallback className="rounded-lg">
                                 {initials}
                             </AvatarFallback>
                         </Avatar>
                         <div className="grid flex-1 text-left text-sm leading-tight">
                             <span className="truncate font-semibold">
-                                {fullName}
+                                {user.name}
                             </span>
                             <span className="truncate text-xs">
-                                {user?.primaryEmailAddress?.emailAddress}
+                                {user.email}
                             </span>
                         </div>
                     </div>
@@ -123,9 +126,7 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
                             <span>Switch Organization</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => clerk.signOut({ redirectUrl: "/" })}
-                    >
+                    <DropdownMenuItem onClick={() => authClient.signOut()}>
                         <LogOutIcon />
                         Sign out
                     </DropdownMenuItem>
