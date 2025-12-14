@@ -36,9 +36,8 @@ export function NavOrganizationMenu({
                     icon={<OrgDashboardIcon />}
                 />
                 <NavCollapsible
-                    path={orgPrefix.admin}
+                    path={orgPrefix.admin.index}
                     icon={<AdminModuleIcon />}
-                    prefix={orgPrefix.admin.href}
                 >
                     <Protect
                         permissions={{ invitation: ["create"] }}
@@ -60,9 +59,8 @@ export function NavOrganizationMenu({
                 </NavCollapsible>
                 <Show when={isModuleEnabled(organization, "d4h-views")}>
                     <NavCollapsible
-                        path={orgPrefix.d4hViews}
+                        path={orgPrefix.d4hViews.index}
                         icon={<D4HModuleIcon />}
-                        prefix={orgPrefix.d4hViews.href}
                     >
                         <NavItem path={orgPrefix.d4hViews.activities} />
                         <NavItem path={orgPrefix.d4hViews.calendar} />
@@ -72,7 +70,7 @@ export function NavOrganizationMenu({
                 </Show>
                 <Show when={isModuleEnabled(organization, "notes")}>
                     <NavItem
-                        path={orgPrefix.notes}
+                        path={orgPrefix.notes.index}
                         icon={<NotesModuleIcon />}
                     />
                 </Show>
@@ -83,9 +81,8 @@ export function NavOrganizationMenu({
                     )}
                 >
                     <NavCollapsible
-                        path={orgPrefix.skillPackageManager}
+                        path={orgPrefix.skillPackageManager.index}
                         icon={<SkillPackageManagerModuleIcon />}
-                        prefix={orgPrefix.skillPackageManager.href}
                     >
                         <NavItem
                             path={orgPrefix.skillPackageManager.skillPackages}
@@ -94,9 +91,8 @@ export function NavOrganizationMenu({
                 </Show>
                 <Show when={isModuleEnabled(organization, "skills")}>
                     <NavCollapsible
-                        path={orgPrefix.skills}
+                        path={orgPrefix.skills.index}
                         icon={<SkillsModuleIcon />}
-                        prefix={orgPrefix.skills.href}
                     >
                         <NavItem path={orgPrefix.skills.catalogue} />
                         <NavItem path={orgPrefix.skills.checks} />

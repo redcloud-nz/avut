@@ -4,12 +4,15 @@
  */
 
 export const Messages = {
-    noteNotFound: (noteId: string) => `Note(${noteId}) not found.`,
+    noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,
+
+    organizationNotFound: (organizationId: string) =>
+        `Organization(id=${organizationId}) not found.`,
 
     personNotAUser: (personId: string) =>
-        `Person(${personId}) is not configured as a user.`,
+        `Person(id=${personId}) is not configured as a user.`,
 
-    personNotFound: (personId: string) => `Person(${personId}) not found.`,
+    personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
 
     sessionNotFound: (sessionId: string) =>
         `SkillCheckSession(${sessionId}) not found.`,
@@ -18,9 +21,9 @@ export const Messages = {
         `SkillPackage(${skillPackageId}) not found.`,
 
     skillPackageSubscriptionNotFound: (subscriptionId: string) =>
-        `Subscription for SkillPackage(${subscriptionId}) not found.`,
+        `Subscription for SkillPackage(id=${subscriptionId}) not found.`,
 
-    skillNotFound: (skillId: string) => `Skill(${skillId}) not found.`,
+    skillNotFound: (skillId: string) => `Skill(id=${skillId}) not found.`,
 
     skillGroupNotFound: (skillGroupId: string) =>
         `SkillGroup(${skillGroupId}) not found.`,
@@ -28,8 +31,8 @@ export const Messages = {
     teamForbidden: (teamId: string) =>
         `You do not have access to team(${teamId}).`,
 
-    teamNotFound: (teamId: string) => `Team(${teamId}) not found.`,
+    teamNotFound: (teamId: string) => `Team(id=${teamId}) not found.`,
 
     teamMembershipNotFound: (personId: string, teamId: string) =>
-        `Team membership not found for Person(${personId}) and Team(${teamId}).`,
+        `Team membership not found for Person(id=${personId}) and Team(id=${teamId}).`,
 } as const;

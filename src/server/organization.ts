@@ -9,9 +9,9 @@ import { notFound } from "next/navigation";
 
 import {
     OrganizationData,
-    OrganizationSettings,
     OrganizationWithSettings,
 } from "@/lib/schemas/organization";
+import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import prisma from "./prisma";
 

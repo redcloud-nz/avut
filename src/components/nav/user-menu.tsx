@@ -6,12 +6,12 @@
 "use client";
 
 import { LogOutIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
     PersonalD4HAccessTokensIcon,
     PersonalProfileIcon,
     PersonalSettingsIcon,
-    SwitchOrganizationIcon,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { S2_Button } from "@/components/ui/s2-button";
@@ -26,10 +26,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
 
+import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
-import { authClient } from "@/lib/auth-client";
 
 export function UserMenu({ organization }: { organization: OrganizationData }) {
     const { data: session } = authClient.useSession();
@@ -37,7 +37,15 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
 
     const user = session.user;
 
+    const router = useRouter();
+
     const initials = getUserInitials(user.name);
+
+    function handleSignOut() {
+        authClient.signOut();
+
+        router.push(Paths.auth.signIn().href);
+    }
 
     return (
         <DropdownMenu>
@@ -120,12 +128,12 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
+                    {/* <DropdownMenuItem asChild>
                         <Link to={Paths.orgs.select}>
                             <SwitchOrganizationIcon />
                             <span>Switch Organization</span>
                         </Link>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem onClick={() => authClient.signOut()}>
                         <LogOutIcon />
                         Sign out

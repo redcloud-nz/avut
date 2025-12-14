@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
+import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { auth, AuthSession } from "@/server/auth";
@@ -147,6 +148,7 @@ export const organizationProcedure = authenticatedProcedure
             action,
             objectType,
             objectId,
+            changes = [],
         }: LogEventOptions) {
             await opts.ctx.prisma.organizationLogEntry.create({
                 data: {
@@ -156,6 +158,7 @@ export const organizationProcedure = authenticatedProcedure
                     action,
                     objectType,
                     objectId,
+                    changes: changes as object[],
                 },
             });
         }
@@ -171,6 +174,7 @@ export const organizationProcedure = authenticatedProcedure
 
 interface LogEventOptions {
     action: "Create" | "Update" | "Delete";
-    objectType: "Person";
+    objectType: "OrganizationSettings" | "Person";
     objectId: string;
+    changes?: DiffChange[];
 }

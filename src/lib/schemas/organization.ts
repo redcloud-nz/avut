@@ -5,13 +5,12 @@
 
 import { z } from "zod";
 
-import {
-    Organization as OrganizationRecord,
-    OrganizationConfig as OrganizationConfigRecord,
-} from "@prisma/client";
+import { Organization as OrganizationRecord } from "@prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
+
+import { OrganizationSettings } from "./organization-settings";
 
 export const OrganizationId = {
     schema: zodNanoId16("OrganizationId expected").brand<"OrganizationId">(),
@@ -41,27 +40,6 @@ export const OrganizationData = {
 };
 
 export type OrganizationData = z.infer<typeof organizationSchema>;
-
-const organizationSettingsSchema = z.object({
-    "modules.d4h-views.enabled": z.boolean().default(false),
-    "modules.notes.enabled": z.boolean().default(false),
-    "modules.skills.enabled": z.boolean().default(false),
-    "modules.skill-package-manager.enabled": z.boolean().default(false),
-});
-
-export const OrganizationSettings = {
-    schema: organizationSettingsSchema,
-
-    fromRecords(records: OrganizationConfigRecord[]): OrganizationSettings {
-        const settingsObj: Record<string, unknown> = {};
-        for (const record of records) {
-            settingsObj[record.key] = record.value;
-        }
-        return organizationSettingsSchema.parse(settingsObj);
-    },
-};
-
-export type OrganizationSettings = z.infer<typeof organizationSettingsSchema>;
 
 export type OrganizationWithSettings = OrganizationData & {
     settings: OrganizationSettings;

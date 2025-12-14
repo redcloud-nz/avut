@@ -166,6 +166,30 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Retrieves a person by their ID.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    getPerson: organizationProcedure
+        .input(z.object({ personId: PersonId.schema }))
+        .output(PersonData.schema)
+        .query(async ({ ctx, input: { personId } }) => {
+            const person = await ctx.prisma.person.findUnique({
+                where: { organizationId: ctx.organizationId, id: personId },
+            });
+
+            if (!person)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            return PersonData.fromRecord(person);
+        }),
+
+    /**
      * Updates an existing person.
      * @param ctx The authenticated context.
      * @param input The data to update the person with.
@@ -242,6 +266,7 @@ export const personnelRouter = createTrpcRouter({
                     action: "Update",
                     objectType: "Person",
                     objectId: personId,
+                    changes: changes,
                 });
 
                 // Clear cached data

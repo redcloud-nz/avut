@@ -136,8 +136,10 @@ function adminModule(org_slug: string) {
     const base = `/orgs/${org_slug}/admin` as const;
 
     return {
-        label: "Admin",
-        href: base,
+        index: {
+            label: "Admin",
+            href: base,
+        },
 
         invitations: {
             label: "Invitations",
@@ -282,8 +284,10 @@ function d4hViewsModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/d4h` as const;
 
     return {
-        label: "D4H Integration",
-        href: base,
+        index: {
+            label: "D4H Integration",
+            href: base,
+        },
         activities: {
             label: "Activities",
             href: `${base}/activities`,
@@ -331,8 +335,10 @@ function fogModule(orgSlug: string) {
 function notesModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/notes` as const;
     return {
-        label: "Notes",
-        href: base,
+        index: {
+            label: "Notes",
+            href: base,
+        },
 
         create: {
             label: "New Note",
@@ -400,8 +406,10 @@ function personalModule(orgSlug: string) {
 function skillsModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/skills` as const;
     return {
-        label: "Skills",
-        href: base,
+        index: {
+            label: "Skills",
+            href: base,
+        },
 
         catalogue: {
             label: "Catalogue",
@@ -465,8 +473,10 @@ function skillPackageManagerModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/skill-package-manager` as const;
 
     return {
-        label: "Skill Package Manager",
-        href: base,
+        index: {
+            label: "Skill Package Manager",
+            href: base,
+        },
 
         skillPackage: (skillPackageId: string) => {
             const packageBase =

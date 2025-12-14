@@ -6,7 +6,15 @@
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTrpcRouter } from "../init";
 
-export const appRouter = createTrpcRouter({});
+import { organizationsRouter } from "./organizations-router";
+import { personnelRouter } from "./personnel-router";
+import { settingsRouter } from "./settings-router";
+
+export const appRouter = createTrpcRouter({
+    organizations: organizationsRouter,
+    personnel: personnelRouter,
+    settings: settingsRouter,
+});
 
 export type AppRouter = typeof appRouter;
 

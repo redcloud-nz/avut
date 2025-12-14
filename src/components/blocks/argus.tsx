@@ -14,7 +14,7 @@ function ArgusRoot({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10",
+                "bg-muted flex min-h-svh flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10",
                 className,
             )}
             {...props}

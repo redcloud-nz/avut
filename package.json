@@ -3,9 +3,9 @@
   "license": "MIT",
   "private": true,
   "nz.avut": {
-    "displayName": "A.V.U.T.",
+    "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "versionName": "Philomel"
   },
   "scripts": {

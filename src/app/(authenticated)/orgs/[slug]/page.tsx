@@ -24,6 +24,7 @@ import { d4hViewsModuleFlag, notesModuleFlag } from "@/lib/flags";
 import { isModuleEnabled } from "@/lib/modules";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
+import { AVUTLogo } from "@/components/art/avut-logo";
 
 export const metadata = { title: "Organisation Dashboard" };
 
@@ -45,11 +46,11 @@ export default async function OrganizationDashboard_Page(
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4">
-                        <RTPlusLogo className="w-50 h-25" />
+                        <AVUTLogo />
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link to={Paths.org(slug).admin}>
+                            <Link to={Paths.org(slug).admin.index}>
                                 <ItemContent>
                                     <ItemTitle>Admin</ItemTitle>
                                     <ItemDescription>
@@ -69,7 +70,7 @@ export default async function OrganizationDashboard_Page(
                             }
                         >
                             <Item asChild>
-                                <Link to={Paths.org(slug).notes}>
+                                <Link to={Paths.org(slug).notes.index}>
                                     <ItemContent>
                                         <ItemTitle>Notes</ItemTitle>
                                         <ItemDescription>
@@ -85,7 +86,7 @@ export default async function OrganizationDashboard_Page(
                         </Show>
                         <Show when={isModuleEnabled(organization, "d4h-views")}>
                             <Item asChild>
-                                <Link to={Paths.org(slug).d4hViews}>
+                                <Link to={Paths.org(slug).d4hViews.index}>
                                     <ItemContent>
                                         <ItemTitle>D4H Views</ItemTitle>
                                         <ItemDescription>
@@ -106,7 +107,12 @@ export default async function OrganizationDashboard_Page(
                             )}
                         >
                             <Item asChild>
-                                <Link to={Paths.org(slug).skillPackageManager}>
+                                <Link
+                                    to={
+                                        Paths.org(slug).skillPackageManager
+                                            .index
+                                    }
+                                >
                                     <ItemContent>
                                         <ItemTitle>
                                             Skill Package Manager
@@ -124,7 +130,7 @@ export default async function OrganizationDashboard_Page(
                         </Show>
                         <Show when={isModuleEnabled(organization, "skills")}>
                             <Item asChild>
-                                <Link to={Paths.org(slug).skills}>
+                                <Link to={Paths.org(slug).skills.index}>
                                     <ItemContent>
                                         <ItemTitle>Skills</ItemTitle>
                                         <ItemDescription>

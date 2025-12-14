@@ -6,6 +6,7 @@
 import Image from "next/image";
 import { Suspense } from "react";
 
+import { Link } from "@/components/ui/link";
 import {
     S2_Sidebar,
     S2_SidebarContent,
@@ -13,6 +14,8 @@ import {
     S2_SidebarHeader,
     S2_SidebarRail,
 } from "@/components/ui/s2-sidebar";
+
+import * as Paths from "@/paths";
 
 import { NavSkeleton } from "./nav-skeleton";
 
@@ -26,30 +29,22 @@ export function AppSidebar({
     return (
         <S2_Sidebar>
             <S2_SidebarHeader className="flex items-center justify-between border-b h-(--header-height)">
-                <div className="relative h-8 aspect-2/1">
+                <div className="w-[100px] self-center">
                     <Image
-                        src="/logo.svg"
-                        alt="RT+ logo"
-                        width={400}
-                        height={200}
-                        priority
+                        src="/avut-logo.svg"
+                        alt="A.V.U.T. Logo"
+                        width={150}
+                        height={50}
                     />
                 </div>
             </S2_SidebarHeader>
             <S2_SidebarContent>
-                <div className="w-full text-center font-semibold px-2 pt-2">
-                    {/* <OrganizationSwitcher
-                    appearance={{
-                        elements: {
-                            organizationSwitcherTrigger: 'w-[calc(var(--sidebar-width)-1px)] py-2',
-                        }
-                    }}
-                    afterCreateOrganizationUrl="/orgs/:slug"
-                    afterSelectOrganizationUrl="/orgs/:slug"
-                    afterSelectPersonalUrl="/personal"
-                /> */}
+                <Link
+                    className="w-full text-center font-semibold px-2 pt-2"
+                    to={Paths.orgs.select}
+                >
                     {name}
-                </div>
+                </Link>
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </S2_SidebarContent>
             <S2_SidebarFooter>
@@ -63,8 +58,7 @@ export function AppSidebar({
 function AppVersion() {
     return (
         <div className="text-xs text-center text-muted-foreground py-1">
-            RT+ v{process.env.NEXT_PUBLIC_APP_VERSION} (
-            {process.env.NEXT_PUBLIC_APP_VERSION_NAME})
+            {`${process.env.NEXT_PUBLIC_APP_DISPLAY_NAME} v${process.env.NEXT_PUBLIC_APP_VERSION} (${process.env.NEXT_PUBLIC_APP_VERSION_NAME})`}
         </div>
     );
 }

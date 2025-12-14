@@ -10,7 +10,7 @@ import localFont from "next/font/local";
 import { Jersey_10 } from "next/font/google";
 
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -38,16 +38,14 @@ export const metadata: Metadata = {
     description: "Assorted Vaguely Useful Tools",
 };
 
-export default async function Root_Layout({
-    children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default async function Root_Layout(props: LayoutProps<"/">) {
     return (
         <html lang="en">
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
+                {props.children}
                 <Toaster richColors />
-                {children}
             </body>
         </html>
     );
