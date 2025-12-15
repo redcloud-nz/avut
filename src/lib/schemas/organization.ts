@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { Organization as OrganizationRecord } from "@prisma/client";
+import { Organization as OrganizationRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";

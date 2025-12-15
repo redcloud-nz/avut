@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { OrganizationConfig as OrganizationConfigRecord } from "@prisma/client";
+import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 
 const organizationSettingsSchema = z.object({
     "modules.d4h-views.enabled": z.boolean().default(false),

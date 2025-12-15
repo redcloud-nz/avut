@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { Person as PersonRecord } from "@prisma/client";
+import { Person as PersonRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import {

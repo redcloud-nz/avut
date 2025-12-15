@@ -35,6 +35,7 @@ export function AppSidebar({
                         alt="A.V.U.T. Logo"
                         width={150}
                         height={50}
+                        loading="eager"
                     />
                 </div>
             </S2_SidebarHeader>

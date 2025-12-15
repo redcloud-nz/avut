@@ -32,12 +32,12 @@ import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
 
 export function UserMenu({ organization }: { organization: OrganizationData }) {
+    const router = useRouter();
+
     const { data: session } = authClient.useSession();
     if (!session) return null;
 
     const user = session.user;
-
-    const router = useRouter();
 
     const initials = getUserInitials(user.name);
 
@@ -134,7 +134,7 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
                             <span>Switch Organization</span>
                         </Link>
                     </DropdownMenuItem> */}
-                    <DropdownMenuItem onClick={() => authClient.signOut()}>
+                    <DropdownMenuItem onClick={handleSignOut}>
                         <LogOutIcon />
                         Sign out
                     </DropdownMenuItem>

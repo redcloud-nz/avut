@@ -76,7 +76,7 @@ export default async function OrganizationSelect_Page() {
                             </Item>
                             <ItemSeparator />
                             {organizations.map((org) => (
-                                <Item asChild>
+                                <Item key={org.id} asChild>
                                     <Link to={Paths.org(org.slug).dashboard}>
                                         <ItemMedia>
                                             <Building2Icon className="size-5" />

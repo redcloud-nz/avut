@@ -2,8 +2,10 @@
  *  Copyright (c) 2025 A.V.U.T. Project
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 
 const prismaClientSingleton = () => {
     // Use Prismock in test environment, regular PrismaClient otherwise
@@ -12,8 +14,12 @@ const prismaClientSingleton = () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { PrismockClient } = require("prismock");
         return new PrismockClient() as unknown as PrismaClient;
+    } else {
+        const adapter = new PrismaPg({
+            connectionString: process.env.POSTGRES_PRISMA_URL,
+        });
+        return new PrismaClient({ adapter });
     }
-    return new PrismaClient();
 };
 
 declare const globalThis: {
