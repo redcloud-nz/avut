@@ -16,7 +16,7 @@ export const settingsRouter = createTrpcRouter({
      * @param ctx The authenticated context.
      * @returns The organization settings object.
      */
-    getOrganizationSettings: organizationProcedure
+    getOrganizationSettings: organizationProcedure()
         .output(OrganizationSettings.schema)
         .query(async ({ ctx }) => {
             const records = await ctx.prisma.organizationConfig.findMany({
@@ -32,7 +32,9 @@ export const settingsRouter = createTrpcRouter({
      * @param input The input object containing the updates to apply.
      * @returns The updated organization settings.
      */
-    updateOrganizationSettings: organizationProcedure
+    updateOrganizationSettings: organizationProcedure({
+        organization: ["update"],
+    })
         .input(
             z.object({
                 settings: OrganizationSettings.schema.partial(),
@@ -40,9 +42,6 @@ export const settingsRouter = createTrpcRouter({
         )
         .output(OrganizationSettings.schema)
         .mutation(async ({ ctx, input }) => {
-            // Verify required permissions
-            await ctx.hasPermission({ organization: ["update"] });
-
             const defaultSettings = OrganizationSettings.schema.parse({});
 
             // Only update keys that differ from defaults

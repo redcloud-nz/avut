@@ -13,6 +13,7 @@ import {
 
 const statement = {
     ...defaultStatements,
+    organization: ["view", "update", "delete"],
     person: ["create", "update", "delete"],
     skillPackage: ["create", "update", "delete", "publish"],
 } as const;
@@ -20,18 +21,21 @@ const statement = {
 export const ac = createAccessControl(statement);
 
 export const owner = ac.newRole({
+    ...ownerAc.statements,
+    organization: ["view", "update", "delete"],
     person: ["create", "update", "delete"],
     skillPackage: ["create", "update", "delete", "publish"],
-    ...ownerAc.statements,
 });
 export const admin = ac.newRole({
+    ...adminAc.statements,
+    organization: ["view", "update"],
     person: ["create", "update", "delete"],
     skillPackage: ["create", "update", "delete", "publish"],
-    ...adminAc.statements,
 });
 
 export const member = ac.newRole({
     ...memberAc.statements,
+    organization: ["view"],
 });
 
 export type Permissions = {

@@ -7,7 +7,7 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
-import { RTPlusLogo } from "@/components/art/rtplus-logo";
+import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
 import { Show } from "@/components/show";
 import {
@@ -24,7 +24,6 @@ import { d4hViewsModuleFlag, notesModuleFlag } from "@/lib/flags";
 import { isModuleEnabled } from "@/lib/modules";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
-import { AVUTLogo } from "@/components/art/avut-logo";
 
 export const metadata = { title: "Organisation Dashboard" };
 

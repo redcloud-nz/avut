@@ -13,6 +13,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { auth, AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
 
@@ -27,7 +28,10 @@ export function createInnerTrpcContext({
     hasPermission,
 }: {
     authSession: AuthSession | null;
-    hasPermission(permissions: Permissions): Promise<void>;
+    hasPermission(
+        organizationId: OrganizationId,
+        permissions: Permissions,
+    ): Promise<void>;
 }) {
     return {
         prisma,
@@ -46,11 +50,15 @@ export const createTrpcContext = cache(async () => {
 
     return createInnerTrpcContext({
         authSession,
-        hasPermission: async (requiredPermissions: Permissions) => {
+        hasPermission: async (
+            organizationId: OrganizationId,
+            requiredPermissions: Permissions,
+        ) => {
             try {
                 await auth.api.hasPermission({
                     headers,
                     body: {
+                        organizationId,
                         permissions: requiredPermissions,
                     },
                 });
@@ -131,46 +139,59 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
     });
 });
 
-export const organizationProcedure = authenticatedProcedure
-    .input(z.object({ organizationId: z.string() }))
-    .use(async (opts) => {
-        if (
-            opts.ctx.authSession.session.activeOrganizationId !=
-            opts.input.organizationId
-        ) {
-            throw new TRPCError({
-                code: "FORBIDDEN",
-                message: "Invalid organization access.",
-            });
-        }
+/**
+ * An organization scoped procedure that checks for required permissions.
+ * @param requiredPermissions The permissions required to access this procedure.
+ * @returns A tRPC procedure with organization context and permission checks.
+ */
+export function organizationProcedure(requiredPermissions: Permissions = {}) {
+    // Ensure that the required organization permissions include at least 'organization:view'
+    requiredPermissions = {
+        ...requiredPermissions,
+        organization: requiredPermissions.organization?.includes("view")
+            ? requiredPermissions.organization
+            : [...(requiredPermissions.organization ?? []), "view"],
+    };
 
-        async function logEvent({
-            action,
-            objectType,
-            objectId,
-            changes = [],
-        }: LogEventOptions) {
-            await opts.ctx.prisma.organizationLogEntry.create({
-                data: {
-                    id: nanoId16(),
+    return authenticatedProcedure
+        .meta({ requiresOrganization: true, requiredPermissions })
+        .input(z.object({ organizationId: OrganizationId.schema }))
+
+        .use(async (opts) => {
+            // Check organization permissions
+            await opts.ctx.hasPermission(
+                opts.input.organizationId,
+                requiredPermissions,
+            );
+
+            async function logEvent({
+                action,
+                objectType,
+                objectId,
+                changes = [],
+            }: LogEventOptions) {
+                await opts.ctx.prisma.organizationLogEntry.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId: opts.input.organizationId,
+                        userId: opts.ctx.authSession.user.id,
+                        action,
+                        objectType,
+                        objectId,
+                        changes: changes as object[],
+                    },
+                });
+            }
+
+            return opts.next({
+                ctx: {
+                    ...opts.ctx,
                     organizationId: opts.input.organizationId,
-                    userId: opts.ctx.authSession.user.id,
-                    action,
-                    objectType,
-                    objectId,
-                    changes: changes as object[],
+                    logEvent,
                 },
             });
-        }
-
-        return opts.next({
-            ctx: {
-                ...opts.ctx,
-                organizationId: opts.input.organizationId,
-                logEvent,
-            },
         });
-    });
+}
 
 interface LogEventOptions {
     action: "Create" | "Update" | "Delete";

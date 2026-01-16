@@ -2,12 +2,15 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+"use client";
 
-import { headers } from "next/headers";
-
-import { Permissions } from "@/lib/permissions";
-import { auth } from "@/server/auth";
 import { ReactNode } from "react";
+import { entries } from "remeda";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import { authClient } from "@/lib/auth-client";
+import { Permissions } from "@/lib/permissions";
 
 interface ProtectProps {
     children: ReactNode;
@@ -15,11 +18,31 @@ interface ProtectProps {
     permissions: Permissions;
 }
 
-export async function Protect({ children, orgId, permissions }: ProtectProps) {
-    const response = await auth.api.hasPermission({
-        headers: await headers(),
-        body: { permissions, organizationId: orgId },
+export function Protect({ children, orgId, permissions }: ProtectProps) {
+    // Flatten permissions for query key
+    const flatPermissions = entries(permissions).flatMap(([key, value]) => {
+        if (Array.isArray(value)) {
+            return value.map((v) => `${key}:${v}`);
+        } else if (typeof value === "string") {
+            return `${key}:${value}`;
+        } else return [];
     });
 
-    return response.success ? <>{children}</> : null;
+    const { data: hasPermission } = useSuspenseQuery({
+        queryKey: ["hasPermission", orgId, flatPermissions],
+        queryFn: async () => {
+            const response = await authClient.organization.hasPermission({
+                permissions: permissions,
+                organizationId: orgId,
+            });
+            if (response.data) {
+                return response.data.success;
+            } else {
+                console.error("Error checking permissions:", response.error);
+                throw response.error;
+            }
+        },
+    });
+
+    return hasPermission ? <>{children}</> : null;
 }

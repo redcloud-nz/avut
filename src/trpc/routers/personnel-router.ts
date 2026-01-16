@@ -28,7 +28,7 @@ export const personnelRouter = createTrpcRouter({
      * @returns The created person object.
      * @throws TRPCError(CONFLICT) if a person with the same email already exists.
      */
-    createPerson: organizationProcedure
+    createPerson: organizationProcedure({ person: ["create"] })
         .input(
             PersonData.schema.omit({
                 createdAt: true,
@@ -38,9 +38,6 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(PersonData.schema)
         .mutation(async ({ ctx, input: person }) => {
-            // Verify required permissions
-            await ctx.hasPermission({ person: ["create"] });
-
             // Check for conflicts
             const [emailConflict] = await Promise.all([
                 ctx.prisma.person.findFirst({
@@ -99,7 +96,7 @@ export const personnelRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the person is not found.
      * @throws TRPCError(FORBIDDEN) if the user does not have permission to delete the person.
      */
-    deletePerson: organizationProcedure
+    deletePerson: organizationProcedure({ person: ["delete"] })
         .input(z.object({ personId: PersonId.schema }))
         .output(
             z.object({
@@ -108,9 +105,6 @@ export const personnelRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId } }) => {
-            // Verify required permissions
-            await ctx.hasPermission({ person: ["delete"] });
-
             const person = await ctx.prisma.person.findUnique({
                 where: { organizationId: ctx.organizationId, id: personId },
                 include: {
@@ -172,7 +166,7 @@ export const personnelRouter = createTrpcRouter({
      * @returns The person object.
      * @throws TRPCError(NOT_FOUND) if the person is not found.
      */
-    getPerson: organizationProcedure
+    getPerson: organizationProcedure()
         .input(z.object({ personId: PersonId.schema }))
         .output(PersonData.schema)
         .query(async ({ ctx, input: { personId } }) => {
@@ -197,7 +191,7 @@ export const personnelRouter = createTrpcRouter({
      * @throws TRPCError(CONFLICT) If a person with the new email already exists.
      * @throws TRPCError(NOT_FOUND) If the person to update is not found.
      */
-    updatePerson: organizationProcedure
+    updatePerson: organizationProcedure({ person: ["update"] })
         .input(
             PersonData.schema.pick({
                 id: true,
@@ -213,8 +207,6 @@ export const personnelRouter = createTrpcRouter({
                 ctx,
                 input: { id: personId, organizationId, ...update },
             }) => {
-                await ctx.hasPermission({ person: ["update"] });
-
                 const existing = await ctx.prisma.person.findUnique({
                     where: { organizationId: ctx.organizationId, id: personId },
                 });

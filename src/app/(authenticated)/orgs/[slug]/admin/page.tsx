@@ -1,0 +1,83 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Path: /orgs/[slug]/admin
+ */
+
+import { ChevronRightIcon } from "lucide-react";
+
+import { AVUTLogo } from "@/components/art/avut-logo";
+
+import { Lexington } from "@/components/blocks/lexington";
+import { Link } from "@/components/ui/link";
+
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/items";
+
+import * as Paths from "@/paths";
+import { getOrganizationBySlug } from "@/server/organization";
+import { Protect } from "@/components/protect";
+
+export default async function AdminIndex_Page(
+    props: PageProps<`/orgs/[slug]/admin`>,
+) {
+    const { slug } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    return (
+        <Lexington.Root>
+            <Lexington.Header breadcrumbs={["Admin"]} />
+            <Lexington.Page>
+                <Lexington.Column width="sm">
+                    <div className="flex flex-col items-center my-4 gap-4">
+                        <AVUTLogo />
+                        <div className="font-semibold">Admin Module</div>
+                    </div>
+                    <ItemGroup>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ invitation: ["create"] }}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.org(slug).admin.invitations}>
+                                    <ItemContent>
+                                        <ItemTitle>Invitations</ItemTitle>
+                                        <ItemDescription>
+                                            Manage invitations to your
+                                            organisation.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+
+                        <Item asChild>
+                            <Link to={Paths.org(slug).admin.users}>
+                                <ItemContent>
+                                    <ItemTitle>Users</ItemTitle>
+                                    <ItemDescription>
+                                        Manage your organisation's users and
+                                        their roles.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </ItemGroup>
+                </Lexington.Column>
+            </Lexington.Page>
+        </Lexington.Root>
+    );
+}

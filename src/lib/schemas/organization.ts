@@ -15,31 +15,29 @@ import { OrganizationSettings } from "./organization-settings";
 export const OrganizationId = {
     schema: zodNanoId16("OrganizationId expected").brand<"OrganizationId">(),
 
-    create: (): OrganizationId => OrganizationId.schema.parse(nanoId16()),
+    create: () => OrganizationId.schema.parse(nanoId16()),
 } as const;
 
-export type OrganizationId = string & z.BRAND<"OrganizationId">;
-
-const organizationSchema = z.object({
-    id: OrganizationId.schema,
-    name: z.string().min(5).max(100),
-    slug: z
-        .string()
-        .min(3)
-        .max(50)
-        .regex(/^[a-z0-9-_]+$/),
-});
+export type OrganizationId = z.infer<typeof OrganizationId.schema>;
 
 export const OrganizationData = {
-    schema: organizationSchema,
+    schema: z.object({
+        id: OrganizationId.schema,
+        name: z.string().min(5).max(100),
+        slug: z
+            .string()
+            .min(3)
+            .max(50)
+            .regex(/^[a-z0-9-_]+$/),
+    }),
 
-    fromRecord: (record: OrganizationRecord): OrganizationData =>
-        organizationSchema.parse({
+    fromRecord: (record: OrganizationRecord) =>
+        OrganizationData.schema.parse({
             ...record,
         }),
 };
 
-export type OrganizationData = z.infer<typeof organizationSchema>;
+export type OrganizationData = z.infer<typeof OrganizationData.schema>;
 
 export type OrganizationWithSettings = OrganizationData & {
     settings: OrganizationSettings;
