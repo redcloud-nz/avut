@@ -29,6 +29,8 @@ export default async function AdminModule_InvitationsList_Page(
         redirect(Paths.auth.signIn().href);
     }
 
+    // TODO  Check if the user has admin permissions for the organization
+
     return (
         <Lexington.Root>
             <Lexington.Header

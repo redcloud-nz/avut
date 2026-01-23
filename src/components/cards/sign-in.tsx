@@ -36,7 +36,12 @@ import { Link } from "@/components/ui/link";
 import { authClient } from "@/lib/auth-client";
 import * as Paths from "@/paths";
 
-export function SignIn_Card() {
+/**
+ * Card for a user to sign in to the application.
+ *
+ * @param redirect Optional redirect URL after successful sign-in.
+ */
+export function SignIn_Card({ redirect }: { redirect?: string }) {
     return (
         <S2_Card>
             <S2_CardHeader>
@@ -47,7 +52,7 @@ export function SignIn_Card() {
             </S2_CardHeader>
             <S2_CardContent>
                 <FieldGroup>
-                    <EmailPasswordSignIn_Form />
+                    <EmailPasswordSignIn_Form redirect={redirect} />
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
@@ -62,7 +67,12 @@ export function SignIn_Card() {
     );
 }
 
-function EmailPasswordSignIn_Form() {
+/**
+ * Sign in form using email and password.
+ *
+ * @param redirect Optional redirect URL after successful sign-in.
+ */
+function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
     const router = useRouter();
 
     const form = useForm({
@@ -85,6 +95,7 @@ function EmailPasswordSignIn_Form() {
         | { status: "Error"; error: { message?: string } }
     >({ status: "Ready" });
 
+    // Handler for the sign-in form submission.
     const handleSignIn = form.handleSubmit(async (formData) => {
         setState({ status: "InProgress" });
         try {
@@ -97,7 +108,9 @@ function EmailPasswordSignIn_Form() {
                 console.log("Sign in successful", data);
 
                 if (data.user.emailVerified) {
-                    router.push(Paths.orgs.select.href);
+                    // Email is verfified
+                    if (redirect) router.push(redirect);
+                    else router.push(Paths.orgs.select.href);
                 } else {
                     router.push(Paths.auth.verifyEmail(data.user.email).href);
                 }

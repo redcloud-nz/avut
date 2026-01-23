@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { betterAuth } from "better-auth";
+import { betterAuth, BetterAuthOptions, InferUser } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP, organization } from "better-auth/plugins";
@@ -15,6 +15,7 @@ import { ac, owner, admin, member } from "@/lib/permissions";
 
 import prisma from "./prisma";
 import { revalidateOrganization } from "./organization";
+import OrganizationInviteTemplate from "@/emails/organization-invite";
 
 export const auth = betterAuth({
     account: {
@@ -45,7 +46,10 @@ export const auth = betterAuth({
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
-                console.log("Sending verification OTP to:", email, otp, type);
+                console.log(
+                    `Sending verification OTP (type: ${type}) to:`,
+                    email,
+                );
                 sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
@@ -61,6 +65,7 @@ export const auth = betterAuth({
         nextCookies(),
         organization({
             ac,
+            cancelPendingInvitationsOnReInvite: true,
             organizationHooks: {
                 async afterUpdateOrganization({ organization }) {
                     // Revalidate organization cache
@@ -88,6 +93,26 @@ export const auth = betterAuth({
                     modelName: "TeamInvitation",
                 },
             },
+            async sendInvitationEmail({
+                invitation,
+                email,
+                organization,
+                inviter,
+            }) {
+                console.log(
+                    `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
+                );
+                sendEmail({
+                    from: NoReplyEmailAddress,
+                    to: email,
+                    subject: `Invitation to join ${organization.name} on AVUT`,
+                    react: OrganizationInviteTemplate({
+                        invitation,
+                        organization,
+                        inviter,
+                    }),
+                });
+            },
             teams: {
                 enabled: true,
             },
@@ -113,6 +138,31 @@ export const auth = betterAuth({
     verification: {
         modelName: "Verification",
     },
-});
+} satisfies BetterAuthOptions);
 
+export type Auth = typeof auth;
+
+/**
+ * Inferred invitation type from better-auth instance
+ */
+export type AuthInvitation = typeof auth.$Infer.Invitation;
+
+/**
+ * Inferred organization type from better-auth instance
+ */
+export type AuthOrganization = typeof auth.$Infer.Organization;
+
+/**
+ * Inferred organization member type from better-auth instance
+ */
+export type AuthOrganizationMember = typeof auth.$Infer.Member;
+
+/**
+ * Inferred session type from better-auth instance
+ */
 export type AuthSession = typeof auth.$Infer.Session;
+
+/**
+ * Inferred user type from better-auth instance
+ */
+export type AuthUser = InferUser<typeof auth>;

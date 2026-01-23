@@ -49,7 +49,7 @@ export default async function AdminModule_CreateInvitation_Page(
                     </Lexington.ColumnControls>
                     <S2_Card>
                         <S2_CardHeader>
-                            <S2_CardTitle>Invite new users</S2_CardTitle>
+                            <S2_CardTitle>Invite new user</S2_CardTitle>
                         </S2_CardHeader>
                         <S2_CardContent>
                             <AdminModule_CreateInvitation_Form

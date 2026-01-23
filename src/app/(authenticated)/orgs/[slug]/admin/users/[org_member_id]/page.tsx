@@ -9,13 +9,11 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
-
-import { TITLE_SEPARATOR } from "@/lib/constants";
-import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
-import prisma from "@/server/prisma";
 import { Hermes } from "@/components/blocks/hermes";
+import { Lexington } from "@/components/blocks/lexington";
+import { EditObjectIcon } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { S2_Button } from "@/components/ui/s2-button";
 import {
     S2_Card,
     S2_CardAction,
@@ -25,8 +23,15 @@ import {
     S2_CardTitle,
 } from "@/components/ui/s2-card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Link } from "@/components/ui/link";
 import { S2_Value } from "@/components/ui/s2-value";
+
+import { TITLE_SEPARATOR } from "@/lib/constants";
 import { formatDate } from "@/lib/datetime";
+import * as Paths from "@/paths";
+import { getOrganizationBySlug } from "@/server/organization";
+import prisma from "@/server/prisma";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 const fetchOrganizationMember = cache(
     async (organizationId: string, org_member_id: string) => {
@@ -89,6 +94,22 @@ export default async function AdminModule_UserDetail_Page(
                             >
                                 Users List
                             </Hermes.BackButton>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ member: ["update"] }}
+                            >
+                                <S2_Button variant="outline" asChild>
+                                    <Link
+                                        to={
+                                            Paths.org(
+                                                organization.slug,
+                                            ).admin.user(org_member_id).update
+                                        }
+                                    >
+                                        <EditObjectIcon /> Edit User
+                                    </Link>
+                                </S2_Button>
+                            </Protect>
                         </Hermes.SectionHeader>
 
                         <S2_Card>
@@ -122,10 +143,9 @@ export default async function AdminModule_UserDetail_Page(
                                         <FieldLabel>Role</FieldLabel>
                                         <S2_Value
                                             value={
-                                                organizationMember.role ==
-                                                "org:admin"
-                                                    ? "Admin"
-                                                    : "Member"
+                                                OrganizationRole.displayNames[
+                                                    organizationMember.role as OrganizationRole
+                                                ]
                                             }
                                         />
                                     </Field>

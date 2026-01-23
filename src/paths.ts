@@ -9,6 +9,12 @@ export const about = {
 } as const;
 
 export const auth = {
+    acceptInvite: (inviteId: string) =>
+        ({
+            label: "Accept Invite",
+            href: `/auth/accept-invite/${inviteId}`,
+        }) as const,
+
     forgotPassword: {
         label: "Forgot Password",
         href: "/auth/forgot-password",
@@ -18,12 +24,26 @@ export const auth = {
             label: "Reset Password",
             href: `/auth/reset-password?e=${encodeURIComponent(email)}`,
         }) as const,
-    signIn: (email?: string) => ({
-        label: "Sign In",
-        href: email
-            ? `/auth/sign-in?e=${encodeURIComponent(email)}`
-            : "/auth/sign-in",
-    }),
+    signIn: ({
+        email,
+        redirect,
+    }: { email?: string; redirect?: string } = {}) => {
+        const parts = [];
+        if (email) {
+            parts.push(`e=${encodeURIComponent(email)}`);
+        }
+        if (redirect) {
+            parts.push(`r=${encodeURIComponent(redirect)}`);
+        }
+
+        return {
+            label: "Sign In",
+            href:
+                parts.length > 0
+                    ? `/auth/sign-in?${parts.join("&")}`
+                    : "/auth/sign-in",
+        };
+    },
     signUp: {
         label: "Sign Up",
         href: "/auth/sign-up",
@@ -245,6 +265,10 @@ function adminModule(org_slug: string) {
         user: (userId: string) =>
             ({
                 href: `${base}/users/${userId}`,
+                update: {
+                    label: "Update User",
+                    href: `${base}/users/${userId}/--update`,
+                },
             }) as const,
         users: {
             label: "Users",

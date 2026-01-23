@@ -1,9 +1,9 @@
 /*
- *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { User } from "better-auth";
+import type { AuthOrganization } from "@/server/auth";
 import {
     Body,
     Button,
@@ -12,7 +12,6 @@ import {
     Hr,
     Html,
     Img,
-    Link,
     pixelBasedPreset,
     Preview,
     Section,
@@ -24,30 +23,46 @@ const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : "http://localhost:3000";
 
-interface VerifyEmailAddressTemplateProps {
-    verificationUrl: string;
-    user: User;
+interface OrganizationInviteTemplateProps {
+    invitation: { id: string; email: string };
+    organization: AuthOrganization;
+    inviter: { user: { name: string; email: string } };
 }
 
-/**
- * TODO Review how the verify process works.
- */
-export default function VerifyEmailAddressTemplate({
-    verificationUrl = "http://localhost:3000/verify-email?token=TESTTOKEN",
-    user = {
-        id: "TESTUSER",
-        name: "John Smith",
-        email: "john.smith@example.com",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        emailVerified: false,
+const SAMPLE_PROPS = {
+    invitation: {
+        id: "TESTINVITEID",
+        email: "jan.kowalski@example.com",
     },
-}: VerifyEmailAddressTemplateProps) {
+
+    inviter: {
+        user: { name: "Alice Johnson", email: "alice.johnson@example.com" },
+    },
+    organization: {
+        id: "TESTORG",
+        name: "Test Organization",
+        slug: "test-organization",
+        createdAt: new Date(),
+    },
+} satisfies OrganizationInviteTemplateProps;
+
+/**
+ * Email template for an organization invitation.
+ */
+export default function OrganizationInviteTemplate({
+    invitation = SAMPLE_PROPS.invitation,
+    organization = SAMPLE_PROPS.organization,
+    inviter = SAMPLE_PROPS.inviter,
+}: OrganizationInviteTemplateProps) {
+    const acceptUrl = `${baseUrl}/auth/accept-invite/${invitation.id}`;
+
     return (
         <Html lang="en">
             <Tailwind config={{ presets: [pixelBasedPreset] }}>
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
-                    <Preview>Verify your email address</Preview>
+                    <Preview>
+                        You're invited to join {organization.name} on AVUT
+                    </Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
@@ -59,33 +74,34 @@ export default function VerifyEmailAddressTemplate({
                             />
                         </Section>
                         <Heading className="max-0 my-[30px] p-0 text-center font-normal text-[24px] text-black">
-                            Email verification
+                            Your invitation to join {organization.name}
                         </Heading>
                         <Text className="text-[14px] text-black leading-6">
-                            Please verify your email address by clicking the
-                            button below:
+                            {`Hello. You have been invited by ${inviter.user.name} (${inviter.user.email}) to join "${organization.name}" on AVUT.`}
                         </Text>
                         <Section className="mt-8 mb-8 text-center">
                             <Button
                                 className="rounded bg-[#000000] px-5 py-3 text-center font-semibold text-[12px] text-white no-underline"
-                                href={verificationUrl}
+                                href={acceptUrl}
                             >
-                                Verify
+                                Accept Invitation
                             </Button>
                         </Section>
                         <Text className="text-[14px] text-black leading-6">
-                            or copy and paste this URL into your browser:{" "}
-                            <Link
-                                href={verificationUrl}
+                            or copy and paste the following link into your
+                            browser:{" "}
+                            <a
+                                href={acceptUrl}
                                 className="text-blue-600 no-underline"
                             >
-                                {verificationUrl}
-                            </Link>
+                                {acceptUrl}
+                            </a>
                         </Text>
                         <Hr className="mx-0 my-[26px] w-full border border-[#eaeaea] border-solid" />
                         <Text className="text-[#666666] text-[12px] leading-6">
-                            This email was sent to {user.email}. If you did not
-                            request this, please ignore it.
+                            This email was sent to {invitation.email}. If you
+                            did not expect this invitation, please ignore this
+                            email.
                         </Text>
                     </Container>
                 </Body>

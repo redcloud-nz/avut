@@ -80,7 +80,9 @@ export function AdminModule_CreateInvitation_Form({
 
         // Check if an invitation has already been sent to this email
         const existingInvitation = invitations.find(
-            (invitation) => invitation.email === formData.email,
+            (invitation) =>
+                invitation.email === formData.email &&
+                invitation.status != "canceled",
         );
         if (existingInvitation) {
             form.setError("email", {
@@ -124,7 +126,7 @@ export function AdminModule_CreateInvitation_Form({
     });
 
     return (
-        <form id="create-invitations" onSubmit={handleSubmit}>
+        <form id="create-invitation-form" onSubmit={handleSubmit}>
             <FieldGroup>
                 <Controller
                     name="email"
@@ -195,10 +197,10 @@ export function AdminModule_CreateInvitation_Form({
                 <Field orientation="horizontal">
                     <S2_Button
                         type="submit"
-                        form="create-invitations"
+                        form="create-invitation-form"
                         disabled={status == "Pending"}
                     >
-                        Send Invitations
+                        Send Invitation
                     </S2_Button>
                     <S2_Button
                         type="button"
