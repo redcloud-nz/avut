@@ -241,6 +241,7 @@ export const OrganizationLogEntryScalarFieldEnum = {
     objectType: "objectType",
     objectId: "objectId",
     changes: "changes",
+    description: "description",
     timestamp: "timestamp",
 } as const;
 

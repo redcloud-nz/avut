@@ -38,7 +38,7 @@ export const createAuthenticatedMockContext = ({
     permissions = {},
 }: CreateAuthenticatedMockContextOverrides) => {
     return createInnerTrpcContext({
-        authSession: {
+        auth: {
             user: {
                 createdAt: mockDate,
                 updatedAt: mockDate,

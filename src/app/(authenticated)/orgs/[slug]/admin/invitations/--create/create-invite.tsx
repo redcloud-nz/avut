@@ -82,7 +82,7 @@ export function AdminModule_CreateInvitation_Form({
         const existingInvitation = invitations.find(
             (invitation) =>
                 invitation.email === formData.email &&
-                invitation.status != "canceled",
+                invitation.status == "pending",
         );
         if (existingInvitation) {
             form.setError("email", {

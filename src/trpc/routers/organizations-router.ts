@@ -3,15 +3,20 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { headers as nextHeaders } from "next/headers";
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { OrganizationMemberData } from "@/lib/schemas/organization-member";
+import {
+    OrganizationMemberData,
+    OrganizationMemberId,
+} from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
+
+import prisma from "@/server/prisma";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 
@@ -43,30 +48,15 @@ export const organizationsRouter = createTrpcRouter({
     getOrganizationMember: organizationProcedure()
         .input(
             z.object({
-                organizationMemberId: OrganizationMemberData.schema.shape.id,
+                organizationMemberId: OrganizationMemberId.schema,
             }),
         )
         .output(OrganizationMemberData.schema.extend({ user: UserData.schema }))
         .query(async ({ ctx, input }) => {
-            const member = await ctx.prisma.organizationMember.findUnique({
-                where: {
-                    id: input.organizationMemberId,
-                    organizationId: ctx.organizationId,
-                },
-                include: { user: true },
-            });
-
-            if (!member) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Organization member not found",
-                });
-            }
-
-            return {
-                ...OrganizationMemberData.fromRecord(member),
-                user: UserData.schema.parse(member.user),
-            };
+            return findOrganizationMemberById(
+                ctx.organizationId,
+                input.organizationMemberId,
+            );
         }),
 
     /**
@@ -79,7 +69,7 @@ export const organizationsRouter = createTrpcRouter({
                 query: {
                     organizationId: input.organizationId,
                 },
-                headers: await nextHeaders(),
+                headers: ctx.headers,
             });
 
             return invitations.map((invitation) =>
@@ -105,7 +95,7 @@ export const organizationsRouter = createTrpcRouter({
                 query: {
                     organizationId: input.organizationId,
                 },
-                headers: await nextHeaders(),
+                headers: ctx.headers,
             });
 
             return members.map((member) => ({
@@ -113,4 +103,79 @@ export const organizationsRouter = createTrpcRouter({
                 user: UserData.schema.parse(member.user),
             }));
         }),
+
+    /**
+     * Remove a member from the organization.
+     */
+    removeOrganizationMember: organizationProcedure({
+        member: ["delete"],
+    })
+        .input(
+            z.object({
+                organizationMemberId: OrganizationMemberId.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            try {
+                const organizationMember = await findOrganizationMemberById(
+                    ctx.organizationId,
+                    input.organizationMemberId,
+                );
+
+                await auth.api.removeMember({
+                    headers: ctx.headers,
+                    body: {
+                        organizationId: ctx.organizationId,
+                        memberIdOrEmail: input.organizationMemberId,
+                    },
+                });
+
+                await ctx.logEvent({
+                    action: "Delete",
+                    objectType: "OrganizationMember",
+                    objectId: input.organizationMemberId,
+                    description: `Removed user (${organizationMember.user.id}, ${organizationMember.user.email}) from organization.`,
+                });
+            } catch (error) {
+                console.error("Error removing organization member:", error);
+
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to remove organization member",
+                    cause: error,
+                });
+            }
+        }),
 });
+
+/**
+ * Find an organization member by ID.
+ * @param organizationId The organization ID.
+ * @param organizationMemberId The organization member ID.
+ * @returns The organization member data with user info.
+ * @throws TRPCError(NOT_FOUND) if the member is not found.
+ */
+async function findOrganizationMemberById(
+    organizationId: OrganizationId,
+    organizationMemberId: OrganizationMemberId,
+) {
+    const member = await prisma.organizationMember.findUnique({
+        where: {
+            id: organizationMemberId,
+            organizationId: organizationId,
+        },
+        include: { user: true },
+    });
+
+    if (!member) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Organization member not found",
+        });
+    }
+
+    return {
+        ...OrganizationMemberData.fromRecord(member),
+        user: UserData.schema.parse(member.user),
+    };
+}

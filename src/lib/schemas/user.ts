@@ -21,6 +21,7 @@ export type UserId = string & z.BRAND<"UserId">;
 const userSchema = z.object({
     id: UserId.schema,
     email: z.email(),
+    emailVerified: z.boolean().default(false),
     name: z.string().max(100),
     image: z.url().nullable(),
 });

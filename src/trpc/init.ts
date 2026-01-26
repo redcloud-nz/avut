@@ -24,19 +24,22 @@ const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
  * Create the inner tRPC context.
  */
 export function createInnerTrpcContext({
-    authSession,
+    auth,
     hasPermission,
+    headers,
 }: {
-    authSession: AuthSession | null;
+    auth: AuthSession | null;
     hasPermission(
         organizationId: OrganizationId,
         permissions: Permissions,
     ): Promise<void>;
+    headers: Headers;
 }) {
     return {
         prisma,
-        authSession,
+        auth,
         hasPermission,
+        headers,
     };
 }
 
@@ -49,7 +52,7 @@ export const createTrpcContext = cache(async () => {
     });
 
     return createInnerTrpcContext({
-        authSession,
+        auth: authSession,
         hasPermission: async (
             organizationId: OrganizationId,
             requiredPermissions: Permissions,
@@ -72,6 +75,7 @@ export const createTrpcContext = cache(async () => {
                 });
             }
         },
+        headers,
     });
 });
 
@@ -114,7 +118,7 @@ export const publicProcedure = t.procedure.use(
     },
 );
 
-export type AuthenticatedContext = Context & { authSession: AuthSession };
+export type AuthenticatedContext = Context & { auth: AuthSession };
 
 /**
  * Procedure that requires the user to be authenticated.
@@ -122,7 +126,7 @@ export type AuthenticatedContext = Context & { authSession: AuthSession };
  */
 export const authenticatedProcedure = publicProcedure.use((opts) => {
     const { ctx } = opts;
-    if (ctx.authSession == null) {
+    if (ctx.auth == null) {
         throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "User is not authenticated.",
@@ -131,7 +135,7 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
 
     const enhancedCtx: AuthenticatedContext = {
         ...ctx,
-        authSession: ctx.authSession,
+        auth: ctx.auth,
     };
 
     return opts.next({
@@ -169,16 +173,18 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                 objectType,
                 objectId,
                 changes = [],
+                description,
             }: LogEventOptions) {
                 await opts.ctx.prisma.organizationLogEntry.create({
                     data: {
                         id: nanoId16(),
                         organizationId: opts.input.organizationId,
-                        userId: opts.ctx.authSession.user.id,
+                        userId: opts.ctx.auth.user.id,
                         action,
                         objectType,
                         objectId,
                         changes: changes as object[],
+                        description,
                     },
                 });
             }
@@ -195,7 +201,8 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 
 interface LogEventOptions {
     action: "Create" | "Update" | "Delete";
-    objectType: "OrganizationSettings" | "Person";
+    objectType: "OrganizationMember" | "OrganizationSettings" | "Person";
     objectId: string;
     changes?: DiffChange[];
+    description?: string;
 }

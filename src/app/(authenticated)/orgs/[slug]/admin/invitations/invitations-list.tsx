@@ -180,7 +180,7 @@ export function AdminModule_InvitationsList({
                     cell: (ctx) => (
                         <Akagi.TableCell
                             cell={ctx.cell}
-                            className="text-center"
+                            className="text-center p-0"
                         >
                             {ctx.row.original.status == "pending" ? (
                                 <DropdownMenu>

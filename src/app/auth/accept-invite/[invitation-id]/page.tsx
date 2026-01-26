@@ -49,6 +49,7 @@ export default async function Auth_AcceptInvite_Page(
             headers,
             body: { invitationId },
         });
+        console.log("acceptInvitation data:", data);
 
         const organization = await prisma.organization.findUnique({
             where: { id: data!.member.organizationId },

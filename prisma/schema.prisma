@@ -202,6 +202,7 @@ model OrganizationLogEntry {
   objectType     String
   objectId       String
   changes        Json         @default("{}")
+  description    String?
   timestamp      DateTime     @default(now())
 
   @@index([organizationId])
