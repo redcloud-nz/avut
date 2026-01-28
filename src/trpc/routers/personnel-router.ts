@@ -8,7 +8,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 
 import { revalidatePerson } from "@/server/person";
@@ -30,10 +29,12 @@ export const personnelRouter = createTrpcRouter({
      */
     createPerson: organizationProcedure({ person: ["create"] })
         .input(
-            PersonData.schema.omit({
-                createdAt: true,
-                updatedAt: true,
-                status: true,
+            PersonData.schema.pick({
+                id: true,
+                name: true,
+                email: true,
+                tags: true,
+                properties: true,
             }),
         )
         .output(PersonData.schema)
@@ -68,21 +69,14 @@ export const personnelRouter = createTrpcRouter({
                 },
             });
 
-            ctx.logEvent({
+            // Calculate changes from empty record
+            const changes = diffObject({}, person);
+
+            await ctx.logEvent({
                 action: "Create",
                 objectType: "Person",
                 objectId: created.id,
-            });
-
-            await ctx.prisma.organizationLogEntry.create({
-                data: {
-                    id: nanoId16(),
-                    organizationId: ctx.organizationId,
-                    userId: ctx.authSession.user.id,
-                    action: "Create",
-                    objectType: "Person",
-                    objectId: created.id,
-                },
+                changes: changes,
             });
 
             return PersonData.fromRecord(created);
@@ -97,7 +91,11 @@ export const personnelRouter = createTrpcRouter({
      * @throws TRPCError(FORBIDDEN) if the user does not have permission to delete the person.
      */
     deletePerson: organizationProcedure({ person: ["delete"] })
-        .input(z.object({ personId: PersonId.schema }))
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
         .output(
             z.object({
                 deletionType: z.enum(["Soft", "Hard"]),
@@ -174,13 +172,28 @@ export const personnelRouter = createTrpcRouter({
                 where: { organizationId: ctx.organizationId, id: personId },
             });
 
-            if (!person)
+            if (!person) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(personId),
                 });
+            }
 
             return PersonData.fromRecord(person);
+        }),
+
+    /**
+     * Lists all personnel in the organization.
+     * @param ctx The authenticated context.
+     * @returns An array of person objects.
+     */
+    listPersonnel: organizationProcedure()
+        .output(z.array(PersonData.schema))
+        .query(async ({ ctx }) => {
+            const personnel = await ctx.prisma.person.findMany({
+                where: { organizationId: ctx.organizationId },
+            });
+            return personnel.map(PersonData.fromRecord);
         }),
 
     /**

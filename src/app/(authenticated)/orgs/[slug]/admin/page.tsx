@@ -62,6 +62,20 @@ export default async function AdminIndex_Page(
                         </Protect>
 
                         <Item asChild>
+                            <Link to={Paths.org(slug).admin.personnel}>
+                                <ItemContent>
+                                    <ItemTitle>Personnel</ItemTitle>
+                                    <ItemDescription>
+                                        Manage your organisation's personnel.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+
+                        <Item asChild>
                             <Link to={Paths.org(slug).admin.users}>
                                 <ItemContent>
                                     <ItemTitle>Users</ItemTitle>

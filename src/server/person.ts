@@ -11,7 +11,7 @@ import { PersonData } from "@/lib/schemas/person";
 
 import prisma from "./prisma";
 
-export async function getPerson(
+export async function getPersonById(
     organizationId: string,
     personId: string,
 ): Promise<PersonData> {

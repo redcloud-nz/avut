@@ -25,7 +25,7 @@ export async function generateMetadata(
 
     return {
         title: {
-            template: `%s ${TITLE_SEPARATOR} ${organization.name}`,
+            template: `%s ${TITLE_SEPARATOR} ${organization.name} | AVUT`,
             default: organization.name,
         },
     };

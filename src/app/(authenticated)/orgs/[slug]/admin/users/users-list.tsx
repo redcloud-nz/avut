@@ -93,7 +93,7 @@ export function AdminModule_UsersList({
                                             {ctx.getValue()}
                                             {ctx.row.original.userId ===
                                             currentUserId ? (
-                                                <span className="bg-neutral-200 border-1 border-neutral-300 text-xs px-1.5 rounded-sm">
+                                                <span className="bg-neutral-200 border border-neutral-300 text-xs px-1.5 rounded-sm">
                                                     You
                                                 </span>
                                             ) : null}
@@ -162,12 +162,7 @@ export function AdminModule_UsersList({
                     permissions={{ invitation: ["create"] }}
                 >
                     <S2_Button variant="outline" asChild>
-                        <Link
-                            to={
-                                Paths.org(organization.slug).admin.invitations
-                                    .create
-                            }
-                        >
+                        <Link to={adminModule.invitations.create}>
                             <SendIcon /> Invite
                         </Link>
                     </S2_Button>

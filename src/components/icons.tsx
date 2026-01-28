@@ -4,6 +4,8 @@
  */
 
 import {
+    ArchiveIcon,
+    ArchiveRestoreIcon,
     ArrowRightLeftIcon,
     BellIcon,
     BookOpenIcon,
@@ -17,6 +19,7 @@ import {
     CircleXIcon,
     CopyIcon,
     FlaskConicalIcon,
+    HistoryIcon,
     InfoIcon,
     KeyRoundIcon,
     LayoutDashboardIcon,
@@ -46,18 +49,22 @@ export {
     TriangleAlertIcon as AlertWarningIcon,
     CircleXIcon as AlertErrorIcon,
     FlaskConicalIcon as AlertMockupIcon,
-    PlusIcon as CreateNewIcon,
     CableIcon as D4HModuleIcon,
-    TrashIcon as DeleteObjectIcon,
     BookOpenIcon as DocumentationIcon,
     MoreVerticalIcon as DropdownMenuTriggerIcon,
-    CopyIcon as DuplicateObjectIcon,
-    PencilIcon as EditObjectIcon,
     ChevronRightIcon as ItemLinkActionIcon,
     NotebookPenIcon as NotesModuleIcon,
     BellIcon as NotificationsIcon,
     LayoutDashboardIcon as OrgDashboardIcon,
     MoveLeftIcon as ToParentPageIcon,
+
+    // Object Icons
+    ArchiveIcon as ArchiveObjectIcon,
+    PlusIcon as CreateNewIcon,
+    TrashIcon as DeleteObjectIcon,
+    CopyIcon as DuplicateObjectIcon,
+    PencilIcon as EditObjectIcon,
+    ArchiveRestoreIcon as RestoreObjectIcon,
 
     // Personal Icons
     LayoutDashboardIcon as PersonalDashboardIcon,
@@ -77,4 +84,13 @@ export {
     PackageIcon as SkillPackageManagerModuleIcon,
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
+};
+
+export const ObjectIcons = {
+    Archive: ArchiveIcon,
+    Delete: TrashIcon,
+    Duplicate: CopyIcon,
+    Edit: PencilIcon,
+    History: HistoryIcon,
+    Restore: ArchiveRestoreIcon,
 };

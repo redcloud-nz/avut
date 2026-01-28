@@ -176,6 +176,11 @@ function adminModule(org_slug: string) {
             return {
                 href: personBase,
 
+                history: {
+                    label: "History",
+                    href: `${personBase}/history`,
+                },
+
                 teamMembership: (teamId: string) =>
                     ({
                         href: `${personBase}/team-memberships/${teamId}`,
