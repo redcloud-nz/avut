@@ -14,7 +14,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Field,
     FieldDescription,
@@ -22,15 +22,15 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
 import {
-    S2_Select,
-    S2_SelectContent,
-    S2_SelectItem,
-    S2_SelectTrigger,
-    S2_SelectValue,
-} from "@/components/ui/s2-select";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -140,7 +140,7 @@ export function AdminModule_CreateInvitation_Form({
                                 Enter the email address of the user you want to
                                 invite.
                             </FieldDescription>
-                            <S2_Input
+                            <Input
                                 id="email"
                                 placeholder="example@email.com"
                                 aria-invalid={fieldState.invalid}
@@ -161,32 +161,32 @@ export function AdminModule_CreateInvitation_Form({
                             orientation="responsive"
                         >
                             <FieldLabel htmlFor="role-select">Role</FieldLabel>
-                            <S2_Select
+                            <Select
                                 value={field.value}
                                 onValueChange={field.onChange}
                             >
-                                <S2_SelectTrigger
+                                <SelectTrigger
                                     aria-invalid={fieldState.invalid}
                                     className="min-w-1/2"
                                     id="role-select"
                                 >
-                                    <S2_SelectValue placeholder="Select role" />
-                                </S2_SelectTrigger>
-                                <S2_SelectContent>
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
                                     {OrganizationRole.options
                                         .filter(
                                             (role) => role.isAdminAssignable,
                                         )
                                         .map((role) => (
-                                            <S2_SelectItem
+                                            <SelectItem
                                                 key={role.value}
                                                 value={role.value}
                                             >
                                                 {role.label}
-                                            </S2_SelectItem>
+                                            </SelectItem>
                                         ))}
-                                </S2_SelectContent>
-                            </S2_Select>
+                                </SelectContent>
+                            </Select>
                             {fieldState.error && (
                                 <FieldError errors={[fieldState.error]} />
                             )}
@@ -195,14 +195,14 @@ export function AdminModule_CreateInvitation_Form({
                 />
 
                 <Field orientation="horizontal">
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="create-invitation-form"
                         disabled={status == "Pending"}
                     >
                         Send Invitation
-                    </S2_Button>
-                    <S2_Button
+                    </Button>
+                    <Button
                         type="button"
                         variant="outline"
                         onClick={() => form.reset()}
@@ -213,7 +213,7 @@ export function AdminModule_CreateInvitation_Form({
                         >
                             Cancel
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Field>
             </FieldGroup>
         </form>

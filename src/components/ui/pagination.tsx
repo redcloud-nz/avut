@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { ComponentProps } from "react";
 
-import { S2_Button, s2_buttonVariants } from "@/components/ui/s2-button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Pagination({ className, ...props }: ComponentProps<"nav">) {
@@ -43,7 +43,7 @@ export function PaginationItem({ ...props }: ComponentProps<"li">) {
 }
 
 type PaginationLinkProps = { isActive?: boolean } & Pick<
-    ComponentProps<typeof S2_Button>,
+    ComponentProps<typeof Button>,
     "size"
 > &
     ComponentProps<"a">;
@@ -60,7 +60,7 @@ export function PaginationLink({
             data-slot="pagination-link"
             data-active={isActive}
             className={cn(
-                s2_buttonVariants({
+                buttonVariants({
                     variant: isActive ? "outline" : "ghost",
                     size,
                 }),

@@ -4,49 +4,17 @@
  */
 
 import { ComponentProps } from "react";
-import { tv, VariantProps } from "tailwind-variants";
 
 import { cn } from "@/lib/utils";
 
-const textareaVariants = tv({
-    base: cn(
-        "flex min-h-[80px] w-full bg-background text-sm ring-offset-background placeholder:text-muted-foreground",
-        "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-    ),
-    variants: {
-        variant: {
-            default: "border border-input",
-            ghost: "",
-        },
-        size: {
-            default: "px-4 py-2.5 rounded-md",
-            sm: "px-3 py-1.5 rounded-sm",
-        },
-    },
-    defaultVariants: {
-        variant: "default",
-        size: "default",
-    },
-});
-
-/**
- * Textarea component with Tailwind CSS styles.
- * @param className Additional class names to apply.
- * @param size Size variant of the textarea.
- * @param variant Style variant of the textarea.
- * @param props Other props to pass to the textarea element.
- */
-export function Textarea({
-    className,
-    size,
-    variant,
-    ...props
-}: ComponentProps<"textarea"> & VariantProps<typeof textareaVariants>) {
+export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
     return (
         <textarea
-            className={textareaVariants({ className, size, variant })}
-            data-component="Textarea"
+            data-slot="textarea"
+            className={cn(
+                "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                className,
+            )}
             {...props}
         />
     );

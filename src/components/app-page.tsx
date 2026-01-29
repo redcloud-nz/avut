@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { S2_SidebarTrigger } from "@/components/ui/s2-sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Tooltip,
     TooltipContent,
@@ -53,7 +53,7 @@ export function AppPage({
         <div className="h-screen flex-1 grid grid-rows-[48px_1px_1fr] grid-cols-[auto_1fr_auto] overflow-hidden">
             {showLeftSidebarTrigger && (
                 <div className="row-1 col-1 flex justify-center items-center pl-2 gap-2">
-                    <S2_SidebarTrigger />
+                    <SidebarTrigger />
                     <Separator orientation="vertical" />
                 </div>
             )}
@@ -235,7 +235,7 @@ export function S2_AppPageHeader({
         <header className="bg-background sticky top-0 flex h-[var(--header-height)] shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md">
             {sidebarTrigger && (
                 <>
-                    <S2_SidebarTrigger />
+                    <SidebarTrigger />
                     <Separator orientation="vertical" className="ml-1" />
                 </>
             )}

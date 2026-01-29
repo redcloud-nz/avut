@@ -8,13 +8,8 @@
 import { Lexington } from "@/components/blocks/lexington";
 import { ToParentPageIcon } from "@/components/icons";
 import { Link } from "@/components/ui/link";
-import { S2_Button } from "@/components/ui/s2-button";
-import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -38,22 +33,22 @@ export default async function AdminModule_PersonCreate_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Lexington.ColumnControls>
-                        <S2_Button variant="outline" asChild>
+                        <Button variant="outline" asChild>
                             <Link to={Paths.org(slug).admin.personnel}>
                                 <ToParentPageIcon /> Personnel
                             </Link>
-                        </S2_Button>
+                        </Button>
                     </Lexington.ColumnControls>
-                    <S2_Card>
-                        <S2_CardHeader>
-                            <S2_CardTitle>New Person Record</S2_CardTitle>
-                        </S2_CardHeader>
-                        <S2_CardContent>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>New Person Record</CardTitle>
+                        </CardHeader>
+                        <CardContent>
                             <AdminModule_CreatePerson_Form
                                 organization={organization}
                             />
-                        </S2_CardContent>
-                    </S2_Card>
+                        </CardContent>
+                    </Card>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

@@ -7,22 +7,22 @@ import { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-type S2_ValueProps = Omit<ComponentProps<"div">, "children"> &
+type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
     (
         | { children?: never; value: string | number }
         | { children: ReactNode; value?: never }
     ) & { muted?: boolean };
 
-export function S2_Value({
+export function FieldValue({
     children,
     className,
     muted = false,
     value,
     ...props
-}: S2_ValueProps) {
+}: FieldValueProps) {
     return (
         <div
-            data-slot="value"
+            data-slot="field-value"
             className={cn(
                 "w-fit min-w-0 h-9 px-3 py-1", // Sizing and padding
                 "flex items-center",

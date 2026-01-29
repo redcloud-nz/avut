@@ -9,14 +9,14 @@ import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { getQueryClient } from "@/trpc/client";
-import { S2_SidebarProvider } from "@/components/ui/s2-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export function Providers({ children }: Readonly<{ children: ReactNode }>) {
     const queryClient = getQueryClient();
 
     return (
         <QueryClientProvider client={queryClient}>
-            <S2_SidebarProvider>{children}</S2_SidebarProvider>
+            <SidebarProvider>{children}</SidebarProvider>
         </QueryClientProvider>
     );
 }

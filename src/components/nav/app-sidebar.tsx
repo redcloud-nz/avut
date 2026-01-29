@@ -8,12 +8,12 @@ import { Suspense } from "react";
 
 import { Link } from "@/components/ui/link";
 import {
-    S2_Sidebar,
-    S2_SidebarContent,
-    S2_SidebarFooter,
-    S2_SidebarHeader,
-    S2_SidebarRail,
-} from "@/components/ui/s2-sidebar";
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarRail,
+} from "@/components/ui/sidebar";
 
 import * as Paths from "@/paths";
 
@@ -27,8 +27,8 @@ export function AppSidebar({
     name: string;
 }) {
     return (
-        <S2_Sidebar>
-            <S2_SidebarHeader className="flex items-center justify-between border-b h-(--header-height)">
+        <Sidebar>
+            <SidebarHeader className="flex items-center justify-between border-b h-(--header-height)">
                 <div className="w-[100px] self-center">
                     <Image
                         src="/avut-logo.svg"
@@ -38,8 +38,8 @@ export function AppSidebar({
                         loading="eager"
                     />
                 </div>
-            </S2_SidebarHeader>
-            <S2_SidebarContent>
+            </SidebarHeader>
+            <SidebarContent>
                 <Link
                     className="w-full text-center font-semibold px-2 pt-2"
                     to={Paths.orgs.select}
@@ -47,12 +47,12 @@ export function AppSidebar({
                     {name}
                 </Link>
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
-            </S2_SidebarContent>
-            <S2_SidebarFooter>
+            </SidebarContent>
+            <SidebarFooter>
                 <AppVersion />
-            </S2_SidebarFooter>
-            <S2_SidebarRail />
-        </S2_Sidebar>
+            </SidebarFooter>
+            <SidebarRail />
+        </Sidebar>
     );
 }
 

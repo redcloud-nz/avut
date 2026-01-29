@@ -14,12 +14,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Field,
@@ -29,8 +29,8 @@ import {
     FieldLabel,
     FieldSeparator,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
@@ -43,14 +43,14 @@ import * as Paths from "@/paths";
  */
 export function SignIn_Card({ redirect }: { redirect?: string }) {
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Login to your account</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Login to your account</CardTitle>
+                <CardDescription>
                     Enter your email below to login to your account
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <FieldGroup>
                     <EmailPasswordSignIn_Form redirect={redirect} />
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
@@ -62,8 +62,8 @@ export function SignIn_Card({ redirect }: { redirect?: string }) {
                         <Link to={Paths.auth.signUp}>Sign Up</Link>
                     </FieldDescription>
                 </FieldGroup>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -133,7 +133,7 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                             <FieldLabel htmlFor="sign-in-email">
                                 Email Address
                             </FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="sign-in-email"
                                 type="email"
                                 placeholder="you@example.com"
@@ -163,7 +163,7 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                                 </Link>
                             </div>
 
-                            <S2_Input
+                            <Input
                                 id="sign-in-password"
                                 type="password"
                                 placeholder="Your password"
@@ -200,7 +200,7 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                     )}
                 />
                 <Field>
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="sign-in-form"
                         disabled={state.status == "InProgress"}
@@ -208,7 +208,7 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                         {state.status == "InProgress"
                             ? "Signing in..."
                             : "Login"}
-                    </S2_Button>
+                    </Button>
                 </Field>
                 {state.status == "Error" && (
                     <FieldError errors={[state.error]} />
@@ -243,7 +243,7 @@ export function SocialSignInButtons_Field() {
 
     return (
         <Field className="grid grid-cols-3 gap-4">
-            <S2_Button
+            <Button
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("apple")}
@@ -251,8 +251,8 @@ export function SocialSignInButtons_Field() {
             >
                 <SiApple />
                 <span className="sr-only">Sign in with Apple</span>
-            </S2_Button>
-            <S2_Button
+            </Button>
+            <Button
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("google")}
@@ -260,8 +260,8 @@ export function SocialSignInButtons_Field() {
             >
                 <SiGoogle />
                 <span className="sr-only">Sign in with Google</span>
-            </S2_Button>
-            <S2_Button
+            </Button>
+            <Button
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("github")}
@@ -269,7 +269,7 @@ export function SocialSignInButtons_Field() {
             >
                 <SiGithub />
                 <span className="sr-only">Sign in with GitHub</span>
-            </S2_Button>
+            </Button>
         </Field>
     );
 }

@@ -9,14 +9,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Field,
     FieldDescription,
@@ -75,14 +75,14 @@ export function VerifyEmail_Card({ email }: { email: string }) {
     }
 
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Enter verification code</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Enter verification code</CardTitle>
+                <CardDescription>
                     We sent a 6-digit code to your email.
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <FieldGroup>
                     <Field>
                         <FieldLabel>Verification Code</FieldLabel>
@@ -107,7 +107,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                         </FieldDescription>
                     </Field>
                     <Field>
-                        <S2_Button
+                        <Button
                             type="submit"
                             onClick={handleVerify}
                             disabled={
@@ -117,7 +117,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                             {state.status === "InProgress"
                                 ? "Verifying..."
                                 : "Verify"}
-                        </S2_Button>
+                        </Button>
                     </Field>
                     {state.status === "Error" && (
                         <FieldError errors={[state.error]} />
@@ -127,7 +127,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                         <a onClick={handleResend}>Resend</a>
                     </FieldDescription>
                 </FieldGroup>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }

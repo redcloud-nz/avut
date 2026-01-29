@@ -3,32 +3,21 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { EllipsisVerticalIcon, InfoIcon } from "lucide-react";
 import { type ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { Button } from "./button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "./dropdown-menu";
-import { LoadingSpinner } from "./loading";
-import { Popover, PopoverContent, PopoverTriggerButton } from "./popover";
-
 export function Card({
     className,
-    raised,
+    size = "default",
     ...props
-}: ComponentProps<"div"> & { raised?: boolean }) {
+}: ComponentProps<"div"> & { size?: "default" | "sm" }) {
     return (
         <div
+            data-slot="card"
+            data-size={size}
             className={cn(
-                "rounded-sm border bg-card text-card-foreground transition-shadow mb-2",
-                raised ? "shadow-md" : "shadow-sm",
+                "ring-foreground/10 bg-card text-card-foreground gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl group/card flex flex-col",
                 className,
             )}
             {...props}
@@ -39,7 +28,11 @@ export function Card({
 export function CardHeader({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
-            className={cn("h-10 flex items-center border-b gap-2", className)}
+            data-slot="card-header"
+            className={cn(
+                "gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3 group/card-header @container/card-header grid auto-rows-min items-start has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]",
+                className,
+            )}
             {...props}
         />
     );
@@ -48,20 +41,11 @@ export function CardHeader({ className, ...props }: ComponentProps<"div">) {
 export function CardTitle({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
+            data-slot="card-title"
             className={cn(
-                "text-2xl font-semibold leading-10 grow px-3",
+                "text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
                 className,
             )}
-            data-slot="title"
-            {...props}
-        />
-    );
-}
-
-export function CardActions({ className, ...props }: ComponentProps<"div">) {
-    return (
-        <div
-            className={cn("h-10 flex items-center lg:gap-1 lg:px-1", className)}
             {...props}
         />
     );
@@ -73,36 +57,19 @@ export function CardDescription({
 }: ComponentProps<"div">) {
     return (
         <div
-            className={cn("text-sm text-muted-foreground", className)}
+            data-slot="card-description"
+            className={cn("text-muted-foreground text-sm", className)}
             {...props}
         />
     );
 }
 
-export function CardContent({
-    children,
-    className,
-    loading,
-    ...props
-}: ComponentProps<"div"> & { loading?: boolean }) {
-    return (
-        <div className={cn("p-1", className)} {...props}>
-            {loading ? (
-                <div className="flex justify-center items-center py-2">
-                    <LoadingSpinner className="w-12 h-12" />
-                </div>
-            ) : (
-                children
-            )}
-        </div>
-    );
-}
-
-export function CardFooter({ className, ...props }: ComponentProps<"div">) {
+export function CardAction({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
+            data-slot="card-action"
             className={cn(
-                "h-10 p-1 flex items-center gap-2 border-t",
+                "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
                 className,
             )}
             {...props}
@@ -110,60 +77,25 @@ export function CardFooter({ className, ...props }: ComponentProps<"div">) {
     );
 }
 
-export function CardGrid({ className, ...props }: ComponentProps<"div">) {
+export function CardContent({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
-            className={cn("grid grid-cols-1 lg:grid-cols-2 gap-4", className)}
+            data-slot="card-content"
+            className={cn("px-6 group-data-[size=sm]/card:px-3", className)}
             {...props}
         />
     );
 }
 
-export function CardExplanation({
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function CardFooter({ className, ...props }: ComponentProps<"div">) {
     return (
-        <Popover>
-            <PopoverTriggerButton
-                variant="ghost"
-                size="icon"
-                tooltip="Card Description"
-            >
-                <InfoIcon />
-            </PopoverTriggerButton>
-            <PopoverContent align="end" className="w-96">
-                <div
-                    className={cn(
-                        "text-sm text-muted-foreground space-y-2",
-                        className,
-                    )}
-                    {...props}
-                />
-            </PopoverContent>
-        </Popover>
-    );
-}
-
-export function CardMenu({
-    children,
-    title,
-    ...props
-}: ComponentProps<typeof DropdownMenu> & { title: string }) {
-    return (
-        <DropdownMenu {...props}>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <EllipsisVerticalIcon />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-center">
-                    {title}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {children}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <div
+            data-slot="card-footer"
+            className={cn(
+                "bg-muted/50 rounded-b-xl border-t p-4 group-data-[size=sm]/card:p-3 flex items-center",
+                className,
+            )}
+            {...props}
+        />
     );
 }

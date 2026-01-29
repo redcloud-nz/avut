@@ -19,7 +19,7 @@ import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { Protect } from "@/components/protect";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Item,
     ItemContent,
@@ -62,9 +62,9 @@ export function AdminModule_UsersList({
                 columnHelper.accessor("user.name", {
                     id: "name",
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             User
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -111,9 +111,9 @@ export function AdminModule_UsersList({
                 }),
                 columnHelper.accessor("createdAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Joined
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -125,9 +125,9 @@ export function AdminModule_UsersList({
                 }),
                 columnHelper.accessor("role", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Role
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -161,11 +161,11 @@ export function AdminModule_UsersList({
                     orgId={organization.id}
                     permissions={{ invitation: ["create"] }}
                 >
-                    <S2_Button variant="outline" asChild>
+                    <Button variant="outline" asChild>
                         <Link to={adminModule.invitations.create}>
                             <SendIcon /> Invite
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Protect>
             </Hermes.SectionHeader>
             <Akagi.Table table={table} />

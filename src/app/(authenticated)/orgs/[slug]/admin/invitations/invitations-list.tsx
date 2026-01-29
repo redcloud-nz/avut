@@ -23,7 +23,7 @@ import {
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { DeleteObjectIcon, DropdownMenuTriggerIcon } from "@/components/icons";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -103,9 +103,9 @@ export function AdminModule_InvitationsList({
             Akagi.defineColumns<OrganizationInvitationData>((columnHelper) => [
                 columnHelper.accessor("email", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Email Address
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -117,9 +117,9 @@ export function AdminModule_InvitationsList({
                 }),
                 columnHelper.accessor("role", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Role
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -134,9 +134,9 @@ export function AdminModule_InvitationsList({
                 }),
                 columnHelper.accessor("createdAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Sent
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -148,7 +148,7 @@ export function AdminModule_InvitationsList({
                 }),
                 columnHelper.accessor("status", {
                     header: (ctx) => (
-                        <Akagi.TableHeader
+                        <Akagi.TableHeadCell
                             header={ctx.header}
                             filterOptions={[
                                 "pending",
@@ -158,7 +158,7 @@ export function AdminModule_InvitationsList({
                             ]}
                         >
                             Status
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -173,9 +173,12 @@ export function AdminModule_InvitationsList({
                 columnHelper.display({
                     id: "actions",
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header} className="w-10">
+                        <Akagi.TableHeadCell
+                            header={ctx.header}
+                            className="w-10"
+                        >
                             Actions
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell
@@ -185,9 +188,9 @@ export function AdminModule_InvitationsList({
                             {ctx.row.original.status == "pending" ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <S2_Button variant="ghost" size="icon">
+                                        <Button variant="ghost" size="icon">
                                             <DropdownMenuTriggerIcon />
-                                        </S2_Button>
+                                        </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuGroup>
@@ -250,7 +253,7 @@ export function AdminModule_InvitationsList({
                     orgId={organization.id}
                     permissions={{ invitation: ["create"] }}
                 >
-                    <S2_Button variant="outline" asChild>
+                    <Button variant="outline" asChild>
                         <Link
                             to={
                                 Paths.org(organization.slug).admin.invitations
@@ -259,7 +262,7 @@ export function AdminModule_InvitationsList({
                         >
                             <SendIcon /> Invite
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Protect>
             </Hermes.SectionHeader>
             <Akagi.Table table={table} />

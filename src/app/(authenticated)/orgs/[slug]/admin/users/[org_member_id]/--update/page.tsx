@@ -10,12 +10,12 @@ import { notFound } from "next/navigation";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import prisma from "@/server/prisma";
@@ -66,24 +66,24 @@ export default async function AdminModule_UpdateUser_Page(
                                 User
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
-                        <S2_Card>
-                            <S2_CardHeader>
-                                <S2_CardTitle>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>
                                     {organizationMember.user.name || "User"}
-                                </S2_CardTitle>
-                                <S2_CardDescription>
+                                </CardTitle>
+                                <CardDescription>
                                     {organizationMember.user.id}
-                                </S2_CardDescription>
-                            </S2_CardHeader>
-                            <S2_CardContent>
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
                                 <AdminModule_UpdateUser_Form
                                     organization={organization}
                                     organizationMemberId={OrganizationMemberId.schema.parse(
                                         org_member_id,
                                     )}
                                 />
-                            </S2_CardContent>
-                        </S2_Card>
+                            </CardContent>
+                        </Card>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

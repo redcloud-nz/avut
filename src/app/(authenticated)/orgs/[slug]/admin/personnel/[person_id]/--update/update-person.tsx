@@ -16,16 +16,16 @@ import {
     useSuspenseQueries,
 } from "@tanstack/react-query";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Field,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
-import { S2_Value } from "@/components/ui/s2-value";
+import { FieldValue } from "@/components/ui/field-value";
 import { Spinner } from "@/components/ui/spinner";
 
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -121,7 +121,7 @@ export function AdminModule_UpdatePerson_Form({
             <FieldGroup>
                 <Field orientation="responsive">
                     <FieldLabel>Person ID</FieldLabel>
-                    <S2_Value className="min-w-1/2">{person.id}</S2_Value>
+                    <FieldValue className="min-w-1/2">{person.id}</FieldValue>
                 </Field>
                 <Controller
                     name="name"
@@ -132,7 +132,7 @@ export function AdminModule_UpdatePerson_Form({
                             orientation="responsive"
                         >
                             <FieldLabel htmlFor="person-name">Name</FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="person-name"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
@@ -155,7 +155,7 @@ export function AdminModule_UpdatePerson_Form({
                             <FieldLabel htmlFor="person-email">
                                 Email
                             </FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="person-email"
                                 type="email"
                                 aria-invalid={fieldState.invalid}
@@ -170,7 +170,7 @@ export function AdminModule_UpdatePerson_Form({
                 />
 
                 <Field orientation="horizontal">
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="update-person-form"
                         disabled={mutation.isPending}
@@ -182,8 +182,8 @@ export function AdminModule_UpdatePerson_Form({
                         ) : (
                             "Update"
                         )}
-                    </S2_Button>
-                    <S2_Button
+                    </Button>
+                    <Button
                         type="button"
                         variant="outline"
                         onClick={() => form.reset()}
@@ -196,7 +196,7 @@ export function AdminModule_UpdatePerson_Form({
                         >
                             Cancel
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Field>
             </FieldGroup>
         </form>

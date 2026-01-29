@@ -1,70 +1,73 @@
 /*
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * This file is largely identical as `table.tsx` but has been added to support returning to shadcn from components that had substantially drifted.
  */
 
-import { ComponentProps } from "react";
-import { tv, type VariantProps } from "tailwind-variants";
+"use client";
+
+import { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-const tableVariants = tv({
-    base: "relative overflow-auto",
-    variants: {
-        border: {
-            true: "rounded-sm border",
-        },
-        width: {
-            full: "w-full",
-            auto: "container mx-auto",
-        },
-    },
-});
-
-export type TableProps = Omit<ComponentProps<"table">, "border"> &
-    VariantProps<typeof tableVariants>;
+type TableProps = ComponentProps<"table"> & {
+    footer?: ReactNode;
+    slotProps?: {
+        container?: Omit<ComponentProps<"div">, "children">;
+    };
+};
 
 export function Table({
     className,
-    border = false,
-    width = "full",
+    footer,
+    slotProps: { container = {} } = {},
     ...props
 }: TableProps) {
+    const { className: containerClassName, ...containerProps } = container;
+
     return (
-        <div className={cn(tableVariants({ border, width }), className)}>
+        <div
+            data-slot="table-container"
+            className={cn("w-full", containerClassName)}
+            {...containerProps}
+        >
             <table
-                className={cn(
-                    "w-full caption-bottom text-sm divide-y divide-gray-300",
-                    className,
-                )}
+                data-slot="table"
+                className={cn("w-full caption-bottom text-sm", className)}
                 {...props}
             />
+            {footer}
         </div>
     );
 }
 
-export function TableHead({ className, ...props }: ComponentProps<"thead">) {
-    return <thead className={cn("", className)} {...props} />;
+export function TableHeader({ className, ...props }: ComponentProps<"thead">) {
+    return (
+        <thead
+            data-slot="table-header"
+            className={cn("[&_tr]:border-b", className)}
+            {...props}
+        />
+    );
 }
 
 export function TableBody({ className, ...props }: ComponentProps<"tbody">) {
     return (
         <tbody
-            className={cn("divide-y divide-gray-200", className)}
+            data-slot="table-body"
+            className={cn("[&_tr:last-child]:border-0", className)}
             {...props}
         />
     );
 }
 
 export function TableFooter({ className, ...props }: ComponentProps<"tfoot">) {
-    return <tfoot className={cn("font-medium", className)} {...props} />;
-}
-
-export function TableRow({ className, ...props }: ComponentProps<"tr">) {
     return (
-        <tr
+        <tfoot
+            data-slot="table-footer"
             className={cn(
-                "transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
                 className,
             )}
             {...props}
@@ -72,32 +75,38 @@ export function TableRow({ className, ...props }: ComponentProps<"tr">) {
     );
 }
 
-export function TableHeadCell({
-    children,
-    className,
-    ...props
-}: ComponentProps<"th">) {
+export function TableRow({ className, ...props }: ComponentProps<"tr">) {
     return (
-        <th
+        <tr
+            data-slot="table-row"
             className={cn(
-                "h-10 px-2 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0",
+                "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
                 className,
             )}
-            role="columnheader"
             {...props}
-        >
-            <div className="w-full flex justify-between items-center">
-                {children}
-            </div>
-        </th>
+        />
+    );
+}
+
+export function TableHeadCell({ className, ...props }: ComponentProps<"th">) {
+    return (
+        <th
+            data-slot="table-head"
+            className={cn(
+                "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+                className,
+            )}
+            {...props}
+        />
     );
 }
 
 export function TableCell({ className, ...props }: ComponentProps<"td">) {
     return (
         <td
+            data-slot="table-cell"
             className={cn(
-                "p-2 align-middle [&:has([role=checkbox])]:pr-0 overflow-hidden overflow-ellipsis hover:overflow-visible",
+                "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
                 className,
             )}
             {...props}
@@ -111,7 +120,8 @@ export function TableCaption({
 }: ComponentProps<"caption">) {
     return (
         <caption
-            className={cn("mt-4 text-sm text-muted-foreground", className)}
+            data-slot="table-caption"
+            className={cn("text-muted-foreground mt-4 text-sm", className)}
             {...props}
         />
     );

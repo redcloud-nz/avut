@@ -10,14 +10,14 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/s2-dialog";
+} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -63,9 +63,9 @@ export function AdminModule_PersonMenu({
             {/* Person dropdown menu */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <S2_Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon">
                         <DropdownMenuTriggerIcon />
-                    </S2_Button>
+                    </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Person</DropdownMenuLabel>
@@ -115,7 +115,7 @@ export function AdminModule_PersonMenu({
                     </DialogHeader>
                     <FieldGroup>
                         <Field orientation="horizontal">
-                            <S2_Button
+                            <Button
                                 type="submit"
                                 variant="destructive"
                                 disabled={deleteMutation.isPending}
@@ -127,7 +127,7 @@ export function AdminModule_PersonMenu({
                                 }
                             >
                                 Delete
-                            </S2_Button>
+                            </Button>
                         </Field>
                     </FieldGroup>
                 </DialogContent>

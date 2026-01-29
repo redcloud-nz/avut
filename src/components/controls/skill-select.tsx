@@ -6,15 +6,15 @@
 import { ComponentProps } from "react";
 
 import {
-    S2_SelectContent,
-    S2_SelectGroup,
-    S2_SelectItem,
-    S2_SelectLabel,
-} from "@/components/ui/s2-select";
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+} from "@/components/ui/select";
 import { RouterOutput } from "@/trpc/client";
 
 type SkillSelectContentProps = Omit<
-    ComponentProps<typeof S2_SelectContent>,
+    ComponentProps<typeof SelectContent>,
     "children"
 > & {
     skillPackages: RouterOutput["skills"]["getAvailablePackages"];
@@ -25,13 +25,13 @@ export function SkillSelectContent({
     ...props
 }: SkillSelectContentProps) {
     return (
-        <S2_SelectContent {...props}>
+        <SelectContent {...props}>
             {skillPackages.map((skillPackage) =>
                 skillPackage.skillGroups.map((skillGroup) => (
-                    <S2_SelectGroup key={skillGroup.skillGroupId}>
-                        <S2_SelectLabel>
+                    <SelectGroup key={skillGroup.skillGroupId}>
+                        <SelectLabel>
                             {skillPackage.name} / {skillGroup.name}
-                        </S2_SelectLabel>
+                        </SelectLabel>
                         {skillPackage.skills
                             .filter(
                                 (skill) =>
@@ -39,16 +39,16 @@ export function SkillSelectContent({
                                     skillGroup.skillGroupId,
                             )
                             .map((skill) => (
-                                <S2_SelectItem
+                                <SelectItem
                                     key={skill.skillId}
                                     value={skill.skillId}
                                 >
                                     {skill.name}
-                                </S2_SelectItem>
+                                </SelectItem>
                             ))}
-                    </S2_SelectGroup>
+                    </SelectGroup>
                 )),
             )}
-        </S2_SelectContent>
+        </SelectContent>
     );
 }

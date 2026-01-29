@@ -8,8 +8,8 @@ import { ComponentProps } from "react";
 
 import { tv, type VariantProps } from "tailwind-variants";
 
-import { S2_Button as Button } from "@/components/ui/s2-button";
-import { S2_Input as Input } from "@/components/ui/s2-input";
+import { Button as Button } from "@/components/ui/button";
+import { Input as Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 

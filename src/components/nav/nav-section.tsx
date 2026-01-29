@@ -17,30 +17,28 @@ import {
 } from "@/components/ui/collapsible";
 import { ExternalLink, Link } from "@/components/ui/link";
 import {
-    S2_SidebarGroup,
-    S2_SidebarGroupLabel,
-    S2_SidebarMenu,
-    S2_SidebarMenuAction,
-    S2_SidebarMenuButton,
-    S2_SidebarMenuItem,
-    S2_SidebarMenuSub,
-    S2_SidebarMenuSubButton,
-    S2_SidebarMenuSubItem,
-} from "@/components/ui/s2-sidebar";
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-export type NavSectionProps = ComponentProps<typeof S2_SidebarGroup> & {
+export type NavSectionProps = ComponentProps<typeof SidebarGroup> & {
     title?: string;
 };
 
 export function NavSection({ title, children }: NavSectionProps) {
     return (
-        <S2_SidebarGroup>
-            {title ? (
-                <S2_SidebarGroupLabel>{title}</S2_SidebarGroupLabel>
-            ) : null}
-            <S2_SidebarMenu>{children}</S2_SidebarMenu>
-        </S2_SidebarGroup>
+        <SidebarGroup>
+            {title ? <SidebarGroupLabel>{title}</SidebarGroupLabel> : null}
+            <SidebarMenu>{children}</SidebarMenu>
+        </SidebarGroup>
     );
 }
 
@@ -57,7 +55,7 @@ type NavItemInternalProps = {
     label?: string;
 };
 type NavItemProps = (NavItemExternalProps | NavItemInternalProps) &
-    Omit<ComponentProps<typeof S2_SidebarMenuItem>, "children"> & {
+    Omit<ComponentProps<typeof SidebarMenuItem>, "children"> & {
         icon?: ReactNode;
     };
 
@@ -73,25 +71,25 @@ export function NavItem({
 
     if (external) {
         return (
-            <S2_SidebarMenuItem {...props}>
-                <S2_SidebarMenuButton asChild>
+            <SidebarMenuItem {...props}>
+                <SidebarMenuButton asChild>
                     <ExternalLink href={href} noDecoration>
                         {icon}
                         <span>{label}</span>
                     </ExternalLink>
-                </S2_SidebarMenuButton>
-            </S2_SidebarMenuItem>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         );
     } else {
         return (
-            <S2_SidebarMenuItem {...props}>
-                <S2_SidebarMenuButton asChild isActive={pathname == path.href}>
+            <SidebarMenuItem {...props}>
+                <SidebarMenuButton asChild isActive={pathname == path.href}>
                     <Link to={path}>
                         {icon}
                         <span>{label ?? path.label}</span>
                     </Link>
-                </S2_SidebarMenuButton>
-            </S2_SidebarMenuItem>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         );
     }
 }
@@ -129,22 +127,22 @@ export function NavCollapsible({
             onOpenChange={setOpen}
             {...props}
         >
-            <S2_SidebarMenuItem>
-                <S2_SidebarMenuButton tooltip={path.label} asChild>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip={path.label} asChild>
                     <Link to={path}>
                         {icon}
                         <span>{path.label}</span>
                     </Link>
-                </S2_SidebarMenuButton>
+                </SidebarMenuButton>
                 <CollapsibleTrigger asChild>
-                    <S2_SidebarMenuAction>
+                    <SidebarMenuAction>
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </S2_SidebarMenuAction>
+                    </SidebarMenuAction>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <S2_SidebarMenuSub>{children}</S2_SidebarMenuSub>
+                    <SidebarMenuSub>{children}</SidebarMenuSub>
                 </CollapsibleContent>
-            </S2_SidebarMenuItem>
+            </SidebarMenuItem>
         </Collapsible>
     );
 }
@@ -162,7 +160,7 @@ type NavSubItemInternalProps = {
     label?: string;
 };
 type NavSubItemProps = (NavSubItemExternalProps | NavSubItemInternalProps) &
-    Omit<ComponentProps<typeof S2_SidebarMenuSubItem>, "children"> & {
+    Omit<ComponentProps<typeof SidebarMenuSubItem>, "children"> & {
         icon?: ReactNode;
     };
 
@@ -178,28 +176,25 @@ export function NavSubItem({
 
     if (external) {
         return (
-            <S2_SidebarMenuSubItem>
-                <S2_SidebarMenuSubButton asChild>
+            <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild>
                     <ExternalLink href={href} noDecoration>
                         {icon}
                         <span>{label}</span>
                     </ExternalLink>
-                </S2_SidebarMenuSubButton>
-            </S2_SidebarMenuSubItem>
+                </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
         );
     } else {
         return (
-            <S2_SidebarMenuSubItem>
-                <S2_SidebarMenuSubButton
-                    asChild
-                    isActive={pathname == path.href}
-                >
+            <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={pathname == path.href}>
                     <Link to={path}>
                         {icon}
                         <span>{label ?? path.label}</span>
                     </Link>
-                </S2_SidebarMenuSubButton>
-            </S2_SidebarMenuSubItem>
+                </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
         );
     }
 }

@@ -13,7 +13,7 @@ import {
 } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import { S2_SidebarGroup, S2_SidebarMenu } from "@/components/ui/s2-sidebar";
+import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 import { isModuleEnabled } from "@/lib/modules";
 import { OrganizationWithSettings } from "@/lib/schemas/organization";
@@ -29,8 +29,8 @@ export function NavOrganizationMenu({
     const orgPrefix = Paths.org(organization.slug);
 
     return (
-        <S2_SidebarGroup>
-            <S2_SidebarMenu>
+        <SidebarGroup>
+            <SidebarMenu>
                 <NavItem
                     path={orgPrefix.dashboard}
                     icon={<OrgDashboardIcon />}
@@ -100,7 +100,7 @@ export function NavOrganizationMenu({
                         <NavItem path={orgPrefix.skills.reports} />
                     </NavCollapsible>
                 </Show>
-            </S2_SidebarMenu>
-        </S2_SidebarGroup>
+            </SidebarMenu>
+        </SidebarGroup>
     );
 }

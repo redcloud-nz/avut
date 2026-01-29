@@ -14,19 +14,19 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { EditObjectIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
-    S2_Card,
-    S2_CardAction,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
-import { S2_Value } from "@/components/ui/s2-value";
+import { FieldValue } from "@/components/ui/field-value";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { formatDate } from "@/lib/datetime";
@@ -124,7 +124,7 @@ export default async function AdminModule_UserDetail_Page(
                                 permissions={{ member: ["update"] }}
                             >
                                 <ButtonGroup>
-                                    <S2_Button variant="outline" asChild>
+                                    <Button variant="outline" asChild>
                                         <Link
                                             to={
                                                 Paths.org(
@@ -135,7 +135,7 @@ export default async function AdminModule_UserDetail_Page(
                                         >
                                             <EditObjectIcon /> Edit
                                         </Link>
-                                    </S2_Button>
+                                    </Button>
                                     <AdminModule_UserMenu
                                         currentUserId={session?.user.id}
                                         organization={organization}
@@ -146,13 +146,11 @@ export default async function AdminModule_UserDetail_Page(
                             </Protect>
                         </Hermes.SectionHeader>
 
-                        <S2_Card>
-                            <S2_CardHeader>
-                                <S2_CardTitle>{user.name}</S2_CardTitle>
-                                <S2_CardDescription>
-                                    {user.id}
-                                </S2_CardDescription>
-                                <S2_CardAction>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{user.name}</CardTitle>
+                                <CardDescription>{user.id}</CardDescription>
+                                <CardAction>
                                     {user.image && (
                                         <img
                                             src={user.image}
@@ -160,22 +158,22 @@ export default async function AdminModule_UserDetail_Page(
                                             className="rounded-full w-12 h-12"
                                         />
                                     )}
-                                </S2_CardAction>
-                            </S2_CardHeader>
-                            <S2_CardContent>
+                                </CardAction>
+                            </CardHeader>
+                            <CardContent>
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
-                                        <S2_Value>
+                                        <FieldValue>
                                             {user.email}
                                             {user.emailVerified ? (
                                                 <span className="text-muted-foreground ml-2"></span>
                                             ) : null}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Role</FieldLabel>
-                                        <S2_Value
+                                        <FieldValue
                                             value={organizationMember.role
                                                 .map(
                                                     (role) =>
@@ -187,15 +185,15 @@ export default async function AdminModule_UserDetail_Page(
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Joined</FieldLabel>
-                                        <S2_Value
+                                        <FieldValue
                                             value={formatDate(
                                                 organizationMember.createdAt,
                                             )}
                                         />
                                     </Field>
                                 </FieldGroup>
-                            </S2_CardContent>
-                        </S2_Card>
+                            </CardContent>
+                        </Card>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

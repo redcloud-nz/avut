@@ -14,17 +14,12 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
-import { S2_Value } from "@/components/ui/s2-value";
+import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 
@@ -70,7 +65,7 @@ export default function AdminModule_Person_Page(
                                     orgId={organization.id}
                                     permissions={{ person: ["update"] }}
                                 >
-                                    <S2_Button variant="outline" asChild>
+                                    <Button variant="outline" asChild>
                                         <Link
                                             to={
                                                 Paths.org(slug).admin.person(
@@ -80,7 +75,7 @@ export default function AdminModule_Person_Page(
                                         >
                                             <ObjectIcons.Edit /> Edit
                                         </Link>
-                                    </S2_Button>
+                                    </Button>
                                     <AdminModule_PersonMenu
                                         organization={organization}
                                         person={person}
@@ -89,45 +84,45 @@ export default function AdminModule_Person_Page(
                             </ButtonGroup>
                         </Hermes.SectionHeader>
 
-                        <S2_Card>
-                            <S2_CardHeader>
-                                <S2_CardTitle>{person.name}</S2_CardTitle>
-                            </S2_CardHeader>
-                            <S2_CardContent>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{person.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Person ID</FieldLabel>
-                                        <S2_Value className="min-w-1/2">
+                                        <FieldValue className="min-w-1/2">
                                             {person.id}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Name</FieldLabel>
-                                        <S2_Value className="min-w-1/2">
+                                        <FieldValue className="min-w-1/2">
                                             {person.name}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
-                                        <S2_Value className="min-w-1/2">
+                                        <FieldValue className="min-w-1/2">
                                             {person.email}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Created At</FieldLabel>
-                                        <S2_Value className="min-w-1/2">
+                                        <FieldValue className="min-w-1/2">
                                             {formatDateTime(person.createdAt)}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Updated At</FieldLabel>
-                                        <S2_Value className="min-w-1/2">
+                                        <FieldValue className="min-w-1/2">
                                             {formatDateTime(person.updatedAt)}
-                                        </S2_Value>
+                                        </FieldValue>
                                     </Field>
                                 </FieldGroup>
-                            </S2_CardContent>
-                        </S2_Card>
+                            </CardContent>
+                        </Card>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

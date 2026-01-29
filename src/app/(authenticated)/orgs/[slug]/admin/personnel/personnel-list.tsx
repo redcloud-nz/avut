@@ -19,7 +19,7 @@ import { Hermes } from "@/components/blocks/hermes";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -51,9 +51,9 @@ export function AdminModule_PersonnelList({
             Akagi.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Name
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -67,9 +67,9 @@ export function AdminModule_PersonnelList({
                 }),
                 columnHelper.accessor("email", {
                     header: (ctx) => (
-                        <Akagi.TableHeader header={ctx.header}>
+                        <Akagi.TableHeadCell header={ctx.header}>
                             Email
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -81,12 +81,12 @@ export function AdminModule_PersonnelList({
                 }),
                 columnHelper.accessor("status", {
                     header: (ctx) => (
-                        <Akagi.TableHeader
+                        <Akagi.TableHeadCell
                             header={ctx.header}
                             filterOptions={["Active", "Archived", "Deleted"]}
                         >
                             Status
-                        </Akagi.TableHeader>
+                        </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -122,11 +122,11 @@ export function AdminModule_PersonnelList({
                     orgId={organization.id}
                     permissions={{ person: ["create"] }}
                 >
-                    <S2_Button variant="outline" asChild>
+                    <Button variant="outline" asChild>
                         <Link to={adminModule.personnel.create}>
                             <CreateNewIcon /> Person
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Protect>
             </Hermes.SectionHeader>
             <Akagi.Table table={table} />

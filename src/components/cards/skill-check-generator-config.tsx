@@ -6,17 +6,12 @@
 
 import { useState } from "react";
 
-import {
-    Card,
-    CardContent,
-    CardExplanation,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components//ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+
+import { Separator } from "@/components/ui/separator";
 import { CompetenceLevel, CompetenceLevels } from "@/lib/competencies";
-import { Separator } from "../ui/separator";
 
 type DateWeightKey = "Expired" | "RecentlyExpired" | "NearlyExpired" | "OK";
 
@@ -98,7 +93,7 @@ export function SkillCheckGeneratorConfig_Card({
                 <CardTitle>Skill Check Generator Configuration</CardTitle>
 
                 <Separator orientation="vertical" />
-                <CardExplanation>
+                {/* <CardExplanation>
                     <p>
                         This card allows you to adjust the probabilities for
                         each competence level and date ranges used for the
@@ -125,7 +120,7 @@ export function SkillCheckGeneratorConfig_Card({
                             between 9 and 0 months ago.
                         </li>
                     </ul>
-                </CardExplanation>
+                </CardExplanation> */}
             </CardHeader>
             <CardContent className="text-sm">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 items-start">

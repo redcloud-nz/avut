@@ -14,14 +14,14 @@ import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { S2_Button } from "../ui/s2-button";
+import { Button } from "../ui/button";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Field,
     FieldDescription,
@@ -29,7 +29,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import {
     InputGroup,
     InputGroupAddon,
@@ -120,14 +120,14 @@ export function CreateOrganization_Card() {
     });
 
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Create Organization</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Create Organization</CardTitle>
+                <CardDescription>
                     Use this form to create a new organization.
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <form id="create-organization-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
@@ -138,7 +138,7 @@ export function CreateOrganization_Card() {
                                     <FieldLabel htmlFor="name">
                                         Organization Name
                                     </FieldLabel>
-                                    <S2_Input id={"name"} {...field} />
+                                    <Input id={"name"} {...field} />
                                     {fieldState.error && (
                                         <FieldError
                                             errors={[fieldState.error]}
@@ -206,16 +206,16 @@ export function CreateOrganization_Card() {
                             )}
                         />
                         <Field>
-                            <S2_Button
+                            <Button
                                 type="submit"
                                 form="create-organization-form"
                             >
                                 Create Organization
-                            </S2_Button>
+                            </Button>
                         </Field>
                     </FieldGroup>
                 </form>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }

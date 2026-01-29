@@ -12,14 +12,14 @@ import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Field,
     FieldDescription,
@@ -28,7 +28,7 @@ import {
     FieldLabel,
     FieldSeparator,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
@@ -38,14 +38,14 @@ import { SocialSignInButtons_Field } from "./sign-in";
 
 export function SignUp_Card() {
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Create an account</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Create an account</CardTitle>
+                <CardDescription>
                     Enter your details to sign up.
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <FieldGroup>
                     <Auth_EmailPasswordSignUp_Form />
 
@@ -60,8 +60,8 @@ export function SignUp_Card() {
                         <Link to={Paths.auth.signIn()}>Sign in</Link>
                     </FieldDescription>
                 </FieldGroup>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -127,7 +127,7 @@ function Auth_EmailPasswordSignUp_Form() {
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                             <FieldLabel htmlFor="sign-up-name">Name</FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="sign-up-name"
                                 placeholder="Your full name"
                                 aria-invalid={fieldState.invalid}
@@ -148,7 +148,7 @@ function Auth_EmailPasswordSignUp_Form() {
                             <FieldLabel htmlFor="email">
                                 Email Address
                             </FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="email"
                                 type="email"
                                 placeholder="Your email address"
@@ -170,7 +170,7 @@ function Auth_EmailPasswordSignUp_Form() {
                             <FieldLabel htmlFor="sign-up-password">
                                 Password
                             </FieldLabel>
-                            <S2_Input
+                            <Input
                                 id="sign-up-password"
                                 type="password"
                                 placeholder="Your password"
@@ -188,13 +188,13 @@ function Auth_EmailPasswordSignUp_Form() {
                     )}
                 />
                 <Field>
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="sign-up-form"
                         disabled={inProgress}
                     >
                         {inProgress ? "Creating account..." : "Sign Up"}
-                    </S2_Button>
+                    </Button>
                     {submitError && <FieldError errors={[submitError]} />}
                 </Field>
             </FieldGroup>

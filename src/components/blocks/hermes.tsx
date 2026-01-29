@@ -10,7 +10,7 @@
 import { ComponentProps } from "react";
 
 import { AlertInfoIcon, ToParentPageIcon } from "@/components/icons";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Item,
     ItemContent,
@@ -91,15 +91,15 @@ function HermesBackButton({
     children,
     to,
     ...props
-}: Omit<ComponentProps<typeof S2_Button>, "asChild"> & {
+}: Omit<ComponentProps<typeof Button>, "asChild"> & {
     to: LinkProps["to"];
 }) {
     return (
-        <S2_Button variant="outline" {...props} asChild>
+        <Button variant="outline" {...props} asChild>
             <Link to={to}>
                 <ToParentPageIcon /> {children}
             </Link>
-        </S2_Button>
+        </Button>
     );
 }
 

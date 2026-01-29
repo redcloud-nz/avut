@@ -11,21 +11,21 @@ import z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Field,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 
 import { authClient } from "@/lib/auth-client";
 import * as Paths from "@/paths";
@@ -69,14 +69,14 @@ export function ForgotPassword_Card() {
     });
 
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Forgot Password</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Forgot Password</CardTitle>
+                <CardDescription>
                     Enter your email to get an a reset code sent to you.
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <form id="forgot-password-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
@@ -87,7 +87,7 @@ export function ForgotPassword_Card() {
                                     <FieldLabel htmlFor="forgot-password-email">
                                         Email
                                     </FieldLabel>
-                                    <S2_Input
+                                    <Input
                                         id="forgot-password-email"
                                         type="email"
                                         placeholder="you@example.com"
@@ -103,20 +103,20 @@ export function ForgotPassword_Card() {
                             )}
                         />
                         <Field>
-                            <S2_Button
+                            <Button
                                 type="submit"
                                 form="forgot-password-form"
                                 disabled={state.status === "InProgress"}
                             >
                                 Send reset link
-                            </S2_Button>
+                            </Button>
                         </Field>
                         {state.status === "Error" && (
                             <FieldError errors={[state.error]} />
                         )}
                     </FieldGroup>
                 </form>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }

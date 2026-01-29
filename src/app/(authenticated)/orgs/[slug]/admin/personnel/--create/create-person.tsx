@@ -19,7 +19,7 @@ import {
     useSuspenseQueries,
 } from "@tanstack/react-query";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Field,
     FieldContent,
@@ -28,15 +28,15 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
 import {
-    S2_Select,
-    S2_SelectContent,
-    S2_SelectItem,
-    S2_SelectTrigger,
-    S2_SelectValue,
-} from "@/components/ui/s2-select";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -45,7 +45,7 @@ import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
 import { PersonData, PersonId } from "@/lib/schemas/person";
-import { S2_Value } from "@/components/ui/s2-value";
+import { FieldValue } from "@/components/ui/field-value";
 
 type AdminModule_CreatePerson_FormProps = {
     organization: OrganizationData;
@@ -121,7 +121,7 @@ export function AdminModule_CreatePerson_Form({
             <FieldGroup>
                 <Field orientation="responsive">
                     <FieldLabel>Person ID</FieldLabel>
-                    <S2_Value className="min-w-1/2">{personId}</S2_Value>
+                    <FieldValue className="min-w-1/2">{personId}</FieldValue>
                 </Field>
                 <Controller
                     name="name"
@@ -133,7 +133,7 @@ export function AdminModule_CreatePerson_Form({
                         >
                             <FieldLabel htmlFor="person-name">Name</FieldLabel>
 
-                            <S2_Input
+                            <Input
                                 id="person-name"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
@@ -162,7 +162,7 @@ export function AdminModule_CreatePerson_Form({
                                 </FieldDescription>
                             </FieldContent>
 
-                            <S2_Input
+                            <Input
                                 id="person-email"
                                 type="email"
                                 aria-invalid={fieldState.invalid}
@@ -177,14 +177,14 @@ export function AdminModule_CreatePerson_Form({
                     )}
                 />
                 <Field orientation="horizontal">
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="create-person-form"
                         disabled={createPersonMutation.isPending}
                     >
                         Create
-                    </S2_Button>
-                    <S2_Button
+                    </Button>
+                    <Button
                         type="button"
                         variant="outline"
                         onClick={() => form.reset()}
@@ -193,7 +193,7 @@ export function AdminModule_CreatePerson_Form({
                         <Link to={Paths.org(organization.slug).admin.personnel}>
                             Cancel
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Field>
             </FieldGroup>
         </form>

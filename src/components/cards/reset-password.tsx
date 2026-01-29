@@ -12,21 +12,21 @@ import z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Field,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { S2_Input } from "@/components/ui/s2-input";
+import { Input } from "@/components/ui/input";
 import { InputOTP } from "@/components/ui/input-otp";
 
 import { authClient } from "@/lib/auth-client";
@@ -76,15 +76,15 @@ export function ResetPassword_Card({ email }: { email: string }) {
     });
 
     return (
-        <S2_Card>
-            <S2_CardHeader>
-                <S2_CardTitle>Reset Password</S2_CardTitle>
-                <S2_CardDescription>
+        <Card>
+            <CardHeader>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>
                     We sent a 6-digit code to your email. Enter the code along
                     with your new password to reset it.
-                </S2_CardDescription>
-            </S2_CardHeader>
-            <S2_CardContent>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 <form id="forgot-password-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
@@ -128,7 +128,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                     <FieldLabel htmlFor="new-password">
                                         New Password
                                     </FieldLabel>
-                                    <S2_Input
+                                    <Input
                                         id="new-password"
                                         type="password"
                                         placeholder="Enter your new password"
@@ -144,18 +144,18 @@ export function ResetPassword_Card({ email }: { email: string }) {
                             )}
                         />
                         <Field>
-                            <S2_Button type="submit" onClick={handleSubmit}>
+                            <Button type="submit" onClick={handleSubmit}>
                                 {state.status === "InProgress"
                                     ? "Updating Password..."
                                     : "Update Password"}
-                            </S2_Button>
+                            </Button>
                         </Field>
                         {state.status === "Error" && (
                             <FieldError errors={[state.error]} />
                         )}
                     </FieldGroup>
                 </form>
-            </S2_CardContent>
-        </S2_Card>
+            </CardContent>
+        </Card>
     );
 }

@@ -17,7 +17,7 @@ import {
     useSuspenseQueries,
 } from "@tanstack/react-query";
 
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     Field,
     FieldError,
@@ -26,13 +26,13 @@ import {
 } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
 import {
-    S2_Select,
-    S2_SelectContent,
-    S2_SelectItem,
-    S2_SelectTrigger,
-    S2_SelectValue,
-} from "@/components/ui/s2-select";
-import { S2_Value } from "@/components/ui/s2-value";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { FieldValue } from "@/components/ui/field-value";
 
 import { authClient } from "@/lib/auth-client";
 import { formatDate } from "@/lib/datetime";
@@ -123,27 +123,27 @@ export function AdminModule_UpdateUser_Form({
                         >
                             <FieldLabel htmlFor="role">Primary Role</FieldLabel>
                             {field.value == "owner" ? (
-                                <S2_Value value="Owner" />
+                                <FieldValue value="Owner" />
                             ) : (
-                                <S2_Select
+                                <Select
                                     value={field.value}
                                     onValueChange={field.onChange}
                                 >
-                                    <S2_SelectTrigger
+                                    <SelectTrigger
                                         aria-invalid={fieldState.invalid}
                                         id="role"
                                     >
-                                        <S2_SelectValue placeholder="Select a role" />
-                                    </S2_SelectTrigger>
-                                    <S2_SelectContent>
-                                        <S2_SelectItem value="admin">
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="admin">
                                             Admin
-                                        </S2_SelectItem>
-                                        <S2_SelectItem value="member">
+                                        </SelectItem>
+                                        <SelectItem value="member">
                                             Member
-                                        </S2_SelectItem>
-                                    </S2_SelectContent>
-                                </S2_Select>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             )}
                             {fieldState.error && (
                                 <FieldError errors={[fieldState.error]} />
@@ -152,14 +152,14 @@ export function AdminModule_UpdateUser_Form({
                     )}
                 />
                 <Field orientation="horizontal">
-                    <S2_Button
+                    <Button
                         type="submit"
                         form="update-user-form"
                         disabled={!form.formState.isDirty || mutation.isPending}
                     >
                         Update
-                    </S2_Button>
-                    <S2_Button
+                    </Button>
+                    <Button
                         type="button"
                         variant="outline"
                         onClick={() => form.reset()}
@@ -172,7 +172,7 @@ export function AdminModule_UpdateUser_Form({
                         >
                             Cancel
                         </Link>
-                    </S2_Button>
+                    </Button>
                 </Field>
             </FieldGroup>
         </form>

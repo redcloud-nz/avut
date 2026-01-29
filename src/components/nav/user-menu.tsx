@@ -14,7 +14,7 @@ import {
     PersonalSettingsIcon,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { S2_Button } from "@/components/ui/s2-button";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -50,14 +50,14 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <S2_Button variant="ghost" size="icon" className="size-8">
+                <Button variant="ghost" size="icon" className="size-8">
                     <Avatar className="size-6 rounded-full">
                         <AvatarImage src={user.image ?? ""} alt={user.name} />
                         <AvatarFallback className="rounded-full">
                             {initials}
                         </AvatarFallback>
                     </Avatar>
-                </S2_Button>
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-md">
                 <DropdownMenuLabel className="p-0 font-normal">

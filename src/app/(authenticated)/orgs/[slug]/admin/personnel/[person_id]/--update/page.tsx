@@ -12,12 +12,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { useOrganization } from "@/hooks/use-organization";
 import * as Paths from "@/paths";
@@ -61,17 +56,17 @@ export default function AdminModule_PersonUpdate_Page(
                                 {person.name}
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
-                        <S2_Card>
-                            <S2_CardHeader>
-                                <S2_CardTitle>Update Person</S2_CardTitle>
-                            </S2_CardHeader>
-                            <S2_CardContent>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Update Person</CardTitle>
+                            </CardHeader>
+                            <CardContent>
                                 <AdminModule_UpdatePerson_Form
                                     organization={organization}
                                     personId={person.id}
                                 />
-                            </S2_CardContent>
-                        </S2_Card>
+                            </CardContent>
+                        </Card>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

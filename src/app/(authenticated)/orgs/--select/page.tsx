@@ -16,12 +16,12 @@ import { redirect } from "next/navigation";
 
 import { Argus } from "@/components/blocks/argus";
 import {
-    S2_Card,
-    S2_CardContent,
-    S2_CardDescription,
-    S2_CardHeader,
-    S2_CardTitle,
-} from "@/components/ui/s2-card";
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Item,
     ItemActions,
@@ -53,15 +53,15 @@ export default async function OrganizationSelect_Page() {
             <Argus.Column>
                 <Argus.AppLogo />
 
-                <S2_Card>
-                    <S2_CardHeader>
-                        <S2_CardTitle>Select account to use</S2_CardTitle>
-                        <S2_CardDescription>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Select account to use</CardTitle>
+                        <CardDescription>
                             Signed in as <br />
                             {session.user.name} ({session.user.email}).
-                        </S2_CardDescription>
-                    </S2_CardHeader>
-                    <S2_CardContent>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
                         <ItemGroup>
                             <Item>
                                 <ItemMedia>
@@ -103,8 +103,8 @@ export default async function OrganizationSelect_Page() {
                                 </Link>
                             </Item>
                         </ItemGroup>
-                    </S2_CardContent>
-                </S2_Card>
+                    </CardContent>
+                </Card>
             </Argus.Column>
         </Argus.Root>
     );
