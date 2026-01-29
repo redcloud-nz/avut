@@ -83,13 +83,14 @@ export function AdminModule_PersonnelList({
                     header: (ctx) => (
                         <Akagi.TableHeadCell
                             header={ctx.header}
-                            filterOptions={["Active", "Archived", "Deleted"]}
+                            className="w-25"
+                            filterOptions={["Active", "Archived"]}
                         >
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
+                        <Akagi.TableCell cell={ctx.cell} className="w-25">
                             {ctx.getValue()}
                         </Akagi.TableCell>
                     ),
@@ -109,6 +110,7 @@ export function AdminModule_PersonnelList({
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         initialState: {
+            columnFilters: [{ id: "status", value: ["Active"] }],
             pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },

@@ -76,11 +76,11 @@ export default function AdminModule_Person_Page(
                                             <ObjectIcons.Edit /> Edit
                                         </Link>
                                     </Button>
-                                    <AdminModule_PersonMenu
-                                        organization={organization}
-                                        person={person}
-                                    />
                                 </Protect>
+                                <AdminModule_PersonMenu
+                                    organization={organization}
+                                    person={person}
+                                />
                             </ButtonGroup>
                         </Hermes.SectionHeader>
 
@@ -118,6 +118,12 @@ export default function AdminModule_Person_Page(
                                         <FieldLabel>Updated At</FieldLabel>
                                         <FieldValue className="min-w-1/2">
                                             {formatDateTime(person.updatedAt)}
+                                        </FieldValue>
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Status</FieldLabel>
+                                        <FieldValue className="min-w-1/2">
+                                            {person.status}
                                         </FieldValue>
                                     </Field>
                                 </FieldGroup>

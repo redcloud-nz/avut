@@ -200,7 +200,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 }
 
 interface LogEventOptions {
-    action: "Create" | "Update" | "Delete";
+    action: "Create" | "Update" | "Delete" | "Archive" | "Restore";
     objectType: "OrganizationMember" | "OrganizationSettings" | "Person";
     objectId: string;
     changes?: DiffChange[];

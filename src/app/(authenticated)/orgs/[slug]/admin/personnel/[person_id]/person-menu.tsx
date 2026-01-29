@@ -6,10 +6,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -51,12 +53,90 @@ export function AdminModule_PersonMenu({
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const deleteMutation = useMutation(
-        trpc.personnel.deletePerson.mutationOptions({
-            onError() {},
-            async onSuccess() {},
+    async function invalidPersonQueries() {
+        await Promise.all([
+            queryClient.invalidateQueries(
+                trpc.personnel.getPerson.queryFilter({
+                    organizationId: organization.id,
+                    personId: person.id,
+                }),
+            ),
+            queryClient.invalidateQueries(
+                trpc.personnel.listPersonnel.queryFilter({
+                    organizationId: organization.id,
+                }),
+            ),
+        ]);
+    }
+
+    const archiveMutation = useMutation(
+        trpc.personnel.archivePerson.mutationOptions({
+            async onSettled() {
+                await invalidPersonQueries();
+            },
         }),
     );
+    const deleteMutation = useMutation(
+        trpc.personnel.deletePerson.mutationOptions({
+            async onSettled() {
+                await invalidPersonQueries();
+            },
+        }),
+    );
+    const restoreMutation = useMutation(
+        trpc.personnel.restorePerson.mutationOptions({
+            async onSettled() {
+                await invalidPersonQueries();
+            },
+        }),
+    );
+
+    function handleArchive() {
+        toast.promise(
+            async () =>
+                await archiveMutation.mutateAsync({
+                    organizationId: organization.id,
+                    personId: person.id,
+                }),
+            {
+                loading: "Archiving person...",
+                success: "Person archived.",
+                error: (error) => "Failed to archive person: " + error.message,
+            },
+        );
+    }
+
+    function handleDelete() {
+        toast.promise(
+            async () => {
+                await deleteMutation.mutateAsync({
+                    organizationId: organization.id,
+                    personId: person.id,
+                });
+                router.push(Paths.org(organization.slug).admin.personnel.href);
+            },
+            {
+                loading: "Deleting person...",
+                success: "Person deleted.",
+                error: (error) => "Failed to delete person: " + error.message,
+            },
+        );
+    }
+
+    function handleRestore() {
+        toast.promise(
+            async () =>
+                await restoreMutation.mutateAsync({
+                    organizationId: organization.id,
+                    personId: person.id,
+                }),
+            {
+                loading: "Restoring person...",
+                success: "Person restored.",
+                error: (error) => "Failed to restore person: " + error.message,
+            },
+        );
+    }
 
     return (
         <>
@@ -87,18 +167,42 @@ export function AdminModule_PersonMenu({
 
                     <DropdownMenuGroup>
                         <DropdownMenuGroupLabel>Actions</DropdownMenuGroupLabel>
-                        <DropdownMenuItem>
-                            <ObjectIcons.Archive /> Archive
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onSelect={() => {
-                                setDeleteDialogOpen(true);
-                            }}
-                            className="text-destructive"
-                        >
-                            <ObjectIcons.Delete />
-                            Delete
-                        </DropdownMenuItem>
+                        {person.status == "Active" && (
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ person: ["archive"] }}
+                            >
+                                <DropdownMenuItem onSelect={handleArchive}>
+                                    <ObjectIcons.Archive /> Archive
+                                </DropdownMenuItem>
+                            </Protect>
+                        )}
+                        {person.status != "Archived" && (
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ person: ["delete"] }}
+                            >
+                                <DropdownMenuItem
+                                    onSelect={() => {
+                                        setDeleteDialogOpen(true);
+                                    }}
+                                    className="text-destructive"
+                                >
+                                    <ObjectIcons.Delete />
+                                    Delete
+                                </DropdownMenuItem>
+                            </Protect>
+                        )}
+                        {person.status != "Active" && (
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ person: ["restore"] }}
+                            >
+                                <DropdownMenuItem onSelect={handleRestore}>
+                                    <ObjectIcons.Restore /> Restore
+                                </DropdownMenuItem>
+                            </Protect>
+                        )}
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -109,22 +213,17 @@ export function AdminModule_PersonMenu({
                     <DialogHeader>
                         <DialogTitle>Delete Person</DialogTitle>
                         <DialogDescription>
-                            Confirm removal of{" "}
+                            Confirm deletion of personnel record for{" "}
                             <ObjectName>{person.name}</ObjectName>.
                         </DialogDescription>
                     </DialogHeader>
                     <FieldGroup>
                         <Field orientation="horizontal">
                             <Button
-                                type="submit"
+                                type="button"
                                 variant="destructive"
                                 disabled={deleteMutation.isPending}
-                                onClick={() =>
-                                    deleteMutation.mutate({
-                                        organizationId: organization.id,
-                                        personId: person.id,
-                                    })
-                                }
+                                onClick={handleDelete}
                             >
                                 Delete
                             </Button>

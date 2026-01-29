@@ -14,7 +14,7 @@ import {
 const statement = {
     ...defaultStatements,
     organization: ["view", "update", "delete"],
-    person: ["create", "update", "delete"],
+    person: ["create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
 } as const;
 
@@ -23,13 +23,13 @@ export const ac = createAccessControl(statement);
 export const owner = ac.newRole({
     ...ownerAc.statements,
     organization: ["view", "update", "delete"],
-    person: ["create", "update", "delete"],
+    person: ["create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
 });
 export const admin = ac.newRole({
     ...adminAc.statements,
     organization: ["view", "update"],
-    person: ["create", "update", "delete"],
+    person: ["create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
 });
 

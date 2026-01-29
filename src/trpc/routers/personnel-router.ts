@@ -21,6 +21,52 @@ import { FieldConflictError } from "../types";
  */
 export const personnelRouter = createTrpcRouter({
     /**
+     * Archives a person in the organization.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The archived person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    archivePerson: organizationProcedure({ person: ["update"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(PersonData.schema)
+        .mutation(async ({ ctx, input: { personId } }) => {
+            const existing = await ctx.prisma.person.findUnique({
+                where: { organizationId: ctx.organizationId, id: personId },
+            });
+
+            if (!existing)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            if (existing.status === "Archived") {
+                return PersonData.fromRecord(existing); // Already archived
+            }
+
+            const updated = await ctx.prisma.person.update({
+                where: { organizationId: ctx.organizationId, id: personId },
+                data: { status: "Archived" },
+            });
+
+            await ctx.logEvent({
+                action: "Archive",
+                objectType: "Person",
+                objectId: personId,
+            });
+
+            // Clear cached data
+            revalidatePerson(personId);
+
+            return PersonData.fromRecord(updated);
+        }),
+
+    /**
      * Creates a new person in the organization.
      * @param ctx The authenticated context.
      * @param input The input object containing the person data.
@@ -191,9 +237,58 @@ export const personnelRouter = createTrpcRouter({
         .output(z.array(PersonData.schema))
         .query(async ({ ctx }) => {
             const personnel = await ctx.prisma.person.findMany({
-                where: { organizationId: ctx.organizationId },
+                where: {
+                    organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
+                },
             });
             return personnel.map(PersonData.fromRecord);
+        }),
+
+    /**
+     * Restores an archived or deleted person in the organization.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The restored person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    restorePerson: organizationProcedure({ person: ["update"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(PersonData.schema)
+        .mutation(async ({ ctx, input: { personId } }) => {
+            const existing = await ctx.prisma.person.findUnique({
+                where: { organizationId: ctx.organizationId, id: personId },
+            });
+
+            if (!existing)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            if (existing.status == "Active") {
+                return PersonData.fromRecord(existing); // Not restorable
+            }
+
+            const updated = await ctx.prisma.person.update({
+                where: { organizationId: ctx.organizationId, id: personId },
+                data: { status: "Active" },
+            });
+
+            await ctx.logEvent({
+                action: "Restore",
+                objectType: "Person",
+                objectId: personId,
+            });
+
+            // Clear cached data
+            revalidatePerson(personId);
+
+            return PersonData.fromRecord(updated);
         }),
 
     /**

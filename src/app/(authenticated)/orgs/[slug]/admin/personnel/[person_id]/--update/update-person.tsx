@@ -29,29 +29,20 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Spinner } from "@/components/ui/spinner";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { PersonData, PersonId } from "@/lib/schemas/person";
+import { PersonData } from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
 
 type AdminModule_UpdatePerson_FormProps = {
     organization: OrganizationData;
-    personId: PersonId;
+    person: PersonData;
 };
 
 export function AdminModule_UpdatePerson_Form({
     organization,
-    personId,
+    person,
 }: AdminModule_UpdatePerson_FormProps) {
-    const [{ data: person }] = useSuspenseQueries({
-        queries: [
-            trpc.personnel.getPerson.queryOptions({
-                organizationId: organization.id,
-                personId,
-            }),
-        ],
-    });
-
     const queryClient = useQueryClient();
     const router = useRouter();
 
@@ -90,7 +81,7 @@ export function AdminModule_UpdatePerson_Form({
                     queryClient.invalidateQueries(
                         trpc.personnel.getPerson.queryFilter({
                             organizationId: organization.id,
-                            personId,
+                            personId: person.id,
                         }),
                     ),
                     queryClient.invalidateQueries(
@@ -101,7 +92,7 @@ export function AdminModule_UpdatePerson_Form({
                 ]);
 
                 router.push(
-                    Paths.org(organization.slug).admin.person(personId).href,
+                    Paths.org(organization.slug).admin.person(person.id).href,
                 );
             },
         }),
@@ -113,7 +104,7 @@ export function AdminModule_UpdatePerson_Form({
             onSubmit={form.handleSubmit((formData) =>
                 mutation.mutate({
                     organizationId: organization.id,
-                    id: personId,
+                    id: person.id,
                     ...formData,
                 }),
             )}
@@ -191,7 +182,7 @@ export function AdminModule_UpdatePerson_Form({
                     >
                         <Link
                             to={Paths.org(organization.slug).admin.person(
-                                personId,
+                                person.id,
                             )}
                         >
                             Cancel
