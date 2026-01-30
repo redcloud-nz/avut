@@ -53,7 +53,7 @@ export function AdminModule_PersonMenu({
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    async function invalidPersonQueries() {
+    async function invalidatePersonQueries() {
         await Promise.all([
             queryClient.invalidateQueries(
                 trpc.personnel.getPerson.queryFilter({
@@ -72,21 +72,21 @@ export function AdminModule_PersonMenu({
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
             async onSettled() {
-                await invalidPersonQueries();
+                await invalidatePersonQueries();
             },
         }),
     );
     const deleteMutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
             async onSettled() {
-                await invalidPersonQueries();
+                await invalidatePersonQueries();
             },
         }),
     );
     const restoreMutation = useMutation(
         trpc.personnel.restorePerson.mutationOptions({
             async onSettled() {
-                await invalidPersonQueries();
+                await invalidatePersonQueries();
             },
         }),
     );

@@ -23,7 +23,7 @@ export async function generateMetadata(
     };
 }
 
-export default async function AdminModule_Person_Page(
+export default async function AdminModule_Person_Layout(
     props: LayoutProps<`/orgs/[slug]/admin/personnel/[person_id]`>,
 ) {
     return props.children;

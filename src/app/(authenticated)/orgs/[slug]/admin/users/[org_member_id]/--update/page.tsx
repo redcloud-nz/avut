@@ -4,8 +4,11 @@
  *
  * Paths: /orgs/[slug]/admin/users/[org_member_id]/--update
  */
+"use client";
 
-import { notFound } from "next/navigation";
+import { use } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
@@ -16,32 +19,25 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+
+import { useOrganization } from "@/hooks/use-organization";
 import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
-import prisma from "@/server/prisma";
+import { trpc } from "@/trpc/client";
 
 import { AdminModule_UpdateUser_Form } from "./update-user";
-import { OrganizationMemberId } from "@/lib/schemas/organization-member";
-
-export const metadata = { title: "Update User Role" };
 
 export default async function AdminModule_UpdateUser_Page(
     props: PageProps<`/orgs/[slug]/admin/users/[org_member_id]/--update`>,
 ) {
-    const { slug, org_member_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { slug, org_member_id } = use(props.params);
+    const organization = useOrganization();
 
-    const organizationMember = await prisma.organizationMember.findUnique({
-        where: {
-            id: org_member_id,
+    const { data: organizationMember } = useSuspenseQuery(
+        trpc.organizations.getOrganizationMember.queryOptions({
             organizationId: organization.id,
-        },
-        include: { user: true },
-    });
-
-    if (!organizationMember) {
-        notFound();
-    }
+            organizationMemberId: org_member_id,
+        }),
+    );
 
     return (
         <Lexington.Root>
@@ -53,7 +49,7 @@ export default async function AdminModule_UpdateUser_Page(
                         label: organizationMember.user.name || "User",
                         href: Paths.org(slug).admin.user(org_member_id).href,
                     },
-                    "Update Role",
+                    "Update",
                 ]}
             />
             <Lexington.Page>
@@ -78,9 +74,7 @@ export default async function AdminModule_UpdateUser_Page(
                             <CardContent>
                                 <AdminModule_UpdateUser_Form
                                     organization={organization}
-                                    organizationMemberId={OrganizationMemberId.schema.parse(
-                                        org_member_id,
-                                    )}
+                                    organizationMember={organizationMember}
                                 />
                             </CardContent>
                         </Card>

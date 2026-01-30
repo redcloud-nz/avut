@@ -4,15 +4,15 @@
  *
  * Paths: /orgs/[slug]/admin/users/[org_member_id]
  */
+"use client";
 
-import { Metadata } from "next";
-import { headers as nextHeaders } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { cache } from "react";
+import { use } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { EditObjectIcon } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -20,85 +20,40 @@ import {
     Card,
     CardAction,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Link } from "@/components/ui/link";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
+import { Link } from "@/components/ui/link";
 
-import { TITLE_SEPARATOR } from "@/lib/constants";
+import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
-import { OrganizationMemberData } from "@/lib/schemas/organization-member";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { UserData } from "@/lib/schemas/user";
 
 import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
-import prisma from "@/server/prisma";
+import { trpc } from "@/trpc/client";
 
 import { AdminModule_UserMenu } from "./user-menu";
-import { auth } from "@/server/auth";
 
-const fetchOrganizationMember = cache(
-    async (
-        organizationId: string,
-        org_member_id: string,
-    ): Promise<(OrganizationMemberData & { user: UserData }) | null> => {
-        const data = await prisma.organizationMember.findUnique({
-            where: {
-                id: org_member_id,
-                organizationId: organizationId,
-            },
-            include: { user: true },
-        });
-
-        if (!data) return null;
-
-        return {
-            ...OrganizationMemberData.fromRecord(data),
-            user: UserData.fromRecord(data.user),
-        };
-    },
-);
-
-export async function getMetadata(
-    props: PageProps<`/orgs/[slug]/admin/users/[org_member_id]`>,
-): Promise<Metadata> {
-    const { slug, org_member_id } = await props.params;
-
-    const organization = await getOrganizationBySlug(slug);
-    const organizationMember = await fetchOrganizationMember(
-        organization.id,
-        org_member_id,
-    );
-    if (!organizationMember) notFound();
-
-    return {
-        title: `${organizationMember.user.name || "User"} ${TITLE_SEPARATOR} Users`,
-    };
-}
-
-export default async function AdminModule_UserDetail_Page(
+export default function AdminModule_User_Page(
     props: PageProps<`/orgs/[slug]/admin/users/[org_member_id]`>,
 ) {
-    const { slug, org_member_id } = await props.params;
+    const { slug, org_member_id } = use(props.params);
 
-    const organization = await getOrganizationBySlug(slug);
+    const organization = useOrganization();
 
-    const session = await auth.api.getSession({
-        headers: await nextHeaders(),
-    });
-    if (!session) redirect(Paths.auth.signIn().href);
-
-    const organizationMember = await fetchOrganizationMember(
-        organization.id,
-        org_member_id,
+    const { data: orgMember } = useSuspenseQuery(
+        trpc.organizations.getOrganizationMember.queryOptions({
+            organizationId: organization.id,
+            organizationMemberId: org_member_id,
+        }),
     );
-    if (!organizationMember) notFound();
-
-    const user = organizationMember.user;
 
     return (
         <Lexington.Root>
@@ -106,7 +61,7 @@ export default async function AdminModule_UserDetail_Page(
                 breadcrumbs={[
                     Paths.org(slug).admin.index,
                     Paths.org(slug).admin.users,
-                    organizationMember.user.name || "User",
+                    orgMember.user.name,
                 ]}
             />
             <Lexington.Page>
@@ -116,14 +71,14 @@ export default async function AdminModule_UserDetail_Page(
                             <Hermes.BackButton
                                 to={Paths.org(organization.slug).admin.users}
                             >
-                                Users List
+                                Users
                             </Hermes.BackButton>
 
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ member: ["update"] }}
-                            >
-                                <ButtonGroup>
+                            <ButtonGroup>
+                                <Protect
+                                    orgId={organization.id}
+                                    permissions={{ member: ["update"] }}
+                                >
                                     <Button variant="outline" asChild>
                                         <Link
                                             to={
@@ -133,28 +88,26 @@ export default async function AdminModule_UserDetail_Page(
                                                     .update
                                             }
                                         >
-                                            <EditObjectIcon /> Edit
+                                            <ObjectIcons.Edit /> Edit
                                         </Link>
                                     </Button>
-                                    <AdminModule_UserMenu
-                                        currentUserId={session?.user.id}
-                                        organization={organization}
-                                        organizationMember={organizationMember}
-                                        user={organizationMember.user}
-                                    />
-                                </ButtonGroup>
-                            </Protect>
+                                </Protect>
+                                <AdminModule_UserMenu
+                                    organization={organization}
+                                    organizationMember={orgMember}
+                                    user={orgMember.user}
+                                />
+                            </ButtonGroup>
                         </Hermes.SectionHeader>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>{user.name}</CardTitle>
-                                <CardDescription>{user.id}</CardDescription>
+                                <CardTitle>{orgMember.user.name}</CardTitle>
                                 <CardAction>
-                                    {user.image && (
+                                    {orgMember.user.image && (
                                         <img
-                                            src={user.image}
-                                            alt={`${user.name}'s profile image`}
+                                            src={orgMember.user.image}
+                                            alt={`${orgMember.user.name}'s profile image`}
                                             className="rounded-full w-12 h-12"
                                         />
                                     )}
@@ -163,18 +116,44 @@ export default async function AdminModule_UserDetail_Page(
                             <CardContent>
                                 <FieldGroup>
                                     <Field orientation="responsive">
+                                        <FieldLabel>User ID</FieldLabel>
+                                        <FieldValue className="min-w-1/2">
+                                            {orgMember.user.id}
+                                        </FieldValue>
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Name</FieldLabel>
+                                        <FieldValue className="min-w-1/2">
+                                            {orgMember.user.name}
+                                        </FieldValue>
+                                    </Field>
+
+                                    <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
-                                        <FieldValue>
-                                            {user.email}
-                                            {user.emailVerified ? (
+                                        <FieldValue className="min-w-1/2">
+                                            {orgMember.user.email}
+                                            {orgMember.user.emailVerified ? (
                                                 <span className="text-muted-foreground ml-2"></span>
                                             ) : null}
                                         </FieldValue>
                                     </Field>
+
+                                    <FieldSeparator />
+
+                                    <Field orientation="responsive">
+                                        <FieldLabel>
+                                            Organization Member ID
+                                        </FieldLabel>
+                                        <FieldValue className="min-w-1/2">
+                                            {orgMember.id}
+                                        </FieldValue>
+                                    </Field>
+
                                     <Field orientation="responsive">
                                         <FieldLabel>Role</FieldLabel>
                                         <FieldValue
-                                            value={organizationMember.role
+                                            className="min-w-1/2"
+                                            value={orgMember.role
                                                 .map(
                                                     (role) =>
                                                         OrganizationRole
@@ -184,10 +163,11 @@ export default async function AdminModule_UserDetail_Page(
                                         />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldLabel>Joined</FieldLabel>
+                                        <FieldLabel>Created At</FieldLabel>
                                         <FieldValue
+                                            className="min-w-1/2"
                                             value={formatDate(
-                                                organizationMember.createdAt,
+                                                orgMember.createdAt,
                                             )}
                                         />
                                     </Field>

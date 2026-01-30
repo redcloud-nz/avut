@@ -22,7 +22,6 @@ import { Link } from "@/components/ui/link";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-
 import { formatDateTime } from "@/lib/datetime";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";

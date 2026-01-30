@@ -35,9 +35,8 @@ import {
 import { FieldValue } from "@/components/ui/field-value";
 
 import { authClient } from "@/lib/auth-client";
-import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationMemberId } from "@/lib/schemas/organization-member";
+import { OrganizationMemberData } from "@/lib/schemas/organization-member";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 
@@ -45,22 +44,13 @@ import { trpc } from "@/trpc/client";
 
 type AdminModule_UpdateUser_FormProps = {
     organization: OrganizationData;
-    organizationMemberId: OrganizationMemberId;
+    organizationMember: OrganizationMemberData;
 };
 
 export function AdminModule_UpdateUser_Form({
     organization,
-    organizationMemberId,
+    organizationMember,
 }: AdminModule_UpdateUser_FormProps) {
-    const [{ data: member }] = useSuspenseQueries({
-        queries: [
-            trpc.organizations.getOrganizationMember.queryOptions({
-                organizationId: organization.id,
-                organizationMemberId,
-            }),
-        ],
-    });
-
     const queryClient = useQueryClient();
     const router = useRouter();
 
@@ -71,7 +61,7 @@ export function AdminModule_UpdateUser_Form({
             }),
         ),
         defaultValues: {
-            role: member.role[0],
+            role: organizationMember.role[0],
         },
     });
 
@@ -80,7 +70,7 @@ export function AdminModule_UpdateUser_Form({
             const { data, error } =
                 await authClient.organization.updateMemberRole({
                     organizationId: organization.id,
-                    memberId: organizationMemberId,
+                    memberId: organizationMember.id,
                     role: formData.role,
                 });
             if (error) toast.error("Failed to update user role.");
@@ -90,7 +80,7 @@ export function AdminModule_UpdateUser_Form({
             await queryClient.invalidateQueries(
                 trpc.organizations.getOrganizationMember.queryFilter({
                     organizationId: organization.id,
-                    organizationMemberId,
+                    organizationMemberId: organizationMember.id,
                 }),
             );
             queryClient.invalidateQueries(
@@ -99,7 +89,7 @@ export function AdminModule_UpdateUser_Form({
                 }),
             );
             router.push(
-                Paths.org(organization.slug).admin.user(organizationMemberId)
+                Paths.org(organization.slug).admin.user(organizationMember.id)
                     .href,
             );
         },
@@ -121,7 +111,7 @@ export function AdminModule_UpdateUser_Form({
                             data-invalid={fieldState.invalid}
                             orientation="responsive"
                         >
-                            <FieldLabel htmlFor="role">Primary Role</FieldLabel>
+                            <FieldLabel htmlFor="role">Role</FieldLabel>
                             {field.value == "owner" ? (
                                 <FieldValue value="Owner" />
                             ) : (
@@ -167,7 +157,7 @@ export function AdminModule_UpdateUser_Form({
                     >
                         <Link
                             to={Paths.org(organization.slug).admin.user(
-                                organizationMemberId,
+                                organizationMember.id,
                             )}
                         >
                             Cancel

@@ -6,15 +6,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { DeleteObjectIcon, DropdownMenuTriggerIcon } from "@/components/icons";
+import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -22,13 +24,15 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
+    DropdownMenuGroupLabel,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldGroup } from "@/components/ui/field";
-import { ObjectName } from "@/components/ui/typography";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FieldValue } from "@/components/ui/field-value";
+import { ObjectName, Paragraph } from "@/components/ui/typography";
 
+import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationMemberData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
@@ -36,7 +40,6 @@ import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface AdminModule_UserMenuProps {
-    currentUserId: string;
     organization: OrganizationData;
     organizationMember: OrganizationMemberData;
     user: UserData;
@@ -46,28 +49,44 @@ export function AdminModule_UserMenu({
     organization,
     organizationMember,
     user,
-    currentUserId,
 }: AdminModule_UserMenuProps) {
     const queryClient = useQueryClient();
     const router = useRouter();
 
+    const { data: session } = authClient.useSession();
+
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const mutation = useMutation(
+    const deleteMutation = useMutation(
         trpc.organizations.removeOrganizationMember.mutationOptions({
-            onSuccess() {
-                setDeleteDialogOpen(false);
-
+            onSettled() {
                 queryClient.invalidateQueries(
                     trpc.organizations.listOrganizationMembers.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
-
-                router.push(Paths.org(organization.slug).admin.users.href);
             },
         }),
     );
+
+    function handleRemove() {
+        toast.promise(
+            async () => {
+                await deleteMutation.mutateAsync({
+                    organizationId: organization.id,
+                    organizationMemberId: organizationMember.id,
+                });
+                router.push(Paths.org(organization.slug).admin.users.href);
+            },
+            {
+                loading: "Removing user from organization...",
+                success: "User removed.",
+                error: (error) => "Failed to remove user: " + error.message,
+            },
+        );
+    }
+
+    const isSelf = organizationMember.userId === session?.user.id;
 
     return (
         <>
@@ -80,15 +99,15 @@ export function AdminModule_UserMenu({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuGroupLabel>Actions</DropdownMenuGroupLabel>
                         <DropdownMenuItem
                             onSelect={() => setDeleteDialogOpen(true)}
-                            disabled={
-                                organizationMember.userId === currentUserId
-                            }
+                            // disabled={
+                            //     organizationMember.userId === session?.user.id
+                            // }
                         >
-                            <DeleteObjectIcon />
-                            Delete User
+                            <ObjectIcons.Delete />
+                            Delete
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
@@ -96,34 +115,71 @@ export function AdminModule_UserMenu({
 
             {/* Delete confirmation dialog. */}
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete User</DialogTitle>
-                        <DialogDescription>
-                            Confirm removal of{" "}
-                            <ObjectName>{user.name}</ObjectName> from
-                            organization.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <FieldGroup>
-                        <Field orientation="horizontal">
+                {isSelf ? (
+                    <DialogContent className="lg:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>Cannot Remove User</DialogTitle>
+                            <DialogDescription>
+                                You cannot remove yourself from the
+                                organization.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Paragraph>
+                            <ObjectName>{user.name}</ObjectName> ({user.email})
+                            is your own user account. To leave this
+                            organization, please contact another organization
+                            administrator.
+                        </Paragraph>
+                        <DialogFooter>
+                            <Button onClick={() => setDeleteDialogOpen(false)}>
+                                OK
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                ) : (
+                    <DialogContent className="lg:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>Remove User</DialogTitle>
+                            <DialogDescription>
+                                Confirm removal of this user from the
+                                organization.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <FieldGroup>
+                            <Field orientation="responsive">
+                                <FieldLabel>User ID</FieldLabel>
+                                <FieldValue
+                                    className="min-w-1/2"
+                                    value={user.id}
+                                />
+                            </Field>
+                            <Field orientation="responsive">
+                                <FieldLabel>Name</FieldLabel>
+                                <FieldValue
+                                    className="min-w-1/2"
+                                    value={user.name}
+                                />
+                            </Field>
+                            <Field orientation="responsive">
+                                <FieldLabel>Email</FieldLabel>
+                                <FieldValue
+                                    className="min-w-1/2"
+                                    value={user.email}
+                                />
+                            </Field>
+                        </FieldGroup>
+                        <DialogFooter>
                             <Button
                                 type="submit"
                                 variant="destructive"
-                                disabled={mutation.isPending}
-                                onClick={() =>
-                                    mutation.mutate({
-                                        organizationId: organization.id,
-                                        organizationMemberId:
-                                            organizationMember.id,
-                                    })
-                                }
+                                disabled={deleteMutation.isPending}
+                                onClick={handleRemove}
                             >
-                                Delete
+                                Remove
                             </Button>
-                        </Field>
-                    </FieldGroup>
-                </DialogContent>
+                        </DialogFooter>
+                    </DialogContent>
+                )}
             </Dialog>
         </>
     );
