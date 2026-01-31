@@ -5,18 +5,30 @@
 
 import { z } from "zod";
 
-import { auth } from "@/server/auth";
+import { Notification } from "@/lib/schemas/notification";
+import prisma from "@/server/prisma";
 
 import { authenticatedProcedure, createTrpcRouter } from "../init";
 
 export const notificationsRouter = createTrpcRouter({
-    getUserNotifications: authenticatedProcedure.query(async ({ ctx }) => {
-        // Check if the user has any pending invitations.
+    getUserNotifications: authenticatedProcedure
+        .output(z.array(Notification.schema))
+        .query(async ({ ctx }) => {
+            // Fetch all pending invitations for the user
+            const invitations = await prisma.invitation.findMany({
+                where: {
+                    email: ctx.auth.user.email,
+                    status: "pending",
+                },
+                include: { organization: true, user: true },
+            });
 
-        const invitations = await auth.api.listUserInvitations({
-            query: {
-                email: ctx.auth.user.email,
-            },
-        });
-    }),
+            return invitations.map((invitation) => ({
+                id: invitation.id,
+                title: "Organization Invite",
+                description: `${invitation.user.name} invited you to join ${invitation.organization.name}.`,
+                path: `/personal/invitations/${invitation.id}`,
+                date: invitation.createdAt,
+            }));
+        }),
 });

@@ -5,40 +5,53 @@
 
 "use client";
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { NotificationsIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
 import {
     Notification,
     NotificationContent,
     NotificationDate,
     NotificationDescription,
-    NotificationFooter,
     NotificationHeader,
     Notifications,
     NotificationsEmpty,
     NotificationTitle,
     UnreadIndicator,
-} from "../ui/notification";
+} from "@/components/ui/notification";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
+import Link from "next/link";
 
 export function NotificationsMenu() {
+    const [open, setOpen] = useState(false);
+
+    const { data: notificationsData, isLoading } = useQuery(
+        trpc.notifications.getUserNotifications.queryOptions(),
+    );
+
+    const notifications = notificationsData ?? [];
+    const unreadCount = notifications.length;
+
+    const handleNotificationClick = () => {
+        setOpen(false);
+    };
+
     return (
-        <Popover>
+        <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative size-8">
                     <NotificationsIcon className="size-5" />
-                    {/* {notificationCount > 0 && (
-                        <span className="absolute -top-1 -right-1 size-4 flex items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-white">
-                            {notificationCount > 9 ? "9+" : notificationCount}
-                        </span>
-                    )} */}
+                    {unreadCount > 0 && (
+                        <span className="absolute top-1 right-1 size-2 rounded-full bg-primary" />
+                    )}
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="rounded-md w-120 p-0">
@@ -46,41 +59,47 @@ export function NotificationsMenu() {
                     <h3 className="text-sm font-semibold">Notifications</h3>
                 </div>
                 <Notifications className="max-h-[400px] overflow-y-auto">
-                    {/* {notificationCount === 0 ? (
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <p className="text-sm text-muted-foreground">
+                                Loading...
+                            </p>
+                        </div>
+                    ) : notifications.length === 0 ? (
                         <NotificationsEmpty />
                     ) : (
-                        <div className="divide-y">
-                            {invitations.map((invitation) => (
-                                <Notification key={invitation.id} asChild>
-                                    <Link to={Paths.orgs.select}>
+                        notifications.map((notification) => (
+                            <Link
+                                key={notification.id}
+                                href={notification.path}
+                                className="block hover:bg-accent transition-colors"
+                                onClick={handleNotificationClick}
+                            >
+                                <Notification asChild>
+                                    <div>
                                         <NotificationHeader>
-                                            <NotificationTitle>
-                                                Organization Invitation
-                                            </NotificationTitle>
-                                            <UnreadIndicator />
+                                            <div className="flex items-center gap-2">
+                                                <UnreadIndicator />
+                                                <NotificationTitle>
+                                                    {notification.title}
+                                                </NotificationTitle>
+                                            </div>
                                         </NotificationHeader>
                                         <NotificationContent>
                                             <NotificationDescription>
-                                                You have been invited to join
-                                                the organization "
-                                                {
-                                                    invitation
-                                                        .publicOrganizationData
-                                                        .name
-                                                }
-                                                ".
+                                                {notification.description}
                                             </NotificationDescription>
-                                        </NotificationContent>
-                                        <NotificationFooter>
                                             <NotificationDate
-                                                date={invitation.createdAt}
+                                                date={
+                                                    new Date(notification.date)
+                                                }
                                             />
-                                        </NotificationFooter>
-                                    </Link>
+                                        </NotificationContent>
+                                    </div>
                                 </Notification>
-                            ))}
-                        </div>
-                    )} */}
+                            </Link>
+                        ))
+                    )}
                 </Notifications>
             </PopoverContent>
         </Popover>

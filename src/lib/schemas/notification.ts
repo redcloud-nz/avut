@@ -5,7 +5,14 @@
 
 import { z } from "zod";
 
-const notificationSchema = z.object({
-    id: z.string(),
-    userId: z.string(),
-});
+export const Notification = {
+    schema: z.object({
+        id: z.string(),
+        title: z.string(),
+        description: z.string(),
+        path: z.string(),
+        date: z.date(),
+    }),
+} as const;
+
+export type Notification = z.infer<typeof Notification.schema>;
