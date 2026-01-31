@@ -9,12 +9,6 @@ export const about = {
 } as const;
 
 export const auth = {
-    acceptInvite: (inviteId: string) =>
-        ({
-            label: "Accept Invite",
-            href: `/auth/accept-invite/${inviteId}`,
-        }) as const,
-
     forgotPassword: {
         label: "Forgot Password",
         href: "/auth/forgot-password",
@@ -120,7 +114,6 @@ type OrgPaths = {
     dev: ReturnType<typeof devModule>;
     fog: ReturnType<typeof fogModule>;
     notes: ReturnType<typeof notesModule>;
-    personal: ReturnType<typeof personalModule>;
     skills: ReturnType<typeof skillsModule>;
     skillPackageManager: ReturnType<typeof skillPackageManagerModule>;
 };
@@ -140,7 +133,6 @@ export function org(orgSlug: string): OrgPaths {
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),
             notes: notesModule(orgSlug),
-            personal: personalModule(orgSlug),
             skills: skillsModule(orgSlug),
             skillPackageManager: skillPackageManagerModule(orgSlug),
         } satisfies OrgPaths;
@@ -149,6 +141,46 @@ export function org(orgSlug: string): OrgPaths {
 
     return paths;
 }
+
+export const personal = {
+    index: {
+        label: "Personal",
+        href: "/personal",
+    },
+
+    d4hAccessToken: (tokenId: string) =>
+        ({
+            href: `/personal/d4h-access-tokens/${tokenId}`,
+        }) as const,
+    d4hAccessTokens: {
+        label: "D4H Access Tokens",
+        href: `/personal/d4h-access-tokens`,
+        create: {
+            label: "Add Access Token",
+            href: `/personal/d4h-access-tokens/--create`,
+        },
+    },
+    invitation: (invitationId: string) =>
+        ({
+            href: `/personal/invitations/${invitationId}`,
+        }) as const,
+    invitations: {
+        label: "Invitations",
+        href: `/personal/invitations`,
+    },
+    settings: {
+        label: "Settings",
+        href: `/personal/settings`,
+    },
+    whoami: {
+        label: "Who Am I",
+        href: `/personal/whoami`,
+    },
+    profile: {
+        label: "Profile",
+        href: `/personal/profile`,
+    },
+} as const;
 
 // Modules
 
@@ -395,41 +427,6 @@ function notesModule(orgSlug: string) {
 
 function personalModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/personal` as const;
-
-    return {
-        label: "Personal",
-        href: base,
-
-        d4hAccessToken: (tokenId: string) =>
-            ({
-                href: `${base}/d4h-access-tokens/${tokenId}`,
-            }) as const,
-        d4hAccessTokens: {
-            label: "D4H Access Tokens",
-            href: `${base}/d4h-access-tokens`,
-
-            create: {
-                label: "Add Access Token",
-                href: `${base}/d4h-access-tokens/--create`,
-            },
-        },
-        dashboard: {
-            label: "Dashboard",
-            href: base,
-        },
-        settings: {
-            label: "Settings",
-            href: `${base}/settings`,
-        },
-        whoami: {
-            label: "Who Am I",
-            href: `${base}/whoami`,
-        },
-        profile: {
-            label: "Profile",
-            href: `${base}/profile`,
-        },
-    } as const;
 }
 
 function skillsModule(orgSlug: string) {

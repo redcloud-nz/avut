@@ -6,11 +6,13 @@
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTrpcRouter } from "../init";
 
+import { invitationsRouter } from "./invitations-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
 
 export const appRouter = createTrpcRouter({
+    invitations: invitationsRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,
     settings: settingsRouter,

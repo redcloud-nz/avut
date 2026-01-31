@@ -27,11 +27,10 @@ import {
 import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
-import { OrganizationData } from "@/lib/schemas/organization";
 import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
 
-export function UserMenu({ organization }: { organization: OrganizationData }) {
+export function UserMenu() {
     const router = useRouter();
 
     const { data: session } = authClient.useSession();
@@ -84,45 +83,21 @@ export function UserMenu({ organization }: { organization: OrganizationData }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link
-                            to={Paths.org(organization.slug).personal.profile}
-                        >
+                        <Link to={Paths.personal.profile}>
                             <PersonalProfileIcon />
-                            <span>
-                                {
-                                    Paths.org(organization.slug).personal
-                                        .profile.label
-                                }
-                            </span>
+                            <span>{Paths.personal.profile.label}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link
-                            to={Paths.org(organization.slug).personal.settings}
-                        >
+                        <Link to={Paths.personal.settings}>
                             <PersonalSettingsIcon />
-                            <span>
-                                {
-                                    Paths.org(organization.slug).personal
-                                        .settings.label
-                                }
-                            </span>
+                            <span>{Paths.personal.settings.label}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link
-                            to={
-                                Paths.org(organization.slug).personal
-                                    .d4hAccessTokens
-                            }
-                        >
+                        <Link to={Paths.personal.d4hAccessTokens}>
                             <PersonalD4HAccessTokensIcon />
-                            <span>
-                                {
-                                    Paths.org(organization.slug).personal
-                                        .d4hAccessTokens.label
-                                }
-                            </span>
+                            <span>{Paths.personal.d4hAccessTokens.label}</span>
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>

@@ -27,7 +27,7 @@ export const organizationsRouter = createTrpcRouter({
      * @returns The organization object.
      * @throws TRPCError(NOT_FOUND) if the organization does not exist.
      */
-    getOrganization: organizationProcedure().query(async ({ ctx, input }) => {
+    getOrganization: organizationProcedure().query(async ({ ctx }) => {
         const organization = await ctx.prisma.organization.findUnique({
             where: { id: ctx.organizationId },
         });
@@ -61,8 +61,12 @@ export const organizationsRouter = createTrpcRouter({
 
     /**
      * List all invitations for an organization.
+     *
+     *
      */
-    listOrganizationInvitations: organizationProcedure()
+    listOrganizationInvitations: organizationProcedure({
+        invitation: ["create"],
+    })
         .output(z.array(OrganizationInvitationData.schema))
         .query(async ({ ctx, input }) => {
             const invitations = await auth.api.listInvitations({

@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { headers as nextHeaders } from "next/headers";
 import { z } from "zod";
 
 import { auth } from "@/server/auth";
