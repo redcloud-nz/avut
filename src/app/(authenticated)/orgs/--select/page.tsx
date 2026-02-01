@@ -63,16 +63,18 @@ export default async function OrganizationSelect_Page() {
                     </CardHeader>
                     <CardContent>
                         <ItemGroup>
-                            <Item>
-                                <ItemMedia>
-                                    <UserIcon className="size-5" />
-                                </ItemMedia>
-                                <ItemContent>
-                                    <ItemTitle>Personal Account</ItemTitle>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
+                            <Item asChild>
+                                <Link to={Paths.personal.dashboard}>
+                                    <ItemMedia>
+                                        <UserIcon className="size-5" />
+                                    </ItemMedia>
+                                    <ItemContent>
+                                        <ItemTitle>Personal Account</ItemTitle>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
                             </Item>
                             <ItemSeparator />
                             {organizations.map((org) => (

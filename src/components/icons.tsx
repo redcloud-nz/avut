@@ -32,6 +32,7 @@ import {
     PlusIcon,
     PocketKnifeIcon,
     ScanEyeIcon,
+    SendIcon,
     SettingsIcon,
     ShieldHalfIcon,
     SlashIcon,
@@ -84,6 +85,7 @@ export {
     PackageIcon as SkillPackageManagerModuleIcon,
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
+    SendIcon as InvitationsIcon,
 };
 
 export const ObjectIcons = {

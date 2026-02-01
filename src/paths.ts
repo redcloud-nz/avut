@@ -148,6 +148,11 @@ export const personal = {
         href: "/personal",
     },
 
+    dashboard: {
+        label: "Dashboard",
+        href: "/personal",
+    },
+
     d4hAccessToken: (tokenId: string) =>
         ({
             href: `/personal/d4h-access-tokens/${tokenId}`,
