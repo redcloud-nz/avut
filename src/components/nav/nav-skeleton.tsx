@@ -7,7 +7,7 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuSkeleton,
-} from "../ui/sidebar";
+} from "@/components/ui/sidebar";
 
 export function NavSkeleton({ length = 5 }: { length?: number }) {
     return (

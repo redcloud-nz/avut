@@ -5,11 +5,9 @@
  * Path: /orgs/[org_slug]/admin/invitations/--create
  */
 
+import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { ToParentPageIcon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "@/components/ui/link";
 
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -35,23 +33,25 @@ export default async function AdminModule_CreateInvitation_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <Lexington.ColumnControls>
-                        <Button variant="outline" asChild>
-                            <Link to={Paths.org(slug).admin.invitations}>
-                                <ToParentPageIcon /> Invitations
-                            </Link>
-                        </Button>
-                    </Lexington.ColumnControls>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Invite new user</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <AdminModule_CreateInvitation_Form
-                                organization={organization}
-                            />
-                        </CardContent>
-                    </Card>
+                    <Hermes.Section>
+                        <Hermes.SectionHeader>
+                            <Hermes.BackButton
+                                to={Paths.org(slug).admin.invitations}
+                            >
+                                Invitations
+                            </Hermes.BackButton>
+                        </Hermes.SectionHeader>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Invite new user</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <AdminModule_CreateInvitation_Form
+                                    organization={organization}
+                                />
+                            </CardContent>
+                        </Card>
+                    </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

@@ -5,10 +5,8 @@
  * Paths: /orgs/[slug]/admin/personnel/--create
  */
 
+import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { ToParentPageIcon } from "@/components/icons";
-import { Link } from "@/components/ui/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import * as Paths from "@/paths";
@@ -32,23 +30,25 @@ export default async function AdminModule_PersonCreate_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <Lexington.ColumnControls>
-                        <Button variant="outline" asChild>
-                            <Link to={Paths.org(slug).admin.personnel}>
-                                <ToParentPageIcon /> Personnel
-                            </Link>
-                        </Button>
-                    </Lexington.ColumnControls>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>New Person Record</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <AdminModule_CreatePerson_Form
-                                organization={organization}
-                            />
-                        </CardContent>
-                    </Card>
+                    <Hermes.Section>
+                        <Hermes.SectionHeader>
+                            <Hermes.BackButton
+                                to={Paths.org(slug).admin.personnel}
+                            >
+                                Personnel
+                            </Hermes.BackButton>
+                        </Hermes.SectionHeader>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>New Person Record</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <AdminModule_CreatePerson_Form
+                                    organization={organization}
+                                />
+                            </CardContent>
+                        </Card>
+                    </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

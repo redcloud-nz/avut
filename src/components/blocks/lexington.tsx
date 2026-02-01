@@ -7,12 +7,20 @@
  * A page that contains a header and main content area, designed to be used within a sidebar layout.
  */
 
-import { ComponentProps, ReactNode } from "react";
-
+import Link from "next/link";
 import { Slot } from "radix-ui";
+import { ComponentProps, Fragment, ReactNode } from "react";
+import { tv, VariantProps } from "tailwind-variants";
 
-import { S2_AppPageHeader } from "@/components/app-page";
 import Artie from "@/components/art/artie";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
     Empty,
     EmptyContent,
@@ -21,9 +29,8 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-
-import { cn } from "@/lib/utils";
-import { tv, VariantProps } from "tailwind-variants";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 function LexingtonRoot({ children }: { children: ReactNode }) {
     return (
@@ -44,6 +51,80 @@ const lexingtonPageVariants = tv({
         },
     },
 });
+
+type BreadcrumbItem = { label: string; href?: string };
+
+function normalizeBreadcrumbs(
+    breadcrumbs: (BreadcrumbItem | string)[],
+): BreadcrumbItem[] {
+    return breadcrumbs.map((breadcrumb) =>
+        typeof breadcrumb === "string" ? { label: breadcrumb } : breadcrumb,
+    );
+}
+
+interface LexingtonBreadcrumbsProps {
+    breadcrumbs?: (BreadcrumbItem | string)[];
+}
+
+function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
+    const normalizedBreadcrumbs = normalizeBreadcrumbs(breadcrumbs);
+
+    return (
+        <Breadcrumb className="px-2">
+            <BreadcrumbList>
+                {normalizedBreadcrumbs.slice(0, -1).map((breadcrumb, idx) => (
+                    <Fragment key={idx}>
+                        <BreadcrumbItem className="hidden md:block">
+                            {breadcrumb.href ? (
+                                <BreadcrumbLink asChild>
+                                    <Link href={breadcrumb.href}>
+                                        {breadcrumb.label}
+                                    </Link>
+                                </BreadcrumbLink>
+                            ) : (
+                                <span className="text-muted-foreground">
+                                    {breadcrumb.label}
+                                </span>
+                            )}
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator className="hidden md:block" />
+                    </Fragment>
+                ))}
+                <BreadcrumbItem>
+                    <BreadcrumbPage>
+                        {
+                            normalizedBreadcrumbs[
+                                normalizedBreadcrumbs.length - 1
+                            ].label
+                        }
+                    </BreadcrumbPage>
+                </BreadcrumbItem>
+            </BreadcrumbList>
+        </Breadcrumb>
+    );
+}
+
+interface LexingtonHeaderProps {
+    breadcrumbs?: (BreadcrumbItem | string)[];
+    sidebarTrigger?: boolean;
+}
+
+export function LexingtonHeader({
+    breadcrumbs,
+    sidebarTrigger = true,
+}: LexingtonHeaderProps) {
+    return (
+        <header className="bg-background sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md">
+            {sidebarTrigger && (
+                <>
+                    <SidebarTrigger />
+                    <Separator orientation="vertical" className="ml-1" />
+                </>
+            )}
+            {breadcrumbs && <LexingtonBreadcrumbs breadcrumbs={breadcrumbs} />}
+        </header>
+    );
+}
 
 function LexingtonPage({
     asChild = false,
@@ -128,24 +209,10 @@ function LexingtonColumn({
     );
 }
 
-function LexingtonColumnControls({
-    className,
-    ...props
-}: ComponentProps<"div">) {
-    return (
-        <div
-            className={cn(" w-full flex gap-2 justify-between", className)}
-            data-component="LexingtonColumnControls"
-            {...props}
-        />
-    );
-}
-
 export const Lexington = {
     Root: LexingtonRoot,
-    Header: S2_AppPageHeader,
+    Header: LexingtonHeader,
     Page: LexingtonPage,
     Empty: LexingtonEmpty,
     Column: LexingtonColumn,
-    ColumnControls: LexingtonColumnControls,
 };

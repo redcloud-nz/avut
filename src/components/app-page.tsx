@@ -36,46 +36,6 @@ import {
 import { Heading } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
-interface AppPageProps {
-    children?: ReactNode;
-    showLeftSidebarTrigger?: boolean;
-    showRightSidebarTrigger?: boolean;
-    rightControls?: ReactNode;
-}
-
-export function AppPage({
-    children,
-    rightControls,
-    showLeftSidebarTrigger = true,
-    showRightSidebarTrigger = false,
-}: AppPageProps) {
-    return (
-        <div className="h-screen flex-1 grid grid-rows-[48px_1px_1fr] grid-cols-[auto_1fr_auto] overflow-hidden">
-            {showLeftSidebarTrigger && (
-                <div className="row-1 col-1 flex justify-center items-center pl-2 gap-2">
-                    <SidebarTrigger />
-                    <Separator orientation="vertical" />
-                </div>
-            )}
-
-            <div className="row-1 col-3 flex justify-center items-center pr-1 gap-1">
-                {rightControls ? rightControls : null}
-                {showRightSidebarTrigger ? (
-                    <>
-                        <Separator orientation="vertical" />
-                        {/* <S2_SidebarTrigger side="right"/> */}
-                    </>
-                ) : null}
-            </div>
-            <Separator
-                className="row-start-2 col-span-full"
-                orientation="horizontal"
-            />
-            {children}
-        </div>
-    );
-}
-
 export const appPageContentVariants = tv({
     base: "col-span-full",
     variants: {
@@ -92,67 +52,6 @@ export const appPageContentVariants = tv({
     },
 });
 
-export type AppPageContentProps = ComponentProps<
-    typeof ScrollAreaPrimitive.Root
-> &
-    VariantProps<typeof appPageContentVariants>;
-
-export function AppPageContent({
-    children,
-    className,
-    variant = "default",
-    ...props
-}: AppPageContentProps) {
-    return (
-        <main
-            className={cn(appPageContentVariants({ variant, className }))}
-            {...props}
-        >
-            {children}
-        </main>
-    );
-}
-
-interface ScrollablePageContentProps {
-    children: ReactNode;
-    slotProps?: {
-        scrollArea?: Omit<ComponentProps<typeof ScrollArea>, "children">;
-        main?: Omit<ComponentProps<"main">, "children">;
-    };
-}
-
-export function ScrollablePageContent({
-    children,
-    slotProps = {},
-}: ScrollablePageContentProps) {
-    const { scrollArea: scrollAreaProps, main: mainProps } = {
-        scrollArea: {},
-        main: {},
-        ...slotProps,
-    };
-
-    return (
-        <ScrollArea
-            style={{ height: `calc(100vh - var(--header-height))` }}
-            className={cn(
-                "col-span-full [&>[data-slot=scroll-area-viewport]]:pb-8",
-                scrollAreaProps.className,
-            )}
-            {...omit(scrollAreaProps, ["className"])}
-        >
-            <main
-                className={cn(
-                    "max-w-4xl mx-auto space-y-4 p-4",
-                    mainProps.className,
-                )}
-                {...omit(mainProps, ["className"])}
-            >
-                {children}
-            </main>
-        </ScrollArea>
-    );
-}
-
 export type PageBreadcrumb = { label: string; href?: string };
 
 function normalizeBreadcrumbs(
@@ -165,18 +64,6 @@ function normalizeBreadcrumbs(
 
 export interface AppPageBreadcrumbsProps {
     breadcrumbs?: (PageBreadcrumb | string)[];
-}
-
-export function AppPageBreadcrumbs({
-    breadcrumbs = [],
-}: AppPageBreadcrumbsProps) {
-    if (breadcrumbs.length === 0) return null;
-
-    return (
-        <div className="row-1 col-2 flex items-center h-12 gap-2 pr-2">
-            <AppPageBreadcrumbs_Inner breadcrumbs={breadcrumbs} />
-        </div>
-    );
 }
 
 function AppPageBreadcrumbs_Inner({
@@ -232,7 +119,7 @@ export function S2_AppPageHeader({
     sidebarTrigger = true,
 }: AppPageHeaderProps) {
     return (
-        <header className="bg-background sticky top-0 flex h-[var(--header-height)] shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md">
+        <header className="bg-background sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md">
             {sidebarTrigger && (
                 <>
                     <SidebarTrigger />
@@ -243,125 +130,5 @@ export function S2_AppPageHeader({
                 <AppPageBreadcrumbs_Inner breadcrumbs={breadcrumbs} />
             )}
         </header>
-    );
-}
-
-export function S2_AppPageMain({ children, ...props }: ComponentProps<"main">) {
-    return (
-        <main className="h-[calc(100vh - var(--header-height))] p-4" {...props}>
-            {children}
-        </main>
-    );
-}
-
-export function AppPageControls({
-    children,
-    className,
-}: ComponentProps<"div">) {
-    return (
-        <div
-            className={cn(
-                "row-start-1 col-start-3 flex items-center gap-1 pr-1",
-                className,
-            )}
-        >
-            {children}
-        </div>
-    );
-}
-
-export function PageHeader({ className, ...props }: ComponentProps<"header">) {
-    return (
-        <header
-            className={cn(
-                "grid",
-                "md:grid-cols-2 md:grid-rows-[auto_auto] ",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-export type PageTitleProps = ComponentProps<"h1"> & {
-    objectType?: string;
-};
-
-export function PageTitle({
-    children,
-    className,
-    objectType,
-    ...props
-}: PageTitleProps) {
-    return (
-        <Heading
-            level={1}
-            className={cn("row-start-1", className)}
-            data-slot="title"
-            {...props}
-        >
-            {objectType ? (
-                <div className="text-sm font-normal tracking-normal text-muted-foreground">
-                    {objectType}
-                </div>
-            ) : null}
-            {children}
-        </Heading>
-    );
-}
-
-export function PageDescription({ className, ...props }: ComponentProps<"p">) {
-    return (
-        <p
-            className={cn(
-                "mt-2 text-sm text-gray-700 hidden md:block",
-                "row-start-2",
-                className,
-            )}
-            data-slot="description"
-            {...props}
-        />
-    );
-}
-
-export function PageControls({ className, ...props }: ComponentProps<"div">) {
-    return (
-        <div
-            className={cn(
-                "row-start-1 row-span-2 col-start-2 justify-self-end self-end",
-                "flex gap-2",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-export function PageExplanation({
-    className,
-    ...props
-}: ComponentProps<"div">) {
-    return (
-        <Popover>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <InfoIcon />
-                        </Button>
-                    </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Page Explanation</TooltipContent>
-            </Tooltip>
-            <PopoverContent align="end" className="w-96">
-                <div
-                    className={cn(
-                        "text-sm text-muted-foreground space-y-2",
-                        className,
-                    )}
-                    {...props}
-                />
-            </PopoverContent>
-        </Popover>
     );
 }
