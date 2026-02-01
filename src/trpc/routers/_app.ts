@@ -11,6 +11,7 @@ import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
+import { teamsRouter } from "./teams-router";
 
 export const appRouter = createTrpcRouter({
     invitations: invitationsRouter,
@@ -18,6 +19,7 @@ export const appRouter = createTrpcRouter({
     organizations: organizationsRouter,
     personnel: personnelRouter,
     settings: settingsRouter,
+    teams: teamsRouter,
 });
 
 export type AppRouter = typeof appRouter;

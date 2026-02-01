@@ -346,7 +346,7 @@ export const personnelRouter = createTrpcRouter({
                     action: "Update",
                     objectType: "Person",
                     objectId: personId,
-                    changes: changes,
+                    changes,
                 });
 
                 // Clear cached data

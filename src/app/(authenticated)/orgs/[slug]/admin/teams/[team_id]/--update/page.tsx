@@ -2,22 +2,36 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/teams/--create
+ * Paths: /orgs/[slug]/admin/teams/[team_id]/--update
  */
+"use client";
+
+import { use } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { useOrganization } from "@/hooks/use-organization";
 import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
-import { AdminModule_CreateTeam_Form } from "./create-team";
+import { trpc } from "@/trpc/client";
 
-export default async function AdminModule_TeamCreate_Page(
-    props: PageProps<`/orgs/[slug]/admin/teams/--create`>,
-) {
-    const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+import { AdminModule_UpdateTeam_Form } from "./update-team";
+
+export default function AdminModule_TeamUpdate_Page(props: any) {
+    const { slug, team_id } = use(props.params) as any;
+    const organization = useOrganization();
+
+    const { data: team } = useSuspenseQuery(
+        trpc.teams.getTeam.queryOptions({
+            organizationId: organization.id,
+            teamId: team_id,
+        }),
+    );
+
+    const adminPath = Paths.org(slug).admin.index.href;
 
     return (
         <Lexington.Root>
@@ -25,24 +39,31 @@ export default async function AdminModule_TeamCreate_Page(
                 breadcrumbs={[
                     Paths.org(slug).admin.index,
                     Paths.org(slug).admin.teams,
-                    Paths.org(slug).admin.teams.create,
+                    {
+                        href: Paths.org(slug).admin.team(team_id).href,
+                        label: team.name,
+                    },
+                    "Update",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.SectionHeader>
-                            <Hermes.BackButton to={Paths.org(slug).admin.teams}>
-                                Teams
+                            <Hermes.BackButton
+                                to={Paths.org(slug).admin.team(team_id)}
+                            >
+                                {team.name}
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
                         <Card>
                             <CardHeader>
-                                <CardTitle>New Team</CardTitle>
+                                <CardTitle>Update Team</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <AdminModule_CreateTeam_Form
+                                <AdminModule_UpdateTeam_Form
                                     organization={organization}
+                                    team={team}
                                 />
                             </CardContent>
                         </Card>
