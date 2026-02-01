@@ -38,6 +38,13 @@ const personSchema = z.object({
 export const PersonData = {
     schema: personSchema,
 
+    modifiableSchema: personSchema.pick({
+        name: true,
+        email: true,
+        tags: true,
+        properties: true,
+    }),
+
     fromRecord: (record: PersonRecord): PersonData =>
         personSchema.parse({
             ...record,

@@ -125,6 +125,9 @@ model OrganizationConfig {
 model Team {
   id             String       @id
   name           String
+  description    String       @default("")
+  tags           String[]     @default([])
+  properties     Json         @default("{}")
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime

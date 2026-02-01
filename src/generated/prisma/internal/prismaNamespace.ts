@@ -2280,6 +2280,9 @@ export type OrganizationConfigScalarFieldEnum =
 export const TeamScalarFieldEnum = {
     id: "id",
     name: "name",
+    description: "description",
+    tags: "tags",
+    properties: "properties",
     organizationId: "organizationId",
     createdAt: "createdAt",
     updatedAt: "updatedAt",

@@ -75,58 +75,54 @@ export const personnelRouter = createTrpcRouter({
      */
     createPerson: organizationProcedure({ person: ["create"] })
         .input(
-            PersonData.schema.pick({
-                id: true,
-                name: true,
-                email: true,
-                tags: true,
-                properties: true,
-            }),
+            PersonData.modifiableSchema.extend({ personId: PersonId.schema }),
         )
         .output(PersonData.schema)
-        .mutation(async ({ ctx, input: person }) => {
-            // Check for conflicts
-            const [emailConflict] = await Promise.all([
-                ctx.prisma.person.findFirst({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        email: person.email,
-                    },
-                }),
-            ]);
+        .mutation(
+            async ({ ctx, input: { personId, organizationId, ...person } }) => {
+                // Check for conflicts
+                const [emailConflict] = await Promise.all([
+                    ctx.prisma.person.findFirst({
+                        where: {
+                            organizationId: ctx.organizationId,
+                            email: person.email,
+                        },
+                    }),
+                ]);
 
-            if (emailConflict)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message:
-                        "A person with this email address already exists in this organization.",
-                    cause: new FieldConflictError("email"),
+                if (emailConflict)
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message:
+                            "A person with this email address already exists in this organization.",
+                        cause: new FieldConflictError("email"),
+                    });
+
+                const created = await ctx.prisma.person.create({
+                    data: {
+                        id: personId,
+                        organizationId: ctx.organizationId,
+                        name: person.name,
+                        email: person.email,
+                        tags: person.tags,
+                        properties: person.properties,
+                        status: "Active",
+                    },
                 });
 
-            const created = await ctx.prisma.person.create({
-                data: {
-                    id: person.id,
-                    organizationId: ctx.organizationId,
-                    name: person.name,
-                    email: person.email,
-                    tags: person.tags,
-                    properties: person.properties,
-                    status: "Active",
-                },
-            });
+                // Calculate changes from empty record
+                const changes = diffObject({}, person);
 
-            // Calculate changes from empty record
-            const changes = diffObject({}, person);
+                await ctx.logEvent({
+                    action: "Create",
+                    objectType: "Person",
+                    objectId: created.id,
+                    changes: changes,
+                });
 
-            await ctx.logEvent({
-                action: "Create",
-                objectType: "Person",
-                objectId: created.id,
-                changes: changes,
-            });
-
-            return PersonData.fromRecord(created);
-        }),
+                return PersonData.fromRecord(created);
+            },
+        ),
 
     /**
      * Delete a person from the organization.
@@ -301,20 +297,11 @@ export const personnelRouter = createTrpcRouter({
      */
     updatePerson: organizationProcedure({ person: ["update"] })
         .input(
-            PersonData.schema.pick({
-                id: true,
-                name: true,
-                email: true,
-                tags: true,
-                properties: true,
-            }),
+            PersonData.modifiableSchema.extend({ personId: PersonId.schema }),
         )
         .output(PersonData.schema)
         .mutation(
-            async ({
-                ctx,
-                input: { id: personId, organizationId, ...update },
-            }) => {
+            async ({ ctx, input: { personId, organizationId, ...update } }) => {
                 const existing = await ctx.prisma.person.findUnique({
                     where: { organizationId: ctx.organizationId, id: personId },
                 });
@@ -344,14 +331,7 @@ export const personnelRouter = createTrpcRouter({
 
                 // Calculate changes from existing record
                 const changes = diffObject(
-                    PersonData.schema
-                        .pick({
-                            name: true,
-                            email: true,
-                            tags: true,
-                            properties: true,
-                        })
-                        .parse(existing),
+                    PersonData.modifiableSchema.parse(existing),
                     update,
                 );
 
