@@ -40,3 +40,10 @@ export async function getOrganizationBySlug(
 export async function revalidateOrganization(slug: string) {
     revalidateTag(`organization-${slug}`, { expire: 0 });
 }
+
+export async function getAllOrganizationSlugs(): Promise<string[]> {
+    const records = await prisma.organization.findMany({
+        select: { slug: true },
+    });
+    return records.map((r) => r.slug);
+}

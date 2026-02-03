@@ -5,7 +5,6 @@
  *  Path: /
  */
 
-import { ControlBar } from "@/components/nav/control-bar";
 import { Providers } from "./providers";
 
 export default function AuthenticatedLayout(props: LayoutProps<"/">) {

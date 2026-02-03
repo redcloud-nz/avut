@@ -187,6 +187,39 @@ export const personal = {
     },
 } as const;
 
+export function pub(slug: string) {
+    const base = `/pub/orgs/${slug}` as const;
+
+    return {
+        forms: {
+            index: {
+                label: "Forms",
+                href: `${base}/forms`,
+            },
+
+            ppe: {
+                label: "PPE",
+                href: `${base}/forms/ppe`,
+
+                borrow: {
+                    label: "Borrow",
+                    href: `${base}/forms/ppe/borrow`,
+                },
+
+                issue: {
+                    label: "Issue",
+                    href: `${base}/forms/ppe/issue`,
+                },
+
+                return: {
+                    label: "Return",
+                    href: `${base}/forms/ppe/return`,
+                },
+            },
+        },
+    } as const;
+}
+
 // Modules
 
 function adminModule(org_slug: string) {
