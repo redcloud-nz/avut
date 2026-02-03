@@ -10,11 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +25,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Spinner } from "@/components/ui/spinner";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { PersonData } from "@/lib/schemas/person";
+import { PersonData, PersonModifiableData } from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
@@ -47,14 +43,7 @@ export function AdminModule_UpdatePerson_Form({
     const router = useRouter();
 
     const form = useForm({
-        resolver: zodResolver(
-            PersonData.schema.pick({
-                name: true,
-                email: true,
-                tags: true,
-                properties: true,
-            }),
-        ),
+        resolver: zodResolver(PersonData.modifiableSchema),
         defaultValues: person,
     });
 
@@ -63,10 +52,7 @@ export function AdminModule_UpdatePerson_Form({
             async onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause.message as keyof Pick<
-                            PersonData,
-                            "name" | "email" | "tags" | "properties"
-                        >,
+                        error.shape.cause.message as keyof PersonModifiableData,
                         { message: error.shape.message },
                     );
                 } else {
@@ -104,7 +90,7 @@ export function AdminModule_UpdatePerson_Form({
             onSubmit={form.handleSubmit((formData) =>
                 mutation.mutate({
                     organizationId: organization.id,
-                    id: person.id,
+                    personId: person.id,
                     ...formData,
                 }),
             )}

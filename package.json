@@ -5,7 +5,7 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.7.6",
+    "version": "0.7.7",
     "versionName": "Philomel"
   },
   "scripts": {
@@ -33,7 +33,7 @@
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@mdxeditor/editor": "^3.42.0",
     "@prisma/adapter-pg": "^7.1.0",
-    "@prisma/client": "^7.1.0",
+    "@prisma/client": "^7.3.0",
     "@react-email/components": "^1.0.1",
     "@tanstack/react-query": "^5.75.4",
     "@tanstack/react-query-devtools": "^5.75.4",
@@ -107,7 +107,7 @@
     "openapi-typescript": "^7.4.2",
     "postcss": "^8",
     "prettier": "3.7.1",
-    "prisma": "^7.1.0",
+    "prisma": "^7.3.0",
     "prismock": "^1.35.4",
     "react-email": "5.0.5",
     "tailwindcss": "^4.1.17",

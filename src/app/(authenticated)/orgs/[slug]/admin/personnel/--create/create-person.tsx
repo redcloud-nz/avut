@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -140,6 +139,9 @@ export function AdminModule_CreatePerson_Form({
                                 <FieldDescription>
                                     Must be unique within the organization.
                                 </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
                             </FieldContent>
 
                             <Input
@@ -149,10 +151,6 @@ export function AdminModule_CreatePerson_Form({
                                 className="min-w-1/2"
                                 {...field}
                             />
-
-                            {fieldState.error && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
                         </Field>
                     )}
                 />

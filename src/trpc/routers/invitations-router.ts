@@ -16,7 +16,11 @@ import { UserData } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
 import prisma from "@/server/prisma";
 
-import { authenticatedProcedure, createTrpcRouter } from "../init";
+import {
+    authenticatedProcedure,
+    createTrpcRouter,
+    organizationProcedure,
+} from "../init";
 
 /**
  * Router for handling a users invitations.
@@ -37,7 +41,7 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const invitation = await prisma.invitation.findUnique({
+            const invitation = await prisma.organizationInvitation.findUnique({
                 where: {
                     id: input.invitationId,
                     status: "pending",
@@ -70,6 +74,70 @@ export const invitationsRouter = createTrpcRouter({
         }),
 
     /**
+     * Create a new organization invitation.
+     *
+     * @param ctx The authenticated context.
+     * @param input The invitation data.
+     * @returns The created invitation.
+     */
+    createInvitation: organizationProcedure({ invitation: ["create"] })
+        .input(
+            z.object({
+                email: z.email(),
+                role: z.enum(["admin", "member"]),
+            }),
+        )
+        .output(OrganizationInvitationData.schema)
+        .mutation(async ({ ctx, input }) => {
+            // Check for an existing pending invitation
+            const existingInvitation =
+                await prisma.organizationInvitation.findFirst({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        email: input.email,
+                        status: "pending",
+                    },
+                });
+
+            if (existingInvitation) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message:
+                        "An invitation has already been sent to this email.",
+                });
+            }
+
+            // Check if a user with this email is already a member of the organization
+            const existingUser = await prisma.organizationUser.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    user: {
+                        email: input.email,
+                    },
+                },
+            });
+
+            if (existingUser) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message:
+                        "A user with this email already exists in the organization.",
+                });
+            }
+
+            const invitation = await auth.api.createInvitation({
+                body: {
+                    organizationId: ctx.organizationId,
+                    email: input.email,
+                    role: input.role,
+                },
+                headers: ctx.headers,
+            });
+
+            return OrganizationInvitationData.fromRecord(invitation);
+        }),
+
+    /**
      * Retrieves an invitation by ID.
      *
      * @param ctx The authenticated context.
@@ -98,7 +166,7 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .query(async ({ ctx, input }) => {
-            const invitation = await prisma.invitation.findUnique({
+            const invitation = await prisma.organizationInvitation.findUnique({
                 where: {
                     id: input.invitationId,
                     status: "pending",
@@ -142,7 +210,7 @@ export const invitationsRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const invitations = await prisma.invitation.findMany({
+            const invitations = await prisma.organizationInvitation.findMany({
                 where: {
                     email: ctx.auth.user.email,
                 },
@@ -175,7 +243,7 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const invitation = await prisma.invitation.findUnique({
+            const invitation = await prisma.organizationInvitation.findUnique({
                 where: {
                     id: input.invitationId,
                     status: "pending",

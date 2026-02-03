@@ -297,7 +297,7 @@ export type SkillWhereInput = {
     > | null;
     checks?: Prisma.SkillCheckListRelationFilter;
     sessions?: Prisma.SkillCheckSessionListRelationFilter;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideListRelationFilter;
+    subscriptionOverrides?: Prisma.SkillOverrideListRelationFilter;
 };
 
 export type SkillOrderByWithRelationInput = {
@@ -319,7 +319,7 @@ export type SkillOrderByWithRelationInput = {
     skillGroup?: Prisma.SkillGroupOrderByWithRelationInput;
     checks?: Prisma.SkillCheckOrderByRelationAggregateInput;
     sessions?: Prisma.SkillCheckSessionOrderByRelationAggregateInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideOrderByRelationAggregateInput;
+    subscriptionOverrides?: Prisma.SkillOverrideOrderByRelationAggregateInput;
 };
 
 export type SkillWhereUniqueInput = Prisma.AtLeast<
@@ -351,7 +351,7 @@ export type SkillWhereUniqueInput = Prisma.AtLeast<
         > | null;
         checks?: Prisma.SkillCheckListRelationFilter;
         sessions?: Prisma.SkillCheckSessionListRelationFilter;
-        subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideListRelationFilter;
+        subscriptionOverrides?: Prisma.SkillOverrideListRelationFilter;
     },
     "id"
 >;
@@ -424,7 +424,7 @@ export type SkillCreateInput = {
     skillGroup?: Prisma.SkillGroupCreateNestedOneWithoutSkillsInput;
     checks?: Prisma.SkillCheckCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUncheckedCreateInput = {
@@ -444,7 +444,7 @@ export type SkillUncheckedCreateInput = {
     updatedAt?: Date | string;
     checks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUpdateInput = {
@@ -466,7 +466,7 @@ export type SkillUpdateInput = {
     skillGroup?: Prisma.SkillGroupUpdateOneWithoutSkillsNestedInput;
     checks?: Prisma.SkillCheckUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateInput = {
@@ -491,7 +491,7 @@ export type SkillUncheckedUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillCreateManyInput = {
@@ -953,7 +953,7 @@ export type SkillCreateWithoutSkillPackageInput = {
     skillGroup?: Prisma.SkillGroupCreateNestedOneWithoutSkillsInput;
     checks?: Prisma.SkillCheckCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUncheckedCreateWithoutSkillPackageInput = {
@@ -972,7 +972,7 @@ export type SkillUncheckedCreateWithoutSkillPackageInput = {
     updatedAt?: Date | string;
     checks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillCreateOrConnectWithoutSkillPackageInput = {
@@ -1054,7 +1054,7 @@ export type SkillCreateWithoutSkillGroupInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutSkillsInput;
     checks?: Prisma.SkillCheckCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUncheckedCreateWithoutSkillGroupInput = {
@@ -1073,7 +1073,7 @@ export type SkillUncheckedCreateWithoutSkillGroupInput = {
     updatedAt?: Date | string;
     checks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutSkillInput;
     sessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillCreateOrConnectWithoutSkillGroupInput = {
@@ -1135,7 +1135,7 @@ export type SkillCreateWithoutSessionsInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutSkillsInput;
     skillGroup?: Prisma.SkillGroupCreateNestedOneWithoutSkillsInput;
     checks?: Prisma.SkillCheckCreateNestedManyWithoutSkillInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUncheckedCreateWithoutSessionsInput = {
@@ -1154,7 +1154,7 @@ export type SkillUncheckedCreateWithoutSessionsInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     checks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutSkillInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillCreateOrConnectWithoutSessionsInput = {
@@ -1209,7 +1209,7 @@ export type SkillCreateWithoutChecksInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutSkillsInput;
     skillGroup?: Prisma.SkillGroupCreateNestedOneWithoutSkillsInput;
     sessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillUncheckedCreateWithoutChecksInput = {
@@ -1228,7 +1228,7 @@ export type SkillUncheckedCreateWithoutChecksInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     sessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutSkillsInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSkillInput;
 };
 
 export type SkillCreateOrConnectWithoutChecksInput = {
@@ -1277,7 +1277,7 @@ export type SkillUpdateWithoutChecksInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
     skillGroup?: Prisma.SkillGroupUpdateOneWithoutSkillsNestedInput;
     sessions?: Prisma.SkillCheckSessionUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateWithoutChecksInput = {
@@ -1301,7 +1301,7 @@ export type SkillUncheckedUpdateWithoutChecksInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     sessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillCreateWithoutSubscriptionOverridesInput = {
@@ -1449,7 +1449,7 @@ export type SkillUpdateWithoutSkillPackageInput = {
     skillGroup?: Prisma.SkillGroupUpdateOneWithoutSkillsNestedInput;
     checks?: Prisma.SkillCheckUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateWithoutSkillPackageInput = {
@@ -1473,7 +1473,7 @@ export type SkillUncheckedUpdateWithoutSkillPackageInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateManyWithoutSkillPackageInput = {
@@ -1531,7 +1531,7 @@ export type SkillUpdateWithoutSkillGroupInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
     checks?: Prisma.SkillCheckUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateWithoutSkillGroupInput = {
@@ -1552,7 +1552,7 @@ export type SkillUncheckedUpdateWithoutSkillGroupInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
     sessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutSkillsNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateManyWithoutSkillGroupInput = {
@@ -1591,7 +1591,7 @@ export type SkillUpdateWithoutSessionsInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
     skillGroup?: Prisma.SkillGroupUpdateOneWithoutSkillsNestedInput;
     checks?: Prisma.SkillCheckUpdateManyWithoutSkillNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateWithoutSessionsInput = {
@@ -1615,7 +1615,7 @@ export type SkillUncheckedUpdateWithoutSessionsInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionSkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
+    subscriptionOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput;
 };
 
 export type SkillUncheckedUpdateManyWithoutSessionsInput = {
@@ -1701,7 +1701,7 @@ export type SkillCountOutputTypeCountSubscriptionOverridesArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    where?: Prisma.SkillPackageSubscriptionSkillOverrideWhereInput;
+    where?: Prisma.SkillOverrideWhereInput;
 };
 
 export type SkillSelect<
@@ -1860,7 +1860,7 @@ export type $SkillPayload<
         skillGroup: Prisma.$SkillGroupPayload<ExtArgs> | null;
         checks: Prisma.$SkillCheckPayload<ExtArgs>[];
         sessions: Prisma.$SkillCheckSessionPayload<ExtArgs>[];
-        subscriptionOverrides: Prisma.$SkillPackageSubscriptionSkillOverridePayload<ExtArgs>[];
+        subscriptionOverrides: Prisma.$SkillOverridePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -2489,7 +2489,7 @@ export interface Prisma__SkillClient<
         >,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
-              Prisma.$SkillPackageSubscriptionSkillOverridePayload<ExtArgs>,
+              Prisma.$SkillOverridePayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -3098,27 +3098,27 @@ export type Skill$subscriptionOverridesArgs<
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the SkillPackageSubscriptionSkillOverride
+     * Select specific fields to fetch from the SkillOverride
      */
-    select?: Prisma.SkillPackageSubscriptionSkillOverrideSelect<ExtArgs> | null;
+    select?: Prisma.SkillOverrideSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the SkillPackageSubscriptionSkillOverride
+     * Omit specific fields from the SkillOverride
      */
-    omit?: Prisma.SkillPackageSubscriptionSkillOverrideOmit<ExtArgs> | null;
+    omit?: Prisma.SkillOverrideOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.SkillPackageSubscriptionSkillOverrideInclude<ExtArgs> | null;
-    where?: Prisma.SkillPackageSubscriptionSkillOverrideWhereInput;
+    include?: Prisma.SkillOverrideInclude<ExtArgs> | null;
+    where?: Prisma.SkillOverrideWhereInput;
     orderBy?:
-        | Prisma.SkillPackageSubscriptionSkillOverrideOrderByWithRelationInput
-        | Prisma.SkillPackageSubscriptionSkillOverrideOrderByWithRelationInput[];
-    cursor?: Prisma.SkillPackageSubscriptionSkillOverrideWhereUniqueInput;
+        | Prisma.SkillOverrideOrderByWithRelationInput
+        | Prisma.SkillOverrideOrderByWithRelationInput[];
+    cursor?: Prisma.SkillOverrideWhereUniqueInput;
     take?: number;
     skip?: number;
     distinct?:
-        | Prisma.SkillPackageSubscriptionSkillOverrideScalarFieldEnum
-        | Prisma.SkillPackageSubscriptionSkillOverrideScalarFieldEnum[];
+        | Prisma.SkillOverrideScalarFieldEnum
+        | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**

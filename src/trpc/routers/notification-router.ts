@@ -15,7 +15,7 @@ export const notificationsRouter = createTrpcRouter({
         .output(z.array(Notification.schema))
         .query(async ({ ctx }) => {
             // Fetch all pending invitations for the user
-            const invitations = await prisma.invitation.findMany({
+            const invitations = await prisma.organizationInvitation.findMany({
                 where: {
                     email: ctx.auth.user.email,
                     status: "pending",

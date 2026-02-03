@@ -13,6 +13,10 @@ import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import { AdminModule_CreateTeam_Form } from "./create-team";
 
+export const metadata = {
+    title: `Create Team`,
+};
+
 export default async function AdminModule_TeamCreate_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/--create`>,
 ) {

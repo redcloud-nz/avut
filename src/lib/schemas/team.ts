@@ -48,3 +48,5 @@ export const TeamData = {
 } as const;
 
 export type TeamData = z.infer<typeof teamSchema>;
+
+export type ModifiableTeamData = z.infer<typeof TeamData.modifiableSchema>;

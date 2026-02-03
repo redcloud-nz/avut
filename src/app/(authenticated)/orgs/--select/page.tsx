@@ -84,7 +84,7 @@ export default async function OrganizationSelect_Page() {
                                             <Building2Icon className="size-5" />
                                         </ItemMedia>
                                         <ItemContent>
-                                            <ItemTitle>Sandbox A</ItemTitle>
+                                            <ItemTitle>{org.name}</ItemTitle>
                                         </ItemContent>
                                         <ItemActions>
                                             <ChevronRightIcon className="size-4" />

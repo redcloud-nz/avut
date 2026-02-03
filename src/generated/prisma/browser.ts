@@ -57,20 +57,20 @@ export type Team = Prisma.TeamModel;
  */
 export type TeamConfig = Prisma.TeamConfigModel;
 /**
- * Model TeamMember
+ * Model TeamUser
  *
  */
-export type TeamMember = Prisma.TeamMemberModel;
+export type TeamUser = Prisma.TeamUserModel;
 /**
- * Model OrganizationMember
+ * Model OrganizationUser
  *
  */
-export type OrganizationMember = Prisma.OrganizationMemberModel;
+export type OrganizationUser = Prisma.OrganizationUserModel;
 /**
- * Model Invitation
+ * Model OrganizationInvitation
  *
  */
-export type Invitation = Prisma.InvitationModel;
+export type OrganizationInvitation = Prisma.OrganizationInvitationModel;
 /**
  * Model OrganizationLogEntry
  *
@@ -81,6 +81,11 @@ export type OrganizationLogEntry = Prisma.OrganizationLogEntryModel;
  *
  */
 export type Person = Prisma.PersonModel;
+/**
+ * Model TeamMembership
+ *
+ */
+export type TeamMembership = Prisma.TeamMembershipModel;
 /**
  * Model Note
  *
@@ -117,14 +122,12 @@ export type SkillCheck = Prisma.SkillCheckModel;
  */
 export type SkillPackageSubscription = Prisma.SkillPackageSubscriptionModel;
 /**
- * Model SkillPackageSubscriptionGroupOverride
+ * Model SkillGroupOverride
  *
  */
-export type SkillPackageSubscriptionGroupOverride =
-    Prisma.SkillPackageSubscriptionGroupOverrideModel;
+export type SkillGroupOverride = Prisma.SkillGroupOverrideModel;
 /**
- * Model SkillPackageSubscriptionSkillOverride
+ * Model SkillOverride
  *
  */
-export type SkillPackageSubscriptionSkillOverride =
-    Prisma.SkillPackageSubscriptionSkillOverrideModel;
+export type SkillOverride = Prisma.SkillOverrideModel;

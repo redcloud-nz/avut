@@ -1,7 +1,7 @@
 // Copyright (c) 2025 A.V.U.T. Project.
 // Licensed under the MIT License. See LICENSE.md in the project root for license information.
 //
-// Schema for the avut Database.
+// Schema for the AVUT Database.
 
 generator client {
   provider = "prisma-client"
@@ -9,28 +9,28 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // Authentication Models
 
 model User {
-  id            String               @id
-  name          String
-  email         String
-  emailVerified Boolean              @default(false)
-  image         String?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  teamMembers   TeamMember[]
-  members       OrganizationMember[]
-  invitations   Invitation[]
+  id                String                   @id
+  name              String
+  email             String
+  emailVerified     Boolean                  @default(false)
+  image             String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  sessions          Session[]                @relation("session_to_user")
+  accounts          Account[]                @relation("account_to_user")
+  teamUsers         TeamUser[]               @relation("team_user_to_user")
+  organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
+  invitations       OrganizationInvitation[] @relation("organization_invitation_to_user")
 
-  authoredNotes Note[]
-  logEntries    OrganizationLogEntry[]
-  personnel     Person[]
+  authoredNotes Note[]                 @relation("note_to_author")
+  logEntries    OrganizationLogEntry[] @relation("organization_log_entry_to_user")
+  personnel     Person[]               @relation("person_to_user")
 
   @@unique([email])
   @@map("users")
@@ -45,7 +45,7 @@ model Session {
   ipAddress            String?
   userAgent            String?
   userId               String
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User     @relation("session_to_user", fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId String?
   activeTeamId         String?
 
@@ -59,7 +59,7 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation("account_to_user", fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -94,19 +94,19 @@ model Organization {
   createdAt DateTime
   metadata  String?
 
-  configs     OrganizationConfig[]
-  invitations Invitation[]
-  teams       Team[]
-  members     OrganizationMember[]
+  configs     OrganizationConfig[]     @relation("organization_config_to_organization")
+  invitations OrganizationInvitation[] @relation("organization_invitation_to_organization")
+  teams       Team[]                   @relation("team_to_organization")
+  users       OrganizationUser[]       @relation("organization_user_to_organization")
 
   // Owned records
-  logEntries                OrganizationLogEntry[]
-  notes                     Note[]
-  skillChecks               SkillCheck[]
-  skillCheckSessions        SkillCheckSession[]
-  skillPackages             SkillPackage[]
-  skillPackageSubscriptions SkillPackageSubscription[]
-  personnel                 Person[]
+  logEntries                OrganizationLogEntry[]     @relation("organization_log_entry_to_organization")
+  notes                     Note[]                     @relation("note_to_organization")
+  skillChecks               SkillCheck[]               @relation("skill_check_to_organization")
+  skillCheckSessions        SkillCheckSession[]        @relation("skill_check_session_to_organization")
+  skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
+  skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
+  personnel                 Person[]                   @relation("person_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -114,26 +114,28 @@ model Organization {
 
 model OrganizationConfig {
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  key String 
-  value Json
+  organization   Organization @relation("organization_config_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  key            String
+  value          Json
 
   @@unique([organizationId, key])
   @@map("organization_config")
 }
 
 model Team {
-  id             String       @id
-  name           String
-  description    String       @default("")
-  tags           String[]     @default([])
-  properties     Json         @default("{}")
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime
-  updatedAt      DateTime?    @updatedAt
-  configs        TeamConfig[]
-  teammembers    TeamMember[]
+  id          String   @id
+  name        String
+  description String   @default("")
+  tags        String[] @default([])
+  properties  Json     @default("{}")
+
+  organizationId  String
+  organization    Organization     @relation("team_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime?        @updatedAt
+  configs         TeamConfig[]     @relation("team_config_to_team")
+  teamUsers       TeamUser[]       @relation("team_user_to_team")
+  teamMemberships TeamMembership[] @relation("team_membership_to_team")
 
   @@index([organizationId])
   @@map("teams")
@@ -141,7 +143,7 @@ model Team {
 
 model TeamConfig {
   teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team   Team   @relation("team_config_to_team", fields: [teamId], references: [id], onDelete: Cascade)
   key    String
   value  Json
 
@@ -149,37 +151,37 @@ model TeamConfig {
   @@map("team_config")
 }
 
-model TeamMember {
-  id        String    @id
+model TeamUser {
+  id        String   @id
   teamId    String
-  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team      Team     @relation("team_user_to_team", fields: [teamId], references: [id], onDelete: Cascade)
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime?
+  user      User     @relation("team_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@index([teamId])
   @@index([userId])
-  @@map("team_members")
+  @@map("team_users")
 }
 
-model OrganizationMember {
+model OrganizationUser {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("organization_user_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation("organization_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
-  createdAt      DateTime
+  createdAt      DateTime     @default(now())
 
   @@index([organizationId])
   @@index([userId])
-  @@map("organization_members")
+  @@map("organization_users")
 }
 
-model Invitation {
+model OrganizationInvitation {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("organization_invitation_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
   role           String?
   teamId         String?
@@ -187,20 +189,20 @@ model Invitation {
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
   inviterId      String
-  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  user           User         @relation("organization_invitation_to_user", fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([email])
-  @@map("invitations")
+  @@map("organization_invitations")
 }
 
 // Logging Models
 model OrganizationLogEntry {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("organization_log_entry_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation("organization_log_entry_to_user", fields: [userId], references: [id], onDelete: Cascade)
   action         String
   objectType     String
   objectId       String
@@ -222,9 +224,9 @@ enum RecordStatus {
 model Person {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("person_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?        @relation("person_to_user", fields: [userId], references: [id], onDelete: SetNull)
   name           String
   email          String
   tags           String[]     @default([])
@@ -235,11 +237,31 @@ model Person {
 
   skillChecksAsAssessee        SkillCheck[]        @relation("skill_check_assessee")
   skillChecksAsAssessor        SkillCheck[]        @relation("skill_check_assessor")
-  skillCheckSessionsAsAssessee SkillCheckSession[] @relation("session_assessees")
-  skillCheckSessionsAsAssessor SkillCheckSession[] @relation("session_assessors")
+  skillCheckSessionsAsAssessee SkillCheckSession[] @relation("skill_check_session_assessees")
+  skillCheckSessionsAsAssessor SkillCheckSession[] @relation("skill_check_session_assessors")
+  teamMemberships              TeamMembership[]    @relation("team_membership_to_person")
 
+  @@unique([organizationId, email]) // On one person per email address in an organization
+  @@unique([organizationId, userId]) // One person record per user in an organization
   @@index([organizationId])
   @@map("personnel")
+}
+
+model TeamMembership {
+  id         String   @id
+  teamId     String
+  team       Team     @relation("team_membership_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  personId   String
+  person     Person   @relation("team_membership_to_person", fields: [personId], references: [id], onDelete: Cascade)
+  tags       String[] @default([])
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([teamId, personId])
+  @@index([teamId])
+  @@index([personId])
+  @@map("team_memberships")
 }
 
 // Notes models
@@ -247,9 +269,9 @@ model Person {
 model Note {
   id             String        @id
   organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation("note_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   authorId       String
-  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author         User          @relation("note_to_author", fields: [authorId], references: [id], onDelete: Cascade)
   content        String
   tags           String[]      @default([])
   properties     Json          @default("{}")
@@ -266,7 +288,7 @@ model Note {
 model SkillPackage {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("skill_package_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   description    String
   tags           String[]     @default([])
@@ -275,9 +297,9 @@ model SkillPackage {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  groups        SkillGroup[]
-  skills        Skill[]
-  subscriptions SkillPackageSubscription[]
+  groups        SkillGroup[]               @relation("skill_group_to_skill_package")
+  skills        Skill[]                    @relation("skill_to_skill_package")
+  subscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_skill_package")
 
   @@index([organizationId])
   @@map("skill_packages")
@@ -286,7 +308,7 @@ model SkillPackage {
 model SkillGroup {
   id              String       @id
   skillPackageId  String
-  skillPackage    SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  skillPackage    SkillPackage @relation("skill_group_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
   parentGroupId   String?
   parentGroup     SkillGroup?  @relation("skill_group_parent", fields: [parentGroupId], references: [id], onDelete: Cascade)
   name            String
@@ -299,9 +321,9 @@ model SkillGroup {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  childGroups           SkillGroup[]                            @relation("skill_group_parent")
-  skills                Skill[]
-  subscriptionOverrides SkillPackageSubscriptionGroupOverride[]
+  childGroups           SkillGroup[]         @relation("skill_group_parent")
+  skills                Skill[]              @relation("skill_to_skill_group")
+  subscriptionOverrides SkillGroupOverride[] @relation("skill_group_override_to_skill_group")
 
   @@index([skillPackageId])
   @@map("skill_groups")
@@ -310,9 +332,9 @@ model SkillGroup {
 model Skill {
   id              String       @id
   skillPackageId  String
-  skillPackage    SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  skillPackage    SkillPackage @relation("skill_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
   skillGroupId    String?
-  skillGroup      SkillGroup?  @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
+  skillGroup      SkillGroup?  @relation("skill_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
   name            String
   description     String
   tags            String[]     @default([])
@@ -325,9 +347,9 @@ model Skill {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  checks                SkillCheck[]
-  sessions              SkillCheckSession[]                     @relation("session_skills")
-  subscriptionOverrides SkillPackageSubscriptionSkillOverride[]
+  checks                SkillCheck[]        @relation("skill_check_to_skill")
+  sessions              SkillCheckSession[] @relation("skill_check_session_skills")
+  subscriptionOverrides SkillOverride[]     @relation("skill_override_to_skill")
 
   @@index([skillPackageId])
   @@map("skills")
@@ -342,10 +364,10 @@ enum SkillCheckStatus {
 model SkillCheckSession {
   id             String           @id
   organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assessees      Person[]         @relation("session_assessees")
-  assessors      Person[]         @relation("session_assessors")
-  skills         Skill[]          @relation("session_skills")
+  organization   Organization     @relation("skill_check_session_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  assessees      Person[]         @relation("skill_check_session_assessees")
+  assessors      Person[]         @relation("skill_check_session_assessors")
+  skills         Skill[]          @relation("skill_check_session_skills")
   startedAt      DateTime?
   endedAt        DateTime?
   notes          String?
@@ -360,13 +382,13 @@ model SkillCheckSession {
 model SkillCheck {
   id             String           @id
   organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation("skill_check_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   assesseeId     String
   assessee       Person           @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
   assessorId     String
   assessor       Person           @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
   skillId        String
-  skill          Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skill          Skill            @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   result         String
   notes          String
   status         SkillCheckStatus @default(Draft)
@@ -382,39 +404,39 @@ model SkillCheck {
 model SkillPackageSubscription {
   id             String       @id
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("skill_package_subscription_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   skillPackageId String
-  skillPackage   SkillPackage @relation(fields: [skillPackageId], references: [id], onDelete: Cascade)
+  skillPackage   SkillPackage @relation("skill_package_subscription_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  groupOverrides SkillPackageSubscriptionGroupOverride[]
-  skillOverrides SkillPackageSubscriptionSkillOverride[]
+  groupOverrides SkillGroupOverride[] @relation("skill_group_override_to_skill_package_subscription")
+  skillOverrides SkillOverride[]      @relation("skill_override_to_skill_package_subscription")
 
   @@index([organizationId])
   @@index([skillPackageId])
   @@map("skill_package_subscriptions")
 }
 
-model SkillPackageSubscriptionGroupOverride {
+model SkillGroupOverride {
   subscriptionId String
-  subscription   SkillPackageSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   SkillPackageSubscription @relation("skill_group_override_to_skill_package_subscription", fields: [subscriptionId], references: [id], onDelete: Cascade)
   skillGroupId   String
-  skillGroup     SkillGroup               @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
+  skillGroup     SkillGroup               @relation("skill_group_override_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
   description    String?
   include        Boolean
 
   @@unique([subscriptionId, skillGroupId])
   @@index([subscriptionId])
   @@index([skillGroupId])
-  @@map("skill_group_subscriptions")
+  @@map("skill_group_overrides")
 }
 
-model SkillPackageSubscriptionSkillOverride {
+model SkillOverride {
   subscriptionId String
-  subscription   SkillPackageSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   SkillPackageSubscription @relation("skill_override_to_skill_package_subscription", fields: [subscriptionId], references: [id], onDelete: Cascade)
   skillId        String
-  skill          Skill                    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skill          Skill                    @relation("skill_override_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   description    String?
   frequency      Int?
   include        Boolean
@@ -422,5 +444,5 @@ model SkillPackageSubscriptionSkillOverride {
   @@unique([subscriptionId, skillId])
   @@index([subscriptionId])
   @@index([skillId])
-  @@map("skill_subscriptions")
+  @@map("skill_overrides")
 }

@@ -154,25 +154,29 @@ export function AdminModule_UpdateTeam_Form({
                         </Field>
                     )}
                 />
-            </FieldGroup>
-            <FieldGroup>
-                <Button
-                    type="submit"
-                    form="update-team-form"
-                    disabled={mutation.isPending}
-                >
-                    Update
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => form.reset()}
-                    asChild
-                >
-                    <Link to={Paths.org(organization.slug).admin.team(team.id)}>
-                        Cancel
-                    </Link>
-                </Button>
+                <Field orientation="horizontal">
+                    <Button
+                        type="submit"
+                        form="update-team-form"
+                        disabled={mutation.isPending}
+                    >
+                        Update
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => form.reset()}
+                        asChild
+                    >
+                        <Link
+                            to={Paths.org(organization.slug).admin.team(
+                                team.id,
+                            )}
+                        >
+                            Cancel
+                        </Link>
+                    </Button>
+                </Field>
             </FieldGroup>
         </form>
     );

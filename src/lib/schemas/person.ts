@@ -54,3 +54,5 @@ export const PersonData = {
 } as const;
 
 export type PersonData = z.infer<typeof personSchema>;
+
+export type PersonModifiableData = z.infer<typeof PersonData.modifiableSchema>;

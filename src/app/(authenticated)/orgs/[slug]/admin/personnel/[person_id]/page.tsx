@@ -22,7 +22,6 @@ import { Link } from "@/components/ui/link";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
@@ -91,39 +90,48 @@ export default function AdminModule_Person_Page(
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Person ID</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {person.id}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.id}
+                                            format="id"
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Name</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {person.name}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.name}
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {person.email}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.email}
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Created At</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {formatDateTime(person.createdAt)}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.createdAt}
+                                            format="dateWithDistance"
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Updated At</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {formatDateTime(person.updatedAt)}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.updatedAt}
+                                            format="dateWithDistance"
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Status</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {person.status}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={person.status}
+                                        />
                                     </Field>
                                 </FieldGroup>
                             </CardContent>

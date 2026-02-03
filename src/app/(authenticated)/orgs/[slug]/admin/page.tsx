@@ -8,8 +8,8 @@
 import { ChevronRightIcon } from "lucide-react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
-
 import { Lexington } from "@/components/blocks/lexington";
+import { Protect } from "@/components/protect";
 import { Link } from "@/components/ui/link";
 
 import {
@@ -23,7 +23,6 @@ import {
 
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
-import { Protect } from "@/components/protect";
 
 export default async function AdminIndex_Page(
     props: PageProps<`/orgs/[slug]/admin`>,
@@ -43,7 +42,7 @@ export default async function AdminIndex_Page(
                     <ItemGroup>
                         <Protect
                             orgId={organization.id}
-                            permissions={{ invitation: ["create"] }}
+                            permissions={{ invitation: ["view"] }}
                         >
                             <Item asChild>
                                 <Link to={Paths.org(slug).admin.invitations}>
@@ -61,34 +60,62 @@ export default async function AdminIndex_Page(
                             </Item>
                         </Protect>
 
-                        <Item asChild>
-                            <Link to={Paths.org(slug).admin.personnel}>
-                                <ItemContent>
-                                    <ItemTitle>Personnel</ItemTitle>
-                                    <ItemDescription>
-                                        Manage your organisation's personnel.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-
-                        <Item asChild>
-                            <Link to={Paths.org(slug).admin.users}>
-                                <ItemContent>
-                                    <ItemTitle>Users</ItemTitle>
-                                    <ItemDescription>
-                                        Manage your organisation's users and
-                                        their roles.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ person: ["view"] }}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.org(slug).admin.personnel}>
+                                    <ItemContent>
+                                        <ItemTitle>Personnel</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's
+                                            personnel.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ team: ["view"] }}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.org(slug).admin.teams}>
+                                    <ItemContent>
+                                        <ItemTitle>Teams</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's teams.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ member: ["view"] }}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.org(slug).admin.users}>
+                                    <ItemContent>
+                                        <ItemTitle>Users</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's users and
+                                            their roles.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>

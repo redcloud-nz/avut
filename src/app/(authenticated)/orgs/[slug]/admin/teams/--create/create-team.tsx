@@ -7,7 +7,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,8 +16,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
     Field,
-    FieldContent,
-    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
@@ -26,10 +23,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
 import { Textarea } from "@/components/ui/textarea";
-import { FieldValue } from "@/components/ui/field-value";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { TeamData, TeamId } from "@/lib/schemas/team";
+import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
@@ -44,17 +40,8 @@ export function AdminModule_CreateTeam_Form({
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const teamId = useMemo(() => TeamId.create(), []);
-
     const form = useForm({
-        resolver: zodResolver(
-            TeamData.schema.pick({
-                name: true,
-                description: true,
-                tags: true,
-                properties: true,
-            }),
-        ),
+        resolver: zodResolver(TeamData.modifiableSchema),
         defaultValues: {
             name: "",
             description: "",
@@ -68,10 +55,7 @@ export function AdminModule_CreateTeam_Form({
             async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause.message as keyof Pick<
-                            TeamData,
-                            "name" | "description" | "tags" | "properties"
-                        >,
+                        error.shape.cause.message as keyof ModifiableTeamData,
                         { message: error.message },
                     );
                 } else {
@@ -84,29 +68,32 @@ export function AdminModule_CreateTeam_Form({
                         organizationId: organization.id,
                     }),
                 );
-                toast.success("Team created successfully.");
-                router.push(
-                    Paths.org(organization.slug).admin.team(teamId).href,
-                );
             },
         }),
     );
 
-    return (
-        <form
-            id="create-team-form"
-            onSubmit={form.handleSubmit((formData) =>
-                createTeamMutation.mutate({
+    const handleCreate = form.handleSubmit((formData) => {
+        toast.promise(
+            async () => {
+                const team = await createTeamMutation.mutateAsync({
                     organizationId: organization.id,
                     ...formData,
-                }),
-            )}
-        >
+                });
+                router.push(
+                    Paths.org(organization.slug).admin.team(team.id).href,
+                );
+            },
+            {
+                loading: "Creating team...",
+                success: "Team created successfully.",
+                error: (error) => "Failed to create team: " + error.message,
+            },
+        );
+    });
+
+    return (
+        <form id="create-team-form" onSubmit={handleCreate}>
             <FieldGroup>
-                <Field orientation="responsive">
-                    <FieldLabel>Team ID</FieldLabel>
-                    <FieldValue className="min-w-1/2">{teamId}</FieldValue>
-                </Field>
                 <Controller
                     name="name"
                     control={form.control}
@@ -153,25 +140,25 @@ export function AdminModule_CreateTeam_Form({
                         </Field>
                     )}
                 />
-            </FieldGroup>
-            <FieldGroup>
-                <Button
-                    type="submit"
-                    form="create-team-form"
-                    disabled={createTeamMutation.isPending}
-                >
-                    Create
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => form.reset()}
-                    asChild
-                >
-                    <Link to={Paths.org(organization.slug).admin.teams}>
-                        Cancel
-                    </Link>
-                </Button>
+                <Field orientation="horizontal">
+                    <Button
+                        type="submit"
+                        form="create-team-form"
+                        disabled={createTeamMutation.isPending}
+                    >
+                        Create
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => form.reset()}
+                        asChild
+                    >
+                        <Link to={Paths.org(organization.slug).admin.teams}>
+                            Cancel
+                        </Link>
+                    </Button>
+                </Field>
             </FieldGroup>
         </form>
     );

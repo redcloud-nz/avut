@@ -73,27 +73,11 @@ export function AdminModule_TeamsList({
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() || "—"}
+                            {ctx.getValue()}
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
-                }),
-                columnHelper.accessor("tags", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Tags
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue().length > 0
-                                ? ctx.getValue().join(", ")
-                                : "—"}
-                        </Akagi.TableCell>
-                    ),
-                    enableSorting: false,
-                    enableGlobalFilter: false,
                 }),
             ]),
         [adminModule],

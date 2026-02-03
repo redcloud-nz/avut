@@ -32,20 +32,21 @@ export const teamsRouter = createTrpcRouter({
                 },
             });
 
-            // Update additional fields
-            const updatedTeam = await ctx.prisma.team.update({
-                where: { organizationId: organizationId, id: data.id },
-                data: pick(team, ["description", "tags", "properties"]),
-            });
-
             const changes = diffObject({}, team);
 
-            await ctx.logEvent({
-                action: "Create",
-                objectType: "Team",
-                objectId: data.id,
-                changes,
-            });
+            const [updatedTeam] = await Promise.all([
+                // Update additional fields
+                ctx.prisma.team.update({
+                    where: { organizationId: organizationId, id: data.id },
+                    data: pick(team, ["description", "tags", "properties"]),
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "Team",
+                    objectId: data.id,
+                    changes,
+                }),
+            ]);
 
             return TeamData.fromRecord(updatedTeam);
         }),

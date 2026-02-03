@@ -17,12 +17,12 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup } from "@/components/ui/field";
-import { Link } from "@/components/ui/link";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+
 import { FieldValue } from "@/components/ui/field-value";
+import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
 import * as Paths from "@/paths";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
@@ -88,52 +88,44 @@ export default function AdminModule_Team_Page(
                             </CardHeader>
                             <CardContent>
                                 <FieldGroup>
-                                    <Field>
-                                        <FieldValue>{team.id}</FieldValue>
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Details</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
                                     <Field orientation="responsive">
-                                        <FieldValue>
-                                            <strong>Name:</strong> {team.name}
-                                        </FieldValue>
+                                        <FieldLabel>Team ID</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={team.id}
+                                            format="id"
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldValue>
-                                            <strong>Description:</strong>{" "}
-                                            {team.description || "—"}
-                                        </FieldValue>
+                                        <FieldLabel>Name</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={team.name}
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldValue>
-                                            <strong>Created:</strong>{" "}
-                                            {formatDateTime(team.createdAt)}
-                                        </FieldValue>
+                                        <FieldLabel>Description</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={team.description}
+                                        />
                                     </Field>
-                                    {team.updatedAt && (
-                                        <Field orientation="responsive">
-                                            <FieldValue>
-                                                <strong>Updated:</strong>{" "}
-                                                {formatDateTime(team.updatedAt)}
-                                            </FieldValue>
-                                        </Field>
-                                    )}
-                                    {team.tags.length > 0 && (
-                                        <Field orientation="responsive">
-                                            <FieldValue>
-                                                <strong>Tags:</strong>{" "}
-                                                {team.tags.join(", ")}
-                                            </FieldValue>
-                                        </Field>
-                                    )}
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Created</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={team.createdAt}
+                                            format="dateWithDistance"
+                                        />
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Updated</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={team.updatedAt ?? "N/A"}
+                                            format="dateWithDistance"
+                                        />
+                                    </Field>
                                 </FieldGroup>
                             </CardContent>
                         </Card>

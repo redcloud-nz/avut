@@ -33,8 +33,6 @@ export default function AdminModule_PersonUpdate_Page(
         }),
     );
 
-    const adminPath = Paths.org(slug).admin.index.href;
-
     return (
         <Lexington.Root>
             <Lexington.Header

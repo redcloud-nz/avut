@@ -231,6 +231,7 @@ export type PersonWhereInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckListRelationFilter;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionListRelationFilter;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionListRelationFilter;
+    teamMemberships?: Prisma.TeamMembershipListRelationFilter;
 };
 
 export type PersonOrderByWithRelationInput = {
@@ -250,11 +251,14 @@ export type PersonOrderByWithRelationInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckOrderByRelationAggregateInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionOrderByRelationAggregateInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionOrderByRelationAggregateInput;
+    teamMemberships?: Prisma.TeamMembershipOrderByRelationAggregateInput;
 };
 
 export type PersonWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        organizationId_email?: Prisma.PersonOrganizationIdEmailCompoundUniqueInput;
+        organizationId_userId?: Prisma.PersonOrganizationIdUserIdCompoundUniqueInput;
         AND?: Prisma.PersonWhereInput | Prisma.PersonWhereInput[];
         OR?: Prisma.PersonWhereInput[];
         NOT?: Prisma.PersonWhereInput | Prisma.PersonWhereInput[];
@@ -279,8 +283,9 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<
         skillChecksAsAssessor?: Prisma.SkillCheckListRelationFilter;
         skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionListRelationFilter;
         skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionListRelationFilter;
+        teamMemberships?: Prisma.TeamMembershipListRelationFilter;
     },
-    "id"
+    "id" | "organizationId_email" | "organizationId_userId"
 >;
 
 export type PersonOrderByWithAggregationInput = {
@@ -339,6 +344,7 @@ export type PersonCreateInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateInput = {
@@ -356,6 +362,7 @@ export type PersonUncheckedCreateInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUpdateInput = {
@@ -375,6 +382,7 @@ export type PersonUpdateInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateInput = {
@@ -394,6 +402,7 @@ export type PersonUncheckedUpdateInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonCreateManyInput = {
@@ -445,6 +454,16 @@ export type PersonListRelationFilter = {
 
 export type PersonOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
+};
+
+export type PersonOrganizationIdEmailCompoundUniqueInput = {
+    organizationId: string;
+    email: string;
+};
+
+export type PersonOrganizationIdUserIdCompoundUniqueInput = {
+    organizationId: string;
+    userId: string;
 };
 
 export type PersonCountOrderByAggregateInput = {
@@ -686,6 +705,32 @@ export type PersonUpdatetagsInput = {
 
 export type EnumRecordStatusFieldUpdateOperationsInput = {
     set?: $Enums.RecordStatus;
+};
+
+export type PersonCreateNestedOneWithoutTeamMembershipsInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutTeamMembershipsInput;
+    connect?: Prisma.PersonWhereUniqueInput;
+};
+
+export type PersonUpdateOneRequiredWithoutTeamMembershipsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutTeamMembershipsInput;
+    upsert?: Prisma.PersonUpsertWithoutTeamMembershipsInput;
+    connect?: Prisma.PersonWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.PersonUpdateToOneWithWhereWithoutTeamMembershipsInput,
+            Prisma.PersonUpdateWithoutTeamMembershipsInput
+        >,
+        Prisma.PersonUncheckedUpdateWithoutTeamMembershipsInput
+    >;
 };
 
 export type PersonCreateNestedManyWithoutSkillCheckSessionsAsAssesseeInput = {
@@ -950,6 +995,7 @@ export type PersonCreateWithoutUserInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutUserInput = {
@@ -966,6 +1012,7 @@ export type PersonUncheckedCreateWithoutUserInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutUserInput = {
@@ -1039,6 +1086,7 @@ export type PersonCreateWithoutOrganizationInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutOrganizationInput = {
@@ -1055,6 +1103,7 @@ export type PersonUncheckedCreateWithoutOrganizationInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutOrganizationInput = {
@@ -1100,6 +1149,106 @@ export type PersonUpdateManyWithWhereWithoutOrganizationInput = {
     >;
 };
 
+export type PersonCreateWithoutTeamMembershipsInput = {
+    id: string;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
+    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+};
+
+export type PersonUncheckedCreateWithoutTeamMembershipsInput = {
+    id: string;
+    organizationId: string;
+    userId?: string | null;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+};
+
+export type PersonCreateOrConnectWithoutTeamMembershipsInput = {
+    where: Prisma.PersonWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedCreateWithoutTeamMembershipsInput
+    >;
+};
+
+export type PersonUpsertWithoutTeamMembershipsInput = {
+    update: Prisma.XOR<
+        Prisma.PersonUpdateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedUpdateWithoutTeamMembershipsInput
+    >;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    where?: Prisma.PersonWhereInput;
+};
+
+export type PersonUpdateToOneWithWhereWithoutTeamMembershipsInput = {
+    where?: Prisma.PersonWhereInput;
+    data: Prisma.XOR<
+        Prisma.PersonUpdateWithoutTeamMembershipsInput,
+        Prisma.PersonUncheckedUpdateWithoutTeamMembershipsInput
+    >;
+};
+
+export type PersonUpdateWithoutTeamMembershipsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
+    organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
+    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+};
+
+export type PersonUncheckedUpdateWithoutTeamMembershipsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+};
+
 export type PersonCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     id: string;
     name: string;
@@ -1114,6 +1263,7 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssesseeInput = {
@@ -1130,6 +1280,7 @@ export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutSkillCheckSessionsAsAssesseeInput = {
@@ -1154,6 +1305,7 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssessorInput = {
@@ -1170,6 +1322,7 @@ export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutSkillCheckSessionsAsAssessorInput = {
@@ -1256,6 +1409,7 @@ export type PersonCreateWithoutSkillChecksAsAssesseeInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutSkillChecksAsAssesseeInput = {
@@ -1272,6 +1426,7 @@ export type PersonUncheckedCreateWithoutSkillChecksAsAssesseeInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutSkillChecksAsAssesseeInput = {
@@ -1296,6 +1451,7 @@ export type PersonCreateWithoutSkillChecksAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonUncheckedCreateWithoutSkillChecksAsAssessorInput = {
@@ -1312,6 +1468,7 @@ export type PersonUncheckedCreateWithoutSkillChecksAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
 };
 
 export type PersonCreateOrConnectWithoutSkillChecksAsAssessorInput = {
@@ -1358,6 +1515,7 @@ export type PersonUpdateWithoutSkillChecksAsAssesseeInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutSkillChecksAsAssesseeInput = {
@@ -1376,6 +1534,7 @@ export type PersonUncheckedUpdateWithoutSkillChecksAsAssesseeInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUpsertWithoutSkillChecksAsAssessorInput = {
@@ -1414,6 +1573,7 @@ export type PersonUpdateWithoutSkillChecksAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutSkillChecksAsAssessorInput = {
@@ -1432,6 +1592,7 @@ export type PersonUncheckedUpdateWithoutSkillChecksAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonCreateManyUserInput = {
@@ -1462,6 +1623,7 @@ export type PersonUpdateWithoutUserInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutUserInput = {
@@ -1480,6 +1642,7 @@ export type PersonUncheckedUpdateWithoutUserInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateManyWithoutUserInput = {
@@ -1524,6 +1687,7 @@ export type PersonUpdateWithoutOrganizationInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutOrganizationInput = {
@@ -1542,6 +1706,7 @@ export type PersonUncheckedUpdateWithoutOrganizationInput = {
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateManyWithoutOrganizationInput = {
@@ -1574,6 +1739,7 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
@@ -1592,6 +1758,7 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateManyWithoutSkillCheckSessionsAsAssesseeInput =
@@ -1629,6 +1796,7 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssessorInput = {
@@ -1647,6 +1815,7 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssessorInput = {
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
 };
 
 export type PersonUncheckedUpdateManyWithoutSkillCheckSessionsAsAssessorInput =
@@ -1677,6 +1846,7 @@ export type PersonCountOutputType = {
     skillChecksAsAssessor: number;
     skillCheckSessionsAsAssessee: number;
     skillCheckSessionsAsAssessor: number;
+    teamMemberships: number;
 };
 
 export type PersonCountOutputTypeSelect<
@@ -1695,6 +1865,7 @@ export type PersonCountOutputTypeSelect<
     skillCheckSessionsAsAssessor?:
         | boolean
         | PersonCountOutputTypeCountSkillCheckSessionsAsAssessorArgs;
+    teamMemberships?: boolean | PersonCountOutputTypeCountTeamMembershipsArgs;
 };
 
 /**
@@ -1750,6 +1921,16 @@ export type PersonCountOutputTypeCountSkillCheckSessionsAsAssessorArgs<
     where?: Prisma.SkillCheckSessionWhereInput;
 };
 
+/**
+ * PersonCountOutputType without action
+ */
+export type PersonCountOutputTypeCountTeamMembershipsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.TeamMembershipWhereInput;
+};
+
 export type PersonSelect<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
@@ -1779,6 +1960,7 @@ export type PersonSelect<
         skillCheckSessionsAsAssessor?:
             | boolean
             | Prisma.Person$skillCheckSessionsAsAssessorArgs<ExtArgs>;
+        teamMemberships?: boolean | Prisma.Person$teamMembershipsArgs<ExtArgs>;
         _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["person"]
@@ -1873,6 +2055,7 @@ export type PersonInclude<
     skillCheckSessionsAsAssessor?:
         | boolean
         | Prisma.Person$skillCheckSessionsAsAssessorArgs<ExtArgs>;
+    teamMemberships?: boolean | Prisma.Person$teamMembershipsArgs<ExtArgs>;
     _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type PersonIncludeCreateManyAndReturn<
@@ -1902,6 +2085,7 @@ export type $PersonPayload<
         skillChecksAsAssessor: Prisma.$SkillCheckPayload<ExtArgs>[];
         skillCheckSessionsAsAssessee: Prisma.$SkillCheckSessionPayload<ExtArgs>[];
         skillCheckSessionsAsAssessor: Prisma.$SkillCheckSessionPayload<ExtArgs>[];
+        teamMemberships: Prisma.$TeamMembershipPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -2553,6 +2737,17 @@ export interface Prisma__PersonClient<
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillCheckSessionPayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
+    teamMemberships<T extends Prisma.Person$teamMembershipsArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Person$teamMembershipsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$TeamMembershipPayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -3215,6 +3410,37 @@ export type Person$skillCheckSessionsAsAssessorArgs<
     distinct?:
         | Prisma.SkillCheckSessionScalarFieldEnum
         | Prisma.SkillCheckSessionScalarFieldEnum[];
+};
+
+/**
+ * Person.teamMemberships
+ */
+export type Person$teamMembershipsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the TeamMembership
+     */
+    select?: Prisma.TeamMembershipSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the TeamMembership
+     */
+    omit?: Prisma.TeamMembershipOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TeamMembershipInclude<ExtArgs> | null;
+    where?: Prisma.TeamMembershipWhereInput;
+    orderBy?:
+        | Prisma.TeamMembershipOrderByWithRelationInput
+        | Prisma.TeamMembershipOrderByWithRelationInput[];
+    cursor?: Prisma.TeamMembershipWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?:
+        | Prisma.TeamMembershipScalarFieldEnum
+        | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**

@@ -285,7 +285,7 @@ export type SkillGroupWhereInput = {
     > | null;
     childGroups?: Prisma.SkillGroupListRelationFilter;
     skills?: Prisma.SkillListRelationFilter;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideListRelationFilter;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideListRelationFilter;
 };
 
 export type SkillGroupOrderByWithRelationInput = {
@@ -305,7 +305,7 @@ export type SkillGroupOrderByWithRelationInput = {
     parentGroup?: Prisma.SkillGroupOrderByWithRelationInput;
     childGroups?: Prisma.SkillGroupOrderByRelationAggregateInput;
     skills?: Prisma.SkillOrderByRelationAggregateInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideOrderByRelationAggregateInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideOrderByRelationAggregateInput;
 };
 
 export type SkillGroupWhereUniqueInput = Prisma.AtLeast<
@@ -340,7 +340,7 @@ export type SkillGroupWhereUniqueInput = Prisma.AtLeast<
         > | null;
         childGroups?: Prisma.SkillGroupListRelationFilter;
         skills?: Prisma.SkillListRelationFilter;
-        subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideListRelationFilter;
+        subscriptionOverrides?: Prisma.SkillGroupOverrideListRelationFilter;
     },
     "id"
 >;
@@ -413,7 +413,7 @@ export type SkillGroupCreateInput = {
     parentGroup?: Prisma.SkillGroupCreateNestedOneWithoutChildGroupsInput;
     childGroups?: Prisma.SkillGroupCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUncheckedCreateInput = {
@@ -431,7 +431,7 @@ export type SkillGroupUncheckedCreateInput = {
     updatedAt?: Date | string;
     childGroups?: Prisma.SkillGroupUncheckedCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillUncheckedCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUpdateInput = {
@@ -451,7 +451,7 @@ export type SkillGroupUpdateInput = {
     parentGroup?: Prisma.SkillGroupUpdateOneWithoutChildGroupsNestedInput;
     childGroups?: Prisma.SkillGroupUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateInput = {
@@ -474,7 +474,7 @@ export type SkillGroupUncheckedUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     childGroups?: Prisma.SkillGroupUncheckedUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUncheckedUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupCreateManyInput = {
@@ -930,7 +930,7 @@ export type SkillGroupCreateWithoutSkillPackageInput = {
     parentGroup?: Prisma.SkillGroupCreateNestedOneWithoutChildGroupsInput;
     childGroups?: Prisma.SkillGroupCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUncheckedCreateWithoutSkillPackageInput = {
@@ -947,7 +947,7 @@ export type SkillGroupUncheckedCreateWithoutSkillPackageInput = {
     updatedAt?: Date | string;
     childGroups?: Prisma.SkillGroupUncheckedCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillUncheckedCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupCreateOrConnectWithoutSkillPackageInput = {
@@ -1029,7 +1029,7 @@ export type SkillGroupCreateWithoutChildGroupsInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutGroupsInput;
     parentGroup?: Prisma.SkillGroupCreateNestedOneWithoutChildGroupsInput;
     skills?: Prisma.SkillCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUncheckedCreateWithoutChildGroupsInput = {
@@ -1046,7 +1046,7 @@ export type SkillGroupUncheckedCreateWithoutChildGroupsInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     skills?: Prisma.SkillUncheckedCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupCreateOrConnectWithoutChildGroupsInput = {
@@ -1071,7 +1071,7 @@ export type SkillGroupCreateWithoutParentGroupInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutGroupsInput;
     childGroups?: Prisma.SkillGroupCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUncheckedCreateWithoutParentGroupInput = {
@@ -1088,7 +1088,7 @@ export type SkillGroupUncheckedCreateWithoutParentGroupInput = {
     updatedAt?: Date | string;
     childGroups?: Prisma.SkillGroupUncheckedCreateNestedManyWithoutParentGroupInput;
     skills?: Prisma.SkillUncheckedCreateNestedManyWithoutSkillGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupCreateOrConnectWithoutParentGroupInput = {
@@ -1142,7 +1142,7 @@ export type SkillGroupUpdateWithoutChildGroupsInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutGroupsNestedInput;
     parentGroup?: Prisma.SkillGroupUpdateOneWithoutChildGroupsNestedInput;
     skills?: Prisma.SkillUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateWithoutChildGroupsInput = {
@@ -1164,7 +1164,7 @@ export type SkillGroupUncheckedUpdateWithoutChildGroupsInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skills?: Prisma.SkillUncheckedUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUpsertWithWhereUniqueWithoutParentGroupInput = {
@@ -1209,7 +1209,7 @@ export type SkillGroupCreateWithoutSkillsInput = {
     skillPackage: Prisma.SkillPackageCreateNestedOneWithoutGroupsInput;
     parentGroup?: Prisma.SkillGroupCreateNestedOneWithoutChildGroupsInput;
     childGroups?: Prisma.SkillGroupCreateNestedManyWithoutParentGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupUncheckedCreateWithoutSkillsInput = {
@@ -1226,7 +1226,7 @@ export type SkillGroupUncheckedCreateWithoutSkillsInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     childGroups?: Prisma.SkillGroupUncheckedCreateNestedManyWithoutParentGroupInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSkillGroupInput;
 };
 
 export type SkillGroupCreateOrConnectWithoutSkillsInput = {
@@ -1273,7 +1273,7 @@ export type SkillGroupUpdateWithoutSkillsInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutGroupsNestedInput;
     parentGroup?: Prisma.SkillGroupUpdateOneWithoutChildGroupsNestedInput;
     childGroups?: Prisma.SkillGroupUpdateManyWithoutParentGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateWithoutSkillsInput = {
@@ -1295,7 +1295,7 @@ export type SkillGroupUncheckedUpdateWithoutSkillsInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     childGroups?: Prisma.SkillGroupUncheckedUpdateManyWithoutParentGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupCreateWithoutSubscriptionOverridesInput = {
@@ -1431,7 +1431,7 @@ export type SkillGroupUpdateWithoutSkillPackageInput = {
     parentGroup?: Prisma.SkillGroupUpdateOneWithoutChildGroupsNestedInput;
     childGroups?: Prisma.SkillGroupUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateWithoutSkillPackageInput = {
@@ -1453,7 +1453,7 @@ export type SkillGroupUncheckedUpdateWithoutSkillPackageInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     childGroups?: Prisma.SkillGroupUncheckedUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUncheckedUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateManyWithoutSkillPackageInput = {
@@ -1505,7 +1505,7 @@ export type SkillGroupUpdateWithoutParentGroupInput = {
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutGroupsNestedInput;
     childGroups?: Prisma.SkillGroupUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateWithoutParentGroupInput = {
@@ -1524,7 +1524,7 @@ export type SkillGroupUncheckedUpdateWithoutParentGroupInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     childGroups?: Prisma.SkillGroupUncheckedUpdateManyWithoutParentGroupNestedInput;
     skills?: Prisma.SkillUncheckedUpdateManyWithoutSkillGroupNestedInput;
-    subscriptionOverrides?: Prisma.SkillPackageSubscriptionGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
+    subscriptionOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSkillGroupNestedInput;
 };
 
 export type SkillGroupUncheckedUpdateManyWithoutParentGroupInput = {
@@ -1604,7 +1604,7 @@ export type SkillGroupCountOutputTypeCountSubscriptionOverridesArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    where?: Prisma.SkillPackageSubscriptionGroupOverrideWhereInput;
+    where?: Prisma.SkillGroupOverrideWhereInput;
 };
 
 export type SkillGroupSelect<
@@ -1753,7 +1753,7 @@ export type $SkillGroupPayload<
         parentGroup: Prisma.$SkillGroupPayload<ExtArgs> | null;
         childGroups: Prisma.$SkillGroupPayload<ExtArgs>[];
         skills: Prisma.$SkillPayload<ExtArgs>[];
-        subscriptionOverrides: Prisma.$SkillPackageSubscriptionGroupOverridePayload<ExtArgs>[];
+        subscriptionOverrides: Prisma.$SkillGroupOverridePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -2386,7 +2386,7 @@ export interface Prisma__SkillGroupClient<
         >,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
-              Prisma.$SkillPackageSubscriptionGroupOverridePayload<ExtArgs>,
+              Prisma.$SkillGroupOverridePayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -3003,27 +3003,27 @@ export type SkillGroup$subscriptionOverridesArgs<
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the SkillPackageSubscriptionGroupOverride
+     * Select specific fields to fetch from the SkillGroupOverride
      */
-    select?: Prisma.SkillPackageSubscriptionGroupOverrideSelect<ExtArgs> | null;
+    select?: Prisma.SkillGroupOverrideSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the SkillPackageSubscriptionGroupOverride
+     * Omit specific fields from the SkillGroupOverride
      */
-    omit?: Prisma.SkillPackageSubscriptionGroupOverrideOmit<ExtArgs> | null;
+    omit?: Prisma.SkillGroupOverrideOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.SkillPackageSubscriptionGroupOverrideInclude<ExtArgs> | null;
-    where?: Prisma.SkillPackageSubscriptionGroupOverrideWhereInput;
+    include?: Prisma.SkillGroupOverrideInclude<ExtArgs> | null;
+    where?: Prisma.SkillGroupOverrideWhereInput;
     orderBy?:
-        | Prisma.SkillPackageSubscriptionGroupOverrideOrderByWithRelationInput
-        | Prisma.SkillPackageSubscriptionGroupOverrideOrderByWithRelationInput[];
-    cursor?: Prisma.SkillPackageSubscriptionGroupOverrideWhereUniqueInput;
+        | Prisma.SkillGroupOverrideOrderByWithRelationInput
+        | Prisma.SkillGroupOverrideOrderByWithRelationInput[];
+    cursor?: Prisma.SkillGroupOverrideWhereUniqueInput;
     take?: number;
     skip?: number;
     distinct?:
-        | Prisma.SkillPackageSubscriptionGroupOverrideScalarFieldEnum
-        | Prisma.SkillPackageSubscriptionGroupOverrideScalarFieldEnum[];
+        | Prisma.SkillGroupOverrideScalarFieldEnum
+        | Prisma.SkillGroupOverrideScalarFieldEnum[];
 };
 
 /**

@@ -93,12 +93,12 @@ export type PrismaVersion = {
 };
 
 /**
- * Prisma Client JS version: 7.1.0
- * Query Engine version: ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba
+ * Prisma Client JS version: 7.3.0
+ * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
  */
 export const prismaVersion: PrismaVersion = {
-    client: "7.1.0",
-    engine: "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba",
+    client: "7.3.0",
+    engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735",
 };
 
 /**
@@ -422,11 +422,12 @@ export const ModelName = {
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
     TeamConfig: "TeamConfig",
-    TeamMember: "TeamMember",
-    OrganizationMember: "OrganizationMember",
-    Invitation: "Invitation",
+    TeamUser: "TeamUser",
+    OrganizationUser: "OrganizationUser",
+    OrganizationInvitation: "OrganizationInvitation",
     OrganizationLogEntry: "OrganizationLogEntry",
     Person: "Person",
+    TeamMembership: "TeamMembership",
     Note: "Note",
     SkillPackage: "SkillPackage",
     SkillGroup: "SkillGroup",
@@ -434,10 +435,8 @@ export const ModelName = {
     SkillCheckSession: "SkillCheckSession",
     SkillCheck: "SkillCheck",
     SkillPackageSubscription: "SkillPackageSubscription",
-    SkillPackageSubscriptionGroupOverride:
-        "SkillPackageSubscriptionGroupOverride",
-    SkillPackageSubscriptionSkillOverride:
-        "SkillPackageSubscriptionSkillOverride",
+    SkillGroupOverride: "SkillGroupOverride",
+    SkillOverride: "SkillOverride",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -468,11 +467,12 @@ export type TypeMap<
             | "organizationConfig"
             | "team"
             | "teamConfig"
-            | "teamMember"
-            | "organizationMember"
-            | "invitation"
+            | "teamUser"
+            | "organizationUser"
+            | "organizationInvitation"
             | "organizationLogEntry"
             | "person"
+            | "teamMembership"
             | "note"
             | "skillPackage"
             | "skillGroup"
@@ -480,8 +480,8 @@ export type TypeMap<
             | "skillCheckSession"
             | "skillCheck"
             | "skillPackageSubscription"
-            | "skillPackageSubscriptionGroupOverride"
-            | "skillPackageSubscriptionSkillOverride";
+            | "skillGroupOverride"
+            | "skillOverride";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -1093,230 +1093,230 @@ export type TypeMap<
                 };
             };
         };
-        TeamMember: {
-            payload: Prisma.$TeamMemberPayload<ExtArgs>;
-            fields: Prisma.TeamMemberFieldRefs;
+        TeamUser: {
+            payload: Prisma.$TeamUserPayload<ExtArgs>;
+            fields: Prisma.TeamUserFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.TeamMemberFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload> | null;
+                    args: Prisma.TeamUserFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.TeamMemberFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 findFirst: {
-                    args: Prisma.TeamMemberFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload> | null;
+                    args: Prisma.TeamUserFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.TeamMemberFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 findMany: {
-                    args: Prisma.TeamMemberFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>[];
+                    args: Prisma.TeamUserFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
                 };
                 create: {
-                    args: Prisma.TeamMemberCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 createMany: {
-                    args: Prisma.TeamMemberCreateManyArgs<ExtArgs>;
+                    args: Prisma.TeamUserCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.TeamMemberCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>[];
+                    args: Prisma.TeamUserCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
                 };
                 delete: {
-                    args: Prisma.TeamMemberDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 update: {
-                    args: Prisma.TeamMemberUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.TeamMemberDeleteManyArgs<ExtArgs>;
+                    args: Prisma.TeamUserDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.TeamMemberUpdateManyArgs<ExtArgs>;
+                    args: Prisma.TeamUserUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.TeamMemberUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>[];
+                    args: Prisma.TeamUserUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
                 };
                 upsert: {
-                    args: Prisma.TeamMemberUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMemberPayload>;
+                    args: Prisma.TeamUserUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
                 };
                 aggregate: {
-                    args: Prisma.TeamMemberAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamMember>;
+                    args: Prisma.TeamUserAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamUser>;
                 };
                 groupBy: {
-                    args: Prisma.TeamMemberGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.TeamMemberGroupByOutputType>[];
+                    args: Prisma.TeamUserGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TeamUserGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.TeamMemberCountArgs<ExtArgs>;
+                    args: Prisma.TeamUserCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.TeamMemberCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.TeamUserCountAggregateOutputType>
                         | number;
                 };
             };
         };
-        OrganizationMember: {
-            payload: Prisma.$OrganizationMemberPayload<ExtArgs>;
-            fields: Prisma.OrganizationMemberFieldRefs;
+        OrganizationUser: {
+            payload: Prisma.$OrganizationUserPayload<ExtArgs>;
+            fields: Prisma.OrganizationUserFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.OrganizationMemberFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload> | null;
+                    args: Prisma.OrganizationUserFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.OrganizationMemberFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 findFirst: {
-                    args: Prisma.OrganizationMemberFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload> | null;
+                    args: Prisma.OrganizationUserFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.OrganizationMemberFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 findMany: {
-                    args: Prisma.OrganizationMemberFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>[];
+                    args: Prisma.OrganizationUserFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>[];
                 };
                 create: {
-                    args: Prisma.OrganizationMemberCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 createMany: {
-                    args: Prisma.OrganizationMemberCreateManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationUserCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.OrganizationMemberCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>[];
+                    args: Prisma.OrganizationUserCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>[];
                 };
                 delete: {
-                    args: Prisma.OrganizationMemberDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 update: {
-                    args: Prisma.OrganizationMemberUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.OrganizationMemberDeleteManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationUserDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.OrganizationMemberUpdateManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationUserUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.OrganizationMemberUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>[];
+                    args: Prisma.OrganizationUserUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>[];
                 };
                 upsert: {
-                    args: Prisma.OrganizationMemberUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationMemberPayload>;
+                    args: Prisma.OrganizationUserUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationUserPayload>;
                 };
                 aggregate: {
-                    args: Prisma.OrganizationMemberAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateOrganizationMember>;
+                    args: Prisma.OrganizationUserAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateOrganizationUser>;
                 };
                 groupBy: {
-                    args: Prisma.OrganizationMemberGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.OrganizationMemberGroupByOutputType>[];
+                    args: Prisma.OrganizationUserGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.OrganizationUserGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.OrganizationMemberCountArgs<ExtArgs>;
+                    args: Prisma.OrganizationUserCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.OrganizationMemberCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.OrganizationUserCountAggregateOutputType>
                         | number;
                 };
             };
         };
-        Invitation: {
-            payload: Prisma.$InvitationPayload<ExtArgs>;
-            fields: Prisma.InvitationFieldRefs;
+        OrganizationInvitation: {
+            payload: Prisma.$OrganizationInvitationPayload<ExtArgs>;
+            fields: Prisma.OrganizationInvitationFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.InvitationFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload> | null;
+                    args: Prisma.OrganizationInvitationFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.InvitationFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 findFirst: {
-                    args: Prisma.InvitationFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload> | null;
+                    args: Prisma.OrganizationInvitationFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.InvitationFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 findMany: {
-                    args: Prisma.InvitationFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>[];
+                    args: Prisma.OrganizationInvitationFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>[];
                 };
                 create: {
-                    args: Prisma.InvitationCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 createMany: {
-                    args: Prisma.InvitationCreateManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationInvitationCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.InvitationCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>[];
+                    args: Prisma.OrganizationInvitationCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>[];
                 };
                 delete: {
-                    args: Prisma.InvitationDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 update: {
-                    args: Prisma.InvitationUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.InvitationDeleteManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationInvitationDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.InvitationUpdateManyArgs<ExtArgs>;
+                    args: Prisma.OrganizationInvitationUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.InvitationUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>[];
+                    args: Prisma.OrganizationInvitationUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>[];
                 };
                 upsert: {
-                    args: Prisma.InvitationUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$InvitationPayload>;
+                    args: Prisma.OrganizationInvitationUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationInvitationPayload>;
                 };
                 aggregate: {
-                    args: Prisma.InvitationAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateInvitation>;
+                    args: Prisma.OrganizationInvitationAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateOrganizationInvitation>;
                 };
                 groupBy: {
-                    args: Prisma.InvitationGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.InvitationGroupByOutputType>[];
+                    args: Prisma.OrganizationInvitationGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.OrganizationInvitationGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.InvitationCountArgs<ExtArgs>;
+                    args: Prisma.OrganizationInvitationCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.InvitationCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.OrganizationInvitationCountAggregateOutputType>
                         | number;
                 };
             };
@@ -1469,6 +1469,82 @@ export type TypeMap<
                     args: Prisma.PersonCountArgs<ExtArgs>;
                     result:
                         | runtime.Types.Utils.Optional<Prisma.PersonCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        TeamMembership: {
+            payload: Prisma.$TeamMembershipPayload<ExtArgs>;
+            fields: Prisma.TeamMembershipFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.TeamMembershipFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.TeamMembershipFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                findFirst: {
+                    args: Prisma.TeamMembershipFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.TeamMembershipFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                findMany: {
+                    args: Prisma.TeamMembershipFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>[];
+                };
+                create: {
+                    args: Prisma.TeamMembershipCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                createMany: {
+                    args: Prisma.TeamMembershipCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.TeamMembershipCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>[];
+                };
+                delete: {
+                    args: Prisma.TeamMembershipDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                update: {
+                    args: Prisma.TeamMembershipUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.TeamMembershipDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.TeamMembershipUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.TeamMembershipUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>[];
+                };
+                upsert: {
+                    args: Prisma.TeamMembershipUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembershipPayload>;
+                };
+                aggregate: {
+                    args: Prisma.TeamMembershipAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamMembership>;
+                };
+                groupBy: {
+                    args: Prisma.TeamMembershipGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TeamMembershipGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.TeamMembershipCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.TeamMembershipCountAggregateOutputType>
                         | number;
                 };
             };
@@ -2005,154 +2081,154 @@ export type TypeMap<
                 };
             };
         };
-        SkillPackageSubscriptionGroupOverride: {
-            payload: Prisma.$SkillPackageSubscriptionGroupOverridePayload<ExtArgs>;
-            fields: Prisma.SkillPackageSubscriptionGroupOverrideFieldRefs;
+        SkillGroupOverride: {
+            payload: Prisma.$SkillGroupOverridePayload<ExtArgs>;
+            fields: Prisma.SkillGroupOverrideFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload> | null;
+                    args: Prisma.SkillGroupOverrideFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 findFirst: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload> | null;
+                    args: Prisma.SkillGroupOverrideFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 findMany: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>[];
+                    args: Prisma.SkillGroupOverrideFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>[];
                 };
                 create: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 createMany: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideCreateManyArgs<ExtArgs>;
+                    args: Prisma.SkillGroupOverrideCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>[];
+                    args: Prisma.SkillGroupOverrideCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>[];
                 };
                 delete: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 update: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 deleteMany: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideDeleteManyArgs<ExtArgs>;
+                    args: Prisma.SkillGroupOverrideDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyArgs<ExtArgs>;
+                    args: Prisma.SkillGroupOverrideUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>[];
+                    args: Prisma.SkillGroupOverrideUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>[];
                 };
                 upsert: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionGroupOverridePayload>;
+                    args: Prisma.SkillGroupOverrideUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillGroupOverridePayload>;
                 };
                 aggregate: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateSkillPackageSubscriptionGroupOverride>;
+                    args: Prisma.SkillGroupOverrideAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateSkillGroupOverride>;
                 };
                 groupBy: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.SkillPackageSubscriptionGroupOverrideGroupByOutputType>[];
+                    args: Prisma.SkillGroupOverrideGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.SkillGroupOverrideGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.SkillPackageSubscriptionGroupOverrideCountArgs<ExtArgs>;
+                    args: Prisma.SkillGroupOverrideCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.SkillPackageSubscriptionGroupOverrideCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.SkillGroupOverrideCountAggregateOutputType>
                         | number;
                 };
             };
         };
-        SkillPackageSubscriptionSkillOverride: {
-            payload: Prisma.$SkillPackageSubscriptionSkillOverridePayload<ExtArgs>;
-            fields: Prisma.SkillPackageSubscriptionSkillOverrideFieldRefs;
+        SkillOverride: {
+            payload: Prisma.$SkillOverridePayload<ExtArgs>;
+            fields: Prisma.SkillOverrideFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload> | null;
+                    args: Prisma.SkillOverrideFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 findFirst: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload> | null;
+                    args: Prisma.SkillOverrideFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 findMany: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>[];
+                    args: Prisma.SkillOverrideFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>[];
                 };
                 create: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 createMany: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideCreateManyArgs<ExtArgs>;
+                    args: Prisma.SkillOverrideCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>[];
+                    args: Prisma.SkillOverrideCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>[];
                 };
                 delete: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 update: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 deleteMany: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideDeleteManyArgs<ExtArgs>;
+                    args: Prisma.SkillOverrideDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyArgs<ExtArgs>;
+                    args: Prisma.SkillOverrideUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>[];
+                    args: Prisma.SkillOverrideUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>[];
                 };
                 upsert: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillPackageSubscriptionSkillOverridePayload>;
+                    args: Prisma.SkillOverrideUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$SkillOverridePayload>;
                 };
                 aggregate: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateSkillPackageSubscriptionSkillOverride>;
+                    args: Prisma.SkillOverrideAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateSkillOverride>;
                 };
                 groupBy: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.SkillPackageSubscriptionSkillOverrideGroupByOutputType>[];
+                    args: Prisma.SkillOverrideGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.SkillOverrideGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.SkillPackageSubscriptionSkillOverrideCountArgs<ExtArgs>;
+                    args: Prisma.SkillOverrideCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.SkillPackageSubscriptionSkillOverrideCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.SkillOverrideCountAggregateOutputType>
                         | number;
                 };
             };
@@ -2300,17 +2376,17 @@ export const TeamConfigScalarFieldEnum = {
 export type TeamConfigScalarFieldEnum =
     (typeof TeamConfigScalarFieldEnum)[keyof typeof TeamConfigScalarFieldEnum];
 
-export const TeamMemberScalarFieldEnum = {
+export const TeamUserScalarFieldEnum = {
     id: "id",
     teamId: "teamId",
     userId: "userId",
     createdAt: "createdAt",
 } as const;
 
-export type TeamMemberScalarFieldEnum =
-    (typeof TeamMemberScalarFieldEnum)[keyof typeof TeamMemberScalarFieldEnum];
+export type TeamUserScalarFieldEnum =
+    (typeof TeamUserScalarFieldEnum)[keyof typeof TeamUserScalarFieldEnum];
 
-export const OrganizationMemberScalarFieldEnum = {
+export const OrganizationUserScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     userId: "userId",
@@ -2318,10 +2394,10 @@ export const OrganizationMemberScalarFieldEnum = {
     createdAt: "createdAt",
 } as const;
 
-export type OrganizationMemberScalarFieldEnum =
-    (typeof OrganizationMemberScalarFieldEnum)[keyof typeof OrganizationMemberScalarFieldEnum];
+export type OrganizationUserScalarFieldEnum =
+    (typeof OrganizationUserScalarFieldEnum)[keyof typeof OrganizationUserScalarFieldEnum];
 
-export const InvitationScalarFieldEnum = {
+export const OrganizationInvitationScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     email: "email",
@@ -2333,8 +2409,8 @@ export const InvitationScalarFieldEnum = {
     inviterId: "inviterId",
 } as const;
 
-export type InvitationScalarFieldEnum =
-    (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum];
+export type OrganizationInvitationScalarFieldEnum =
+    (typeof OrganizationInvitationScalarFieldEnum)[keyof typeof OrganizationInvitationScalarFieldEnum];
 
 export const OrganizationLogEntryScalarFieldEnum = {
     id: "id",
@@ -2366,6 +2442,19 @@ export const PersonScalarFieldEnum = {
 
 export type PersonScalarFieldEnum =
     (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum];
+
+export const TeamMembershipScalarFieldEnum = {
+    id: "id",
+    teamId: "teamId",
+    personId: "personId",
+    tags: "tags",
+    properties: "properties",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type TeamMembershipScalarFieldEnum =
+    (typeof TeamMembershipScalarFieldEnum)[keyof typeof TeamMembershipScalarFieldEnum];
 
 export const NoteScalarFieldEnum = {
     id: "id",
@@ -2474,17 +2563,17 @@ export const SkillPackageSubscriptionScalarFieldEnum = {
 export type SkillPackageSubscriptionScalarFieldEnum =
     (typeof SkillPackageSubscriptionScalarFieldEnum)[keyof typeof SkillPackageSubscriptionScalarFieldEnum];
 
-export const SkillPackageSubscriptionGroupOverrideScalarFieldEnum = {
+export const SkillGroupOverrideScalarFieldEnum = {
     subscriptionId: "subscriptionId",
     skillGroupId: "skillGroupId",
     description: "description",
     include: "include",
 } as const;
 
-export type SkillPackageSubscriptionGroupOverrideScalarFieldEnum =
-    (typeof SkillPackageSubscriptionGroupOverrideScalarFieldEnum)[keyof typeof SkillPackageSubscriptionGroupOverrideScalarFieldEnum];
+export type SkillGroupOverrideScalarFieldEnum =
+    (typeof SkillGroupOverrideScalarFieldEnum)[keyof typeof SkillGroupOverrideScalarFieldEnum];
 
-export const SkillPackageSubscriptionSkillOverrideScalarFieldEnum = {
+export const SkillOverrideScalarFieldEnum = {
     subscriptionId: "subscriptionId",
     skillId: "skillId",
     description: "description",
@@ -2492,8 +2581,8 @@ export const SkillPackageSubscriptionSkillOverrideScalarFieldEnum = {
     include: "include",
 } as const;
 
-export type SkillPackageSubscriptionSkillOverrideScalarFieldEnum =
-    (typeof SkillPackageSubscriptionSkillOverrideScalarFieldEnum)[keyof typeof SkillPackageSubscriptionSkillOverrideScalarFieldEnum];
+export type SkillOverrideScalarFieldEnum =
+    (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",
@@ -2765,11 +2854,12 @@ export type GlobalOmitConfig = {
     organizationConfig?: Prisma.OrganizationConfigOmit;
     team?: Prisma.TeamOmit;
     teamConfig?: Prisma.TeamConfigOmit;
-    teamMember?: Prisma.TeamMemberOmit;
-    organizationMember?: Prisma.OrganizationMemberOmit;
-    invitation?: Prisma.InvitationOmit;
+    teamUser?: Prisma.TeamUserOmit;
+    organizationUser?: Prisma.OrganizationUserOmit;
+    organizationInvitation?: Prisma.OrganizationInvitationOmit;
     organizationLogEntry?: Prisma.OrganizationLogEntryOmit;
     person?: Prisma.PersonOmit;
+    teamMembership?: Prisma.TeamMembershipOmit;
     note?: Prisma.NoteOmit;
     skillPackage?: Prisma.SkillPackageOmit;
     skillGroup?: Prisma.SkillGroupOmit;
@@ -2777,8 +2867,8 @@ export type GlobalOmitConfig = {
     skillCheckSession?: Prisma.SkillCheckSessionOmit;
     skillCheck?: Prisma.SkillCheckOmit;
     skillPackageSubscription?: Prisma.SkillPackageSubscriptionOmit;
-    skillPackageSubscriptionGroupOverride?: Prisma.SkillPackageSubscriptionGroupOverrideOmit;
-    skillPackageSubscriptionSkillOverride?: Prisma.SkillPackageSubscriptionSkillOverrideOmit;
+    skillGroupOverride?: Prisma.SkillGroupOverrideOmit;
+    skillOverride?: Prisma.SkillOverrideOmit;
 };
 
 /* Types for Logging */

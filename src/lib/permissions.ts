@@ -13,29 +13,40 @@ import {
 
 const statement = {
     ...defaultStatements,
+    invitation: ["view", "create", "cancel"],
+    member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
-    person: ["create", "update", "delete", "archive", "restore"],
+    person: ["view", "create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
+    team: ["view", "create", "update", "delete"],
 } as const;
 
 export const ac = createAccessControl(statement);
 
 export const owner = ac.newRole({
     ...ownerAc.statements,
+    invitation: ["view", "create", "cancel"],
+    member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
-    person: ["create", "update", "delete", "archive", "restore"],
+    person: ["view", "create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
+    team: ["view", "create", "update", "delete"],
 });
 export const admin = ac.newRole({
     ...adminAc.statements,
+    invitation: ["view", "create", "cancel"],
+    member: ["view", "create", "update", "delete"],
     organization: ["view", "update"],
-    person: ["create", "update", "delete", "archive", "restore"],
+    person: ["view", "create", "update", "delete", "archive", "restore"],
     skillPackage: ["create", "update", "delete", "publish"],
+    team: ["view", "create", "update", "delete"],
 });
 
 export const member = ac.newRole({
     ...memberAc.statements,
     organization: ["view"],
+    person: ["view"],
+    team: ["view"],
 });
 
 export type Permissions = {

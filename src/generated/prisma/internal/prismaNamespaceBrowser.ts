@@ -62,11 +62,12 @@ export const ModelName = {
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
     TeamConfig: "TeamConfig",
-    TeamMember: "TeamMember",
-    OrganizationMember: "OrganizationMember",
-    Invitation: "Invitation",
+    TeamUser: "TeamUser",
+    OrganizationUser: "OrganizationUser",
+    OrganizationInvitation: "OrganizationInvitation",
     OrganizationLogEntry: "OrganizationLogEntry",
     Person: "Person",
+    TeamMembership: "TeamMembership",
     Note: "Note",
     SkillPackage: "SkillPackage",
     SkillGroup: "SkillGroup",
@@ -74,10 +75,8 @@ export const ModelName = {
     SkillCheckSession: "SkillCheckSession",
     SkillCheck: "SkillCheck",
     SkillPackageSubscription: "SkillPackageSubscription",
-    SkillPackageSubscriptionGroupOverride:
-        "SkillPackageSubscriptionGroupOverride",
-    SkillPackageSubscriptionSkillOverride:
-        "SkillPackageSubscriptionSkillOverride",
+    SkillGroupOverride: "SkillGroupOverride",
+    SkillOverride: "SkillOverride",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -86,12 +85,12 @@ export type ModelName = (typeof ModelName)[keyof typeof ModelName];
  * Enums
  */
 
-export const TransactionIsolationLevel = {
+export const TransactionIsolationLevel = runtime.makeStrictEnum({
     ReadUncommitted: "ReadUncommitted",
     ReadCommitted: "ReadCommitted",
     RepeatableRead: "RepeatableRead",
     Serializable: "Serializable",
-} as const;
+} as const);
 
 export type TransactionIsolationLevel =
     (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
@@ -200,17 +199,17 @@ export const TeamConfigScalarFieldEnum = {
 export type TeamConfigScalarFieldEnum =
     (typeof TeamConfigScalarFieldEnum)[keyof typeof TeamConfigScalarFieldEnum];
 
-export const TeamMemberScalarFieldEnum = {
+export const TeamUserScalarFieldEnum = {
     id: "id",
     teamId: "teamId",
     userId: "userId",
     createdAt: "createdAt",
 } as const;
 
-export type TeamMemberScalarFieldEnum =
-    (typeof TeamMemberScalarFieldEnum)[keyof typeof TeamMemberScalarFieldEnum];
+export type TeamUserScalarFieldEnum =
+    (typeof TeamUserScalarFieldEnum)[keyof typeof TeamUserScalarFieldEnum];
 
-export const OrganizationMemberScalarFieldEnum = {
+export const OrganizationUserScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     userId: "userId",
@@ -218,10 +217,10 @@ export const OrganizationMemberScalarFieldEnum = {
     createdAt: "createdAt",
 } as const;
 
-export type OrganizationMemberScalarFieldEnum =
-    (typeof OrganizationMemberScalarFieldEnum)[keyof typeof OrganizationMemberScalarFieldEnum];
+export type OrganizationUserScalarFieldEnum =
+    (typeof OrganizationUserScalarFieldEnum)[keyof typeof OrganizationUserScalarFieldEnum];
 
-export const InvitationScalarFieldEnum = {
+export const OrganizationInvitationScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     email: "email",
@@ -233,8 +232,8 @@ export const InvitationScalarFieldEnum = {
     inviterId: "inviterId",
 } as const;
 
-export type InvitationScalarFieldEnum =
-    (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum];
+export type OrganizationInvitationScalarFieldEnum =
+    (typeof OrganizationInvitationScalarFieldEnum)[keyof typeof OrganizationInvitationScalarFieldEnum];
 
 export const OrganizationLogEntryScalarFieldEnum = {
     id: "id",
@@ -266,6 +265,19 @@ export const PersonScalarFieldEnum = {
 
 export type PersonScalarFieldEnum =
     (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum];
+
+export const TeamMembershipScalarFieldEnum = {
+    id: "id",
+    teamId: "teamId",
+    personId: "personId",
+    tags: "tags",
+    properties: "properties",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type TeamMembershipScalarFieldEnum =
+    (typeof TeamMembershipScalarFieldEnum)[keyof typeof TeamMembershipScalarFieldEnum];
 
 export const NoteScalarFieldEnum = {
     id: "id",
@@ -374,17 +386,17 @@ export const SkillPackageSubscriptionScalarFieldEnum = {
 export type SkillPackageSubscriptionScalarFieldEnum =
     (typeof SkillPackageSubscriptionScalarFieldEnum)[keyof typeof SkillPackageSubscriptionScalarFieldEnum];
 
-export const SkillPackageSubscriptionGroupOverrideScalarFieldEnum = {
+export const SkillGroupOverrideScalarFieldEnum = {
     subscriptionId: "subscriptionId",
     skillGroupId: "skillGroupId",
     description: "description",
     include: "include",
 } as const;
 
-export type SkillPackageSubscriptionGroupOverrideScalarFieldEnum =
-    (typeof SkillPackageSubscriptionGroupOverrideScalarFieldEnum)[keyof typeof SkillPackageSubscriptionGroupOverrideScalarFieldEnum];
+export type SkillGroupOverrideScalarFieldEnum =
+    (typeof SkillGroupOverrideScalarFieldEnum)[keyof typeof SkillGroupOverrideScalarFieldEnum];
 
-export const SkillPackageSubscriptionSkillOverrideScalarFieldEnum = {
+export const SkillOverrideScalarFieldEnum = {
     subscriptionId: "subscriptionId",
     skillId: "skillId",
     description: "description",
@@ -392,8 +404,8 @@ export const SkillPackageSubscriptionSkillOverrideScalarFieldEnum = {
     include: "include",
 } as const;
 
-export type SkillPackageSubscriptionSkillOverrideScalarFieldEnum =
-    (typeof SkillPackageSubscriptionSkillOverrideScalarFieldEnum)[keyof typeof SkillPackageSubscriptionSkillOverrideScalarFieldEnum];
+export type SkillOverrideScalarFieldEnum =
+    (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",
@@ -403,7 +415,7 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 export const JsonNullValueInput = {
-    JsonNull: "JsonNull",
+    JsonNull: JsonNull,
 } as const;
 
 export type JsonNullValueInput =
@@ -424,9 +436,9 @@ export const NullsOrder = {
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
 
 export const JsonNullValueFilter = {
-    DbNull: "DbNull",
-    JsonNull: "JsonNull",
-    AnyNull: "AnyNull",
+    DbNull: DbNull,
+    JsonNull: JsonNull,
+    AnyNull: AnyNull,
 } as const;
 
 export type JsonNullValueFilter =

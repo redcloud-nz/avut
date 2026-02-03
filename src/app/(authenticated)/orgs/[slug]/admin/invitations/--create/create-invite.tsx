@@ -6,13 +6,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +31,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
@@ -46,17 +44,6 @@ type AdminModule_CreateInvitation_FormProps = {
 export function AdminModule_CreateInvitation_Form({
     organization,
 }: AdminModule_CreateInvitation_FormProps) {
-    const [{ data: invitations }, { data: members }] = useSuspenseQueries({
-        queries: [
-            trpc.organizations.listOrganizationInvitations.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.organizations.listOrganizationMembers.queryOptions({
-                organizationId: organization.id,
-            }),
-        ],
-    });
-
     const queryClient = useQueryClient();
     const router = useRouter();
 
@@ -64,7 +51,7 @@ export function AdminModule_CreateInvitation_Form({
         resolver: zodResolver(
             z.object({
                 email: z.email(),
-                role: z.enum(["owner", "admin", "member"]),
+                role: z.enum(["admin", "member"]),
             }),
         ),
         defaultValues: {
@@ -73,56 +60,36 @@ export function AdminModule_CreateInvitation_Form({
         },
     });
 
-    const [status, setStatus] = useState<"Pending" | "Idle" | "Error">("Idle");
+    const mutation = useMutation(
+        trpc.invitations.createInvitation.mutationOptions({
+            async onSettled() {
+                await queryClient.invalidateQueries(
+                    trpc.organizations.listOrganizationInvitations.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
 
     const handleSubmit = form.handleSubmit(async (formData) => {
-        setStatus("Pending");
-
-        // Check if an invitation has already been sent to this email
-        const existingInvitation = invitations.find(
-            (invitation) =>
-                invitation.email === formData.email &&
-                invitation.status == "pending",
+        toast.promise(
+            async () => {
+                await mutation.mutateAsync({
+                    organizationId: organization.id,
+                    email: formData.email,
+                    role: formData.role,
+                });
+                router.push(
+                    Paths.org(organization.slug).admin.invitations.href,
+                );
+            },
+            {
+                loading: "Sending invitation...",
+                success: `Invitation sent to ${form.getValues("email")}`,
+                error: (error) => "Failed to send invitation: " + error.message,
+            },
         );
-        if (existingInvitation) {
-            form.setError("email", {
-                type: "manual",
-                message: "An invitation has already been sent to this email.",
-            });
-            setStatus("Idle");
-            return;
-        }
-
-        // Check if a member with this email already exists
-        const existingMember = members.find(
-            (member) => member.user.email === formData.email,
-        );
-        if (existingMember) {
-            form.setError("email", {
-                type: "manual",
-                message: "A member with this email already exists.",
-            });
-            setStatus("Idle");
-            return;
-        }
-
-        const { data, error } = await authClient.organization.inviteMember({
-            email: formData.email,
-            role: formData.role,
-            organizationId: organization.id,
-        });
-
-        if (error) toast.error("Failed to send invitation. Please try again.");
-        else
-            toast.success(`Invitation successfully sent to ${formData.email}.`);
-
-        setStatus("Idle");
-        queryClient.invalidateQueries(
-            trpc.organizations.listOrganizationInvitations.queryFilter({
-                organizationId: organization.id,
-            }),
-        );
-        router.push(Paths.org(organization.slug).admin.invitations.href);
     });
 
     return (
@@ -132,16 +99,16 @@ export function AdminModule_CreateInvitation_Form({
                     name="email"
                     control={form.control}
                     render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
+                        <Field
+                            data-invalid={fieldState.invalid}
+                            orientation="responsive"
+                        >
                             <FieldLabel htmlFor="email">
                                 Email Address
                             </FieldLabel>
-                            <FieldDescription>
-                                Enter the email address of the user you want to
-                                invite.
-                            </FieldDescription>
                             <Input
                                 id="email"
+                                className="min-w-1/2"
                                 placeholder="example@email.com"
                                 aria-invalid={fieldState.invalid}
                                 {...field}

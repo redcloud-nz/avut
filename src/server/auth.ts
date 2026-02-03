@@ -9,13 +9,14 @@ import { nextCookies } from "better-auth/next-js";
 import { emailOTP, organization } from "better-auth/plugins";
 
 import OneTimePasswordTemplate from "@/emails/one-time-password";
+import OrganizationInviteTemplate from "@/emails/organization-invite";
+
 import { NoReplyEmailAddress, sendEmail } from "@/lib/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, owner, admin, member } from "@/lib/permissions";
 
-import prisma from "./prisma";
 import { revalidateOrganization } from "./organization";
-import OrganizationInviteTemplate from "@/emails/organization-invite";
+import prisma from "./prisma";
 
 export const auth = betterAuth({
     account: {
@@ -78,19 +79,16 @@ export const auth = betterAuth({
                     modelName: "Organization",
                 },
                 member: {
-                    modelName: "OrganizationMember",
+                    modelName: "OrganizationUser",
                 },
                 invitation: {
-                    modelName: "Invitation",
+                    modelName: "OrganizationInvitation",
                 },
                 team: {
                     modelName: "Team",
                 },
-                teamMembership: {
-                    modelName: "TeamMember",
-                },
-                teamInvitation: {
-                    modelName: "TeamInvitation",
+                teamMember: {
+                    modelName: "TeamUser",
                 },
             },
             async sendInvitationEmail({
@@ -115,6 +113,7 @@ export const auth = betterAuth({
             },
             teams: {
                 enabled: true,
+                allowRemovingAllTeams: true,
             },
         }),
     ],

@@ -112,7 +112,6 @@ export function SidebarProvider({
     // Adds a keyboard shortcut to toggle the sidebar.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            console.log("keydown", event.key, event.metaKey, event.ctrlKey);
             if (
                 event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
                 (event.metaKey || event.ctrlKey)
