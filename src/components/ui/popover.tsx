@@ -4,14 +4,11 @@
  */
 "use client";
 
-import { ComponentProps, ReactNode } from "react";
+import { ComponentProps } from "react";
 
 import { Popover as PopoverPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-
-import { Button } from "./button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 export const Popover = PopoverPrimitive.Root;
 
@@ -49,30 +46,5 @@ export function PopoverContent({
         <PopoverPrimitive.Portal>{content}</PopoverPrimitive.Portal>
     ) : (
         content
-    );
-}
-
-interface PopoverTriggerButtonProps extends ComponentProps<typeof Button> {
-    children: ReactNode;
-    tooltip?: ReactNode;
-}
-
-/**
- * A {@link Button} that triggers a popover when clicked. It also displays a tooltip with the provided text.
- * @param tooltip The text to display in the tooltip.
- */
-export function PopoverTriggerButton({
-    tooltip,
-    ...props
-}: PopoverTriggerButtonProps) {
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                    <Button {...props} />
-                </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
     );
 }

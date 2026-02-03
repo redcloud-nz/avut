@@ -31,7 +31,7 @@ import { Link } from "@/components/ui/link";
 
 import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationMemberData } from "@/lib/schemas/organization-member";
+import { OrganizationUserData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
@@ -47,14 +47,14 @@ export function AdminModule_UsersList({
     currentUserId,
 }: AdminModule_UsersListProps) {
     const { data: members } = useSuspenseQuery(
-        trpc.organizations.listOrganizationMembers.queryOptions({
+        trpc.organizations.listOrganizationUsers.queryOptions({
             organizationId: organization.id,
         }),
     );
 
     const adminModule = Paths.org(organization.slug).admin;
 
-    type RowData = OrganizationMemberData & { user: UserData };
+    type RowData = OrganizationUserData & { user: UserData };
 
     const columns = useMemo(
         () =>

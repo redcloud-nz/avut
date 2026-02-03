@@ -11,11 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +32,7 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationMemberData } from "@/lib/schemas/organization-member";
+import { OrganizationUserData } from "@/lib/schemas/organization-member";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 
@@ -44,7 +40,7 @@ import { trpc } from "@/trpc/client";
 
 type AdminModule_UpdateUser_FormProps = {
     organization: OrganizationData;
-    organizationMember: OrganizationMemberData;
+    organizationMember: OrganizationUserData;
 };
 
 export function AdminModule_UpdateUser_Form({
@@ -78,13 +74,13 @@ export function AdminModule_UpdateUser_Form({
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries(
-                trpc.organizations.getOrganizationMember.queryFilter({
+                trpc.organizations.getOrganizationUser.queryFilter({
                     organizationId: organization.id,
-                    organizationMemberId: organizationMember.id,
+                    organizationUserId: organizationMember.id,
                 }),
             );
             queryClient.invalidateQueries(
-                trpc.organizations.listOrganizationMembers.queryFilter({
+                trpc.organizations.listOrganizationUsers.queryFilter({
                     organizationId: organization.id,
                 }),
             );

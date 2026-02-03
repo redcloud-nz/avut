@@ -48,10 +48,10 @@ export default function AdminModule_User_Page(
 
     const organization = useOrganization();
 
-    const { data: orgMember } = useSuspenseQuery(
-        trpc.organizations.getOrganizationMember.queryOptions({
+    const { data: orgUser } = useSuspenseQuery(
+        trpc.organizations.getOrganizationUser.queryOptions({
             organizationId: organization.id,
-            organizationMemberId: org_member_id,
+            organizationUserId: org_member_id,
         }),
     );
 
@@ -61,7 +61,7 @@ export default function AdminModule_User_Page(
                 breadcrumbs={[
                     Paths.org(slug).admin.index,
                     Paths.org(slug).admin.users,
-                    orgMember.user.name,
+                    orgUser.user.name,
                 ]}
             />
             <Lexington.Page>
@@ -94,20 +94,20 @@ export default function AdminModule_User_Page(
                                 </Protect>
                                 <AdminModule_UserMenu
                                     organization={organization}
-                                    organizationMember={orgMember}
-                                    user={orgMember.user}
+                                    organizationUser={orgUser}
+                                    user={orgUser.user}
                                 />
                             </ButtonGroup>
                         </Hermes.SectionHeader>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>{orgMember.user.name}</CardTitle>
+                                <CardTitle>{orgUser.user.name}</CardTitle>
                                 <CardAction>
-                                    {orgMember.user.image && (
+                                    {orgUser.user.image && (
                                         <img
-                                            src={orgMember.user.image}
-                                            alt={`${orgMember.user.name}'s profile image`}
+                                            src={orgUser.user.image}
+                                            alt={`${orgUser.user.name}'s profile image`}
                                             className="rounded-full w-12 h-12"
                                         />
                                     )}
@@ -118,21 +118,21 @@ export default function AdminModule_User_Page(
                                     <Field orientation="responsive">
                                         <FieldLabel>User ID</FieldLabel>
                                         <FieldValue className="min-w-1/2">
-                                            {orgMember.user.id}
+                                            {orgUser.user.id}
                                         </FieldValue>
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Name</FieldLabel>
                                         <FieldValue className="min-w-1/2">
-                                            {orgMember.user.name}
+                                            {orgUser.user.name}
                                         </FieldValue>
                                     </Field>
 
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
                                         <FieldValue className="min-w-1/2">
-                                            {orgMember.user.email}
-                                            {orgMember.user.emailVerified ? (
+                                            {orgUser.user.email}
+                                            {orgUser.user.emailVerified ? (
                                                 <span className="text-muted-foreground ml-2"></span>
                                             ) : null}
                                         </FieldValue>
@@ -145,7 +145,7 @@ export default function AdminModule_User_Page(
                                             Organization Member ID
                                         </FieldLabel>
                                         <FieldValue className="min-w-1/2">
-                                            {orgMember.id}
+                                            {orgUser.id}
                                         </FieldValue>
                                     </Field>
 
@@ -153,7 +153,7 @@ export default function AdminModule_User_Page(
                                         <FieldLabel>Role</FieldLabel>
                                         <FieldValue
                                             className="min-w-1/2"
-                                            value={orgMember.role
+                                            value={orgUser.role
                                                 .map(
                                                     (role) =>
                                                         OrganizationRole
@@ -167,7 +167,7 @@ export default function AdminModule_User_Page(
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={formatDate(
-                                                orgMember.createdAt,
+                                                orgUser.createdAt,
                                             )}
                                         />
                                     </Field>

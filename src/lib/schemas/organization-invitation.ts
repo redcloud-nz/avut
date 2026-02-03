@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import type { Invitation as InvitationRecord } from "@/generated/prisma/client";
+import type { OrganizationInvitation as InvitationRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "../id";
 import { OrganizationId } from "./organization";
 import { OrganizationRole } from "./organization-role";

@@ -65,7 +65,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                 setState({ status: "Error", error });
             } else {
                 console.log("Reset password successful", data);
-                router.push(Paths.auth.signIn(email).href);
+                router.push(Paths.auth.signIn({ email }).href);
             }
         } catch (error) {
             setState({
@@ -92,10 +92,11 @@ export function ResetPassword_Card({ email }: { email: string }) {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="forgot-password-email">
+                                    <FieldLabel htmlFor="verification-code">
                                         Verification Code
                                     </FieldLabel>
                                     <InputOTP.Root
+                                        id="verification-code"
                                         maxLength={6}
                                         value={field.value}
                                         onChange={field.onChange}

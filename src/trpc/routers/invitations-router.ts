@@ -134,7 +134,7 @@ export const invitationsRouter = createTrpcRouter({
                 headers: ctx.headers,
             });
 
-            return OrganizationInvitationData.fromRecord(invitation);
+            return OrganizationInvitationData.schema.parse(invitation);
         }),
 
     /**

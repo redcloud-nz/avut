@@ -11,6 +11,7 @@ import { AuthSession } from "@/server/auth";
 import { createInnerTrpcContext } from "@/trpc/init";
 import { nanoId16 } from "@/lib/id";
 import { TRPCError } from "@trpc/server";
+import { OrganizationId } from "@/lib/schemas/organization";
 
 const mockDate = new Date("2020-01-01T00:00:00.000Z");
 const nowDate = new Date();
@@ -57,7 +58,10 @@ export const createAuthenticatedMockContext = ({
                 ...session,
             } satisfies AuthSession["session"],
         },
-        hasPermission: async (requiredPermissions: Permissions) => {
+        hasPermission: async (
+            organizationId: OrganizationId,
+            requiredPermissions: Permissions,
+        ) => {
             for (const key in requiredPermissions) {
                 const permKey = key as keyof Permissions;
                 const requiredPermValue: string[] =
@@ -76,6 +80,7 @@ export const createAuthenticatedMockContext = ({
                 }
             }
         },
+        headers: new Headers(),
     });
 };
 

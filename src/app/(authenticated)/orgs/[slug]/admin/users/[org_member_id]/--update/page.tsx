@@ -33,9 +33,9 @@ export default async function AdminModule_UpdateUser_Page(
     const organization = useOrganization();
 
     const { data: organizationMember } = useSuspenseQuery(
-        trpc.organizations.getOrganizationMember.queryOptions({
+        trpc.organizations.getOrganizationUser.queryOptions({
             organizationId: organization.id,
-            organizationMemberId: org_member_id,
+            organizationUserId: org_member_id,
         }),
     );
 

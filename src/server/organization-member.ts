@@ -9,8 +9,8 @@ import { notFound } from "next/navigation";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
-    OrganizationMemberData,
-    OrganizationMemberId,
+    OrganizationUserData,
+    OrganizationUserId,
 } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 
@@ -20,41 +20,40 @@ import prisma from "./prisma";
  * Get an organization member (and the associated user) by their ID within an organization.
  *
  * Notes:
- * - The results are cached for performance with a cache tag of `organization-member-{orgMemberId}`.
- * - The `orgMemberId` parameter is not typed to allow easier integration with route parameters.
- * - If the organization member is not found, a 404 response is triggered.
+ * - The results are cached for performance with a cache tag of `organization-user-{orgUserId}`.
+ * - The `orgUserId` parameter is not typed to allow easier integration with route parameters.
+ * - If the organization user is not found, a 404 response is triggered.
  *
  * @param organizationId The ID of the organization.
- * @param orgMemberId The ID of the organization member.
- * @returns The organization member data along with the associated user data.
+ * @param orgUserId The ID of the organization user.
+ * @returns The organization user data along with the associated user data.
  */
-export async function getOrganizationMemberById(
+export async function getOrganizationUserById(
     organizationId: OrganizationId,
-    orgMemberId: string,
-): Promise<OrganizationMemberData & { user: UserData }> {
+    orgUserId: string,
+): Promise<OrganizationUserData & { user: UserData }> {
     "use cache";
-    cacheTag(`organization-member-${orgMemberId}`);
+    cacheTag(`organization-user-${orgUserId}`);
 
-    // Fetch organization member record
-    const orgMember = await prisma.organizationMember.findUnique({
-        where: { organizationId, id: orgMemberId },
+    // Fetch organization user record
+    const orgUser = await prisma.organizationUser.findUnique({
+        where: { organizationId, id: orgUserId },
         include: { user: true },
     });
 
-    if (!orgMember) return notFound();
-
+    if (!orgUser) return notFound();
     return {
-        ...OrganizationMemberData.fromRecord(orgMember),
-        user: UserData.fromRecord(orgMember.user),
+        ...OrganizationUserData.fromRecord(orgUser),
+        user: UserData.fromRecord(orgUser.user),
     };
 }
 
 /**
- * Revalidate the cache for an organization member.
- * @param orgMemberId The ID of the organization member.
+ * Revalidate the cache for an organization user.
+ * @param orgUserId The ID of the organization user.
  */
-export async function revalidateOrganizationMember(
-    orgMemberId: OrganizationMemberId,
+export async function revalidateOrganizationUser(
+    orgUserId: OrganizationUserId,
 ) {
-    revalidateTag(`organization-member-${orgMemberId}`, { expire: 0 });
+    revalidateTag(`organization-user-${orgUserId}`, { expire: 0 });
 }

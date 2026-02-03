@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import type { OrganizationMember as OrganizationMemberRecord } from "@/generated/prisma/client";
+import type { OrganizationUser as OrganizationUserRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationRole } from "./organization-role";
@@ -13,33 +13,31 @@ import { OrganizationRole } from "./organization-role";
 import { zodNanoId16 } from "../validation";
 import { UserId } from "./user";
 
-export const OrganizationMemberId = {
+export const OrganizationUserId = {
     schema: zodNanoId16(
-        "OrganizationMemberId expected",
-    ).brand<"OrganizationMemberId">(),
+        "OrganizationUserId expected",
+    ).brand<"OrganizationUserId">(),
 
-    create: () => OrganizationMemberId.schema.parse(nanoId16()),
+    create: () => OrganizationUserId.schema.parse(nanoId16()),
 } as const;
 
-export type OrganizationMemberId = z.infer<typeof OrganizationMemberId.schema>;
+export type OrganizationUserId = z.infer<typeof OrganizationUserId.schema>;
 
-export const OrganizationMemberData = {
+export const OrganizationUserData = {
     schema: z.object({
-        id: OrganizationMemberId.schema,
+        id: OrganizationUserId.schema,
         organizationId: z.string(),
         createdAt: z.iso.datetime(),
         role: z.array(OrganizationRole.schema),
         userId: UserId.schema,
     }),
 
-    fromRecord: (record: OrganizationMemberRecord) =>
-        OrganizationMemberData.schema.parse({
+    fromRecord: (record: OrganizationUserRecord) =>
+        OrganizationUserData.schema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
             role: record.role.split(","),
         }),
 };
 
-export type OrganizationMemberData = z.infer<
-    typeof OrganizationMemberData.schema
->;
+export type OrganizationUserData = z.infer<typeof OrganizationUserData.schema>;

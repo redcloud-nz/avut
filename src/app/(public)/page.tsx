@@ -7,9 +7,11 @@
 
 import Link from "next/link";
 
+import { CopyrightString } from "@/components/ui/copyright";
+
 export default function HomePage() {
     return (
-        <div className="min-h-screen bg-lnear-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
             {/* Header */}
             <header className="bg-white shadow">
                 <nav className="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -79,7 +81,9 @@ export default function HomePage() {
             {/* Footer */}
             <footer className="bg-gray-900 text-white py-8">
                 <div className="max-w-6xl mx-auto px-4 text-center">
-                    <p>&copy; {new Date().getFullYear()} A.V.U.T. Project.</p>
+                    <p>
+                        <CopyrightString />
+                    </p>
                 </div>
             </footer>
         </div>

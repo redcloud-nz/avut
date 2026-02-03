@@ -3,10 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import {
-    OrganizationSettings,
-    OrganizationWithSettings,
-} from "./schemas/organization";
+import { OrganizationSettings } from "./schemas/organization-settings";
+import { OrganizationWithSettings } from "./schemas/organization";
 
 export type ModuleID =
     | "d4h-views"

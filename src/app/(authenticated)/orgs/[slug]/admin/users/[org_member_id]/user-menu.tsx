@@ -34,20 +34,20 @@ import { ObjectName, Paragraph } from "@/components/ui/typography";
 
 import { authClient } from "@/lib/auth-client";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationMemberData } from "@/lib/schemas/organization-member";
+import { OrganizationUserData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface AdminModule_UserMenuProps {
     organization: OrganizationData;
-    organizationMember: OrganizationMemberData;
+    organizationUser: OrganizationUserData;
     user: UserData;
 }
 
 export function AdminModule_UserMenu({
     organization,
-    organizationMember,
+    organizationUser,
     user,
 }: AdminModule_UserMenuProps) {
     const queryClient = useQueryClient();
@@ -58,10 +58,10 @@ export function AdminModule_UserMenu({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const deleteMutation = useMutation(
-        trpc.organizations.removeOrganizationMember.mutationOptions({
+        trpc.organizations.removeOrganizationUser.mutationOptions({
             onSettled() {
                 queryClient.invalidateQueries(
-                    trpc.organizations.listOrganizationMembers.queryFilter({
+                    trpc.organizations.listOrganizationUsers.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -74,7 +74,7 @@ export function AdminModule_UserMenu({
             async () => {
                 await deleteMutation.mutateAsync({
                     organizationId: organization.id,
-                    organizationMemberId: organizationMember.id,
+                    organizationUserId: organizationUser.id,
                 });
                 router.push(Paths.org(organization.slug).admin.users.href);
             },
@@ -86,7 +86,7 @@ export function AdminModule_UserMenu({
         );
     }
 
-    const isSelf = organizationMember.userId === session?.user.id;
+    const isSelf = organizationUser.userId === session?.user.id;
 
     return (
         <>
@@ -103,7 +103,7 @@ export function AdminModule_UserMenu({
                         <DropdownMenuItem
                             onSelect={() => setDeleteDialogOpen(true)}
                             // disabled={
-                            //     organizationMember.userId === session?.user.id
+                            //     organizationUser.userId === session?.user.id
                             // }
                         >
                             <ObjectIcons.Delete />

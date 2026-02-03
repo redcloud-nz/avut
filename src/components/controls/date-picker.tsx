@@ -7,9 +7,10 @@
 
 import { formatISO, parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { ComponentProps } from "react";
 
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -18,57 +19,95 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { selectTriggerVariants } from "@/components/ui/select";
-
 export interface DatePickerProps {
     className?: string;
-    defaultValue?: string;
-    name?: string;
-    onValueChange?: (newValue: string) => void;
+    id?: string;
+    onValueChange: (newValue: string | undefined) => void;
     placeholder?: string;
     size?: "default" | "sm";
-    value?: string;
+    value: string | undefined;
+    slotProps?: {
+        calendar?: Omit<
+            ComponentProps<typeof Calendar>,
+            "captionLayout" | "mode" | "onSelect" | "selected"
+        >;
+        popover?: Omit<ComponentProps<typeof Popover>, "children">;
+        popoverContent?: Omit<
+            ComponentProps<typeof PopoverContent>,
+            "children"
+        >;
+        popoverTrigger?: Omit<
+            ComponentProps<typeof PopoverTrigger>,
+            "children"
+        >;
+    };
 }
 
-export function DatePicker({
+export function S2_DatePicker({
     className,
-    defaultValue = "",
+    id,
     onValueChange = () => {},
     placeholder = "Pick a date",
-    value,
     size = "default",
+    slotProps = {},
+    value,
 }: DatePickerProps) {
-    const [internalValue, setInternalValue] = useState<string>(
-        value ?? defaultValue,
-    );
-
     function handleSelect(selected: Date | undefined) {
         const str = selected
             ? formatISO(selected, { representation: "date" })
-            : "";
+            : undefined;
 
-        if (str != internalValue) {
-            setInternalValue(str);
-            onValueChange(str);
-        }
+        onValueChange(str);
     }
 
-    const effectiveValue = value ?? internalValue;
+    const selected = value ? parseISO(value) : undefined;
 
-    const date = effectiveValue ? parseISO(effectiveValue) : undefined;
+    const {
+        calendar: calendarProps = {},
+        popover: popoverProps = {},
+        popoverContent: {
+            className: popoverContentClassName,
+            ...popoverContentProps
+        } = {},
+        popoverTrigger: {
+            className: popoverTriggerClassName,
+            ...popoverTriggerProps
+        } = {},
+    } = slotProps;
 
     return (
         <Popover>
             <PopoverTrigger
-                className={selectTriggerVariants({ className, size })}
+                id={id}
+                data-size={size}
+                className={cn(
+                    "border-input flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color-box-shadow] outline-none",
+                    "data-[size=default]:h-9 data-[size=sm]:h-8",
+                    "disabled:cursor-not-allowed disabled:opacity-50", // disabled styles
+                    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", // focus styles
+                    "aria-invalid:ring-destructive/20 aria-invalid:border-destructive", // aria-invalid styles
+                    className,
+                    popoverTriggerClassName,
+                )}
+                {...popoverTriggerProps}
             >
-                {date ? formatDate(date) : <span>{placeholder}</span>}
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selected ? (
+                    formatDate(selected)
+                ) : (
+                    <span className="text-muted-foreground">{placeholder}</span>
+                )}
+                <CalendarIcon className="size-4 opacity-50" />
             </PopoverTrigger>
-            <PopoverContent className="w-auto overflow-hidden p-0">
+            <PopoverContent
+                className={cn(
+                    "w-auto overflow-hidden p-0",
+                    popoverContentClassName,
+                )}
+                {...popoverContentProps}
+            >
                 <Calendar
                     mode="single"
-                    selected={date}
+                    selected={selected}
                     captionLayout="dropdown"
                     onSelect={handleSelect}
                     autoFocus
