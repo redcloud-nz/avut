@@ -28,19 +28,19 @@ interface ArtieProps {
 }
 
 const poseToImage: Record<ArtiePose, string> = {
-    CheckThisOut: "/artie/artie-check-this-out.png",
-    Empty: "/artie/artie-empty-transparent.png",
-    Error: "/artie/artie-error.png",
-    Login: "/artie/artie-login.png",
-    NotAllowed: "/artie/artie-not-allowed.png",
-    NotFound: "/artie/artie-not-found.png",
-    Question: "/artie/artie-question.png",
-    Searching: "/artie/artie-searching.png",
-    Secure: "/artie/artie-secure.png",
-    Success: "/artie/artie-success.png",
-    Welcome: "/artie/artie-welcome.png",
-    Working: "/artie/artie-working.png",
-    Writing: "/artie/artie-writing.png",
+    CheckThisOut: "/mascot/artie-check-this-out.png",
+    Empty: "/mascot/artie-empty-transparent.png",
+    Error: "/mascot/artie-error.png",
+    Login: "/mascot/artie-login.png",
+    NotAllowed: "/mascot/artie-not-allowed.png",
+    NotFound: "/mascot/artie-not-found.png",
+    Question: "/mascot/artie-question.png",
+    Searching: "/mascot/artie-searching.png",
+    Secure: "/mascot/artie-secure.png",
+    Success: "/mascot/artie-success.png",
+    Welcome: "/mascot/artie-welcome.png",
+    Working: "/mascot/artie-working.png",
+    Writing: "/mascot/artie-writing.png",
 };
 
 // const sizeConfig = {
