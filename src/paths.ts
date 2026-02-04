@@ -206,6 +206,11 @@ export function pub(slug: string) {
                     href: `${base}/forms/ppe/borrow`,
                 },
 
+                inspect: {
+                    label: "Inspect",
+                    href: `${base}/forms/ppe/inspect`,
+                },
+
                 issue: {
                     label: "Issue",
                     href: `${base}/forms/ppe/issue`,

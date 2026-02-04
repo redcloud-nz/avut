@@ -1,6 +1,8 @@
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /pub/orgs/[slug]/forms/ppe/inspect
  */
 
 import { Hermes } from "@/components/blocks/hermes";
@@ -22,8 +24,8 @@ export const metadata = {
     title: `PPE Return Form`,
 };
 
-export default async function Pub_PPEReturn_Page(
-    props: PageProps<"/pub/orgs/[slug]/forms/ppe/return">,
+export default async function Pub_PPEInspect_Page(
+    props: PageProps<"/pub/orgs/[slug]/forms/ppe/inspect">,
 ) {
     const { slug } = await props.params;
 
@@ -33,7 +35,7 @@ export default async function Pub_PPEReturn_Page(
                 breadcrumbs={[
                     Paths.pub(slug).forms.index,
                     Paths.pub(slug).forms.ppe,
-                    Paths.pub(slug).forms.ppe.return,
+                    Paths.pub(slug).forms.ppe.inspect,
                 ]}
             />
             <Lexington.Page>
@@ -48,7 +50,8 @@ export default async function Pub_PPEReturn_Page(
                             <CardHeader>
                                 <CardTitle>PPE Return Form</CardTitle>
                                 <CardDescription>
-                                    Use the form to return issued PPE items.
+                                    Use this form to record an inspection of the
+                                    PPE items issued to an individual.
                                 </CardDescription>
                             </CardHeader>
                         </Card>

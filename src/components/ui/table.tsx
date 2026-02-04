@@ -19,6 +19,7 @@ type TableProps = ComponentProps<"table"> & {
 };
 
 export function Table({
+    children,
     className,
     footer,
     slotProps: { container = {} } = {},
@@ -36,33 +37,51 @@ export function Table({
                 data-slot="table"
                 className={cn("w-full caption-bottom text-sm", className)}
                 {...props}
-            />
+            >
+                {children}
+            </table>
             {footer}
         </div>
     );
 }
 
-export function TableHeader({ className, ...props }: ComponentProps<"thead">) {
+export function TableHeader({
+    children,
+    className,
+    ...props
+}: ComponentProps<"thead">) {
     return (
         <thead
             data-slot="table-header"
             className={cn("[&_tr]:border-b", className)}
             {...props}
-        />
+        >
+            {children}
+        </thead>
     );
 }
 
-export function TableBody({ className, ...props }: ComponentProps<"tbody">) {
+export function TableBody({
+    children,
+    className,
+    ...props
+}: ComponentProps<"tbody">) {
     return (
         <tbody
             data-slot="table-body"
             className={cn("[&_tr:last-child]:border-0", className)}
             {...props}
-        />
+        >
+            {children}
+        </tbody>
     );
 }
 
-export function TableFooter({ className, ...props }: ComponentProps<"tfoot">) {
+export function TableFooter({
+    children,
+    className,
+    ...props
+}: ComponentProps<"tfoot">) {
     return (
         <tfoot
             data-slot="table-footer"
@@ -71,11 +90,17 @@ export function TableFooter({ className, ...props }: ComponentProps<"tfoot">) {
                 className,
             )}
             {...props}
-        />
+        >
+            {children}
+        </tfoot>
     );
 }
 
-export function TableRow({ className, ...props }: ComponentProps<"tr">) {
+export function TableRow({
+    children,
+    className,
+    ...props
+}: ComponentProps<"tr">) {
     return (
         <tr
             data-slot="table-row"
@@ -84,11 +109,17 @@ export function TableRow({ className, ...props }: ComponentProps<"tr">) {
                 className,
             )}
             {...props}
-        />
+        >
+            {children}
+        </tr>
     );
 }
 
-export function TableHeadCell({ className, ...props }: ComponentProps<"th">) {
+export function TableHeadCell({
+    children,
+    className,
+    ...props
+}: ComponentProps<"th">) {
     return (
         <th
             data-slot="table-head"
@@ -97,11 +128,17 @@ export function TableHeadCell({ className, ...props }: ComponentProps<"th">) {
                 className,
             )}
             {...props}
-        />
+        >
+            {children}
+        </th>
     );
 }
 
-export function TableCell({ className, ...props }: ComponentProps<"td">) {
+export function TableCell({
+    children,
+    className,
+    ...props
+}: ComponentProps<"td">) {
     return (
         <td
             data-slot="table-cell"
@@ -110,11 +147,14 @@ export function TableCell({ className, ...props }: ComponentProps<"td">) {
                 className,
             )}
             {...props}
-        />
+        >
+            {children}
+        </td>
     );
 }
 
 export function TableCaption({
+    children,
     className,
     ...props
 }: ComponentProps<"caption">) {
@@ -123,6 +163,8 @@ export function TableCaption({
             data-slot="table-caption"
             className={cn("text-muted-foreground mt-4 text-sm", className)}
             {...props}
-        />
+        >
+            {children}
+        </caption>
     );
 }

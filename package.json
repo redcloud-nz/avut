@@ -5,7 +5,7 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.7.13",
+    "version": "0.7.14",
     "versionName": "Philomel"
   },
   "scripts": {
@@ -86,7 +86,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@react-email/preview-server": "^5.0.5",
+    "@react-email/preview-server": "^5.2.5",
     "@tailwindcss/postcss": "^4.1.10",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.8.0",
@@ -110,7 +110,7 @@
     "prettier": "3.7.1",
     "prisma": "^7.3.0",
     "prismock": "^1.35.4",
-    "react-email": "5.0.5",
+    "react-email": "^5.2.5",
     "tailwindcss": "^4.1.17",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5.9.2",

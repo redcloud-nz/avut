@@ -4,12 +4,20 @@
  */
 "use client";
 
+import { PlusIcon, XIcon } from "lucide-react";
+import { ComponentProps, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import z from "zod";
+import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     Field,
     FieldContent,
@@ -17,14 +25,9 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
-    FieldLegend,
     FieldSeparator,
-    FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/ui/alert";
-import { Textarea } from "@/components/ui/textarea";
 import {
     Select,
     SelectContent,
@@ -32,8 +35,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ComponentProps, useState } from "react";
-import { PlusIcon, XIcon } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -42,225 +43,217 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+
 import { nanoId16 } from "@/lib/id";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { IssuedPPEItem, IssuePPEFormData } from "@/lib/schemas/ppe";
+
+import { PPEItemCatalogue } from "../catalogue";
+import { submitPPEIssueForm } from "./action";
 
 export function Pub_PPEIssue_Form() {
     const form = useForm({
-        resolver: zodResolver(
-            z.object({
-                issuerName: z.string().min(1, "Issuer name is required"),
-                issueeName: z.string().min(1, "Issuee name is required"),
-                comments: z.string(),
-            }),
-        ),
+        resolver: zodResolver(IssuePPEFormData.schema),
         defaultValues: {
-            issuerName: "",
-            issueeName: "",
+            issuer: { id: "NONE", name: "" },
+            recipient: { id: "NONE", name: "" },
+            issuedItems: [] as IssuedPPEItem[],
+            email: "",
+            comments: "",
         },
     });
 
+    const handleSubmit = form.handleSubmit(async (formData) => {
+        toast.promise(
+            async () => {
+                // Call server action to submit the form
+                console.log("Submitting PPE Issue Form:", formData);
+                await submitPPEIssueForm(formData);
+                form.reset();
+            },
+            {
+                loading: "Submitting PPE Issue Form...",
+                success: "PPE Issue Form submitted successfully!",
+                error: (error) =>
+                    `Failed to submit PPE Issue Form: ${error.message}`,
+            },
+        );
+    });
+
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>PPE Log Entry</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form>
-                        <FieldGroup>
-                            <Controller
-                                name="issuerName"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="issuer-name">
-                                                Issuer
-                                            </FieldLabel>
-                                            <FieldDescription>
-                                                The person filling out this form
-                                                and authorised to access the PPE
-                                                shed.
-                                            </FieldDescription>
-                                            {fieldState.error && (
-                                                <FieldError
-                                                    errors={[fieldState.error]}
-                                                />
-                                            )}
-                                        </FieldContent>
-
-                                        <Input
-                                            id="issuer-name"
-                                            aria-invalid={fieldState.invalid}
-                                            placeholder="Your Name"
-                                            type="text"
-                                            className="min-w-1/2"
-                                            {...field}
-                                        />
-                                    </Field>
+        <form id="ppe-issue-form" onSubmit={handleSubmit}>
+            <FieldGroup>
+                <Controller
+                    name="issuer.name"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field
+                            orientation="responsive"
+                            data-invalid={fieldState.invalid}
+                        >
+                            <FieldContent>
+                                <FieldLabel htmlFor="issuer-name">
+                                    Issuer
+                                </FieldLabel>
+                                <FieldDescription>
+                                    The person filling out this form and
+                                    authorised to access the PPE shed.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
                                 )}
-                            />
-                            <Controller
-                                name="issueeName"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="issuee-name">
-                                                Issuee
-                                            </FieldLabel>
-                                            <FieldDescription>
-                                                The person receiving the PPE.
-                                            </FieldDescription>
-                                            {fieldState.error && (
-                                                <FieldError
-                                                    errors={[fieldState.error]}
-                                                />
-                                            )}
-                                        </FieldContent>
+                            </FieldContent>
 
-                                        <Input
-                                            id="issuee-name"
-                                            aria-invalid={fieldState.invalid}
-                                            placeholder="Their Name"
-                                            type="text"
-                                            className="min-w-1/2"
-                                            {...field}
-                                        />
-                                    </Field>
+                            <Input
+                                id="issuer-name"
+                                aria-invalid={fieldState.invalid}
+                                placeholder="Your Name"
+                                type="text"
+                                className="min-w-1/2"
+                                {...field}
+                            />
+                        </Field>
+                    )}
+                />
+                <Controller
+                    name="recipient.name"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field
+                            orientation="responsive"
+                            data-invalid={fieldState.invalid}
+                        >
+                            <FieldContent>
+                                <FieldLabel htmlFor="recipient-name">
+                                    Recipient
+                                </FieldLabel>
+                                <FieldDescription>
+                                    The person receiving the PPE.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
                                 )}
+                            </FieldContent>
+
+                            <Input
+                                id="recipient-name"
+                                aria-invalid={fieldState.invalid}
+                                placeholder="Their Name"
+                                type="text"
+                                className="min-w-1/2"
+                                {...field}
                             />
+                        </Field>
+                    )}
+                />
 
-                            <FieldSeparator />
-
-                            <UniformItemsControl />
-
-                            <FieldSeparator />
-
-                            <Controller
-                                name="comments"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="comments">
-                                            Comments
-                                        </FieldLabel>
-
-                                        <Textarea
-                                            id="comments"
-                                            aria-invalid={fieldState.invalid}
-                                            className="min-w-1/2"
-                                            {...field}
-                                        />
-                                    </Field>
-                                )}
+                <Controller
+                    name="issuedItems"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                            <PPEItemTable
+                                value={field.value}
+                                onChange={field.onChange}
+                                aria-invalid={fieldState.invalid}
                             />
+                            {fieldState.error && (
+                                <FieldError errors={[fieldState.error]} />
+                            )}
+                        </Field>
+                    )}
+                />
 
-                            <Field orientation="horizontal">
-                                <Button
-                                    type="submit"
-                                    form="ppe-issue-form"
-                                    disabled
-                                >
-                                    Submit
-                                </Button>
-                                <Button
-                                    type="reset"
-                                    form="ppe-issue-form"
-                                    variant="outline"
-                                    onClick={() => form.reset()}
-                                >
-                                    Reset
-                                </Button>
-                            </Field>
-                        </FieldGroup>
-                    </form>
-                </CardContent>
-            </Card>
-        </>
+                <Controller
+                    name="comments"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="comments">Comments</FieldLabel>
+
+                            <Textarea
+                                id="comments"
+                                aria-invalid={fieldState.invalid}
+                                className="min-w-1/2"
+                                {...field}
+                            />
+                        </Field>
+                    )}
+                />
+
+                <FieldSeparator />
+
+                <Controller
+                    name="email"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="email">
+                                Notification Email
+                            </FieldLabel>
+                            <FieldDescription>
+                                For initial testing only. An email address to
+                                recieve the PPE issue notification (rather than
+                                the PPE coordinator).
+                            </FieldDescription>
+                            {fieldState.error && (
+                                <FieldError errors={[fieldState.error]} />
+                            )}
+
+                            <Input
+                                id="email"
+                                aria-invalid={fieldState.invalid}
+                                type="email"
+                                className="min-w-1/2"
+                                {...field}
+                            />
+                        </Field>
+                    )}
+                />
+
+                <Field orientation="horizontal">
+                    <Button type="submit" form="ppe-issue-form">
+                        Submit
+                    </Button>
+                    <Button
+                        type="reset"
+                        form="ppe-issue-form"
+                        variant="outline"
+                        onClick={() => form.reset()}
+                    >
+                        Reset
+                    </Button>
+                </Field>
+            </FieldGroup>
+        </form>
     );
 }
 
-const ItemDfn = [
-    { id: "boots", name: "Boots", hasSize: true, hasSerialNumber: false },
-
-    { id: "gloves", name: "Gloves", hasSize: true, hasSerialNumber: false },
-    { id: "goggles", name: "Goggles", hasSize: false, hasSerialNumber: false },
-    { id: "helmet", name: "Helmet", hasSize: false, hasSerialNumber: true },
-    {
-        id: "knee-pads",
-        name: "Knee Pads",
-        hasSize: false,
-        hasSerialNumber: false,
-    },
-    {
-        id: "uniform-jacket",
-        name: "Jacket (Uniform)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-    {
-        id: "ww-jacket",
-        name: "Jacket (Wet Weather)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-
-    {
-        id: "probationary-overalls",
-        name: "Overalls (Probationary)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-    {
-        id: "uniform-overall",
-        name: "Overalls (Standard)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-    {
-        id: "uniform-pants",
-        name: "Pants (Uniform)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-    {
-        id: "ww-pants",
-        name: "Pants (Wet Weather)",
-        hasSize: true,
-        hasSerialNumber: false,
-    },
-];
-
-interface UniformItem {
-    itemId: string;
-    itemType: string;
-    size: string;
-    serialNumber: string;
-}
-
-function UniformItemsControl() {
-    const [items, setItems] = useState<UniformItem[]>([]);
+function PPEItemTable({
+    value: items,
+    onChange,
+    ...props
+}: {
+    value: IssuedPPEItem[];
+    onChange: (items: IssuedPPEItem[]) => void;
+} & ComponentProps<typeof Table>) {
     const [showNewItemDialog, setShowNewItemDialog] = useState(false);
 
+    function handleDeleteRow(itemId: string) {
+        onChange(items.filter((item) => item.id !== itemId));
+    }
+
+    function handleAddItem(item: IssuedPPEItem) {
+        onChange([...items, { ...item, id: nanoId16() }]);
+        setShowNewItemDialog(false);
+    }
+
     return (
-        <div>
+        <>
             <div className="flex items-center justify-between">
-                <FieldLegend>
+                <FieldLabel>
                     <span>Items Issued</span>
-                </FieldLegend>
+                </FieldLabel>
                 <Button
                     type="button"
                     variant="outline"
@@ -270,10 +263,13 @@ function UniformItemsControl() {
                     <PlusIcon />
                 </Button>
             </div>
-            <Table className="table-fixed">
+            <Table
+                className="table-fixed aria-invalid:ring-destructive/20 aria-invalid:ring"
+                {...props}
+            >
                 <TableHeader className="w-full bg-background">
                     <TableRow>
-                        <TableHeadCell>Item</TableHeadCell>
+                        <TableHeadCell className="w-1/2">Item</TableHeadCell>
                         <TableHeadCell className="text-center">
                             Size
                         </TableHeadCell>
@@ -284,21 +280,11 @@ function UniformItemsControl() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {items.map((item, index) => (
+                    {items.map((item) => (
                         <UniformItemRow
-                            key={item.itemId}
+                            key={item.id}
                             item={item}
-                            onChange={(newItem) => {
-                                const newItems = [...items];
-                                newItems[index] = newItem;
-                                setItems(newItems);
-                            }}
-                            onDelete={(itemId) => {
-                                const newItems = items.filter(
-                                    (it) => it.itemId !== itemId,
-                                );
-                                setItems(newItems);
-                            }}
+                            onDelete={handleDeleteRow}
                         />
                     ))}
                     {items.length === 0 && (
@@ -316,40 +302,43 @@ function UniformItemsControl() {
 
             <NewUniformItemDialog
                 open={showNewItemDialog}
-                onSave={(item) => {
-                    setItems([...items, { ...item, itemType: nanoId16() }]);
-                    setShowNewItemDialog(false);
-                }}
+                onSave={handleAddItem}
                 onCancel={() => {
                     setShowNewItemDialog(false);
                 }}
             />
-        </div>
+        </>
     );
 }
 
 function UniformItemRow({
     item,
-    onChange,
     onDelete,
 }: {
-    item: UniformItem;
-    onChange: (item: UniformItem) => void;
+    item: IssuedPPEItem;
     onDelete: (itemId: string) => void;
 }) {
-    const selectedItemDfn = ItemDfn.find((def) => def.id === item.itemId);
+    const itemTemplate = PPEItemCatalogue.find(
+        (def) => def.id === item.templateId,
+    );
 
     return (
         <TableRow>
-            <TableCell className="w-1/2">{selectedItemDfn?.name}</TableCell>
-            <TableCell className="text-center">{item.size}</TableCell>
-            <TableCell className="text-center">{item.serialNumber}</TableCell>
-            <TableCell className="text-center w-10">
+            <TableCell className="overflow-clip">
+                {itemTemplate?.name}
+            </TableCell>
+            <TableCell className="text-center overflow-clip">
+                {item.size}
+            </TableCell>
+            <TableCell className="text-center overflow-clip">
+                {item.serialNumber}
+            </TableCell>
+            <TableCell className="text-center w-10 p-0">
                 <Button
                     type="button"
                     variant="link"
                     onClick={() => {
-                        onDelete(item.itemId);
+                        onDelete(item.id);
                     }}
                 >
                     <XIcon />
@@ -365,23 +354,32 @@ function NewUniformItemDialog({
     onCancel,
 }: {
     open: boolean;
-    onSave: (item: UniformItem) => void;
+    onSave: (item: IssuedPPEItem) => void;
     onCancel: () => void;
 }) {
-    const [item, setItem] = useState<UniformItem>({
-        itemId: "",
-        itemType: "",
+    const [item, setItem] = useState<
+        Pick<IssuedPPEItem, "templateId" | "size" | "serialNumber">
+    >({
+        templateId: "",
         size: "",
         serialNumber: "",
     });
 
-    const itemDfn = ItemDfn.find((def) => def.id === item.itemId);
+    const itemDfn = PPEItemCatalogue.find((def) => def.id === item.templateId);
+
+    function handleAdd() {
+        onSave({ ...item, id: "", itemName: itemDfn ? itemDfn.name : "" });
+        setItem({
+            templateId: "",
+            size: "",
+            serialNumber: "",
+        });
+    }
 
     function handleCancel() {
         onCancel();
         setItem({
-            itemId: "",
-            itemType: "",
+            templateId: "",
             size: "",
             serialNumber: "",
         });
@@ -398,15 +396,15 @@ function NewUniformItemDialog({
                         <FieldLabel>Item</FieldLabel>
                         <Select
                             onValueChange={(value) =>
-                                setItem({ ...item, itemId: value })
+                                setItem({ ...item, templateId: value })
                             }
-                            value={item.itemId}
+                            value={item.templateId}
                         >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select item" />
                             </SelectTrigger>
                             <SelectContent>
-                                {ItemDfn.map((def) => (
+                                {PPEItemCatalogue.map((def) => (
                                     <SelectItem key={def.id} value={def.id}>
                                         {def.name}
                                     </SelectItem>
@@ -414,57 +412,80 @@ function NewUniformItemDialog({
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field>
-                        <FieldLabel>Size</FieldLabel>
-                        <Input
-                            type="text"
-                            value={item.size}
-                            disabled={!itemDfn?.hasSize}
-                            onChange={(e) =>
-                                setItem({ ...item, size: e.target.value })
-                            }
-                            placeholder="Size"
-                        />
-                    </Field>
+                    {itemDfn?.hasSize && (
+                        <Field>
+                            <FieldLabel>Size</FieldLabel>
+                            {itemDfn.sizeOptions ? (
+                                <Select
+                                    onValueChange={(value) =>
+                                        setItem({ ...item, size: value })
+                                    }
+                                    value={item.size}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select size" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {itemDfn.sizeOptions.map(
+                                            (sizeOption) => (
+                                                <SelectItem
+                                                    key={sizeOption}
+                                                    value={sizeOption}
+                                                >
+                                                    {sizeOption}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <Input
+                                    type="text"
+                                    value={item.size}
+                                    disabled={!itemDfn?.hasSize}
+                                    onChange={(e) =>
+                                        setItem({
+                                            ...item,
+                                            size: e.target.value,
+                                        })
+                                    }
+                                    placeholder="Size"
+                                />
+                            )}
+                        </Field>
+                    )}
 
-                    <Field>
-                        <FieldLabel>Serial Number</FieldLabel>
-                        <Input
-                            type="text"
-                            value={item.serialNumber}
-                            disabled={!itemDfn?.hasSerialNumber}
-                            onChange={(e) =>
-                                setItem({
-                                    ...item,
-                                    serialNumber: e.target.value,
-                                })
-                            }
-                            placeholder="Serial Number"
-                        />
-                    </Field>
-                    <Field orientation="horizontal">
-                        <Button
-                            type="button"
-                            onClick={() => {
-                                onSave(item);
-                                setItem({
-                                    itemId: "",
-                                    itemType: "",
-                                    size: "",
-                                    serialNumber: "",
-                                });
-                            }}
-                        >
-                            Add
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleCancel()}
-                        >
-                            Cancel
-                        </Button>
-                    </Field>
+                    {itemDfn?.hasSerialNumber && (
+                        <Field>
+                            <FieldLabel>Serial Number</FieldLabel>
+                            <Input
+                                type="text"
+                                value={item.serialNumber}
+                                disabled={!itemDfn?.hasSerialNumber}
+                                onChange={(e) =>
+                                    setItem({
+                                        ...item,
+                                        serialNumber: e.target.value,
+                                    })
+                                }
+                                placeholder="Serial Number"
+                            />
+                        </Field>
+                    )}
+                    {itemDfn && (
+                        <Field orientation="horizontal">
+                            <Button type="button" onClick={handleAdd}>
+                                Add
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCancel}
+                            >
+                                Cancel
+                            </Button>
+                        </Field>
+                    )}
                 </FieldGroup>
             </DialogContent>
         </Dialog>

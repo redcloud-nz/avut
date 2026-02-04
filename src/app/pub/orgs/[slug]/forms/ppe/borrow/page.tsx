@@ -1,12 +1,19 @@
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /pub/orgs/[slug]/forms/ppe/return
  */
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { Alert } from "@/components/ui/alert";
+import {
+    Card,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import * as Paths from "@/paths";
 
 export async function generateStaticParams() {
@@ -39,7 +46,15 @@ export default async function Pub_PPEBorrow_Page(
                                 PPE Forms
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
-                        <Alert title="PPE Borrow Form is under construction." />
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>PPE Borrow Form</CardTitle>
+                                <CardDescription>
+                                    Use this form to record PPE that has been
+                                    temporarily borrowed.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

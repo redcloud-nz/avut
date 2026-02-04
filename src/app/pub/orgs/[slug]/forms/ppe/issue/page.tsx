@@ -9,9 +9,13 @@ import { Lexington } from "@/components/blocks/lexington";
 import * as Paths from "@/paths";
 
 import { Pub_PPEIssue_Form } from "./ppe-issue-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heading, Paragraph } from "@/components/ui/typography";
-import { List, ListItem } from "@/components/ui/list";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 
 export const metadata = {
     title: `PPE Issue Form`,
@@ -32,6 +36,7 @@ export default async function Pub_PPEIssue_Page(
                 breadcrumbs={[
                     Paths.pub(slug).forms.index,
                     Paths.pub(slug).forms.ppe,
+                    Paths.pub(slug).forms.ppe.issue,
                 ]}
             />
             <Lexington.Page>
@@ -42,39 +47,16 @@ export default async function Pub_PPEIssue_Page(
                                 PPE Forms
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
-                        <Pub_PPEIssue_Form />
-                    </Hermes.Section>
-                    <Hermes.Section>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Explanation</CardTitle>
+                                <CardTitle>PPE Issue Form</CardTitle>
+                                <CardDescription>
+                                    Use this form to record the issue of PPE to
+                                    an individual.
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Paragraph>
-                                    This form is a work in progress and cannot
-                                    yet be submitted.
-                                </Paragraph>
-
-                                <Heading level={5} className="mt-4">
-                                    Development Plan
-                                </Heading>
-                                <List>
-                                    <ListItem>
-                                        v1 - Form can be submitted and the
-                                        contents are emailed to the ppe manager.
-                                    </ListItem>
-                                    <ListItem>
-                                        v2 - Form submissions are recorded in
-                                        the database and can be viewed by ppe
-                                        managers.
-                                    </ListItem>
-                                    <ListItem>
-                                        v3 - Integration with D4H so that a
-                                        submission of this form will generate
-                                        the appropriate issued equipment records
-                                        in D4H.
-                                    </ListItem>
-                                </List>
+                                <Pub_PPEIssue_Form />
                             </CardContent>
                         </Card>
                     </Hermes.Section>
