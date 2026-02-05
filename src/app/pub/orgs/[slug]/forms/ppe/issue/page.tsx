@@ -16,19 +16,59 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import prisma from "@/server/prisma";
+import { getOrganizationBySlug } from "@/server/organization";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { TeamData } from "@/lib/schemas/team";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { PersonData } from "@/lib/schemas/person";
+
+async function getTeams(organizationId: OrganizationId): Promise<
+    (TeamData & {
+        members: (TeamMembershipData & { person: PersonData })[];
+    })[]
+> {
+    const teams = await prisma.team.findMany({
+        where: {
+            organizationId: organizationId,
+        },
+        include: {
+            teamMemberships: {
+                include: {
+                    person: true,
+                },
+                orderBy: {
+                    person: {
+                        name: "asc",
+                    },
+                },
+            },
+        },
+        orderBy: {
+            name: "asc",
+        },
+    });
+
+    return teams.map((team) => ({
+        ...TeamData.fromRecord(team),
+        members: team.teamMemberships.map((membership) => ({
+            ...TeamMembershipData.fromRecord(membership),
+            person: PersonData.fromRecord(membership.person),
+        })),
+    }));
+}
 
 export const metadata = {
     title: `PPE Issue Form`,
 };
 
-export async function generateStaticParams() {
-    return [{ slug: "christchurch-em" }];
-}
-
 export default async function Pub_PPEIssue_Page(
     props: PageProps<"/pub/orgs/[slug]/forms/ppe">,
 ) {
     const { slug } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    const teams = await getTeams(organization.id);
 
     return (
         <Lexington.Root>
@@ -56,7 +96,7 @@ export default async function Pub_PPEIssue_Page(
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Pub_PPEIssue_Form />
+                                <Pub_PPEIssue_Form teams={teams} />
                             </CardContent>
                         </Card>
                     </Hermes.Section>

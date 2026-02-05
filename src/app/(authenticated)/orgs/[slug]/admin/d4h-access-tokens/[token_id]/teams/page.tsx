@@ -5,6 +5,7 @@
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
+import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -15,47 +16,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-import { getD4hFetchClient, getD4hTeams } from "@/lib/d4h-api/client";
+import { getD4HTeamsWithMembers } from "@/lib/d4h-api/client";
 import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import prisma from "@/server/prisma";
-import { D4hMember } from "@/lib/d4h-api/member";
-import { Alert } from "@/components/ui/alert";
-
-async function getTeamsWithMembers(token: D4hAccessTokenData) {
-    //'use cache';
-    //cacheTag(`d4h-api-${token.id}-team-${teamId}-members`);
-
-    const fetchClient = getD4hFetchClient(token);
-
-    const teams = await getD4hTeams(token);
-
-    const teamsWithMembers = await Promise.all(
-        teams.map(async (team) => {
-            const { data } = await fetchClient.GET(
-                "/v3/{context}/{contextId}/members",
-                {
-                    params: {
-                        path: {
-                            context: "team",
-                            contextId: team.id,
-                        },
-                        query: {
-                            status: ["OPERATIONAL", "NON_OPERATIONAL"],
-                        },
-                    },
-                },
-            );
-            return {
-                ...team,
-                members: (data as { results: D4hMember[] }).results,
-            };
-        }),
-    );
-
-    return teamsWithMembers;
-}
 
 export default async function Admin_D4hAccessToken_Teams_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/teams`>,
@@ -76,7 +41,7 @@ export default async function Admin_D4hAccessToken_Teams_Page(
 
     const token = D4hAccessTokenData.fromRecord(record);
 
-    const teams = await getTeamsWithMembers(token);
+    const teams = await getD4HTeamsWithMembers(token);
 
     return (
         <Lexington.Root>

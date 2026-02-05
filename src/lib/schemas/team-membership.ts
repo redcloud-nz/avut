@@ -28,7 +28,6 @@ const teamMembershipSchema = z.object({
     personId: PersonId.schema,
     tags: tagsSchema,
     properties: propertiesSchema,
-    organizationId: z.string(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
 });

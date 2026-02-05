@@ -31,7 +31,10 @@ import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
+    SelectSeparator,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -50,8 +53,17 @@ import { IssuedPPEItem, IssuePPEFormData } from "@/lib/schemas/ppe";
 
 import { PPEItemCatalogue } from "../catalogue";
 import { submitPPEIssueForm } from "./action";
+import { TeamData } from "@/lib/schemas/team";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { PersonData } from "@/lib/schemas/person";
 
-export function Pub_PPEIssue_Form() {
+export function Pub_PPEIssue_Form({
+    teams,
+}: {
+    teams: (TeamData & {
+        members: (TeamMembershipData & { person: PersonData })[];
+    })[];
+}) {
     const form = useForm({
         resolver: zodResolver(IssuePPEFormData.schema),
         defaultValues: {
@@ -79,6 +91,13 @@ export function Pub_PPEIssue_Form() {
             },
         );
     });
+
+    const flattenedRecipients = teams.flatMap((team) =>
+        team.members.map((member) => ({
+            id: member.person.id,
+            name: `${member.person.name} (${team.name})`,
+        })),
+    );
 
     return (
         <form id="ppe-issue-form" onSubmit={handleSubmit}>
@@ -116,7 +135,7 @@ export function Pub_PPEIssue_Form() {
                     )}
                 />
                 <Controller
-                    name="recipient.name"
+                    name="recipient"
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field
@@ -124,7 +143,7 @@ export function Pub_PPEIssue_Form() {
                             data-invalid={fieldState.invalid}
                         >
                             <FieldContent>
-                                <FieldLabel htmlFor="recipient-name">
+                                <FieldLabel htmlFor="recipient">
                                     Recipient
                                 </FieldLabel>
                                 <FieldDescription>
@@ -135,14 +154,50 @@ export function Pub_PPEIssue_Form() {
                                 )}
                             </FieldContent>
 
-                            <Input
-                                id="recipient-name"
-                                aria-invalid={fieldState.invalid}
-                                placeholder="Their Name"
-                                type="text"
-                                className="min-w-1/2"
-                                {...field}
-                            />
+                            <Select
+                                value={field.value.id}
+                                onValueChange={(newValue) => {
+                                    const person = flattenedRecipients.find(
+                                        (r) => r.id === newValue,
+                                    );
+                                    field.onChange(
+                                        person
+                                            ? {
+                                                  id: person.id,
+                                                  name: person.name,
+                                              }
+                                            : { id: "NONE", name: "" },
+                                    );
+                                }}
+                            >
+                                <SelectTrigger
+                                    id="recipient-name"
+                                    className="min-w-1/2"
+                                    aria-invalid={fieldState.invalid}
+                                >
+                                    <SelectValue placeholder="Select recipient" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teams.map((team, index) => (
+                                        <>
+                                            {index > 0 && <SelectSeparator />}
+                                            <SelectGroup key={team.id}>
+                                                <SelectLabel>
+                                                    {team.name}
+                                                </SelectLabel>
+                                                {team.members.map((member) => (
+                                                    <SelectItem
+                                                        key={member.person.id}
+                                                        value={member.person.id}
+                                                    >
+                                                        {member.person.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </Field>
                     )}
                 />

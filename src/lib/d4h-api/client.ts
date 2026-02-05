@@ -12,6 +12,7 @@ import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
 import type { paths } from "./schema";
 import { D4hServerCode, getD4hServer } from "./servers";
 import { D4hWhoami } from "./whoami";
+import { D4hMember } from "./member";
 
 export const getD4hFetchClient = cache((token: D4hAccessTokenData) => {
     const server = getD4hServer(token.serverCode)!;
@@ -49,4 +50,47 @@ export async function getD4hTeams(token: D4hAccessTokenData) {
     return whoami.members
         .map((member) => member.owner)
         .filter((resource) => resource.resourceType === "Team");
+}
+
+export async function getD4hTeamMembers(
+    token: D4hAccessTokenData,
+    d4hTeamId: number,
+) {
+    "use cache";
+    cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-members`);
+
+    const fetchClient = getD4hFetchClient(token);
+
+    const { data } = await fetchClient.GET(
+        "/v3/{context}/{contextId}/members",
+        {
+            params: {
+                path: {
+                    context: "team",
+                    contextId: d4hTeamId,
+                },
+                query: {
+                    status: ["OPERATIONAL", "NON_OPERATIONAL"],
+                },
+            },
+        },
+    );
+    return (data as { results: D4hMember[] }).results;
+}
+
+export async function getD4HTeamsWithMembers(token: D4hAccessTokenData) {
+    const teams = await getD4hTeams(token);
+
+    const teamsWithMembers = await Promise.all(
+        teams.map(async (team) => {
+            const members = await getD4hTeamMembers(token, team.id);
+
+            return {
+                ...team,
+                members,
+            };
+        }),
+    );
+
+    return teamsWithMembers;
 }
