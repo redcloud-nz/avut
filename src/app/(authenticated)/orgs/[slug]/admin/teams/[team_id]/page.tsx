@@ -8,7 +8,7 @@
 
 import { use } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
@@ -28,6 +28,14 @@ import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_TeamMenu } from "./team-menu";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHeadCell,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
@@ -35,12 +43,18 @@ export default function AdminModule_Team_Page(
     const { slug, team_id } = use(props.params);
     const organization = useOrganization();
 
-    const { data: team } = useSuspenseQuery(
-        trpc.teams.getTeam.queryOptions({
-            organizationId: organization.id,
-            teamId: team_id,
-        }),
-    ) as { data: TeamData };
+    const [{ data: team }, { data: teamMemberships }] = useSuspenseQueries({
+        queries: [
+            trpc.teams.getTeam.queryOptions({
+                organizationId: organization.id,
+                teamId: team_id,
+            }),
+            trpc.teams.listTeamMembers.queryOptions({
+                organizationId: organization.id,
+                teamId: team_id,
+            }),
+        ],
+    });
 
     return (
         <Lexington.Root>
@@ -129,6 +143,34 @@ export default function AdminModule_Team_Page(
                                 </FieldGroup>
                             </CardContent>
                         </Card>
+                    </Hermes.Section>
+                    <Hermes.Section>
+                        <Hermes.SectionHeader>
+                            <Hermes.SectionTitle>
+                                Assigned Personnel
+                            </Hermes.SectionTitle>
+                            <Button variant="outline">Manage</Button>
+                        </Hermes.SectionHeader>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHeadCell>Person</TableHeadCell>
+                                    <TableHeadCell>Email</TableHeadCell>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teamMemberships.map((membership) => (
+                                    <TableRow key={membership.id}>
+                                        <TableCell>
+                                            {membership.person.name}
+                                        </TableCell>
+                                        <TableCell>
+                                            {membership.person.email}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>

@@ -15,6 +15,8 @@ import { revalidateTeam } from "@/server/team";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { PersonData } from "@/lib/schemas/person";
 
 export const teamsRouter = createTrpcRouter({
     /**
@@ -93,9 +95,54 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * List all members of a team.
+     * @param ctx The authenticated context.
+     * @param teamId The ID of the team to list members for.
+     * @returns An array of team memberships, including person data.
+     * @throws TRPCError(Not_FOUND) If the team does not exist within the organization.
+     */
+    listTeamMembers: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(
+            z.array(
+                TeamMembershipData.schema.extend({ person: PersonData.schema }),
+            ),
+        )
+        .query(async ({ ctx, input: { teamId } }) => {
+            const [team, memberships] = await Promise.all([
+                ctx.prisma.team.findUnique({
+                    where: {
+                        id: teamId,
+                        organizationId: ctx.organizationId,
+                    },
+                    select: { id: true },
+                }),
+                ctx.prisma.teamMembership.findMany({
+                    where: {
+                        teamId,
+                    },
+                    include: {
+                        person: true,
+                    },
+                }),
+            ]);
+
+            if (!team)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
+                });
+
+            return memberships.map((membership) => ({
+                ...TeamMembershipData.fromRecord(membership),
+                person: PersonData.fromRecord(membership.person),
+            }));
+        }),
+
+    /**
      * List all teams in the organization.
      */
-    listTeams: organizationProcedure()
+    listTeams: organizationProcedure({ team: ["view"] })
         .output(z.array(TeamData.schema))
         .query(async ({ ctx }) => {
             const teamRecords = await ctx.prisma.team.findMany({

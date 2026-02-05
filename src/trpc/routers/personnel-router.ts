@@ -15,6 +15,8 @@ import { revalidatePerson } from "@/server/person";
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 import { FieldConflictError } from "../types";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { TeamData } from "@/lib/schemas/team";
 
 /**
  * Router for personnel management within an organization.
@@ -206,7 +208,7 @@ export const personnelRouter = createTrpcRouter({
      * @returns The person object.
      * @throws TRPCError(NOT_FOUND) if the person is not found.
      */
-    getPerson: organizationProcedure()
+    getPerson: organizationProcedure({ person: ["view"] })
         .input(z.object({ personId: PersonId.schema }))
         .output(PersonData.schema)
         .query(async ({ ctx, input: { personId } }) => {
@@ -229,7 +231,7 @@ export const personnelRouter = createTrpcRouter({
      * @param ctx The authenticated context.
      * @returns An array of person objects.
      */
-    listPersonnel: organizationProcedure()
+    listPersonnel: organizationProcedure({ person: ["view"] })
         .output(z.array(PersonData.schema))
         .query(async ({ ctx }) => {
             const personnel = await ctx.prisma.person.findMany({
@@ -239,6 +241,53 @@ export const personnelRouter = createTrpcRouter({
                 },
             });
             return personnel.map(PersonData.fromRecord);
+        }),
+
+    /**
+     * Lists all team memberships for a given person.
+     * @param ctx The authenticated context.
+     * @param personId The ID of the person to list team memberships for.
+     * @returns An array of team membership objects with associated team data.
+     * @throws TRPCError(NOT_FOUND) if the person does not exist within the organization.
+     */
+    listTeamMemberships: organizationProcedure({ team: ["view"] })
+        .input(z.object({ personId: PersonId.schema }))
+        .output(
+            z.array(
+                TeamMembershipData.schema.extend({
+                    team: TeamData.schema,
+                }),
+            ),
+        )
+        .query(async ({ ctx, input: { personId } }) => {
+            const [person, memberships] = await Promise.all([
+                ctx.prisma.person.findUnique({
+                    where: {
+                        id: personId,
+                        organizationId: ctx.organizationId,
+                    },
+                    select: { id: true },
+                }),
+                ctx.prisma.teamMembership.findMany({
+                    where: {
+                        personId,
+                    },
+                    include: {
+                        team: true,
+                    },
+                }),
+            ]);
+
+            if (!person)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            return memberships.map((membership) => ({
+                ...TeamMembershipData.fromRecord(membership),
+                team: TeamData.fromRecord(membership.team),
+            }));
         }),
 
     /**
