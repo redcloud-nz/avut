@@ -36,7 +36,7 @@ function getUrl() {
     return `${base}/trpc`;
 }
 
-const trpcClient = createTRPCClient<AppRouter>({
+export const trpcClient = createTRPCClient<AppRouter>({
     links: [
         httpBatchLink({
             transformer: superjson,

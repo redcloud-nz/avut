@@ -36,6 +36,8 @@
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.3.0",
     "@react-email/components": "^1.0.1",
+    "@tanstack/query-db-collection": "^1.0.22",
+    "@tanstack/react-db": "^0.1.69",
     "@tanstack/react-query": "^5.75.4",
     "@tanstack/react-query-devtools": "^5.75.4",
     "@tanstack/react-table": "^8.21.3",

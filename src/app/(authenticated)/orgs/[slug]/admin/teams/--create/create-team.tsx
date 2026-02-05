@@ -50,7 +50,7 @@ export function AdminModule_CreateTeam_Form({
         },
     });
 
-    const createTeamMutation = useMutation(
+    const mutation = useMutation(
         trpc.teams.createTeam.mutationOptions({
             async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
@@ -58,15 +58,16 @@ export function AdminModule_CreateTeam_Form({
                         error.shape.cause.message as keyof ModifiableTeamData,
                         { message: error.message },
                     );
-                } else {
-                    toast.error(`Error creating team: ${error.message}`);
                 }
             },
-            async onSuccess() {
+            async onSuccess(team) {
                 queryClient.invalidateQueries(
                     trpc.teams.listTeams.queryFilter({
                         organizationId: organization.id,
                     }),
+                );
+                router.push(
+                    Paths.org(organization.slug).admin.team(team.id).href,
                 );
             },
         }),
@@ -75,13 +76,10 @@ export function AdminModule_CreateTeam_Form({
     const handleCreate = form.handleSubmit((formData) => {
         toast.promise(
             async () => {
-                const team = await createTeamMutation.mutateAsync({
+                await mutation.mutateAsync({
                     organizationId: organization.id,
-                    ...formData,
+                    team: formData,
                 });
-                router.push(
-                    Paths.org(organization.slug).admin.team(team.id).href,
-                );
             },
             {
                 loading: "Creating team...",
@@ -144,7 +142,7 @@ export function AdminModule_CreateTeam_Form({
                     <Button
                         type="submit"
                         form="create-team-form"
-                        disabled={createTeamMutation.isPending}
+                        disabled={mutation.isPending}
                     >
                         Create
                     </Button>

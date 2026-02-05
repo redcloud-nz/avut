@@ -6,7 +6,7 @@
 
 import { useMemo } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -22,10 +22,10 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
+import { getTeamsCollection } from "@/lib/collections/teams";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
-import { trpc } from "@/trpc/client";
 
 interface AdminModule_TeamsListProps {
     organization: OrganizationData;
@@ -37,10 +37,8 @@ interface AdminModule_TeamsListProps {
 export function AdminModule_TeamsList({
     organization,
 }: AdminModule_TeamsListProps) {
-    const { data: teams } = useSuspenseQuery(
-        trpc.teams.listTeams.queryOptions({
-            organizationId: organization.id,
-        }),
+    const { data: teams } = useLiveSuspenseQuery((q) =>
+        q.from({ team: getTeamsCollection(organization.id) }),
     );
 
     const adminModule = Paths.org(organization.slug).admin;

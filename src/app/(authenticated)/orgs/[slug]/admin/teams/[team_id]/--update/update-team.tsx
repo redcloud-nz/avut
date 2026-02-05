@@ -25,7 +25,7 @@ import { Link } from "@/components/ui/link";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { TeamData } from "@/lib/schemas/team";
+import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
@@ -56,55 +56,53 @@ export function AdminModule_UpdateTeam_Form({
 
     const mutation = useMutation(
         trpc.teams.updateTeam.mutationOptions({
-            async onError(error) {
+            async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause.message as keyof Pick<
-                            TeamData,
-                            "name" | "description" | "tags" | "properties"
-                        >,
-                        { message: error.shape.message },
-                    );
-                } else {
-                    toast.error(
-                        `Failed to update team: ${error.message || "Unknown error"}`,
+                        error.shape.cause.message as keyof ModifiableTeamData,
+                        { message: error.message },
                     );
                 }
             },
             async onSuccess() {
-                toast.success("Team updated successfully.");
-                await Promise.all([
-                    queryClient.invalidateQueries(
-                        trpc.teams.getTeam.queryFilter({
-                            organizationId: organization.id,
-                            teamId: team.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.teams.listTeams.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                ]);
-
                 router.push(
                     Paths.org(organization.slug).admin.team(team.id).href,
+                );
+                queryClient.invalidateQueries(
+                    trpc.teams.listTeams.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+                queryClient.invalidateQueries(
+                    trpc.teams.getTeam.queryFilter({
+                        organizationId: organization.id,
+                        teamId: team.id,
+                    }),
                 );
             },
         }),
     );
 
-    return (
-        <form
-            id="update-team-form"
-            onSubmit={form.handleSubmit((formData) =>
-                mutation.mutate({
+    const handleSubmit = form.handleSubmit((formData) => {
+        toast.promise(
+            async () => {
+                await mutation.mutateAsync({
                     organizationId: organization.id,
                     teamId: team.id,
-                    ...formData,
-                }),
-            )}
-        >
+                    update: formData,
+                });
+            },
+            {
+                loading: "Updating team...",
+                success: "Team updated successfully.",
+                error: (error) =>
+                    `Failed to update team: ${error.message || "Unknown error"}`,
+            },
+        );
+    });
+
+    return (
+        <form id="update-team-form" onSubmit={handleSubmit}>
             <FieldGroup>
                 <Field orientation="responsive">
                     <FieldLabel>Team ID</FieldLabel>

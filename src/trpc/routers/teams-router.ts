@@ -23,9 +23,13 @@ export const teamsRouter = createTrpcRouter({
      * Create a new team in the organization.
      */
     createTeam: organizationProcedure({ team: ["create"] })
-        .input(TeamData.modifiableSchema)
+        .input(
+            z.object({
+                team: TeamData.modifiableSchema,
+            }),
+        )
         .output(TeamData.schema)
-        .mutation(async ({ ctx, input: { organizationId, ...team } }) => {
+        .mutation(async ({ ctx, input: { organizationId, team } }) => {
             // Create the team via the auth API
             const data = await auth.api.createTeam({
                 body: {
@@ -36,7 +40,7 @@ export const teamsRouter = createTrpcRouter({
 
             const changes = diffObject({}, team);
 
-            const [updatedTeam] = await Promise.all([
+            const [createdTeam] = await Promise.all([
                 // Update additional fields
                 ctx.prisma.team.update({
                     where: { organizationId: organizationId, id: data.id },
@@ -50,7 +54,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return TeamData.fromRecord(updatedTeam);
+            return TeamData.fromRecord(createdTeam);
         }),
 
     /**
@@ -74,7 +78,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Retrieve a team by its ID.
      */
-    getTeam: organizationProcedure()
+    getTeam: organizationProcedure({ team: ["view"] })
         .input(z.object({ teamId: TeamId.schema }))
         .output(TeamData.schema)
         .query(async ({ input, ctx }) => {
@@ -156,52 +160,58 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Update an existing team.
-     * @param input The team data to update.
+     * @param teamId The ID of the team to update.
+     * @param update The fields to update on the team.
      * @returns The updated team data.
      * @throws TRPCError(Not_FOund) If the team does not exist.
      */
     updateTeam: organizationProcedure({ team: ["update"] })
-        .input(TeamData.modifiableSchema.extend({ teamId: TeamId.schema }))
+        .input(
+            z.object({
+                teamId: TeamId.schema,
+                update: TeamData.modifiableSchema,
+            }),
+        )
         .output(TeamData.schema)
-        .mutation(
-            async ({ ctx, input: { teamId, organizationId, ...update } }) => {
-                const existingTeam = await ctx.prisma.team.findUnique({
-                    where: {
-                        id: teamId,
-                        organizationId: ctx.organizationId,
-                    },
+        .mutation(async ({ ctx, input: { teamId, update } }) => {
+            const existingTeam = await ctx.prisma.team.findUnique({
+                where: {
+                    id: teamId,
+                    organizationId: ctx.organizationId,
+                },
+            });
+
+            if (!existingTeam)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
                 });
 
-                if (!existingTeam)
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.teamNotFound(teamId),
-                    });
+            const diff = diffObject(
+                TeamData.modifiableSchema.parse(existingTeam),
+                update,
+            );
 
-                const changes = diffObject(
-                    TeamData.modifiableSchema.parse(existingTeam),
-                    update,
-                );
+            if (diff.length == 0) return TeamData.fromRecord(existingTeam); // No changes
 
-                if (changes.length == 0)
-                    return TeamData.fromRecord(existingTeam); // No changes
-
-                const updated = await ctx.prisma.team.update({
+            const [updated] = await Promise.all([
+                // Apply the changes
+                ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: teamId },
                     data: { ...update },
-                });
-
-                await ctx.logEvent({
+                }),
+                // Record an event for the update
+                ctx.logEvent({
                     action: "Update",
                     objectType: "Team",
                     objectId: teamId,
-                    changes,
-                });
+                    changes: diff,
+                }),
+            ]);
 
-                // Clear cached data
-                await revalidateTeam(teamId);
+            // Clear cached data
+            await revalidateTeam(teamId);
 
-                return TeamData.fromRecord(updated);
-            },
-        ),
+            return TeamData.fromRecord(updated);
+        }),
 });

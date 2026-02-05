@@ -6,6 +6,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { type OrganizationId } from "./schemas/organization";
+
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
@@ -33,4 +35,22 @@ export function getUserInitials(name: string | null): string {
                 parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
             ).toUpperCase();
     }
+}
+
+/**
+ * Utility to create a per-organization cached value. This is useful for things like collections that need to be created once per organization and then reused.
+ * @param create A function that creates the value for a given organization ID.
+ * @returns A function that takes an organization ID and returns the cached value for that organization, creating it if it doesn't exist yet.
+ */
+export function perOrganization<R>(
+    create: (organizationId: OrganizationId) => R,
+): (organizationId: OrganizationId) => R {
+    const cache = new Map<OrganizationId, R>();
+
+    return (organizationId: OrganizationId) => {
+        if (!cache.has(organizationId)) {
+            cache.set(organizationId, create(organizationId));
+        }
+        return cache.get(organizationId)!;
+    };
 }
