@@ -66,6 +66,7 @@ export const ModelName = {
     OrganizationUser: "OrganizationUser",
     OrganizationInvitation: "OrganizationInvitation",
     OrganizationLogEntry: "OrganizationLogEntry",
+    D4hAccessToken: "D4hAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
     Note: "Note",
@@ -249,6 +250,23 @@ export const OrganizationLogEntryScalarFieldEnum = {
 
 export type OrganizationLogEntryScalarFieldEnum =
     (typeof OrganizationLogEntryScalarFieldEnum)[keyof typeof OrganizationLogEntryScalarFieldEnum];
+
+export const D4hAccessTokenScalarFieldEnum = {
+    id: "id",
+    organizationId: "organizationId",
+    userId: "userId",
+    label: "label",
+    token: "token",
+    serverCode: "serverCode",
+    status: "status",
+    expiresAt: "expiresAt",
+    metadata: "metadata",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type D4hAccessTokenScalarFieldEnum =
+    (typeof D4hAccessTokenScalarFieldEnum)[keyof typeof D4hAccessTokenScalarFieldEnum];
 
 export const PersonScalarFieldEnum = {
     id: "id",

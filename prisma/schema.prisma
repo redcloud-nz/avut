@@ -27,6 +27,7 @@ model User {
   teamUsers         TeamUser[]               @relation("team_user_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_user")
+  d4hAccessTokens   D4hAccessToken[]         @relation("d4h_access_token_to_user")
 
   authoredNotes Note[]                 @relation("note_to_author")
   logEntries    OrganizationLogEntry[] @relation("organization_log_entry_to_user")
@@ -107,6 +108,7 @@ model Organization {
   skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
+  d4hAccessTokens           D4hAccessToken[]           @relation("d4h_access_token_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -219,6 +221,26 @@ enum RecordStatus {
   Active
   Archived
   Deleted
+}
+
+
+model D4hAccessToken {
+  id             String       @id
+  organizationId String?
+  organization   Organization? @relation("d4h_access_token_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?         @relation("d4h_access_token_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  label          String
+  token          String
+  serverCode     String
+  status         String
+  expiresAt      DateTime
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("d4h_access_tokens")
 }
 
 model Person {

@@ -206,6 +206,7 @@ export type UserWhereInput = {
     teamUsers?: Prisma.TeamUserListRelationFilter;
     organizationUsers?: Prisma.OrganizationUserListRelationFilter;
     invitations?: Prisma.OrganizationInvitationListRelationFilter;
+    d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
     authoredNotes?: Prisma.NoteListRelationFilter;
     logEntries?: Prisma.OrganizationLogEntryListRelationFilter;
     personnel?: Prisma.PersonListRelationFilter;
@@ -224,6 +225,7 @@ export type UserOrderByWithRelationInput = {
     teamUsers?: Prisma.TeamUserOrderByRelationAggregateInput;
     organizationUsers?: Prisma.OrganizationUserOrderByRelationAggregateInput;
     invitations?: Prisma.OrganizationInvitationOrderByRelationAggregateInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenOrderByRelationAggregateInput;
     authoredNotes?: Prisma.NoteOrderByRelationAggregateInput;
     logEntries?: Prisma.OrganizationLogEntryOrderByRelationAggregateInput;
     personnel?: Prisma.PersonOrderByRelationAggregateInput;
@@ -246,6 +248,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
         teamUsers?: Prisma.TeamUserListRelationFilter;
         organizationUsers?: Prisma.OrganizationUserListRelationFilter;
         invitations?: Prisma.OrganizationInvitationListRelationFilter;
+        d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
         authoredNotes?: Prisma.NoteListRelationFilter;
         logEntries?: Prisma.OrganizationLogEntryListRelationFilter;
         personnel?: Prisma.PersonListRelationFilter;
@@ -296,6 +299,7 @@ export type UserCreateInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -314,6 +318,7 @@ export type UserUncheckedCreateInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -332,6 +337,7 @@ export type UserUpdateInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -350,6 +356,7 @@ export type UserUncheckedUpdateInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -597,6 +604,34 @@ export type UserUpdateOneRequiredWithoutLogEntriesNestedInput = {
     >;
 };
 
+export type UserCreateNestedOneWithoutD4hAccessTokensInput = {
+    create?: Prisma.XOR<
+        Prisma.UserCreateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedCreateWithoutD4hAccessTokensInput
+    >;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutD4hAccessTokensInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutD4hAccessTokensNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.UserCreateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedCreateWithoutD4hAccessTokensInput
+    >;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutD4hAccessTokensInput;
+    upsert?: Prisma.UserUpsertWithoutD4hAccessTokensInput;
+    disconnect?: Prisma.UserWhereInput | boolean;
+    delete?: Prisma.UserWhereInput | boolean;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.UserUpdateToOneWithWhereWithoutD4hAccessTokensInput,
+            Prisma.UserUpdateWithoutD4hAccessTokensInput
+        >,
+        Prisma.UserUncheckedUpdateWithoutD4hAccessTokensInput
+    >;
+};
+
 export type UserCreateNestedOneWithoutPersonnelInput = {
     create?: Prisma.XOR<
         Prisma.UserCreateWithoutPersonnelInput,
@@ -663,6 +698,7 @@ export type UserCreateWithoutSessionsInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -680,6 +716,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -725,6 +762,7 @@ export type UserUpdateWithoutSessionsInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -742,6 +780,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -759,6 +798,7 @@ export type UserCreateWithoutAccountsInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -776,6 +816,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -821,6 +862,7 @@ export type UserUpdateWithoutAccountsInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -838,6 +880,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -855,6 +898,7 @@ export type UserCreateWithoutTeamUsersInput = {
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -872,6 +916,7 @@ export type UserUncheckedCreateWithoutTeamUsersInput = {
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -917,6 +962,7 @@ export type UserUpdateWithoutTeamUsersInput = {
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -934,6 +980,7 @@ export type UserUncheckedUpdateWithoutTeamUsersInput = {
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -951,6 +998,7 @@ export type UserCreateWithoutOrganizationUsersInput = {
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -968,6 +1016,7 @@ export type UserUncheckedCreateWithoutOrganizationUsersInput = {
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -1013,6 +1062,7 @@ export type UserUpdateWithoutOrganizationUsersInput = {
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -1030,6 +1080,7 @@ export type UserUncheckedUpdateWithoutOrganizationUsersInput = {
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1047,6 +1098,7 @@ export type UserCreateWithoutInvitationsInput = {
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
@@ -1064,6 +1116,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
@@ -1109,6 +1162,7 @@ export type UserUpdateWithoutInvitationsInput = {
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
@@ -1126,6 +1180,7 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
@@ -1144,6 +1199,7 @@ export type UserCreateWithoutLogEntriesInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1161,6 +1217,7 @@ export type UserUncheckedCreateWithoutLogEntriesInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1206,6 +1263,7 @@ export type UserUpdateWithoutLogEntriesInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1223,7 +1281,108 @@ export type UserUncheckedUpdateWithoutLogEntriesInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutD4hAccessTokensInput = {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified?: boolean;
+    image?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+    accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
+    organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
+    invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
+    personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutD4hAccessTokensInput = {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified?: boolean;
+    image?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+    accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
+    organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
+    personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutD4hAccessTokensInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.UserCreateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedCreateWithoutD4hAccessTokensInput
+    >;
+};
+
+export type UserUpsertWithoutD4hAccessTokensInput = {
+    update: Prisma.XOR<
+        Prisma.UserUpdateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedUpdateWithoutD4hAccessTokensInput
+    >;
+    create: Prisma.XOR<
+        Prisma.UserCreateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedCreateWithoutD4hAccessTokensInput
+    >;
+    where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutD4hAccessTokensInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<
+        Prisma.UserUpdateWithoutD4hAccessTokensInput,
+        Prisma.UserUncheckedUpdateWithoutD4hAccessTokensInput
+    >;
+};
+
+export type UserUpdateWithoutD4hAccessTokensInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+    accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
+    organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
+    invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
+    personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutD4hAccessTokensInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+    accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
+    organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
 
@@ -1240,6 +1399,7 @@ export type UserCreateWithoutPersonnelInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
 };
@@ -1257,6 +1417,7 @@ export type UserUncheckedCreateWithoutPersonnelInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1302,6 +1463,7 @@ export type UserUpdateWithoutPersonnelInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
 };
@@ -1319,6 +1481,7 @@ export type UserUncheckedUpdateWithoutPersonnelInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1336,6 +1499,7 @@ export type UserCreateWithoutAuthoredNotesInput = {
     teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1353,6 +1517,7 @@ export type UserUncheckedCreateWithoutAuthoredNotesInput = {
     teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1398,6 +1563,7 @@ export type UserUpdateWithoutAuthoredNotesInput = {
     teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1415,6 +1581,7 @@ export type UserUncheckedUpdateWithoutAuthoredNotesInput = {
     teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1429,6 +1596,7 @@ export type UserCountOutputType = {
     teamUsers: number;
     organizationUsers: number;
     invitations: number;
+    d4hAccessTokens: number;
     authoredNotes: number;
     logEntries: number;
     personnel: number;
@@ -1443,6 +1611,7 @@ export type UserCountOutputTypeSelect<
     teamUsers?: boolean | UserCountOutputTypeCountTeamUsersArgs;
     organizationUsers?: boolean | UserCountOutputTypeCountOrganizationUsersArgs;
     invitations?: boolean | UserCountOutputTypeCountInvitationsArgs;
+    d4hAccessTokens?: boolean | UserCountOutputTypeCountD4hAccessTokensArgs;
     authoredNotes?: boolean | UserCountOutputTypeCountAuthoredNotesArgs;
     logEntries?: boolean | UserCountOutputTypeCountLogEntriesArgs;
     personnel?: boolean | UserCountOutputTypeCountPersonnelArgs;
@@ -1514,6 +1683,16 @@ export type UserCountOutputTypeCountInvitationsArgs<
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountD4hAccessTokensArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.D4hAccessTokenWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountAuthoredNotesArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
@@ -1560,6 +1739,7 @@ export type UserSelect<
             | boolean
             | Prisma.User$organizationUsersArgs<ExtArgs>;
         invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
+        d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
         authoredNotes?: boolean | Prisma.User$authoredNotesArgs<ExtArgs>;
         logEntries?: boolean | Prisma.User$logEntriesArgs<ExtArgs>;
         personnel?: boolean | Prisma.User$personnelArgs<ExtArgs>;
@@ -1632,6 +1812,7 @@ export type UserInclude<
     teamUsers?: boolean | Prisma.User$teamUsersArgs<ExtArgs>;
     organizationUsers?: boolean | Prisma.User$organizationUsersArgs<ExtArgs>;
     invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
+    d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
     authoredNotes?: boolean | Prisma.User$authoredNotesArgs<ExtArgs>;
     logEntries?: boolean | Prisma.User$logEntriesArgs<ExtArgs>;
     personnel?: boolean | Prisma.User$personnelArgs<ExtArgs>;
@@ -1657,6 +1838,7 @@ export type $UserPayload<
         teamUsers: Prisma.$TeamUserPayload<ExtArgs>[];
         organizationUsers: Prisma.$OrganizationUserPayload<ExtArgs>[];
         invitations: Prisma.$OrganizationInvitationPayload<ExtArgs>[];
+        d4hAccessTokens: Prisma.$D4hAccessTokenPayload<ExtArgs>[];
         authoredNotes: Prisma.$NotePayload<ExtArgs>[];
         logEntries: Prisma.$OrganizationLogEntryPayload<ExtArgs>[];
         personnel: Prisma.$PersonPayload<ExtArgs>[];
@@ -2274,6 +2456,17 @@ export interface Prisma__UserClient<
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$OrganizationInvitationPayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
+    d4hAccessTokens<T extends Prisma.User$d4hAccessTokensArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.User$d4hAccessTokensArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$D4hAccessTokenPayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -2951,6 +3144,37 @@ export type User$invitationsArgs<
     distinct?:
         | Prisma.OrganizationInvitationScalarFieldEnum
         | Prisma.OrganizationInvitationScalarFieldEnum[];
+};
+
+/**
+ * User.d4hAccessTokens
+ */
+export type User$d4hAccessTokensArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the D4hAccessToken
+     */
+    select?: Prisma.D4hAccessTokenSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the D4hAccessToken
+     */
+    omit?: Prisma.D4hAccessTokenOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.D4hAccessTokenInclude<ExtArgs> | null;
+    where?: Prisma.D4hAccessTokenWhereInput;
+    orderBy?:
+        | Prisma.D4hAccessTokenOrderByWithRelationInput
+        | Prisma.D4hAccessTokenOrderByWithRelationInput[];
+    cursor?: Prisma.D4hAccessTokenWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?:
+        | Prisma.D4hAccessTokenScalarFieldEnum
+        | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**

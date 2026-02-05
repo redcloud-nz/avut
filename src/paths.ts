@@ -236,6 +236,21 @@ function adminModule(org_slug: string) {
             href: base,
         },
 
+        d4hAccessToken: (tokenId: string) =>
+            ({
+                href: `${base}/d4h-access-tokens/${tokenId}`,
+            }) as const,
+
+        d4hAccessTokens: {
+            label: "D4H Access Tokens",
+            href: `${base}/d4h-access-tokens`,
+
+            create: {
+                label: "Add Access Token",
+                href: `${base}/d4h-access-tokens/--create`,
+            },
+        },
+
         invitations: {
             label: "Invitations",
             href: `${base}/invitations`,

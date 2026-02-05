@@ -19,6 +19,7 @@ export type * from "./models/TeamUser";
 export type * from "./models/OrganizationUser";
 export type * from "./models/OrganizationInvitation";
 export type * from "./models/OrganizationLogEntry";
+export type * from "./models/D4hAccessToken";
 export type * from "./models/Person";
 export type * from "./models/TeamMembership";
 export type * from "./models/Note";

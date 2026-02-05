@@ -77,6 +77,11 @@ export type OrganizationInvitation = Prisma.OrganizationInvitationModel;
  */
 export type OrganizationLogEntry = Prisma.OrganizationLogEntryModel;
 /**
+ * Model D4hAccessToken
+ *
+ */
+export type D4hAccessToken = Prisma.D4hAccessTokenModel;
+/**
  * Model Person
  *
  */

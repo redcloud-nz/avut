@@ -13,6 +13,7 @@ import {
 
 const statement = {
     ...defaultStatements,
+    d4hAccessToken: ["view", "create", "delete"],
     invitation: ["view", "create", "cancel"],
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
@@ -25,6 +26,7 @@ export const ac = createAccessControl(statement);
 
 export const owner = ac.newRole({
     ...ownerAc.statements,
+    d4hAccessToken: ["view", "create", "delete"],
     invitation: ["view", "create", "cancel"],
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
@@ -34,6 +36,7 @@ export const owner = ac.newRole({
 });
 export const admin = ac.newRole({
     ...adminAc.statements,
+    d4hAccessToken: ["view", "create", "delete"],
     invitation: ["view", "create", "cancel"],
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update"],

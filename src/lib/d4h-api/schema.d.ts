@@ -9672,7 +9672,12 @@ export interface paths {
                         | "countRollingHoursIncident";
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    /** @description The point of view from where the request takes place */
+                    context: "team" | "organisation" | "admin";
+                    /** @description Either a team, organisation or admin's id */
+                    contextId: number;
+                };
                 cookie?: never;
             };
             requestBody?: never;

@@ -201,7 +201,12 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 
 interface LogEventOptions {
     action: "Create" | "Update" | "Delete" | "Archive" | "Restore";
-    objectType: "OrganizationUser" | "OrganizationSettings" | "Person" | "Team";
+    objectType:
+        | "D4hAccessToken"
+        | "OrganizationUser"
+        | "OrganizationSettings"
+        | "Person"
+        | "Team";
     objectId: string;
     changes?: DiffChange[];
     description?: string;

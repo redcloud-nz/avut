@@ -13890,6 +13890,28 @@
         "description": "Retrieve a list of members <br></br>**Required modules:** ",
         "parameters": [
           {
+            "description": "The point of view from where the request takes place",
+            "in": "path",
+            "required": true,
+            "name": "context",
+            "schema": {
+              "type": ["string"],
+              "enum": ["team", "organisation", "admin"],
+              "description": "The point of view from where the request takes place"
+            }
+          },
+          {
+            "description": "Either a team, organisation or admin's id",
+            "in": "path",
+            "required": true,
+            "name": "contextId",
+            "schema": {
+              "type": ["integer"],
+              "minimum": 1,
+              "description": "Either a team, organisation or admin's id"
+            }
+          },
+          {
             "description": "Page number",
             "in": "query",
             "name": "page",

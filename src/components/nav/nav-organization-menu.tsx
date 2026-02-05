@@ -40,6 +40,12 @@ export function NavOrganizationMenu({
                     icon={<AdminModuleIcon />}
                 >
                     <Protect
+                        permissions={{ d4hAccessToken: ["view"] }}
+                        orgId={organization.id}
+                    >
+                        <NavSubItem path={orgPrefix.admin.d4hAccessTokens} />
+                    </Protect>
+                    <Protect
                         permissions={{ invitation: ["create"] }}
                         orgId={organization.id}
                     >

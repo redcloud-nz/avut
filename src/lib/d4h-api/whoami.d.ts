@@ -16,6 +16,10 @@ export interface D4hWhoami {
             id: number;
             resourceType: string;
             title: string;
+            owner?: {
+                id: number;
+                resourceType: string;
+            };
         };
         permissions?: Record<
             | "Animal"
