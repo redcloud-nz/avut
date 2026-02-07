@@ -206,7 +206,8 @@ interface LogEventOptions {
         | "OrganizationUser"
         | "OrganizationSettings"
         | "Person"
-        | "Team";
+        | "Team"
+        | "TeamMembership";
     objectId: string;
     changes?: DiffChange[];
     description?: string;

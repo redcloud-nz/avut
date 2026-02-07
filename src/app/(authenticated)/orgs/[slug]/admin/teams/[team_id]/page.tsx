@@ -7,8 +7,7 @@
 "use client";
 
 import { use } from "react";
-
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
@@ -18,24 +17,16 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import * as Paths from "@/paths";
-import { TeamData } from "@/lib/schemas/team";
+
 import { trpc } from "@/trpc/client";
 
+import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
 import { AdminModule_TeamMenu } from "./team-menu";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHeadCell,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
@@ -43,18 +34,12 @@ export default function AdminModule_Team_Page(
     const { slug, team_id } = use(props.params);
     const organization = useOrganization();
 
-    const [{ data: team }, { data: teamMemberships }] = useSuspenseQueries({
-        queries: [
-            trpc.teams.getTeam.queryOptions({
-                organizationId: organization.id,
-                teamId: team_id,
-            }),
-            trpc.teams.listTeamMembers.queryOptions({
-                organizationId: organization.id,
-                teamId: team_id,
-            }),
-        ],
-    });
+    const { data: team } = useSuspenseQuery(
+        trpc.teams.getTeam.queryOptions({
+            organizationId: organization.id,
+            teamId: team_id,
+        }),
+    );
 
     return (
         <Lexington.Root>
@@ -85,7 +70,7 @@ export default function AdminModule_Team_Page(
                                                 ).update
                                             }
                                         >
-                                            <ObjectIcons.Edit /> Edit
+                                            <ObjectIcons.Edit />
                                         </Link>
                                     </Button>
                                 </Protect>
@@ -129,7 +114,7 @@ export default function AdminModule_Team_Page(
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={team.createdAt}
-                                            format="dateWithDistance"
+                                            format="dateTimeWithDistance"
                                         />
                                     </Field>
                                     <Field orientation="responsive">
@@ -137,41 +122,34 @@ export default function AdminModule_Team_Page(
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={team.updatedAt ?? "N/A"}
-                                            format="dateWithDistance"
+                                            format="dateTimeWithDistance"
                                         />
                                     </Field>
                                 </FieldGroup>
                             </CardContent>
                         </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>D4h Integration</CardTitle>
+                                <FieldGroup className="px-4">
+                                    <Field orientation="responsive">
+                                        <FieldLabel>D4H Team ID</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={
+                                                team.properties?.d4hTeamId ??
+                                                "N/A"
+                                            }
+                                        />
+                                    </Field>
+                                </FieldGroup>
+                            </CardHeader>
+                        </Card>
                     </Hermes.Section>
-                    <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.SectionTitle>
-                                Assigned Personnel
-                            </Hermes.SectionTitle>
-                            <Button variant="outline">Manage</Button>
-                        </Hermes.SectionHeader>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHeadCell>Person</TableHeadCell>
-                                    <TableHeadCell>Email</TableHeadCell>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {teamMemberships.map((membership) => (
-                                    <TableRow key={membership.id}>
-                                        <TableCell>
-                                            {membership.person.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {membership.person.email}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Hermes.Section>
+                    <AdminModule_TeamPersonnel_Section
+                        organization={organization}
+                        team={team}
+                    />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

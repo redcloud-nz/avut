@@ -2540,6 +2540,7 @@ export type PersonScalarFieldEnum =
 
 export const TeamMembershipScalarFieldEnum = {
     id: "id",
+    organizationId: "organizationId",
     teamId: "teamId",
     personId: "personId",
     tags: "tags",

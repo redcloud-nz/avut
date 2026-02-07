@@ -218,6 +218,7 @@ export type OrganizationWhereInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionListRelationFilter;
     personnel?: Prisma.PersonListRelationFilter;
     d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
+    teamMemberships?: Prisma.TeamMembershipListRelationFilter;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -239,6 +240,7 @@ export type OrganizationOrderByWithRelationInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionOrderByRelationAggregateInput;
     personnel?: Prisma.PersonOrderByRelationAggregateInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenOrderByRelationAggregateInput;
+    teamMemberships?: Prisma.TeamMembershipOrderByRelationAggregateInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -264,6 +266,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
         skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionListRelationFilter;
         personnel?: Prisma.PersonListRelationFilter;
         d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
+        teamMemberships?: Prisma.TeamMembershipListRelationFilter;
     },
     "id" | "slug"
 >;
@@ -324,6 +327,7 @@ export type OrganizationCreateInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -345,6 +349,7 @@ export type OrganizationUncheckedCreateInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -366,6 +371,7 @@ export type OrganizationUpdateInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -387,6 +393,7 @@ export type OrganizationUncheckedUpdateInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -637,6 +644,32 @@ export type OrganizationUpdateOneRequiredWithoutPersonnelNestedInput = {
     >;
 };
 
+export type OrganizationCreateNestedOneWithoutTeamMembershipsInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutTeamMembershipsInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUpdateOneRequiredWithoutTeamMembershipsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutTeamMembershipsInput;
+    upsert?: Prisma.OrganizationUpsertWithoutTeamMembershipsInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUpdateToOneWithWhereWithoutTeamMembershipsInput,
+            Prisma.OrganizationUpdateWithoutTeamMembershipsInput
+        >,
+        Prisma.OrganizationUncheckedUpdateWithoutTeamMembershipsInput
+    >;
+};
+
 export type OrganizationCreateNestedOneWithoutNotesInput = {
     create?: Prisma.XOR<
         Prisma.OrganizationCreateWithoutNotesInput,
@@ -789,6 +822,7 @@ export type OrganizationCreateWithoutConfigsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutConfigsInput = {
@@ -809,6 +843,7 @@ export type OrganizationUncheckedCreateWithoutConfigsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutConfigsInput = {
@@ -857,6 +892,7 @@ export type OrganizationUpdateWithoutConfigsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutConfigsInput = {
@@ -877,6 +913,7 @@ export type OrganizationUncheckedUpdateWithoutConfigsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutTeamsInput = {
@@ -897,6 +934,7 @@ export type OrganizationCreateWithoutTeamsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutTeamsInput = {
@@ -917,6 +955,7 @@ export type OrganizationUncheckedCreateWithoutTeamsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutTeamsInput = {
@@ -965,6 +1004,7 @@ export type OrganizationUpdateWithoutTeamsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutTeamsInput = {
@@ -985,6 +1025,7 @@ export type OrganizationUncheckedUpdateWithoutTeamsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutUsersInput = {
@@ -1005,6 +1046,7 @@ export type OrganizationCreateWithoutUsersInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutUsersInput = {
@@ -1025,6 +1067,7 @@ export type OrganizationUncheckedCreateWithoutUsersInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutUsersInput = {
@@ -1073,6 +1116,7 @@ export type OrganizationUpdateWithoutUsersInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutUsersInput = {
@@ -1093,6 +1137,7 @@ export type OrganizationUncheckedUpdateWithoutUsersInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -1113,6 +1158,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -1133,6 +1179,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -1181,6 +1228,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -1201,6 +1249,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutLogEntriesInput = {
@@ -1221,6 +1270,7 @@ export type OrganizationCreateWithoutLogEntriesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
@@ -1241,6 +1291,7 @@ export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutLogEntriesInput = {
@@ -1289,6 +1340,7 @@ export type OrganizationUpdateWithoutLogEntriesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
@@ -1309,6 +1361,7 @@ export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutD4hAccessTokensInput = {
@@ -1329,6 +1382,7 @@ export type OrganizationCreateWithoutD4hAccessTokensInput = {
     skillPackages?: Prisma.SkillPackageCreateNestedManyWithoutOrganizationInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
@@ -1349,6 +1403,7 @@ export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
     skillPackages?: Prisma.SkillPackageUncheckedCreateNestedManyWithoutOrganizationInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutD4hAccessTokensInput = {
@@ -1397,6 +1452,7 @@ export type OrganizationUpdateWithoutD4hAccessTokensInput = {
     skillPackages?: Prisma.SkillPackageUpdateManyWithoutOrganizationNestedInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
@@ -1417,6 +1473,7 @@ export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
     skillPackages?: Prisma.SkillPackageUncheckedUpdateManyWithoutOrganizationNestedInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutPersonnelInput = {
@@ -1437,6 +1494,7 @@ export type OrganizationCreateWithoutPersonnelInput = {
     skillPackages?: Prisma.SkillPackageCreateNestedManyWithoutOrganizationInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutPersonnelInput = {
@@ -1457,6 +1515,7 @@ export type OrganizationUncheckedCreateWithoutPersonnelInput = {
     skillPackages?: Prisma.SkillPackageUncheckedCreateNestedManyWithoutOrganizationInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutPersonnelInput = {
@@ -1505,6 +1564,7 @@ export type OrganizationUpdateWithoutPersonnelInput = {
     skillPackages?: Prisma.SkillPackageUpdateManyWithoutOrganizationNestedInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
@@ -1524,6 +1584,119 @@ export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
     skillCheckSessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutOrganizationNestedInput;
     skillPackages?: Prisma.SkillPackageUncheckedUpdateManyWithoutOrganizationNestedInput;
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationCreateWithoutTeamMembershipsInput = {
+    id: string;
+    name: string;
+    slug: string;
+    logo?: string | null;
+    createdAt: Date | string;
+    metadata?: string | null;
+    configs?: Prisma.OrganizationConfigCreateNestedManyWithoutOrganizationInput;
+    invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutOrganizationInput;
+    teams?: Prisma.TeamCreateNestedManyWithoutOrganizationInput;
+    users?: Prisma.OrganizationUserCreateNestedManyWithoutOrganizationInput;
+    logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutOrganizationInput;
+    notes?: Prisma.NoteCreateNestedManyWithoutOrganizationInput;
+    skillChecks?: Prisma.SkillCheckCreateNestedManyWithoutOrganizationInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutOrganizationInput;
+    skillPackages?: Prisma.SkillPackageCreateNestedManyWithoutOrganizationInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
+    personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationUncheckedCreateWithoutTeamMembershipsInput = {
+    id: string;
+    name: string;
+    slug: string;
+    logo?: string | null;
+    createdAt: Date | string;
+    metadata?: string | null;
+    configs?: Prisma.OrganizationConfigUncheckedCreateNestedManyWithoutOrganizationInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+    teams?: Prisma.TeamUncheckedCreateNestedManyWithoutOrganizationInput;
+    users?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutOrganizationInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutOrganizationInput;
+    notes?: Prisma.NoteUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillChecks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillPackages?: Prisma.SkillPackageUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
+    personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationCreateOrConnectWithoutTeamMembershipsInput = {
+    where: Prisma.OrganizationWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedCreateWithoutTeamMembershipsInput
+    >;
+};
+
+export type OrganizationUpsertWithoutTeamMembershipsInput = {
+    update: Prisma.XOR<
+        Prisma.OrganizationUpdateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedUpdateWithoutTeamMembershipsInput
+    >;
+    create: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedCreateWithoutTeamMembershipsInput
+    >;
+    where?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationUpdateToOneWithWhereWithoutTeamMembershipsInput = {
+    where?: Prisma.OrganizationWhereInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationUpdateWithoutTeamMembershipsInput,
+        Prisma.OrganizationUncheckedUpdateWithoutTeamMembershipsInput
+    >;
+};
+
+export type OrganizationUpdateWithoutTeamMembershipsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    slug?: Prisma.StringFieldUpdateOperationsInput | string;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configs?: Prisma.OrganizationConfigUpdateManyWithoutOrganizationNestedInput;
+    invitations?: Prisma.OrganizationInvitationUpdateManyWithoutOrganizationNestedInput;
+    teams?: Prisma.TeamUpdateManyWithoutOrganizationNestedInput;
+    users?: Prisma.OrganizationUserUpdateManyWithoutOrganizationNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutOrganizationNestedInput;
+    notes?: Prisma.NoteUpdateManyWithoutOrganizationNestedInput;
+    skillChecks?: Prisma.SkillCheckUpdateManyWithoutOrganizationNestedInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUpdateManyWithoutOrganizationNestedInput;
+    skillPackages?: Prisma.SkillPackageUpdateManyWithoutOrganizationNestedInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
+    personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationUncheckedUpdateWithoutTeamMembershipsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    slug?: Prisma.StringFieldUpdateOperationsInput | string;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configs?: Prisma.OrganizationConfigUncheckedUpdateManyWithoutOrganizationNestedInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teams?: Prisma.TeamUncheckedUpdateManyWithoutOrganizationNestedInput;
+    users?: Prisma.OrganizationUserUncheckedUpdateManyWithoutOrganizationNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationNestedInput;
+    notes?: Prisma.NoteUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillChecks?: Prisma.SkillCheckUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillPackages?: Prisma.SkillPackageUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
+    personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
@@ -1545,6 +1718,7 @@ export type OrganizationCreateWithoutNotesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutNotesInput = {
@@ -1565,6 +1739,7 @@ export type OrganizationUncheckedCreateWithoutNotesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutNotesInput = {
@@ -1613,6 +1788,7 @@ export type OrganizationUpdateWithoutNotesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutNotesInput = {
@@ -1633,6 +1809,7 @@ export type OrganizationUncheckedUpdateWithoutNotesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackagesInput = {
@@ -1653,6 +1830,7 @@ export type OrganizationCreateWithoutSkillPackagesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
@@ -1673,6 +1851,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackagesInput = {
@@ -1721,6 +1900,7 @@ export type OrganizationUpdateWithoutSkillPackagesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
@@ -1741,6 +1921,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillCheckSessionsInput = {
@@ -1761,6 +1942,7 @@ export type OrganizationCreateWithoutSkillCheckSessionsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
@@ -1781,6 +1963,7 @@ export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillCheckSessionsInput = {
@@ -1829,6 +2012,7 @@ export type OrganizationUpdateWithoutSkillCheckSessionsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
@@ -1849,6 +2033,7 @@ export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillChecksInput = {
@@ -1869,6 +2054,7 @@ export type OrganizationCreateWithoutSkillChecksInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
@@ -1889,6 +2075,7 @@ export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillChecksInput = {
@@ -1937,6 +2124,7 @@ export type OrganizationUpdateWithoutSkillChecksInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
@@ -1957,6 +2145,7 @@ export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
@@ -1977,6 +2166,7 @@ export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
     skillPackages?: Prisma.SkillPackageCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
@@ -1997,6 +2187,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
     skillPackages?: Prisma.SkillPackageUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackageSubscriptionsInput = {
@@ -2046,6 +2237,7 @@ export type OrganizationUpdateWithoutSkillPackageSubscriptionsInput = {
     skillPackages?: Prisma.SkillPackageUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
@@ -2066,6 +2258,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
     skillPackages?: Prisma.SkillPackageUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 /**
@@ -2085,6 +2278,7 @@ export type OrganizationCountOutputType = {
     skillPackageSubscriptions: number;
     personnel: number;
     d4hAccessTokens: number;
+    teamMemberships: number;
 };
 
 export type OrganizationCountOutputTypeSelect<
@@ -2109,6 +2303,9 @@ export type OrganizationCountOutputTypeSelect<
     d4hAccessTokens?:
         | boolean
         | OrganizationCountOutputTypeCountD4hAccessTokensArgs;
+    teamMemberships?:
+        | boolean
+        | OrganizationCountOutputTypeCountTeamMembershipsArgs;
 };
 
 /**
@@ -2244,6 +2441,16 @@ export type OrganizationCountOutputTypeCountD4hAccessTokensArgs<
     where?: Prisma.D4hAccessTokenWhereInput;
 };
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountTeamMembershipsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.TeamMembershipWhereInput;
+};
+
 export type OrganizationSelect<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
@@ -2275,6 +2482,9 @@ export type OrganizationSelect<
         d4hAccessTokens?:
             | boolean
             | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
+        teamMemberships?:
+            | boolean
+            | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
         _count?:
             | boolean
             | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
@@ -2350,6 +2560,9 @@ export type OrganizationInclude<
     d4hAccessTokens?:
         | boolean
         | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
+    teamMemberships?:
+        | boolean
+        | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrganizationIncludeCreateManyAndReturn<
@@ -2379,6 +2592,7 @@ export type $OrganizationPayload<
         skillPackageSubscriptions: Prisma.$SkillPackageSubscriptionPayload<ExtArgs>[];
         personnel: Prisma.$PersonPayload<ExtArgs>[];
         d4hAccessTokens: Prisma.$D4hAccessTokenPayload<ExtArgs>[];
+        teamMemberships: Prisma.$TeamMembershipPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -3104,6 +3318,22 @@ export interface Prisma__OrganizationClient<
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$D4hAccessTokenPayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
+    teamMemberships<
+        T extends Prisma.Organization$teamMembershipsArgs<ExtArgs> = {},
+    >(
+        args?: Prisma.Subset<
+            T,
+            Prisma.Organization$teamMembershipsArgs<ExtArgs>
+        >,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$TeamMembershipPayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -3984,6 +4214,37 @@ export type Organization$d4hAccessTokensArgs<
     distinct?:
         | Prisma.D4hAccessTokenScalarFieldEnum
         | Prisma.D4hAccessTokenScalarFieldEnum[];
+};
+
+/**
+ * Organization.teamMemberships
+ */
+export type Organization$teamMembershipsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs =
+        runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the TeamMembership
+     */
+    select?: Prisma.TeamMembershipSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the TeamMembership
+     */
+    omit?: Prisma.TeamMembershipOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TeamMembershipInclude<ExtArgs> | null;
+    where?: Prisma.TeamMembershipWhereInput;
+    orderBy?:
+        | Prisma.TeamMembershipOrderByWithRelationInput
+        | Prisma.TeamMembershipOrderByWithRelationInput[];
+    cursor?: Prisma.TeamMembershipWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?:
+        | Prisma.TeamMembershipScalarFieldEnum
+        | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**

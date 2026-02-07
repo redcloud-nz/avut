@@ -6,7 +6,7 @@
 import { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/datetime";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 import { formatDistanceToNow } from "date-fns";
 
 type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
@@ -18,7 +18,9 @@ type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
         format?:
             | "default"
             | "date"
+            | "datetime"
             | "dateWithDistance"
+            | "dateTimeWithDistance"
             | "id"
             | "uppercase"
             | "lowercase"
@@ -67,19 +69,36 @@ function formatValue(
     }
 
     switch (format) {
-        case "date":
+        case "date": {
             const date = new Date(value);
             return formatDate(date);
-        case "dateWithDistance":
-            const dt = new Date(value);
+        }
+        case "datetime": {
+            const date = new Date(value);
+            return formatDateTime(date);
+        }
+        case "dateWithDistance": {
+            const date = new Date(value);
             return (
                 <>
-                    <span>{formatDate(dt)}</span>
+                    <span>{formatDate(date)}</span>
                     <span className="pl-2 text-muted-foreground">
-                        ({formatDistanceToNow(dt, { addSuffix: true })})
+                        ({formatDistanceToNow(date, { addSuffix: true })})
                     </span>
                 </>
             );
+        }
+        case "dateTimeWithDistance": {
+            const date = new Date(value);
+            return (
+                <>
+                    <span>{formatDateTime(date)}</span>
+                    <span className="pl-2 text-muted-foreground">
+                        ({formatDistanceToNow(date, { addSuffix: true })})
+                    </span>
+                </>
+            );
+        }
         case "id":
             return <code className="font-mono">{value}</code>;
         case "uppercase":

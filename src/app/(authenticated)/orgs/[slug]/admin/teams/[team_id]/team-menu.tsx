@@ -31,13 +31,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
 import { OrganizationData } from "@/lib/schemas/organization";
 import { TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+import { Link } from "@/components/ui/link";
 
 interface AdminModule_TeamMenuProps {
     organization: OrganizationData;
@@ -72,24 +72,20 @@ export function AdminModule_TeamMenu({
     const deleteMutation = useMutation(
         trpc.teams.deleteTeam.mutationOptions({
             async onSuccess() {
-                await invalidateTeamQueries();
-                toast.success("Team deleted successfully.");
                 router.push(Paths.org(organization.slug).admin.teams.href);
-            },
-            async onError(error: any) {
-                toast.error(`Error deleting team: ${error.message}`);
+                invalidateTeamQueries();
             },
         }),
     );
 
     function handleDelete() {
+        setDeleteDialogOpen(false);
         toast.promise(
             async () => {
                 await deleteMutation.mutateAsync({
                     organizationId: organization.id,
                     teamId: team.id,
                 });
-                router.push(Paths.org(organization.slug).admin.teams.href);
             },
             {
                 loading: "Deleting team...",
@@ -111,13 +107,26 @@ export function AdminModule_TeamMenu({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-40" align="end">
                         <DropdownMenuLabel>Team</DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem disabled asChild>
+                                <Link
+                                    to={
+                                        Paths.org(organization.slug).admin.team(
+                                            team.id,
+                                        ).history
+                                    }
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuGroupLabel>
                                 Actions
                             </DropdownMenuGroupLabel>
                             <DropdownMenuItem
-                                onSelect={handleDelete}
+                                onSelect={() => setDeleteDialogOpen(true)}
                                 className="text-destructive"
                             >
                                 <ObjectIcons.Delete /> Delete
@@ -143,6 +152,13 @@ export function AdminModule_TeamMenu({
                                 type="button"
                                 variant="destructive"
                                 disabled={deleteMutation.isPending}
+                                onClick={handleDelete}
+                            >
+                                Delete
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
                                 onClick={() => setDeleteDialogOpen(false)}
                             >
                                 Cancel

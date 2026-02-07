@@ -9,8 +9,10 @@ import { TeamMembership as TeamMembershipRecord } from "@/generated/prisma/clien
 
 import { nanoId16 } from "../id";
 import { propertiesSchema, tagsSchema, zodNanoId16 } from "../validation";
-import { TeamId } from "./team";
+
+import { OrganizationId } from "./organization";
 import { PersonId } from "./person";
+import { TeamId } from "./team";
 
 export const TeamMembershipId = {
     schema: zodNanoId16(
@@ -24,6 +26,7 @@ export type TeamMembershipId = string & z.BRAND<"TeamMembershipId">;
 
 const teamMembershipSchema = z.object({
     id: TeamMembershipId.schema,
+    organizationId: OrganizationId.schema,
     teamId: TeamId.schema,
     personId: PersonId.schema,
     tags: tagsSchema,

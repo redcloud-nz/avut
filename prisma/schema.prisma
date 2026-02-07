@@ -109,6 +109,7 @@ model Organization {
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
   d4hAccessTokens           D4hAccessToken[]           @relation("d4h_access_token_to_organization")
+  teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -271,6 +272,8 @@ model Person {
 
 model TeamMembership {
   id         String   @id
+  organizationId String
+  organization   Organization @relation("team_membership_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   teamId     String
   team       Team     @relation("team_membership_to_team", fields: [teamId], references: [id], onDelete: Cascade)
   personId   String

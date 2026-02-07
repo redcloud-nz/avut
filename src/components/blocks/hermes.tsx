@@ -26,7 +26,7 @@ function HermesSection({ className, ...props }: ComponentProps<"section">) {
     return (
         <section
             className={cn(
-                "relative flex flex-col items-stretch gap-2 [&+section]:mt-6",
+                "relative flex flex-col items-stretch gap-2 [&+section]:mt-8",
                 className,
             )}
             data-component="HermesSection"

@@ -91,6 +91,7 @@ export async function populateTeamsAction(organizationId: string) {
                     await prisma.teamMembership.create({
                         data: {
                             id: nanoId16(),
+                            organizationId,
                             teamId: team!.id,
                             personId: person!.id,
                             properties: {

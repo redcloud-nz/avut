@@ -17,5 +17,5 @@ export function formatDate(dateOrString: string | Date): string {
 
 export function formatDateTime(dateOrString: string | Date): string {
     const date = new Date(dateOrString);
-    return format(date, "yyyy-MM-dd HH:mm:ss XXXXX");
+    return format(date, "yyyy-MM-dd HH:mm");
 }

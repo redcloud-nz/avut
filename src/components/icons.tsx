@@ -90,6 +90,7 @@ export {
 
 export const ObjectIcons = {
     Archive: ArchiveIcon,
+    Create: PlusIcon,
     Delete: TrashIcon,
     Duplicate: CopyIcon,
     Edit: PencilIcon,

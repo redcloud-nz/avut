@@ -150,7 +150,7 @@ export function AdminModule_PersonMenu({
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Person</DropdownMenuLabel>
                     <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem disabled asChild>
                             <Link
                                 to={
                                     Paths.org(organization.slug).admin.person(
