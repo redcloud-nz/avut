@@ -203,6 +203,7 @@ interface LogEventOptions {
     action: "Create" | "Update" | "Delete" | "Archive" | "Restore";
     objectType:
         | "D4hAccessToken"
+        | "Organization"
         | "OrganizationUser"
         | "OrganizationSettings"
         | "Person"

@@ -54,3 +54,18 @@ export function perOrganization<R>(
         return cache.get(organizationId)!;
     };
 }
+
+type DirtyFields = { [key: string]: undefined | boolean | DirtyFields };
+
+export function countDirtyFields(dirtyFields: DirtyFields): number {
+    let count = 0;
+    for (const key in dirtyFields) {
+        const value = dirtyFields[key];
+        if (value === true) {
+            count++;
+        } else if (typeof value === "object" && value !== null) {
+            count += countDirtyFields(value);
+        }
+    }
+    return count;
+}

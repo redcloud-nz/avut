@@ -9,7 +9,7 @@ import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/clien
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
-import { D4hServerCode } from "../d4h-api/servers";
+import { D4HServerCode } from "../d4h-api/servers";
 
 export const D4hAccessTokenId = {
     schema: zodNanoId16(
@@ -27,7 +27,7 @@ export const D4hAccessTokenData = {
         organizationId: z.string().nullable(),
         userId: z.string().nullable(),
         label: z.string(),
-        serverCode: D4hServerCode.schema,
+        serverCode: D4HServerCode.schema,
         token: z.string(),
         status: z.string(),
         expiresAt: z.string(),

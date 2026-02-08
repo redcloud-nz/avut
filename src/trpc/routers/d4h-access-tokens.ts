@@ -68,6 +68,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             return D4hAccessTokenData.fromRecord(created);
         }),
 
+    /**
+     * Delete a saved organization access token. This does not revoke the token in D4H, but removes it from AVUT.
+     */
     deleteOrganizationAccessToken: organizationProcedure({
         d4hAccessToken: ["delete"],
     })
@@ -82,7 +85,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             });
 
             if (!existing || existing.organizationId !== ctx.organizationId) {
-                throw new Error("Access token not found");
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Access token not found",
+                });
             }
 
             await ctx.prisma.d4hAccessToken.delete({
@@ -93,6 +99,17 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 action: "Delete",
                 objectType: "D4hAccessToken",
                 objectId: existing.id,
+            });
+
+            // Delete any organization config entries that reference this token
+            await ctx.prisma.organizationConfig.delete({
+                where: {
+                    organizationId_key: {
+                        organizationId: ctx.organizationId,
+                        key: `integrations.d4h.syncToken`,
+                    },
+                    value: { equals: input.tokenId },
+                },
             });
         }),
 

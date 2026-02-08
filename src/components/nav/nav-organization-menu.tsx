@@ -5,7 +5,6 @@
 
 import {
     AdminModuleIcon,
-    D4HModuleIcon,
     OrgDashboardIcon,
     NotesModuleIcon,
     SkillsModuleIcon,
@@ -15,18 +14,20 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
-import { isModuleEnabled } from "@/lib/modules";
-import { OrganizationWithSettings } from "@/lib/schemas/organization";
+import { OrganizationData } from "@/lib/schemas/organization";
 import * as Paths from "@/paths";
+import { getOrganizationSettings } from "@/server/organization-settings";
 
 import { NavCollapsible, NavItem, NavSubItem } from "./nav-section";
 
-export function NavOrganizationMenu({
+export async function NavOrganizationMenu({
     organization,
 }: {
-    organization: OrganizationWithSettings;
+    organization: OrganizationData;
 }) {
     const orgPrefix = Paths.org(organization.slug);
+
+    const { modules } = await getOrganizationSettings(organization.id);
 
     return (
         <SidebarGroup>
@@ -51,9 +52,8 @@ export function NavOrganizationMenu({
                     >
                         <NavSubItem path={orgPrefix.admin.invitations} />
                     </Protect>
-                    <NavSubItem path={orgPrefix.admin.profile} />
+                    <NavSubItem path={orgPrefix.admin.organization} />
                     <NavSubItem path={orgPrefix.admin.personnel} />
-                    <NavSubItem path={orgPrefix.admin.settings} />
                     {/* <NavSubItem path={prefix.admin.skillPackages}/> */}
                     <NavSubItem path={orgPrefix.admin.teams} />
                     <Protect
@@ -63,7 +63,7 @@ export function NavOrganizationMenu({
                         <NavSubItem path={orgPrefix.admin.users} />
                     </Protect>
                 </NavCollapsible>
-                <Show when={isModuleEnabled(organization, "d4h-views")}>
+                {/* <Show when={isModuleEnabled(organization, "d4h-views")}>
                     <NavCollapsible
                         path={orgPrefix.d4hViews.index}
                         icon={<D4HModuleIcon />}
@@ -73,19 +73,14 @@ export function NavOrganizationMenu({
                         <NavItem path={orgPrefix.d4hViews.equipment} />
                         <NavItem path={orgPrefix.d4hViews.personnel} />
                     </NavCollapsible>
-                </Show>
-                <Show when={isModuleEnabled(organization, "notes")}>
+                </Show> */}
+                <Show when={modules.notes.enabled}>
                     <NavItem
                         path={orgPrefix.notes.index}
                         icon={<NotesModuleIcon />}
                     />
                 </Show>
-                <Show
-                    when={isModuleEnabled(
-                        organization,
-                        "skill-package-manager",
-                    )}
-                >
+                <Show when={modules["skill-package-manager"].enabled}>
                     <NavCollapsible
                         path={orgPrefix.skillPackageManager.index}
                         icon={<SkillPackageManagerModuleIcon />}
@@ -95,7 +90,7 @@ export function NavOrganizationMenu({
                         />
                     </NavCollapsible>
                 </Show>
-                <Show when={isModuleEnabled(organization, "skills")}>
+                <Show when={modules.skills.enabled}>
                     <NavCollapsible
                         path={orgPrefix.skills.index}
                         icon={<SkillsModuleIcon />}

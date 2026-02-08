@@ -27,7 +27,7 @@ import { OrganizationData } from "@/lib/schemas/organization";
 
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { getD4hServer } from "@/lib/d4h-api/servers";
+import { getD4HServer } from "@/lib/d4h-api/servers";
 
 interface AdminModule_D4hAccessTokensListProps {
     organization: OrganizationData;
@@ -86,7 +86,7 @@ export function AdminModule_D4hAccessTokensList({
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {getD4hServer(ctx.getValue())?.name}
+                            {getD4HServer(ctx.getValue())?.name}
                         </Akagi.TableCell>
                     ),
                 }),

@@ -7,17 +7,13 @@ import "server-only";
 import { cacheTag, revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
-import {
-    OrganizationData,
-    OrganizationWithSettings,
-} from "@/lib/schemas/organization";
-import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { OrganizationData } from "@/lib/schemas/organization";
 
 import prisma from "./prisma";
 
 export async function getOrganizationBySlug(
     slug: string,
-): Promise<OrganizationWithSettings> {
+): Promise<OrganizationData> {
     "use cache";
     cacheTag(`organization-${slug}`);
 
@@ -27,14 +23,7 @@ export async function getOrganizationBySlug(
 
     if (!record) return notFound();
 
-    const configRecords = await prisma.organizationConfig.findMany({
-        where: { organizationId: record.id },
-    });
-
-    return {
-        ...OrganizationData.fromRecord(record),
-        settings: OrganizationSettings.fromRecords(configRecords),
-    };
+    return OrganizationData.fromRecord(record);
 }
 
 export async function revalidateOrganization(slug: string) {

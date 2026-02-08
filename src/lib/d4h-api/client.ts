@@ -10,12 +10,12 @@ import { cache } from "react";
 import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
 
 import type { paths } from "./schema";
-import { D4hServerCode, getD4hServer } from "./servers";
+import { D4HServerCode, getD4HServer } from "./servers";
 import { D4hWhoami } from "./whoami";
 import { D4hMember } from "./member";
 
 export const getD4hFetchClient = cache((token: D4hAccessTokenData) => {
-    const server = getD4hServer(token.serverCode)!;
+    const server = getD4HServer(token.serverCode)!;
 
     const fetchClient = createFetchClient<paths>({
         baseUrl: server.apiUrl,

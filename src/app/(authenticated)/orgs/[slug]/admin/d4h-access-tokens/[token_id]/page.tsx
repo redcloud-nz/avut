@@ -18,7 +18,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4hServer } from "@/lib/d4h-api/servers";
+import { getD4HServer } from "@/lib/d4h-api/servers";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
@@ -77,7 +77,7 @@ export default function AdminModule_D4hAccessToken_Page(
                                         <FieldLabel>Server</FieldLabel>
                                         <FieldValue
                                             value={
-                                                getD4hServer(token.serverCode)
+                                                getD4HServer(token.serverCode)
                                                     ?.name!
                                             }
                                             className="min-w-1/2"

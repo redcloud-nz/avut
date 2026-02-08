@@ -7,18 +7,21 @@ import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { OrganizationId } from "@/lib/schemas/organization";
+import { diffObject } from "@/lib/diff";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import {
     OrganizationUserData,
     OrganizationUserId,
 } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
-import { auth } from "@/server/auth";
 
+import { auth } from "@/server/auth";
+import { revalidateOrganization } from "@/server/organization";
 import prisma from "@/server/prisma";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
+import { Messages } from "../messages";
 
 export const organizationsRouter = createTrpcRouter({
     /**
@@ -27,25 +30,28 @@ export const organizationsRouter = createTrpcRouter({
      * @returns The organization object.
      * @throws TRPCError(NOT_FOUND) if the organization does not exist.
      */
-    getOrganization: organizationProcedure().query(async ({ ctx }) => {
-        const organization = await ctx.prisma.organization.findUnique({
-            where: { id: ctx.organizationId },
-        });
 
-        if (!organization) {
-            throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Organization not found",
+    getOrganization: organizationProcedure({ organization: ["view"] })
+        .output(OrganizationData.schema)
+        .query(async ({ ctx }) => {
+            const organization = await ctx.prisma.organization.findUnique({
+                where: { id: ctx.organizationId },
             });
-        }
 
-        return organization;
-    }),
+            if (!organization) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Organization not found",
+                });
+            }
+
+            return OrganizationData.fromRecord(organization);
+        }),
 
     /**
      * Retrieves an organization user by ID.
      */
-    getOrganizationUser: organizationProcedure()
+    getOrganizationUser: organizationProcedure({ member: ["view"] })
         .input(
             z.object({
                 organizationUserId: OrganizationUserId.schema,
@@ -65,7 +71,7 @@ export const organizationsRouter = createTrpcRouter({
      *
      */
     listOrganizationInvitations: organizationProcedure({
-        invitation: ["create"],
+        invitation: ["view"],
     })
         .output(z.array(OrganizationInvitationData.schema))
         .query(async ({ ctx, input }) => {
@@ -87,7 +93,7 @@ export const organizationsRouter = createTrpcRouter({
     /**
      * List all users that have access to the organization.
      */
-    listOrganizationUsers: organizationProcedure()
+    listOrganizationUsers: organizationProcedure({ member: ["view"] })
         .output(
             z.array(
                 OrganizationUserData.schema.extend({ user: UserData.schema }),
@@ -149,6 +155,59 @@ export const organizationsRouter = createTrpcRouter({
                     cause: error,
                 });
             }
+        }),
+
+    /**
+     * Updates the organization details.
+     */
+    updateOrganization: organizationProcedure({ organization: ["update"] })
+        .input(
+            OrganizationData.schema.pick({
+                name: true,
+                slug: true,
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const existing = await ctx.prisma.organization.findUnique({
+                where: { id: ctx.organizationId },
+            });
+
+            if (!existing) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.organizationNotFound(ctx.organizationId),
+                });
+            }
+
+            await auth.api.updateOrganization({
+                headers: ctx.headers,
+                body: {
+                    organizationId: ctx.organizationId,
+                    data: {
+                        slug: input.slug,
+                        name: input.name,
+                    },
+                },
+            });
+
+            const changes = diffObject(
+                OrganizationData.modifiableSchema.parse(existing),
+                input,
+            );
+
+            await ctx.logEvent({
+                action: "Update",
+                objectType: "Organization",
+                objectId: ctx.organizationId,
+                changes,
+            });
+
+            await revalidateOrganization(input.slug);
+
+            return OrganizationData.fromRecord({
+                ...existing,
+                ...input,
+            });
         }),
 });
 

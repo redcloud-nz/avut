@@ -5,22 +5,22 @@
 
 import { z } from "zod";
 
-export type D4hServerCode = "ap" | "eu" | "us";
+export type D4HServerCode = "ap" | "eu" | "us";
 
-export const D4hServerCode = {
+export const D4HServerCode = {
     schema: z.enum(["ap", "eu", "us"] as const),
 };
 
-export const D4hServerCodes = ["ap", "eu", "us"] as const;
+export const D4HServerCodes = ["ap", "eu", "us"] as const;
 
 interface D4HServer {
-    code: D4hServerCode;
+    code: D4HServerCode;
     apiUrl: string;
     tokensUrl?: string;
     name: string;
 }
 
-export const D4hServerList: D4HServer[] = [
+export const D4HServerList: D4HServer[] = [
     {
         code: "ap",
         apiUrl: "https://api.team-manager.ap.d4h.com",
@@ -41,6 +41,6 @@ export const D4hServerList: D4HServer[] = [
     },
 ];
 
-export function getD4hServer(code: D4hServerCode): D4HServer | null {
-    return D4hServerList.find((server) => server.code === code) ?? null;
+export function getD4HServer(code: D4HServerCode): D4HServer | null {
+    return D4HServerList.find((server) => server.code === code) ?? null;
 }

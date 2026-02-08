@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { organization } from "better-auth/plugins";
+
 export const about = {
     label: "About",
     href: "/about",
@@ -261,6 +263,21 @@ function adminModule(org_slug: string) {
             },
         },
 
+        organization: {
+            label: "Organization",
+            href: `${base}/organization`,
+
+            update: {
+                label: "Update",
+                href: `${base}/organization/--update`,
+            },
+
+            settings: {
+                label: "Settings",
+                href: `${base}/organization/settings`,
+            },
+        },
+
         person: (personId: string) => {
             const personBase = `${base}/personnel/${personId}` as const;
             return {
@@ -315,10 +332,6 @@ function adminModule(org_slug: string) {
             label: "Organisation",
         },
 
-        settings: {
-            label: "Settings",
-            href: `${base}/settings`,
-        },
         team: (teamId: string) => {
             const teamBase = `${base}/teams/${teamId}` as const;
             return {

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { D4hServerList } from "@/lib/d4h-api/servers";
+import { D4HServerList } from "@/lib/d4h-api/servers";
 import {
     D4hAccessTokenData,
     D4hAccessTokenId,
@@ -132,7 +132,7 @@ export function AdminModule_CreateD4hAccessToken_Form({
                                     <SelectValue placeholder="Select D4H server" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {D4hServerList.map((server) => (
+                                    {D4HServerList.map((server) => (
                                         <SelectItem
                                             key={server.code}
                                             value={server.code}
@@ -153,7 +153,7 @@ export function AdminModule_CreateD4hAccessToken_Form({
                     control={form.control}
                     names={["serverCode"]}
                     render={([serverCode]) => {
-                        const server = D4hServerList.find(
+                        const server = D4HServerList.find(
                             (s) => s.code === serverCode,
                         );
 

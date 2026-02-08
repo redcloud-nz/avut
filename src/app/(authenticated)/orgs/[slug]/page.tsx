@@ -21,9 +21,9 @@ import {
 import { Link } from "@/components/ui/link";
 
 import { d4hViewsModuleFlag, notesModuleFlag } from "@/lib/flags";
-import { isModuleEnabled } from "@/lib/modules";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationSettings } from "@/server/organization-settings";
 
 export const metadata = { title: "Organisation Dashboard" };
 
@@ -38,6 +38,8 @@ export default async function OrganizationDashboard_Page(
             notesModuleFlag(),
             d4hViewsModuleFlag(),
         ]);
+
+    const { modules } = await getOrganizationSettings(organization.id);
 
     return (
         <Lexington.Root>
@@ -63,10 +65,7 @@ export default async function OrganizationDashboard_Page(
                             </Link>
                         </Item>
                         <Show
-                            when={
-                                notesModuleAllowed &&
-                                isModuleEnabled(organization, "notes")
-                            }
+                            when={notesModuleAllowed && modules.notes.enabled}
                         >
                             <Item asChild>
                                 <Link to={Paths.org(slug).notes.index}>
@@ -83,7 +82,7 @@ export default async function OrganizationDashboard_Page(
                                 </Link>
                             </Item>
                         </Show>
-                        <Show when={isModuleEnabled(organization, "d4h-views")}>
+                        {/* <Show when={modules.d4hViews.enabled}>
                             <Item asChild>
                                 <Link to={Paths.org(slug).d4hViews.index}>
                                     <ItemContent>
@@ -98,13 +97,8 @@ export default async function OrganizationDashboard_Page(
                                     </ItemActions>
                                 </Link>
                             </Item>
-                        </Show>
-                        <Show
-                            when={isModuleEnabled(
-                                organization,
-                                "skill-package-manager",
-                            )}
-                        >
+                        </Show> */}
+                        <Show when={modules["skill-package-manager"].enabled}>
                             <Item asChild>
                                 <Link
                                     to={
@@ -127,7 +121,7 @@ export default async function OrganizationDashboard_Page(
                                 </Link>
                             </Item>
                         </Show>
-                        <Show when={isModuleEnabled(organization, "skills")}>
+                        <Show when={modules.skills.enabled}>
                             <Item asChild>
                                 <Link to={Paths.org(slug).skills.index}>
                                     <ItemContent>

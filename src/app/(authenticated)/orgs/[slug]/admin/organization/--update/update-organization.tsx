@@ -20,94 +20,77 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Link } from "@/components/ui/link";
 import { FieldValue } from "@/components/ui/field-value";
+import { Link } from "@/components/ui/link";
 
-import { OrganizationData } from "@/lib/schemas/organization";
-import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
+import {
+    ModifiableOrganizationData,
+    OrganizationData,
+} from "@/lib/schemas/organization";
+
 import * as Paths from "@/paths";
-
 import { trpc } from "@/trpc/client";
 
-type AdminModule_UpdateTeam_FormProps = {
-    organization: OrganizationData;
-    team: TeamData;
-};
-
-export function AdminModule_UpdateTeam_Form({
+export function AdminModule_UpdateOrganization_Form({
     organization,
-    team,
-}: AdminModule_UpdateTeam_FormProps) {
+}: {
+    organization: OrganizationData;
+}) {
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
-        resolver: zodResolver(
-            TeamData.schema.pick({
-                name: true,
-                description: true,
-                tags: true,
-                properties: true,
-            }),
-        ),
-        defaultValues: team,
+        resolver: zodResolver(OrganizationData.modifiableSchema),
+        defaultValues: organization,
     });
 
     const mutation = useMutation(
-        trpc.teams.updateTeam.mutationOptions({
+        trpc.organizations.updateOrganization.mutationOptions({
             async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause.message as keyof ModifiableTeamData,
+                        error.shape.cause
+                            .message as keyof ModifiableOrganizationData,
                         { message: error.message },
                     );
                 }
             },
             async onSuccess() {
                 router.push(
-                    Paths.org(organization.slug).admin.team(team.id).href,
+                    Paths.org(organization.slug).admin.organization.href,
                 );
                 queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
+                    trpc.organizations.getOrganization.queryFilter({
                         organizationId: organization.id,
-                    }),
-                );
-                queryClient.invalidateQueries(
-                    trpc.teams.getTeam.queryFilter({
-                        organizationId: organization.id,
-                        teamId: team.id,
                     }),
                 );
             },
         }),
     );
 
-    const handleSubmit = form.handleSubmit((formData) => {
+    const handleSubmit = form.handleSubmit(async (formData) => {
         toast.promise(
             async () => {
                 await mutation.mutateAsync({
                     organizationId: organization.id,
-                    teamId: team.id,
-                    update: formData,
+                    ...formData,
                 });
             },
             {
-                loading: "Updating team...",
-                success: "Team updated successfully.",
-                error: (error) =>
-                    `Failed to update team: ${error.message || "Unknown error"}`,
+                loading: "Updating organization...",
+                success: "Organization updated",
+                error: "Failed to update organization",
             },
         );
     });
 
     return (
-        <form id="update-team-form" onSubmit={handleSubmit}>
+        <form id="update-organization-form" onSubmit={handleSubmit}>
             <FieldGroup>
                 <Field orientation="responsive">
-                    <FieldLabel>Team ID</FieldLabel>
+                    <FieldLabel>Organization ID</FieldLabel>
                     <FieldValue className="min-w-1/2" format="id">
-                        {team.id}
+                        {organization.id}
                     </FieldValue>
                 </Field>
                 <Controller
@@ -118,9 +101,11 @@ export function AdminModule_UpdateTeam_Form({
                             data-invalid={fieldState.invalid}
                             orientation="responsive"
                         >
-                            <FieldLabel htmlFor="team-name">Name</FieldLabel>
+                            <FieldLabel htmlFor="organization-name">
+                                Name
+                            </FieldLabel>
                             <Input
-                                id="team-name"
+                                id="organization-name"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
@@ -132,18 +117,18 @@ export function AdminModule_UpdateTeam_Form({
                     )}
                 />
                 <Controller
-                    name="description"
+                    name="slug"
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field
                             data-invalid={fieldState.invalid}
                             orientation="responsive"
                         >
-                            <FieldLabel htmlFor="team-description">
-                                Description
+                            <FieldLabel htmlFor="organization-slug">
+                                Slug
                             </FieldLabel>
-                            <Textarea
-                                id="team-description"
+                            <Input
+                                id="organization-slug"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
@@ -157,7 +142,7 @@ export function AdminModule_UpdateTeam_Form({
                 <Field orientation="horizontal">
                     <Button
                         type="submit"
-                        form="update-team-form"
+                        form="update-organization-form"
                         disabled={mutation.isPending}
                     >
                         Update
@@ -169,9 +154,7 @@ export function AdminModule_UpdateTeam_Form({
                         asChild
                     >
                         <Link
-                            to={Paths.org(organization.slug).admin.team(
-                                team.id,
-                            )}
+                            to={Paths.org(organization.slug).admin.organization}
                         >
                             Cancel
                         </Link>
