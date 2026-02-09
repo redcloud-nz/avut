@@ -9,14 +9,14 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { PersonData, PersonId } from "@/lib/schemas/person";
+import { TeamData } from "@/lib/schemas/team";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
 
 import { revalidatePerson } from "@/server/person";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 import { FieldConflictError } from "../types";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
-import { TeamData } from "@/lib/schemas/team";
 
 /**
  * Router for personnel management within an organization.

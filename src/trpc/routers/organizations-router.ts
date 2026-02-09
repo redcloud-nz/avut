@@ -65,6 +65,31 @@ export const organizationsRouter = createTrpcRouter({
             );
         }),
 
+    getOrganizationUserSelf: organizationProcedure()
+        .output(OrganizationUserData.schema.extend({ user: UserData.schema }))
+        .query(async ({ ctx }) => {
+            const organizationUser =
+                await ctx.prisma.organizationUser.findFirst({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        userId: ctx.auth.session.userId,
+                    },
+                    include: { user: true },
+                });
+
+            if (!organizationUser) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Organization user not found",
+                });
+            }
+
+            return {
+                ...OrganizationUserData.fromRecord(organizationUser),
+                user: UserData.schema.parse(organizationUser.user),
+            };
+        }),
+
     /**
      * List all invitations for an organization.
      *

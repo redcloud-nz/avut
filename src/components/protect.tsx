@@ -4,13 +4,14 @@
  */
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { entries } from "remeda";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth-client";
 import { Permissions } from "@/lib/permissions";
+import { trpc } from "@/trpc/client";
 
 interface ProtectProps {
     children: ReactNode;
@@ -28,7 +29,7 @@ export function Protect({ children, orgId, permissions }: ProtectProps) {
         } else return [];
     });
 
-    const { data: hasPermission } = useSuspenseQuery({
+    const { data: hasPermission = false } = useQuery({
         queryKey: ["hasPermission", orgId, flatPermissions],
         queryFn: async () => {
             const response = await authClient.organization.hasPermission({
@@ -43,6 +44,23 @@ export function Protect({ children, orgId, permissions }: ProtectProps) {
             }
         },
     });
+
+    return hasPermission ? <>{children}</> : null;
+}
+
+function Protect2({ children, orgId, permissions }: ProtectProps) {
+    const { data: organizationUser } = useSuspenseQuery(
+        trpc.organizations.getOrganizationUserSelf.queryOptions({
+            organizationId: orgId,
+        }),
+    );
+
+    const hasPermission = useMemo(() => {
+        // Check if any of the user's roles grant the required permissions
+        return organizationUser.role.some((role) =>
+            authClient.organization.checkRolePermission({ role, permissions }),
+        );
+    }, [organizationUser, permissions]);
 
     return hasPermission ? <>{children}</> : null;
 }

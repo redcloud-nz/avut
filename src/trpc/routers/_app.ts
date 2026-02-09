@@ -6,7 +6,7 @@
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTrpcRouter } from "../init";
 
-import { d4hAccessTokensRouter } from "./d4h-access-tokens";
+import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
