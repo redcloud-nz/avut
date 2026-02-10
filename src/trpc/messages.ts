@@ -23,10 +23,10 @@ export const Messages = {
     skillPackageSubscriptionNotFound: (subscriptionId: string) =>
         `Subscription for SkillPackage(id=${subscriptionId}) not found.`,
 
-    skillNotFound: (skillId: string) => `Skill(id=${skillId}) not found.`,
-
     skillGroupNotFound: (skillGroupId: string) =>
         `SkillGroup(${skillGroupId}) not found.`,
+
+    skillNotFound: (skillId: string) => `Skill(id=${skillId}) not found.`,
 
     teamForbidden: (teamId: string) =>
         `You do not have access to team(${teamId}).`,

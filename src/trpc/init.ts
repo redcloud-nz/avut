@@ -143,6 +143,11 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
     });
 });
 
+export type AuthenticatedOrganizationContext = AuthenticatedContext & {
+    organizationId: OrganizationId;
+    logEvent: (options: LogEventOptions) => Promise<void>;
+};
+
 /**
  * An organization scoped procedure that checks for required permissions.
  * @param requiredPermissions The permissions required to access this procedure.
@@ -194,7 +199,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                     ...opts.ctx,
                     organizationId: opts.input.organizationId,
                     logEvent,
-                },
+                } satisfies AuthenticatedOrganizationContext,
             });
         });
 }
@@ -207,6 +212,9 @@ interface LogEventOptions {
         | "OrganizationUser"
         | "OrganizationSettings"
         | "Person"
+        | "Skill"
+        | "SkillGroup"
+        | "SkillPackage"
         | "Team"
         | "TeamMembership";
     objectId: string;

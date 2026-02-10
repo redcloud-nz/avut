@@ -9,6 +9,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
+import { PersonId } from "@/lib/schemas/person";
 import { TeamData, TeamId } from "@/lib/schemas/team";
 import {
     TeamMembershipData,
@@ -19,7 +20,6 @@ import { revalidateTeam } from "@/server/team";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-import { PersonId } from "@/lib/schemas/person";
 
 export const teamsRouter = createTrpcRouter({
     /**

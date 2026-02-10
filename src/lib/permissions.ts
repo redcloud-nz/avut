@@ -18,7 +18,7 @@ const statement = {
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
     person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["create", "update", "delete", "publish"],
+    skillPackage: ["view", "create", "update", "delete", "publish"],
     team: ["view", "create", "update", "delete"],
 } as const;
 
@@ -31,7 +31,7 @@ export const owner = ac.newRole({
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
     person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["create", "update", "delete", "publish"],
+    skillPackage: ["view", "create", "update", "delete", "publish"],
     team: ["view", "create", "update", "delete"],
 });
 export const admin = ac.newRole({
@@ -41,7 +41,7 @@ export const admin = ac.newRole({
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update"],
     person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["create", "update", "delete", "publish"],
+    skillPackage: ["view", "create", "update", "delete", "publish"],
     team: ["view", "create", "update", "delete"],
 });
 
@@ -49,6 +49,7 @@ export const member = ac.newRole({
     ...memberAc.statements,
     organization: ["view"],
     person: ["view"],
+    skillPackage: ["view"],
     team: ["view"],
 });
 
