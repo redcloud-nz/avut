@@ -11,7 +11,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryClient } from "@/trpc/client";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
-export function Providers({ children }: Readonly<{ children: ReactNode }>) {
+export function CommonProviders({
+    children,
+}: Readonly<{ children: ReactNode }>) {
     const queryClient = getQueryClient();
 
     return (

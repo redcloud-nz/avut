@@ -3,14 +3,17 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { organization } from "better-auth/plugins";
-
 export const about = {
     label: "About",
     href: "/about",
 } as const;
 
 export const auth = {
+    acceptInvitation: (invitationId: string) =>
+        ({
+            label: "Accept Invitation",
+            href: `/auth/accept-invitation/${invitationId}`,
+        }) as const,
     forgotPassword: {
         label: "Forgot Password",
         href: "/auth/forgot-password",
@@ -38,16 +41,21 @@ export const auth = {
                 parts.length > 0
                     ? `/auth/sign-in?${parts.join("&")}`
                     : "/auth/sign-in",
-        };
+        } as const;
     },
-    signUp: {
-        label: "Sign Up",
-        href: "/auth/sign-up",
-    },
-    verifyEmail: (email: string) =>
+    signUp: ({ redirect }: { redirect?: string } = {}) =>
+        ({
+            label: "Sign Up",
+            href: redirect
+                ? `/auth/sign-up?r=${encodeURIComponent(redirect)}`
+                : "/auth/sign-up",
+        }) as const,
+    verifyEmail: ({ email, redirect }: { email: string; redirect?: string }) =>
         ({
             label: "Verify Email",
-            href: `/auth/verify-email?e=${encodeURIComponent(email)}`,
+            href: redirect
+                ? `/auth/verify-email?e=${encodeURIComponent(email)}&r=${encodeURIComponent(redirect)}`
+                : `/auth/verify-email?e=${encodeURIComponent(email)}`,
         }) as const,
 } as const;
 

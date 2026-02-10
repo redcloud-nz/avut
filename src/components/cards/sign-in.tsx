@@ -59,7 +59,9 @@ export function SignIn_Card({ redirect }: { redirect?: string }) {
                     <SocialSignInButtons_Field />
                     <FieldDescription className="text-center">
                         Don't have an account?{" "}
-                        <Link to={Paths.auth.signUp}>Sign Up</Link>
+                        <Link to={Paths.auth.signUp({ redirect })}>
+                            Sign Up
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -112,7 +114,12 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                     if (redirect) router.push(redirect);
                     else router.push(Paths.orgs.select.href);
                 } else {
-                    router.push(Paths.auth.verifyEmail(data.user.email).href);
+                    router.push(
+                        Paths.auth.verifyEmail({
+                            email: data.user.email,
+                            redirect,
+                        }).href,
+                    );
                 }
             }
         } catch (error) {

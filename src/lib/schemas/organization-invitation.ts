@@ -11,6 +11,7 @@ import { OrganizationId } from "./organization";
 import { OrganizationRole } from "./organization-role";
 import { UserId } from "./user";
 import { zodNanoId16 } from "../validation";
+import { AuthInvitation } from "@/server/auth";
 
 export const InvitationId = {
     schema: zodNanoId16("InvitationId expected").brand<"InvitationId">(),
@@ -32,6 +33,19 @@ export const OrganizationInvitationData = {
         expiresAt: z.iso.datetime(),
         teamId: z.string().nullable(),
     }),
+
+    fromAuth: (data: AuthInvitation) =>
+        OrganizationInvitationData.schema.parse({
+            id: data.id,
+            organizationId: data.organizationId,
+            email: data.email,
+            role: [data.role],
+            status: data.status,
+            inviterId: data.inviterId,
+            createdAt: data.createdAt.toISOString(),
+            expiresAt: data.expiresAt.toISOString(),
+            teamId: data.teamId ?? null,
+        }),
 
     fromRecord: (record: InvitationRecord) =>
         OrganizationInvitationData.schema.parse({

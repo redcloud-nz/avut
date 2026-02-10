@@ -36,7 +36,7 @@ import * as Paths from "@/paths";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
-export function SignUp_Card() {
+export function SignUp_Card({ redirect }: { redirect?: string }) {
     return (
         <Card>
             <CardHeader>
@@ -47,7 +47,7 @@ export function SignUp_Card() {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Auth_EmailPasswordSignUp_Form />
+                    <Auth_EmailPasswordSignUp_Form redirect={redirect} />
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
@@ -57,7 +57,9 @@ export function SignUp_Card() {
 
                     <FieldDescription className="text-center">
                         Already have an account?{" "}
-                        <Link to={Paths.auth.signIn()}>Sign in</Link>
+                        <Link to={Paths.auth.signIn({ redirect })}>
+                            Sign in
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -68,7 +70,7 @@ export function SignUp_Card() {
 /**
  * Form form signing up with email and password.
  */
-function Auth_EmailPasswordSignUp_Form() {
+function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
     const router = useRouter();
 
     const form = useForm({
@@ -107,7 +109,10 @@ function Auth_EmailPasswordSignUp_Form() {
             } else {
                 // Successful signup. BetterAuth automatically sends a verification email.
                 console.log("Sign up successful", data);
-                router.push(Paths.auth.verifyEmail(data.user.email).href);
+                router.push(
+                    Paths.auth.verifyEmail({ email: data.user.email, redirect })
+                        .href,
+                );
             }
         } catch (error) {
             // We're assuming this is an unexpected error

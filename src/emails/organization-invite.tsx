@@ -54,7 +54,7 @@ export default function OrganizationInviteTemplate({
     organization = SAMPLE_PROPS.organization,
     inviter = SAMPLE_PROPS.inviter,
 }: OrganizationInviteTemplateProps) {
-    const acceptUrl = `${baseUrl}/auth/accept-invite/${invitation.id}`;
+    const acceptUrl = `${baseUrl}/auth/accept-invitation/${invitation.id}`;
 
     return (
         <Html lang="en">
@@ -84,7 +84,7 @@ export default function OrganizationInviteTemplate({
                                 className="rounded bg-[#000000] px-5 py-3 text-center font-semibold text-[12px] text-white no-underline"
                                 href={acceptUrl}
                             >
-                                Accept Invitation
+                                View Invitation
                             </Button>
                         </Section>
                         <Text className="text-[14px] text-black leading-6">

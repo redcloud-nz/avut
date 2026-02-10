@@ -32,8 +32,15 @@ import * as Paths from "@/paths";
 /**
  * Card for verifying user's email with OTP code.
  * @param email - The email address to verify.
+ * @param redirect - Optional redirect URL after verification.
  */
-export function VerifyEmail_Card({ email }: { email: string }) {
+export function VerifyEmail_Card({
+    email,
+    redirect,
+}: {
+    email: string;
+    redirect?: string;
+}) {
     const router = useRouter();
 
     const [code, setCode] = useState<string>("");
@@ -55,7 +62,8 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                 console.log("Email verification error", error);
             } else {
                 console.log("Email verified successfully", data);
-                router.push(Paths.orgs.select.href);
+                if (redirect) router.push(redirect);
+                else router.push(Paths.orgs.select.href);
             }
         } catch (error) {
             console.log("Email verification error", error);

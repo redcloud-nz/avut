@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import {
     useSuspenseQueries,
 } from "@tanstack/react-query";
 
+import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,12 +25,10 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { sessionQueryOptions } from "@/lib/auth-client";
-import { formatDate, formatDateTime } from "@/lib/datetime";
+import { formatDate } from "@/lib/datetime";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { formatDistanceToNow } from "date-fns";
-import { Hermes } from "@/components/blocks/hermes";
 
 export default function Auth_ViewInvitation_Page(
     props: PageProps<"/personal/invitations/[invitation_id]">,
@@ -161,27 +161,22 @@ export default function Auth_ViewInvitation_Page(
                                 <Field orientation="responsive">
                                     <FieldLabel>Role</FieldLabel>
                                     <FieldValue className="min-w-1/2">
-                                        {
-                                            OrganizationRole.displayNames[
-                                                invitation
-                                                    .role[0] as OrganizationRole
-                                            ]
-                                        }
+                                        {invitation.role
+                                            .map(
+                                                (role) =>
+                                                    OrganizationRole
+                                                        .displayNames[role],
+                                            )
+                                            .join(", ")}
                                     </FieldValue>
                                 </Field>
                                 <Field orientation="horizontal">
                                     <FieldLabel>Created</FieldLabel>
-                                    <FieldValue className="min-w-1/2">
-                                        {formatDate(invitation.createdAt)}
-                                        <span className="text-muted-foreground pl-2">
-                                            (
-                                            {formatDistanceToNow(
-                                                new Date(invitation.createdAt),
-                                                { addSuffix: true },
-                                            )}
-                                            )
-                                        </span>
-                                    </FieldValue>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        format="dateTimeWithDistance"
+                                        value={invitation.createdAt}
+                                    />
                                 </Field>
 
                                 <Field orientation="horizontal">

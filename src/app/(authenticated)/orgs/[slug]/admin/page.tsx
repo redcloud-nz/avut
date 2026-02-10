@@ -62,6 +62,25 @@ export default async function AdminIndex_Page(
 
                         <Protect
                             orgId={organization.id}
+                            permissions={{ organization: ["view"] }}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.org(slug).admin.organization}>
+                                    <ItemContent>
+                                        <ItemTitle>Organization</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's details.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+
+                        <Protect
+                            orgId={organization.id}
                             permissions={{ person: ["view"] }}
                         >
                             <Item asChild>

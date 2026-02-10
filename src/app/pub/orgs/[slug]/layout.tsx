@@ -10,7 +10,7 @@ import { OrganizationProvider } from "@/hooks/use-organization";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { getOrganizationBySlug } from "@/server/organization";
 
-import { Providers } from "../../../(authenticated)/providers";
+import { CommonProviders } from "@/components/providers";
 
 export async function generateMetadata(props: LayoutProps<`/pub/orgs/[slug]`>) {
     const { slug } = await props.params;
@@ -31,11 +31,11 @@ export default async function Pub_Organization_Layout(
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Providers>
+        <CommonProviders>
             <OrganizationProvider organization={organization}>
                 <AppSidebar name={organization.name}></AppSidebar>
                 {props.children}
             </OrganizationProvider>
-        </Providers>
+        </CommonProviders>
     );
 }

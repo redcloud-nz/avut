@@ -5,8 +5,8 @@
  *  Path: /
  */
 
-import { Providers } from "./providers";
+import { CommonProviders } from "@/components/providers";
 
 export default function AuthenticatedLayout(props: LayoutProps<"/">) {
-    return <Providers>{props.children}</Providers>;
+    return <CommonProviders>{props.children}</CommonProviders>;
 }
