@@ -74,7 +74,7 @@ export default function PPEIssueNotificationEmail({
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
-                                src={`${baseUrl}/avut-logo.svg`}
+                                src={`${baseUrl}/avut-logo.png`}
                                 width="150"
                                 height="50"
                                 alt="AVUT Logo"

@@ -27,7 +27,6 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "-": "^0.0.1",
     "@date-fns/utc": "^2.1.1",
     "@flags-sdk/edge-config": "^0.1.2",
     "@hookform/lenses": "^0.9.0",
@@ -52,7 +51,6 @@
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "D": "^1.0.0",
     "date-fns": "^3.6.0",
     "diff": "^8.0.2",
     "dotenv": "^17.2.3",
