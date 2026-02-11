@@ -32,6 +32,9 @@ const organizationSettingsSchema = z.object({
         }),
     }),
     modules: z.object({
+        "d4h-views": z.object({
+            enabled: z.boolean().default(false),
+        }),
         forms: z.object({
             enabled: z.boolean().default(false),
         }),
@@ -51,7 +54,13 @@ export const OrganizationSettings = {
     schema: organizationSettingsSchema,
 
     integrationKeys: ["d4h", "email"],
-    moduleKeys: ["forms", "notes", "skills", "skill-package-manager"],
+    moduleKeys: [
+        "d4h-views",
+        "forms",
+        "notes",
+        "skills",
+        "skill-package-manager",
+    ],
 
     default(): OrganizationSettings {
         return organizationSettingsSchema.parse({
@@ -61,6 +70,7 @@ export const OrganizationSettings = {
                 email: {},
             },
             modules: {
+                "d4h-views": {},
                 forms: {},
                 notes: {},
                 skills: {},

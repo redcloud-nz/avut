@@ -7,7 +7,7 @@ import type { TeamMembershipD4hInfo } from "@prisma/client";
 
 import type { CustomField, DateString, ResourceId } from "./common";
 
-export interface D4hMember {
+export interface D4HMember {
     id: number;
     resourceType: "Member";
 
@@ -103,12 +103,12 @@ export type MemberStatusType =
     | "RETIRED";
 
 export type BasicD4hMember = Pick<
-    D4hMember,
+    D4HMember,
     "id" | "email" | "name" | "owner" | "position" | "ref" | "status"
 >;
 
 export function toTeamMembershipStatus(
-    d4hMemberStatus: D4hMember["status"],
+    d4hMemberStatus: D4HMember["status"],
 ): TeamMembershipD4hInfo["d4hStatus"] {
     const mapping = {
         OPERATIONAL: "Operational",

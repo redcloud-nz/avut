@@ -74,7 +74,7 @@ type AkagiTableHeadCellProps<TData extends RowData> = Omit<
 > &
     Pick<HeaderContext<TData, unknown>, "header"> & {
         align?: "start" | "center" | "end";
-        filterOptions?: string[];
+        filterOptions?: (string | { value: any; label: string })[];
         showAbove?: "sm" | "md" | "lg" | "xl" | "2xl";
     };
 
@@ -172,17 +172,22 @@ function AkagiTableHeadCell<TData extends RowData>({
                                 <FunnelIcon className="size-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-32">
+                        <DropdownMenuContent className="w-50">
                             <DropdownMenuLabel>Filter</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {filterOptions.map((option) => {
+                                const { value, label } =
+                                    typeof option === "string"
+                                        ? { value: option, label: option }
+                                        : option;
+
                                 const checked = (
                                     (header.column.getFilterValue() as string[]) ??
                                     []
-                                ).includes(option);
+                                ).includes(value);
                                 return (
                                     <DropdownMenuCheckboxItem
-                                        key={option}
+                                        key={value}
                                         checked={checked}
                                         onSelect={(ev) => {
                                             ev.preventDefault();
@@ -192,18 +197,18 @@ function AkagiTableHeadCell<TData extends RowData>({
                                                         (header.column.getFilterValue() as string[]) ??
                                                         []
                                                     ).filter(
-                                                        (v) => v !== option,
+                                                        (v) => v !== value,
                                                     ),
                                                 );
                                             else
                                                 header.column.setFilterValue([
                                                     ...((header.column.getFilterValue() as string[]) ??
                                                         []),
-                                                    option,
+                                                    value,
                                                 ]);
                                         }}
                                     >
-                                        {option}
+                                        {label}
                                     </DropdownMenuCheckboxItem>
                                 );
                             })}

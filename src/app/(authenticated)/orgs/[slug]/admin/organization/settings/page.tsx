@@ -163,6 +163,10 @@ export default function AdminModule_Settings_Page(
                                     Modules
                                 </Hermes.SectionTitle>
                             </Hermes.SectionHeader>
+
+                            <D4hViewsModule_SettingsCard
+                                lens={lens.focus("modules.d4h-views")}
+                            />
                             <FormsModule_SettingsCard
                                 lens={lens.focus("modules.forms")}
                             />
@@ -522,6 +526,37 @@ function EmailIntegration_SettingsCard({
                         No additional settings available.
                     </div>
                 </FieldGroup>
+            </CardContent>
+        </Card>
+    );
+}
+
+function D4hViewsModule_SettingsCard({
+    lens,
+}: {
+    lens: Lens<Partial<OrganizationSettings["modules"]["d4h-views"]>>;
+}) {
+    const enabled = useWatch(lens.focus("enabled").interop());
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>D4H Views Module</CardTitle>
+                <CardAction>
+                    <Controller
+                        {...lens.focus("enabled").interop()}
+                        render={({ field }) => (
+                            <Switch
+                                id="d4h-views-module-enabled"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+                <FieldGroup></FieldGroup>
             </CardContent>
         </Card>
     );

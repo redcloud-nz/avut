@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-export interface D4hWhoami {
+export interface D4HWhoami {
     account: {
         id: number;
         resourceType: string;
@@ -63,12 +63,12 @@ export interface D4hWhoami {
             | "Task"
             | "Team"
             | "Whiteboard",
-            Record<D4hPermissionType, boolean | undefined>
+            Record<D4HPermissionType, boolean | undefined>
         >;
     }[];
 }
 
-type D4hPermissionType =
+type D4HPermissionType =
     | "APPROVE"
     | "ARCHIVED"
     | "ASSIGN_UNASSIGED"

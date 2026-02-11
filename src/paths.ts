@@ -426,11 +426,11 @@ function checklistsModule(orgSlug: string) {
 }
 
 function d4hViewsModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/d4h` as const;
+    const base = `/orgs/${orgSlug}/d4h-views` as const;
 
     return {
         index: {
-            label: "D4H Integration",
+            label: "D4H Views",
             href: base,
         },
         activities: {
