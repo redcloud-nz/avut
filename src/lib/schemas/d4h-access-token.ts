@@ -21,7 +21,49 @@ export const D4hAccessTokenId = {
 
 export type D4hAccessTokenId = z.infer<typeof D4hAccessTokenId.schema>;
 
-export const D4hAccessTokenData = {
+export const D4hAccessTokenMetadata = {
+    schema: z.object({
+        d4HTeams: z.array(
+            z.object({
+                id: z.number(),
+                title: z.string(),
+                resourceType: z.literal("Team"),
+            }),
+        ),
+        d4HOrganizations: z.array(
+            z.object({
+                id: z.number(),
+                title: z.string(),
+                resourceType: z.literal("Organisation"),
+            }),
+        ),
+    }),
+};
+
+export const D4HAccessToken = {
+    schema: z.object({
+        id: D4hAccessTokenId.schema,
+        organizationId: z.string().nullable(),
+        userId: z.string().nullable(),
+        label: z.string(),
+        serverCode: D4HServerCode.schema,
+        status: z.string(),
+        expiresAt: z.string(),
+        createdAt: z.string(),
+        metadata: D4hAccessTokenMetadata.schema,
+    }),
+
+    fromRecord: (record: D4hAccessTokenRecord) =>
+        D4HAccessToken.schema.parse({
+            ...record,
+            expiresAt: record.expiresAt.toISOString(),
+            createdAt: record.createdAt.toISOString(),
+        }),
+} as const;
+
+export type D4HAccessToken = z.infer<typeof D4HAccessToken.schema>;
+
+export const D4HAccessToken_ServerOnly = {
     schema: z.object({
         id: D4hAccessTokenId.schema,
         organizationId: z.string().nullable(),
@@ -29,18 +71,15 @@ export const D4hAccessTokenData = {
         label: z.string(),
         serverCode: D4HServerCode.schema,
         token: z.string(),
-        status: z.string(),
-        expiresAt: z.string(),
-        createdAt: z.string(),
-        metadata: z.record(z.string(), z.any()),
     }),
 
     fromRecord: (record: D4hAccessTokenRecord) =>
-        D4hAccessTokenData.schema.parse({
+        D4HAccessToken_ServerOnly.schema.parse({
             ...record,
-            expiresAt: record.expiresAt.toISOString(),
-            createdAt: record.createdAt.toISOString(),
+            token: record.token,
         }),
-} as const;
+};
 
-export type D4hAccessTokenData = z.infer<typeof D4hAccessTokenData.schema>;
+export type D4HAccessToken_ServerOnly = z.infer<
+    typeof D4HAccessToken_ServerOnly.schema
+>;

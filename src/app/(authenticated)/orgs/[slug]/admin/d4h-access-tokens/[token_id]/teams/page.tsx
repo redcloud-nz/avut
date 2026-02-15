@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { notFound } from "next/navigation";
+
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Alert } from "@/components/ui/alert";
@@ -17,31 +19,27 @@ import {
 } from "@/components/ui/table";
 
 import { getD4HTeamsWithMembers } from "@/lib/d4h-api/client";
-import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
+import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
-import prisma from "@/server/prisma";
 
+/**
+ * DEVELOPMENT ONLY PAGE
+ */
 export default async function Admin_D4hAccessToken_Teams_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/teams`>,
 ) {
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const record = await prisma.d4hAccessToken.findUnique({
-        where: {
-            id: token_id,
-            organizationId: organization.id,
-        },
+    const accesToken = await getD4HAccessToken({
+        tokenId: token_id,
+        organizationId: organization.id,
     });
 
-    if (!record) {
-        throw new Error("Token not found");
-    }
+    if (!accesToken) notFound();
 
-    const token = D4hAccessTokenData.fromRecord(record);
-
-    const teams = await getD4HTeamsWithMembers(token);
+    const teams = await getD4HTeamsWithMembers(accesToken);
 
     return (
         <Lexington.Root>
@@ -52,7 +50,7 @@ export default async function Admin_D4hAccessToken_Teams_Page(
                     {
                         href: Paths.org(slug).admin.d4hAccessToken(token_id)
                             .href,
-                        label: record.id,
+                        label: accesToken.id,
                     },
                     "Teams",
                 ]}

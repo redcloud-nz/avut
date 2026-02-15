@@ -3,19 +3,29 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { addYears } from "date-fns";
 import { z } from "zod";
 
-import { getD4hFetchClient } from "@/lib/d4h-api/client";
+import { TRPCError } from "@trpc/server";
+
+import {
+    getD4hFetchClient,
+    getD4HOrganizationsAccessibleWithToken,
+    getD4HTeamsAccessibleWithToken,
+} from "@/lib/d4h-api/client";
 import { diffObject } from "@/lib/diff";
 import {
-    D4hAccessTokenData,
+    D4HAccessToken,
+    D4HAccessToken_ServerOnly,
     D4hAccessTokenId,
 } from "@/lib/schemas/d4h-access-token";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
-import { addYears } from "date-fns";
-import { TRPCError } from "@trpc/server";
+import { Messages } from "../messages";
 
+/**
+ * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
+ */
 export const d4hAccessTokensRouter = createTrpcRouter({
     /**
      * Create a new D4H access token for the organization.
@@ -24,15 +34,15 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         d4hAccessToken: ["create"],
     })
         .input(
-            D4hAccessTokenData.schema.pick({
-                id: true,
-                label: true,
-                serverCode: true,
-                token: true,
-                metadata: true,
-            }),
+            D4HAccessToken.schema
+                .pick({
+                    id: true,
+                    label: true,
+                    serverCode: true,
+                })
+                .extend({ token: z.string() }),
         )
-        .output(D4hAccessTokenData.schema)
+        .output(D4HAccessToken.schema)
         .mutation(async ({ ctx, input }) => {
             const token = {
                 ...input,
@@ -42,17 +52,29 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 status: "",
                 createdAt: new Date().toISOString(),
                 expiresAt: addYears(new Date(), 10).toISOString(),
-                metadata: input.metadata,
-            } satisfies D4hAccessTokenData;
+                metadata: {
+                    d4HTeams: [],
+                    d4HOrganizations: [],
+                },
+            } satisfies D4HAccessToken;
 
             // Check the token by making a request to the D4H API
             const fetchClient = getD4hFetchClient(token);
             const { response } = await fetchClient.GET("/v3/whoami");
 
+            // Check which teams and organizations are accessible with this token
+            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
+            const d4HOrganizations =
+                await getD4HOrganizationsAccessibleWithToken(token);
+
             const created = await ctx.prisma.d4hAccessToken.create({
                 data: {
                     ...token,
                     status: response.statusText,
+                    metadata: {
+                        d4HTeams: d4HTeams as object[],
+                        d4HOrganizations: d4HOrganizations as object[],
+                    },
                 },
             });
 
@@ -65,7 +87,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 changes,
             });
 
-            return D4hAccessTokenData.fromRecord(created);
+            return D4HAccessToken.fromRecord(created);
         }),
 
     /**
@@ -87,7 +109,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             if (!existing || existing.organizationId !== ctx.organizationId) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "Access token not found",
+                    message: Messages.d4HAccessTokenNotFound(input.tokenId),
                 });
             }
 
@@ -113,6 +135,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             });
         }),
 
+    /**
+     * Get a specific D4H access token by ID. Only returns tokens that belong to the organization.
+     */
     getOrganizationAccessToken: organizationProcedure({
         d4hAccessToken: ["view"],
     })
@@ -121,37 +146,75 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 tokenId: D4hAccessTokenId.schema,
             }),
         )
-        .output(
-            z.object({
-                token: D4hAccessTokenData.schema,
-            }),
-        )
+        .output(D4HAccessToken.schema)
         .query(async ({ input, ctx }) => {
-            const token = await ctx.prisma.d4hAccessToken.findUnique({
+            const record = await ctx.prisma.d4hAccessToken.findUnique({
                 where: {
                     id: input.tokenId,
                     organizationId: ctx.organizationId,
                 },
             });
 
-            if (!token)
+            if (!record)
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "Access token not found",
+                    message: Messages.d4HAccessTokenNotFound(input.tokenId),
                 });
 
-            return { token: D4hAccessTokenData.fromRecord(token) };
+            return D4HAccessToken.fromRecord(record);
         }),
 
+    /**
+     * List all D4H access tokens that have been saved for the organization.
+     */
     listOrganizationAccessTokens: organizationProcedure({
         d4hAccessToken: ["view"],
     })
-        .output(D4hAccessTokenData.schema.array())
+        .output(z.array(D4HAccessToken.schema))
         .query(async ({ ctx }) => {
-            const tokens = await ctx.prisma.d4hAccessToken.findMany({
+            const records = await ctx.prisma.d4hAccessToken.findMany({
                 where: { organizationId: ctx.organizationId },
             });
 
-            return tokens.map(D4hAccessTokenData.fromRecord);
+            return records.map(D4HAccessToken.fromRecord);
+        }),
+
+    refreshToken: organizationProcedure({
+        d4hAccessToken: ["update"],
+    })
+        .input(
+            z.object({
+                tokenId: D4hAccessTokenId.schema,
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            const record = await ctx.prisma.d4hAccessToken.findUnique({
+                where: {
+                    id: input.tokenId,
+                    organizationId: ctx.organizationId,
+                },
+            });
+
+            if (!record)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.d4HAccessTokenNotFound(input.tokenId),
+                });
+
+            const token = D4HAccessToken_ServerOnly.fromRecord(record);
+
+            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
+            const d4HOrganizations =
+                await getD4HOrganizationsAccessibleWithToken(token);
+
+            await ctx.prisma.d4hAccessToken.update({
+                where: { id: input.tokenId },
+                data: {
+                    metadata: {
+                        d4HTeams: d4HTeams as object[],
+                        d4HOrganizations: d4HOrganizations as object[],
+                    },
+                },
+            });
         }),
 });

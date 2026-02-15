@@ -3,70 +3,71 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { D4HResource } from "./resource";
+
 export interface D4HWhoami {
-    account: {
-        id: number;
-        resourceType: string;
-    };
-    members: {
+    account: D4HResource<"Account">;
+    members: (D4HResource<"Member"> & {
         hasAccess: boolean;
-        id: number;
         name: string;
-        owner: {
-            id: number;
-            resourceType: string;
+        owner: D4HResource<"Team"> & {
             title: string;
-            owner?: {
-                id: number;
-                resourceType: string;
-            };
+            owner?: D4HResource<"Organization">;
         };
-        permissions?: Record<
-            | "Animal"
-            | "AnimalGroup"
-            | "AnimalQualification"
-            | "AnimalQualificationAward"
-            | "Audit"
-            | "BillingUnit"
-            | "CustomField"
-            | "CustomFieldOption"
-            | "CustomIdentifier"
-            | "Division"
-            | "Document"
-            | "Duty"
-            | "Equipment"
-            | "EquipmentInspection"
-            | "EquipmentInspectionResult"
-            | "EquipmentLocation"
-            | "EquipmentUsage"
-            | "Event"
-            | "Exercise"
-            | "HandlerGroup"
-            | "HandlerQualification"
-            | "HandlerQualificationAward"
-            | "HealthAndSafetyCategory"
-            | "HealthAndSafetyReport"
-            | "HealthAndSafetySeverity"
-            | "Incident"
-            | "LocationBookmark"
-            | "Member"
-            | "MemberGroup"
-            | "MemberQualification"
-            | "MemberQualificationAward"
-            | "PersonInvolved"
-            | "Repair"
-            | "Resource"
-            | "ResourceBundle"
-            | "Role"
-            | "Setting"
-            | "Tag"
-            | "Task"
-            | "Team"
-            | "Whiteboard",
-            Record<D4HPermissionType, boolean | undefined>
-        >;
-    }[];
+        permissions?: D4HPermissions;
+    })[];
+    officers: (D4HResource<"Officer"> & {
+        hasAccess: boolean;
+        name: string;
+        owner: D4HResource<"Organization"> & { title: string };
+        permissions?: D4HPermissions;
+    })[];
 }
+
+type D4HPermissions = Record<
+    | "Animal"
+    | "AnimalGroup"
+    | "AnimalQualification"
+    | "AnimalQualificationAward"
+    | "Audit"
+    | "BillingUnit"
+    | "CustomField"
+    | "CustomFieldOption"
+    | "CustomIdentifier"
+    | "Division"
+    | "Document"
+    | "Duty"
+    | "Equipment"
+    | "EquipmentInspection"
+    | "EquipmentInspectionResult"
+    | "EquipmentLocation"
+    | "EquipmentUsage"
+    | "Event"
+    | "Exercise"
+    | "HandlerGroup"
+    | "HandlerQualification"
+    | "HandlerQualificationAward"
+    | "HealthAndSafetyCategory"
+    | "HealthAndSafetyReport"
+    | "HealthAndSafetySeverity"
+    | "Incident"
+    | "LocationBookmark"
+    | "Member"
+    | "MemberGroup"
+    | "MemberQualification"
+    | "MemberQualificationAward"
+    | "PersonInvolved"
+    | "Repair"
+    | "Resource"
+    | "ResourceBundle"
+    | "Role"
+    | "Setting"
+    | "Tag"
+    | "Task"
+    | "Team"
+    | "Whiteboard",
+    Record<D4HPermissionType, boolean | undefined>
+>;
 
 type D4HPermissionType =
     | "APPROVE"

@@ -3,19 +3,23 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import createFetchClient from "openapi-fetch";
 import { cache } from "react";
 
-import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
+import {
+    D4HAccessToken,
+    D4HAccessToken_ServerOnly,
+} from "@/lib/schemas/d4h-access-token";
 
+import { D4HMember } from "./member";
 import type { paths } from "./schema";
 import { getD4HServer } from "./servers";
 import { D4HWhoami } from "./whoami";
-import { D4HMember } from "./member";
 import { D4HTeamRef } from "./team";
+import { D4HOrganization } from "./organization";
 
-export const getD4hFetchClient = cache((token: D4hAccessTokenData) => {
+export const getD4hFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
 
     const fetchClient = createFetchClient<paths>({
@@ -31,8 +35,9 @@ export const getD4hFetchClient = cache((token: D4hAccessTokenData) => {
     return fetchClient;
 });
 
-export async function getD4hWhoami(token: D4hAccessTokenData) {
+export async function getD4HWhoami(token: D4HAccessToken_ServerOnly) {
     "use cache";
+    cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-whoami`);
 
     const fetchClient = getD4hFetchClient(token);
@@ -45,18 +50,83 @@ export async function getD4hWhoami(token: D4hAccessTokenData) {
     return data as D4HWhoami;
 }
 
-export async function getD4hTeams(
-    token: D4hAccessTokenData,
+export async function getD4HTeamsAccessibleWithToken(
+    token: D4HAccessToken_ServerOnly,
 ): Promise<D4HTeamRef[]> {
-    const whoami = await getD4hWhoami(token);
+    const whoami = await getD4HWhoami(token);
 
-    return whoami.members
-        .map((member) => member.owner)
-        .filter((resource) => resource.resourceType === "Team") as D4HTeamRef[];
+    return whoami.members.map((member) => member.owner);
 }
 
-export async function getD4hTeamMembers(
-    token: D4hAccessTokenData,
+export async function getD4HOrganizationsAccessibleWithToken(
+    token: D4HAccessToken_ServerOnly,
+): Promise<D4HOrganization[]> {
+    const fetchClient = getD4hFetchClient(token);
+
+    const whoami = await getD4HWhoami(token);
+
+    const organizations: D4HOrganization[] = [];
+
+    for (const member of whoami.members) {
+        const team = member.owner;
+
+        if (!team.owner) continue;
+
+        // Skip if the organization has already been fetched
+        if (organizations.some((org) => org.id === team.owner!.id)) continue;
+
+        const { data, response } = await fetchClient.GET(
+            "/v3/{context}/{contextId}/organisations/{organisationId}",
+            {
+                params: {
+                    path: {
+                        context: "team",
+                        contextId: team.id,
+                        organisationId: team.owner!.id,
+                    },
+                },
+            },
+        );
+        if (!response.ok) {
+            throw new Error(
+                `Failed to fetch D4H organisation: ${response.status} ${response.statusText}`,
+            );
+        }
+
+        organizations.push(data as D4HOrganization);
+    }
+
+    // for (const officer of whoami.officers) {
+    //     const organization = officer.owner;
+
+    //     // Skip if the organization has already been fetched
+    //     if (organizations.some((org) => org.id === organization.id)) continue;
+
+    //     const { data, response } = await fetchClient.GET(
+    //         "/v3/{context}/{contextId}/organisations/{organisationId}",
+    //         {
+    //             params: {
+    //                 path: {
+    //                     context: "organisation",
+    //                     contextId: organization.id,
+    //                     organisationId: organization.id,
+    //                 },
+    //             },
+    //         },
+    //     );
+    //     if (!response.ok) {
+    //         throw new Error(
+    //             `Failed to fetch D4H organisation: ${response.status} ${response.statusText}`,
+    //         );
+    //     }
+    //     organizations.push(data as D4HOrganization);
+    // }
+
+    return organizations;
+}
+
+export async function getD4HTeamMembers(
+    token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
 ): Promise<D4HMember[]> {
     "use cache";
@@ -82,13 +152,13 @@ export async function getD4hTeamMembers(
 }
 
 export async function getD4HTeamsWithMembers(
-    token: D4hAccessTokenData,
+    token: D4HAccessToken_ServerOnly,
 ): Promise<(D4HTeamRef & { members: D4HMember[] })[]> {
-    const teams = await getD4hTeams(token);
+    const teams = await getD4HTeamsAccessibleWithToken(token);
 
     const teamsWithMembers = await Promise.all(
         teams.map(async (team) => {
-            const members = await getD4hTeamMembers(token, team.id);
+            const members = await getD4HTeamMembers(token, team.id);
 
             return {
                 ...team,
@@ -99,3 +169,8 @@ export async function getD4HTeamsWithMembers(
 
     return teamsWithMembers;
 }
+
+export async function getD4HTeamEquipment(
+    token: D4HAccessToken,
+    d4hTeamId: number,
+) {}

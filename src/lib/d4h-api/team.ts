@@ -3,12 +3,13 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-export interface D4HTeamRef {
-    id: number;
-    resourceType: "Team";
+import { D4HResource } from "./resource";
+
+export interface D4HTeamRef extends D4HResource<"Team"> {
     title: string;
-    owner?: {
-        id: number;
-        resourceType: string;
-    };
+}
+
+export interface D4HTeam extends D4HResource<"Team"> {
+    title: string;
+    owner?: D4HResource<"Organization">;
 }

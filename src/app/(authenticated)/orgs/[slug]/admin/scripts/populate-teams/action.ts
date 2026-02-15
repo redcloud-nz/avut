@@ -8,7 +8,7 @@
 
 import { getD4HTeamsWithMembers } from "@/lib/d4h-api/client";
 import { nanoId16 } from "@/lib/id";
-import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import prisma from "@/server/prisma";
 
 export async function populateTeamsAction(organizationId: string) {
@@ -23,7 +23,7 @@ export async function populateTeamsAction(organizationId: string) {
     }
 
     const d4hTeams = await getD4HTeamsWithMembers(
-        D4hAccessTokenData.fromRecord(d4hAccessToken),
+        D4HAccessToken.fromRecord(d4hAccessToken),
     );
 
     const teams = await prisma.team.findMany({

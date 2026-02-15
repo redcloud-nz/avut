@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { D4HServerList } from "@/lib/d4h-api/servers";
 import {
-    D4hAccessTokenData,
+    D4HAccessToken,
     D4hAccessTokenId,
 } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -57,7 +57,7 @@ export function AdminModule_CreateD4hAccessToken_Form({
 
     const form = useForm({
         resolver: zodResolver(
-            D4hAccessTokenData.schema.pick({
+            D4HAccessToken.schema.pick({
                 id: true,
                 label: true,
                 serverCode: true,

@@ -22,7 +22,7 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
-import { D4hAccessTokenData } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
 
 import * as Paths from "@/paths";
@@ -47,7 +47,7 @@ export function AdminModule_D4hAccessTokensList({
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4hAccessTokenData>((columnHelper) => [
+            Akagi.defineColumns<D4HAccessToken>((columnHelper) => [
                 columnHelper.accessor("id", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>

@@ -454,6 +454,11 @@ function d4hViewsModule(orgSlug: string) {
             href: `${base}/personnel`,
             bgColor: "bg-blue-400",
         },
+        teams: {
+            label: "Teams",
+            href: `${base}/teams`,
+            bgColor: "bg-green-400",
+        },
     } as const;
 }
 
