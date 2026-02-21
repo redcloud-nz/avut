@@ -29,11 +29,10 @@ AVUT (Assorted Vaguely Useful Tools) is a Next.js + Prisma + tRPC SaaS platform 
 - Router mounted at `/src/trpc/routers/_app.ts` aggregates all subrouters
 - Each domain (organizations, personnel, teams, settings, invitations, notifications) gets dedicated router file
 - All routers use `createTrpcRouter()` from `/src/trpc/init.ts` for consistent middleware setup
-- Context includes `auth` session, `prisma` client, and `hasPermission()` function
+- Organization permissions checked in middleware by passing the required permissions to `organizationProcedure()`.
 
 ### Server Utilities & Schemas
 
-- **Data Layer**: `/src/server/*.ts` contains database queries (organization.ts, team.ts, person.ts, etc.)
 - **Schemas**: `/src/lib/schemas/` contains Zod schemas + fromRecord/toRecord converters for type-safe Prisma→DTO transforms
   - Pattern: `export const EntityData = { fromRecord(), toRecord(), schema }`
   - This prevents exposing internal DB fields (IDs, timestamps) to client
