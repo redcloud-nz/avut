@@ -7,13 +7,13 @@ import { z } from "zod";
 
 import { SkillPackage as SkillPackageRecord } from "@prisma/client";
 
+import { nanoId16 } from "../id";
 import {
     propertiesSchema,
     recordStatusSchema,
     tagsSchema,
     zodNanoId16,
 } from "../validation";
-import { nanoId16 } from "../id";
 
 export const SkillPackageId = {
     schema: zodNanoId16("SkillPackageId expected").brand<"SkillPackageId">(),
@@ -53,3 +53,7 @@ export const SkillPackage = {
 };
 
 export type SkillPackage = z.infer<typeof skillPackageSchema>;
+
+export type ModifiableSkillPackage = z.infer<
+    typeof SkillPackage.modifiableSchema
+>;

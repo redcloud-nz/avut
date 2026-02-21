@@ -10,6 +10,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
+    getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
@@ -109,6 +110,7 @@ export function AdminModule_PersonnelList({
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             columnFilters: [{ id: "status", value: ["Active"] }],
             pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },

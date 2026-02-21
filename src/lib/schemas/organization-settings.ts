@@ -44,7 +44,7 @@ const organizationSettingsSchema = z.object({
         skills: z.object({
             enabled: z.boolean().default(false),
         }),
-        "skill-package-manager": z.object({
+        "skill-package-author": z.object({
             enabled: z.boolean().default(false),
         }),
     }),
@@ -59,7 +59,7 @@ export const OrganizationSettings = {
         "forms",
         "notes",
         "skills",
-        "skill-package-manager",
+        "skill-package-author",
     ],
 
     default(): OrganizationSettings {
@@ -74,7 +74,7 @@ export const OrganizationSettings = {
                 forms: {},
                 notes: {},
                 skills: {},
-                "skill-package-manager": {},
+                "skill-package-author": {},
             },
         });
     },

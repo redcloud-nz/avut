@@ -82,7 +82,7 @@ export {
     XIcon as SkillCheckNotCompetentIcon,
     SlashIcon as SkillCheckNotTaughtIcon,
     PocketKnifeIcon as SkillsModuleIcon,
-    PackageIcon as SkillPackageManagerModuleIcon,
+    PackageIcon as SkillPackageAuthorModuleIcon,
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
     SendIcon as InvitationsIcon,

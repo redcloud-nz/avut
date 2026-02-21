@@ -16,91 +16,92 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
     Field,
-    FieldContent,
-    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/ui/link";
+import { Textarea } from "@/components/ui/textarea";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { PersonData, PersonId } from "@/lib/schemas/person";
+import {
+    ModifiableSkillPackage,
+    SkillPackage,
+    SkillPackageId,
+} from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
-
 import { trpc } from "@/trpc/client";
 
 type AdminModule_CreatePerson_FormProps = {
     organization: OrganizationData;
 };
 
-export function AdminModule_CreatePerson_Form({
+export function SkillPackageAuthor_PackageCreate_Form({
     organization,
 }: AdminModule_CreatePerson_FormProps) {
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const personId = useMemo(() => PersonId.create(), []);
+    const packageId = useMemo(() => SkillPackageId.create(), []);
 
     const form = useForm({
-        resolver: zodResolver(PersonData.modifiableSchema),
+        resolver: zodResolver(SkillPackage.modifiableSchema),
         defaultValues: {
             name: "",
-            email: "",
+            description: "",
             tags: [],
             properties: {},
         },
     });
 
-    const createPersonMutation = useMutation(
-        trpc.personnel.createPerson.mutationOptions({
+    const mutation = useMutation(
+        trpc.skills.createPackage.mutationOptions({
             async onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause.message as keyof Pick<
-                            PersonData,
-                            "name" | "email" | "tags" | "properties"
-                        >,
-                        { message: error.shape.message },
+                        error.shape.cause
+                            .message as keyof ModifiableSkillPackage,
+                        { message: error.message },
                     );
                 } else {
-                    toast.error(
-                        `Error creating person record: ${error.message}`,
-                    );
+                    toast.error("An unexpected error occurred.");
                 }
             },
-            async onSuccess() {
+            async onSuccess(skillPackage) {
                 queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
-                    }),
+                    trpc.skills.listPackages.queryFilter(),
                 );
-                toast.success("Person record created successfully.");
                 router.push(
-                    Paths.org(organization.slug).admin.person(personId).href,
+                    Paths.org(
+                        organization.slug,
+                    ).skillPackageAuthor.skillPackage(skillPackage.id).href,
                 );
             },
         }),
     );
 
-    return (
-        <form
-            id="create-person-form"
-            onSubmit={form.handleSubmit((formData) =>
-                createPersonMutation.mutate({
+    const handleCreate = form.handleSubmit((formData) => {
+        toast.promise(
+            async () => {
+                await mutation.mutateAsync({
+                    id: packageId,
                     organizationId: organization.id,
-                    personId,
                     ...formData,
-                }),
-            )}
-        >
+                });
+            },
+            {
+                loading: "Creating skill package...",
+                success: "Skill package created!",
+                error: (error) =>
+                    `Failed to create skill package: ${error.message}`,
+            },
+        );
+    });
+
+    return (
+        <form id="create-package-form" onSubmit={handleCreate}>
             <FieldGroup>
-                <Field orientation="responsive">
-                    <FieldLabel>Person ID</FieldLabel>
-                    <FieldValue className="min-w-1/2">{personId}</FieldValue>
-                </Field>
                 <Controller
                     name="name"
                     control={form.control}
@@ -109,10 +110,10 @@ export function AdminModule_CreatePerson_Form({
                             data-invalid={fieldState.invalid}
                             orientation="responsive"
                         >
-                            <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                            <FieldLabel htmlFor="package-name">Name</FieldLabel>
 
                             <Input
-                                id="person-name"
+                                id="package-name"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
@@ -124,40 +125,34 @@ export function AdminModule_CreatePerson_Form({
                     )}
                 />
                 <Controller
-                    name="email"
+                    name="description"
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field
                             data-invalid={fieldState.invalid}
                             orientation="responsive"
                         >
-                            <FieldContent>
-                                <FieldLabel htmlFor="person-email">
-                                    Email
-                                </FieldLabel>
-                                <FieldDescription>
-                                    Must be unique within the organization.
-                                </FieldDescription>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
-                            </FieldContent>
+                            <FieldLabel htmlFor="package-description">
+                                Description
+                            </FieldLabel>
 
-                            <Input
-                                id="person-email"
-                                type="email"
+                            <Textarea
+                                id="package-description"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
                             />
+                            {fieldState.error && (
+                                <FieldError errors={[fieldState.error]} />
+                            )}
                         </Field>
                     )}
                 />
                 <Field orientation="horizontal">
                     <Button
                         type="submit"
-                        form="create-person-form"
-                        disabled={createPersonMutation.isPending}
+                        form="create-package-form"
+                        disabled={mutation.isPending}
                     >
                         Create
                     </Button>
@@ -167,7 +162,12 @@ export function AdminModule_CreatePerson_Form({
                         onClick={() => form.reset()}
                         asChild
                     >
-                        <Link to={Paths.org(organization.slug).admin.personnel}>
+                        <Link
+                            to={
+                                Paths.org(organization.slug).skillPackageAuthor
+                                    .skillPackages
+                            }
+                        >
                             Cancel
                         </Link>
                     </Button>

@@ -176,9 +176,9 @@ export default function AdminModule_Settings_Page(
                             <SkillsModule_SettingsCard
                                 lens={lens.focus("modules.skills")}
                             />
-                            <SkillPackageManagerModule_SettingsCard
+                            <SkillPackageAuthorModule_SettingsCard
                                 lens={lens.focus(
-                                    "modules.skill-package-manager",
+                                    "modules.skill-package-author",
                                 )}
                             />
                         </Hermes.Section>
@@ -655,11 +655,11 @@ function SkillsModule_SettingsCard({
     );
 }
 
-function SkillPackageManagerModule_SettingsCard({
+function SkillPackageAuthorModule_SettingsCard({
     lens,
 }: {
     lens: Lens<
-        Partial<OrganizationSettings["modules"]["skill-package-manager"]>
+        Partial<OrganizationSettings["modules"]["skill-package-author"]>
     >;
 }) {
     const enabled = useWatch(lens.focus("enabled").interop());
@@ -667,13 +667,13 @@ function SkillPackageManagerModule_SettingsCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Skill Package Manager Module</CardTitle>
+                <CardTitle>Skill Package Author Module</CardTitle>
                 <CardAction>
                     <Controller
                         {...lens.focus("enabled").interop()}
                         render={({ field }) => (
                             <Switch
-                                id="skill-package-manager-module-enabled"
+                                id="skill-package-author-module-enabled"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                             />

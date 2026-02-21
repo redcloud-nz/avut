@@ -125,7 +125,7 @@ type OrgPaths = {
     fog: ReturnType<typeof fogModule>;
     notes: ReturnType<typeof notesModule>;
     skills: ReturnType<typeof skillsModule>;
-    skillPackageManager: ReturnType<typeof skillPackageManagerModule>;
+    skillPackageAuthor: ReturnType<typeof skillPackageAuthorModule>;
 };
 
 const orgPathCache = new Map<string, OrgPaths>();
@@ -144,7 +144,7 @@ export function org(orgSlug: string): OrgPaths {
             fog: fogModule(orgSlug),
             notes: notesModule(orgSlug),
             skills: skillsModule(orgSlug),
-            skillPackageManager: skillPackageManagerModule(orgSlug),
+            skillPackageAuthor: skillPackageAuthorModule(orgSlug),
         } satisfies OrgPaths;
         orgPathCache.set(orgSlug, paths);
     }
@@ -584,18 +584,17 @@ function skillsModule(orgSlug: string) {
     } as const;
 }
 
-function skillPackageManagerModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/skill-package-manager` as const;
+function skillPackageAuthorModule(orgSlug: string) {
+    const base = `/orgs/${orgSlug}/skill-package-author` as const;
 
     return {
         index: {
-            label: "Skill Package Manager",
+            label: "Skill Package Author",
             href: base,
         },
 
         skillPackage: (skillPackageId: string) => {
-            const packageBase =
-                `${base}/skill-packages/${skillPackageId}` as const;
+            const packageBase = `${base}/packages/${skillPackageId}` as const;
 
             return {
                 href: packageBase,
@@ -620,6 +619,11 @@ function skillPackageManagerModule(orgSlug: string) {
                     },
                 },
 
+                history: {
+                    label: "History",
+                    href: `${packageBase}/history`,
+                },
+
                 skill: (skillId: string) =>
                     ({
                         href: `${packageBase}/skills/${skillId}`,
@@ -640,14 +644,14 @@ function skillPackageManagerModule(orgSlug: string) {
         },
         skillPackages: {
             label: "Skill Packages",
-            href: `${base}/skill-packages`,
+            href: `${base}/packages`,
             create: {
                 label: "Create",
-                href: `${base}/skill-packages/--create`,
+                href: `${base}/packages/--create`,
             },
             import: {
                 label: "Import Skill Package",
-                href: `${base}/skill-packages/--import`,
+                href: `${base}/packages/--import`,
             },
         } as const,
     };

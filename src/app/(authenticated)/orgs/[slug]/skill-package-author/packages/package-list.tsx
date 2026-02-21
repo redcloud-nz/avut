@@ -2,15 +2,15 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+
 "use client";
 
 import { useMemo } from "react";
 
-import { useLiveSuspenseQuery } from "@tanstack/react-db";
-
 import {
     getCoreRowModel,
     getFilteredRowModel,
+    getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
@@ -23,26 +23,29 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
-import { getTeamsCollection } from "@/lib/collections/teams";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { TeamData } from "@/lib/schemas/team";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { trpc } from "@/trpc/client";
 
-interface AdminModule_TeamsListProps {
+interface SkillPackageAuthorModules_SkillPackagesListProps {
     organization: OrganizationData;
 }
 
 /**
- * List of teams in the organization.
+ * List of skill packages in the organization.
  */
-export function AdminModule_TeamsList({
+export function SkillPackageAuthorModules_SkillPackages_List({
     organization,
-}: AdminModule_TeamsListProps) {
-    const { data: teams } = useLiveSuspenseQuery((q) =>
-        q.from({ team: getTeamsCollection(organization.id) }),
+}: SkillPackageAuthorModules_SkillPackagesListProps) {
+    const { data: skillPackages } = useSuspenseQuery(
+        trpc.skills.listPackages.queryOptions({
+            organizationId: organization.id,
+        }),
     );
 
-    type RowData = TeamData;
+    type RowData = SkillPackage;
 
     const columns = useMemo(
         () =>
@@ -56,7 +59,9 @@ export function AdminModule_TeamsList({
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.org(organization.slug).admin.team(
+                                to={Paths.org(
+                                    organization.slug,
+                                ).skillPackageAuthor.skillPackage(
                                     ctx.row.original.id,
                                 )}
                             >
@@ -64,8 +69,6 @@ export function AdminModule_TeamsList({
                             </Link>
                         </Akagi.TableCell>
                     ),
-                    enableSorting: true,
-                    enableGlobalFilter: true,
                 }),
                 columnHelper.accessor("description", {
                     header: (ctx) => (
@@ -78,21 +81,42 @@ export function AdminModule_TeamsList({
                             {ctx.getValue()}
                         </Akagi.TableCell>
                     ),
-                    enableSorting: true,
-                    enableGlobalFilter: true,
+                    enableSorting: false,
+                }),
+                columnHelper.accessor("status", {
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell
+                            header={ctx.header}
+                            className="w-25"
+                            filterOptions={["Active", "Archived"]}
+                        >
+                            Status
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell cell={ctx.cell}>
+                            {ctx.getValue()}
+                        </Akagi.TableCell>
+                    ),
+                    enableColumnFilter: true,
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    filterFn: "arrIncludesSome",
                 }),
             ]),
         [organization.slug],
     );
 
     const table = useReactTable({
-        data: teams,
+        data: skillPackages,
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        globalFilterFn: "includesString",
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
         initialState: {
+            columnFilters: [{ id: "status", value: ["Active"] }],
+            pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },
     });
@@ -103,13 +127,16 @@ export function AdminModule_TeamsList({
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
-                    permissions={{ team: ["create"] }}
+                    permissions={{ skillPackage: ["create"] }}
                 >
                     <Button variant="outline" asChild>
                         <Link
-                            to={Paths.org(organization.slug).admin.teams.create}
+                            to={
+                                Paths.org(organization.slug).skillPackageAuthor
+                                    .skillPackages.create
+                            }
                         >
-                            <CreateNewIcon /> Team
+                            <CreateNewIcon /> Skill Package
                         </Link>
                     </Button>
                 </Protect>

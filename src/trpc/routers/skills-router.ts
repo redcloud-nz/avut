@@ -286,7 +286,7 @@ export const skillsRouter = createTrpcRouter({
      */
     deleteSkill: organizationProcedure({ skillPackage: ["update"] })
         .input(z.object({ skillId: SkillId.schema }))
-        .mutation(async ({ ctx, input: { organizationId, skillId } }) => {
+        .mutation(async ({ ctx, input: { skillId } }) => {
             // Verify the skill exists and belongs to the organization before attempting deletion
             await getSkillOrThrow(ctx, skillId);
 
@@ -303,15 +303,71 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
-     * List all skill groups within the organization.
+     * Retrieve a single skill group by ID, ensuring it belongs to the organization.
+     * @param skillGroupId The ID of the skill group to retrieve.
+     * @returns The skill group data.
+     * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
+     */
+    getGroup: organizationProcedure({ skillPackage: ["view"] })
+        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(SkillGroup.schema)
+        .query(async ({ ctx, input: { skillGroupId } }) => {
+            const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+
+            return skillGroup;
+        }),
+
+    /**
+     * Retrieve a single skill package by ID, ensuring it belongs to the organization.
+     * @param skillPackageId The ID of the skill package to retrieve.
+     * @returns The skill package data.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     */
+    getPackage: organizationProcedure({ skillPackage: ["view"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(SkillPackage.schema)
+        .query(async ({ ctx, input: { skillPackageId } }) => {
+            const skillPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
+
+            return skillPackage;
+        }),
+
+    /**
+     * Retrieve a single skill by ID, ensuring it belongs to the organization.
+     * @param skillId The ID of the skill to retrieve.
+     * @returns The skill data.
+     * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
+     */
+    getSkill: organizationProcedure({ skillPackage: ["view"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(Skill.schema)
+        .query(async ({ ctx, input: { skillId } }) => {
+            const skill = await getSkillOrThrow(ctx, skillId);
+
+            return skill;
+        }),
+
+    /**
+     * List all skill groups within the organization, optionally filtered by skill package.
+     * @param skillPackageId Optional skill package ID to filter groups by.
+     * @returns An array of skill groups.
      */
     listGroups: organizationProcedure({ skillPackage: ["view"] })
+        .input(
+            z.object({
+                skillPackageId: SkillPackageId.schema.optional(),
+            }),
+        )
         .output(z.array(SkillGroup.schema))
-        .query(async ({ ctx, input: { organizationId } }) => {
+        .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
             const skillGroups = await ctx.prisma.skillGroup.findMany({
                 where: {
                     skillPackage: {
                         organizationId,
+                        id: skillPackageId,
                     },
                 },
             });
@@ -335,21 +391,37 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
-     * List all skills within the organization.
+     * List all skills within the organization, optionally filtered by skill package and/or skill group.
+     * @param skillGroupId Optional skill group ID to filter skills by.
+     * @param skillPackageId Optional skill package ID to filter skills by.
+     * @returns An array of skills.
      */
     listSkills: organizationProcedure({ skillPackage: ["view"] })
+        .input(
+            z.object({
+                skillGroupId: SkillGroupId.schema.optional(),
+                skillPackageId: SkillPackageId.schema.optional(),
+            }),
+        )
         .output(z.array(Skill.schema))
-        .query(async ({ ctx, input: { organizationId } }) => {
-            const skills = await ctx.prisma.skill.findMany({
-                where: {
-                    skillPackage: {
-                        organizationId,
+        .query(
+            async ({
+                ctx,
+                input: { organizationId, skillGroupId, skillPackageId },
+            }) => {
+                const skills = await ctx.prisma.skill.findMany({
+                    where: {
+                        skillGroupId: skillGroupId,
+                        skillPackage: {
+                            organizationId,
+                            id: skillPackageId,
+                        },
                     },
-                },
-            });
+                });
 
-            return skills.map(Skill.fromRecord);
-        }),
+                return skills.map(Skill.fromRecord);
+            },
+        ),
 
     /**
      * Update the specified skill group.
@@ -413,37 +485,32 @@ export const skillsRouter = createTrpcRouter({
             }),
         )
         .output(SkillPackage.schema)
-        .mutation(
-            async ({
+        .mutation(async ({ ctx, input: { skillPackageId, update } }) => {
+            const existingPackage = await getSkillPackageOrThrow(
                 ctx,
-                input: { organizationId, skillPackageId, update },
-            }) => {
-                const existingPackage = getSkillPackageOrThrow(
-                    ctx,
-                    skillPackageId,
-                );
+                skillPackageId,
+            );
 
-                const diff = diffObject(
-                    SkillPackage.modifiableSchema.parse(existingPackage),
-                    update,
-                );
+            const diff = diffObject(
+                SkillPackage.modifiableSchema.parse(existingPackage),
+                update,
+            );
 
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillPackage.update({
-                        where: { id: skillPackageId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillPackage",
-                        objectId: skillPackageId,
-                        changes: diff,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                    changes: diff,
+                }),
+            ]);
 
-                return SkillPackage.fromRecord(updated);
-            },
-        ),
+            return SkillPackage.fromRecord(updated);
+        }),
 
     /**
      * Update the specified skill.
@@ -460,31 +527,29 @@ export const skillsRouter = createTrpcRouter({
             }),
         )
         .output(Skill.schema)
-        .mutation(
-            async ({ ctx, input: { organizationId, skillId, update } }) => {
-                const existingSkill = await getSkillOrThrow(ctx, skillId);
+        .mutation(async ({ ctx, input: { skillId, update } }) => {
+            const existingSkill = await getSkillOrThrow(ctx, skillId);
 
-                const diff = diffObject(
-                    Skill.modifiableSchema.parse(existingSkill),
-                    update,
-                );
+            const diff = diffObject(
+                Skill.modifiableSchema.parse(existingSkill),
+                update,
+            );
 
-                const [updated] = await Promise.all([
-                    ctx.prisma.skill.update({
-                        where: { id: skillId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "Skill",
-                        objectId: skillId,
-                        changes: diff,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skill.update({
+                    where: { id: skillId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "Skill",
+                    objectId: skillId,
+                    changes: diff,
+                }),
+            ]);
 
-                return Skill.fromRecord(updated);
-            },
-        ),
+            return Skill.fromRecord(updated);
+        }),
 });
 
 /**

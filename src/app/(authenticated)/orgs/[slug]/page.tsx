@@ -98,21 +98,19 @@ export default async function OrganizationDashboard_Page(
                                 </Link>
                             </Item>
                         </Show> */}
-                        <Show when={modules["skill-package-manager"].enabled}>
+                        <Show when={modules["skill-package-author"].enabled}>
                             <Item asChild>
                                 <Link
                                     to={
-                                        Paths.org(slug).skillPackageManager
-                                            .index
+                                        Paths.org(slug).skillPackageAuthor.index
                                     }
                                 >
                                     <ItemContent>
                                         <ItemTitle>
-                                            Skill Package Manager
+                                            Skill Package Author
                                         </ItemTitle>
                                         <ItemDescription>
-                                            Create, edit, and manage skill
-                                            packages.
+                                            Create and edit skill packages.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

@@ -186,7 +186,7 @@ export function AdminModule_PersonMenu({
                                     onSelect={() => {
                                         setDeleteDialogOpen(true);
                                     }}
-                                    className="text-destructive"
+                                    className="text-destructive focus:text-destructive"
                                 >
                                     <ObjectIcons.Delete />
                                     Delete

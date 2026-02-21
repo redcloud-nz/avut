@@ -8,7 +8,7 @@ import {
     OrgDashboardIcon,
     NotesModuleIcon,
     SkillsModuleIcon,
-    SkillPackageManagerModuleIcon,
+    SkillPackageAuthorModuleIcon,
 } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
@@ -80,13 +80,13 @@ export async function NavOrganizationMenu({
                         icon={<NotesModuleIcon />}
                     />
                 </Show>
-                <Show when={modules["skill-package-manager"].enabled}>
+                <Show when={modules["skill-package-author"].enabled}>
                     <NavCollapsible
-                        path={orgPrefix.skillPackageManager.index}
-                        icon={<SkillPackageManagerModuleIcon />}
+                        path={orgPrefix.skillPackageAuthor.index}
+                        icon={<SkillPackageAuthorModuleIcon />}
                     >
                         <NavItem
-                            path={orgPrefix.skillPackageManager.skillPackages}
+                            path={orgPrefix.skillPackageAuthor.skillPackages}
                         />
                     </NavCollapsible>
                 </Show>
