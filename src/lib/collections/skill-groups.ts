@@ -4,12 +4,12 @@
  */
 "use client";
 
-import { createCollection } from "@tanstack/react-db";
+import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { perOrganization } from "@/lib/utils";
-import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
+import { getQueryClient, RouterInput, trpc, trpcClient } from "@/trpc/client";
 
 export const getSkillGroupsCollection = perOrganization((organizationId) =>
     createCollection(
@@ -17,14 +17,29 @@ export const getSkillGroupsCollection = perOrganization((organizationId) =>
             queryKey: trpc.skills.listGroups.queryKey({
                 organizationId,
             }),
-            queryFn: async () => {
-                return await trpcClient.skills.listGroups.query({
-                    organizationId: organizationId,
-                });
+            queryFn: async (ctx) => {
+                const { filters } = parseLoadSubsetOptions(
+                    ctx.meta?.loadSubsetOptions,
+                );
+
+                const input: RouterInput["skills"]["listGroups"] = {
+                    organizationId,
+                };
+
+                for (const filter of filters) {
+                    const field = filter.field.join(".");
+                    if (field == "skillPackageId" && filter.operator == "eq") {
+                        input.skillPackageId = filter.value;
+                    }
+                }
+
+                return await trpcClient.skills.listGroups.query(input);
             },
             queryClient: getQueryClient(),
             getKey: (skillGroup) => skillGroup.id,
             schema: SkillGroup.schema,
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            syncMode: "on-demand",
 
             onInsert: async ({ transaction }) => {
                 await Promise.all(

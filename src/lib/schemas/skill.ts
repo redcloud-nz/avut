@@ -35,6 +35,8 @@ const skillSchema = z.object({
     tags: tagsSchema,
     properties: propertiesSchema,
     sequence: z.number().int().nonnegative(),
+    frequency: z.number().int().nonnegative(),
+    defaultRequired: z.boolean(),
     status: recordStatusSchema,
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
@@ -44,10 +46,13 @@ export const Skill = {
     schema: skillSchema,
 
     modifiableSchema: skillSchema.pick({
+        skillGroupId: true,
         name: true,
         description: true,
         tags: true,
         properties: true,
+        defaultRequired: true,
+        frequency: true,
     }),
 
     fromRecord: (record: SkillRecord) =>
@@ -59,3 +64,5 @@ export const Skill = {
 };
 
 export type Skill = z.infer<typeof skillSchema>;
+
+export type ModifiableSkill = z.infer<typeof Skill.modifiableSchema>;

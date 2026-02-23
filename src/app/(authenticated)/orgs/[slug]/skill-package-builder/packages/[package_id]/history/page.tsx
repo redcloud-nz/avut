@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-author/packages/[package_id]/history
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/history
  */
 "use client";
 
@@ -17,8 +17,8 @@ import { useOrganization } from "@/hooks/use-organization";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-export default function SkillPackageAuthor_SkillPackageHistory_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-author/packages/[package_id]/history`>,
+export default function SkillPackageBuilder_Package_History_Page(
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>,
 ) {
     const { slug, package_id } = use(props.params);
     const organization = useOrganization();
@@ -34,12 +34,12 @@ export default function SkillPackageAuthor_SkillPackageHistory_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).skillPackageAuthor.index,
-                    Paths.org(slug).skillPackageAuthor.skillPackages,
+                    Paths.org(slug).skillPackageBuilder.index,
+                    Paths.org(slug).skillPackageBuilder.skillPackages,
                     {
-                        href: Paths.org(slug).skillPackageAuthor.skillPackage(
+                        ...Paths.org(slug).skillPackageBuilder.skillPackage(
                             package_id,
-                        ).href,
+                        ).index,
                         label: skillPackage.name,
                     },
                     "History",

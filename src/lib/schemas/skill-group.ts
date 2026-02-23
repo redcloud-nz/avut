@@ -58,3 +58,5 @@ export const SkillGroup = {
 };
 
 export type SkillGroup = z.infer<typeof skillGroupSchema>;
+
+export type ModifiableSkillGroup = z.infer<typeof SkillGroup.modifiableSchema>;

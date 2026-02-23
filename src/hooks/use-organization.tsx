@@ -6,14 +6,12 @@
 
 import { createContext, ReactNode, useContext } from "react";
 
-import { OrganizationData } from "@/lib/schemas/organization";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { useQueries } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
-const OrganizationContext = createContext<
-    (OrganizationData & { settings: OrganizationSettings }) | null
->(null);
+const OrganizationContext = createContext<OrganizationClient | null>(null);
 
 export function OrganizationProvider({
     children,
@@ -36,21 +34,16 @@ export function OrganizationProvider({
         ],
     });
 
-    const organizationWithSettings = {
-        ...organization,
-        settings,
-    };
+    const client = new OrganizationClient(organization, settings);
 
     return (
-        <OrganizationContext.Provider value={organizationWithSettings}>
+        <OrganizationContext.Provider value={client}>
             {children}
         </OrganizationContext.Provider>
     );
 }
 
-export function useOrganization(): OrganizationData & {
-    settings: OrganizationSettings;
-} {
+export function useOrganization(): OrganizationClient {
     const context = useContext(OrganizationContext);
     if (!context) {
         throw new Error(
@@ -58,4 +51,21 @@ export function useOrganization(): OrganizationData & {
         );
     }
     return context;
+}
+
+export class OrganizationClient {
+    readonly id: OrganizationId;
+    readonly name: string;
+    readonly slug: string;
+    readonly settings: OrganizationSettings;
+
+    constructor(
+        organization: OrganizationData,
+        settings: OrganizationSettings,
+    ) {
+        this.id = organization.id;
+        this.name = organization.name;
+        this.slug = organization.slug;
+        this.settings = settings;
+    }
 }

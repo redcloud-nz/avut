@@ -51,7 +51,7 @@ export function FieldGroup({ className, ...props }: ComponentProps<"div">) {
         <div
             data-slot="field-group"
             className={cn(
-                "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 [&>[data-slot=field-group]]:gap-4",
+                "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
                 className,
             )}
             {...props}
@@ -63,16 +63,18 @@ export const fieldVariants = tv({
     base: "group/field flex w-full gap-3 data-[invalid=true]:text-destructive",
     variants: {
         orientation: {
-            vertical: ["flex-col [&>*]:w-full [&>.sr-only]:w-auto"],
+            vertical: ["flex-col *:w-full [&>.sr-only]:w-auto"],
             horizontal: [
                 "flex-row items-center",
-                "[&>[data-slot=field-label]]:flex-auto",
+                "*:data-[slot=field-label]:flex-auto",
                 "has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
             ],
             responsive: [
-                "flex-col [&>*]:w-full [&>.sr-only]:w-auto @md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>*]:w-auto",
-                "@md/field-group:[&>[data-slot=field-label]]:flex-auto",
+                "flex-col *:w-full [&>.sr-only]:w-auto @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto",
+                "@md/field-group:*:data-[slot=field-label]:flex-auto",
                 "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+                "@md/field-group:flex-wrap @md/field-group:*:data-[slot=field-error]:w-full",
+                "@md/field-group:*:data-[slot=field-value]:w-1/2 @md/field-group:*:data-[slot=input]:w-1/2 @md/field-group:*:data-[slot=input-group]:w-1/2 @md/field-group:*:data-[slot=select-trigger]:w-1/2 @md/field-group:*:data-[slot=textarea]:w-1/2",
             ],
         },
     },

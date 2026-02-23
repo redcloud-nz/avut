@@ -44,17 +44,14 @@ import {
 } from "lucide-react";
 
 export {
-    WrenchIcon as AdminModuleIcon,
     InfoIcon as AlertInfoIcon,
     CircleCheckIcon as AlertSuccessIcon,
     TriangleAlertIcon as AlertWarningIcon,
     CircleXIcon as AlertErrorIcon,
     FlaskConicalIcon as AlertMockupIcon,
-    CableIcon as D4HModuleIcon,
     BookOpenIcon as DocumentationIcon,
     MoreVerticalIcon as DropdownMenuTriggerIcon,
     ChevronRightIcon as ItemLinkActionIcon,
-    NotebookPenIcon as NotesModuleIcon,
     BellIcon as NotificationsIcon,
     LayoutDashboardIcon as OrgDashboardIcon,
     MoveLeftIcon as ToParentPageIcon,
@@ -81,11 +78,17 @@ export {
     CircleIcon as SkillCheckNotAssessedIcon,
     XIcon as SkillCheckNotCompetentIcon,
     SlashIcon as SkillCheckNotTaughtIcon,
-    PocketKnifeIcon as SkillsModuleIcon,
-    PackageIcon as SkillPackageAuthorModuleIcon,
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
     SendIcon as InvitationsIcon,
+};
+
+export const ModuleIcons = {
+    D4H: CableIcon,
+    Notes: NotebookPenIcon,
+    Skills: PocketKnifeIcon,
+    SkillPackageBuilder: PackageIcon,
+    Admin: WrenchIcon,
 };
 
 export const ObjectIcons = {

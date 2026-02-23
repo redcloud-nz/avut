@@ -42,6 +42,7 @@ export const SkillPackage = {
         description: true,
         tags: true,
         properties: true,
+        status: true,
     }),
 
     fromRecord: (record: SkillPackageRecord) =>

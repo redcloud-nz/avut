@@ -48,13 +48,15 @@ import {
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
 
+interface AdminModule_TeamPersonnel_SectionProps {
+    organization: OrganizationWithSettings;
+    team: TeamData;
+}
+
 export function AdminModule_TeamPersonnel_Section({
     organization,
     team,
-}: {
-    organization: OrganizationWithSettings;
-    team: TeamData;
-}) {
+}: AdminModule_TeamPersonnel_SectionProps) {
     const teamMembersQuery = useLiveQuery((q) =>
         q
             .from({

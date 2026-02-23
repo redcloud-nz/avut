@@ -2,13 +2,13 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-author/packages/[package_id]
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]
  */
 "use client";
 
 import { use } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
@@ -16,36 +16,47 @@ import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import * as Paths from "@/paths";
-import { trpc } from "@/trpc/client";
 
-import { SkillPackageAuthor_PackageMenu } from "./skill-package-menu";
+import { SkillPackageBuilder_Package_Groups_List } from "./package-groups-list";
+import { SkillPackageBuilder_Package_Menu } from "./package-menu";
+import { SkillPackageBuilder_Package_Skills_List } from "./package-skills-list";
 
-export default function SkillPackageAuthorModule_Package_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-author/packages/[package_id]`>,
+export default function SkillPackageBuilder_Package_Page(
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]`>,
 ) {
     const { slug, package_id } = use(props.params);
     const organization = useOrganization();
 
-    const { data: skillPackage } = useSuspenseQuery(
-        trpc.skills.getPackage.queryOptions({
-            organizationId: organization.id,
-            skillPackageId: package_id,
-        }),
+    const { data: skillPackage } = useLiveSuspenseQuery((q) =>
+        q
+            .from({ skillPackage: getSkillPackagesCollection(organization.id) })
+            .where(({ skillPackage }) => eq(skillPackage.id, package_id))
+            .findOne(),
     );
+
+    if (!skillPackage)
+        throw new Error(`Skill Package (${package_id}) not found`);
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).skillPackageAuthor.index,
-                    Paths.org(slug).skillPackageAuthor.skillPackages,
+                    Paths.org(slug).skillPackageBuilder.index,
                     skillPackage.name,
                 ]}
             />
@@ -55,47 +66,27 @@ export default function SkillPackageAuthorModule_Package_Page(
                         <Hermes.SectionHeader>
                             <Hermes.BackButton
                                 to={
-                                    Paths.org(slug).skillPackageAuthor
+                                    Paths.org(slug).skillPackageBuilder
                                         .skillPackages
                                 }
                             >
-                                Skill Packages
+                                Package List
                             </Hermes.BackButton>
-                            <ButtonGroup>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ skillPackage: ["update"] }}
-                                >
-                                    <Button variant="outline" asChild>
-                                        <Link
-                                            to={
-                                                Paths.org(
-                                                    slug,
-                                                ).skillPackageAuthor.skillPackage(
-                                                    skillPackage.id,
-                                                ).update
-                                            }
-                                        >
-                                            <ObjectIcons.Edit /> Edit
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                                <SkillPackageAuthor_PackageMenu
-                                    organization={organization}
-                                    skillPackage={skillPackage}
-                                />
-                            </ButtonGroup>
                         </Hermes.SectionHeader>
                         <Card>
                             <CardHeader>
                                 <CardTitle>{skillPackage.name}</CardTitle>
+                                <CardDescription>Skill Package</CardDescription>
+                                <CardAction>
+                                    <SkillPackageBuilder_Package_Menu
+                                        skillPackage={skillPackage}
+                                    />
+                                </CardAction>
                             </CardHeader>
                             <CardContent>
                                 <FieldGroup>
                                     <Field orientation="responsive">
-                                        <FieldLabel>
-                                            Skill Package ID
-                                        </FieldLabel>
+                                        <FieldLabel>Package ID</FieldLabel>
                                         <FieldValue
                                             className="min-w-1/2"
                                             format="id"
@@ -111,12 +102,13 @@ export default function SkillPackageAuthorModule_Package_Page(
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Description</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {skillPackage.description}
-                                        </FieldValue>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={skillPackage.description}
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldLabel>Created At</FieldLabel>
+                                        <FieldLabel>Created</FieldLabel>
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={skillPackage.createdAt}
@@ -124,7 +116,7 @@ export default function SkillPackageAuthorModule_Package_Page(
                                         />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldLabel>Updated At</FieldLabel>
+                                        <FieldLabel>Updated</FieldLabel>
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={skillPackage.updatedAt}
@@ -142,6 +134,12 @@ export default function SkillPackageAuthorModule_Package_Page(
                             </CardContent>
                         </Card>
                     </Hermes.Section>
+                    <SkillPackageBuilder_Package_Groups_List
+                        skillPackageId={skillPackage.id}
+                    />
+                    <SkillPackageBuilder_Package_Skills_List
+                        skillPackageId={skillPackage.id}
+                    />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

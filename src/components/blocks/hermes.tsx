@@ -19,6 +19,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 import { Link, LinkProps } from "@/components/ui/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { cn } from "@/lib/utils";
 

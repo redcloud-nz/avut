@@ -15,6 +15,7 @@ type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
         | { children: ReactNode; value?: never }
     ) & {
         muted?: boolean;
+        ifEmpty?: ReactNode;
         format?:
             | "default"
             | "date"

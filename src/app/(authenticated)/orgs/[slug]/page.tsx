@@ -98,16 +98,17 @@ export default async function OrganizationDashboard_Page(
                                 </Link>
                             </Item>
                         </Show> */}
-                        <Show when={modules["skill-package-author"].enabled}>
+                        <Show when={modules["skill-package-builder"].enabled}>
                             <Item asChild>
                                 <Link
                                     to={
-                                        Paths.org(slug).skillPackageAuthor.index
+                                        Paths.org(slug).skillPackageBuilder
+                                            .index
                                     }
                                 >
                                     <ItemContent>
                                         <ItemTitle>
-                                            Skill Package Author
+                                            Skill Package Builder
                                         </ItemTitle>
                                         <ItemDescription>
                                             Create and edit skill packages.

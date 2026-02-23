@@ -3,6 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import type { Skill } from "@/lib/schemas/skill";
+import type { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
+import type { SkillPackage } from "@/lib/schemas/skill-package";
+
 export const about = {
     label: "About",
     href: "/about",
@@ -125,7 +129,7 @@ type OrgPaths = {
     fog: ReturnType<typeof fogModule>;
     notes: ReturnType<typeof notesModule>;
     skills: ReturnType<typeof skillsModule>;
-    skillPackageAuthor: ReturnType<typeof skillPackageAuthorModule>;
+    skillPackageBuilder: ReturnType<typeof skillPackageBuilderModule>;
 };
 
 const orgPathCache = new Map<string, OrgPaths>();
@@ -144,7 +148,7 @@ export function org(orgSlug: string): OrgPaths {
             fog: fogModule(orgSlug),
             notes: notesModule(orgSlug),
             skills: skillsModule(orgSlug),
-            skillPackageAuthor: skillPackageAuthorModule(orgSlug),
+            skillPackageBuilder: skillPackageBuilderModule(orgSlug),
         } satisfies OrgPaths;
         orgPathCache.set(orgSlug, paths);
     }
@@ -584,35 +588,58 @@ function skillsModule(orgSlug: string) {
     } as const;
 }
 
-function skillPackageAuthorModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/skill-package-author` as const;
+function skillPackageBuilderModule(orgSlug: string) {
+    const base = `/orgs/${orgSlug}/skill-package-builder` as const;
 
     return {
         index: {
-            label: "Skill Package Author",
+            label: "Skill Package Builder",
             href: base,
         },
 
-        skillPackage: (skillPackageId: string) => {
-            const packageBase = `${base}/packages/${skillPackageId}` as const;
+        skillPackage: (packageOrPackageId: SkillPackage | string) => {
+            const packageId =
+                typeof packageOrPackageId === "string"
+                    ? packageOrPackageId
+                    : packageOrPackageId.id;
+
+            const packageBase = `${base}/packages/${packageId}` as const;
 
             return {
-                href: packageBase,
+                index: {
+                    href: packageBase,
+                    label:
+                        typeof packageOrPackageId === "string"
+                            ? (undefined as never)
+                            : packageOrPackageId.name,
+                },
+
                 update: {
                     href: `${packageBase}/--update`,
                     label: "Update",
                 },
 
-                group: (skillGroupId: string) =>
-                    ({
-                        href: `${packageBase}/groups/${skillGroupId}`,
+                group: (groupOrGroupId: SkillGroup | string) => {
+                    const groupId =
+                        typeof groupOrGroupId === "string"
+                            ? groupOrGroupId
+                            : groupOrGroupId.id;
+
+                    return {
+                        href: `${packageBase}/groups/${groupId}`,
+                        label:
+                            typeof groupOrGroupId === "string"
+                                ? (undefined as never)
+                                : groupOrGroupId.name,
                         update: {
                             label: "Update",
-                            href: `${packageBase}/groups/${skillGroupId}/--update`,
+                            href: `${packageBase}/groups/${groupId}/--update`,
                         },
-                    }) as const,
+                    } as const;
+                },
                 groups: {
                     label: "Groups",
+                    href: `${packageBase}/groups`,
                     create: {
                         label: "Create",
                         href: `${packageBase}/groups/--create`,
@@ -624,21 +651,30 @@ function skillPackageAuthorModule(orgSlug: string) {
                     href: `${packageBase}/history`,
                 },
 
-                skill: (skillId: string) =>
-                    ({
+                skill: (skillOrSkillId: Skill | string) => {
+                    const skillId =
+                        typeof skillOrSkillId === "string"
+                            ? skillOrSkillId
+                            : skillOrSkillId.id;
+
+                    return {
                         href: `${packageBase}/skills/${skillId}`,
+                        label:
+                            typeof skillOrSkillId === "string"
+                                ? (undefined as never)
+                                : skillOrSkillId.name,
                         update: {
                             label: "Update",
                             href: `${packageBase}/skills/${skillId}/--update`,
                         },
-                    }) as const,
-
+                    } as const;
+                },
                 skills: {
                     label: "Skills",
-                    create: {
+                    create: ({ groupId }: { groupId?: SkillGroupId } = {}) => ({
                         label: "Create",
-                        href: `${packageBase}/skills/--create`,
-                    },
+                        href: `${packageBase}/skills/--create${groupId ? `?groupId=${groupId}` : ""}`,
+                    }),
                 },
             } as const;
         },
@@ -646,7 +682,7 @@ function skillPackageAuthorModule(orgSlug: string) {
             label: "Skill Packages",
             href: `${base}/packages`,
             create: {
-                label: "Create",
+                label: "Create Package",
                 href: `${base}/packages/--create`,
             },
             import: {

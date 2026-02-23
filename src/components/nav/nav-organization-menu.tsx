@@ -3,13 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import {
-    AdminModuleIcon,
-    OrgDashboardIcon,
-    NotesModuleIcon,
-    SkillsModuleIcon,
-    SkillPackageAuthorModuleIcon,
-} from "@/components/icons";
+import { ModuleIcons, OrgDashboardIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
@@ -38,7 +32,7 @@ export async function NavOrganizationMenu({
                 />
                 <NavCollapsible
                     path={orgPrefix.admin.index}
-                    icon={<AdminModuleIcon />}
+                    icon={<ModuleIcons.Admin />}
                 >
                     <Protect
                         permissions={{ d4hAccessToken: ["view"] }}
@@ -66,7 +60,7 @@ export async function NavOrganizationMenu({
                 {/* <Show when={isModuleEnabled(organization, "d4h-views")}>
                     <NavCollapsible
                         path={orgPrefix.d4hViews.index}
-                        icon={<D4HModuleIcon />}
+                        icon={<ModuleIcons.D4H />}
                     >
                         <NavItem path={orgPrefix.d4hViews.activities} />
                         <NavItem path={orgPrefix.d4hViews.calendar} />
@@ -77,23 +71,23 @@ export async function NavOrganizationMenu({
                 <Show when={modules.notes.enabled}>
                     <NavItem
                         path={orgPrefix.notes.index}
-                        icon={<NotesModuleIcon />}
+                        icon={<ModuleIcons.Notes />}
                     />
                 </Show>
-                <Show when={modules["skill-package-author"].enabled}>
+                <Show when={modules["skill-package-builder"].enabled}>
                     <NavCollapsible
-                        path={orgPrefix.skillPackageAuthor.index}
-                        icon={<SkillPackageAuthorModuleIcon />}
+                        path={orgPrefix.skillPackageBuilder.index}
+                        icon={<ModuleIcons.SkillPackageBuilder />}
                     >
                         <NavItem
-                            path={orgPrefix.skillPackageAuthor.skillPackages}
+                            path={orgPrefix.skillPackageBuilder.skillPackages}
                         />
                     </NavCollapsible>
                 </Show>
                 <Show when={modules.skills.enabled}>
                     <NavCollapsible
                         path={orgPrefix.skills.index}
-                        icon={<SkillsModuleIcon />}
+                        icon={<ModuleIcons.Skills />}
                     >
                         <NavItem path={orgPrefix.skills.catalogue} />
                         <NavItem path={orgPrefix.skills.checks} />

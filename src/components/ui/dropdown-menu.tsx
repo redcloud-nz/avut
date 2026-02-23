@@ -154,7 +154,7 @@ export function DropdownMenuLabel({
     return (
         <DropdownMenuPrimitive.Label
             className={cn(
-                "px-2 py-1.5 text-sm font-semibold",
+                "px-2 py-1.5 text-sm text-center font-semibold",
                 inset && "pl-8",
                 className,
             )}
@@ -170,7 +170,7 @@ export function DropdownMenuGroupLabel({
     return (
         <DropdownMenuPrimitive.Label
             className={cn(
-                "px-2 py-0 text-sm font-semibold text-zinc-600",
+                "px-2 text-sm font-semibold text-zinc-600",
                 className,
             )}
             {...props}

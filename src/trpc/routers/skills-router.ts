@@ -33,7 +33,7 @@ export const skillsRouter = createTrpcRouter({
                 skillPackageId: SkillPackageId.schema,
             }),
         )
-        .output(SkillGroup.schema)
+        .output(z.object({ created: SkillGroup.schema }))
         .mutation(
             async ({
                 ctx,
@@ -87,7 +87,7 @@ export const skillsRouter = createTrpcRouter({
                     }),
                 ]);
 
-                return SkillGroup.fromRecord(created);
+                return { created: SkillGroup.fromRecord(created) };
             },
         ),
 
@@ -102,7 +102,7 @@ export const skillsRouter = createTrpcRouter({
                 id: SkillPackageId.schema,
             }),
         )
-        .output(SkillPackage.schema)
+        .output(z.object({ created: SkillPackage.schema }))
         .mutation(
             async ({
                 ctx,
@@ -126,7 +126,7 @@ export const skillsRouter = createTrpcRouter({
                     }),
                 ]);
 
-                return SkillPackage.fromRecord(created);
+                return { created: SkillPackage.fromRecord(created) };
             },
         ),
 
@@ -143,7 +143,7 @@ export const skillsRouter = createTrpcRouter({
                 skillGroupId: SkillGroupId.schema.nullable(),
             }),
         )
-        .output(Skill.schema)
+        .output(z.object({ created: Skill.schema }))
         .mutation(
             async ({
                 ctx,
@@ -227,7 +227,7 @@ export const skillsRouter = createTrpcRouter({
                     }),
                 ]);
 
-                return Skill.fromRecord(created);
+                return { created: Skill.fromRecord(created) };
             },
         ),
 
@@ -238,9 +238,10 @@ export const skillsRouter = createTrpcRouter({
      */
     deleteGroup: organizationProcedure({ skillPackage: ["update"] })
         .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(z.object({ deleted: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillGroupId } }) => {
             // Verify the skill group exists and belongs to the organization before attempting deletion
-            await getSkillGroupOrThrow(ctx, skillGroupId);
+            const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
 
             await Promise.all([
                 ctx.prisma.skillGroup.delete({
@@ -252,6 +253,7 @@ export const skillsRouter = createTrpcRouter({
                     objectId: skillGroupId,
                 }),
             ]);
+            return { deleted: skillGroup };
         }),
 
     /**
@@ -261,23 +263,26 @@ export const skillsRouter = createTrpcRouter({
      */
     deletePackage: organizationProcedure({ skillPackage: ["delete"] })
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
-        .mutation(
-            async ({ ctx, input: { organizationId, skillPackageId } }) => {
-                // Verify the skill package exists before attempting deletion
-                await getSkillPackageOrThrow(ctx, skillPackageId);
+        .output(z.object({ deleted: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            // Verify the skill package exists before attempting deletion
+            const skillPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
 
-                await Promise.all([
-                    ctx.prisma.skillPackage.delete({
-                        where: { id: skillPackageId },
-                    }),
-                    ctx.logEvent({
-                        action: "Delete",
-                        objectType: "SkillPackage",
-                        objectId: skillPackageId,
-                    }),
-                ]);
-            },
-        ),
+            await Promise.all([
+                ctx.prisma.skillPackage.delete({
+                    where: { id: skillPackageId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                }),
+            ]);
+            return { deleted: skillPackage };
+        }),
 
     /**
      * Delete the specified skill.
@@ -286,9 +291,10 @@ export const skillsRouter = createTrpcRouter({
      */
     deleteSkill: organizationProcedure({ skillPackage: ["update"] })
         .input(z.object({ skillId: SkillId.schema }))
+        .output(z.object({ deleted: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId } }) => {
             // Verify the skill exists and belongs to the organization before attempting deletion
-            await getSkillOrThrow(ctx, skillId);
+            const skill = await getSkillOrThrow(ctx, skillId);
 
             await Promise.all([
                 ctx.prisma.skill.delete({
@@ -300,19 +306,36 @@ export const skillsRouter = createTrpcRouter({
                     objectId: skillId,
                 }),
             ]);
+            return { deleted: Skill.fromRecord(skill) };
         }),
 
     /**
      * Retrieve a single skill group by ID, ensuring it belongs to the organization.
      * @param skillGroupId The ID of the skill group to retrieve.
+     * @param skillPackageId Optional skill package ID to verify the group belongs to.
      * @returns The skill group data.
      * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
      */
     getGroup: organizationProcedure({ skillPackage: ["view"] })
-        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .input(
+            z.object({
+                skillGroupId: SkillGroupId.schema,
+                skillPackageId: SkillPackageId.schema.optional(),
+            }),
+        )
         .output(SkillGroup.schema)
-        .query(async ({ ctx, input: { skillGroupId } }) => {
+        .query(async ({ ctx, input: { skillGroupId, skillPackageId } }) => {
             const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+
+            if (
+                skillPackageId &&
+                skillGroup.skillPackageId !== skillPackageId
+            ) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillGroupNotFound(skillGroupId),
+                });
+            }
 
             return skillGroup;
         }),
@@ -338,17 +361,44 @@ export const skillsRouter = createTrpcRouter({
     /**
      * Retrieve a single skill by ID, ensuring it belongs to the organization.
      * @param skillId The ID of the skill to retrieve.
+     * @param skillGroupId Optional skill group ID to verify the skill belongs to.
+     * @param skillPackageId Optional skill package ID to verify the skill belongs to.
      * @returns The skill data.
      * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
      */
     getSkill: organizationProcedure({ skillPackage: ["view"] })
-        .input(z.object({ skillId: SkillId.schema }))
+        .input(
+            z.object({
+                skillId: SkillId.schema,
+                skillGroupId: SkillGroupId.schema.optional(),
+                skillPackageId: SkillPackageId.schema.optional(),
+            }),
+        )
         .output(Skill.schema)
-        .query(async ({ ctx, input: { skillId } }) => {
-            const skill = await getSkillOrThrow(ctx, skillId);
+        .query(
+            async ({
+                ctx,
+                input: { skillId, skillGroupId, skillPackageId },
+            }) => {
+                const skill = await getSkillOrThrow(ctx, skillId);
 
-            return skill;
-        }),
+                if (skillGroupId && skill.skillGroupId !== skillGroupId) {
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: Messages.skillNotFound(skillId),
+                    });
+                }
+
+                if (skillPackageId && skill.skillPackageId !== skillPackageId) {
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: Messages.skillNotFound(skillId),
+                    });
+                }
+
+                return skill;
+            },
+        ),
 
     /**
      * List all skill groups within the organization, optionally filtered by skill package.
@@ -437,38 +487,30 @@ export const skillsRouter = createTrpcRouter({
                 update: SkillGroup.modifiableSchema,
             }),
         )
-        .output(SkillGroup.schema)
-        .mutation(
-            async ({
-                ctx,
-                input: { organizationId, skillGroupId, update },
-            }) => {
-                const existingGroup = await getSkillGroupOrThrow(
-                    ctx,
-                    skillGroupId,
-                );
+        .output(z.object({ updated: SkillGroup.schema }))
+        .mutation(async ({ ctx, input: { skillGroupId, update } }) => {
+            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
 
-                const diff = diffObject(
-                    SkillGroup.modifiableSchema.parse(existingGroup),
-                    update,
-                );
+            const diff = diffObject(
+                SkillGroup.modifiableSchema.parse(existingGroup),
+                update,
+            );
 
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillGroup.update({
-                        where: { id: skillGroupId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillGroup",
-                        objectId: skillGroupId,
-                        changes: diff,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skillGroup.update({
+                    where: { id: skillGroupId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "SkillGroup",
+                    objectId: skillGroupId,
+                    changes: diff,
+                }),
+            ]);
 
-                return SkillGroup.fromRecord(updated);
-            },
-        ),
+            return { updated: SkillGroup.fromRecord(updated) };
+        }),
 
     /**
      * Update the specified skill package.
@@ -484,7 +526,7 @@ export const skillsRouter = createTrpcRouter({
                 update: SkillPackage.modifiableSchema,
             }),
         )
-        .output(SkillPackage.schema)
+        .output(z.object({ updated: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId, update } }) => {
             const existingPackage = await getSkillPackageOrThrow(
                 ctx,
@@ -509,7 +551,7 @@ export const skillsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return SkillPackage.fromRecord(updated);
+            return { updated: SkillPackage.fromRecord(updated) };
         }),
 
     /**
@@ -526,7 +568,7 @@ export const skillsRouter = createTrpcRouter({
                 update: Skill.modifiableSchema,
             }),
         )
-        .output(Skill.schema)
+        .output(z.object({ updated: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId, update } }) => {
             const existingSkill = await getSkillOrThrow(ctx, skillId);
 
@@ -548,7 +590,7 @@ export const skillsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return Skill.fromRecord(updated);
+            return { updated: Skill.fromRecord(updated) };
         }),
 });
 

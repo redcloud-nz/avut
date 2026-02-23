@@ -2,7 +2,7 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/skill-package-manager
+ * Path: /orgs/[slug]/skill-package-builder
  */
 
 import { ChevronRightIcon } from "lucide-react";
@@ -24,8 +24,8 @@ import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 
-export default async function SkillPackageAuthor_Index_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-author`>,
+export default async function SkillPackageBuilder_Index_Page(
+    props: PageProps<`/orgs/[slug]/skill-package-builder`>,
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -34,21 +34,21 @@ export default async function SkillPackageAuthor_Index_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.org(slug).skillPackageAuthor.index]}
+                breadcrumbs={[Paths.org(slug).skillPackageBuilder.index]}
             />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
                         <div className="font-semibold">
-                            Skill Package Author Module
+                            Skill Package Builder Module
                         </div>
                     </div>
                     <ItemGroup>
                         <Item asChild>
                             <Link
                                 to={
-                                    Paths.org(slug).skillPackageAuthor
+                                    Paths.org(slug).skillPackageBuilder
                                         .skillPackages
                                 }
                             >

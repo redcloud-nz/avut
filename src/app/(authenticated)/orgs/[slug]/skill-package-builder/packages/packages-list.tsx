@@ -29,16 +29,16 @@ import * as Paths from "@/paths";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
-interface SkillPackageAuthorModules_SkillPackagesListProps {
+interface SkillPackageBuilder_Packages_ListProps {
     organization: OrganizationData;
 }
 
 /**
- * List of skill packages in the organization.
+ * List of skill packages owned by the organization, with options to view, create, and manage packages.
  */
-export function SkillPackageAuthorModules_SkillPackages_List({
+export function SkillPackageBuilder_Packages_List({
     organization,
-}: SkillPackageAuthorModules_SkillPackagesListProps) {
+}: SkillPackageBuilder_Packages_ListProps) {
     const { data: skillPackages } = useSuspenseQuery(
         trpc.skills.listPackages.queryOptions({
             organizationId: organization.id,
@@ -59,11 +59,13 @@ export function SkillPackageAuthorModules_SkillPackages_List({
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.org(
-                                    organization.slug,
-                                ).skillPackageAuthor.skillPackage(
-                                    ctx.row.original.id,
-                                )}
+                                to={
+                                    Paths.org(
+                                        organization.slug,
+                                    ).skillPackageBuilder.skillPackage(
+                                        ctx.row.original.id,
+                                    ).index
+                                }
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -132,7 +134,7 @@ export function SkillPackageAuthorModules_SkillPackages_List({
                     <Button variant="outline" asChild>
                         <Link
                             to={
-                                Paths.org(organization.slug).skillPackageAuthor
+                                Paths.org(organization.slug).skillPackageBuilder
                                     .skillPackages.create
                             }
                         >
