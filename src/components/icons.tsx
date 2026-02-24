@@ -6,6 +6,7 @@
 import {
     ArchiveIcon,
     ArchiveRestoreIcon,
+    ArrowDownUpIcon,
     ArrowRightLeftIcon,
     BellIcon,
     BookOpenIcon,
@@ -55,6 +56,7 @@ export {
     BellIcon as NotificationsIcon,
     LayoutDashboardIcon as OrgDashboardIcon,
     MoveLeftIcon as ToParentPageIcon,
+    ArrowDownUpIcon as ReorderIcon,
 
     // Object Icons
     ArchiveIcon as ArchiveObjectIcon,

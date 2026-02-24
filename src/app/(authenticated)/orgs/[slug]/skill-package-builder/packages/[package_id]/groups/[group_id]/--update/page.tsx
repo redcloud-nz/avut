@@ -6,7 +6,9 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { use } from "react";
+import { toast } from "sonner";
 
 import { and, eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
@@ -16,15 +18,21 @@ import { Lexington } from "@/components/blocks/lexington";
 import { useOrganization } from "@/hooks/use-organization";
 import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
 import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
+import { ModifiableSkillGroup } from "@/lib/schemas/skill-group";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_UpdateGroup_Form } from "./update-group";
+import { SkillPackageBuilder_Group_Form } from "../../group-form";
 
+/**
+ * Page to update an existing skill group. Fetches the skill group data and renders the update form.
+ * On form submission, updates the skill group in the database and navigates back to the group page.
+ */
 export default function SkillPackageBuilder_UpdateGroup_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update`>,
 ) {
     const { slug, package_id, group_id } = use(props.params);
     const organization = useOrganization();
+    const router = useRouter();
 
     const { data: skillGroup } = useLiveSuspenseQuery((q) =>
         q
@@ -53,6 +61,30 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
         skillGroup.skillPackage,
     );
 
+    function handleUpdate(formData: ModifiableSkillGroup) {
+        toast.promise(
+            async () => {
+                router.back();
+
+                const collection = getSkillGroupsCollection(organization.id);
+                const tx = collection.update(skillGroup!.id, (draft) => {
+                    draft.name = formData.name;
+                    draft.description = formData.description;
+                    draft.tags = formData.tags;
+                    draft.properties = formData.properties;
+                });
+
+                await tx.isPersisted.promise;
+            },
+            {
+                loading: "Updating Skill Group...",
+                success: "Skill Group updated",
+                error: (error) =>
+                    `Failed to update Skill Group: ${error.message}`,
+            },
+        );
+    }
+
     return (
         <Lexington.Root>
             <Lexington.Header
@@ -74,8 +106,12 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
                                 Group
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
-                        <SkillPackageBuilder_UpdateGroup_Form
-                            skillGroup={skillGroup}
+                        <SkillPackageBuilder_Group_Form
+                            formMode="Update"
+                            id={skillGroup.id}
+                            defaultValues={skillGroup}
+                            onSubmit={handleUpdate}
+                            skillPackage={skillGroup.skillPackage}
                         />
                     </Hermes.Section>
                 </Lexington.Column>

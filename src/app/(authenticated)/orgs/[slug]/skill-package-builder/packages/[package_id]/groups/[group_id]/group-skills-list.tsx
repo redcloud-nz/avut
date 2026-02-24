@@ -50,7 +50,8 @@ export function SkillPackageBuilder_Group_Skills_List({
     const { data: skills, isReady } = useLiveQuery((q) =>
         q
             .from({ skill: getSkillsCollection(organization.id) })
-            .where(({ skill }) => eq(skill.skillGroupId, skillGroupId)),
+            .where(({ skill }) => eq(skill.skillGroupId, skillGroupId))
+            .orderBy(({ skill }) => skill.sequence),
     );
 
     const packagePath = Paths.org(
@@ -79,12 +80,18 @@ export function SkillPackageBuilder_Group_Skills_List({
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHeadCell className="w-20 text-center">
+                                    Sequence
+                                </TableHeadCell>
                                 <TableHeadCell>Name</TableHeadCell>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {skills.map((skill) => (
                                 <TableRow key={skill.id}>
+                                    <TableCell className="text-center">
+                                        {skill.sequence}
+                                    </TableCell>
                                     <TableCell>
                                         <Link
                                             to={Paths.org(organization.slug)

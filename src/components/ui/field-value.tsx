@@ -3,16 +3,17 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { formatDistanceToNow } from "date-fns";
 import { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/datetime";
-import { formatDistanceToNow } from "date-fns";
 
 type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
     (
-        | { children?: never; value: string | number | Date }
-        | { children: ReactNode; value?: never }
+        | { children?: never; value: string | number | Date; empty?: never }
+        | { children: ReactNode; value?: never; empty?: never }
+        | { children?: never; value?: never; empty: true }
     ) & {
         muted?: boolean;
         ifEmpty?: ReactNode;
@@ -35,6 +36,7 @@ export function FieldValue({
     muted = false,
     value,
     format = "default",
+    empty,
     ...props
 }: FieldValueProps) {
     return (
@@ -50,7 +52,9 @@ export function FieldValue({
             )}
             {...props}
         >
-            {value == undefined ? (
+            {empty ? (
+                <span className="text-muted-foreground">None</span>
+            ) : value == undefined ? (
                 <span>{children}</span>
             ) : value == "" ? (
                 <span className="text-muted-foreground">None</span>

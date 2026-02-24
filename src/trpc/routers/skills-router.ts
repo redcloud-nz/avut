@@ -306,56 +306,7 @@ export const skillsRouter = createTrpcRouter({
                     objectId: skillId,
                 }),
             ]);
-            return { deleted: Skill.fromRecord(skill) };
-        }),
-
-    /**
-     * Retrieve a single skill group by ID, ensuring it belongs to the organization.
-     * @param skillGroupId The ID of the skill group to retrieve.
-     * @param skillPackageId Optional skill package ID to verify the group belongs to.
-     * @returns The skill group data.
-     * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
-     */
-    getGroup: organizationProcedure({ skillPackage: ["view"] })
-        .input(
-            z.object({
-                skillGroupId: SkillGroupId.schema,
-                skillPackageId: SkillPackageId.schema.optional(),
-            }),
-        )
-        .output(SkillGroup.schema)
-        .query(async ({ ctx, input: { skillGroupId, skillPackageId } }) => {
-            const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
-
-            if (
-                skillPackageId &&
-                skillGroup.skillPackageId !== skillPackageId
-            ) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillGroupNotFound(skillGroupId),
-                });
-            }
-
-            return skillGroup;
-        }),
-
-    /**
-     * Retrieve a single skill package by ID, ensuring it belongs to the organization.
-     * @param skillPackageId The ID of the skill package to retrieve.
-     * @returns The skill package data.
-     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
-     */
-    getPackage: organizationProcedure({ skillPackage: ["view"] })
-        .input(z.object({ skillPackageId: SkillPackageId.schema }))
-        .output(SkillPackage.schema)
-        .query(async ({ ctx, input: { skillPackageId } }) => {
-            const skillPackage = await getSkillPackageOrThrow(
-                ctx,
-                skillPackageId,
-            );
-
-            return skillPackage;
+            return { deleted: skill };
         }),
 
     /**

@@ -12,10 +12,6 @@ import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
-import { ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Card,
     CardAction,
@@ -26,15 +22,13 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_Package_Groups_List } from "./package-groups-list";
+import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
 import { SkillPackageBuilder_Package_Menu } from "./package-menu";
-import { SkillPackageBuilder_Package_Skills_List } from "./package-skills-list";
 
 export default function SkillPackageBuilder_Package_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]`>,
@@ -134,10 +128,7 @@ export default function SkillPackageBuilder_Package_Page(
                             </CardContent>
                         </Card>
                     </Hermes.Section>
-                    <SkillPackageBuilder_Package_Groups_List
-                        skillPackageId={skillPackage.id}
-                    />
-                    <SkillPackageBuilder_Package_Skills_List
+                    <SkillPackageBuilder_Package_Contents_List
                         skillPackageId={skillPackage.id}
                     />
                 </Lexington.Column>

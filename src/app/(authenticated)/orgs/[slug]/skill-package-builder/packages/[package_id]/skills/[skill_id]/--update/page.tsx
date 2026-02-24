@@ -22,7 +22,7 @@ import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import { ModifiableSkill } from "@/lib/schemas/skill";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_UpdateSkill_Form } from "./update-skill";
+import { SkillPackageBuilder_Skill_Form } from "../../skill-form";
 
 export default function SkillPackageBuilder_UpdateSkill_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update`>,
@@ -63,8 +63,6 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
     function handleSubmit(formData: ModifiableSkill) {
         toast.promise(
             async () => {
-                router.back();
-
                 const collection = getSkillsCollection(organization.id);
                 const tx = collection.update(skill!.id, (draft) => {
                     draft.name = formData.name;
@@ -74,6 +72,8 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                     draft.defaultRequired = formData.defaultRequired;
                     draft.frequency = formData.frequency;
                 });
+
+                router.back();
 
                 await tx.isPersisted.promise;
             },
@@ -109,7 +109,14 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
 
-                        <SkillPackageBuilder_UpdateSkill_Form skill={skill} />
+                        <SkillPackageBuilder_Skill_Form
+                            formMode="Update"
+                            id={skill.id}
+                            defaultValues={skill}
+                            onSubmit={handleSubmit}
+                            skillPackage={skill.skillPackage}
+                            skillGroup={skill.skillGroup ?? null}
+                        />
                     </Hermes.Section>
                 </Lexington.Column>
             </Lexington.Page>
