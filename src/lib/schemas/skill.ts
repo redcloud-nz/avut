@@ -29,7 +29,7 @@ export type SkillId = string & z.BRAND<"SkillId">;
 const skillSchema = z.object({
     id: SkillId.schema,
     skillPackageId: SkillPackageId.schema,
-    skillGroupId: SkillGroupId.schema.nullable(),
+    skillGroupId: SkillGroupId.schema,
     name: z.string().min(1).max(100),
     description: z.string().max(500),
     tags: tagsSchema,

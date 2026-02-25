@@ -140,7 +140,6 @@ export const skillsRouter = createTrpcRouter({
             Skill.modifiableSchema.extend({
                 id: SkillId.schema,
                 skillPackageId: SkillPackageId.schema,
-                skillGroupId: SkillGroupId.schema.nullable(),
             }),
         )
         .output(z.object({ created: Skill.schema }))
@@ -151,7 +150,6 @@ export const skillsRouter = createTrpcRouter({
                     organizationId,
                     id: skillId,
                     skillPackageId,
-                    skillGroupId,
                     ...fields
                 },
             }) => {
@@ -169,21 +167,19 @@ export const skillsRouter = createTrpcRouter({
                             },
                         },
                     }),
-                    skillGroupId
-                        ? ctx.prisma.skillGroup.findUnique({
-                              where: {
-                                  id: skillGroupId,
-                                  skillPackageId: skillPackageId,
-                              },
-                              include: {
-                                  skills: {
-                                      select: {
-                                          sequence: true,
-                                      },
-                                  },
-                              },
-                          })
-                        : Promise.resolve(null),
+                    ctx.prisma.skillGroup.findUnique({
+                        where: {
+                            id: fields.skillGroupId,
+                            skillPackageId: skillPackageId,
+                        },
+                        include: {
+                            skills: {
+                                select: {
+                                    sequence: true,
+                                },
+                            },
+                        },
+                    }),
                 ]);
 
                 if (!skillPackage) {
@@ -193,10 +189,12 @@ export const skillsRouter = createTrpcRouter({
                     });
                 }
 
-                if (skillGroupId && !skillGroup) {
+                if (!skillGroup) {
                     throw new TRPCError({
                         code: "NOT_FOUND",
-                        message: Messages.skillGroupNotFound(skillGroupId),
+                        message: Messages.skillGroupNotFound(
+                            fields.skillGroupId,
+                        ),
                     });
                 }
 
@@ -214,7 +212,6 @@ export const skillsRouter = createTrpcRouter({
                         data: {
                             id: skillId,
                             skillPackageId,
-                            skillGroupId,
                             sequence: highestSequenceNumber + 1,
                             ...fields,
                         },
@@ -427,6 +424,122 @@ export const skillsRouter = createTrpcRouter({
                 return skills.map(Skill.fromRecord);
             },
         ),
+
+    /**
+     * Reorder skill groups within a skill package.
+     * @param skillPackageId The ID of the skill package.
+     * @param newOrder An array of skill group IDs representing the new order.
+     * @returns An object indicating the success of the operation.
+     */
+    reorderGroups: organizationProcedure({ skillPackage: ["update"] })
+        .input(
+            z.object({
+                skillPackageId: SkillPackageId.schema,
+                newOrder: z.array(SkillGroupId.schema),
+            }),
+        )
+        .output(z.object({ success: z.boolean() }))
+        .mutation(async ({ ctx, input: { skillPackageId, newOrder } }) => {
+            const skillPackage = await ctx.prisma.skillPackage.findUnique({
+                where: {
+                    id: skillPackageId,
+                    organizationId: ctx.organizationId,
+                },
+                include: {
+                    groups: {
+                        select: { id: true, sequence: true },
+                    },
+                },
+            });
+
+            if (!skillPackage)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillPackageNotFound(skillPackageId),
+                });
+
+            const toUpdate: { id: SkillGroupId; sequence: number }[] = [];
+
+            newOrder.forEach((groupId, index) => {
+                const group = skillPackage.groups.find((g) => g.id === groupId);
+
+                if (group && group.sequence != index + 1) {
+                    toUpdate.push({ id: groupId, sequence: index + 1 });
+                }
+            });
+
+            if (toUpdate.length > 0) {
+                await Promise.all(
+                    toUpdate.map(({ id, sequence }) =>
+                        ctx.prisma.skillGroup.update({
+                            where: { id },
+                            data: { sequence },
+                        }),
+                    ),
+                );
+            }
+
+            return { success: true };
+        }),
+
+    /**
+     * Reorder skills within a skill group.
+     * @param skillGroupId The ID of the skill group.
+     * @param newOrder An array of skill IDs representing the new order.
+     * @returns An object indicating the success of the operation.
+     */
+    reorderGroupSkills: organizationProcedure({ skillPackage: ["update"] })
+        .input(
+            z.object({
+                skillGroupId: SkillGroupId.schema,
+                newOrder: z.array(SkillId.schema),
+            }),
+        )
+        .output(z.object({ success: z.boolean() }))
+        .mutation(async ({ ctx, input: { skillGroupId, newOrder } }) => {
+            const group = await ctx.prisma.skillGroup.findUnique({
+                where: {
+                    id: skillGroupId,
+                    skillPackage: {
+                        organizationId: ctx.organizationId,
+                    },
+                },
+                include: {
+                    skills: {
+                        select: { id: true, sequence: true },
+                    },
+                },
+            });
+
+            if (!group)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillGroupNotFound(skillGroupId),
+                });
+
+            const toUpdate: { id: SkillId; sequence: number }[] = [];
+
+            newOrder.forEach((skillId, index) => {
+                const skill = group.skills.find((s) => s.id === skillId);
+
+                if (skill && skill.sequence != index + 1) {
+                    toUpdate.push({ id: skillId, sequence: index + 1 });
+                }
+            });
+
+            if (toUpdate.length > 0) {
+                await Promise.all(
+                    toUpdate.map(({ id, sequence }) =>
+                        ctx.prisma.skill.update({
+                            where: { id },
+                            data: { sequence },
+                        }),
+                    ),
+                );
+            }
+
+            return { success: true };
+        }),
 
     /**
      * Update the specified skill group.

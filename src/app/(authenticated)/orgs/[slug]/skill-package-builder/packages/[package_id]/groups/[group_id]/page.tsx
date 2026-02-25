@@ -260,8 +260,7 @@ export default function SkillPackageBuilder_Group_Page(
                         </Card>
                     </Hermes.Section>
                     <SkillPackageBuilder_Group_Skills_List
-                        skillPackageId={skillGroup.skillPackageId}
-                        skillGroupId={skillGroup.id}
+                        skillGroup={skillGroup}
                     />
                 </Lexington.Column>
             </Lexington.Page>

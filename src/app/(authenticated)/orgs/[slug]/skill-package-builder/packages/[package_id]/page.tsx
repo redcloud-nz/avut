@@ -214,7 +214,7 @@ export default function SkillPackageBuilder_Package_Page(
                         </Card>
                     </Hermes.Section>
                     <SkillPackageBuilder_Package_Contents_List
-                        skillPackageId={skillPackage.id}
+                        skillPackage={skillPackage}
                     />
                 </Lexington.Column>
             </Lexington.Page>

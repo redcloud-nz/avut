@@ -2573,6 +2573,7 @@ export const SkillPackageScalarFieldEnum = {
     description: "description",
     tags: "tags",
     properties: "properties",
+    published: "published",
     status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
@@ -2584,7 +2585,6 @@ export type SkillPackageScalarFieldEnum =
 export const SkillGroupScalarFieldEnum = {
     id: "id",
     skillPackageId: "skillPackageId",
-    parentGroupId: "parentGroupId",
     name: "name",
     description: "description",
     tags: "tags",

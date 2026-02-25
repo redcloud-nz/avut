@@ -4,10 +4,16 @@
  */
 "use client";
 
-import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
+import {
+    createCollection,
+    createOptimisticAction,
+    parseLoadSubsetOptions,
+} from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
-import { Skill } from "@/lib/schemas/skill";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { Skill, SkillId } from "@/lib/schemas/skill";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { perOrganization } from "@/lib/utils";
 import { getQueryClient, RouterInput, trpc, trpcClient } from "@/trpc/client";
 
@@ -23,7 +29,7 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                 );
 
                 const input: RouterInput["skills"]["listSkills"] = {
-                    organizationId: ctx.meta?.organizationId!,
+                    organizationId,
                 };
 
                 for (const filter of filters) {
@@ -49,7 +55,7 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
                         await trpcClient.skills.createSkill.mutate({
-                            organizationId: organizationId,
+                            organizationId,
                             ...mutation.modified,
                         });
                     }),
@@ -60,7 +66,7 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                     transaction.mutations.map(async (mutation) => {
                         const data = mutation.modified;
                         await trpcClient.skills.updateSkill.mutate({
-                            organizationId: organizationId,
+                            organizationId,
                             skillId: mutation.original.id,
                             update: data,
                         });
@@ -71,7 +77,7 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
                         await trpcClient.skills.deleteSkill.mutate({
-                            organizationId: organizationId,
+                            organizationId,
                             skillId: mutation.original.id,
                         });
                     }),
@@ -80,3 +86,32 @@ export const getSkillsCollection = perOrganization((organizationId) =>
         }),
     ),
 );
+
+export const reorderSkillsAction = createOptimisticAction<{
+    organizationId: OrganizationId;
+    skillGroupId: SkillGroupId;
+    newOrder: SkillId[];
+}>({
+    onMutate({ organizationId, newOrder }) {
+        const collection = getSkillsCollection(organizationId);
+
+        newOrder.forEach((skillId, index) => {
+            const skill = collection.get(skillId);
+            if (skill) {
+                collection.update(skillId, (draft) => {
+                    draft.sequence = index + 1;
+                });
+            }
+        });
+    },
+    async mutationFn({ organizationId, skillGroupId, newOrder }) {
+        await trpcClient.skills.reorderGroupSkills.mutate({
+            organizationId,
+            skillGroupId,
+            newOrder,
+        });
+
+        // Refetch the skills collection to ensure we have the latest data, including any changes made by the server during the reorder operation.
+        await getSkillsCollection(organizationId).utils.refetch();
+    },
+});

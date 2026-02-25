@@ -29,6 +29,7 @@ export type SkillPackageMinAggregateOutputType = {
     organizationId: string | null;
     name: string | null;
     description: string | null;
+    published: boolean | null;
     status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -39,6 +40,7 @@ export type SkillPackageMaxAggregateOutputType = {
     organizationId: string | null;
     name: string | null;
     description: string | null;
+    published: boolean | null;
     status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -51,6 +53,7 @@ export type SkillPackageCountAggregateOutputType = {
     description: number;
     tags: number;
     properties: number;
+    published: number;
     status: number;
     createdAt: number;
     updatedAt: number;
@@ -62,6 +65,7 @@ export type SkillPackageMinAggregateInputType = {
     organizationId?: true;
     name?: true;
     description?: true;
+    published?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -72,6 +76,7 @@ export type SkillPackageMaxAggregateInputType = {
     organizationId?: true;
     name?: true;
     description?: true;
+    published?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -84,6 +89,7 @@ export type SkillPackageCountAggregateInputType = {
     description?: true;
     tags?: true;
     properties?: true;
+    published?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -181,6 +187,7 @@ export type SkillPackageGroupByOutputType = {
     description: string;
     tags: string[];
     properties: runtime.JsonValue;
+    published: boolean;
     status: $Enums.RecordStatus;
     createdAt: Date;
     updatedAt: Date;
@@ -219,6 +226,7 @@ export type SkillPackageWhereInput = {
     description?: Prisma.StringFilter<"SkillPackage"> | string;
     tags?: Prisma.StringNullableListFilter<"SkillPackage">;
     properties?: Prisma.JsonFilter<"SkillPackage">;
+    published?: Prisma.BoolFilter<"SkillPackage"> | boolean;
     status?:
         | Prisma.EnumRecordStatusFilter<"SkillPackage">
         | $Enums.RecordStatus;
@@ -240,6 +248,7 @@ export type SkillPackageOrderByWithRelationInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    published?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -260,6 +269,7 @@ export type SkillPackageWhereUniqueInput = Prisma.AtLeast<
         description?: Prisma.StringFilter<"SkillPackage"> | string;
         tags?: Prisma.StringNullableListFilter<"SkillPackage">;
         properties?: Prisma.JsonFilter<"SkillPackage">;
+        published?: Prisma.BoolFilter<"SkillPackage"> | boolean;
         status?:
             | Prisma.EnumRecordStatusFilter<"SkillPackage">
             | $Enums.RecordStatus;
@@ -283,6 +293,7 @@ export type SkillPackageOrderByWithAggregationInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    published?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -305,6 +316,7 @@ export type SkillPackageScalarWhereWithAggregatesInput = {
     description?: Prisma.StringWithAggregatesFilter<"SkillPackage"> | string;
     tags?: Prisma.StringNullableListFilter<"SkillPackage">;
     properties?: Prisma.JsonWithAggregatesFilter<"SkillPackage">;
+    published?: Prisma.BoolWithAggregatesFilter<"SkillPackage"> | boolean;
     status?:
         | Prisma.EnumRecordStatusWithAggregatesFilter<"SkillPackage">
         | $Enums.RecordStatus;
@@ -324,6 +336,7 @@ export type SkillPackageCreateInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -340,6 +353,7 @@ export type SkillPackageUncheckedCreateInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -354,6 +368,7 @@ export type SkillPackageUpdateInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -372,6 +387,7 @@ export type SkillPackageUncheckedUpdateInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -389,6 +405,7 @@ export type SkillPackageCreateManyInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -400,6 +417,7 @@ export type SkillPackageUpdateManyMutationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -414,6 +432,7 @@ export type SkillPackageUncheckedUpdateManyInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -438,6 +457,7 @@ export type SkillPackageCountOrderByAggregateInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    published?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -448,6 +468,7 @@ export type SkillPackageMaxOrderByAggregateInput = {
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
+    published?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -458,6 +479,7 @@ export type SkillPackageMinOrderByAggregateInput = {
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
+    published?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -671,6 +693,7 @@ export type SkillPackageCreateWithoutOrganizationInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -685,6 +708,7 @@ export type SkillPackageUncheckedCreateWithoutOrganizationInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -750,6 +774,7 @@ export type SkillPackageScalarWhereInput = {
     description?: Prisma.StringFilter<"SkillPackage"> | string;
     tags?: Prisma.StringNullableListFilter<"SkillPackage">;
     properties?: Prisma.JsonFilter<"SkillPackage">;
+    published?: Prisma.BoolFilter<"SkillPackage"> | boolean;
     status?:
         | Prisma.EnumRecordStatusFilter<"SkillPackage">
         | $Enums.RecordStatus;
@@ -763,6 +788,7 @@ export type SkillPackageCreateWithoutGroupsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -778,6 +804,7 @@ export type SkillPackageUncheckedCreateWithoutGroupsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -819,6 +846,7 @@ export type SkillPackageUpdateWithoutGroupsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -836,6 +864,7 @@ export type SkillPackageUncheckedUpdateWithoutGroupsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -851,6 +880,7 @@ export type SkillPackageCreateWithoutSkillsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -866,6 +896,7 @@ export type SkillPackageUncheckedCreateWithoutSkillsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -907,6 +938,7 @@ export type SkillPackageUpdateWithoutSkillsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -924,6 +956,7 @@ export type SkillPackageUncheckedUpdateWithoutSkillsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -939,6 +972,7 @@ export type SkillPackageCreateWithoutSubscriptionsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -954,6 +988,7 @@ export type SkillPackageUncheckedCreateWithoutSubscriptionsInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -995,6 +1030,7 @@ export type SkillPackageUpdateWithoutSubscriptionsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -1012,6 +1048,7 @@ export type SkillPackageUncheckedUpdateWithoutSubscriptionsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -1027,6 +1064,7 @@ export type SkillPackageCreateManyOrganizationInput = {
     description: string;
     tags?: Prisma.SkillPackageCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -1038,6 +1076,7 @@ export type SkillPackageUpdateWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -1054,6 +1093,7 @@ export type SkillPackageUncheckedUpdateWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -1070,6 +1110,7 @@ export type SkillPackageUncheckedUpdateManyWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.SkillPackageUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    published?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?:
         | Prisma.EnumRecordStatusFieldUpdateOperationsInput
         | $Enums.RecordStatus;
@@ -1150,6 +1191,7 @@ export type SkillPackageSelect<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        published?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1177,6 +1219,7 @@ export type SkillPackageSelectCreateManyAndReturn<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        published?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1196,6 +1239,7 @@ export type SkillPackageSelectUpdateManyAndReturn<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        published?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1211,6 +1255,7 @@ export type SkillPackageSelectScalar = {
     description?: boolean;
     tags?: boolean;
     properties?: boolean;
+    published?: boolean;
     status?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1226,6 +1271,7 @@ export type SkillPackageOmit<
     | "description"
     | "tags"
     | "properties"
+    | "published"
     | "status"
     | "createdAt"
     | "updatedAt",
@@ -1273,6 +1319,7 @@ export type $SkillPackagePayload<
             description: string;
             tags: string[];
             properties: runtime.JsonValue;
+            published: boolean;
             status: $Enums.RecordStatus;
             createdAt: Date;
             updatedAt: Date;
@@ -1945,6 +1992,7 @@ export interface SkillPackageFieldRefs {
     readonly description: Prisma.FieldRef<"SkillPackage", "String">;
     readonly tags: Prisma.FieldRef<"SkillPackage", "String[]">;
     readonly properties: Prisma.FieldRef<"SkillPackage", "Json">;
+    readonly published: Prisma.FieldRef<"SkillPackage", "Boolean">;
     readonly status: Prisma.FieldRef<"SkillPackage", "RecordStatus">;
     readonly createdAt: Prisma.FieldRef<"SkillPackage", "DateTime">;
     readonly updatedAt: Prisma.FieldRef<"SkillPackage", "DateTime">;

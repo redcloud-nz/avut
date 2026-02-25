@@ -16,6 +16,7 @@ import {
 import { nanoId16 } from "../id";
 
 import { SkillPackageId } from "./skill-package";
+import { SkillId } from "./skill";
 
 export const SkillGroupId = {
     schema: zodNanoId16("SkillGroupId expected").brand<"SkillGroupId">(),
@@ -28,7 +29,6 @@ export type SkillGroupId = string & z.BRAND<"SkillGroupId">;
 const skillGroupSchema = z.object({
     id: SkillGroupId.schema,
     skillPackageId: SkillPackageId.schema,
-    parentGroupId: SkillGroupId.schema.nullable(),
     name: z.string().min(1).max(100),
     description: z.string().max(500),
     tags: tagsSchema,
@@ -47,6 +47,7 @@ export const SkillGroup = {
         description: true,
         tags: true,
         properties: true,
+        skillSequence: true,
         status: true,
     }),
 

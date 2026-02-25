@@ -318,6 +318,7 @@ model SkillPackage {
   description    String
   tags           String[]     @default([])
   properties     Json         @default("{}")
+  published      Boolean      @default(false)
   status         RecordStatus @default(Active)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -334,19 +335,16 @@ model SkillGroup {
   id              String       @id
   skillPackageId  String
   skillPackage    SkillPackage @relation("skill_group_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
-  parentGroupId   String?
-  parentGroup     SkillGroup?  @relation("skill_group_parent", fields: [parentGroupId], references: [id], onDelete: Cascade)
   name            String
   description     String
   tags            String[]     @default([])
   properties      Json         @default("{}")
-  sequence        Int
+  sequence        Int          @default(0)
   defaultIncluded Boolean      @default(true)
   status          RecordStatus @default(Active)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  childGroups           SkillGroup[]         @relation("skill_group_parent")
   skills                Skill[]              @relation("skill_to_skill_group")
   subscriptionOverrides SkillGroupOverride[] @relation("skill_group_override_to_skill_group")
 
@@ -358,13 +356,13 @@ model Skill {
   id              String       @id
   skillPackageId  String
   skillPackage    SkillPackage @relation("skill_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
-  skillGroupId    String?
-  skillGroup      SkillGroup?  @relation("skill_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
+  skillGroupId    String
+  skillGroup      SkillGroup  @relation("skill_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
   name            String
   description     String
   tags            String[]     @default([])
   properties      Json         @default("{}")
-  sequence        Int
+  sequence        Int          @default(0)
   frequency       Int          @default(12) // revalidation frequency in months
   defaultInclude  Boolean      @default(true)
   defaultRequired Boolean      @default(false)
