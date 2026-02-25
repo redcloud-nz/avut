@@ -243,6 +243,8 @@ export const skillsRouter = createTrpcRouter({
             // Verify the skill group exists and belongs to the organization before attempting deletion
             const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
 
+            // TODO Check if the group contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
+
             await Promise.all([
                 ctx.prisma.skillGroup.delete({
                     where: { id: skillGroupId },
@@ -270,6 +272,8 @@ export const skillsRouter = createTrpcRouter({
                 ctx,
                 skillPackageId,
             );
+
+            // TODO Check if the package contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
 
             await Promise.all([
                 ctx.prisma.skillPackage.delete({
@@ -442,25 +446,65 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { skillGroupId, update } }) => {
             const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
 
-            const diff = diffObject(
-                SkillGroup.modifiableSchema.parse(existingGroup),
-                update,
-            );
+            if (
+                existingGroup.status == "Active" &&
+                update.status == "Archived"
+            ) {
+                // Archive Action
 
-            const [updated] = await Promise.all([
-                ctx.prisma.skillGroup.update({
-                    where: { id: skillGroupId },
-                    data: update,
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "SkillGroup",
-                    objectId: skillGroupId,
-                    changes: diff,
-                }),
-            ]);
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillGroup.update({
+                        where: { id: skillGroupId },
+                        data: { status: "Archived" },
+                    }),
+                    ctx.logEvent({
+                        action: "Archive",
+                        objectType: "SkillGroup",
+                        objectId: skillGroupId,
+                    }),
+                ]);
+                return { updated: SkillGroup.fromRecord(updated) };
+            } else if (
+                existingGroup.status == "Archived" &&
+                update.status == "Active"
+            ) {
+                // Restore Action
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillGroup.update({
+                        where: { id: skillGroupId },
+                        data: { status: "Active" },
+                    }),
+                    ctx.logEvent({
+                        action: "Restore",
+                        objectType: "SkillGroup",
+                        objectId: skillGroupId,
+                    }),
+                ]);
 
-            return { updated: SkillGroup.fromRecord(updated) };
+                return { updated: SkillGroup.fromRecord(updated) };
+            } else {
+                // Regular update.
+
+                const diff = diffObject(
+                    SkillGroup.modifiableSchema.parse(existingGroup),
+                    update,
+                );
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillGroup.update({
+                        where: { id: skillGroupId },
+                        data: update,
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillGroup",
+                        objectId: skillGroupId,
+                        changes: diff,
+                    }),
+                ]);
+
+                return { updated: SkillGroup.fromRecord(updated) };
+            }
         }),
 
     /**
@@ -484,25 +528,64 @@ export const skillsRouter = createTrpcRouter({
                 skillPackageId,
             );
 
-            const diff = diffObject(
-                SkillPackage.modifiableSchema.parse(existingPackage),
-                update,
-            );
+            if (
+                existingPackage.status == "Active" &&
+                update.status == "Archived"
+            ) {
+                // Archive action.
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillPackage.update({
+                        where: { id: skillPackageId },
+                        data: { status: "Archived" },
+                    }),
+                    ctx.logEvent({
+                        action: "Archive",
+                        objectType: "SkillPackage",
+                        objectId: skillPackageId,
+                    }),
+                ]);
 
-            const [updated] = await Promise.all([
-                ctx.prisma.skillPackage.update({
-                    where: { id: skillPackageId },
-                    data: update,
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "SkillPackage",
-                    objectId: skillPackageId,
-                    changes: diff,
-                }),
-            ]);
+                return { updated: SkillPackage.fromRecord(updated) };
+            } else if (
+                existingPackage.status == "Archived" &&
+                update.status == "Active"
+            ) {
+                // Restore action.
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillPackage.update({
+                        where: { id: skillPackageId },
+                        data: { status: "Active" },
+                    }),
+                    ctx.logEvent({
+                        action: "Restore",
+                        objectType: "SkillPackage",
+                        objectId: skillPackageId,
+                    }),
+                ]);
 
-            return { updated: SkillPackage.fromRecord(updated) };
+                return { updated: SkillPackage.fromRecord(updated) };
+            } else {
+                // Regular update.
+                const diff = diffObject(
+                    SkillPackage.modifiableSchema.parse(existingPackage),
+                    update,
+                );
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillPackage.update({
+                        where: { id: skillPackageId },
+                        data: update,
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillPackage",
+                        objectId: skillPackageId,
+                        changes: diff,
+                    }),
+                ]);
+
+                return { updated: SkillPackage.fromRecord(updated) };
+            }
         }),
 
     /**
@@ -523,25 +606,61 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { skillId, update } }) => {
             const existingSkill = await getSkillOrThrow(ctx, skillId);
 
-            const diff = diffObject(
-                Skill.modifiableSchema.parse(existingSkill),
-                update,
-            );
+            if (existingSkill.status == "Active" && update.status == "Active") {
+                // Archive action.
 
-            const [updated] = await Promise.all([
-                ctx.prisma.skill.update({
-                    where: { id: skillId },
-                    data: update,
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "Skill",
-                    objectId: skillId,
-                    changes: diff,
-                }),
-            ]);
+                const [updated] = await Promise.all([
+                    ctx.prisma.skill.update({
+                        where: { id: skillId },
+                        data: { status: "Archived" },
+                    }),
+                    ctx.logEvent({
+                        action: "Archive",
+                        objectType: "Skill",
+                        objectId: skillId,
+                    }),
+                ]);
 
-            return { updated: Skill.fromRecord(updated) };
+                return { updated: Skill.fromRecord(updated) };
+            } else if (
+                existingSkill.status == "Archived" &&
+                update.status == "Active"
+            ) {
+                // Restore action.
+                const [updated] = await Promise.all([
+                    ctx.prisma.skill.update({
+                        where: { id: skillId },
+                        data: { status: "Active" },
+                    }),
+                    ctx.logEvent({
+                        action: "Restore",
+                        objectType: "Skill",
+                        objectId: skillId,
+                    }),
+                ]);
+
+                return { updated: Skill.fromRecord(updated) };
+            } else {
+                const diff = diffObject(
+                    Skill.modifiableSchema.parse(existingSkill),
+                    update,
+                );
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skill.update({
+                        where: { id: skillId },
+                        data: update,
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "Skill",
+                        objectId: skillId,
+                        changes: diff,
+                    }),
+                ]);
+
+                return { updated: Skill.fromRecord(updated) };
+            }
         }),
 });
 

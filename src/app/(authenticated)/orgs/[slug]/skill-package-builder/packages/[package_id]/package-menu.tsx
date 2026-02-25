@@ -4,9 +4,7 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -32,47 +30,25 @@ import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 
 interface SkillPackageBuilder_Package_MenuProps {
+    onArchive: () => void;
+    onDelete(): void;
+    onRestore(): void;
     skillPackage: SkillPackage;
 }
 
 export function SkillPackageBuilder_Package_Menu({
     skillPackage,
+    onArchive,
+    onDelete,
+    onRestore,
 }: SkillPackageBuilder_Package_MenuProps) {
     const organization = useOrganization();
-    const router = useRouter();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-    function handleDelete() {
-        toast.promise(
-            async () => {
-                router.push(
-                    Paths.org(organization.slug).skillPackageBuilder
-                        .skillPackages.href,
-                );
-
-                // Wait for the navigation to complete before performing the delete operation.
-                await new Promise((resolve) => setTimeout(resolve, 500));
-
-                const collection = getSkillPackagesCollection(organization.id);
-
-                const tx = collection.delete(skillPackage.id);
-
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Deleting skill package...",
-                success: "Skill package deleted.",
-                error: (error) =>
-                    "Error deleting skill package." + error.message,
-            },
-        );
-    }
 
     return (
         <>
@@ -100,13 +76,24 @@ export function SkillPackageBuilder_Package_Menu({
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
 
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuGroup>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skillPackage: ["update"] }}
-                        >
+                    <Protect
+                        orgId={organization.id}
+                        permissions={{ skillPackage: ["update"] }}
+                    >
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                            {/* Show the archive option if the skill package is active */}
+                            {skillPackage.status == "Active" && (
+                                <DropdownMenuItem onSelect={onArchive}>
+                                    <ObjectIcons.Archive /> Archive
+                                </DropdownMenuItem>
+                            )}
+                            {/* Show the restore option if the skill package is archived */}
+                            {skillPackage.status == "Archived" && (
+                                <DropdownMenuItem onSelect={onRestore}>
+                                    <ObjectIcons.Restore /> Restore
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem asChild>
                                 <Link
                                     to={
@@ -120,19 +107,20 @@ export function SkillPackageBuilder_Package_Menu({
                                     <ObjectIcons.Edit /> Edit
                                 </Link>
                             </DropdownMenuItem>
-                        </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skillPackage: ["delete"] }}
-                        >
-                            <DropdownMenuItem
-                                onSelect={() => setDeleteDialogOpen(true)}
-                                className="text-destructive focus:text-destructive"
+
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ skillPackage: ["delete"] }}
                             >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        </Protect>
-                    </DropdownMenuGroup>
+                                <DropdownMenuItem
+                                    onSelect={() => setDeleteDialogOpen(true)}
+                                    className="text-destructive focus:text-destructive"
+                                >
+                                    <ObjectIcons.Delete /> Delete
+                                </DropdownMenuItem>
+                            </Protect>
+                        </DropdownMenuGroup>
+                    </Protect>
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -150,7 +138,7 @@ export function SkillPackageBuilder_Package_Menu({
                             <Button
                                 type="button"
                                 variant="destructive"
-                                onClick={handleDelete}
+                                onClick={onDelete}
                             >
                                 Delete
                             </Button>

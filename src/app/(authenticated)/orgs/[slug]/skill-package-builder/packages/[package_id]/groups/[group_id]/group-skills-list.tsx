@@ -5,13 +5,31 @@
 
 "use client";
 
+import { useState } from "react";
+
 import { eq, useLiveQuery } from "@tanstack/react-db";
 
 import { Hermes } from "@/components/blocks/hermes";
-import { ObjectIcons } from "@/components/icons";
+import {
+    DropdownMenuTriggerIcon,
+    ObjectIcons,
+    ReorderIcon,
+} from "@/components/icons";
+import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuGroupLabel,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,7 +45,6 @@ import { useOrganization } from "@/hooks/use-organization";
 import { getSkillsCollection } from "@/lib/collections/skills";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
-
 import * as Paths from "@/paths";
 
 interface SkillPackageBuilder_Group_Skills_ListProps {
@@ -54,44 +71,96 @@ export function SkillPackageBuilder_Group_Skills_List({
             .orderBy(({ skill }) => skill.sequence),
     );
 
+    const [statusFilter, setStatusFilter] = useState(["Active"]);
+
     const packagePath = Paths.org(
         organization.slug,
     ).skillPackageBuilder.skillPackage(skillPackageId);
+
+    const filteredSkills = skills.filter((skill) =>
+        statusFilter.includes(skill.status),
+    );
 
     return (
         <Hermes.Section>
             <Hermes.SectionHeader>
                 <Hermes.SectionTitle>Skills</Hermes.SectionTitle>
-                <Button variant="outline" asChild>
-                    <Link
-                        to={packagePath.skills.create({
-                            groupId: skillGroupId,
-                        })}
-                    >
-                        <ObjectIcons.Create /> Skill
-                    </Link>
-                </Button>
+                <Protect
+                    orgId={organization.id}
+                    permissions={{ skillPackage: ["update"] }}
+                >
+                    <ButtonGroup>
+                        <Button variant="ghost" asChild>
+                            <Link
+                                to={packagePath.skills.create({
+                                    groupId: skillGroupId,
+                                })}
+                            >
+                                <ObjectIcons.Create />
+                            </Link>
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuItem>
+                                        <ReorderIcon /> Reorder
+                                    </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>
+                                    <DropdownMenuGroupLabel>
+                                        Show
+                                    </DropdownMenuGroupLabel>
+                                    {["Active", "Archived"].map((status) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={status}
+                                            checked={statusFilter.includes(
+                                                status,
+                                            )}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setStatusFilter((prev) => [
+                                                        ...prev,
+                                                        status,
+                                                    ]);
+                                                } else {
+                                                    setStatusFilter((prev) =>
+                                                        prev.filter(
+                                                            (s) => s !== status,
+                                                        ),
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            {status}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </ButtonGroup>
+                </Protect>
             </Hermes.SectionHeader>
             <Show
                 when={isReady}
                 fallback={<Skeleton className="w-full h-13 mb-4" />}
             >
-                {skills.length > 0 ? (
+                {filteredSkills.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHeadCell className="w-20 text-center">
-                                    Sequence
-                                </TableHeadCell>
                                 <TableHeadCell>Name</TableHeadCell>
+                                <TableHeadCell>Status</TableHeadCell>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {skills.map((skill) => (
+                            {filteredSkills.map((skill) => (
                                 <TableRow key={skill.id}>
-                                    <TableCell className="text-center">
-                                        {skill.sequence}
-                                    </TableCell>
                                     <TableCell>
                                         <Link
                                             to={Paths.org(organization.slug)
@@ -103,6 +172,7 @@ export function SkillPackageBuilder_Group_Skills_List({
                                             {skill.name}
                                         </Link>
                                     </TableCell>
+                                    <TableCell>{skill.status}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -110,7 +180,11 @@ export function SkillPackageBuilder_Group_Skills_List({
                 ) : (
                     <Alert
                         severity="info"
-                        title="No skills have been added to this group yet."
+                        title={
+                            skills.length == 0
+                                ? "No skills defined for this group yet."
+                                : "No skills match the current filter settings."
+                        }
                     />
                 )}
             </Show>

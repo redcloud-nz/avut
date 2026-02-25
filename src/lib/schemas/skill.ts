@@ -53,13 +53,14 @@ export const Skill = {
         properties: true,
         defaultRequired: true,
         frequency: true,
+        status: true,
     }),
 
     fromRecord: (record: SkillRecord) =>
         skillSchema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            createdAt: record?.createdAt?.toISOString(),
+            updatedAt: record?.updatedAt?.toISOString(),
         }),
 };
 

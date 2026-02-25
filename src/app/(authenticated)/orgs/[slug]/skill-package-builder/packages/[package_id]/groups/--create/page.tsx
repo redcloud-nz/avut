@@ -116,6 +116,7 @@ export default function SkillPackageBuilder_CreateGroup_Page(
                                 description: "",
                                 tags: [],
                                 properties: {},
+                                status: "Active",
                             }}
                             onSubmit={handleCreate}
                             skillPackage={skillPackage}

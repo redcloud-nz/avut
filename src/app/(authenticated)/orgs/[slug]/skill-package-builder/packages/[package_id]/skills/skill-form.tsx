@@ -203,6 +203,8 @@ export function SkillPackageBuilder_Skill_Form(
                                     </FieldLabel>
                                     <Input
                                         id="skill-name"
+                                        autoFocus
+                                        placeholder="Skill Name"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />

@@ -47,13 +47,14 @@ export const SkillGroup = {
         description: true,
         tags: true,
         properties: true,
+        status: true,
     }),
 
     fromRecord: (record: SkillGroupRecord) =>
         skillGroupSchema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            createdAt: record?.createdAt?.toISOString(),
+            updatedAt: record?.updatedAt?.toISOString(),
         }),
 };
 

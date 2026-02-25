@@ -38,9 +38,15 @@ import * as Paths from "@/paths";
 
 interface SkillPackageBuilder_Group_MenuProps {
     skillGroup: SkillGroup & { skillPackage: SkillPackage };
+    onArchive(): void;
+    onDelete(): void;
+    onRestore(): void;
 }
 
 export function SkillPackageBuilder_Group_Menu({
+    onArchive,
+    onDelete,
+    onRestore,
     skillGroup,
 }: SkillPackageBuilder_Group_MenuProps) {
     const organization = useOrganization();
@@ -87,11 +93,24 @@ export function SkillPackageBuilder_Group_Menu({
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Skill Group</DropdownMenuLabel>
 
-                    <DropdownMenuGroup>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skillPackage: ["delete"] }}
-                        >
+                    <Protect
+                        orgId={organization.id}
+                        permissions={{ skillPackage: ["delete"] }}
+                    >
+                        <DropdownMenuGroup>
+                            {/** Show the archive option if the skill group is active */}
+                            {skillGroup.skillPackage.status == "Active" && (
+                                <DropdownMenuItem onSelect={onArchive}>
+                                    <ObjectIcons.Archive /> Archive
+                                </DropdownMenuItem>
+                            )}
+
+                            {/* Show the restore option if the skill group is archived */}
+                            {skillGroup.skillPackage.status == "Archived" && (
+                                <DropdownMenuItem onSelect={onRestore}>
+                                    <ObjectIcons.Restore /> Restore
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem asChild>
                                 <Link
                                     to={
@@ -111,8 +130,8 @@ export function SkillPackageBuilder_Group_Menu({
                             >
                                 <ObjectIcons.Delete /> Delete
                             </DropdownMenuItem>
-                        </Protect>
-                    </DropdownMenuGroup>
+                        </DropdownMenuGroup>
+                    </Protect>
                 </DropdownMenuContent>
             </DropdownMenu>
 

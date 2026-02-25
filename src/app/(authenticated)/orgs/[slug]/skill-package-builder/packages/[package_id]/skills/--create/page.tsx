@@ -71,7 +71,6 @@ export default function SkillPackageBuilder_CreateSkill_Page(
                     id: skillId,
                     skillPackageId: skillPackage!.id,
                     sequence: 0,
-                    status: "Active",
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     ...formData,
@@ -149,6 +148,7 @@ export default function SkillPackageBuilder_CreateSkill_Page(
                                 properties: {},
                                 defaultRequired: false,
                                 frequency: 12,
+                                status: "Active",
                             }}
                             onSubmit={handleCreate}
                             skillPackage={skillPackage}

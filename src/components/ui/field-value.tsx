@@ -11,9 +11,19 @@ import { formatDate, formatDateTime } from "@/lib/datetime";
 
 type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
     (
-        | { children?: never; value: string | number | Date; empty?: never }
-        | { children: ReactNode; value?: never; empty?: never }
-        | { children?: never; value?: never; empty: true }
+        | {
+              children?: never;
+              value: string | number | Date;
+              empty?: never;
+              action?: ReactNode;
+          }
+        | {
+              children: ReactNode;
+              value?: never;
+              empty?: never;
+              action?: never;
+          }
+        | { children?: never; value?: never; empty: true; action?: never }
     ) & {
         muted?: boolean;
         ifEmpty?: ReactNode;
@@ -36,6 +46,7 @@ export function FieldValue({
     muted = false,
     value,
     format = "default",
+    action,
     empty,
     ...props
 }: FieldValueProps) {
@@ -48,6 +59,7 @@ export function FieldValue({
                 "border border-transparent rounded-md outline-none", // Border
                 "text-base md:text-sm align-baseline overflow-clip", // Text size
                 muted ? "text-muted-foreground" : "text-foreground",
+                action ? "justify-between" : "",
                 className,
             )}
             {...props}
@@ -59,7 +71,10 @@ export function FieldValue({
             ) : value == "" ? (
                 <span className="text-muted-foreground">None</span>
             ) : (
-                formatValue(String(value), format)
+                <>
+                    <span>{formatValue(String(value), format)}</span>
+                    {action}
+                </>
             )}
         </div>
     );

@@ -94,6 +94,7 @@ export function SkillPackageBuilder_Group_Form(
 
                                     <Input
                                         id="group-name"
+                                        autoFocus
                                         placeholder="New Skill Group"
                                         aria-invalid={fieldState.invalid}
                                         {...field}

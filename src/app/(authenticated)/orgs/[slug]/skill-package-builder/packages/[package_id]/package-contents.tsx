@@ -5,10 +5,16 @@
 
 "use client";
 
+import { useState } from "react";
+
 import { eq, useLiveQuery } from "@tanstack/react-db";
 
 import { Hermes } from "@/components/blocks/hermes";
-import { ObjectIcons, ReorderIcon } from "@/components/icons";
+import {
+    DropdownMenuTriggerIcon,
+    ObjectIcons,
+    ReorderIcon,
+} from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Alert } from "@/components/ui/alert";
@@ -16,9 +22,12 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     DropdownMenu,
+    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuGroup,
+    DropdownMenuGroupLabel,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
@@ -69,12 +78,25 @@ export function SkillPackageBuilder_Package_Contents_List({
             .orderBy(({ skill }) => skill.sequence);
     });
 
+    const [statusFilter, setStatusFilter] = useState(["Active"]);
+
     const packagePath = Paths.org(
         organization.slug,
     ).skillPackageBuilder.skillPackage(skillPackageId);
 
-    const ungroupedSkills =
-        skillsQuery.data?.filter((skill) => !skill.skillGroupId) ?? [];
+    const groups = groupsQuery.data ?? [];
+    const skills = skillsQuery.data ?? [];
+
+    const filteredGroups = groups.filter((group) =>
+        statusFilter.includes(group.status),
+    );
+    const filteredSkills = skills.filter((skill) =>
+        statusFilter.includes(skill.status),
+    );
+
+    const ungroupedSkills = filteredSkills.filter(
+        (skill) => !skill.skillGroupId,
+    );
 
     return (
         <Hermes.Section>
@@ -87,7 +109,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                     <ButtonGroup>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
+                                <Button variant="ghost" size="icon">
                                     <ObjectIcons.Create />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -107,14 +129,50 @@ export function SkillPackageBuilder_Package_Contents_List({
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            tooltip="Reorder groups & skills"
-                            disabled
-                        >
-                            <ReorderIcon />
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuItem>
+                                        <ReorderIcon /> Reorder
+                                    </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>
+                                    <DropdownMenuGroupLabel>
+                                        Show
+                                    </DropdownMenuGroupLabel>
+                                    {["Active", "Archived"].map((status) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={status}
+                                            checked={statusFilter.includes(
+                                                status,
+                                            )}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setStatusFilter((prev) => [
+                                                        ...prev,
+                                                        status,
+                                                    ]);
+                                                } else {
+                                                    setStatusFilter((prev) =>
+                                                        prev.filter(
+                                                            (s) => s !== status,
+                                                        ),
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            {status}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </ButtonGroup>
                 </Protect>
             </Hermes.SectionHeader>
@@ -127,17 +185,18 @@ export function SkillPackageBuilder_Package_Contents_List({
                     </Skeleton>
                 }
             >
-                {skillsQuery.data.length > 0 ? (
+                {filteredGroups.length > 0 || filteredSkills.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHeadCell>Group</TableHeadCell>
                                 <TableHeadCell>Skill</TableHeadCell>
+                                <TableHeadCell>Status</TableHeadCell>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {groupsQuery.data.map((skillGroup) => {
-                                const groupSkills = skillsQuery.data.filter(
+                            {filteredGroups.map((skillGroup) => {
+                                const groupSkills = filteredSkills.filter(
                                     (skill) =>
                                         skill.skillGroupId === skillGroup.id,
                                 );
@@ -157,11 +216,17 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                 </Link>
                                             </TableCell>
                                             {groupSkills.length === 0 && (
-                                                <TableCell>
-                                                    <em className="text-muted-foreground">
-                                                        No skills in this group
-                                                    </em>
-                                                </TableCell>
+                                                <>
+                                                    <TableCell>
+                                                        <em className="text-muted-foreground">
+                                                            No skills in this
+                                                            group
+                                                        </em>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {skillGroup.status}
+                                                    </TableCell>
+                                                </>
                                             )}
                                         </TableRow>
                                         {groupSkills.map((skill) => (
@@ -179,6 +244,12 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     >
                                                         {skill.name}
                                                     </Link>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {skillGroup.status ==
+                                                    "Active"
+                                                        ? skill.status
+                                                        : skillGroup.status}
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -212,6 +283,9 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     {skill.name}
                                                 </Link>
                                             </TableCell>
+                                            <TableCell>
+                                                {skill.status}
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </>
@@ -221,7 +295,11 @@ export function SkillPackageBuilder_Package_Contents_List({
                 ) : (
                     <Alert
                         severity="info"
-                        title="No skills have been created for this package yet."
+                        title={
+                            groups.length == 0 && skills.length == 0
+                                ? "No groups or skills defined for this package yet."
+                                : "No groups or skills match the current filter settings."
+                        }
                     />
                 )}
             </Show>

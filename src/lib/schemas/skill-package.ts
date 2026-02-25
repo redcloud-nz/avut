@@ -48,8 +48,8 @@ export const SkillPackage = {
     fromRecord: (record: SkillPackageRecord) =>
         skillPackageSchema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            createdAt: record?.createdAt?.toISOString(),
+            updatedAt: record?.updatedAt?.toISOString(),
         }),
 };
 

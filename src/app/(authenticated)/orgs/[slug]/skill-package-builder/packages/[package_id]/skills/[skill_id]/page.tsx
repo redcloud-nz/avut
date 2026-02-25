@@ -6,16 +6,15 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { use } from "react";
+import { toast } from "sonner";
 
 import { and, eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
-import { ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Card,
     CardAction,
@@ -23,7 +22,6 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
-    CardType,
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
@@ -42,10 +40,13 @@ export default function SkillPackageBuilder_Skill_Page(
 ) {
     const { slug, package_id, skill_id } = use(props.params);
     const organization = useOrganization();
+    const router = useRouter();
+
+    const skillsCollection = getSkillsCollection(organization.id);
 
     const { data: skill } = useLiveSuspenseQuery((q) =>
         q
-            .from({ skill: getSkillsCollection(organization.id) })
+            .from({ skill: skillsCollection })
             .innerJoin(
                 { skillPackage: getSkillPackagesCollection(organization.id) },
                 ({ skill, skillPackage }) =>
@@ -76,6 +77,64 @@ export default function SkillPackageBuilder_Skill_Page(
         skill.skillPackage,
     );
 
+    function handleArchive() {
+        toast.promise(
+            async () => {
+                const tx = skillsCollection.update(skill!.id, (draft) => {
+                    draft.status = "Archived";
+                });
+                await tx.isPersisted.promise;
+            },
+            {
+                loading: "Archiving skill...",
+                success: "Skill archived.",
+                error: (error) => "Error archiving skill." + error.message,
+            },
+        );
+    }
+
+    function handleDelete() {
+        toast.promise(
+            async () => {
+                router.push(
+                    Paths.org(
+                        organization.slug,
+                    ).skillPackageBuilder.skillPackage(skill!.skillPackage.id)
+                        .index.href,
+                );
+
+                // Wait for the navigation to complete before performing the delete operation.
+                await new Promise((resolve) => setTimeout(resolve, 200));
+
+                const collection = getSkillsCollection(organization.id);
+                const tx = collection.delete(skill!.id);
+
+                await tx.isPersisted.promise;
+            },
+            {
+                loading: "Deleting skill...",
+                success: "Skill deleted",
+                error: (error) => `Failed to delete skill: ${error.message}`,
+            },
+        );
+    }
+
+    function handleRestore() {
+        toast.promise(
+            async () => {
+                const tx = skillsCollection.update(skill!.id, (draft) => {
+                    draft.status = "Active";
+                });
+                await tx.isPersisted.promise;
+            },
+            {
+                loading: "Restoring skill...",
+                success: "Skill restored.",
+                error: (error) => "Error restoring skill." + error.message,
+            },
+        );
+    }
+
     return (
         <Lexington.Root>
             <Lexington.Header
@@ -100,6 +159,9 @@ export default function SkillPackageBuilder_Skill_Page(
                                 <CardDescription>Skill</CardDescription>
                                 <CardAction>
                                     <SkillPackageBuilder_Skill_Menu
+                                        onArchive={handleArchive}
+                                        onDelete={handleDelete}
+                                        onRestore={handleRestore}
                                         skill={skill}
                                     />
                                 </CardAction>
@@ -208,6 +270,17 @@ export default function SkillPackageBuilder_Skill_Page(
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={skill.status}
+                                            action={
+                                                skill.status == "Archived" ? (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleRestore}
+                                                    >
+                                                        Restore
+                                                    </Button>
+                                                ) : null
+                                            }
                                         />
                                     </Field>
                                 </FieldGroup>
