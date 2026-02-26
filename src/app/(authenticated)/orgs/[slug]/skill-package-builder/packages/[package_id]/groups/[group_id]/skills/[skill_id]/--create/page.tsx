@@ -2,12 +2,12 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/skills/--create
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--create
  */
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useMemo } from "react";
+import { use } from "react";
 import { toast } from "sonner";
 
 import { and, eq, useLiveSuspenseQuery } from "@tanstack/react-db";
@@ -22,46 +22,46 @@ import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import { ModifiableSkill, SkillId } from "@/lib/schemas/skill";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_Skill_Form } from "../skill-form";
+import { SkillPackageBuilder_Skill_Form } from "../../skill-form";
+import { SkillGroup } from "@/lib/schemas/skill-group";
 
 /**
  * Page to create a new skill within a skill package. Renders a form for entering skill details and handles form submission to create the skill in the database.
  */
 export default function SkillPackageBuilder_CreateSkill_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/--create`>,
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/skills/[skill_id]/--create`>,
 ) {
-    const { slug, package_id } = use(props.params);
-    const searchParams = useSearchParams();
+    const { slug, package_id, group_id, skill_id } = use(props.params);
 
-    const groupId = searchParams.get("groupId");
     const organization = useOrganization();
     const router = useRouter();
 
-    const { data: skillPackage } = useLiveSuspenseQuery((q) =>
+    const { data: queryData } = useLiveSuspenseQuery((q) =>
         q
             .from({ skillPackage: getSkillPackagesCollection(organization.id) })
-            .where(({ skillPackage }) => eq(skillPackage.id, package_id))
-            .findOne(),
-    );
-    const { data: skillGroup } = useLiveSuspenseQuery((q) =>
-        q
-            .from({ skillGroup: getSkillGroupsCollection(organization.id) })
-            .where(({ skillGroup }) =>
+            .innerJoin(
+                { skillGroup: getSkillGroupsCollection(organization.id) },
+                ({ skillPackage, skillGroup }) =>
+                    eq(skillPackage.id, skillGroup.skillPackageId),
+            )
+            .where(({ skillPackage, skillGroup }) =>
                 and(
-                    eq(skillGroup.id, groupId ?? "NEVER"),
-                    eq(skillGroup.skillPackageId, package_id),
+                    eq(skillPackage.id, package_id),
+                    eq(skillGroup.id, group_id),
                 ),
             )
+
             .findOne(),
     );
 
-    if (!skillPackage)
-        throw new Error(`Skill Package (${package_id}) not found`);
+    if (!queryData)
+        throw new Error(
+            `Skill Package (${package_id}) or Skill Group (${group_id}) not found`,
+        );
 
-    if (groupId && !skillGroup)
-        throw new Error(`Skill Group (${groupId}) not found`);
+    const { skillPackage, skillGroup } = queryData;
 
-    const skillId = useMemo(() => SkillId.create(), []);
+    const skillId = SkillId.schema.parse(skill_id);
 
     function handleCreate(formData: ModifiableSkill) {
         toast.promise(
@@ -69,7 +69,8 @@ export default function SkillPackageBuilder_CreateSkill_Page(
                 const collection = getSkillsCollection(organization.id);
                 const tx = collection.insert({
                     id: skillId,
-                    skillPackageId: skillPackage!.id,
+                    skillPackageId: skillPackage.id,
+                    skillGroupId: skillGroup.id,
                     sequence: 0,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -80,7 +81,8 @@ export default function SkillPackageBuilder_CreateSkill_Page(
 
                 router.push(
                     Paths.org(organization.slug)
-                        .skillPackageBuilder.skillPackage(skillPackage!.id)
+                        .skillPackageBuilder.skillPackage(skillPackage.id)
+                        .group(skillGroup.id)
                         .skill(skillId).href,
                 );
 
@@ -115,11 +117,13 @@ export default function SkillPackageBuilder_CreateSkill_Page(
                         <Hermes.SectionHeader>
                             {skillGroup ? (
                                 <Hermes.BackButton
-                                    to={Paths.org(slug)
-                                        .skillPackageBuilder.skillPackage(
-                                            package_id,
-                                        )
-                                        .group(skillGroup.id)}
+                                    to={
+                                        Paths.org(slug)
+                                            .skillPackageBuilder.skillPackage(
+                                                package_id,
+                                            )
+                                            .group(skillGroup.id).index
+                                    }
                                 >
                                     Group
                                 </Hermes.BackButton>
@@ -143,7 +147,6 @@ export default function SkillPackageBuilder_CreateSkill_Page(
                             defaultValues={{
                                 name: "",
                                 description: "",
-                                skillGroupId: skillGroup?.id ?? null,
                                 tags: [],
                                 properties: {},
                                 defaultRequired: false,

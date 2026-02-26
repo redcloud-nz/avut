@@ -16,7 +16,6 @@ import {
 import { nanoId16 } from "../id";
 
 import { SkillPackageId } from "./skill-package";
-import { SkillId } from "./skill";
 
 export const SkillGroupId = {
     schema: zodNanoId16("SkillGroupId expected").brand<"SkillGroupId">(),
@@ -47,7 +46,6 @@ export const SkillGroup = {
         description: true,
         tags: true,
         properties: true,
-        skillSequence: true,
         status: true,
     }),
 

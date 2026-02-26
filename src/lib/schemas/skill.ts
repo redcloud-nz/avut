@@ -46,7 +46,6 @@ export const Skill = {
     schema: skillSchema,
 
     modifiableSchema: skillSchema.pick({
-        skillGroupId: true,
         name: true,
         description: true,
         tags: true,

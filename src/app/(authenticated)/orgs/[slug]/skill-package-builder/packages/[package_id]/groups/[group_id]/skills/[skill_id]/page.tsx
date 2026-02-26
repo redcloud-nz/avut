@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/skills/[skill_id]
  */
 "use client";
 
@@ -36,9 +36,9 @@ import * as Paths from "@/paths";
 import { SkillPackageBuilder_Skill_Menu } from "./skill-menu";
 
 export default function SkillPackageBuilder_Skill_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]`>,
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/skills/[skill_id]`>,
 ) {
-    const { slug, package_id, skill_id } = use(props.params);
+    const { slug, package_id, group_id, skill_id } = use(props.params);
     const organization = useOrganization();
     const router = useRouter();
 
@@ -52,7 +52,7 @@ export default function SkillPackageBuilder_Skill_Page(
                 ({ skill, skillPackage }) =>
                     eq(skill.skillPackageId, skillPackage.id),
             )
-            .join(
+            .innerJoin(
                 { skillGroup: getSkillGroupsCollection(organization.id) },
                 ({ skill, skillGroup }) =>
                     eq(skill.skillGroupId, skillGroup.id),
@@ -61,6 +61,7 @@ export default function SkillPackageBuilder_Skill_Page(
                 and(
                     eq(skill.id, skill_id),
                     eq(skill.skillPackageId, package_id),
+                    eq(skill.skillGroupId, group_id),
                 ),
             )
             .select(({ skill, skillGroup, skillPackage }) => ({
@@ -141,6 +142,8 @@ export default function SkillPackageBuilder_Skill_Page(
                 breadcrumbs={[
                     Paths.org(slug).skillPackageBuilder.index,
                     packagePath.index,
+                    "Groups",
+                    packagePath.group(skill.skillGroup).index,
                     "Skills",
                     skill.name,
                 ]}
@@ -149,8 +152,10 @@ export default function SkillPackageBuilder_Skill_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.SectionHeader>
-                            <Hermes.BackButton to={packagePath.index}>
-                                Package
+                            <Hermes.BackButton
+                                to={packagePath.group(skill.skillGroup).index}
+                            >
+                                Group
                             </Hermes.BackButton>
                         </Hermes.SectionHeader>
                         <Card>
@@ -196,13 +201,16 @@ export default function SkillPackageBuilder_Skill_Page(
                                         {skill.skillGroup ? (
                                             <FieldValue className="min-w-1/2">
                                                 <Link
-                                                    to={Paths.org(slug)
-                                                        .skillPackageBuilder.skillPackage(
-                                                            package_id,
-                                                        )
-                                                        .group(
-                                                            skill.skillGroup.id,
-                                                        )}
+                                                    to={
+                                                        Paths.org(slug)
+                                                            .skillPackageBuilder.skillPackage(
+                                                                package_id,
+                                                            )
+                                                            .group(
+                                                                skill.skillGroup
+                                                                    .id,
+                                                            ).index
+                                                    }
                                                 >
                                                     {skill.skillGroup.name}
                                                 </Link>

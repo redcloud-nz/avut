@@ -140,6 +140,7 @@ export const skillsRouter = createTrpcRouter({
             Skill.modifiableSchema.extend({
                 id: SkillId.schema,
                 skillPackageId: SkillPackageId.schema,
+                skillGroupId: SkillGroupId.schema,
             }),
         )
         .output(z.object({ created: Skill.schema }))
@@ -150,60 +151,37 @@ export const skillsRouter = createTrpcRouter({
                     organizationId,
                     id: skillId,
                     skillPackageId,
+                    skillGroupId,
                     ...fields
                 },
             }) => {
-                const [skillPackage, skillGroup] = await Promise.all([
-                    ctx.prisma.skillPackage.findUnique({
-                        where: {
+                const skillGroup = await ctx.prisma.skillGroup.findUnique({
+                    where: {
+                        id: skillGroupId,
+                        skillPackage: {
                             id: skillPackageId,
                             organizationId,
                         },
-                        include: {
-                            skills: {
-                                select: {
-                                    sequence: true,
-                                },
-                            },
+                    },
+                    include: {
+                        skillPackage: true,
+                        skills: {
+                            select: { sequence: true },
                         },
-                    }),
-                    ctx.prisma.skillGroup.findUnique({
-                        where: {
-                            id: fields.skillGroupId,
-                            skillPackageId: skillPackageId,
-                        },
-                        include: {
-                            skills: {
-                                select: {
-                                    sequence: true,
-                                },
-                            },
-                        },
-                    }),
-                ]);
-
-                if (!skillPackage) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.skillPackageNotFound(skillPackageId),
-                    });
-                }
+                    },
+                });
 
                 if (!skillGroup) {
                     throw new TRPCError({
                         code: "NOT_FOUND",
-                        message: Messages.skillGroupNotFound(
-                            fields.skillGroupId,
-                        ),
+                        message: Messages.skillGroupNotFound(skillGroupId),
                     });
                 }
 
-                const highestSequenceNumber = skillGroup
-                    ? Math.max(...skillGroup.skills.map((s) => s.sequence), 0)
-                    : Math.max(
-                          ...skillPackage.skills.map((s) => s.sequence),
-                          0,
-                      );
+                const highestSequenceNumber = Math.max(
+                    ...skillGroup.skills.map((s) => s.sequence),
+                    0,
+                );
 
                 const diff = diffObject({}, fields);
 
@@ -212,6 +190,7 @@ export const skillsRouter = createTrpcRouter({
                         data: {
                             id: skillId,
                             skillPackageId,
+                            skillGroupId,
                             sequence: highestSequenceNumber + 1,
                             ...fields,
                         },

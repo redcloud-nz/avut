@@ -209,6 +209,17 @@ export default function SkillPackageBuilder_Package_Page(
                                             }
                                         />
                                     </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Published</FieldLabel>
+                                        <FieldValue
+                                            className="min-w-1/2"
+                                            value={
+                                                skillPackage.published
+                                                    ? "Yes"
+                                                    : "No"
+                                            }
+                                        />
+                                    </Field>
                                 </FieldGroup>
                             </CardContent>
                         </Card>

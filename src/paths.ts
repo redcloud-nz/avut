@@ -626,11 +626,40 @@ function skillPackageBuilderModule(orgSlug: string) {
                             : groupOrGroupId.id;
 
                     return {
-                        href: `${packageBase}/groups/${groupId}`,
-                        label:
-                            typeof groupOrGroupId === "string"
-                                ? (undefined as never)
-                                : groupOrGroupId.name,
+                        index: {
+                            href: `${packageBase}/groups/${groupId}`,
+                            label:
+                                typeof groupOrGroupId === "string"
+                                    ? (undefined as never)
+                                    : groupOrGroupId.name,
+                        },
+
+                        skill: (skillOrSkillId: Skill | string) => {
+                            const skillId =
+                                typeof skillOrSkillId === "string"
+                                    ? skillOrSkillId
+                                    : skillOrSkillId.id;
+
+                            return {
+                                href: `${packageBase}/groups/${groupId}/skills/${skillId}`,
+                                label:
+                                    typeof skillOrSkillId === "string"
+                                        ? (undefined as never)
+                                        : skillOrSkillId.name,
+                                update: {
+                                    label: "Update",
+                                    href: `${packageBase}/groups/${groupId}/skills/${skillId}/--update`,
+                                },
+                            } as const;
+                        },
+                        skills: {
+                            label: "Skills",
+                            create: {
+                                label: "Create",
+                                href: `${packageBase}/groups/${groupId}/skills/--create`,
+                            },
+                        },
+
                         update: {
                             label: "Update",
                             href: `${packageBase}/groups/${groupId}/--update`,
@@ -649,32 +678,6 @@ function skillPackageBuilderModule(orgSlug: string) {
                 history: {
                     label: "History",
                     href: `${packageBase}/history`,
-                },
-
-                skill: (skillOrSkillId: Skill | string) => {
-                    const skillId =
-                        typeof skillOrSkillId === "string"
-                            ? skillOrSkillId
-                            : skillOrSkillId.id;
-
-                    return {
-                        href: `${packageBase}/skills/${skillId}`,
-                        label:
-                            typeof skillOrSkillId === "string"
-                                ? (undefined as never)
-                                : skillOrSkillId.name,
-                        update: {
-                            label: "Update",
-                            href: `${packageBase}/skills/${skillId}/--update`,
-                        },
-                    } as const;
-                },
-                skills: {
-                    label: "Skills",
-                    create: ({ groupId }: { groupId?: SkillGroupId } = {}) => ({
-                        label: "Create",
-                        href: `${packageBase}/skills/--create${groupId ? `?groupId=${groupId}` : ""}`,
-                    }),
                 },
             } as const;
         },

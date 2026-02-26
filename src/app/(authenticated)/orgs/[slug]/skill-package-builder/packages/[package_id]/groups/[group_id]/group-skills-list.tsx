@@ -78,7 +78,7 @@ export function SkillPackageBuilder_Group_Skills_List({
     );
 
     const [statusFilter, setStatusFilter] = useState(["Active"]);
-    const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+    const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
 
     const packagePath = Paths.org(
         organization.slug,
@@ -101,9 +101,10 @@ export function SkillPackageBuilder_Group_Skills_List({
                         <ButtonGroup>
                             <Button variant="ghost" asChild>
                                 <Link
-                                    to={packagePath.skills.create({
-                                        groupId: skillGroup.id,
-                                    })}
+                                    to={
+                                        packagePath.group(skillGroup.id).skills
+                                            .create
+                                    }
                                 >
                                     <ObjectIcons.Create />
                                 </Link>
@@ -121,7 +122,7 @@ export function SkillPackageBuilder_Group_Skills_List({
                                     <DropdownMenuGroup>
                                         <DropdownMenuItem
                                             onClick={() =>
-                                                setOrderDialogOpen(true)
+                                                setReorderDialogOpen(true)
                                             }
                                         >
                                             <ReorderIcon /> Reorder Skills
@@ -194,6 +195,7 @@ export function SkillPackageBuilder_Group_Skills_List({
                                                     .skillPackageBuilder.skillPackage(
                                                         skillGroup.skillPackageId,
                                                     )
+                                                    .group(skillGroup.id)
                                                     .skill(skill.id)}
                                             >
                                                 {skill.name}
@@ -218,8 +220,8 @@ export function SkillPackageBuilder_Group_Skills_List({
             </CardContent>
             <ReorderSkillsDialog
                 skillGroup={skillGroup}
-                open={orderDialogOpen}
-                onOpenChange={setOrderDialogOpen}
+                open={reorderDialogOpen}
+                onOpenChange={setReorderDialogOpen}
             />
         </Card>
     );

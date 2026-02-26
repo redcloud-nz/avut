@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { eq, useLiveQuery } from "@tanstack/react-db";
 
@@ -53,6 +53,7 @@ import { getSkillsCollection } from "@/lib/collections/skills";
 import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
+
 import { ReorderGroupsDialog } from "./reorder-groups";
 
 interface SkillPackageBuilder_Package_Groups_ListProps {
@@ -114,34 +115,16 @@ export function SkillPackageBuilder_Package_Contents_List({
                         permissions={{ skillPackage: ["update"] }}
                     >
                         <ButtonGroup>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <ObjectIcons.Create />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    className="w-40"
-                                >
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                to={packagePath.groups.create}
-                                            >
-                                                <ObjectIcons.Create /> New Group
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                to={packagePath.skills.create()}
-                                            >
-                                                <ObjectIcons.Create /> New Skill
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                tooltip="Add Group"
+                                asChild
+                            >
+                                <Link to={packagePath.groups.create}>
+                                    <ObjectIcons.Create />
+                                </Link>
+                            </Button>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -234,7 +217,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                                     );
 
                                     return (
-                                        <>
+                                        <Fragment key={skillGroup.id}>
                                             <TableRow key={skillGroup.id}>
                                                 <TableCell
                                                     rowSpan={
@@ -242,9 +225,11 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     }
                                                 >
                                                     <Link
-                                                        to={packagePath.group(
-                                                            skillGroup.id,
-                                                        )}
+                                                        to={
+                                                            packagePath.group(
+                                                                skillGroup.id,
+                                                            ).index
+                                                        }
                                                     >
                                                         {skillGroup.name}
                                                     </Link>
@@ -274,6 +259,9 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                                 .skillPackageBuilder.skillPackage(
                                                                     skillGroup.skillPackageId,
                                                                 )
+                                                                .group(
+                                                                    skillGroup.id,
+                                                                )
                                                                 .skill(
                                                                     skill.id,
                                                                 )}
@@ -289,7 +277,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
-                                        </>
+                                        </Fragment>
                                     );
                                 })}
                             </TableBody>

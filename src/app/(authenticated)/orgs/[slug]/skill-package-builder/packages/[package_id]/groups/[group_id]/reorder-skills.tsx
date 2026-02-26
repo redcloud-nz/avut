@@ -50,11 +50,13 @@ export function ReorderSkillsDialog({
 }: ReorderSkillsDialogProps) {
     const organization = useOrganization();
 
-    const { data: skills, isReady } = useLiveQuery((q) =>
-        q
-            .from({ skill: getSkillsCollection(organization.id) })
-            .where(({ skill }) => eq(skill.skillGroupId, skillGroup.id))
-            .orderBy(({ skill }) => skill.sequence),
+    const { data: skills, isReady } = useLiveQuery(
+        (q) =>
+            q
+                .from({ skill: getSkillsCollection(organization.id) })
+                .where(({ skill }) => eq(skill.skillGroupId, skillGroup.id))
+                .orderBy(({ skill }) => skill.sequence),
+        [props.open],
     );
 
     const [order, setOrder] = useState<SkillId[]>([]);

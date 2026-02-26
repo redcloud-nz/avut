@@ -2,12 +2,12 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/groups/--create
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--create
  */
 "use client";
 
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { use } from "react";
 import { toast } from "sonner";
 
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
@@ -21,16 +21,16 @@ import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
 import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
 import { ModifiableSkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 
-import { SkillPackageBuilder_Group_Form } from "../group-form";
+import { SkillPackageBuilder_Group_Form } from "../../group-form";
 
 /**
  * Page for creating a new skill group within a skill package. Fetches the skill package data and renders the group creation form.
  * On form submission, creates the skill group in the database and navigates to the new group's page.
  */
 export default function SkillPackageBuilder_CreateGroup_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/--create`>,
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--create`>,
 ) {
-    const { slug, package_id } = use(props.params);
+    const { slug, package_id, group_id } = use(props.params);
     const organization = useOrganization();
     const router = useRouter();
 
@@ -44,7 +44,7 @@ export default function SkillPackageBuilder_CreateGroup_Page(
     if (!skillPackage)
         throw new Error(`Skill Package (${package_id}) not found`);
 
-    const groupId = useMemo(() => SkillGroupId.create(), []);
+    const groupId = SkillGroupId.schema.parse(group_id);
 
     function handleCreate(formData: ModifiableSkillGroup) {
         toast.promise(
@@ -53,10 +53,8 @@ export default function SkillPackageBuilder_CreateGroup_Page(
                 const tx = collection.insert({
                     id: groupId,
                     skillPackageId: skillPackage!.id,
-                    parentGroupId: null,
                     ...formData,
                     sequence: 0,
-                    status: "Active",
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 });
@@ -66,7 +64,7 @@ export default function SkillPackageBuilder_CreateGroup_Page(
                 router.push(
                     Paths.org(organization.slug)
                         .skillPackageBuilder.skillPackage(skillPackage!.id)
-                        .group(groupId).href,
+                        .group(groupId).index.href,
                 );
 
                 await tx.isPersisted.promise;

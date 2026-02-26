@@ -89,6 +89,7 @@ export function SkillPackageBuilder_Skill_Menu({
                                             .skillPackageBuilder.skillPackage(
                                                 skill.skillPackageId,
                                             )
+                                            .group(skill.skillGroupId)
                                             .skill(skill.id).update
                                     }
                                 >

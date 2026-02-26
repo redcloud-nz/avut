@@ -50,15 +50,17 @@ export function ReorderGroupsDialog({
 }: ReorderGroupsDialogProps) {
     const organization = useOrganization();
 
-    const { data: skillGroups, isReady } = useLiveQuery((q) =>
-        q
-            .from({
-                skillGroup: getSkillGroupsCollection(organization.id),
-            })
-            .where(({ skillGroup }) =>
-                eq(skillGroup.skillPackageId, skillPackage.id),
-            )
-            .orderBy(({ skillGroup }) => skillGroup.sequence),
+    const { data: skillGroups, isReady } = useLiveQuery(
+        (q) =>
+            q
+                .from({
+                    skillGroup: getSkillGroupsCollection(organization.id),
+                })
+                .where(({ skillGroup }) =>
+                    eq(skillGroup.skillPackageId, skillPackage.id),
+                )
+                .orderBy(({ skillGroup }) => skillGroup.sequence),
+        [props.open],
     );
 
     const [order, setOrder] = useState<SkillGroupId[]>([]);

@@ -2,13 +2,13 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-package-builder/packages/--create
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/--create
  */
 
 "use client";
 
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { use } from "react";
 import { toast } from "sonner";
 
 import { Hermes } from "@/components/blocks/hermes";
@@ -22,20 +22,20 @@ import {
 } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_Package_Form } from "../package-form";
+import { SkillPackageBuilder_Package_Form } from "../../package-form";
 
 /**
  * Page for creating a new skill package.
  */
 export default function SkillPackageBuilder_CreatePackage_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/--create`>,
+    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/--create`>,
 ) {
-    const { slug } = use(props.params);
+    const { slug, package_id } = use(props.params);
 
     const organization = useOrganization();
     const router = useRouter();
 
-    const packageId = useMemo(() => SkillPackageId.create(), []);
+    const packageId = SkillPackageId.schema.parse(package_id);
 
     function handleCreate(formData: ModifiableSkillPackage) {
         toast.promise(
@@ -50,7 +50,6 @@ export default function SkillPackageBuilder_CreatePackage_Page(
                 const tx = collection.insert({
                     id: packageId,
                     ...formData,
-                    status: "Active",
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 });
@@ -96,6 +95,7 @@ export default function SkillPackageBuilder_CreatePackage_Page(
                                 tags: [],
                                 properties: {},
                                 status: "Active",
+                                published: false,
                             }}
                             onSubmit={handleCreate}
                         />
