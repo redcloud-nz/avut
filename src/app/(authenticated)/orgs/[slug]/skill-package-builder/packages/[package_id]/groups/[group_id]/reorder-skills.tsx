@@ -7,15 +7,14 @@
 
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
 import { ComponentProps, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
 import { RestrictToElement } from "@dnd-kit/dom/modifiers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Dialog,
@@ -28,13 +27,12 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import {
-    getSkillsCollection,
-    reorderSkillsAction,
-} from "@/lib/collections/skills";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { cn } from "@/lib/utils";
+
+import { trpc } from "@/trpc/client";
+import { toast } from "sonner";
 
 interface ReorderSkillsDialogProps extends ComponentProps<typeof Dialog> {
     skillGroup: SkillGroup;
@@ -49,46 +47,49 @@ export function ReorderSkillsDialog({
     ...props
 }: ReorderSkillsDialogProps) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
 
-    const { data: skills, isReady } = useLiveQuery(
-        (q) =>
-            q
-                .from({ skill: getSkillsCollection(organization.id) })
-                .where(({ skill }) => eq(skill.skillGroupId, skillGroup.id))
-                .orderBy(({ skill }) => skill.sequence),
-        [props.open],
+    const skillsQuery = useQuery(
+        trpc.skills.listSkills.queryOptions({
+            organizationId: organization.id,
+            skillPackageId: skillGroup.skillPackageId,
+            skillGroupId: skillGroup.id,
+        }),
+    );
+    const skills = (skillsQuery.data ?? []).sort(
+        (a, b) => a.sequence - b.sequence,
     );
 
     const [order, setOrder] = useState<SkillId[]>([]);
 
     useEffect(() => {
         // Set the initial order of skills based on their current sequence in the database once the data is ready.
-        if (isReady) setOrder(skills.map((skill) => skill.id));
-    }, [isReady]);
+        if (skillsQuery.isSuccess) setOrder(skills.map((skill) => skill.id));
+    }, [skillsQuery.isSuccess]);
+
+    const mutation = useMutation(
+        trpc.skills.reorderGroupSkills.mutationOptions({
+            onError(error) {
+                toast.error("Failed to save changes.");
+                console.error("Failed to save changes:", error);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listSkills.queryFilter({
+                        organizationId: organization.id,
+                        skillPackageId: skillGroup.skillPackageId,
+                        skillGroupId: skillGroup.id,
+                    }),
+                );
+
+                props.onOpenChange?.(false);
+                mutation.reset();
+            },
+        }),
+    );
 
     function handleReset() {
         setOrder(skills.map((skill) => skill.id));
-    }
-
-    function handleSave() {
-        props.onOpenChange?.(false);
-
-        toast.promise(
-            async () => {
-                const tx = reorderSkillsAction({
-                    organizationId: organization.id,
-                    skillGroupId: skillGroup.id,
-                    newOrder: order,
-                });
-
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Applying new skill order...",
-                success: "Skills reordered successfully",
-                error: (error) => `Failed to reorder skills: ${error.message}`,
-            },
-        );
     }
 
     return (
@@ -155,10 +156,27 @@ export function ReorderSkillsDialog({
 
                 <FieldGroup>
                     <Field orientation="horizontal">
-                        <Button type="button" onClick={handleSave}>
-                            Save
-                        </Button>
-                        <Button variant="outline" onClick={handleReset}>
+                        <MutationButton
+                            type="button"
+                            onClick={() =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillGroupId: skillGroup.id,
+                                    newOrder: order,
+                                })
+                            }
+                            status={mutation.status}
+                            text={{
+                                idle: "Save",
+                                pending: "Saving",
+                                success: "Saved",
+                            }}
+                        />
+                        <Button
+                            variant="outline"
+                            onClick={handleReset}
+                            disabled={!mutation.isIdle}
+                        >
                             Reset
                         </Button>
                     </Field>

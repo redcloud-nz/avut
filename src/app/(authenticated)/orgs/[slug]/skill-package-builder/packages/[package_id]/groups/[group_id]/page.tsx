@@ -6,15 +6,10 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { use } from "react";
-import { toast } from "sonner";
-
-import { and, eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
-import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
@@ -27,9 +22,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
-import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
+import { useSkillGroup } from "@/hooks/use-skill-group";
 import * as Paths from "@/paths";
 
 import { SkillPackageBuilder_Group_Menu } from "./group-menu";
@@ -39,100 +32,11 @@ export default function SkillPackageBuilder_Group_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]`>,
 ) {
     const { slug, package_id, group_id } = use(props.params);
-    const organization = useOrganization();
-    const router = useRouter();
 
-    const skillGroupsCollection = getSkillGroupsCollection(organization.id);
-
-    const { data: skillGroup } = useLiveSuspenseQuery((q) =>
-        q
-            .from({ skillGroup: skillGroupsCollection })
-            .innerJoin(
-                { skillPackage: getSkillPackagesCollection(organization.id) },
-                ({ skillGroup, skillPackage }) =>
-                    eq(skillGroup.skillPackageId, skillPackage.id),
-            )
-            .where(({ skillGroup }) =>
-                and(
-                    eq(skillGroup.id, group_id),
-                    eq(skillGroup.skillPackageId, package_id),
-                ),
-            )
-            .select(({ skillGroup, skillPackage }) => ({
-                ...skillGroup,
-                skillPackage,
-            }))
-            .findOne(),
-    );
-
-    if (!skillGroup) throw new Error(`Skill Group (${group_id}) not found`);
-
-    function handleArchive() {
-        toast.promise(
-            async () => {
-                const tx = skillGroupsCollection.update(
-                    skillGroup!.id,
-                    (draft) => {
-                        draft.status = "Archived";
-                    },
-                );
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Archiving skill group...",
-                success: "Skill group archived.",
-                error: (error) =>
-                    "Error archiving skill group." + error.message,
-            },
-        );
-    }
-
-    function handleDelete() {
-        toast.promise(
-            async () => {
-                router.push(
-                    Paths.org(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(
-                        skillGroup!.skillPackageId,
-                    ).index.href,
-                );
-
-                // Wait for the navigation to complete before performing the delete operation.
-                await new Promise((resolve) => setTimeout(resolve, 200));
-
-                const tx = skillGroupsCollection.delete(skillGroup!.id);
-
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Deleting skill group...",
-                success: "Skill group deleted",
-                error: (error) =>
-                    `Failed to delete skill group: ${error.message}`,
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            async () => {
-                const tx = skillGroupsCollection.update(
-                    skillGroup!.id,
-                    (draft) => {
-                        draft.status = "Active";
-                    },
-                );
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Restoring skill group...",
-                success: "Skill group restored.",
-                error: (error) =>
-                    "Error restoring skill group." + error.message,
-            },
-        );
-    }
+    const skillGroup = useSkillGroup({
+        skillPackageId: package_id,
+        skillGroupId: group_id,
+    });
 
     return (
         <Lexington.Root>
@@ -171,9 +75,6 @@ export default function SkillPackageBuilder_Group_Page(
                                 <CardDescription>Skill Group</CardDescription>
                                 <CardAction>
                                     <SkillPackageBuilder_Group_Menu
-                                        onArchive={handleArchive}
-                                        onDelete={handleDelete}
-                                        onRestore={handleRestore}
                                         skillGroup={skillGroup}
                                     />
                                 </CardAction>
@@ -241,18 +142,6 @@ export default function SkillPackageBuilder_Group_Page(
                                         <FieldValue
                                             className="min-w-1/2"
                                             value={skillGroup.status}
-                                            action={
-                                                skillGroup.status ==
-                                                "Archived" ? (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={handleRestore}
-                                                    >
-                                                        Restore
-                                                    </Button>
-                                                ) : null
-                                            }
                                         />
                                     </Field>
                                 </FieldGroup>

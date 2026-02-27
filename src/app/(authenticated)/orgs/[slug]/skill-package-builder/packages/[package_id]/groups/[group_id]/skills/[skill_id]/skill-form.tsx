@@ -2,16 +2,17 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-
 "use client";
 
 import { useRouter } from "next/navigation";
 import { Controller, useForm, Watch } from "react-hook-form";
 import { toast } from "sonner";
+import { match } from "ts-pattern";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -45,52 +46,117 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getSkillsCollection } from "@/lib/collections/skills";
-import { Skill } from "@/lib/schemas/skill";
+import { ModifiableSkill, Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
+import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
+import { Show } from "@/components/show";
 
-interface SkillPackageBuilder_UpdateSkill_FormProps {
-    skill: Skill & {
-        skillGroup: SkillGroup | undefined;
-        skillPackage: SkillPackage;
-    };
+interface SkillPackageBuilder_Skill_FormProps {
+    formMode: "Create" | "Update";
+    skillId: SkillId;
+    defaultValues: ModifiableSkill;
+    skillPackage: SkillPackage;
+    skillGroup: SkillGroup;
 }
 
-export function SkillPackageBuilder_UpdateSkill_Form({
-    skill,
-}: SkillPackageBuilder_UpdateSkill_FormProps) {
+export function SkillPackageBuilder_Skill_Form({
+    formMode,
+    skillId,
+    defaultValues,
+    skillPackage,
+    skillGroup,
+}: SkillPackageBuilder_Skill_FormProps) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),
-        defaultValues: skill,
+        defaultValues: defaultValues,
     });
 
-    const handleSubmit = form.handleSubmit((formData) => {
-        toast.promise(
-            async () => {
-                router.back();
-
-                const collection = getSkillsCollection(organization.id);
-                const tx = collection.update(skill.id, (draft) => {
-                    draft.name = formData.name;
-                    draft.description = formData.description;
-                    draft.tags = formData.tags;
-                    draft.properties = formData.properties;
-                    draft.defaultRequired = formData.defaultRequired;
-                    draft.frequency = formData.frequency;
-                });
-
-                await tx.isPersisted.promise;
+    const createMutation = useMutation(
+        trpc.skills.createSkill.mutationOptions({
+            onError(error) {
+                if (error.shape?.cause?.name == "FieldConflictError") {
+                    form.setError(
+                        error.shape.cause.message as keyof ModifiableSkill,
+                        { message: error.message },
+                    );
+                } else {
+                    toast.error(
+                        `Failed to create skill group: ${error.message}`,
+                    );
+                    console.error("Failed to create skill group:", error);
+                }
             },
-            {
-                loading: "Updating Skill...",
-                success: "Skill updated",
-                error: (error) => `Failed to update Skill: ${error.message}`,
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listSkills.queryFilter({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                );
+
+                router.push(
+                    Paths.org(organization.slug)
+                        .skillPackageBuilder.skillPackage(skillPackage.id)
+                        .group(skillGroup.id).index.href,
+                );
             },
-        );
+        }),
+    );
+
+    const updateMutation = useMutation(
+        trpc.skills.updateSkill.mutationOptions({
+            onError(error) {
+                if (error.shape?.cause?.name == "FieldConflictError") {
+                    form.setError(
+                        error.shape.cause.message as keyof ModifiableSkill,
+                        { message: error.message },
+                    );
+                } else {
+                    toast.error(
+                        `Failed to update skill group: ${error.message}`,
+                    );
+                    console.error("Failed to update skill group:", error);
+                }
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listSkills.queryFilter({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                );
+
+                router.push(
+                    Paths.org(organization.slug)
+                        .skillPackageBuilder.skillPackage(skillPackage.id)
+                        .group(skillGroup.id).index.href,
+                );
+            },
+        }),
+    );
+
+    const handleSubmit = form.handleSubmit((formData: ModifiableSkill) => {
+        if (formMode === "Create") {
+            createMutation.mutate({
+                organizationId: organization.id,
+                skillId,
+                skillGroupId: skillGroup.id,
+                skillPackageId: skillPackage.id,
+                create: formData,
+            });
+        } else {
+            updateMutation.mutate({
+                organizationId: organization.id,
+                skillId,
+                update: formData,
+            });
+        }
     });
 
     return (
@@ -99,25 +165,29 @@ export function SkillPackageBuilder_UpdateSkill_Form({
                 <Watch
                     control={form.control}
                     names={["name"]}
-                    render={([name]) => <CardTitle>{name}</CardTitle>}
+                    render={([name]) => (
+                        <CardTitle>{name || "New Skill"}</CardTitle>
+                    )}
                 />
                 <CardDescription>Skill</CardDescription>
             </CardHeader>
             <CardContent>
-                <form id="update-skill-form" onSubmit={handleSubmit}>
+                <form id="skill-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Field orientation="responsive">
                             <FieldLabel>Skill ID</FieldLabel>
-                            <FieldValue value={skill.id} format="id" />
+                            <FieldValue value={skillId} format="id" />
                         </Field>
                         <Field orientation="responsive">
                             <FieldLabel>Package</FieldLabel>
-                            <FieldValue value={skill.skillPackage.name} />
+                            <FieldValue value={skillPackage.name} />
                         </Field>
+
                         <Field orientation="responsive">
                             <FieldLabel>Group</FieldLabel>
-                            <FieldValue value={skill.skillGroup?.name ?? ""} />
+                            <FieldValue value={skillGroup.name} />
                         </Field>
+
                         <Controller
                             name="name"
                             control={form.control}
@@ -131,6 +201,8 @@ export function SkillPackageBuilder_UpdateSkill_Form({
                                     </FieldLabel>
                                     <Input
                                         id="skill-name"
+                                        autoFocus
+                                        placeholder="Skill Name"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -262,19 +334,51 @@ export function SkillPackageBuilder_UpdateSkill_Form({
                             )}
                         />
                         <Field orientation="horizontal">
-                            <Button type="submit" form="update-skill-form">
-                                Update
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    form.reset();
-                                    router.back();
-                                }}
+                            {match(formMode)
+                                .with("Create", () => (
+                                    <MutationButton
+                                        type="submit"
+                                        form="skill-form"
+                                        status={createMutation.status}
+                                        text={{
+                                            idle: "Create",
+                                            pending: "Creating",
+                                            success: "Created",
+                                        }}
+                                    />
+                                ))
+                                .with("Update", () => (
+                                    <MutationButton
+                                        type="submit"
+                                        form="skill-form"
+                                        status={updateMutation.status}
+                                        text={{
+                                            idle: "Update",
+                                            pending: "Updating",
+                                            success: "Updated",
+                                        }}
+                                    />
+                                ))
+                                .exhaustive()}
+                            <Show
+                                when={
+                                    !(
+                                        createMutation.isPending ||
+                                        updateMutation.isPending
+                                    )
+                                }
                             >
-                                Cancel
-                            </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        form.reset();
+                                        router.back();
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            </Show>
                         </Field>
                     </FieldGroup>
                 </form>

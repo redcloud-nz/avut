@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useQuery } from "@tanstack/react-query";
 
 import {
     DropdownMenuTriggerIcon,
@@ -49,9 +49,9 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getSkillsCollection } from "@/lib/collections/skills";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
 
 import { ReorderSkillsDialog } from "./reorder-skills";
 
@@ -70,11 +70,12 @@ export function SkillPackageBuilder_Group_Skills_List({
 }: SkillPackageBuilder_Group_Skills_ListProps) {
     const organization = useOrganization();
 
-    const { data: skills, isReady } = useLiveQuery((q) =>
-        q
-            .from({ skill: getSkillsCollection(organization.id) })
-            .where(({ skill }) => eq(skill.skillGroupId, skillGroup.id))
-            .orderBy(({ skill }) => skill.sequence),
+    const skillsQuery = useQuery(
+        trpc.skills.listSkills.queryOptions({
+            organizationId: organization.id,
+            skillPackageId: skillGroup.skillPackageId,
+            skillGroupId: skillGroup.id,
+        }),
     );
 
     const [statusFilter, setStatusFilter] = useState(["Active"]);
@@ -84,9 +85,11 @@ export function SkillPackageBuilder_Group_Skills_List({
         organization.slug,
     ).skillPackageBuilder.skillPackage(skillGroup.skillPackageId);
 
-    const filteredSkills = skills.filter((skill) =>
-        statusFilter.includes(skill.status),
+    const skills = (skillsQuery.data ?? []).sort(
+        (a, b) => a.sequence - b.sequence,
     );
+    const filteredSkills =
+        skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
 
     return (
         <Card>
@@ -175,7 +178,7 @@ export function SkillPackageBuilder_Group_Skills_List({
             </CardHeader>
             <CardContent>
                 <Show
-                    when={isReady}
+                    when={skillsQuery.isSuccess}
                     fallback={<Skeleton className="w-full h-13 mb-4" />}
                 >
                     {filteredSkills.length > 0 ? (

@@ -205,7 +205,14 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 }
 
 interface LogEventOptions {
-    action: "Create" | "Update" | "Delete" | "Archive" | "Restore";
+    action:
+        | "Archive"
+        | "Create"
+        | "Delete"
+        | "Publish"
+        | "Restore"
+        | "Unpublish"
+        | "Update";
     objectType:
         | "D4hAccessToken"
         | "Organization"

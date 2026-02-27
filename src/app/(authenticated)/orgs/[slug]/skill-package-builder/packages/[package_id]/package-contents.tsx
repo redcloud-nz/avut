@@ -7,7 +7,7 @@
 
 import { Fragment, useState } from "react";
 
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useQueries } from "@tanstack/react-query";
 
 import {
     DropdownMenuTriggerIcon,
@@ -49,10 +49,9 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getSkillsCollection } from "@/lib/collections/skills";
-import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
 
 import { ReorderGroupsDialog } from "./reorder-groups";
 
@@ -71,20 +70,17 @@ export function SkillPackageBuilder_Package_Contents_List({
 }: SkillPackageBuilder_Package_Groups_ListProps) {
     const organization = useOrganization();
 
-    const groupsQuery = useLiveQuery((q) =>
-        q
-            .from({ skillGroup: getSkillGroupsCollection(organization.id) })
-            .where(({ skillGroup }) =>
-                eq(skillGroup.skillPackageId, skillPackage.id),
-            )
-            .orderBy(({ skillGroup }) => skillGroup.sequence),
-    );
-
-    const skillsQuery = useLiveQuery((q) => {
-        return q
-            .from({ skill: getSkillsCollection(organization.id) })
-            .where(({ skill }) => eq(skill.skillPackageId, skillPackage.id))
-            .orderBy(({ skill }) => skill.sequence);
+    const [groupsQuery, skillsQuery] = useQueries({
+        queries: [
+            trpc.skills.listGroups.queryOptions({
+                organizationId: organization.id,
+                skillPackageId: skillPackage.id,
+            }),
+            trpc.skills.listSkills.queryOptions({
+                organizationId: organization.id,
+                skillPackageId: skillPackage.id,
+            }),
+        ],
     });
 
     const [statusFilter, setStatusFilter] = useState(["Active"]);
@@ -94,8 +90,12 @@ export function SkillPackageBuilder_Package_Contents_List({
         organization.slug,
     ).skillPackageBuilder.skillPackage(skillPackage.id);
 
-    const groups = groupsQuery.data ?? [];
-    const skills = skillsQuery.data ?? [];
+    const groups = (groupsQuery.data ?? []).sort(
+        (a, b) => a.sequence - b.sequence,
+    );
+    const skills = (skillsQuery.data ?? []).sort(
+        (a, b) => a.sequence - b.sequence,
+    );
 
     const filteredGroups = groups.filter((group) =>
         statusFilter.includes(group.status),
@@ -192,7 +192,7 @@ export function SkillPackageBuilder_Package_Contents_List({
             </CardHeader>
             <CardContent>
                 <Show
-                    when={groupsQuery.isReady && skillsQuery.isReady}
+                    when={groupsQuery.isSuccess && skillsQuery.isSuccess}
                     fallback={
                         <Skeleton className="w-full h-13 mb-4">
                             Loading Skills

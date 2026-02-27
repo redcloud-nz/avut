@@ -29,10 +29,10 @@ const skillPackageSchema = z.object({
     description: z.string().max(500),
     tags: tagsSchema,
     properties: propertiesSchema,
-    status: recordStatusSchema,
-    published: z.boolean(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+    status: recordStatusSchema.default("Active"),
+    published: z.boolean().default(false),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
 });
 
 export const SkillPackage = {
@@ -43,8 +43,6 @@ export const SkillPackage = {
         description: true,
         tags: true,
         properties: true,
-        status: true,
-        published: true,
     }),
 
     fromRecord: (record: SkillPackageRecord) =>

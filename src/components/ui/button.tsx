@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/tooltip";
 
 import { cn } from "@/lib/utils";
+import { Spinner } from "./spinner";
+import { match } from "ts-pattern";
+import { CheckIcon } from "lucide-react";
 
 export const buttonVariants = tv({
     base: cn(
@@ -75,6 +78,12 @@ export const buttonVariants = tv({
     },
 });
 
+interface ButtonProps
+    extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
+    asChild?: boolean;
+    tooltip?: string | ComponentProps<typeof TooltipContent>;
+}
+
 export function Button({
     className,
     variant = "default",
@@ -82,11 +91,7 @@ export function Button({
     asChild = false,
     tooltip,
     ...props
-}: ComponentProps<"button"> &
-    VariantProps<typeof buttonVariants> & {
-        asChild?: boolean;
-        tooltip?: string | ComponentProps<typeof TooltipContent>;
-    }) {
+}: ButtonProps) {
     const Comp = asChild ? SlotPrimitive.Slot : "button";
 
     const button = (
@@ -114,5 +119,45 @@ export function Button({
             <TooltipTrigger asChild>{button}</TooltipTrigger>
             <TooltipContent {...tooltip} />
         </Tooltip>
+    );
+}
+
+interface MutationButtonProps extends Omit<
+    ButtonProps,
+    "children" | "disabled"
+> {
+    status: "error" | "pending" | "success" | "idle";
+    text: {
+        idle: string;
+        pending: string;
+        success: string;
+    };
+}
+
+export function MutationButton({
+    className,
+    status,
+    text,
+    ...props
+}: MutationButtonProps) {
+    return (
+        <Button
+            {...props}
+            disabled={status != "idle"}
+            data-status={status}
+            className={cn("data-[status=success]:bg-green-500", className)}
+        >
+            {match(status)
+                .with("idle", () => text.idle)
+                .with("pending", () => (
+                    <>
+                        {text.pending}
+                        <Spinner className="ml-1" />
+                    </>
+                ))
+                .with("success", () => text.success)
+                .with("error", () => text.idle)
+                .exhaustive()}
+        </Button>
     );
 }

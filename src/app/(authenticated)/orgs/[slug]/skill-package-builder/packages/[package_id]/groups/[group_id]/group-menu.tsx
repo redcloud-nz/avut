@@ -5,12 +5,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ComponentProps, useState } from "react";
 import { toast } from "sonner";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
+import { Show } from "@/components/show";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -31,53 +34,78 @@ import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
 
 interface SkillPackageBuilder_Group_MenuProps {
     skillGroup: SkillGroup & { skillPackage: SkillPackage };
-    onArchive(): void;
-    onDelete(): void;
-    onRestore(): void;
 }
 
 export function SkillPackageBuilder_Group_Menu({
-    onArchive,
-    onDelete,
-    onRestore,
     skillGroup,
 }: SkillPackageBuilder_Group_MenuProps) {
     const organization = useOrganization();
-    const router = useRouter();
+    const queryClient = useQueryClient();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    function handleDelete() {
-        toast.promise(
-            async () => {
-                router.push(
-                    Paths.org(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(
-                        skillGroup.skillPackageId,
-                    ).index.href,
-                );
-
-                // Wait for the navigation to complete before performing the delete operation.
-                await new Promise((resolve) => setTimeout(resolve, 200));
-
-                const collection = getSkillGroupsCollection(organization.id);
-                const tx = collection.delete(skillGroup.id);
-
-                await tx.isPersisted.promise;
+    const archiveMutation = useMutation(
+        trpc.skills.archiveGroup.mutationOptions({
+            onError(error) {
+                console.error("Failed to archive skill group:", error);
             },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listGroups.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
+    const restoreMutation = useMutation(
+        trpc.skills.restoreGroup.mutationOptions({
+            onError(error) {
+                console.error("Failed to restore skill group:", error);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listGroups.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
+
+    function handleArchive() {
+        toast.promise(
+            archiveMutation.mutateAsync({
+                skillGroupId: skillGroup.id,
+                organizationId: organization.id,
+            }),
             {
-                loading: "Deleting skill group...",
-                success: "Skill group deleted",
+                loading: "Archiving skill group...",
+                success: "Skill group archived.",
                 error: (error) =>
-                    `Failed to delete skill group: ${error.message}`,
+                    "Error archiving skill group." + error.message,
+            },
+        );
+    }
+
+    function handleRestore() {
+        toast.promise(
+            restoreMutation.mutateAsync({
+                skillGroupId: skillGroup.id,
+                organizationId: organization.id,
+            }),
+            {
+                loading: "Restoring skill group...",
+                success: "Skill group restored.",
+                error: (error) =>
+                    "Error restoring skill group." + error.message,
             },
         );
     }
@@ -99,15 +127,15 @@ export function SkillPackageBuilder_Group_Menu({
                     >
                         <DropdownMenuGroup>
                             {/** Show the archive option if the skill group is active */}
-                            {skillGroup.skillPackage.status == "Active" && (
-                                <DropdownMenuItem onSelect={onArchive}>
+                            {skillGroup.status == "Active" && (
+                                <DropdownMenuItem onSelect={handleArchive}>
                                     <ObjectIcons.Archive /> Archive
                                 </DropdownMenuItem>
                             )}
 
                             {/* Show the restore option if the skill group is archived */}
-                            {skillGroup.skillPackage.status == "Archived" && (
-                                <DropdownMenuItem onSelect={onRestore}>
+                            {skillGroup.status == "Archived" && (
+                                <DropdownMenuItem onSelect={handleRestore}>
                                     <ObjectIcons.Restore /> Restore
                                 </DropdownMenuItem>
                             )}
@@ -135,39 +163,91 @@ export function SkillPackageBuilder_Group_Menu({
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Skill Group</DialogTitle>
-                        <DialogDescription>
-                            Confirm deletion of skill group{" "}
-                            <ObjectName>{skillGroup.name}</ObjectName> from
-                            package{" "}
-                            <ObjectName>
-                                {skillGroup.skillPackage.name}
-                            </ObjectName>
-                            .
-                        </DialogDescription>
-                    </DialogHeader>
-                    <FieldGroup>
-                        <Field orientation="horizontal">
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                onClick={handleDelete}
-                            >
-                                Delete
-                            </Button>
+            <DeleteSkillGroupDialog
+                skillGroup={skillGroup}
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            />
+        </>
+    );
+}
+
+interface DeleteSkillGroupDialogProps extends ComponentProps<typeof Dialog> {
+    skillGroup: SkillGroup & { skillPackage: SkillPackage };
+}
+
+function DeleteSkillGroupDialog({
+    skillGroup,
+    ...props
+}: DeleteSkillGroupDialogProps) {
+    const organization = useOrganization();
+    const queryClient = useQueryClient();
+    const router = useRouter();
+
+    const mutation = useMutation(
+        trpc.skills.deleteGroup.mutationOptions({
+            onError(error) {
+                console.error("Failed to delete skill group:", error);
+            },
+            async onSuccess() {
+                props.onOpenChange?.(false);
+
+                // Redirect to the package list page after deletion
+                router.push(
+                    Paths.org(organization.slug).skillPackageBuilder
+                        .skillPackages.href,
+                );
+
+                await queryClient.invalidateQueries(
+                    trpc.skills.listPackages.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
+
+    return (
+        <Dialog {...props}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete Skill Group</DialogTitle>
+                    <DialogDescription>
+                        Confirm deletion of skill group{" "}
+                        <ObjectName>{skillGroup.name}</ObjectName> from package{" "}
+                        <ObjectName>{skillGroup.skillPackage.name}</ObjectName>.
+                        This action cannot be undone.
+                    </DialogDescription>
+                </DialogHeader>
+                <FieldGroup>
+                    <Field orientation="horizontal">
+                        <MutationButton
+                            type="button"
+                            variant="destructive"
+                            onClick={() =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillGroupId: skillGroup.id,
+                                })
+                            }
+                            status={mutation.status}
+                            text={{
+                                idle: "Delete",
+                                pending: "Deleting",
+                                success: "Deleted",
+                            }}
+                        />
+                        <Show when={mutation.isIdle}>
                             <Button
                                 variant="outline"
-                                onClick={() => setDeleteDialogOpen(false)}
+                                onClick={() => props.onOpenChange?.(false)}
                             >
                                 Cancel
                             </Button>
-                        </Field>
-                    </FieldGroup>
-                </DialogContent>
-            </Dialog>
-        </>
+                        </Show>
+                    </Field>
+                </FieldGroup>
+            </DialogContent>
+        </Dialog>
     );
 }

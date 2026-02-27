@@ -33,9 +33,9 @@ const skillGroupSchema = z.object({
     tags: tagsSchema,
     properties: propertiesSchema,
     sequence: z.number().int().nonnegative(),
-    status: recordStatusSchema,
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+    status: recordStatusSchema.default("Active"),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
 });
 
 export const SkillGroup = {
@@ -46,7 +46,6 @@ export const SkillGroup = {
         description: true,
         tags: true,
         properties: true,
-        status: true,
     }),
 
     fromRecord: (record: SkillGroupRecord) =>

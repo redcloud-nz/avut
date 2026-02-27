@@ -6,22 +6,16 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { use } from "react";
-import { toast } from "sonner";
-
-import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
 import * as Paths from "@/paths";
-import { useOrganization } from "@/hooks/use-organization";
-import { getSkillGroupsCollection } from "@/lib/collections/skill-groups";
-import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
-import { ModifiableSkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
 
-import { SkillPackageBuilder_Group_Form } from "../../group-form";
+import { SkillPackageBuilder_Group_Form } from "../group-form";
+import { useSkillPackage } from "@/hooks/use-skill-package";
 
 /**
  * Page for creating a new skill group within a skill package. Fetches the skill package data and renders the group creation form.
@@ -31,52 +25,10 @@ export default function SkillPackageBuilder_CreateGroup_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--create`>,
 ) {
     const { slug, package_id, group_id } = use(props.params);
-    const organization = useOrganization();
-    const router = useRouter();
 
-    const { data: skillPackage } = useLiveSuspenseQuery((q) =>
-        q
-            .from({ skillPackage: getSkillPackagesCollection(organization.id) })
-            .where(({ skillPackage }) => eq(skillPackage.id, package_id))
-            .findOne(),
-    );
-
-    if (!skillPackage)
-        throw new Error(`Skill Package (${package_id}) not found`);
+    const skillPackage = useSkillPackage(package_id);
 
     const groupId = SkillGroupId.schema.parse(group_id);
-
-    function handleCreate(formData: ModifiableSkillGroup) {
-        toast.promise(
-            async () => {
-                const collection = getSkillGroupsCollection(organization.id);
-                const tx = collection.insert({
-                    id: groupId,
-                    skillPackageId: skillPackage!.id,
-                    ...formData,
-                    sequence: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                });
-
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                router.push(
-                    Paths.org(organization.slug)
-                        .skillPackageBuilder.skillPackage(skillPackage!.id)
-                        .group(groupId).index.href,
-                );
-
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Creating the skill group...",
-                success: "Skill group created!",
-                error: (error) =>
-                    `Failed to create the skill group: ${error.message}`,
-            },
-        );
-    }
 
     return (
         <Lexington.Root>
@@ -99,7 +51,7 @@ export default function SkillPackageBuilder_CreateGroup_Page(
                                     Paths.org(
                                         slug,
                                     ).skillPackageBuilder.skillPackage(
-                                        package_id,
+                                        skillPackage,
                                     ).index
                                 }
                             >
@@ -114,9 +66,7 @@ export default function SkillPackageBuilder_CreateGroup_Page(
                                 description: "",
                                 tags: [],
                                 properties: {},
-                                status: "Active",
                             }}
-                            onSubmit={handleCreate}
                             skillPackage={skillPackage}
                         />
                     </Hermes.Section>

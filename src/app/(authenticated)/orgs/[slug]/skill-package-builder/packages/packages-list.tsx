@@ -105,6 +105,27 @@ export function SkillPackageBuilder_Packages_List({
                     enableGlobalFilter: false,
                     filterFn: "arrIncludesSome",
                 }),
+                columnHelper.accessor("published", {
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell
+                            header={ctx.header}
+                            className="w-25"
+                        >
+                            Published
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell
+                            cell={ctx.cell}
+                            className="text-center"
+                        >
+                            {ctx.getValue() ? "Yes" : "No"}
+                        </Akagi.TableCell>
+                    ),
+                    enableColumnFilter: true,
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                }),
             ]),
         [organization.slug],
     );

@@ -37,9 +37,9 @@ const skillSchema = z.object({
     sequence: z.number().int().nonnegative(),
     frequency: z.number().int().nonnegative(),
     defaultRequired: z.boolean(),
-    status: recordStatusSchema,
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+    status: recordStatusSchema.default("Active"),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
 });
 
 export const Skill = {
@@ -52,7 +52,6 @@ export const Skill = {
         properties: true,
         defaultRequired: true,
         frequency: true,
-        status: true,
     }),
 
     fromRecord: (record: SkillRecord) =>

@@ -7,22 +7,15 @@
 
 "use client";
 
-import { useRouter } from "next/navigation";
 import { use } from "react";
-import { toast } from "sonner";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { getSkillPackagesCollection } from "@/lib/collections/skill-packages";
-import {
-    ModifiableSkillPackage,
-    SkillPackageId,
-} from "@/lib/schemas/skill-package";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 
-import { SkillPackageBuilder_Package_Form } from "../../package-form";
+import { SkillPackageBuilder_Package_Form } from "../package-form";
 
 /**
  * Page for creating a new skill package.
@@ -32,38 +25,7 @@ export default function SkillPackageBuilder_CreatePackage_Page(
 ) {
     const { slug, package_id } = use(props.params);
 
-    const organization = useOrganization();
-    const router = useRouter();
-
     const packageId = SkillPackageId.schema.parse(package_id);
-
-    function handleCreate(formData: ModifiableSkillPackage) {
-        toast.promise(
-            async () => {
-                router.push(
-                    Paths.org(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(packageId).index.href,
-                );
-
-                const collection = getSkillPackagesCollection(organization.id);
-                const tx = collection.insert({
-                    id: packageId,
-                    ...formData,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                });
-
-                await tx.isPersisted.promise;
-            },
-            {
-                loading: "Creating skill package...",
-                success: "Skill package created!",
-                error: (error) =>
-                    `Failed to create skill package: ${error.message}`,
-            },
-        );
-    }
 
     return (
         <Lexington.Root>
@@ -88,16 +50,13 @@ export default function SkillPackageBuilder_CreatePackage_Page(
                         </Hermes.SectionHeader>
                         <SkillPackageBuilder_Package_Form
                             formMode="Create"
+                            id={packageId}
                             defaultValues={{
-                                id: packageId,
                                 name: "",
                                 description: "",
                                 tags: [],
                                 properties: {},
-                                status: "Active",
-                                published: false,
                             }}
-                            onSubmit={handleCreate}
                         />
                     </Hermes.Section>
                 </Lexington.Column>

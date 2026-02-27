@@ -21,28 +21,133 @@ import { Messages } from "../messages";
 
 export const skillsRouter = createTrpcRouter({
     /**
+     * Archive the specified skill, marking it as archived but not deleting it from the database. Only skills with status "Active" can be archived.
+     * @param skillId The ID of the skill to archive.
+     * @return The updated skill with status "Archived".
+     * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill is not in "Active" status.
+     */
+    archiveSkill: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(z.object({ updated: Skill.schema }))
+        .mutation(async ({ ctx, input: { skillId } }) => {
+            const existingSkill = await getSkillOrThrow(ctx, skillId);
+
+            if (existingSkill.status != "Active")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Skill(${skillId}) with status ${existingSkill.status} cannot be archived. Only skills with status Active can be archived.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skill.update({
+                    where: { id: skillId },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({
+                    action: "Archive",
+                    objectType: "Skill",
+                    objectId: skillId,
+                }),
+            ]);
+            return { updated: Skill.fromRecord(updated) };
+        }),
+
+    /**
+     * Archive the specified skill group, marking it as archived but not deleting it from the database. Only groups with status "Active" can be archived.
+     * @param skillGroupId The ID of the skill group to archive.
+     * @return The updated skill group with status "Archived".
+     * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill group is not in "Active" status.
+     */
+    archiveGroup: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(z.object({ updated: SkillGroup.schema }))
+        .mutation(async ({ ctx, input: { skillGroupId } }) => {
+            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+
+            if (existingGroup.status != "Active")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillGroup(${skillGroupId}) with status ${existingGroup.status} cannot be archived. Only groups with status Active can be archived.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skillGroup.update({
+                    where: { id: skillGroupId },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({
+                    action: "Archive",
+                    objectType: "SkillGroup",
+                    objectId: skillGroupId,
+                }),
+            ]);
+            return { updated: SkillGroup.fromRecord(updated) };
+        }),
+
+    /**
+     * Archive the specified skill package, marking it as archived but not deleting it from the database. Only packages with status "Active" can be archived.
+     * @param skillPackageId The ID of the skill package to archive.
+     * @return The updated skill package with status "Archived".
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill package is not in "Active" status.
+     */
+    archivePackage: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(z.object({ updated: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            const existingPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
+
+            if (existingPackage.status != "Active")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillPackage(${skillPackageId}) with status ${existingPackage.status} cannot be archived. Only packages with status Active can be archived.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({
+                    action: "Archive",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                }),
+            ]);
+            return { updated: SkillPackage.fromRecord(updated) };
+        }),
+
+    /**
      * Create new new group within a skill package.
-     * @param input The skill group data.
+     * @param skillPackageId The ID of the skill package to add the group to.
+     * @param skillGroupId The ID of the skill group to create.
+     * @param create The skill group data to create.
      * @returns The created skill group.
      * @throws TRPCError(NOT_FOUND) if the specified skill package does not exist.
      */
     createGroup: organizationProcedure({ skillPackage: ["update"] })
         .input(
-            SkillGroup.modifiableSchema.extend({
-                id: SkillGroupId.schema,
+            z.object({
                 skillPackageId: SkillPackageId.schema,
+                skillGroupId: SkillGroupId.schema,
+                create: SkillGroup.modifiableSchema,
             }),
         )
         .output(z.object({ created: SkillGroup.schema }))
         .mutation(
             async ({
                 ctx,
-                input: { organizationId, id: skillGroupId, ...fields },
+                input: { organizationId, skillGroupId, skillPackageId, create },
             }) => {
                 // Verify the skill package exists in the organization
                 const skillPackage = await ctx.prisma.skillPackage.findUnique({
                     where: {
-                        id: fields.skillPackageId,
+                        id: skillPackageId,
                         organizationId,
                     },
                     include: {
@@ -57,9 +162,7 @@ export const skillsRouter = createTrpcRouter({
                 if (!skillPackage) {
                     throw new TRPCError({
                         code: "NOT_FOUND",
-                        message: Messages.skillPackageNotFound(
-                            fields.skillPackageId,
-                        ),
+                        message: Messages.skillPackageNotFound(skillPackageId),
                     });
                 }
 
@@ -69,14 +172,15 @@ export const skillsRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, fields);
+                const diff = diffObject({}, create);
 
                 const [created] = await Promise.all([
                     ctx.prisma.skillGroup.create({
                         data: {
+                            skillPackageId,
                             id: skillGroupId,
                             sequence: highestSequenceNumber + 1,
-                            ...fields,
+                            ...create,
                         },
                     }),
                     ctx.logEvent({
@@ -93,29 +197,31 @@ export const skillsRouter = createTrpcRouter({
 
     /**
      * Create a new skill package.
-     * @param input The skill package data.
+     * @param skillPackageId The ID of the skill package to create.
+     * @param create The skill package data to create.
      * @returns The created skill package.
      */
     createPackage: organizationProcedure({ skillPackage: ["create"] })
         .input(
-            SkillPackage.modifiableSchema.extend({
-                id: SkillPackageId.schema,
+            z.object({
+                skillPackageId: SkillPackageId.schema,
+                create: SkillPackage.modifiableSchema,
             }),
         )
         .output(z.object({ created: SkillPackage.schema }))
         .mutation(
             async ({
                 ctx,
-                input: { organizationId, id: skillPackageId, ...fields },
+                input: { organizationId, skillPackageId, create },
             }) => {
-                const diff = diffObject({}, fields);
+                const diff = diffObject({}, create);
 
                 const [created] = await Promise.all([
                     ctx.prisma.skillPackage.create({
                         data: {
                             id: skillPackageId,
                             organizationId,
-                            ...fields,
+                            ...create,
                         },
                     }),
                     ctx.logEvent({
@@ -137,10 +243,11 @@ export const skillsRouter = createTrpcRouter({
      */
     createSkill: organizationProcedure({ skillPackage: ["update"] })
         .input(
-            Skill.modifiableSchema.extend({
-                id: SkillId.schema,
+            z.object({
+                skillId: SkillId.schema,
                 skillPackageId: SkillPackageId.schema,
                 skillGroupId: SkillGroupId.schema,
+                create: Skill.modifiableSchema,
             }),
         )
         .output(z.object({ created: Skill.schema }))
@@ -149,10 +256,10 @@ export const skillsRouter = createTrpcRouter({
                 ctx,
                 input: {
                     organizationId,
-                    id: skillId,
+                    skillId,
                     skillPackageId,
                     skillGroupId,
-                    ...fields
+                    create,
                 },
             }) => {
                 const skillGroup = await ctx.prisma.skillGroup.findUnique({
@@ -183,7 +290,7 @@ export const skillsRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, fields);
+                const diff = diffObject({}, create);
 
                 const [created] = await Promise.all([
                     ctx.prisma.skill.create({
@@ -192,7 +299,7 @@ export const skillsRouter = createTrpcRouter({
                             skillPackageId,
                             skillGroupId,
                             sequence: highestSequenceNumber + 1,
-                            ...fields,
+                            ...create,
                         },
                     }),
                     ctx.logEvent({
@@ -405,6 +512,49 @@ export const skillsRouter = createTrpcRouter({
         ),
 
     /**
+     * Publish the specified skill package, making it available for use. Only packages with status "Active" can be published.
+     * @param skillPackageId The ID of the skill package to publish.
+     * @return The updated skill package with published set to true.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill package is not in "Active" status.
+     * @throws TRPCError(BAD_REQUEST) if the skill package is already published.
+     */
+    publishPackage: organizationProcedure({ skillPackage: ["publish"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(z.object({ published: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            const existingPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
+
+            if (existingPackage.status != "Active")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillPackage(${skillPackageId}) with status ${existingPackage.status} cannot be published. Only packages with status Active can be published.`,
+                });
+
+            if (existingPackage.published)
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillPackage(${skillPackageId}) is already published.`,
+                });
+
+            const [published] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: { published: true },
+                }),
+                ctx.logEvent({
+                    action: "Publish",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                }),
+            ]);
+            return { published: SkillPackage.fromRecord(published) };
+        }),
+
+    /**
      * Reorder skill groups within a skill package.
      * @param skillPackageId The ID of the skill package.
      * @param newOrder An array of skill group IDs representing the new order.
@@ -521,6 +671,144 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Restore the specified skill, changing its status from "Archived" or "Deleted" back to "Active". Only skills with status "Archived" or "Deleted" can be restored.
+     * @param skillId The ID of the skill to restore.
+     * @return The updated skill with status "Active".
+     * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill is not in "Archived" or "Deleted" status.
+     */
+    restoreSkill: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(z.object({ updated: Skill.schema }))
+        .mutation(async ({ ctx, input: { skillId } }) => {
+            const existingSkill = await getSkillOrThrow(ctx, skillId);
+
+            if (!["Archived", "Deleted"].includes(existingSkill.status))
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Skill(${skillId}) with status ${existingSkill.status} cannot be restored. Only skills with status 'Archived' or 'Deleted' can be restored.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skill.update({
+                    where: { id: skillId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({
+                    action: "Restore",
+                    objectType: "Skill",
+                    objectId: skillId,
+                }),
+            ]);
+            return { updated: Skill.fromRecord(updated) };
+        }),
+
+    /**
+     * Restore the specified skill group, changing its status from "Archived" or "Deleted" back to "Active". Only groups with status "Archived" or "Deleted" can be restored.
+     * @param skillGroupId The ID of the skill group to restore.
+     * @return The updated skill group with status "Active".
+     * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill group is not in "Archived" or "Deleted" status.
+     */
+    restoreGroup: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(z.object({ updated: SkillGroup.schema }))
+        .mutation(async ({ ctx, input: { skillGroupId } }) => {
+            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+
+            if (!["Archived", "Deleted"].includes(existingGroup.status))
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillGroup(${skillGroupId}) with status ${existingGroup.status} cannot be restored. Only groups with status 'Archived' or 'Deleted' can be restored.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skillGroup.update({
+                    where: { id: skillGroupId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({
+                    action: "Restore",
+                    objectType: "SkillGroup",
+                    objectId: skillGroupId,
+                }),
+            ]);
+            return { updated: SkillGroup.fromRecord(updated) };
+        }),
+
+    /**
+     * Restore the specified skill package, changing its status from "Archived" or "Deleted" back to "Active". Only packages with status "Archived" or "Deleted" can be restored.
+     * @param skillPackageId The ID of the skill package to restore.
+     * @return The updated skill package with status "Active".
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill package is not in "Archived" or "Deleted" status.
+     */
+    restorePackage: organizationProcedure({ skillPackage: ["update"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(z.object({ updated: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            const existingPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
+
+            if (!["Archived", "Deleted"].includes(existingPackage.status))
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillPackage(${skillPackageId}) with status ${existingPackage.status} cannot be restored. Only packages with status 'Archived' or 'Deleted' can be restored.`,
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({
+                    action: "Restore",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                }),
+            ]);
+            return { updated: SkillPackage.fromRecord(updated) };
+        }),
+
+    /**
+     * Unpublish the specified skill package, making it unavailable for use. Only packages that are currently published can be unpublished.
+     * @param skillPackageId The ID of the skill package to unpublish.
+     * @return The updated skill package with published set to false.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the skill package is not published.
+     */
+    unpublishPackage: organizationProcedure({ skillPackage: ["publish"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(z.object({ unpublished: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            const existingPackage = await getSkillPackageOrThrow(
+                ctx,
+                skillPackageId,
+            );
+
+            if (!existingPackage.published)
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `SkillPackage(${skillPackageId}) is not published.`,
+                });
+
+            const [unpublished] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: { published: false },
+                }),
+                ctx.logEvent({
+                    action: "Unpublish",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                }),
+            ]);
+            return { unpublished: SkillPackage.fromRecord(unpublished) };
+        }),
+
+    /**
      * Update the specified skill group.
      * @param skillGroupId The ID of the skill group to update.
      * @param update The fields to update on the skill group.
@@ -538,65 +826,25 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { skillGroupId, update } }) => {
             const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
 
-            if (
-                existingGroup.status == "Active" &&
-                update.status == "Archived"
-            ) {
-                // Archive Action
+            const diff = diffObject(
+                SkillGroup.modifiableSchema.parse(existingGroup),
+                update,
+            );
 
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillGroup.update({
-                        where: { id: skillGroupId },
-                        data: { status: "Archived" },
-                    }),
-                    ctx.logEvent({
-                        action: "Archive",
-                        objectType: "SkillGroup",
-                        objectId: skillGroupId,
-                    }),
-                ]);
-                return { updated: SkillGroup.fromRecord(updated) };
-            } else if (
-                existingGroup.status == "Archived" &&
-                update.status == "Active"
-            ) {
-                // Restore Action
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillGroup.update({
-                        where: { id: skillGroupId },
-                        data: { status: "Active" },
-                    }),
-                    ctx.logEvent({
-                        action: "Restore",
-                        objectType: "SkillGroup",
-                        objectId: skillGroupId,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skillGroup.update({
+                    where: { id: skillGroupId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "SkillGroup",
+                    objectId: skillGroupId,
+                    changes: diff,
+                }),
+            ]);
 
-                return { updated: SkillGroup.fromRecord(updated) };
-            } else {
-                // Regular update.
-
-                const diff = diffObject(
-                    SkillGroup.modifiableSchema.parse(existingGroup),
-                    update,
-                );
-
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillGroup.update({
-                        where: { id: skillGroupId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillGroup",
-                        objectId: skillGroupId,
-                        changes: diff,
-                    }),
-                ]);
-
-                return { updated: SkillGroup.fromRecord(updated) };
-            }
+            return { updated: SkillGroup.fromRecord(updated) };
         }),
 
     /**
@@ -620,64 +868,25 @@ export const skillsRouter = createTrpcRouter({
                 skillPackageId,
             );
 
-            if (
-                existingPackage.status == "Active" &&
-                update.status == "Archived"
-            ) {
-                // Archive action.
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillPackage.update({
-                        where: { id: skillPackageId },
-                        data: { status: "Archived" },
-                    }),
-                    ctx.logEvent({
-                        action: "Archive",
-                        objectType: "SkillPackage",
-                        objectId: skillPackageId,
-                    }),
-                ]);
+            const diff = diffObject(
+                SkillPackage.modifiableSchema.parse(existingPackage),
+                update,
+            );
 
-                return { updated: SkillPackage.fromRecord(updated) };
-            } else if (
-                existingPackage.status == "Archived" &&
-                update.status == "Active"
-            ) {
-                // Restore action.
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillPackage.update({
-                        where: { id: skillPackageId },
-                        data: { status: "Active" },
-                    }),
-                    ctx.logEvent({
-                        action: "Restore",
-                        objectType: "SkillPackage",
-                        objectId: skillPackageId,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skillPackage.update({
+                    where: { id: skillPackageId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "SkillPackage",
+                    objectId: skillPackageId,
+                    changes: diff,
+                }),
+            ]);
 
-                return { updated: SkillPackage.fromRecord(updated) };
-            } else {
-                // Regular update.
-                const diff = diffObject(
-                    SkillPackage.modifiableSchema.parse(existingPackage),
-                    update,
-                );
-
-                const [updated] = await Promise.all([
-                    ctx.prisma.skillPackage.update({
-                        where: { id: skillPackageId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillPackage",
-                        objectId: skillPackageId,
-                        changes: diff,
-                    }),
-                ]);
-
-                return { updated: SkillPackage.fromRecord(updated) };
-            }
+            return { updated: SkillPackage.fromRecord(updated) };
         }),
 
     /**
@@ -698,61 +907,25 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { skillId, update } }) => {
             const existingSkill = await getSkillOrThrow(ctx, skillId);
 
-            if (existingSkill.status == "Active" && update.status == "Active") {
-                // Archive action.
+            const diff = diffObject(
+                Skill.modifiableSchema.parse(existingSkill),
+                update,
+            );
 
-                const [updated] = await Promise.all([
-                    ctx.prisma.skill.update({
-                        where: { id: skillId },
-                        data: { status: "Archived" },
-                    }),
-                    ctx.logEvent({
-                        action: "Archive",
-                        objectType: "Skill",
-                        objectId: skillId,
-                    }),
-                ]);
+            const [updated] = await Promise.all([
+                ctx.prisma.skill.update({
+                    where: { id: skillId },
+                    data: update,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "Skill",
+                    objectId: skillId,
+                    changes: diff,
+                }),
+            ]);
 
-                return { updated: Skill.fromRecord(updated) };
-            } else if (
-                existingSkill.status == "Archived" &&
-                update.status == "Active"
-            ) {
-                // Restore action.
-                const [updated] = await Promise.all([
-                    ctx.prisma.skill.update({
-                        where: { id: skillId },
-                        data: { status: "Active" },
-                    }),
-                    ctx.logEvent({
-                        action: "Restore",
-                        objectType: "Skill",
-                        objectId: skillId,
-                    }),
-                ]);
-
-                return { updated: Skill.fromRecord(updated) };
-            } else {
-                const diff = diffObject(
-                    Skill.modifiableSchema.parse(existingSkill),
-                    update,
-                );
-
-                const [updated] = await Promise.all([
-                    ctx.prisma.skill.update({
-                        where: { id: skillId },
-                        data: update,
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "Skill",
-                        objectId: skillId,
-                        changes: diff,
-                    }),
-                ]);
-
-                return { updated: Skill.fromRecord(updated) };
-            }
+            return { updated: Skill.fromRecord(updated) };
         }),
 });
 
