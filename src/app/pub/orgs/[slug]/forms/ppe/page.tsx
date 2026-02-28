@@ -43,9 +43,9 @@ export default async function Pub_PPEIndex_Page(
             <Lexington.Page>
                 <Lexington.Column width="md">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.SectionTitle>PPE Forms</Hermes.SectionTitle>
-                        </Hermes.SectionHeader>
+                        <Hermes.Header>
+                            <Hermes.Title>PPE Forms</Hermes.Title>
+                        </Hermes.Header>
                         <div className="flex flex-col gap-4 mt-4">
                             <ItemGroup>
                                 <Item asChild>

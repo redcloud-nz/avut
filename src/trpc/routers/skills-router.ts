@@ -397,56 +397,14 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
-     * Retrieve a single skill by ID, ensuring it belongs to the organization.
-     * @param skillId The ID of the skill to retrieve.
-     * @param skillGroupId Optional skill group ID to verify the skill belongs to.
-     * @param skillPackageId Optional skill package ID to verify the skill belongs to.
-     * @returns The skill data.
-     * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
-     */
-    getSkill: organizationProcedure({ skillPackage: ["view"] })
-        .input(
-            z.object({
-                skillId: SkillId.schema,
-                skillGroupId: SkillGroupId.schema.optional(),
-                skillPackageId: SkillPackageId.schema.optional(),
-            }),
-        )
-        .output(Skill.schema)
-        .query(
-            async ({
-                ctx,
-                input: { skillId, skillGroupId, skillPackageId },
-            }) => {
-                const skill = await getSkillOrThrow(ctx, skillId);
-
-                if (skillGroupId && skill.skillGroupId !== skillGroupId) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.skillNotFound(skillId),
-                    });
-                }
-
-                if (skillPackageId && skill.skillPackageId !== skillPackageId) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.skillNotFound(skillId),
-                    });
-                }
-
-                return skill;
-            },
-        ),
-
-    /**
      * List all skill groups within the organization, optionally filtered by skill package.
-     * @param skillPackageId Optional skill package ID to filter groups by.
+     * @param skillPackageId Skill package ID to filter groups by.
      * @returns An array of skill groups.
      */
     listGroups: organizationProcedure({ skillPackage: ["view"] })
         .input(
             z.object({
-                skillPackageId: SkillPackageId.schema.optional(),
+                skillPackageId: SkillPackageId.schema,
             }),
         )
         .output(z.array(SkillGroup.schema))
@@ -480,36 +438,28 @@ export const skillsRouter = createTrpcRouter({
 
     /**
      * List all skills within the organization, optionally filtered by skill package and/or skill group.
-     * @param skillGroupId Optional skill group ID to filter skills by.
-     * @param skillPackageId Optional skill package ID to filter skills by.
+     * @param skillPackageId Skill package ID to filter skills by.
      * @returns An array of skills.
      */
     listSkills: organizationProcedure({ skillPackage: ["view"] })
         .input(
             z.object({
-                skillGroupId: SkillGroupId.schema.optional(),
-                skillPackageId: SkillPackageId.schema.optional(),
+                skillPackageId: SkillPackageId.schema,
             }),
         )
         .output(z.array(Skill.schema))
-        .query(
-            async ({
-                ctx,
-                input: { organizationId, skillGroupId, skillPackageId },
-            }) => {
-                const skills = await ctx.prisma.skill.findMany({
-                    where: {
-                        skillGroupId: skillGroupId,
-                        skillPackage: {
-                            organizationId,
-                            id: skillPackageId,
-                        },
+        .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
+            const skills = await ctx.prisma.skill.findMany({
+                where: {
+                    skillPackage: {
+                        organizationId,
+                        id: skillPackageId,
                     },
-                });
+                },
+            });
 
-                return skills.map(Skill.fromRecord);
-            },
-        ),
+            return skills.map(Skill.fromRecord);
+        }),
 
     /**
      * Publish the specified skill package, making it available for use. Only packages with status "Active" can be published.

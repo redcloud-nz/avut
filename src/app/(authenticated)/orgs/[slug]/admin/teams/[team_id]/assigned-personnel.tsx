@@ -78,25 +78,23 @@ export function AdminModule_TeamPersonnel_Section({
         <Hermes.Section>
             {teamMembersQuery.isLoading ? (
                 <>
-                    <Hermes.SectionHeader>
+                    <Hermes.Header>
                         <Skeleton className="h-8 w-50" />
                         <Skeleton className="h-8 w-20" />
-                    </Hermes.SectionHeader>
+                    </Hermes.Header>
                     <Skeleton className="h-20 w-full" />
                 </>
             ) : (
                 <>
-                    <Hermes.SectionHeader>
-                        <Hermes.SectionTitle>
-                            Team Personnel
-                        </Hermes.SectionTitle>
+                    <Hermes.Header>
+                        <Hermes.Title>Team Personnel</Hermes.Title>
                         <Button
                             variant="outline"
                             onClick={() => setNewMemberDialogOpen(true)}
                         >
                             <ObjectIcons.Create /> Person
                         </Button>
-                    </Hermes.SectionHeader>
+                    </Hermes.Header>
                     <Table>
                         <TableHeader>
                             <TableRow>

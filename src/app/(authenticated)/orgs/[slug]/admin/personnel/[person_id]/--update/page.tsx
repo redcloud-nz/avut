@@ -49,13 +49,13 @@ export default function AdminModule_PersonUpdate_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(slug).admin.person(person_id)}
                             >
                                 {person.name}
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Update Person</CardTitle>

@@ -27,6 +27,7 @@ import {
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -116,12 +117,13 @@ export function SkillPackageBuilder_Skill_Menu({
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="outline" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Skill</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
 
                     <Protect
                         orgId={organization.id}
@@ -147,7 +149,6 @@ export function SkillPackageBuilder_Skill_Menu({
                                             .skillPackageBuilder.skillPackage(
                                                 skill.skillPackageId,
                                             )
-                                            .group(skill.skillGroupId)
                                             .skill(skill.id).update
                                     }
                                 >

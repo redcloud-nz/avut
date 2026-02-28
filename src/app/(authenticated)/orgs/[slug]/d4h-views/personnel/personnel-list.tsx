@@ -123,9 +123,9 @@ export function D4HViewsModules_Personnel_List({
 
     return (
         <Hermes.Section>
-            <Hermes.SectionHeader>
+            <Hermes.Header>
                 <Akagi.TableSearch table={table} />
-            </Hermes.SectionHeader>
+            </Hermes.Header>
             <Akagi.Table table={table} />
         </Hermes.Section>
     );

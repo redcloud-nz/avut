@@ -53,7 +53,7 @@ export default function AdminModule_Team_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton to={Paths.org(slug).admin.teams}>
                                 Teams
                             </Hermes.BackButton>
@@ -79,7 +79,7 @@ export default function AdminModule_Team_Page(
                                     team={team}
                                 />
                             </ButtonGroup>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
 
                         <Card>
                             <CardHeader>

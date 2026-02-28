@@ -131,11 +131,11 @@ export default function Auth_ViewInvitation_Page(
             />
             <Lexington.Column width="lg">
                 <Hermes.Section>
-                    <Hermes.SectionHeader>
+                    <Hermes.Header>
                         <Hermes.BackButton to={Paths.personal.invitations}>
                             Invitations
                         </Hermes.BackButton>
-                    </Hermes.SectionHeader>
+                    </Hermes.Header>
 
                     <Card>
                         <CardHeader>

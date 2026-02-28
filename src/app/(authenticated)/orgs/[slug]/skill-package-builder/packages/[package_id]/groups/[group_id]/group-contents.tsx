@@ -5,9 +5,9 @@
 
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import {
     FilterColumnValuesIcon,
@@ -46,67 +46,51 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
-import { SkillPackageBuilder_CreateGroup_Dialog } from "./groups/create-group";
-
-interface SkillPackageBuilder_Package_Groups_ListProps {
-    skillPackage: SkillPackage;
-}
+import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
+import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
 
 /**
- * Component to display a list of the groups, and skills within those groups, for a given skill package.
- * Provides buttons to create new skills and groups within the package.
- * @param skillPackageId The ID of the skill package whose groups are being displayed.
- * @returns A React component displaying the skill groups in a table format, or an alert if no groups are present.
+ * Component to display a list of skills within a skill group.
+ * Provides a button to create new skills within the group.
+ * @param skillGroup The skill group whose skills are being displayed.
+ * @param skillPackage The skill package to which the skill group belongs.
+ * @returns A React component displaying the skills in a table format, or an alert if no skills are present.
  */
-export function SkillPackageBuilder_Package_Contents_List({
+export function SkillPackageBuilder_Group_Contents_List({
+    skillGroup,
     skillPackage,
-}: SkillPackageBuilder_Package_Groups_ListProps) {
+}: {
+    skillGroup: SkillGroup;
+    skillPackage: SkillPackage;
+}) {
     const organization = useOrganization();
 
-    const [groupsQuery, skillsQuery] = useQueries({
-        queries: [
-            trpc.skills.listGroups.queryOptions({
-                organizationId: organization.id,
-                skillPackageId: skillPackage.id,
-            }),
-            trpc.skills.listSkills.queryOptions({
-                organizationId: organization.id,
-                skillPackageId: skillPackage.id,
-            }),
-        ],
-    });
+    const skillsQuery = useQuery(
+        trpc.skills.listSkills.queryOptions({
+            organizationId: organization.id,
+            skillPackageId: skillPackage.id,
+        }),
+    );
 
     const [statusFilter, setStatusFilter] = useState(["Active"]);
-    const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
+    const [createSkillDialogOpen, setCreateSkillDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
 
-    const packagePath = Paths.org(
-        organization.slug,
-    ).skillPackageBuilder.skillPackage(skillPackage.id);
-
-    const groups = (groupsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
     const skills = (skillsQuery.data ?? []).sort(
         (a, b) => a.sequence - b.sequence,
     );
-
-    const filteredGroups = groups.filter((group) =>
-        statusFilter.includes(group.status),
-    );
-    const filteredSkills = skills.filter((skill) =>
-        statusFilter.includes(skill.status),
-    );
+    const filteredSkills =
+        skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Package Contents</CardTitle>
+                <CardTitle>Skill Group Contents</CardTitle>
                 <CardAction>
                     <Protect
                         orgId={organization.id}
@@ -116,16 +100,16 @@ export function SkillPackageBuilder_Package_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                tooltip="Add Group"
-                                onClick={() => setCreateGroupDialogOpen(true)}
+                                onClick={() => setCreateSkillDialogOpen(true)}
+                                tooltip="New Skill"
                             >
                                 <ObjectIcons.Create />
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                tooltip="Reorder Groups"
                                 onClick={() => setReorderDialogOpen(true)}
+                                tooltip="Reorder Skills"
                             >
                                 <ReorderIcon />
                             </Button>
@@ -135,27 +119,22 @@ export function SkillPackageBuilder_Package_Contents_List({
             </CardHeader>
             <CardContent>
                 <Show
-                    when={groupsQuery.isSuccess && skillsQuery.isSuccess}
-                    fallback={
-                        <Skeleton className="w-full h-13 mb-4">
-                            Loading Skills
-                        </Skeleton>
-                    }
+                    when={skillsQuery.isSuccess}
+                    fallback={<Skeleton className="w-full h-13 mb-4" />}
                 >
-                    {filteredGroups.length > 0 || filteredSkills.length > 0 ? (
+                    {filteredSkills.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHeadCell>Group</TableHeadCell>
-                                    <TableHeadCell>Skill</TableHeadCell>
-                                    <TableHeadCell className="w-25">
-                                        Status{" "}
+                                    <TableHeadCell>Name</TableHeadCell>
+                                    <TableHeadCell>
+                                        Status
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon-sm"
-                                                    className="text-muted-foreground"
+                                                    className="text-muted-foreground ml-1"
                                                 >
                                                     <FilterColumnValuesIcon />
                                                 </Button>
@@ -211,82 +190,44 @@ export function SkillPackageBuilder_Package_Contents_List({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredGroups.map((skillGroup) => {
-                                    const groupSkills = filteredSkills.filter(
-                                        (skill) =>
-                                            skill.skillGroupId ===
-                                            skillGroup.id,
-                                    );
-
-                                    return (
-                                        <Fragment key={skillGroup.id}>
-                                            <TableRow key={skillGroup.id}>
-                                                <TableCell
-                                                    // rowSpan={
-                                                    //     groupSkills.length + 1
-                                                    // }
-                                                    colSpan={2}
-                                                >
-                                                    <Link
-                                                        to={packagePath.group(
-                                                            skillGroup.id,
-                                                        )}
-                                                    >
-                                                        {skillGroup.name}
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {skillGroup.status}
-                                                </TableCell>
-                                            </TableRow>
-                                            {groupSkills.map((skill) => (
-                                                // Skills that belong to a group will be listed under their respective group
-                                                <TableRow key={skill.id}>
-                                                    <TableCell></TableCell>
-                                                    <TableCell>
-                                                        <Link
-                                                            to={Paths.org(
-                                                                organization.slug,
-                                                            )
-                                                                .skillPackageBuilder.skillPackage(
-                                                                    skillGroup.skillPackageId,
-                                                                )
-                                                                .skill(
-                                                                    skill.id,
-                                                                )}
-                                                        >
-                                                            {skill.name}
-                                                        </Link>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {skill.status}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </Fragment>
-                                    );
-                                })}
+                                {filteredSkills.map((skill) => (
+                                    <TableRow key={skill.id}>
+                                        <TableCell>
+                                            <Link
+                                                to={Paths.org(organization.slug)
+                                                    .skillPackageBuilder.skillPackage(
+                                                        skillGroup.skillPackageId,
+                                                    )
+                                                    .skill(skill.id)}
+                                            >
+                                                {skill.name}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>{skill.status}</TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     ) : (
                         <Alert
                             severity="info"
                             title={
-                                groups.length == 0 && skills.length == 0
-                                    ? "No groups or skills defined for this package yet."
-                                    : "No groups or skills match the current filter settings."
+                                skills.length == 0
+                                    ? "No skills defined for this group yet."
+                                    : "No skills match the current filter settings."
                             }
                         />
                     )}
                 </Show>
             </CardContent>
-            <SkillPackageBuilder_CreateGroup_Dialog
+            <SkillPackageBuilder_CreateSkill_Dialog
+                skillGroup={skillGroup}
                 skillPackage={skillPackage}
-                open={createGroupDialogOpen}
-                onOpenChange={setCreateGroupDialogOpen}
+                open={createSkillDialogOpen}
+                onOpenChange={setCreateSkillDialogOpen}
             />
-            <SkillPackageBuilder_ReorderGroups_Dialog
-                skillPackage={skillPackage}
+            <SkillPackageBuilder_ReorderSkills_Dialog
+                skillGroup={skillGroup}
                 open={reorderDialogOpen}
                 onOpenChange={setReorderDialogOpen}
             />

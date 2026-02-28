@@ -4,7 +4,7 @@
  */
 
 import type { Skill } from "@/lib/schemas/skill";
-import type { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
+import type { SkillGroup } from "@/lib/schemas/skill-group";
 import type { SkillPackage } from "@/lib/schemas/skill-package";
 
 export const about = {
@@ -626,39 +626,11 @@ function skillPackageBuilderModule(orgSlug: string) {
                             : groupOrGroupId.id;
 
                     return {
-                        index: {
-                            href: `${packageBase}/groups/${groupId}`,
-                            label:
-                                typeof groupOrGroupId === "string"
-                                    ? (undefined as never)
-                                    : groupOrGroupId.name,
-                        },
-
-                        skill: (skillOrSkillId: Skill | string) => {
-                            const skillId =
-                                typeof skillOrSkillId === "string"
-                                    ? skillOrSkillId
-                                    : skillOrSkillId.id;
-
-                            return {
-                                href: `${packageBase}/groups/${groupId}/skills/${skillId}`,
-                                label:
-                                    typeof skillOrSkillId === "string"
-                                        ? (undefined as never)
-                                        : skillOrSkillId.name,
-                                update: {
-                                    label: "Update",
-                                    href: `${packageBase}/groups/${groupId}/skills/${skillId}/--update`,
-                                },
-                            } as const;
-                        },
-                        skills: {
-                            label: "Skills",
-                            create: {
-                                label: "Create",
-                                href: `${packageBase}/groups/${groupId}/skills/--create`,
-                            },
-                        },
+                        href: `${packageBase}/groups/${groupId}`,
+                        label:
+                            typeof groupOrGroupId === "string"
+                                ? (undefined as never)
+                                : groupOrGroupId.name,
 
                         update: {
                             label: "Update",
@@ -669,25 +641,37 @@ function skillPackageBuilderModule(orgSlug: string) {
                 groups: {
                     label: "Groups",
                     href: `${packageBase}/groups`,
-                    create: {
-                        label: "Create",
-                        href: `${packageBase}/groups/--create`,
-                    },
                 },
 
                 history: {
                     label: "History",
                     href: `${packageBase}/history`,
                 },
+
+                skill: (skillOrSkillId: Skill | string) => {
+                    const skillId =
+                        typeof skillOrSkillId === "string"
+                            ? skillOrSkillId
+                            : skillOrSkillId.id;
+
+                    return {
+                        href: `${packageBase}/skills/${skillId}`,
+                        label:
+                            typeof skillOrSkillId === "string"
+                                ? (undefined as never)
+                                : skillOrSkillId.name,
+                        update: {
+                            label: "Update",
+                            href: `${packageBase}/skills/${skillId}/--update`,
+                        },
+                    } as const;
+                },
+                skills: {
+                    label: "Skills",
+                },
             } as const;
         },
         skillPackages: {
-            label: "Skill Packages",
-            href: `${base}/packages`,
-            create: {
-                label: "Create Package",
-                href: `${base}/packages/--create`,
-            },
             import: {
                 label: "Import Skill Package",
                 href: `${base}/packages/--import`,

@@ -99,7 +99,7 @@ export function AdminModule_TeamsList({
 
     return (
         <Hermes.Section>
-            <Hermes.SectionHeader>
+            <Hermes.Header>
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
@@ -113,7 +113,7 @@ export function AdminModule_TeamsList({
                         </Link>
                     </Button>
                 </Protect>
-            </Hermes.SectionHeader>
+            </Hermes.Header>
             <Akagi.Table table={table} />
         </Hermes.Section>
     );

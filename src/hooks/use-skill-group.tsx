@@ -36,6 +36,7 @@ export function useSkillGroup({
                 }),
                 trpc.skills.listGroups.queryOptions({
                     organizationId: organization.id,
+                    skillPackageId: skillPackageId,
                 }),
             ],
         },

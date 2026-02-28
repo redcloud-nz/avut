@@ -55,13 +55,13 @@ export default async function AdminModule_UpdateUser_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(slug).admin.user(org_member_id)}
                             >
                                 User
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>

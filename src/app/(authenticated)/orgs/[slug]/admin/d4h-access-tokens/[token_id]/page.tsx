@@ -98,7 +98,7 @@ export default function AdminModule_D4hAccessToken_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(slug).admin.d4hAccessTokens}
                             >
@@ -117,7 +117,7 @@ export default function AdminModule_D4hAccessToken_Page(
                                     <RefreshCwIcon />
                                 </Button>
                             </Protect>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>D4H Access Token</CardTitle>
@@ -169,11 +169,9 @@ export default function AdminModule_D4hAccessToken_Page(
                         </Card>
                     </Hermes.Section>
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.SectionTitle>
-                                Organizations
-                            </Hermes.SectionTitle>
-                        </Hermes.SectionHeader>
+                        <Hermes.Header>
+                            <Hermes.Title>Organizations</Hermes.Title>
+                        </Hermes.Header>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -198,9 +196,9 @@ export default function AdminModule_D4hAccessToken_Page(
                         </Table>
                     </Hermes.Section>
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.SectionTitle>Teams</Hermes.SectionTitle>
-                        </Hermes.SectionHeader>
+                        <Hermes.Header>
+                            <Hermes.Title>Teams</Hermes.Title>
+                        </Hermes.Header>
                         <Table>
                             <TableHeader>
                                 <TableRow>

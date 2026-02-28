@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import {
     getCoreRowModel,
@@ -16,10 +16,8 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
@@ -28,6 +26,8 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
+
+import { SkillPackageBuilder_CreatePackage_Dialog } from "./create-package";
 
 interface SkillPackageBuilder_Packages_ListProps {
     organization: OrganizationData;
@@ -144,27 +144,30 @@ export function SkillPackageBuilder_Packages_List({
         },
     });
 
+    const [createPackageDialogOpen, setCreatePackageDialogOpen] =
+        useState(false);
+
     return (
-        <Hermes.Section>
-            <Hermes.SectionHeader>
+        <>
+            <div className="flex items-center justify-between mb-4">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
                     permissions={{ skillPackage: ["create"] }}
                 >
-                    <Button variant="outline" asChild>
-                        <Link
-                            to={
-                                Paths.org(organization.slug).skillPackageBuilder
-                                    .skillPackages.create
-                            }
-                        >
-                            <CreateNewIcon /> Skill Package
-                        </Link>
+                    <Button
+                        variant="outline"
+                        onClick={() => setCreatePackageDialogOpen(true)}
+                    >
+                        <CreateNewIcon /> New
                     </Button>
                 </Protect>
-            </Hermes.SectionHeader>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+            <SkillPackageBuilder_CreatePackage_Dialog
+                open={createPackageDialogOpen}
+                onOpenChange={setCreatePackageDialogOpen}
+            />
+        </>
     );
 }

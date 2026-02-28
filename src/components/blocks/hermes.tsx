@@ -19,7 +19,6 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 import { Link, LinkProps } from "@/components/ui/link";
-import { Skeleton } from "@/components/ui/skeleton";
 
 import { cn } from "@/lib/utils";
 
@@ -36,26 +35,26 @@ function HermesSection({ className, ...props }: ComponentProps<"section">) {
     );
 }
 
-function HermesSectionHeader({ className, ...props }: ComponentProps<"div">) {
+function HermesHeader({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
-            className={cn(" w-full flex gap-2 justify-between", className)}
-            data-component="HermesSectionHeader"
-            data-slot="section-header"
+            className={cn("w-full grid grid-cols-[36px_1fr_36px]", className)}
+            data-component="HermesHeader"
+            data-slot="header"
             {...props}
         />
     );
 }
 
-function HermesSectionTitle({ className, ...props }: ComponentProps<"h3">) {
+function HermesTitle({ className, ...props }: ComponentProps<"h3">) {
     return (
         <h3
             className={cn(
-                "scroll-m-20 text-2xl font-semibold tracking-tight",
+                "scroll-m-20 text-2xl font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
                 className,
             )}
-            data-component="HermesSectionTitle"
-            data-slot="section-title"
+            data-component="HermesTitle"
+            data-slot="title"
             {...props}
         />
     );
@@ -108,6 +107,6 @@ export const Hermes = {
     BackButton: HermesBackButton,
     Empty: HermesEmpty,
     Section: HermesSection,
-    SectionHeader: HermesSectionHeader,
-    SectionTitle: HermesSectionTitle,
+    Header: HermesHeader,
+    Title: HermesTitle,
 };

@@ -75,14 +75,10 @@ export async function NavOrganizationMenu({
                     />
                 </Show>
                 <Show when={modules["skill-package-builder"].enabled}>
-                    <NavCollapsible
+                    <NavItem
                         path={orgPrefix.skillPackageBuilder.index}
                         icon={<ModuleIcons.SkillPackageBuilder />}
-                    >
-                        <NavItem
-                            path={orgPrefix.skillPackageBuilder.skillPackages}
-                        />
-                    </NavCollapsible>
+                    />
                 </Show>
                 <Show when={modules.skills.enabled}>
                     <NavCollapsible

@@ -31,7 +31,7 @@ export default function AdminModule_OrganizationUpdate_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={
                                     Paths.org(organization.slug).admin
@@ -40,7 +40,7 @@ export default function AdminModule_OrganizationUpdate_Page(
                             >
                                 {organization.name}
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Update Organization</CardTitle>

@@ -10,16 +10,23 @@ import { use } from "react";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
+import { ObjectIcons } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
+import { Link } from "@/components/ui/link";
 
 import { useSkillPackage } from "@/hooks/use-skill-package";
 import * as Paths from "@/paths";
@@ -44,89 +51,106 @@ export default function SkillPackageBuilder_Package_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.BackButton
-                                to={
-                                    Paths.org(slug).skillPackageBuilder
-                                        .skillPackages
-                                }
-                            >
-                                List
-                            </Hermes.BackButton>
-                        </Hermes.SectionHeader>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{skillPackage.name}</CardTitle>
-                                <CardDescription>Skill Package</CardDescription>
-                                <CardAction>
-                                    <SkillPackageBuilder_Package_Menu
-                                        skillPackage={skillPackage}
+                    <Hermes.Header>
+                        <Hermes.BackButton
+                            to={
+                                Paths.org(slug).skillPackageBuilder
+                                    .skillPackages
+                            }
+                            tooltip="Back to package list"
+                        />
+                        <Hermes.Title>{skillPackage.name}</Hermes.Title>
+                        <SkillPackageBuilder_Package_Menu
+                            skillPackage={skillPackage}
+                        />
+                    </Hermes.Header>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Package Details</CardTitle>
+
+                            <CardAction>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    tooltip="Edit package"
+                                    asChild
+                                >
+                                    <Link
+                                        to={
+                                            Paths.org(
+                                                slug,
+                                            ).skillPackageBuilder.skillPackage(
+                                                skillPackage.id,
+                                            ).update
+                                        }
+                                    >
+                                        <ObjectIcons.Edit />
+                                    </Link>
+                                </Button>
+                            </CardAction>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Package ID</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        format="id"
+                                        value={skillPackage.id}
                                     />
-                                </CardAction>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Package ID</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            format="id"
-                                            value={skillPackage.id}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Name</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={skillPackage.name}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Description</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={skillPackage.description}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Created</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={skillPackage.createdAt}
-                                            format="dateWithDistance"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Updated</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={skillPackage.updatedAt}
-                                            format="dateWithDistance"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Status</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={skillPackage.status}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Published</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={
-                                                skillPackage.published
-                                                    ? "Yes"
-                                                    : "No"
-                                            }
-                                        />
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Name</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={skillPackage.name}
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Description</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={skillPackage.description}
+                                    />
+                                </Field>
+                                <FieldSeparator />
+                                <Field orientation="responsive">
+                                    <FieldLabel>Created</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={skillPackage.createdAt}
+                                        format="dateWithDistance"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Updated</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={skillPackage.updatedAt}
+                                        format="dateWithDistance"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Status</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={skillPackage.status}
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Published</FieldLabel>
+                                    <FieldValue
+                                        className="min-w-1/2"
+                                        value={
+                                            skillPackage.published
+                                                ? "Yes"
+                                                : "No"
+                                        }
+                                    />
+                                </Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
                     <SkillPackageBuilder_Package_Contents_List
                         skillPackage={skillPackage}
                     />

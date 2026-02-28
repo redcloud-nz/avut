@@ -6,7 +6,7 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
-import { ComponentProps, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
@@ -22,6 +22,7 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
+    DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -32,21 +33,16 @@ import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { cn } from "@/lib/utils";
-
 import { trpc } from "@/trpc/client";
-
-interface ReorderGroupsDialogProps extends ComponentProps<typeof Dialog> {
-    skillPackage: SkillPackage;
-}
 
 /**
  * Dialog component that allows users to reorder skill groups within a skill package using drag-and-drop functionality.
  * It fetches the skill groups for the specified skill package, displays them in a sortable list, and updates their order in the database when the user saves their changes.
  */
-export function ReorderGroupsDialog({
+export function SkillPackageBuilder_ReorderGroups_Dialog({
     skillPackage,
     ...props
-}: ReorderGroupsDialogProps) {
+}: DialogProps & { skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 

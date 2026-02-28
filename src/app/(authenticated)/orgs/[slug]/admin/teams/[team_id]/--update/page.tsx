@@ -49,13 +49,13 @@ export default function AdminModule_TeamUpdate_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(slug).admin.team(team_id)}
                             >
                                 {team.name}
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Update Team</CardTitle>

@@ -67,7 +67,7 @@ export default function AdminModule_User_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(organization.slug).admin.users}
                             >
@@ -98,7 +98,7 @@ export default function AdminModule_User_Page(
                                     user={orgUser.user}
                                 />
                             </ButtonGroup>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
 
                         <Card>
                             <CardHeader>

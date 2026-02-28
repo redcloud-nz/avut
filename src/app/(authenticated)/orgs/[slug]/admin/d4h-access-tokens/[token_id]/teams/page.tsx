@@ -58,7 +58,7 @@ export default async function Admin_D4hAccessToken_Teams_Page(
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(slug).admin.d4hAccessToken(
                                     token_id,
@@ -66,7 +66,7 @@ export default async function Admin_D4hAccessToken_Teams_Page(
                             >
                                 Access Token
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         {teams.map((team) => (
                             <Card key={team.id}>
                                 <CardHeader>

@@ -82,11 +82,11 @@ export default async function Pub_PPEIssue_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton to={Paths.pub(slug).forms.ppe}>
                                 PPE Forms
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>PPE Issue Form</CardTitle>

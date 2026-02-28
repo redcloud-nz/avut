@@ -130,24 +130,22 @@ export default function AdminModule_Settings_Page(
                         onSubmit={handleSubmit}
                     >
                         <Hermes.Section>
-                            <Hermes.SectionHeader>
+                            <Hermes.Header>
                                 <Hermes.BackButton
                                     to={Paths.org(slug).admin.organization}
                                 >
                                     Organization
                                 </Hermes.BackButton>
-                            </Hermes.SectionHeader>
+                            </Hermes.Header>
                             <General_SettingsCard
                                 lens={lens.focus("general")}
                             />
                         </Hermes.Section>
 
                         <Hermes.Section>
-                            <Hermes.SectionHeader>
-                                <Hermes.SectionTitle>
-                                    Integrations
-                                </Hermes.SectionTitle>
-                            </Hermes.SectionHeader>
+                            <Hermes.Header>
+                                <Hermes.Title>Integrations</Hermes.Title>
+                            </Hermes.Header>
                             <D4hIntegration_SettingsCard
                                 lens={lens.focus("integrations.d4h")}
                                 organizationId={organization.id}
@@ -158,11 +156,9 @@ export default function AdminModule_Settings_Page(
                         </Hermes.Section>
 
                         <Hermes.Section>
-                            <Hermes.SectionHeader>
-                                <Hermes.SectionTitle>
-                                    Modules
-                                </Hermes.SectionTitle>
-                            </Hermes.SectionHeader>
+                            <Hermes.Header>
+                                <Hermes.Title>Modules</Hermes.Title>
+                            </Hermes.Header>
 
                             <D4hViewsModule_SettingsCard
                                 lens={lens.focus("modules.d4h-views")}

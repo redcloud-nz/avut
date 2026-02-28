@@ -23,11 +23,9 @@ import { Skill } from "@/lib/schemas/skill";
  */
 export function useSkill({
     skillPackageId,
-    skillGroupId,
     skillId,
 }: {
     skillPackageId: string;
-    skillGroupId: string;
     skillId: string;
 }): Skill & { skillGroup: SkillGroup; skillPackage: SkillPackage } {
     const organization = useOrganization();
@@ -40,26 +38,26 @@ export function useSkill({
                 }),
                 trpc.skills.listGroups.queryOptions({
                     organizationId: organization.id,
+                    skillPackageId: skillPackageId,
                 }),
                 trpc.skills.listSkills.queryOptions({
                     organizationId: organization.id,
+                    skillPackageId: skillPackageId,
                 }),
             ],
         });
 
     const skillPackage = skillPackages.find((pkg) => pkg.id === skillPackageId);
-    const skillGroup = skillGroups.find((grp) => grp.id === skillGroupId);
-    const skill = skills.find((skl) => skl.id === skillId);
-
     if (!skillPackage)
         throw new Error(`SkillPackage(${skillPackageId}) not found`);
-    if (!skillGroup) throw new Error(`SkillGroup(${skillGroupId}) not found`);
+
+    const skill = skills.find((skl) => skl.id === skillId);
     if (!skill) throw new Error(`Skill(${skillId}) not found`);
 
-    if (skill.skillGroupId !== skillGroupId)
-        throw new Error(
-            `Skill(${skillId}) does not belong to SkillGroup(${skillGroupId})`,
-        );
+    const skillGroup = skillGroups.find((grp) => grp.id === skill.skillGroupId);
+    if (!skillGroup)
+        throw new Error(`SkillGroup(${skill.skillGroupId}) not found`);
+
     if (skill.skillPackageId !== skillPackageId)
         throw new Error(
             `Skill(${skillId}) does not belong to SkillPackage(${skillPackageId})`,

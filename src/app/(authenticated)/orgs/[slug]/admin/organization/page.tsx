@@ -37,10 +37,8 @@ export default async function AdminModule_Organization_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
-                            <Hermes.SectionTitle>
-                                Organization
-                            </Hermes.SectionTitle>
+                        <Hermes.Header>
+                            <Hermes.Title>Organization</Hermes.Title>
                             <Protect
                                 orgId={organization.id}
                                 permissions={{ organization: ["update"] }}
@@ -78,7 +76,7 @@ export default async function AdminModule_Organization_Page(
                                     </Button>
                                 </ButtonGroup>
                             </Protect>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>{organization.name}</CardTitle>

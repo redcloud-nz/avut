@@ -35,11 +35,11 @@ export default async function AdminModule_TeamCreate_Page(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
-                        <Hermes.SectionHeader>
+                        <Hermes.Header>
                             <Hermes.BackButton to={Paths.org(slug).admin.teams}>
                                 Teams
                             </Hermes.BackButton>
-                        </Hermes.SectionHeader>
+                        </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>New Team</CardTitle>
