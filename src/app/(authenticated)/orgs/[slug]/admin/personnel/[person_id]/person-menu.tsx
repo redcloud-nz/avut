@@ -26,7 +26,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuGroupLabel,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -50,7 +49,6 @@ export function AdminModule_PersonMenu({
 }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
-    const router = useRouter();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -118,12 +116,11 @@ export function AdminModule_PersonMenu({
             {/* Person dropdown menu */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Person</DropdownMenuLabel>
                     <DropdownMenuGroup>
                         <DropdownMenuItem disabled asChild>
                             <Link
@@ -141,7 +138,7 @@ export function AdminModule_PersonMenu({
                     <DropdownMenuSeparator />
 
                     <DropdownMenuGroup>
-                        <DropdownMenuGroupLabel>Actions</DropdownMenuGroupLabel>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         {person.status == "Active" && (
                             <Protect
                                 orgId={organization.id}

@@ -44,7 +44,7 @@ export function DialogOverlay({
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
             className={cn(
-                "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-50",
+                "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs",
                 className,
             )}
             {...props}
@@ -66,7 +66,7 @@ export function DialogContent({
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 className={cn(
-                    "bg-background data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-4 rounded-xl p-4 text-sm ring-1 duration-100 sm:max-w-sm fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2",
+                    "bg-background data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-none p-4 text-xs/relaxed ring-1 duration-100 outline-none sm:max-w-sm",
                     className,
                 )}
                 {...props}
@@ -93,7 +93,7 @@ export function DialogHeader({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-header"
-            className={cn("gap-2 flex flex-col", className)}
+            className={cn("gap-1 flex flex-col text-left", className)}
             {...props}
         />
     );
@@ -111,7 +111,7 @@ export function DialogFooter({
         <div
             data-slot="dialog-footer"
             className={cn(
-                "bg-muted/50 -mx-4 -mb-4 rounded-b-xl border-t p-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+                "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
                 className,
             )}
             {...props}
@@ -133,7 +133,7 @@ export function DialogTitle({
     return (
         <DialogPrimitive.Title
             data-slot="dialog-title"
-            className={cn("text-base leading-none font-medium", className)}
+            className={cn("text-sm font-medium", className)}
             {...props}
         />
     );
@@ -147,7 +147,7 @@ export function DialogDescription({
         <DialogPrimitive.Description
             data-slot="dialog-description"
             className={cn(
-                "text-muted-foreground *:[a]:hover:text-foreground text-sm *:[a]:underline *:[a]:underline-offset-3",
+                "text-muted-foreground *:[a]:hover:text-foreground text-xs/relaxed *:[a]:underline *:[a]:underline-offset-3",
                 className,
             )}
             {...props}

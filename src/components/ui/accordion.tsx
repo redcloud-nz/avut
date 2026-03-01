@@ -1,61 +1,87 @@
-/*
- *  Copyright (c) 2025 A.V.U.T. Project.
- *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- */
+"use client";
 
-import { ChevronDownIcon } from "lucide-react";
 import * as React from "react";
-
 import { Accordion as AccordionPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
-export const Accordion = AccordionPrimitive.Root;
-
-export function AccordionItem({
+function Accordion({
     className,
     ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+}: React.ComponentProps<typeof AccordionPrimitive.Root>) {
     return (
-        <AccordionPrimitive.Item
-            className={cn("border-b", className)}
+        <AccordionPrimitive.Root
+            data-slot="accordion"
+            className={cn("flex w-full flex-col", className)}
             {...props}
         />
     );
 }
 
-export function AccordionTrigger({
+function AccordionItem({
+    className,
+    ...props
+}: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+    return (
+        <AccordionPrimitive.Item
+            data-slot="accordion-item"
+            className={cn("not-last:border-b", className)}
+            {...props}
+        />
+    );
+}
+
+function AccordionTrigger({
     className,
     children,
     ...props
-}: React.ComponentPropsWithRef<typeof AccordionPrimitive.Trigger>) {
+}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
     return (
         <AccordionPrimitive.Header className="flex">
             <AccordionPrimitive.Trigger
+                data-slot="accordion-trigger"
                 className={cn(
-                    "flex flex-1 items-center justify-between py-4 font-medium transition-all [&[data-state=open]>svg]:rotate-180",
+                    "focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:after:border-ring **:data-[slot=accordion-trigger-icon]:text-muted-foreground group/accordion-trigger relative flex flex-1 items-start justify-between rounded-none border border-transparent py-2.5 text-left text-xs font-medium transition-all outline-none hover:underline focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4",
                     className,
                 )}
                 {...props}
             >
                 {children}
-                <ChevronDownIcon className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                <ChevronDownIcon
+                    data-slot="accordion-trigger-icon"
+                    className="pointer-events-none shrink-0 group-aria-expanded/accordion-trigger:hidden"
+                />
+                <ChevronUpIcon
+                    data-slot="accordion-trigger-icon"
+                    className="pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline"
+                />
             </AccordionPrimitive.Trigger>
         </AccordionPrimitive.Header>
     );
 }
 
-export function AccordionContent({
+function AccordionContent({
     className,
     children,
     ...props
-}: React.ComponentPropsWithRef<typeof AccordionPrimitive.Content>) {
+}: React.ComponentProps<typeof AccordionPrimitive.Content>) {
     return (
         <AccordionPrimitive.Content
-            className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+            data-slot="accordion-content"
+            className="data-open:animate-accordion-down data-closed:animate-accordion-up overflow-hidden text-xs"
             {...props}
         >
-            <div className={cn("pb-4 pt-0", className)}>{children}</div>
+            <div
+                className={cn(
+                    "[&_a]:hover:text-foreground h-(--radix-accordion-content-height) pt-0 pb-2.5 [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-4",
+                    className,
+                )}
+            >
+                {children}
+            </div>
         </AccordionPrimitive.Content>
     );
 }
+
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };

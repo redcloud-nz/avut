@@ -60,7 +60,9 @@ export default function AdminModule_Person_Page(
                             tooltip="Back to personnel list"
                         />
                         <Hermes.Title>{person.name}</Hermes.Title>
-                        <AdminModule_PersonMenu person={person} />
+                        <Hermes.Action>
+                            <AdminModule_PersonMenu person={person} />
+                        </Hermes.Action>
                     </Hermes.Header>
 
                     <Card>

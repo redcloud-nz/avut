@@ -24,7 +24,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuGroupLabel,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -55,12 +54,6 @@ export function AdminModule_TeamMenu({
 
     async function invalidateTeamQueries() {
         await Promise.all([
-            queryClient.invalidateQueries(
-                trpc.teams.getTeam.queryFilter({
-                    organizationId: organization.id,
-                    teamId: team.id,
-                }),
-            ),
             queryClient.invalidateQueries(
                 trpc.teams.listTeams.queryFilter({
                     organizationId: organization.id,
@@ -101,13 +94,16 @@ export function AdminModule_TeamMenu({
             <Protect orgId={organization.id} permissions={{ team: ["delete"] }}>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="justify-self-end"
+                        >
                             <DropdownMenuTriggerIcon />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-40" align="end">
-                        <DropdownMenuLabel>Team</DropdownMenuLabel>
-                        <DropdownMenuGroup>
+                        {/* <DropdownMenuGroup>
                             <DropdownMenuItem disabled asChild>
                                 <Link
                                     to={
@@ -120,11 +116,9 @@ export function AdminModule_TeamMenu({
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator /> */}
                         <DropdownMenuGroup>
-                            <DropdownMenuGroupLabel>
-                                Actions
-                            </DropdownMenuGroupLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
                                 onSelect={() => setDeleteDialogOpen(true)}
                                 className="text-destructive"

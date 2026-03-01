@@ -6,9 +6,8 @@
 
 import { SendIcon } from "lucide-react";
 import { useMemo } from "react";
-
+import { toast } from "sonner";
 import {
-    QueryClient,
     useMutation,
     useQueryClient,
     useSuspenseQuery,
@@ -21,7 +20,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
+import { Protect } from "@/components/protect";
 import { DeleteObjectIcon, DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,14 +33,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
 
+import { authClient } from "@/lib/auth-client";
 import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { Protect } from "@/components/protect";
-import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
 
 type AdminModule_InvitationsListProps = { organization: OrganizationData };
 
@@ -246,8 +243,8 @@ export function AdminModule_InvitationsList({
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
@@ -264,8 +261,8 @@ export function AdminModule_InvitationsList({
                         </Link>
                     </Button>
                 </Protect>
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+        </>
     );
 }

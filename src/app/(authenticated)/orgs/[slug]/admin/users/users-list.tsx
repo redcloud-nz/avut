@@ -16,7 +16,6 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { Protect } from "@/components/protect";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -154,8 +153,8 @@ export function AdminModule_UsersList({
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
@@ -167,8 +166,8 @@ export function AdminModule_UsersList({
                         </Link>
                     </Button>
                 </Protect>
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+        </>
     );
 }

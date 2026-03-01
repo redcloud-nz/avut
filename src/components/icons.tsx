@@ -8,7 +8,7 @@ import {
     ArchiveRestoreIcon,
     ArrowDownUpIcon,
     ArrowRightLeftIcon,
-    ArrowUpLeftIcon,
+    ArrowLeftIcon,
     BellIcon,
     BookOpenIcon,
     CableIcon,
@@ -57,7 +57,7 @@ export {
     BellIcon as NotificationsIcon,
     FunnelIcon as FilterColumnValuesIcon,
     LayoutDashboardIcon as OrgDashboardIcon,
-    ArrowUpLeftIcon as ToParentPageIcon,
+    ArrowLeftIcon as ToParentPageIcon,
     ArrowDownUpIcon as ReorderIcon,
 
     // Object Icons

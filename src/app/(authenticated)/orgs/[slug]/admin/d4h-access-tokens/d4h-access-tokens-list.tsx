@@ -115,8 +115,8 @@ export function AdminModule_D4hAccessTokensList({
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
@@ -129,12 +129,12 @@ export function AdminModule_D4hAccessTokensList({
                                     .d4hAccessTokens.create
                             }
                         >
-                            <CreateNewIcon /> Access Token
+                            <CreateNewIcon /> New
                         </Link>
                     </Button>
                 </Protect>
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+        </>
     );
 }

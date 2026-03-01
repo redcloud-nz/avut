@@ -48,21 +48,23 @@ export default async function AdminModule_Organization_Page(
                             orgId={organization.id}
                             permissions={{ organization: ["update"] }}
                         >
-                            <Button
-                                variant="outline"
-                                tooltip="Organization Settings"
-                                size="icon"
-                                asChild
-                            >
-                                <Link
-                                    to={
-                                        Paths.org(slug).admin.organization
-                                            .settings
-                                    }
+                            <Hermes.Action>
+                                <Button
+                                    variant="outline"
+                                    tooltip="Organization Settings"
+                                    size="icon"
+                                    asChild
                                 >
-                                    <SettingsIcon />
-                                </Link>
-                            </Button>
+                                    <Link
+                                        to={
+                                            Paths.org(slug).admin.organization
+                                                .settings
+                                        }
+                                    >
+                                        <SettingsIcon />
+                                    </Link>
+                                </Button>
+                            </Hermes.Action>
                         </Protect>
                     </Hermes.Header>
                     <Card>

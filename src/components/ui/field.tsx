@@ -17,7 +17,7 @@ export function FieldSet({ className, ...props }: ComponentProps<"fieldset">) {
         <fieldset
             data-slot="field-set"
             className={cn(
-                "flex flex-col gap-6",
+                "flex flex-col gap-4",
                 "has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
                 className,
             )}
@@ -36,9 +36,9 @@ export function FieldLegend({
             data-slot="field-legend"
             data-variant={variant}
             className={cn(
-                "mb-3 font-medium",
-                "data-[variant=legend]:text-base",
-                "data-[variant=label]:text-sm",
+                "mb-2.55 font-medium",
+                "data-[variant=legend]:text-sm",
+                "data-[variant=label]:text-xs",
                 className,
             )}
             {...props}
@@ -51,7 +51,7 @@ export function FieldGroup({ className, ...props }: ComponentProps<"div">) {
         <div
             data-slot="field-group"
             className={cn(
-                "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
+                "group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
                 className,
             )}
             {...props}
@@ -60,7 +60,7 @@ export function FieldGroup({ className, ...props }: ComponentProps<"div">) {
 }
 
 export const fieldVariants = tv({
-    base: "group/field flex w-full gap-3 data-[invalid=true]:text-destructive",
+    base: "data-[invalid=true]:text-destructive gap-2 group/field flex w-full",
     variants: {
         orientation: {
             vertical: ["flex-col *:w-full [&>.sr-only]:w-auto"],
@@ -120,9 +120,8 @@ export function FieldLabel({
         <Label
             data-slot="field-label"
             className={cn(
-                "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50",
-                "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4",
-                "has-data-[state=checked]:bg-primary/5 has-data-[state=checked]:border-primary dark:has-data-[state=checked]:bg-primary/10",
+                "has-data-checked:bg-primary/5 has-data-checked:border-primary/30 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-none has-[>[data-slot=field]]:border *:data-[slot=field]:p-2",
+                "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
                 className,
             )}
             {...props}
@@ -135,7 +134,7 @@ export function FieldTitle({ className, ...props }: ComponentProps<"div">) {
         <div
             data-slot="field-title"
             className={cn(
-                "flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50",
+                "flex w-fit items-center gap-2 text-xs/relaxed leading-snug group-data-[disabled=true]/field:opacity-50",
                 className,
             )}
             {...props}
@@ -148,8 +147,8 @@ export function FieldDescription({ className, ...props }: ComponentProps<"p">) {
         <p
             data-slot="field-description"
             className={cn(
-                "text-muted-foreground text-sm leading-normal font-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
-                "last:mt-0 nth-last-2:-mt-1 [[data-variant=legend]+&]:-mt-1.5",
+                "text-muted-foreground text-left text-xs/relaxed leading-normal font-normal group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5",
+                "last:mt-0 nth-last-2:-mt-1",
                 "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
                 className,
             )}
@@ -168,7 +167,7 @@ export function FieldSeparator({
             data-slot="field-separator"
             data-content={!!children}
             className={cn(
-                "relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2",
+                "-my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2 relative",
                 className,
             )}
             {...props}
@@ -176,7 +175,7 @@ export function FieldSeparator({
             <Separator className="absolute inset-0 top-1/2" />
             {children && (
                 <span
-                    className="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
+                    className="text-muted-foreground bg-background relative mx-auto block w-fit px-2"
                     data-slot="field-separator-content"
                 >
                     {children}

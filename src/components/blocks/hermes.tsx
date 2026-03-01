@@ -89,18 +89,26 @@ function HermesEmpty({
 }
 
 function HermesBackButton({
-    children,
     to,
     ...props
-}: Omit<ComponentProps<typeof Button>, "asChild"> & {
+}: Omit<ComponentProps<typeof Button>, "asChild" | "children"> & {
     to: LinkProps["to"];
 }) {
     return (
-        <Button variant="outline" {...props} asChild>
+        <Button variant="ghost" {...props} asChild>
             <Link to={to}>
-                <ToParentPageIcon /> {children}
+                <ToParentPageIcon className="size-5" />
             </Link>
         </Button>
+    );
+}
+
+function HermesAction({ className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            className={cn("col-3 flex items-center justify-end", className)}
+            {...props}
+        />
     );
 }
 
@@ -110,4 +118,5 @@ export const Hermes = {
     Section: HermesSection,
     Header: HermesHeader,
     Title: HermesTitle,
+    Action: HermesAction,
 };

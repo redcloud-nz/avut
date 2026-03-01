@@ -35,6 +35,7 @@ import * as Paths from "@/paths";
 
 import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
 import { AdminModule_TeamMenu } from "./team-menu";
+import { Separator } from "@/components/ui/separator";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
@@ -103,7 +104,9 @@ export default function AdminModule_Team_Page(
                                     <FieldLabel>Description</FieldLabel>
                                     <FieldValue value={team.description} />
                                 </Field>
+
                                 <FieldSeparator />
+
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue

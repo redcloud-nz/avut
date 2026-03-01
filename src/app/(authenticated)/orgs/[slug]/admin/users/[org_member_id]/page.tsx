@@ -15,7 +15,6 @@ import { Lexington } from "@/components/blocks/lexington";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Card,
     CardAction,
@@ -33,9 +32,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
@@ -70,67 +67,61 @@ export default function AdminModule_User_Page(
                         <Hermes.Header>
                             <Hermes.BackButton
                                 to={Paths.org(organization.slug).admin.users}
-                            >
-                                Users
-                            </Hermes.BackButton>
-
-                            <ButtonGroup>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ member: ["update"] }}
-                                >
-                                    <Button variant="outline" asChild>
-                                        <Link
-                                            to={
-                                                Paths.org(
-                                                    organization.slug,
-                                                ).admin.user(org_member_id)
-                                                    .update
-                                            }
-                                        >
-                                            <ObjectIcons.Edit /> Edit
-                                        </Link>
-                                    </Button>
-                                </Protect>
+                                tooltip="Back to users list"
+                            />
+                            <Hermes.Title>{orgUser.user.name}</Hermes.Title>
+                            <Hermes.Action>
                                 <AdminModule_UserMenu
-                                    organization={organization}
                                     organizationUser={orgUser}
                                     user={orgUser.user}
                                 />
-                            </ButtonGroup>
+                            </Hermes.Action>
                         </Hermes.Header>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>{orgUser.user.name}</CardTitle>
+                                <CardTitle>User Details</CardTitle>
                                 <CardAction>
-                                    {orgUser.user.image && (
-                                        <img
-                                            src={orgUser.user.image}
-                                            alt={`${orgUser.user.name}'s profile image`}
-                                            className="rounded-full w-12 h-12"
-                                        />
-                                    )}
+                                    <Protect
+                                        orgId={organization.id}
+                                        permissions={{ member: ["update"] }}
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            asChild
+                                        >
+                                            <Link
+                                                to={
+                                                    Paths.org(
+                                                        organization.slug,
+                                                    ).admin.user(org_member_id)
+                                                        .update
+                                                }
+                                            >
+                                                <ObjectIcons.Edit />
+                                            </Link>
+                                        </Button>
+                                    </Protect>
                                 </CardAction>
                             </CardHeader>
                             <CardContent>
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>User ID</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {orgUser.user.id}
-                                        </FieldValue>
+                                        <FieldValue
+                                            value={orgUser.user.id}
+                                            format="id"
+                                        />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Name</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {orgUser.user.name}
-                                        </FieldValue>
+                                        <FieldValue value={orgUser.user.name} />
                                     </Field>
 
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
-                                        <FieldValue className="min-w-1/2">
+                                        <FieldValue>
                                             {orgUser.user.email}
                                             {orgUser.user.emailVerified ? (
                                                 <span className="text-muted-foreground ml-2"></span>
@@ -144,15 +135,15 @@ export default function AdminModule_User_Page(
                                         <FieldLabel>
                                             Organization Member ID
                                         </FieldLabel>
-                                        <FieldValue className="min-w-1/2">
-                                            {orgUser.id}
-                                        </FieldValue>
+                                        <FieldValue
+                                            value={orgUser.id}
+                                            format="id"
+                                        />
                                     </Field>
 
                                     <Field orientation="responsive">
                                         <FieldLabel>Role</FieldLabel>
                                         <FieldValue
-                                            className="min-w-1/2"
                                             value={orgUser.role
                                                 .map(
                                                     (role) =>
@@ -163,12 +154,10 @@ export default function AdminModule_User_Page(
                                         />
                                     </Field>
                                     <Field orientation="responsive">
-                                        <FieldLabel>Created At</FieldLabel>
+                                        <FieldLabel>Created</FieldLabel>
                                         <FieldValue
-                                            className="min-w-1/2"
-                                            value={formatDate(
-                                                orgUser.createdAt,
-                                            )}
+                                            value={orgUser.createdAt}
+                                            format="dateWithDistance"
                                         />
                                     </Field>
                                 </FieldGroup>

@@ -30,12 +30,12 @@ export function Table({
     return (
         <div
             data-slot="table-container"
-            className={cn("w-full", containerClassName)}
+            className={cn("relative w-full", containerClassName)}
             {...containerProps}
         >
             <table
                 data-slot="table"
-                className={cn("w-full caption-bottom text-sm", className)}
+                className={cn("w-full caption-bottom text-xs", className)}
                 {...props}
             >
                 {children}

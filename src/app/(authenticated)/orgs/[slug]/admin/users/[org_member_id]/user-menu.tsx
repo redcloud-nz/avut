@@ -24,32 +24,31 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuGroupLabel,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { ObjectName, Paragraph } from "@/components/ui/typography";
 
+import { useOrganization } from "@/hooks/use-organization";
 import { authClient } from "@/lib/auth-client";
-import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationUserData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface AdminModule_UserMenuProps {
-    organization: OrganizationData;
     organizationUser: OrganizationUserData;
     user: UserData;
 }
 
 export function AdminModule_UserMenu({
-    organization,
     organizationUser,
     user,
 }: AdminModule_UserMenuProps) {
+    const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
@@ -93,13 +92,13 @@ export function AdminModule_UserMenu({
             {/* User dropdown menu */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuGroup>
-                        <DropdownMenuGroupLabel>Actions</DropdownMenuGroupLabel>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
                             onSelect={() => setDeleteDialogOpen(true)}
                             // disabled={

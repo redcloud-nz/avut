@@ -139,7 +139,6 @@ function AkagiTableHeadCell<TData extends RowData>({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-32">
                             <DropdownMenuLabel>Sort</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onClick={() =>
                                     header.column.toggleSorting(false)
@@ -167,7 +166,7 @@ function AkagiTableHeadCell<TData extends RowData>({
                             <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                className="text-muted-foreground"
+                                className="text-muted-foreground pl-1"
                             >
                                 <FunnelIcon className="size-4" />
                             </Button>

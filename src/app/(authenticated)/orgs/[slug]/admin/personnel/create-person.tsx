@@ -118,6 +118,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                     <Input
                                         id="person-name"
                                         autoFocus
+                                        autoComplete="off"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -140,6 +141,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                     <Input
                                         id="person-email"
                                         type="email"
+                                        autoComplete="off"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />

@@ -54,10 +54,10 @@ export function FieldValue({
         <div
             data-slot="field-value"
             className={cn(
-                "w-fit min-w-0 h-9 px-3 py-1", // Sizing and padding
+                "w-full min-w-0 h-8 px-2.5 py-1", // Sizing and padding
                 "flex items-center",
-                "border border-transparent rounded-md outline-none", // Border
-                "text-base md:text-sm align-baseline overflow-clip", // Text size
+                "border border-transparent rounded-nonew outline-none", // Border
+                "text-xs align-baseline overflow-clip", // Text size
                 muted ? "text-muted-foreground" : "text-foreground",
                 action ? "justify-between" : "",
                 className,
