@@ -133,9 +133,11 @@ export default function AdminModule_Settings_Page(
                             <Hermes.Header>
                                 <Hermes.BackButton
                                     to={Paths.org(slug).admin.organization}
-                                >
-                                    Organization
-                                </Hermes.BackButton>
+                                    tooltip="Back to organization overview"
+                                />
+                                <Hermes.Title>
+                                    Organization Settings
+                                </Hermes.Title>
                             </Hermes.Header>
                             <General_SettingsCard
                                 lens={lens.focus("general")}

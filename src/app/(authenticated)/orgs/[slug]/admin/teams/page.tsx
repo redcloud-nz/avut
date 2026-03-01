@@ -8,7 +8,6 @@
 import { Lexington } from "@/components/blocks/lexington";
 
 import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
 
 import { AdminModule_TeamsList } from "./teams-list";
 
@@ -20,7 +19,6 @@ export default async function AdminModule_TeamsList_Page(
     props: PageProps<"/orgs/[slug]/admin/teams">,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
 
     return (
         <Lexington.Root>
@@ -32,7 +30,7 @@ export default async function AdminModule_TeamsList_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
-                    <AdminModule_TeamsList organization={organization} />
+                    <AdminModule_TeamsList />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

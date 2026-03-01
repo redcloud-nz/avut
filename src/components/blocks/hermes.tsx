@@ -50,6 +50,7 @@ function HermesTitle({ className, ...props }: ComponentProps<"h3">) {
     return (
         <h3
             className={cn(
+                "col-2",
                 "scroll-m-20 text-2xl font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
                 className,
             )}

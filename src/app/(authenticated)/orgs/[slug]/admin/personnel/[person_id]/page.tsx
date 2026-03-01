@@ -8,22 +8,30 @@
 
 import { use } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
-
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { usePerson } from "@/hooks/use-person";
 import * as Paths from "@/paths";
-import { trpc } from "@/trpc/client";
 
 import { AdminModule_PersonMenu } from "./person-menu";
 
@@ -33,12 +41,7 @@ export default function AdminModule_Person_Page(
     const { slug, person_id } = use(props.params);
     const organization = useOrganization();
 
-    const { data: person } = useSuspenseQuery(
-        trpc.personnel.getPerson.queryOptions({
-            organizationId: organization.id,
-            personId: person_id,
-        }),
-    );
+    const person = usePerson(person_id);
 
     return (
         <Lexington.Root>
@@ -51,19 +54,24 @@ export default function AdminModule_Person_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton
-                                to={Paths.org(slug).admin.personnel}
-                            >
-                                Personnel
-                            </Hermes.BackButton>
-                            <ButtonGroup>
+                    <Hermes.Header>
+                        <Hermes.BackButton
+                            to={Paths.org(slug).admin.personnel}
+                            tooltip="Back to personnel list"
+                        />
+                        <Hermes.Title>{person.name}</Hermes.Title>
+                        <AdminModule_PersonMenu person={person} />
+                    </Hermes.Header>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Person Details</CardTitle>
+                            <CardAction>
                                 <Protect
                                     orgId={organization.id}
                                     permissions={{ person: ["update"] }}
                                 >
-                                    <Button variant="outline" asChild>
+                                    <Button variant="ghost" asChild>
                                         <Link
                                             to={
                                                 Paths.org(slug).admin.person(
@@ -71,72 +79,50 @@ export default function AdminModule_Person_Page(
                                                 ).update
                                             }
                                         >
-                                            <ObjectIcons.Edit /> Edit
+                                            <ObjectIcons.Edit />
                                         </Link>
                                     </Button>
                                 </Protect>
-                                <AdminModule_PersonMenu
-                                    organization={organization}
-                                    person={person}
-                                />
-                            </ButtonGroup>
-                        </Hermes.Header>
+                            </CardAction>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Person ID</FieldLabel>
+                                    <FieldValue value={person.id} format="id" />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Name</FieldLabel>
+                                    <FieldValue value={person.name} />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Email</FieldLabel>
+                                    <FieldValue value={person.email} />
+                                </Field>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{person.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Person ID</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.id}
-                                            format="id"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Name</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.name}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Email</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.email}
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Created At</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.createdAt}
-                                            format="dateWithDistance"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Updated At</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.updatedAt}
-                                            format="dateWithDistance"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Status</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            value={person.status}
-                                        />
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
+                                <FieldSeparator />
+
+                                <Field orientation="responsive">
+                                    <FieldLabel>Created At</FieldLabel>
+                                    <FieldValue
+                                        value={person.createdAt}
+                                        format="dateWithDistance"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Updated At</FieldLabel>
+                                    <FieldValue
+                                        value={person.updatedAt}
+                                        format="dateWithDistance"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Status</FieldLabel>
+                                    <FieldValue value={person.status} />
+                                </Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

@@ -3,9 +3,11 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import type { PersonData } from "./lib/schemas/person";
 import type { Skill } from "@/lib/schemas/skill";
 import type { SkillGroup } from "@/lib/schemas/skill-group";
 import type { SkillPackage } from "@/lib/schemas/skill-package";
+import type { TeamData } from "./lib/schemas/team";
 
 export const about = {
     label: "About",
@@ -290,10 +292,20 @@ function adminModule(org_slug: string) {
             },
         },
 
-        person: (personId: string) => {
+        person: (personOrPersonId: PersonData | string) => {
+            const personId =
+                typeof personOrPersonId === "string"
+                    ? personOrPersonId
+                    : personOrPersonId.id;
             const personBase = `${base}/personnel/${personId}` as const;
             return {
-                href: personBase,
+                index: {
+                    href: personBase,
+                    label:
+                        typeof personOrPersonId === "string"
+                            ? (undefined as never)
+                            : personOrPersonId.name,
+                },
 
                 history: {
                     label: "History",
@@ -344,10 +356,20 @@ function adminModule(org_slug: string) {
             label: "Organisation",
         },
 
-        team: (teamId: string) => {
+        team: (teamOrTeamId: TeamData | string) => {
+            const teamId =
+                typeof teamOrTeamId === "string"
+                    ? teamOrTeamId
+                    : teamOrTeamId.id;
             const teamBase = `${base}/teams/${teamId}` as const;
             return {
-                href: teamBase,
+                index: {
+                    href: teamBase,
+                    label:
+                        typeof teamOrTeamId === "string"
+                            ? (undefined as never)
+                            : teamOrTeamId.name,
+                },
 
                 history: {
                     label: "History",

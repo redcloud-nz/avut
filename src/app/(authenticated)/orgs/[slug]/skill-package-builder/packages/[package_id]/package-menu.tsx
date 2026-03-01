@@ -19,6 +19,7 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
+    DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -187,7 +188,7 @@ export function SkillPackageBuilder_Package_Menu({
                     </Protect>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <DeleteSkillPackageDialog
+            <SkillPackageBuilder_DeletePackage_Dialog
                 skillPackage={skillPackage}
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
@@ -196,14 +197,10 @@ export function SkillPackageBuilder_Package_Menu({
     );
 }
 
-interface DeleteSkillPackageDialogProps extends ComponentProps<typeof Dialog> {
-    skillPackage: SkillPackage;
-}
-
-function DeleteSkillPackageDialog({
+function SkillPackageBuilder_DeletePackage_Dialog({
     skillPackage,
     ...props
-}: DeleteSkillPackageDialogProps) {
+}: DialogProps & { skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -212,20 +209,20 @@ function DeleteSkillPackageDialog({
         trpc.skills.deletePackage.mutationOptions({
             onError(error) {
                 console.error("Failed to delete skill package:", error);
+                toast.error(`Failed to delete skill package: ${error.message}`);
             },
             async onSuccess() {
-                props.onOpenChange?.(false);
-
-                // Redirect to the package list page after deletion
-                router.push(
-                    Paths.org(organization.slug).skillPackageBuilder
-                        .skillPackages.href,
-                );
-
                 await queryClient.invalidateQueries(
                     trpc.skills.listPackages.queryFilter({
                         organizationId: organization.id,
                     }),
+                );
+
+                props.onOpenChange?.(false);
+
+                // Redirect to the package list page after deletion
+                router.push(
+                    Paths.org(organization.slug).skillPackageBuilder.index.href,
                 );
             },
         }),
@@ -259,7 +256,7 @@ function DeleteSkillPackageDialog({
                                 })
                             }
                         />
-                        <Show when={!mutation.isPending}>
+                        <Show when={mutation.isIdle}>
                             <Button
                                 variant="outline"
                                 onClick={() => props.onOpenChange?.(false)}

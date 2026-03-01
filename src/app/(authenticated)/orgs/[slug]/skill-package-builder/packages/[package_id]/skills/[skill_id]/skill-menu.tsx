@@ -127,7 +127,7 @@ export function SkillPackageBuilder_Skill_Menu({
 
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["delete"] }}
+                        permissions={{ skillPackage: ["update"] }}
                     >
                         <DropdownMenuGroup>
                             {/* Show the archive option if the skill package is active */}
@@ -194,8 +194,9 @@ function DeleteSkillDialog({ skill, ...props }: DeleteSkillDialogProps) {
 
                 // Redirect to the package list page after deletion
                 router.push(
-                    Paths.org(organization.slug).skillPackageBuilder
-                        .skillPackages.href,
+                    Paths.org(organization.slug)
+                        .skillPackageBuilder.skillPackage(skill.skillPackageId)
+                        .group(skill.skillGroupId).href,
                 );
 
                 await queryClient.invalidateQueries(

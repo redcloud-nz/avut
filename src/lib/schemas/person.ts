@@ -48,11 +48,11 @@ export const PersonData = {
     fromRecord: (record: PersonRecord): PersonData =>
         personSchema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            createdAt: record?.createdAt?.toISOString(),
+            updatedAt: record?.updatedAt?.toISOString(),
         }),
 } as const;
 
 export type PersonData = z.infer<typeof personSchema>;
 
-export type PersonModifiableData = z.infer<typeof PersonData.modifiableSchema>;
+export type ModifiablePersonData = z.infer<typeof PersonData.modifiableSchema>;

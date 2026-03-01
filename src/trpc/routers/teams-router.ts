@@ -28,26 +28,30 @@ export const teamsRouter = createTrpcRouter({
     createTeam: organizationProcedure({ team: ["create"] })
         .input(
             z.object({
-                team: TeamData.modifiableSchema,
+                create: TeamData.modifiableSchema,
             }),
         )
-        .output(TeamData.schema)
-        .mutation(async ({ ctx, input: { organizationId, team } }) => {
+        .output(
+            z.object({
+                created: TeamData.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input: { organizationId, create } }) => {
             // Create the team via the auth API
             const data = await auth.api.createTeam({
                 body: {
-                    name: team.name,
+                    name: create.name,
                     organizationId,
                 },
             });
 
-            const changes = diffObject({}, team);
+            const changes = diffObject({}, create);
 
             const [createdTeam] = await Promise.all([
                 // Update additional fields
                 ctx.prisma.team.update({
                     where: { organizationId: organizationId, id: data.id },
-                    data: pick(team, ["description", "tags", "properties"]),
+                    data: pick(create, ["description", "tags", "properties"]),
                 }),
                 ctx.logEvent({
                     action: "Create",
@@ -57,7 +61,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return TeamData.fromRecord(createdTeam);
+            return { created: TeamData.fromRecord(createdTeam) };
         }),
 
     /**
@@ -69,32 +73,31 @@ export const teamsRouter = createTrpcRouter({
      */
     createTeamMembership: organizationProcedure({ team: ["update"] })
         .input(
-            TeamMembershipData.schema.pick({
-                teamId: true,
-                personId: true,
-                tags: true,
-                properties: true,
+            z.object({
+                teamId: TeamId.schema,
+                personId: PersonId.schema,
+                create: TeamMembershipData.modifiableSchema,
             }),
         )
-        .output(TeamMembershipData.schema)
-        .mutation(async ({ ctx, input }) => {
+        .output(z.object({ created: TeamMembershipData.schema }))
+        .mutation(async ({ ctx, input: { teamId, personId, create } }) => {
             const [team, person, existing] = await Promise.all([
                 ctx.prisma.team.findUnique({
                     where: {
-                        id: input.teamId,
+                        id: teamId,
                         organizationId: ctx.organizationId,
                     },
                 }),
                 ctx.prisma.person.findUnique({
                     where: {
-                        id: input.personId,
+                        id: personId,
                         organizationId: ctx.organizationId,
                     },
                 }),
                 ctx.prisma.teamMembership.findFirst({
                     where: {
-                        teamId: input.teamId,
-                        personId: input.personId,
+                        teamId: teamId,
+                        personId: personId,
                     },
                 }),
             ]);
@@ -102,21 +105,21 @@ export const teamsRouter = createTrpcRouter({
             if (!team) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: Messages.teamNotFound(input.teamId),
+                    message: Messages.teamNotFound(teamId),
                 });
             }
 
             if (!person) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: Messages.personNotFound(input.personId),
+                    message: Messages.personNotFound(personId),
                 });
             }
 
             if (existing) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: `Person(${input.personId}) is already a member of Team(${input.teamId}).`,
+                    message: `Person(${personId}) is already a member of Team(${teamId}).`,
                 });
             }
 
@@ -127,21 +130,21 @@ export const teamsRouter = createTrpcRouter({
                     data: {
                         id: teamMembershipId,
                         organizationId: ctx.organizationId,
-                        teamId: input.teamId,
-                        personId: input.personId,
-                        tags: input.tags,
-                        properties: input.properties,
+                        teamId,
+                        personId,
+                        tags: create.tags,
+                        properties: create.properties,
                     },
                 }),
                 ctx.logEvent({
                     action: "Create",
                     objectType: "TeamMembership",
                     objectId: teamMembershipId,
-                    changes: diffObject({}, input),
+                    changes: diffObject({}, create),
                 }),
             ]);
 
-            return TeamMembershipData.fromRecord(created);
+            return { created: TeamMembershipData.fromRecord(created) };
         }),
 
     /**
@@ -153,18 +156,18 @@ export const teamsRouter = createTrpcRouter({
                 teamId: TeamId.schema,
             }),
         )
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input: { teamId }, ctx }) => {
             await Promise.all([
                 await auth.api.removeTeam({
                     body: {
-                        teamId: input.teamId,
+                        teamId,
                         organizationId: ctx.organizationId,
                     },
                 }),
                 ctx.logEvent({
                     action: "Delete",
                     objectType: "Team",
-                    objectId: input.teamId,
+                    objectId: teamId,
                 }),
             ]);
         }),
@@ -177,7 +180,12 @@ export const teamsRouter = createTrpcRouter({
      * @throws TRPCError(Not_FOUND) If the specified team membership does not exist within the organization.
      */
     deleteTeamMembership: organizationProcedure({ team: ["update"] })
-        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
+        .input(
+            z.object({
+                personId: PersonId.schema,
+                teamId: TeamId.schema,
+            }),
+        )
         .mutation(async ({ ctx, input: { personId, teamId } }) => {
             const existing = await ctx.prisma.teamMembership.findUnique({
                 where: {
@@ -216,29 +224,6 @@ export const teamsRouter = createTrpcRouter({
                     objectId: `${teamId}_${personId}`,
                 }),
             ]);
-        }),
-
-    /**
-     * Retrieve a team by its ID.
-     */
-    getTeam: organizationProcedure({ team: ["view"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(TeamData.schema)
-        .query(async ({ input, ctx }) => {
-            const teamRecord = await ctx.prisma.team.findUnique({
-                where: {
-                    id: input.teamId,
-                    organizationId: ctx.organizationId,
-                },
-            });
-
-            if (!teamRecord)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(input.teamId),
-                });
-
-            return TeamData.fromRecord(teamRecord);
         }),
 
     /**
@@ -298,7 +283,11 @@ export const teamsRouter = createTrpcRouter({
                 update: TeamData.modifiableSchema,
             }),
         )
-        .output(TeamData.schema)
+        .output(
+            z.object({
+                updated: TeamData.schema,
+            }),
+        )
         .mutation(async ({ ctx, input: { teamId, update } }) => {
             const existingTeam = await ctx.prisma.team.findUnique({
                 where: {
@@ -318,7 +307,8 @@ export const teamsRouter = createTrpcRouter({
                 update,
             );
 
-            if (diff.length == 0) return TeamData.fromRecord(existingTeam); // No changes
+            if (diff.length == 0)
+                return { updated: TeamData.fromRecord(existingTeam) }; // No changes
 
             const [updated] = await Promise.all([
                 // Apply the changes
@@ -338,7 +328,7 @@ export const teamsRouter = createTrpcRouter({
             // Clear cached data
             await revalidateTeam(teamId);
 
-            return TeamData.fromRecord(updated);
+            return { updated: TeamData.fromRecord(updated) };
         }),
 
     /**
@@ -360,7 +350,11 @@ export const teamsRouter = createTrpcRouter({
                 }),
             }),
         )
-        .output(TeamMembershipData.schema)
+        .output(
+            z.object({
+                updated: TeamMembershipData.schema,
+            }),
+        )
         .mutation(async ({ ctx, input: { teamId, personId, update } }) => {
             const existing = await ctx.prisma.teamMembership.findUnique({
                 where: {
@@ -387,7 +381,7 @@ export const teamsRouter = createTrpcRouter({
             );
 
             if (diff.length == 0)
-                return TeamMembershipData.fromRecord(existing);
+                return { updated: TeamMembershipData.fromRecord(existing) };
 
             const [updated] = await Promise.all([
                 // Apply the changes
@@ -409,6 +403,6 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return TeamMembershipData.fromRecord(updated);
+            return { updated: TeamMembershipData.fromRecord(updated) };
         }),
 });

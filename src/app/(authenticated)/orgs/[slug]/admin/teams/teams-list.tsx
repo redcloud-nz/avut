@@ -4,9 +4,9 @@
  */
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { useLiveSuspenseQuery } from "@tanstack/react-db";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import {
     getCoreRowModel,
@@ -16,30 +16,29 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
 
-import { getTeamsCollection } from "@/lib/collections/teams";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
 
-interface AdminModule_TeamsListProps {
-    organization: OrganizationData;
-}
+import { trpc } from "@/trpc/client";
+import { useOrganization } from "@/hooks/use-organization";
+import { AdminModule_CreateTeam_Dialog } from "./create-team";
 
 /**
  * List of teams in the organization.
  */
-export function AdminModule_TeamsList({
-    organization,
-}: AdminModule_TeamsListProps) {
-    const { data: teams } = useLiveSuspenseQuery((q) =>
-        q.from({ team: getTeamsCollection(organization.id) }),
+export function AdminModule_TeamsList() {
+    const organization = useOrganization();
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({
+            organizationId: organization.id,
+        }),
     );
 
     type RowData = TeamData;
@@ -56,9 +55,11 @@ export function AdminModule_TeamsList({
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.org(organization.slug).admin.team(
-                                    ctx.row.original.id,
-                                )}
+                                to={
+                                    Paths.org(organization.slug).admin.team(
+                                        ctx.row.original.id,
+                                    ).index
+                                }
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -97,24 +98,30 @@ export function AdminModule_TeamsList({
         },
     });
 
+    const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
+
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
                     permissions={{ team: ["create"] }}
                 >
-                    <Button variant="outline" asChild>
-                        <Link
-                            to={Paths.org(organization.slug).admin.teams.create}
-                        >
-                            <CreateNewIcon /> Team
-                        </Link>
+                    <Button
+                        variant="outline"
+                        tooltip="Add Team"
+                        onClick={() => setCreateTeamDialogOpen(true)}
+                    >
+                        <CreateNewIcon /> New
                     </Button>
                 </Protect>
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+            <AdminModule_CreateTeam_Dialog
+                open={createTeamDialogOpen}
+                onOpenChange={setCreateTeamDialogOpen}
+            />
+        </>
     );
 }

@@ -12,7 +12,13 @@ import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
@@ -36,16 +42,39 @@ export default async function AdminModule_Organization_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.Title>Organization</Hermes.Title>
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ organization: ["update"] }}
+                    <Hermes.Header>
+                        <Hermes.Title>Organization</Hermes.Title>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ organization: ["update"] }}
+                        >
+                            <Button
+                                variant="outline"
+                                tooltip="Organization Settings"
+                                size="icon"
+                                asChild
                             >
-                                <ButtonGroup>
+                                <Link
+                                    to={
+                                        Paths.org(slug).admin.organization
+                                            .settings
+                                    }
+                                >
+                                    <SettingsIcon />
+                                </Link>
+                            </Button>
+                        </Protect>
+                    </Hermes.Header>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{organization.name}</CardTitle>
+                            <CardAction>
+                                <Protect
+                                    orgId={organization.id}
+                                    permissions={{ organization: ["update"] }}
+                                >
                                     <Button
-                                        variant="outline"
+                                        variant="ghost"
                                         tooltip="Edit Organization"
                                         size="icon"
                                         asChild
@@ -59,64 +88,44 @@ export default async function AdminModule_Organization_Page(
                                             <ObjectIcons.Edit />
                                         </Link>
                                     </Button>
-                                    <Button
-                                        variant="outline"
-                                        tooltip="Organization Settings"
-                                        size="icon"
-                                        asChild
-                                    >
-                                        <Link
-                                            to={
-                                                Paths.org(slug).admin
-                                                    .organization.settings
-                                            }
-                                        >
-                                            <SettingsIcon />
-                                        </Link>
-                                    </Button>
-                                </ButtonGroup>
-                            </Protect>
-                        </Hermes.Header>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{organization.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Organization ID</FieldLabel>
-                                        <FieldValue
-                                            format="id"
-                                            value={organization.id}
-                                            className="min-w-1/2"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Name</FieldLabel>
-                                        <FieldValue
-                                            value={organization.name}
-                                            className="min-w-1/2"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Slug</FieldLabel>
-                                        <FieldValue
-                                            value={organization.slug}
-                                            className="min-w-1/2"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Created</FieldLabel>
-                                        <FieldValue
-                                            value={organization.createdAt}
-                                            format="dateTimeWithDistance"
-                                            className="min-w-1/2"
-                                        />
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
+                                </Protect>
+                            </CardAction>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Organization ID</FieldLabel>
+                                    <FieldValue
+                                        format="id"
+                                        value={organization.id}
+                                        className="min-w-1/2"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Name</FieldLabel>
+                                    <FieldValue
+                                        value={organization.name}
+                                        className="min-w-1/2"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Slug</FieldLabel>
+                                    <FieldValue
+                                        value={organization.slug}
+                                        className="min-w-1/2"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Created</FieldLabel>
+                                    <FieldValue
+                                        value={organization.createdAt}
+                                        format="dateTimeWithDistance"
+                                        className="min-w-1/2"
+                                    />
+                                </Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

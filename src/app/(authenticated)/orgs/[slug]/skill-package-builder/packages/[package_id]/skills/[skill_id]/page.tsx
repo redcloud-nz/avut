@@ -11,6 +11,7 @@ import { use } from "react";
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -23,6 +24,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
+import { useOrganization } from "@/hooks/use-organization";
 import { useSkill } from "@/hooks/use-skill";
 import * as Paths from "@/paths";
 
@@ -33,6 +35,7 @@ export default function SkillPackageBuilder_Skill_Page(
 ) {
     const { slug, package_id, skill_id } = use(props.params);
 
+    const organization = useOrganization();
     const skill = useSkill({
         skillPackageId: package_id,
         skillId: skill_id,
@@ -67,19 +70,24 @@ export default function SkillPackageBuilder_Skill_Page(
                             <CardTitle>Skill Details</CardTitle>
 
                             <CardAction>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        to={
-                                            Paths.org(slug)
-                                                .skillPackageBuilder.skillPackage(
-                                                    skill.skillPackage,
-                                                )
-                                                .skill(skill).update
-                                        }
-                                    >
-                                        <ObjectIcons.Edit />
-                                    </Link>
-                                </Button>
+                                <Protect
+                                    orgId={organization.id}
+                                    permissions={{ organization: ["update"] }}
+                                >
+                                    <Button variant="ghost" size="icon" asChild>
+                                        <Link
+                                            to={
+                                                Paths.org(slug)
+                                                    .skillPackageBuilder.skillPackage(
+                                                        skill.skillPackage,
+                                                    )
+                                                    .skill(skill).update
+                                            }
+                                        >
+                                            <ObjectIcons.Edit />
+                                        </Link>
+                                    </Button>
+                                </Protect>
                             </CardAction>
                         </CardHeader>
                         <CardContent>

@@ -149,7 +149,7 @@ export function SkillPackageBuilder_Packages_List({
 
     return (
         <>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}

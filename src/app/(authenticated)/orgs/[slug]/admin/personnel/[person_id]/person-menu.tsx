@@ -12,12 +12,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
+import { Show } from "@/components/show";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
+    DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -34,70 +36,61 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
-import { OrganizationData } from "@/lib/schemas/organization";
+import { useOrganization } from "@/hooks/use-organization";
 import { PersonData } from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface AdminModule_PersonMenuProps {
-    organization: OrganizationData;
     person: PersonData;
 }
 
 export function AdminModule_PersonMenu({
-    organization,
     person,
 }: AdminModule_PersonMenuProps) {
+    const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    async function invalidatePersonQueries() {
-        await Promise.all([
-            queryClient.invalidateQueries(
-                trpc.personnel.getPerson.queryFilter({
-                    organizationId: organization.id,
-                    personId: person.id,
-                }),
-            ),
-            queryClient.invalidateQueries(
-                trpc.personnel.listPersonnel.queryFilter({
-                    organizationId: organization.id,
-                }),
-            ),
-        ]);
-    }
-
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
-            async onSettled() {
-                await invalidatePersonQueries();
+            onError(error) {
+                toast.error(`Failed to archive person: ${error.message}`);
+                console.error("Failed to archive person:", error);
             },
-        }),
-    );
-    const deleteMutation = useMutation(
-        trpc.personnel.deletePerson.mutationOptions({
-            async onSettled() {
-                await invalidatePersonQueries();
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.personnel.listPersonnel.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
             },
         }),
     );
     const restoreMutation = useMutation(
         trpc.personnel.restorePerson.mutationOptions({
-            async onSettled() {
-                await invalidatePersonQueries();
+            onError(error) {
+                toast.error(`Failed to archive person: ${error.message}`);
+                console.error("Failed to archive person:", error);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.personnel.listPersonnel.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
             },
         }),
     );
 
     function handleArchive() {
         toast.promise(
-            async () =>
-                await archiveMutation.mutateAsync({
-                    organizationId: organization.id,
-                    personId: person.id,
-                }),
+            archiveMutation.mutateAsync({
+                organizationId: organization.id,
+                personId: person.id,
+            }),
             {
                 loading: "Archiving person...",
                 success: "Person archived.",
@@ -106,30 +99,12 @@ export function AdminModule_PersonMenu({
         );
     }
 
-    function handleDelete() {
-        toast.promise(
-            async () => {
-                await deleteMutation.mutateAsync({
-                    organizationId: organization.id,
-                    personId: person.id,
-                });
-                router.push(Paths.org(organization.slug).admin.personnel.href);
-            },
-            {
-                loading: "Deleting person...",
-                success: "Person deleted.",
-                error: (error) => "Failed to delete person: " + error.message,
-            },
-        );
-    }
-
     function handleRestore() {
         toast.promise(
-            async () =>
-                await restoreMutation.mutateAsync({
-                    organizationId: organization.id,
-                    personId: person.id,
-                }),
+            restoreMutation.mutateAsync({
+                organizationId: organization.id,
+                personId: person.id,
+            }),
             {
                 loading: "Restoring person...",
                 success: "Person restored.",
@@ -208,29 +183,83 @@ export function AdminModule_PersonMenu({
             </DropdownMenu>
 
             {/* Delete Person dialog*/}
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Person</DialogTitle>
-                        <DialogDescription>
-                            Confirm deletion of personnel record for{" "}
-                            <ObjectName>{person.name}</ObjectName>.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <FieldGroup>
-                        <Field orientation="horizontal">
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                disabled={deleteMutation.isPending}
-                                onClick={handleDelete}
-                            >
-                                Delete
-                            </Button>
-                        </Field>
-                    </FieldGroup>
-                </DialogContent>
-            </Dialog>
+            <AdminModule_DeletePerson_Dialog
+                person={person}
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            />
         </>
+    );
+}
+
+function AdminModule_DeletePerson_Dialog({
+    person,
+    ...props
+}: DialogProps & { person: PersonData }) {
+    const organization = useOrganization();
+    const queryClient = useQueryClient();
+    const router = useRouter();
+
+    const mutation = useMutation(
+        trpc.personnel.deletePerson.mutationOptions({
+            onError(error) {
+                console.error("Failed to delete person:", error);
+                toast.error(`Failed to delete person: ${error.message}`);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.personnel.listPersonnel.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+
+                props.onOpenChange?.(false);
+
+                // Redirect to the personnel list page after deletion
+                router.push(Paths.org(organization.slug).admin.personnel.href);
+            },
+        }),
+    );
+
+    return (
+        <Dialog {...props}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete Person</DialogTitle>
+                    <DialogDescription>
+                        Confirm deletion of personnel record for{" "}
+                        <ObjectName>{person.name}</ObjectName>.
+                    </DialogDescription>
+                </DialogHeader>
+                <FieldGroup>
+                    <Field orientation="horizontal">
+                        <MutationButton
+                            type="button"
+                            variant="destructive"
+                            status={mutation.status}
+                            text={{
+                                idle: "Delete",
+                                pending: "Deleting",
+                                success: "Deleted",
+                            }}
+                            onClick={() =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    personId: person.id,
+                                })
+                            }
+                        />
+                        <Show when={mutation.isIdle}>
+                            <Button
+                                variant="outline"
+                                onClick={() => props.onOpenChange?.(false)}
+                            >
+                                Cancel
+                            </Button>
+                        </Show>
+                    </Field>
+                </FieldGroup>
+            </DialogContent>
+        </Dialog>
     );
 }

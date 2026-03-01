@@ -39,24 +39,29 @@ import {
 } from "@/components/ui/table";
 import { ObjectName } from "@/components/ui/typography";
 
+import { useOrganization } from "@/hooks/use-organization";
 import { getPersonnelCollection } from "@/lib/collections/personnel";
 import { getTeamMembershipsCollection } from "@/lib/collections/team-memberships";
-import {
-    OrganizationId,
-    OrganizationWithSettings,
-} from "@/lib/schemas/organization";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 
 interface AdminModule_TeamPersonnel_SectionProps {
-    organization: OrganizationWithSettings;
     team: TeamData;
 }
 
 export function AdminModule_TeamPersonnel_Section({
-    organization,
     team,
 }: AdminModule_TeamPersonnel_SectionProps) {
+    const organization = useOrganization();
+
     const teamMembersQuery = useLiveQuery((q) =>
         q
             .from({
@@ -75,56 +80,60 @@ export function AdminModule_TeamPersonnel_Section({
     const [deleteTarget, setDeleteTarget] = useState<PersonData | null>(null);
 
     return (
-        <Hermes.Section>
-            {teamMembersQuery.isLoading ? (
-                <>
-                    <Hermes.Header>
-                        <Skeleton className="h-8 w-50" />
-                        <Skeleton className="h-8 w-20" />
-                    </Hermes.Header>
-                    <Skeleton className="h-20 w-full" />
-                </>
-            ) : (
-                <>
-                    <Hermes.Header>
-                        <Hermes.Title>Team Personnel</Hermes.Title>
-                        <Button
-                            variant="outline"
-                            onClick={() => setNewMemberDialogOpen(true)}
-                        >
-                            <ObjectIcons.Create /> Person
-                        </Button>
-                    </Hermes.Header>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeadCell>Name</TableHeadCell>
-                                <TableCell className="w-9"></TableCell>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {teamMembersQuery.data.map(
-                                ({ person, teamMembership }) => (
-                                    <TableRow key={teamMembership.personId}>
-                                        <TableCell>{person.name}</TableCell>
-                                        <TableCell className="w-9 p-0">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    setDeleteTarget(person)
-                                                }
-                                            >
-                                                <ObjectIcons.Delete />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ),
-                            )}
-                        </TableBody>
-                    </Table>
-                </>
-            )}
+        <Card>
+            <CardHeader>
+                <CardTitle>Team Personnel</CardTitle>
+                <CardAction>
+                    <Button
+                        variant="ghost"
+                        onClick={() => setNewMemberDialogOpen(true)}
+                    >
+                        <ObjectIcons.Create />
+                    </Button>
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+                {teamMembersQuery.isLoading ? (
+                    <>
+                        <Hermes.Header>
+                            <Skeleton className="h-8 w-50" />
+                            <Skeleton className="h-8 w-20" />
+                        </Hermes.Header>
+                        <Skeleton className="h-20 w-full" />
+                    </>
+                ) : (
+                    <>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHeadCell>Name</TableHeadCell>
+                                    <TableCell className="w-9"></TableCell>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teamMembersQuery.data.map(
+                                    ({ person, teamMembership }) => (
+                                        <TableRow key={teamMembership.personId}>
+                                            <TableCell>{person.name}</TableCell>
+                                            <TableCell className="w-9 p-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() =>
+                                                        setDeleteTarget(person)
+                                                    }
+                                                >
+                                                    <ObjectIcons.Delete />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ),
+                                )}
+                            </TableBody>
+                        </Table>
+                    </>
+                )}
+            </CardContent>
 
             {/* Add Person Dialog */}
             <AddTeamMemberDialog
@@ -142,7 +151,7 @@ export function AdminModule_TeamPersonnel_Section({
                 open={deleteTarget !== null}
                 onOpenChange={() => setDeleteTarget(null)}
             />
-        </Hermes.Section>
+        </Card>
     );
 }
 

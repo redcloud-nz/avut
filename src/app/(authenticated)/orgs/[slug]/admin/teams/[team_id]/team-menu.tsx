@@ -31,16 +31,16 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup } from "@/components/ui/field";
+import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
-import { OrganizationData } from "@/lib/schemas/organization";
+import { OrganizationClient } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { Link } from "@/components/ui/link";
 
 interface AdminModule_TeamMenuProps {
-    organization: OrganizationData;
+    organization: OrganizationClient;
     team: TeamData;
 }
 

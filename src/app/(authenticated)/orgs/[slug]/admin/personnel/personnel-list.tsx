@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -16,7 +16,6 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
@@ -27,6 +26,8 @@ import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_CreatePerson_Dialog } from "./create-person";
 
 interface AdminModule_PersonnelListProps {
     organization: OrganizationData;
@@ -58,7 +59,12 @@ export function AdminModule_PersonnelList({
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Link to={adminModule.person(ctx.row.original.id)}>
+                            <Link
+                                to={
+                                    adminModule.person(ctx.row.original.id)
+                                        .index
+                                }
+                            >
                                 {ctx.getValue()}
                             </Link>
                         </Akagi.TableCell>
@@ -118,22 +124,30 @@ export function AdminModule_PersonnelList({
         },
     });
 
+    const [createPersonDialogOpen, setCreatePersonDialogOpen] = useState(false);
+
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
                 <Protect
                     orgId={organization.id}
                     permissions={{ person: ["create"] }}
                 >
-                    <Button variant="outline" asChild>
-                        <Link to={adminModule.personnel.create}>
-                            <CreateNewIcon /> Person
-                        </Link>
+                    <Button
+                        variant="outline"
+                        onClick={() => setCreatePersonDialogOpen(true)}
+                        tooltip="Add Person"
+                    >
+                        <CreateNewIcon /> New
                     </Button>
                 </Protect>
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+            <AdminModule_CreatePerson_Dialog
+                open={createPersonDialogOpen}
+                onOpenChange={setCreatePersonDialogOpen}
+            />
+        </>
     );
 }

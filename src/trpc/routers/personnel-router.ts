@@ -14,7 +14,11 @@ import { TeamMembershipData } from "@/lib/schemas/team-membership";
 
 import { revalidatePerson } from "@/server/person";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import {
+    AuthenticatedOrganizationContext,
+    createTrpcRouter,
+    organizationProcedure,
+} from "../init";
 import { Messages } from "../messages";
 import { FieldConflictError } from "../types";
 
@@ -35,7 +39,7 @@ export const personnelRouter = createTrpcRouter({
                 personId: PersonId.schema,
             }),
         )
-        .output(PersonData.schema)
+        .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
             const existing = await ctx.prisma.person.findUnique({
                 where: { organizationId: ctx.organizationId, id: personId },
@@ -48,7 +52,7 @@ export const personnelRouter = createTrpcRouter({
                 });
 
             if (existing.status === "Archived") {
-                return PersonData.fromRecord(existing); // Already archived
+                return { updated: PersonData.fromRecord(existing) }; // Already archived
             }
 
             const updated = await ctx.prisma.person.update({
@@ -65,7 +69,7 @@ export const personnelRouter = createTrpcRouter({
             // Clear cached data
             revalidatePerson(personId);
 
-            return PersonData.fromRecord(updated);
+            return { updated: PersonData.fromRecord(updated) };
         }),
 
     /**
@@ -77,54 +81,55 @@ export const personnelRouter = createTrpcRouter({
      */
     createPerson: organizationProcedure({ person: ["create"] })
         .input(
-            PersonData.modifiableSchema.extend({ personId: PersonId.schema }),
+            z.object({
+                personId: PersonId.schema,
+                create: PersonData.modifiableSchema,
+            }),
         )
-        .output(PersonData.schema)
-        .mutation(
-            async ({ ctx, input: { personId, organizationId, ...person } }) => {
-                // Check for conflicts
-                const [emailConflict] = await Promise.all([
-                    ctx.prisma.person.findFirst({
-                        where: {
-                            organizationId: ctx.organizationId,
-                            email: person.email,
-                        },
-                    }),
-                ]);
-
-                if (emailConflict)
-                    throw new TRPCError({
-                        code: "CONFLICT",
-                        message:
-                            "A person with this email address already exists in this organization.",
-                        cause: new FieldConflictError("email"),
-                    });
-
-                const created = await ctx.prisma.person.create({
-                    data: {
-                        id: personId,
+        .output(z.object({ created: PersonData.schema }))
+        .mutation(async ({ ctx, input: { personId, create } }) => {
+            // Check for conflicts
+            const [emailConflict] = await Promise.all([
+                ctx.prisma.person.findFirst({
+                    where: {
                         organizationId: ctx.organizationId,
-                        name: person.name,
-                        email: person.email,
-                        tags: person.tags,
-                        properties: person.properties,
-                        status: "Active",
+                        email: create.email,
                     },
+                }),
+            ]);
+
+            if (emailConflict)
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message:
+                        "A person with this email address already exists in this organization.",
+                    cause: new FieldConflictError("email"),
                 });
 
-                // Calculate changes from empty record
-                const changes = diffObject({}, person);
+            const created = await ctx.prisma.person.create({
+                data: {
+                    id: personId,
+                    organizationId: ctx.organizationId,
+                    name: create.name,
+                    email: create.email,
+                    tags: create.tags,
+                    properties: create.properties,
+                    status: "Active",
+                },
+            });
 
-                await ctx.logEvent({
-                    action: "Create",
-                    objectType: "Person",
-                    objectId: created.id,
-                    changes: changes,
-                });
+            // Calculate changes from empty record
+            const changes = diffObject({}, create);
 
-                return PersonData.fromRecord(created);
-            },
-        ),
+            await ctx.logEvent({
+                action: "Create",
+                objectType: "Person",
+                objectId: created.id,
+                changes: changes,
+            });
+
+            return { created: PersonData.fromRecord(created) };
+        }),
 
     /**
      * Delete a person from the organization.
@@ -202,31 +207,6 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Retrieves a person by their ID.
-     * @param ctx The authenticated context.
-     * @param input The input object containing the personId.
-     * @returns The person object.
-     * @throws TRPCError(NOT_FOUND) if the person is not found.
-     */
-    getPerson: organizationProcedure({ person: ["view"] })
-        .input(z.object({ personId: PersonId.schema }))
-        .output(PersonData.schema)
-        .query(async ({ ctx, input: { personId } }) => {
-            const person = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-            });
-
-            if (!person) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
-            }
-
-            return PersonData.fromRecord(person);
-        }),
-
-    /**
      * Lists all personnel in the organization.
      * @param ctx The authenticated context.
      * @returns An array of person objects.
@@ -244,53 +224,6 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Lists all team memberships for a given person.
-     * @param ctx The authenticated context.
-     * @param personId The ID of the person to list team memberships for.
-     * @returns An array of team membership objects with associated team data.
-     * @throws TRPCError(NOT_FOUND) if the person does not exist within the organization.
-     */
-    listTeamMemberships: organizationProcedure({ team: ["view"] })
-        .input(z.object({ personId: PersonId.schema }))
-        .output(
-            z.array(
-                TeamMembershipData.schema.extend({
-                    team: TeamData.schema,
-                }),
-            ),
-        )
-        .query(async ({ ctx, input: { personId } }) => {
-            const [person, memberships] = await Promise.all([
-                ctx.prisma.person.findUnique({
-                    where: {
-                        id: personId,
-                        organizationId: ctx.organizationId,
-                    },
-                    select: { id: true },
-                }),
-                ctx.prisma.teamMembership.findMany({
-                    where: {
-                        personId,
-                    },
-                    include: {
-                        team: true,
-                    },
-                }),
-            ]);
-
-            if (!person)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
-
-            return memberships.map((membership) => ({
-                ...TeamMembershipData.fromRecord(membership),
-                team: TeamData.fromRecord(membership.team),
-            }));
-        }),
-
-    /**
      * Restores an archived or deleted person in the organization.
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
@@ -303,7 +236,7 @@ export const personnelRouter = createTrpcRouter({
                 personId: PersonId.schema,
             }),
         )
-        .output(PersonData.schema)
+        .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
             const existing = await ctx.prisma.person.findUnique({
                 where: { organizationId: ctx.organizationId, id: personId },
@@ -316,7 +249,7 @@ export const personnelRouter = createTrpcRouter({
                 });
 
             if (existing.status == "Active") {
-                return PersonData.fromRecord(existing); // Not restorable
+                return { updated: PersonData.fromRecord(existing) }; // Not restorable
             }
 
             const updated = await ctx.prisma.person.update({
@@ -333,7 +266,7 @@ export const personnelRouter = createTrpcRouter({
             // Clear cached data
             revalidatePerson(personId);
 
-            return PersonData.fromRecord(updated);
+            return { updated: PersonData.fromRecord(updated) };
         }),
 
     /**
@@ -346,62 +279,80 @@ export const personnelRouter = createTrpcRouter({
      */
     updatePerson: organizationProcedure({ person: ["update"] })
         .input(
-            PersonData.modifiableSchema.extend({ personId: PersonId.schema }),
+            z.object({
+                personId: PersonId.schema,
+                update: PersonData.modifiableSchema,
+            }),
         )
-        .output(PersonData.schema)
-        .mutation(
-            async ({ ctx, input: { personId, organizationId, ...update } }) => {
-                const existing = await ctx.prisma.person.findUnique({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                });
+        .output(z.object({ updated: PersonData.schema }))
+        .mutation(async ({ ctx, input: { personId, update } }) => {
+            const existing = await getPersonOrThrow(ctx, personId);
 
-                if (!existing)
+            if (update.email != existing.email) {
+                // Check if a person with the new email already exists
+                const emailConflict = await ctx.prisma.person.findFirst({
+                    where: {
+                        email: update.email,
+                        organizationId: ctx.organizationId,
+                    },
+                });
+                if (emailConflict)
                     throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.personNotFound(personId),
+                        code: "CONFLICT",
+                        message:
+                            "A person with this email address already exists in this organisation.",
+                        cause: new FieldConflictError("email"),
                     });
+            }
 
-                if (update.email != existing.email) {
-                    // Check if a person with the new email already exists
-                    const emailConflict = await ctx.prisma.person.findFirst({
-                        where: {
-                            email: update.email,
-                            organizationId: ctx.organizationId,
-                        },
-                    });
-                    if (emailConflict)
-                        throw new TRPCError({
-                            code: "CONFLICT",
-                            message:
-                                "A person with this email address already exists in this organisation.",
-                            cause: new FieldConflictError("email"),
-                        });
-                }
+            // Calculate changes from existing record
+            const changes = diffObject(
+                PersonData.modifiableSchema.parse(existing),
+                update,
+            );
 
-                // Calculate changes from existing record
-                const changes = diffObject(
-                    PersonData.modifiableSchema.parse(existing),
-                    update,
-                );
+            if (changes.length == 0) return { updated: existing }; // No changes
 
-                if (changes.length == 0) return PersonData.fromRecord(existing); // No changes
+            const updated = await ctx.prisma.person.update({
+                where: { organizationId: ctx.organizationId, id: personId },
+                data: { ...update },
+            });
 
-                const updated = await ctx.prisma.person.update({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                    data: { ...update },
-                });
+            await ctx.logEvent({
+                action: "Update",
+                objectType: "Person",
+                objectId: personId,
+                changes,
+            });
 
-                await ctx.logEvent({
-                    action: "Update",
-                    objectType: "Person",
-                    objectId: personId,
-                    changes,
-                });
+            // Clear cached data
+            revalidatePerson(personId);
 
-                // Clear cached data
-                revalidatePerson(personId);
-
-                return PersonData.fromRecord(updated);
-            },
-        ),
+            return { updated: PersonData.fromRecord(updated) };
+        }),
 });
+
+/**
+ * Utility function to fetch a person by ID and throw a TRPCError if not found.
+ * @param ctx The authenticated context containing the organization ID and Prisma client.
+ * @param personId The ID of the person to fetch.
+ * @returns The person data if found.
+ * @throws TRPCError(NOT_FOUND) if the person is not found in the organization.
+ */
+async function getPersonOrThrow(
+    ctx: AuthenticatedOrganizationContext,
+    personId: PersonId,
+): Promise<PersonData> {
+    const person = await ctx.prisma.person.findUnique({
+        where: { organizationId: ctx.organizationId, id: personId },
+    });
+
+    if (!person) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: Messages.personNotFound(personId),
+        });
+    }
+
+    return PersonData.fromRecord(person);
+}

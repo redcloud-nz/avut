@@ -38,6 +38,11 @@ const teamMembershipSchema = z.object({
 export const TeamMembershipData = {
     schema: teamMembershipSchema,
 
+    modifiableSchema: teamMembershipSchema.pick({
+        tags: true,
+        properties: true,
+    }),
+
     fromRecord: (record: TeamMembershipRecord): TeamMembershipData =>
         teamMembershipSchema.parse({
             ...record,
@@ -47,3 +52,7 @@ export const TeamMembershipData = {
 } as const;
 
 export type TeamMembershipData = z.infer<typeof teamMembershipSchema>;
+
+export type ModifiableTeamMembershipData = z.infer<
+    typeof TeamMembershipData.modifiableSchema
+>;

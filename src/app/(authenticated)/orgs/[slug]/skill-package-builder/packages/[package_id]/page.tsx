@@ -11,6 +11,7 @@ import { use } from "react";
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -28,6 +29,7 @@ import {
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
+import { useOrganization } from "@/hooks/use-organization";
 import { useSkillPackage } from "@/hooks/use-skill-package";
 import * as Paths from "@/paths";
 
@@ -39,6 +41,7 @@ export default function SkillPackageBuilder_Package_Page(
 ) {
     const { slug, package_id } = use(props.params);
 
+    const organization = useOrganization();
     const skillPackage = useSkillPackage(package_id);
 
     return (
@@ -53,10 +56,7 @@ export default function SkillPackageBuilder_Package_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.org(slug).skillPackageBuilder
-                                    .skillPackages
-                            }
+                            to={Paths.org(slug).skillPackageBuilder.index}
                             tooltip="Back to package list"
                         />
                         <Hermes.Title>{skillPackage.name}</Hermes.Title>
@@ -69,24 +69,29 @@ export default function SkillPackageBuilder_Package_Page(
                             <CardTitle>Package Details</CardTitle>
 
                             <CardAction>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    tooltip="Edit package"
-                                    asChild
+                                <Protect
+                                    orgId={organization.id}
+                                    permissions={{ organization: ["update"] }}
                                 >
-                                    <Link
-                                        to={
-                                            Paths.org(
-                                                slug,
-                                            ).skillPackageBuilder.skillPackage(
-                                                skillPackage.id,
-                                            ).update
-                                        }
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        tooltip="Edit package"
+                                        asChild
                                     >
-                                        <ObjectIcons.Edit />
-                                    </Link>
-                                </Button>
+                                        <Link
+                                            to={
+                                                Paths.org(
+                                                    slug,
+                                                ).skillPackageBuilder.skillPackage(
+                                                    skillPackage.id,
+                                                ).update
+                                            }
+                                        >
+                                            <ObjectIcons.Edit />
+                                        </Link>
+                                    </Button>
+                                </Protect>
                             </CardAction>
                         </CardHeader>
                         <CardContent>

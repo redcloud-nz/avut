@@ -1,3 +1,4 @@
+// filepath: /Users/awestphal/projects/avut/src/app/(authenticated)/orgs/[slug]/admin/personnel/create-person.tsx
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
@@ -5,13 +6,12 @@
 
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -29,61 +29,57 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
 import {
-    ModifiableSkillPackage,
-    SkillPackage,
-    SkillPackageId,
-} from "@/lib/schemas/skill-package";
+    ModifiablePersonData,
+    PersonData,
+    PersonId,
+} from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
+export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
-        resolver: zodResolver(SkillPackage.modifiableSchema),
+        resolver: zodResolver(PersonData.modifiableSchema),
         defaultValues: {
             name: "",
-            description: "",
+            email: "",
             tags: [],
             properties: {},
         },
     });
 
     const mutation = useMutation(
-        trpc.skills.createPackage.mutationOptions({
+        trpc.personnel.createPerson.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
-                        error.shape.cause
-                            .message as keyof ModifiableSkillPackage,
+                        error.shape.cause.message as keyof ModifiablePersonData,
                         { message: error.message },
                     );
                 } else {
-                    toast.error(
-                        `Failed to create skill package: ${error.message}`,
-                    );
-                    console.error("Failed to create skill package:", error);
+                    toast.error(`Failed to create person: ${error.message}`);
+                    console.error("Failed to create person:", error);
                 }
             },
             async onSuccess({ created }) {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.personnel.listPersonnel.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
 
                 props.onOpenChange?.(false);
                 form.reset();
+
                 router.push(
-                    Paths.org(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(created.id).index.href,
+                    Paths.org(organization.slug).admin.person(created.id).index
+                        .href,
                 );
             },
         }),
@@ -92,7 +88,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId: organization.id,
-            skillPackageId: SkillPackageId.create(),
+            personId: PersonId.create(),
             create: formData,
         });
     });
@@ -106,23 +102,21 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
         <Dialog {...props}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>New Package</DialogTitle>
-                    <DialogDescription>
-                        Create a new skill package.
-                    </DialogDescription>
+                    <DialogTitle>New Person</DialogTitle>
+                    <DialogDescription>Create a new person.</DialogDescription>
                 </DialogHeader>
-                <form id="create-skill-package-form" onSubmit={handleSubmit}>
+                <form id="create-person-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-name">
+                                    <FieldLabel htmlFor="person-name">
                                         Name
                                     </FieldLabel>
                                     <Input
-                                        id="package-name"
+                                        id="person-name"
                                         autoFocus
                                         aria-invalid={fieldState.invalid}
                                         {...field}
@@ -136,15 +130,16 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                             )}
                         />
                         <Controller
-                            name="description"
+                            name="email"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-description">
-                                        Description
+                                    <FieldLabel htmlFor="person-email">
+                                        Email
                                     </FieldLabel>
-                                    <Textarea
-                                        id="package-description"
+                                    <Input
+                                        id="person-email"
+                                        type="email"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -159,7 +154,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="create-skill-package-form"
+                                form="create-person-form"
                                 status={mutation.status}
                                 text={{
                                     idle: "Create",
