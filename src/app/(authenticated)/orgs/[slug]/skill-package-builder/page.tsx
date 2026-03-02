@@ -10,7 +10,6 @@ import { Lexington } from "@/components/blocks/lexington";
 
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 import { SkillPackageBuilder_Packages_List } from "./packages/packages-list";
 
 export default async function SkillPackageBuilder_Index_Page(
@@ -18,8 +17,6 @@ export default async function SkillPackageBuilder_Index_Page(
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
-
     return (
         <Lexington.Root>
             <Lexington.Header

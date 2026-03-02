@@ -89,6 +89,8 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                         )
                         .skill(created.id).href,
                 );
+
+                mutation.reset();
             },
         }),
     );

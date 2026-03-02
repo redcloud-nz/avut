@@ -20,6 +20,7 @@ import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/ui/link";
+import { Show } from "@/components/show";
 
 import { OrganizationData } from "@/lib/schemas/organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -28,6 +29,15 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreatePackage_Dialog } from "./create-package";
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from "@/components/ui/empty";
+import Artie from "@/components/art/artie";
 
 interface SkillPackageBuilder_Packages_ListProps {
     organization: OrganizationData;
@@ -149,21 +159,53 @@ export function SkillPackageBuilder_Packages_List({
 
     return (
         <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
-                <Protect
-                    orgId={organization.id}
-                    permissions={{ skillPackage: ["create"] }}
-                >
-                    <Button
-                        variant="outline"
-                        onClick={() => setCreatePackageDialogOpen(true)}
+            <Show
+                when={skillPackages.length > 0}
+                fallback={
+                    <Empty>
+                        <EmptyMedia>
+                            <Artie pose="Empty" size="sm" />
+                        </EmptyMedia>
+                        <EmptyHeader>
+                            <EmptyTitle>No skill packages yet.</EmptyTitle>
+                            <EmptyDescription>
+                                Your organization does not have any skill
+                                packages yet.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ skillPackage: ["create"] }}
+                            >
+                                <Button
+                                    onClick={() =>
+                                        setCreatePackageDialogOpen(true)
+                                    }
+                                >
+                                    Create Package
+                                </Button>
+                            </Protect>
+                        </EmptyContent>
+                    </Empty>
+                }
+            >
+                <div className="flex items-center justify-between">
+                    <Akagi.TableSearch table={table} />
+                    <Protect
+                        orgId={organization.id}
+                        permissions={{ skillPackage: ["create"] }}
                     >
-                        <CreateNewIcon /> New
-                    </Button>
-                </Protect>
-            </div>
-            <Akagi.Table table={table} />
+                        <Button
+                            variant="outline"
+                            onClick={() => setCreatePackageDialogOpen(true)}
+                        >
+                            <CreateNewIcon /> New
+                        </Button>
+                    </Protect>
+                </div>
+                <Akagi.Table table={table} />
+            </Show>
             <SkillPackageBuilder_CreatePackage_Dialog
                 open={createPackageDialogOpen}
                 onOpenChange={setCreatePackageDialogOpen}

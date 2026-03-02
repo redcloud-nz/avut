@@ -16,7 +16,6 @@ import {
 } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -53,6 +52,12 @@ import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
 import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 
 /**
  * Component to display a list of skills within a skill group.
@@ -81,9 +86,9 @@ export function SkillPackageBuilder_Group_Contents_List({
     const [createSkillDialogOpen, setCreateSkillDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
 
-    const skills = (skillsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
+    const skills = (skillsQuery.data ?? [])
+        .filter((s) => s.skillGroupId === skillGroup.id)
+        .sort((a, b) => a.sequence - b.sequence);
     const filteredSkills =
         skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
 
@@ -122,7 +127,22 @@ export function SkillPackageBuilder_Group_Contents_List({
                     when={skillsQuery.isSuccess}
                     fallback={<Skeleton className="w-full h-13 mb-4" />}
                 >
-                    {filteredSkills.length > 0 ? (
+                    <Show
+                        when={filteredSkills.length > 0}
+                        fallback={
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyTitle>No skill yet</EmptyTitle>
+                                    <EmptyDescription>
+                                        You have not created any skill in this
+                                        group yet. Click the{" "}
+                                        <ObjectIcons.Create className="inline-block mr-1 size-4" />{" "}
+                                        button to add a skill.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        }
+                    >
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -208,16 +228,7 @@ export function SkillPackageBuilder_Group_Contents_List({
                                 ))}
                             </TableBody>
                         </Table>
-                    ) : (
-                        <Alert
-                            severity="info"
-                            title={
-                                skills.length == 0
-                                    ? "No skills defined for this group yet."
-                                    : "No skills match the current filter settings."
-                            }
-                        />
-                    )}
+                    </Show>
                 </Show>
             </CardContent>
             <SkillPackageBuilder_CreateSkill_Dialog
@@ -228,6 +239,7 @@ export function SkillPackageBuilder_Group_Contents_List({
             />
             <SkillPackageBuilder_ReorderSkills_Dialog
                 skillGroup={skillGroup}
+                skillPackage={skillPackage}
                 open={reorderDialogOpen}
                 onOpenChange={setReorderDialogOpen}
             />

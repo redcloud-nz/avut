@@ -17,9 +17,15 @@ interface ProtectProps {
     children: ReactNode;
     orgId: string;
     permissions: Permissions;
+    fallback?: ReactNode;
 }
 
-export function Protect({ children, orgId, permissions }: ProtectProps) {
+export function Protect({
+    children,
+    orgId,
+    permissions,
+    fallback = null,
+}: ProtectProps) {
     // Flatten permissions for query key
     const flatPermissions = entries(permissions).flatMap(([key, value]) => {
         if (Array.isArray(value)) {
@@ -45,7 +51,7 @@ export function Protect({ children, orgId, permissions }: ProtectProps) {
         },
     });
 
-    return hasPermission ? <>{children}</> : null;
+    return hasPermission ? <>{children}</> : fallback;
 }
 
 function Protect2({ children, orgId, permissions }: ProtectProps) {

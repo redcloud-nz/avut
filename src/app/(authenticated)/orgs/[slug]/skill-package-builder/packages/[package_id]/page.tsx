@@ -60,9 +60,11 @@ export default function SkillPackageBuilder_Package_Page(
                             tooltip="Back to package list"
                         />
                         <Hermes.Title>{skillPackage.name}</Hermes.Title>
-                        <SkillPackageBuilder_Package_Menu
-                            skillPackage={skillPackage}
-                        />
+                        <Hermes.Action>
+                            <SkillPackageBuilder_Package_Menu
+                                skillPackage={skillPackage}
+                            />
+                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>

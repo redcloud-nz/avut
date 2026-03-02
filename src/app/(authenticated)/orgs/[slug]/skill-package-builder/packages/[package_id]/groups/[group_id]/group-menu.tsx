@@ -115,7 +115,7 @@ export function SkillPackageBuilder_Group_Menu({
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
@@ -196,8 +196,11 @@ function DeleteSkillGroupDialog({
 
                 // Redirect to the package list page after deletion
                 router.push(
-                    Paths.org(organization.slug).skillPackageBuilder
-                        .skillPackages.href,
+                    Paths.org(
+                        organization.slug,
+                    ).skillPackageBuilder.skillPackage(
+                        skillGroup.skillPackageId,
+                    ).index.href,
                 );
 
                 await queryClient.invalidateQueries(

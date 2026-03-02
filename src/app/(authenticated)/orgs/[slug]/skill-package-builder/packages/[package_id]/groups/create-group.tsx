@@ -89,6 +89,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                         .skillPackageBuilder.skillPackage(skillPackage.id)
                         .group(created.id).href,
                 );
+                mutation.reset();
             },
         }),
     );

@@ -6,14 +6,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
 import { Controller, useForm, Watch } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { Show } from "@/components/show";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Field,
     FieldError,
@@ -38,9 +39,7 @@ import {
     D4hAccessTokenId,
 } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
-
 import * as Paths from "@/paths";
-
 import { trpc } from "@/trpc/client";
 
 interface CreateD4hAccessTokenFormProps {
@@ -53,28 +52,31 @@ export function AdminModule_CreateD4hAccessToken_Form({
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const tokenId = useMemo(() => D4hAccessTokenId.create(), []);
-
     const form = useForm({
         resolver: zodResolver(
-            D4HAccessToken.schema.pick({
-                id: true,
-                label: true,
-                serverCode: true,
-                token: true,
-            }),
+            D4HAccessToken.schema
+                .pick({
+                    label: true,
+                    serverCode: true,
+                })
+                .extend({ token: z.string() }),
         ),
         defaultValues: {
-            id: tokenId,
             label: "",
-            serverCode: "ap",
+            serverCode: "ap" as const,
             token: "",
         },
     });
 
     const createTokenMutation = useMutation(
         trpc.d4hAccessTokens.createOrganizationAccessToken.mutationOptions({
-            async onSettled() {
+            onError(error) {
+                console.error("Error creating D4H access token:", error);
+                toast.error(
+                    `Failed to create D4H access token: ${error.message || "Unknown error"}`,
+                );
+            },
+            async onSuccess({ created }) {
                 await queryClient.invalidateQueries(
                     trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter(
                         {
@@ -82,31 +84,22 @@ export function AdminModule_CreateD4hAccessToken_Form({
                         },
                     ),
                 );
-            },
-        }),
-    );
 
-    const handleCreate = form.handleSubmit((formData) => {
-        toast.promise(
-            async () => {
-                const created = await createTokenMutation.mutateAsync({
-                    organizationId: organization.id,
-                    metadata: {},
-                    ...formData,
-                });
                 router.push(
                     Paths.org(organization.slug).admin.d4hAccessToken(
                         created.id,
                     ).href,
                 );
             },
-            {
-                loading: "Creating D4H access token...",
-                success: "D4H access token created successfully.",
-                error: (error) =>
-                    `Failed to create D4H access token: ${error.message || "Unknown error"}`,
-            },
-        );
+        }),
+    );
+
+    const handleCreate = form.handleSubmit((formData) => {
+        createTokenMutation.mutate({
+            organizationId: organization.id,
+            accessTokenId: D4hAccessTokenId.create(),
+            create: formData,
+        });
     });
 
     return (
@@ -158,10 +151,10 @@ export function AdminModule_CreateD4hAccessToken_Form({
                         );
 
                         return server ? (
-                            <div className="text-sm text-muted-foreground">
-                                Create your D4H access token at{" "}
+                            <div className="text-xs/relaxed text-muted-foreground">
+                                Create your D4H access token at:{" "}
                                 <ExternalLink
-                                    className="text-sm pl-2"
+                                    className="text-xs pl-1"
                                     href={server?.tokensUrl}
                                 >
                                     {server?.tokensUrl}
@@ -219,28 +212,33 @@ export function AdminModule_CreateD4hAccessToken_Form({
                     )}
                 />
                 <Field orientation="horizontal">
-                    <Button
+                    <MutationButton
                         type="submit"
                         form="create-d4h-access-token-form"
-                        disabled={createTokenMutation.isPending}
-                    >
-                        Create
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => form.reset()}
-                        asChild
-                    >
-                        <Link
-                            to={
-                                Paths.org(organization.slug).admin
-                                    .d4hAccessTokens
-                            }
+                        status={createTokenMutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                    <Show when={createTokenMutation.isIdle}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => form.reset()}
+                            asChild
                         >
-                            Cancel
-                        </Link>
-                    </Button>
+                            <Link
+                                to={
+                                    Paths.org(organization.slug).admin
+                                        .d4hAccessTokens
+                                }
+                            >
+                                Cancel
+                            </Link>
+                        </Button>
+                    </Show>
                 </Field>
             </FieldGroup>
         </form>

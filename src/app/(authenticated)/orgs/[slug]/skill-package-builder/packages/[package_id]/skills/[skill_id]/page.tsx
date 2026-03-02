@@ -20,7 +20,12 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
@@ -63,7 +68,9 @@ export default function SkillPackageBuilder_Skill_Page(
                             tooltip={`Back to skill group: ${skill.skillGroup.name}`}
                         />
                         <Hermes.Title>{skill.name}</Hermes.Title>
-                        <SkillPackageBuilder_Skill_Menu skill={skill} />
+                        <Hermes.Action>
+                            <SkillPackageBuilder_Skill_Menu skill={skill} />
+                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
@@ -169,6 +176,9 @@ export default function SkillPackageBuilder_Skill_Page(
                                         }
                                     />
                                 </Field>
+
+                                <FieldSeparator />
+
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue

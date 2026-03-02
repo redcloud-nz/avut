@@ -15,6 +15,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -25,12 +26,19 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
@@ -40,8 +48,9 @@ import { trpc } from "@/trpc/client";
  */
 export function SkillPackageBuilder_ReorderSkills_Dialog({
     skillGroup,
+    skillPackage,
     ...props
-}: DialogProps & { skillGroup: SkillGroup }) {
+}: DialogProps & { skillGroup: SkillGroup; skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -49,12 +58,11 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
         trpc.skills.listSkills.queryOptions({
             organizationId: organization.id,
             skillPackageId: skillGroup.skillPackageId,
-            skillGroupId: skillGroup.id,
         }),
     );
-    const skills = (skillsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
+    const skills = (skillsQuery.data ?? [])
+        .filter((s) => s.skillGroupId === skillGroup.id)
+        .sort((a, b) => a.sequence - b.sequence);
 
     const [order, setOrder] = useState<SkillId[]>([]);
 
@@ -73,8 +81,7 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                 await queryClient.invalidateQueries(
                     trpc.skills.listSkills.queryFilter({
                         organizationId: organization.id,
-                        skillPackageId: skillGroup.skillPackageId,
-                        skillGroupId: skillGroup.id,
+                        skillPackageId: skillPackage.id,
                     }),
                 );
 
@@ -95,88 +102,111 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                     <DialogTitle>Reorder Skills</DialogTitle>
                     <DialogDescription>
                         Drag and drop the skills to reorder them within the
-                        group <ObjectName>{skillGroup.name}</ObjectName>.
+                        group <ObjectName>{skillPackage.name}</ObjectName>
+                        {" / "}
+                        <ObjectName>{skillGroup.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
 
-                <DragDropProvider
-                    onDragEnd={(event) => {
-                        if (event.canceled) return;
-
-                        const { source } = event.operation;
-
-                        if (isSortable(source)) {
-                            const { initialIndex, index } = source;
-
-                            if (initialIndex != index) {
-                                setOrder((prevOrder) => {
-                                    const newOrder = [...prevOrder];
-                                    const [removed] = newOrder.splice(
-                                        initialIndex,
-                                        1,
-                                    );
-                                    newOrder.splice(index, 0, removed);
-                                    console.log("New Order: ", newOrder);
-                                    return newOrder;
-                                });
-                            }
-                        }
-                    }}
+                <Show
+                    when={skills.length > 0}
+                    fallback={
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyTitle>No skills to reorder</EmptyTitle>
+                                <EmptyDescription>
+                                    This group does not contain any skills to
+                                    reorder. Please add skills to this group
+                                    before attempting to reorder.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
                 >
-                    <div className="space-y-2" id="sortable-skill-list">
-                        {order.map((skillId, index) => {
-                            const skill = skills.find((s) => s.id === skillId)!;
+                    <DragDropProvider
+                        onDragEnd={(event) => {
+                            if (event.canceled) return;
 
-                            return (
-                                <SortableSkill
-                                    key={skillId}
-                                    skill={skill}
-                                    index={index}
-                                    isLast={index === skills.length - 1}
-                                    onSwap={(fromIndex, toIndex) => {
-                                        setOrder((prevOrder) => {
-                                            const newOrder = [...prevOrder];
-                                            const [moved] = newOrder.splice(
-                                                fromIndex,
-                                                1,
-                                            );
-                                            newOrder.splice(toIndex, 0, moved);
-                                            return newOrder;
-                                        });
-                                    }}
-                                />
-                            );
-                        })}
-                    </div>
-                </DragDropProvider>
+                            const { source } = event.operation;
 
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    skillGroupId: skillGroup.id,
-                                    newOrder: order,
-                                })
+                            if (isSortable(source)) {
+                                const { initialIndex, index } = source;
+
+                                if (initialIndex != index) {
+                                    setOrder((prevOrder) => {
+                                        const newOrder = [...prevOrder];
+                                        const [removed] = newOrder.splice(
+                                            initialIndex,
+                                            1,
+                                        );
+                                        newOrder.splice(index, 0, removed);
+                                        console.log("New Order: ", newOrder);
+                                        return newOrder;
+                                    });
+                                }
                             }
-                            status={mutation.status}
-                            text={{
-                                idle: "Save",
-                                pending: "Saving",
-                                success: "Saved",
-                            }}
-                        />
-                        <Button
-                            variant="outline"
-                            onClick={handleReset}
-                            disabled={!mutation.isIdle}
-                        >
-                            Reset
-                        </Button>
-                    </Field>
-                </FieldGroup>
+                        }}
+                    >
+                        <div className="space-y-2" id="sortable-skill-list">
+                            {order.map((skillId, index) => {
+                                const skill = skills.find(
+                                    (s) => s.id === skillId,
+                                )!;
+
+                                return (
+                                    <SortableSkill
+                                        key={skillId}
+                                        skill={skill}
+                                        index={index}
+                                        isLast={index === skills.length - 1}
+                                        onSwap={(fromIndex, toIndex) => {
+                                            setOrder((prevOrder) => {
+                                                const newOrder = [...prevOrder];
+                                                const [moved] = newOrder.splice(
+                                                    fromIndex,
+                                                    1,
+                                                );
+                                                newOrder.splice(
+                                                    toIndex,
+                                                    0,
+                                                    moved,
+                                                );
+                                                return newOrder;
+                                            });
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </DragDropProvider>
+                    <FieldGroup>
+                        <Field orientation="horizontal">
+                            <MutationButton
+                                type="button"
+                                onClick={() =>
+                                    mutation.mutate({
+                                        organizationId: organization.id,
+                                        skillGroupId: skillGroup.id,
+                                        newOrder: order,
+                                    })
+                                }
+                                status={mutation.status}
+                                text={{
+                                    idle: "Save",
+                                    pending: "Saving",
+                                    success: "Saved",
+                                }}
+                            />
+                            <Button
+                                variant="outline"
+                                onClick={handleReset}
+                                disabled={!mutation.isIdle}
+                            >
+                                Reset
+                            </Button>
+                        </Field>
+                    </FieldGroup>
+                </Show>
             </DialogContent>
         </Dialog>
     );

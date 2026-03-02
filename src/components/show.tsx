@@ -6,13 +6,28 @@
 
 import { ReactNode } from "react";
 
-export interface ShowProps {
+interface SimpleShowProps {
     children: ReactNode;
     fallback?: ReactNode;
     when: boolean;
 }
 
-export function Show({ children, fallback, when }: ShowProps) {
-    if (when) return children;
-    else return fallback;
+interface MultiConditionShowProps {
+    children: ReactNode;
+    conditions: { condition: boolean; fallback?: ReactNode }[];
+}
+
+type ShowProps = SimpleShowProps | MultiConditionShowProps;
+
+export function Show(props: ShowProps) {
+    if ("when" in props) {
+        return props.when ? props.children : props.fallback;
+    } else {
+        for (const condition of props.conditions) {
+            if (!condition.condition) {
+                return condition.fallback ?? null;
+            }
+        }
+        return props.children;
+    }
 }

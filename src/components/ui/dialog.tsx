@@ -110,10 +110,7 @@ export function DialogFooter({
     return (
         <div
             data-slot="dialog-footer"
-            className={cn(
-                "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-                className,
-            )}
+            className={cn("flex flex-col-reverse gap-2 sm:flex-row", className)}
             {...props}
         >
             {children}
@@ -152,5 +149,13 @@ export function DialogDescription({
             )}
             {...props}
         />
+    );
+}
+
+export function DialogCloseButton(props: ComponentProps<typeof Button>) {
+    return (
+        <DialogPrimitive.Close asChild>
+            <Button {...props} />
+        </DialogPrimitive.Close>
     );
 }

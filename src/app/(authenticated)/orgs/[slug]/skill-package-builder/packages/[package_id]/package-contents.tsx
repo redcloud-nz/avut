@@ -52,6 +52,12 @@ import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
 import { SkillPackageBuilder_CreateGroup_Dialog } from "./groups/create-group";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 
 interface SkillPackageBuilder_Package_Groups_ListProps {
     skillPackage: SkillPackage;
@@ -142,7 +148,25 @@ export function SkillPackageBuilder_Package_Contents_List({
                         </Skeleton>
                     }
                 >
-                    {filteredGroups.length > 0 || filteredSkills.length > 0 ? (
+                    <Show
+                        when={
+                            filteredGroups.length > 0 ||
+                            filteredSkills.length > 0
+                        }
+                        fallback={
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyTitle>No skill yet</EmptyTitle>
+                                    <EmptyDescription>
+                                        You have not created any groups or skill
+                                        in this package yet. Click the
+                                        <ObjectIcons.Create className="inline-block mx-1 size-4" />
+                                        button to add a group.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        }
+                    >
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -268,16 +292,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                                 })}
                             </TableBody>
                         </Table>
-                    ) : (
-                        <Alert
-                            severity="info"
-                            title={
-                                groups.length == 0 && skills.length == 0
-                                    ? "No groups or skills defined for this package yet."
-                                    : "No groups or skills match the current filter settings."
-                            }
-                        />
-                    )}
+                    </Show>
                 </Show>
             </CardContent>
             <SkillPackageBuilder_CreateGroup_Dialog

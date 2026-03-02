@@ -34,19 +34,21 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         d4hAccessToken: ["create"],
     })
         .input(
-            D4HAccessToken.schema
-                .pick({
-                    id: true,
-                    label: true,
-                    serverCode: true,
-                })
-                .extend({ token: z.string() }),
+            z.object({
+                accessTokenId: D4hAccessTokenId.schema,
+                create: D4HAccessToken.schema
+                    .pick({
+                        label: true,
+                        serverCode: true,
+                    })
+                    .extend({ token: z.string() }),
+            }),
         )
-        .output(D4HAccessToken.schema)
-        .mutation(async ({ ctx, input }) => {
+        .output(z.object({ created: D4HAccessToken.schema }))
+        .mutation(async ({ ctx, input: { accessTokenId, create } }) => {
             const token = {
-                ...input,
-
+                ...create,
+                id: accessTokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
                 status: "",
@@ -78,7 +80,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 },
             });
 
-            const changes = diffObject({}, input);
+            const changes = diffObject({}, create);
 
             await ctx.logEvent({
                 action: "Create",
@@ -87,7 +89,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 changes,
             });
 
-            return D4HAccessToken.fromRecord(created);
+            return { created: D4HAccessToken.fromRecord(created) };
         }),
 
     /**

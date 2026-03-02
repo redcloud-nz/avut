@@ -34,6 +34,13 @@ import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
+import { Show } from "@/components/show";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 
 /**
  * Dialog component that allows users to reorder skill groups within a skill package using drag-and-drop functionality.
@@ -104,85 +111,107 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <DragDropProvider
-                    onDragEnd={(event) => {
-                        if (event.canceled) return;
-
-                        const { source } = event.operation;
-
-                        if (isSortable(source)) {
-                            const { initialIndex, index } = source;
-
-                            if (initialIndex != index) {
-                                setOrder((prevOrder) => {
-                                    const newOrder = [...prevOrder];
-                                    const [removed] = newOrder.splice(
-                                        initialIndex,
-                                        1,
-                                    );
-                                    newOrder.splice(index, 0, removed);
-                                    return newOrder;
-                                });
-                            }
-                        }
-                    }}
+                <Show
+                    when={skillGroups.length > 0}
+                    fallback={
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyTitle>No groups to reorder</EmptyTitle>
+                                <EmptyDescription>
+                                    This skill package does not contain any
+                                    groups to reorder. Please add groups to this
+                                    package before attempting to reorder.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
                 >
-                    <div className="space-y-2" id="sortable-group-list">
-                        {order.map((groupId, index) => {
-                            const group = skillGroups.find(
-                                (g) => g.id === groupId,
-                            )!;
+                    <DragDropProvider
+                        onDragEnd={(event) => {
+                            if (event.canceled) return;
 
-                            return (
-                                <SortableGroup
-                                    key={groupId}
-                                    group={group}
-                                    index={index}
-                                    isLast={index === skillGroups.length - 1}
-                                    onSwap={(fromIndex, toIndex) => {
-                                        setOrder((prevOrder) => {
-                                            const newOrder = [...prevOrder];
-                                            const [moved] = newOrder.splice(
-                                                fromIndex,
-                                                1,
-                                            );
-                                            newOrder.splice(toIndex, 0, moved);
-                                            return newOrder;
-                                        });
-                                    }}
-                                />
-                            );
-                        })}
-                    </div>
-                </DragDropProvider>
+                            const { source } = event.operation;
 
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    skillPackageId: skillPackage.id,
-                                    newOrder: order,
-                                })
+                            if (isSortable(source)) {
+                                const { initialIndex, index } = source;
+
+                                if (initialIndex != index) {
+                                    setOrder((prevOrder) => {
+                                        const newOrder = [...prevOrder];
+                                        const [removed] = newOrder.splice(
+                                            initialIndex,
+                                            1,
+                                        );
+                                        newOrder.splice(index, 0, removed);
+                                        return newOrder;
+                                    });
+                                }
                             }
-                            status={mutation.status}
-                            text={{
-                                idle: "Save",
-                                pending: "Saving",
-                                success: "Saved",
-                            }}
-                        />
-                        <Button
-                            variant="outline"
-                            onClick={handleReset}
-                            disabled={!mutation.isIdle}
-                        >
-                            Reset
-                        </Button>
-                    </Field>
-                </FieldGroup>
+                        }}
+                    >
+                        <div className="space-y-2" id="sortable-group-list">
+                            {order.map((groupId, index) => {
+                                const group = skillGroups.find(
+                                    (g) => g.id === groupId,
+                                )!;
+
+                                return (
+                                    <SortableGroup
+                                        key={groupId}
+                                        group={group}
+                                        index={index}
+                                        isLast={
+                                            index === skillGroups.length - 1
+                                        }
+                                        onSwap={(fromIndex, toIndex) => {
+                                            setOrder((prevOrder) => {
+                                                const newOrder = [...prevOrder];
+                                                const [moved] = newOrder.splice(
+                                                    fromIndex,
+                                                    1,
+                                                );
+                                                newOrder.splice(
+                                                    toIndex,
+                                                    0,
+                                                    moved,
+                                                );
+                                                return newOrder;
+                                            });
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </DragDropProvider>
+
+                    <FieldGroup>
+                        <Field orientation="horizontal">
+                            <MutationButton
+                                type="button"
+                                onClick={() =>
+                                    mutation.mutate({
+                                        organizationId: organization.id,
+                                        skillPackageId: skillPackage.id,
+                                        newOrder: order,
+                                    })
+                                }
+                                status={mutation.status}
+                                text={{
+                                    idle: "Save",
+                                    pending: "Saving",
+                                    success: "Saved",
+                                }}
+                            />
+                            <Button
+                                variant="outline"
+                                onClick={handleReset}
+                                disabled={!mutation.isIdle}
+                            >
+                                Reset
+                            </Button>
+                        </Field>
+                    </FieldGroup>
+                </Show>
             </DialogContent>
         </Dialog>
     );

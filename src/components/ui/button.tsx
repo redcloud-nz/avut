@@ -98,10 +98,7 @@ export function Button({
     );
 }
 
-interface MutationButtonProps extends Omit<
-    ButtonProps,
-    "children" | "disabled"
-> {
+interface MutationButtonProps extends Omit<ButtonProps, "children"> {
     status: "error" | "pending" | "success" | "idle";
     text: {
         idle: string;
@@ -121,12 +118,13 @@ export function MutationButton({
     className,
     status,
     text,
+    disabled = false,
     ...props
 }: MutationButtonProps) {
     return (
         <Button
             {...props}
-            disabled={status != "idle"}
+            disabled={disabled || status != "idle"}
             data-status={status}
             className={cn("data-[status=success]:bg-green-500", className)}
         >

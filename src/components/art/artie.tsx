@@ -4,6 +4,7 @@
  *
  */
 
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 type ArtiePose =
@@ -22,6 +23,7 @@ type ArtiePose =
     | "Writing";
 
 interface ArtieProps {
+    className?: string;
     pose: ArtiePose;
     size?: "sm" | "md" | "lg";
     alt?: string;
@@ -52,18 +54,33 @@ const poseToImage: Record<ArtiePose, string> = {
 /**
  * Component to render Artie illustrations.
  */
-export default function Artie({ pose, alt }: ArtieProps) {
+export default function Artie({
+    pose,
+    alt,
+    className,
+    size = "md",
+}: ArtieProps) {
     const imageSrc = poseToImage[pose];
     const altText = alt || `Artie the mascot - ${pose}`;
 
     return (
-        <Image
-            src={imageSrc}
-            alt={altText}
-            width={1184}
-            height={864}
-            priority={false}
-            className="object-contain select-none"
-        />
+        <div
+            data-slot="mascot"
+            data-pose={pose}
+            data-size={size}
+            className={cn(
+                "data-[size=sm]:w-[300px] data-[size=md]:w-[600px] data-[size=lg]:w-[600px]",
+                className,
+            )}
+        >
+            <Image
+                src={imageSrc}
+                alt={altText}
+                width={1184}
+                height={864}
+                priority={false}
+                className={cn("object-contain select-none")}
+            />
+        </div>
     );
 }

@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,15 +13,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogProps,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    AlertDialog,
+    AlertDialogProps,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -31,7 +32,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldGroup } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
 import { ObjectName } from "@/components/ui/typography";
 
@@ -64,10 +64,41 @@ export function SkillPackageBuilder_Package_Menu({
             },
         }),
     );
+
+    const publishMutation = useMutation(
+        trpc.skills.publishPackage.mutationOptions({
+            onError(error) {
+                console.error("Failed to publish skill package:", error);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listPackages.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
+
     const restoreMutation = useMutation(
         trpc.skills.restorePackage.mutationOptions({
             onError(error) {
                 console.error("Failed to restore skill package:", error);
+            },
+            async onSuccess() {
+                await queryClient.invalidateQueries(
+                    trpc.skills.listPackages.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
+
+    const unpublishMutation = useMutation(
+        trpc.skills.unpublishPackage.mutationOptions({
+            onError(error) {
+                console.error("Failed to unpublish skill package:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
@@ -94,6 +125,21 @@ export function SkillPackageBuilder_Package_Menu({
         );
     }
 
+    function handlePublish() {
+        toast.promise(
+            publishMutation.mutateAsync({
+                skillPackageId: skillPackage.id,
+                organizationId: organization.id,
+            }),
+            {
+                loading: "Publishing skill package...",
+                success: "Skill package published.",
+                error: (error) =>
+                    "Error publishing skill package." + error.message,
+            },
+        );
+    }
+
     function handleRestore() {
         toast.promise(
             restoreMutation.mutateAsync({
@@ -109,16 +155,30 @@ export function SkillPackageBuilder_Package_Menu({
         );
     }
 
+    function handleUnpublish() {
+        toast.promise(
+            unpublishMutation.mutateAsync({
+                skillPackageId: skillPackage.id,
+                organizationId: organization.id,
+            }),
+            {
+                loading: "Unpublishing skill package...",
+                success: "Skill package unpublished.",
+                error: (error) =>
+                    "Error unpublishing skill package." + error.message,
+            },
+        );
+    }
+
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Skill Package</DropdownMenuLabel>
                     <DropdownMenuGroup>
                         <DropdownMenuItem asChild disabled>
                             <Link
@@ -141,6 +201,7 @@ export function SkillPackageBuilder_Package_Menu({
                     >
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             {/* Show the archive option if the skill package is active */}
                             {skillPackage.status == "Active" && (
                                 <DropdownMenuItem
@@ -148,15 +209,6 @@ export function SkillPackageBuilder_Package_Menu({
                                     disabled={archiveMutation.isPending}
                                 >
                                     <ObjectIcons.Archive /> Archive
-                                </DropdownMenuItem>
-                            )}
-                            {/* Show the restore option if the skill package is archived */}
-                            {skillPackage.status == "Archived" && (
-                                <DropdownMenuItem
-                                    onClick={handleRestore}
-                                    disabled={restoreMutation.isPending}
-                                >
-                                    <ObjectIcons.Restore /> Restore
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem asChild>
@@ -184,6 +236,33 @@ export function SkillPackageBuilder_Package_Menu({
                                     <ObjectIcons.Delete /> Delete
                                 </DropdownMenuItem>
                             </Protect>
+                            {/* Show the publish option if the skill package is not published */}
+                            {!skillPackage.published && (
+                                <DropdownMenuItem
+                                    onClick={handlePublish}
+                                    disabled={publishMutation.isPending}
+                                >
+                                    <ObjectIcons.Publish /> Publish
+                                </DropdownMenuItem>
+                            )}
+                            {/* Show the restore option if the skill package is archived */}
+                            {skillPackage.status == "Archived" && (
+                                <DropdownMenuItem
+                                    onClick={handleRestore}
+                                    disabled={restoreMutation.isPending}
+                                >
+                                    <ObjectIcons.Restore /> Restore
+                                </DropdownMenuItem>
+                            )}
+                            {/* Show the unpublish option if the skill package is published */}
+                            {skillPackage.published && (
+                                <DropdownMenuItem
+                                    onClick={handleUnpublish}
+                                    disabled={unpublishMutation.isPending}
+                                >
+                                    <ObjectIcons.Unpublish /> Unpublish
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuGroup>
                     </Protect>
                 </DropdownMenuContent>
@@ -200,7 +279,7 @@ export function SkillPackageBuilder_Package_Menu({
 function SkillPackageBuilder_DeletePackage_Dialog({
     skillPackage,
     ...props
-}: DialogProps & { skillPackage: SkillPackage }) {
+}: AlertDialogProps & { skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -229,44 +308,42 @@ function SkillPackageBuilder_DeletePackage_Dialog({
     );
 
     return (
-        <Dialog {...props}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Delete Skill Package</DialogTitle>
-                    <DialogDescription>
+        <AlertDialog {...props}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Skill Package</AlertDialogTitle>
+                    <AlertDialogDescription>
                         Confirm deletion of skill package{" "}
                         <ObjectName>{skillPackage.name}</ObjectName>.
-                    </DialogDescription>
-                </DialogHeader>
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            variant="destructive"
-                            status={mutation.status}
-                            text={{
-                                idle: "Delete",
-                                pending: "Deleting",
-                                success: "Deleted",
-                            }}
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    skillPackageId: skillPackage.id,
-                                })
-                            }
-                        />
-                        <Show when={mutation.isIdle}>
-                            <Button
-                                variant="outline"
-                                onClick={() => props.onOpenChange?.(false)}
-                            >
-                                Cancel
-                            </Button>
-                        </Show>
-                    </Field>
-                </FieldGroup>
-            </DialogContent>
-        </Dialog>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <Show when={mutation.isIdle}>
+                        <Button
+                            variant="outline"
+                            onClick={() => props.onOpenChange?.(false)}
+                        >
+                            Cancel
+                        </Button>
+                    </Show>
+                    <MutationButton
+                        type="button"
+                        variant="destructive"
+                        status={mutation.status}
+                        text={{
+                            idle: "Delete",
+                            pending: "Deleting",
+                            success: "Deleted",
+                        }}
+                        onClick={() =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillPackageId: skillPackage.id,
+                            })
+                        }
+                    />
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

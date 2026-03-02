@@ -43,6 +43,9 @@ import {
     UsersIcon,
     WrenchIcon,
     XIcon,
+    BookUpIcon,
+    BookXIcon,
+    MoveIcon,
 } from "lucide-react";
 
 export {
@@ -102,5 +105,8 @@ export const ObjectIcons = {
     Duplicate: CopyIcon,
     Edit: PencilIcon,
     History: HistoryIcon,
+    Move: MoveIcon,
+    Publish: BookUpIcon,
     Restore: ArchiveRestoreIcon,
+    Unpublish: BookXIcon,
 };

@@ -462,6 +462,69 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Move a skill to a different skill group within the same skill package.
+     * @param skillId The ID of the skill to move.
+     * @param targetGroupId The ID of the skill group to move the skill to.
+     * @throws TRPCError(NOT_FOUND) if the skill or target skill group does not exist or does not belong to the organization.
+     */
+    moveSkill: organizationProcedure({ skillPackage: ["update"] })
+        .input(
+            z.object({
+                skillId: SkillId.schema,
+                destinationPackageId: SkillPackageId.schema,
+                destinationGroupId: SkillGroupId.schema,
+            }),
+        )
+        .mutation(
+            async ({
+                ctx,
+                input: { skillId, destinationPackageId, destinationGroupId },
+            }) => {
+                const [skill, destinationGroup] = await Promise.all([
+                    getSkillOrThrow(ctx, skillId),
+                    getSkillGroupOrThrow(ctx, destinationGroupId),
+                ]);
+
+                if (destinationGroup.skillPackageId !== destinationPackageId) {
+                    throw new TRPCError({
+                        code: "BAD_REQUEST",
+                        message: `Target group does not belong to the specified destination package.`,
+                    });
+                }
+
+                const changes = diffObject(
+                    {
+                        skillGroupId: skill.skillGroupId,
+                        skillPackageId: skill.skillPackageId,
+                    },
+                    {
+                        skillGroupId: destinationGroupId,
+                        skillPackageId: destinationPackageId,
+                    },
+                );
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skill.update({
+                        where: { id: skillId },
+                        data: {
+                            skillGroupId: destinationGroupId,
+                            skillPackageId: destinationPackageId,
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "Skill",
+                        objectId: skillId,
+                        description: `Moved skill to group ${destinationGroup.name}`,
+                        changes,
+                    }),
+                ]);
+
+                return { updated: Skill.fromRecord(updated) };
+            },
+        ),
+
+    /**
      * Publish the specified skill package, making it available for use. Only packages with status "Active" can be published.
      * @param skillPackageId The ID of the skill package to publish.
      * @return The updated skill package with published set to true.

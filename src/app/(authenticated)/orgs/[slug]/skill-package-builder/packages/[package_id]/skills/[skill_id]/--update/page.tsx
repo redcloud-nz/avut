@@ -185,6 +185,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                                     }
                                                     {...field}
                                                 />
+
                                                 {fieldState.error && (
                                                     <FieldError
                                                         errors={[

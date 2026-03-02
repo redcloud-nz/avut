@@ -85,6 +85,8 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                         organization.slug,
                     ).skillPackageBuilder.skillPackage(created.id).index.href,
                 );
+
+                mutation.reset();
             },
         }),
     );

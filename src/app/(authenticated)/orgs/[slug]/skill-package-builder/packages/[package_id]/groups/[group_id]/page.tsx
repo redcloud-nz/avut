@@ -70,9 +70,11 @@ export default function SkillPackageBuilder_Group_Page(
                             tooltip={`Back to package: ${skillGroup.skillPackage.name}`}
                         />
                         <Hermes.Title>{skillGroup.name}</Hermes.Title>
-                        <SkillPackageBuilder_Group_Menu
-                            skillGroup={skillGroup}
-                        />
+                        <Hermes.Action>
+                            <SkillPackageBuilder_Group_Menu
+                                skillGroup={skillGroup}
+                            />
+                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
