@@ -70,7 +70,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
     });
 
     const mutation = useMutation(
-        trpc.skills.updateSkill.mutationOptions({
+        trpc.skillPackageBuilder.updateSkill.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(
@@ -84,7 +84,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listSkills.queryFilter({
+                    trpc.skillPackageBuilder.listSkills.queryFilter({
                         organizationId: organization.id,
                         skillPackageId: skill.skillPackageId,
                     }),

@@ -41,13 +41,13 @@ export function SkillPackageBuilder_Package_Menu({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
-        trpc.skills.archivePackage.mutationOptions({
+        trpc.skillPackageBuilder.archivePackage.mutationOptions({
             onError(error) {
                 console.error("Failed to archive skill package:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -56,13 +56,13 @@ export function SkillPackageBuilder_Package_Menu({
     );
 
     const publishMutation = useMutation(
-        trpc.skills.publishPackage.mutationOptions({
+        trpc.skillPackageBuilder.publishPackage.mutationOptions({
             onError(error) {
                 console.error("Failed to publish skill package:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -71,13 +71,13 @@ export function SkillPackageBuilder_Package_Menu({
     );
 
     const restoreMutation = useMutation(
-        trpc.skills.restorePackage.mutationOptions({
+        trpc.skillPackageBuilder.restorePackage.mutationOptions({
             onError(error) {
                 console.error("Failed to restore skill package:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -86,13 +86,13 @@ export function SkillPackageBuilder_Package_Menu({
     );
 
     const unpublishMutation = useMutation(
-        trpc.skills.unpublishPackage.mutationOptions({
+        trpc.skillPackageBuilder.unpublishPackage.mutationOptions({
             onError(error) {
                 console.error("Failed to unpublish skill package:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -187,7 +187,7 @@ export function SkillPackageBuilder_Package_Menu({
 
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["update"] }}
+                        permissions={{ skillPackageBuilder: ["update"] }}
                     >
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
@@ -217,7 +217,9 @@ export function SkillPackageBuilder_Package_Menu({
 
                             <Protect
                                 orgId={organization.id}
-                                permissions={{ skillPackage: ["delete"] }}
+                                permissions={{
+                                    skillPackageBuilder: ["delete"],
+                                }}
                             >
                                 <DropdownMenuItem
                                     onSelect={() => setDeleteDialogOpen(true)}

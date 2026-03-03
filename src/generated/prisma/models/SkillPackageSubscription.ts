@@ -240,6 +240,7 @@ export type SkillPackageSubscriptionOrderByWithRelationInput = {
 export type SkillPackageSubscriptionWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        organizationId_skillPackageId?: Prisma.SkillPackageSubscriptionOrganizationIdSkillPackageIdCompoundUniqueInput;
         AND?:
             | Prisma.SkillPackageSubscriptionWhereInput
             | Prisma.SkillPackageSubscriptionWhereInput[];
@@ -272,7 +273,7 @@ export type SkillPackageSubscriptionWhereUniqueInput = Prisma.AtLeast<
         groupOverrides?: Prisma.SkillGroupOverrideListRelationFilter;
         skillOverrides?: Prisma.SkillOverrideListRelationFilter;
     },
-    "id"
+    "id" | "organizationId_skillPackageId"
 >;
 
 export type SkillPackageSubscriptionOrderByWithAggregationInput = {
@@ -382,6 +383,12 @@ export type SkillPackageSubscriptionListRelationFilter = {
 export type SkillPackageSubscriptionOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
+
+export type SkillPackageSubscriptionOrganizationIdSkillPackageIdCompoundUniqueInput =
+    {
+        organizationId: string;
+        skillPackageId: string;
+    };
 
 export type SkillPackageSubscriptionCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;

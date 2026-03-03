@@ -57,14 +57,14 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
 
     const { data: skillPackages = [], isSuccess: skillPackagesReady } =
         useQuery(
-            trpc.skills.listPackages.queryOptions({
+            trpc.skillPackageBuilder.listPackages.queryOptions({
                 organizationId: organization.id,
             }),
         );
 
     const { data: skillGroups = [], isSuccess: skillGroupsReady } = useQueries({
         queries: skillPackages.map((skillPackage) =>
-            trpc.skills.listGroups.queryOptions({
+            trpc.skillPackageBuilder.listGroups.queryOptions({
                 organizationId: organization.id,
                 skillPackageId: skillPackage.id,
             }),
@@ -94,7 +94,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         useState<SkillGroupId | null>(null);
 
     const mutation = useMutation(
-        trpc.skills.moveSkill.mutationOptions({
+        trpc.skillPackageBuilder.moveSkill.mutationOptions({
             onMutate(data) {
                 const parsed = z
                     .object({
@@ -104,7 +104,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                     })
                     .parse(data);
 
-                const queryKey = trpc.skills.listSkills.queryKey({
+                const queryKey = trpc.skillPackageBuilder.listSkills.queryKey({
                     organizationId: organization.id,
                     skillPackageId: destinationPackageId,
                 });
@@ -127,7 +127,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
             onError(error, data, context) {
                 if (context?.previousDestinationSkills) {
                     queryClient.setQueryData(
-                        trpc.skills.listSkills.queryKey({
+                        trpc.skillPackageBuilder.listSkills.queryKey({
                             organizationId: organization.id,
                             skillPackageId: data.destinationPackageId,
                         }),
@@ -171,14 +171,14 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 await Promise.all([
                     // Destination package skills list
                     queryClient.invalidateQueries(
-                        trpc.skills.listSkills.queryFilter({
+                        trpc.skillPackageBuilder.listSkills.queryFilter({
                             organizationId: organization.id,
                             skillPackageId: destinationPackageId,
                         }),
                     ),
                     // Origin package skills list
                     queryClient.invalidateQueries(
-                        trpc.skills.listSkills.queryFilter({
+                        trpc.skillPackageBuilder.listSkills.queryFilter({
                             organizationId: organization.id,
                             skillPackageId: skill.skillPackageId,
                         }),

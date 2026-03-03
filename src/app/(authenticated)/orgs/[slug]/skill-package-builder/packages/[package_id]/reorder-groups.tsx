@@ -55,7 +55,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
     const queryClient = useQueryClient();
 
     const groupsQuery = useQuery(
-        trpc.skills.listGroups.queryOptions(
+        trpc.skillPackageBuilder.listGroups.queryOptions(
             {
                 organizationId: organization.id,
                 skillPackageId: skillPackage.id,
@@ -77,14 +77,14 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
     }, [groupsQuery.isSuccess]);
 
     const mutation = useMutation(
-        trpc.skills.reorderGroups.mutationOptions({
+        trpc.skillPackageBuilder.reorderGroups.mutationOptions({
             onError(error) {
                 toast.error(`Failed to save changes: ${error.message}`);
                 console.error("Failed to save changes:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listGroups.queryFilter({
+                    trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,
                         skillPackageId: skillPackage.id,
                     }),

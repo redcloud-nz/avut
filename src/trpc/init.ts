@@ -223,7 +223,9 @@ interface LogEventOptions {
         | "Delete"
         | "Publish"
         | "Restore"
+        | "Subscribe"
         | "Unpublish"
+        | "Unsubscribe"
         | "Update";
     objectType:
         | "D4hAccessToken"

@@ -436,6 +436,7 @@ model SkillPackageSubscription {
   groupOverrides SkillGroupOverride[] @relation("skill_group_override_to_skill_package_subscription")
   skillOverrides SkillOverride[]      @relation("skill_override_to_skill_package_subscription")
 
+  @@unique([organizationId, skillPackageId])
   @@index([organizationId])
   @@index([skillPackageId])
   @@map("skill_package_subscriptions")

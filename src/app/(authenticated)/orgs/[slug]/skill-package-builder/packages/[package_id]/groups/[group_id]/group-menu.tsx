@@ -49,13 +49,13 @@ export function SkillPackageBuilder_Group_Menu({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
-        trpc.skills.archiveGroup.mutationOptions({
+        trpc.skillPackageBuilder.archiveGroup.mutationOptions({
             onError(error) {
                 console.error("Failed to archive skill group:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listGroups.queryFilter({
+                    trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -63,13 +63,13 @@ export function SkillPackageBuilder_Group_Menu({
         }),
     );
     const restoreMutation = useMutation(
-        trpc.skills.restoreGroup.mutationOptions({
+        trpc.skillPackageBuilder.restoreGroup.mutationOptions({
             onError(error) {
                 console.error("Failed to restore skill group:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listGroups.queryFilter({
+                    trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -120,7 +120,7 @@ export function SkillPackageBuilder_Group_Menu({
 
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["delete"] }}
+                        permissions={{ skillPackageBuilder: ["delete"] }}
                         fallback={
                             <Empty size="sm">
                                 <EmptyHeader>

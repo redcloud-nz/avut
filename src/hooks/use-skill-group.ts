@@ -31,10 +31,10 @@ export function useSkillGroup({
     const [{ data: skillPackages }, { data: skillGroups }] = useSuspenseQueries(
         {
             queries: [
-                trpc.skills.listPackages.queryOptions({
+                trpc.skillPackageBuilder.listPackages.queryOptions({
                     organizationId: organization.id,
                 }),
-                trpc.skills.listGroups.queryOptions({
+                trpc.skillPackageBuilder.listGroups.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: skillPackageId,
                 }),

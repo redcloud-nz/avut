@@ -33,14 +33,14 @@ export function useSkill({
     const [{ data: skillPackages }, { data: skillGroups }, { data: skills }] =
         useSuspenseQueries({
             queries: [
-                trpc.skills.listPackages.queryOptions({
+                trpc.skillPackageBuilder.listPackages.queryOptions({
                     organizationId: organization.id,
                 }),
-                trpc.skills.listGroups.queryOptions({
+                trpc.skillPackageBuilder.listGroups.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: skillPackageId,
                 }),
-                trpc.skills.listSkills.queryOptions({
+                trpc.skillPackageBuilder.listSkills.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: skillPackageId,
                 }),

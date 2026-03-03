@@ -50,7 +50,7 @@ export function SkillPackageBuilder_Packages_List({
     organization,
 }: SkillPackageBuilder_Packages_ListProps) {
     const { data: skillPackages } = useSuspenseQuery(
-        trpc.skills.listPackages.queryOptions({
+        trpc.skillPackageBuilder.listPackages.queryOptions({
             organizationId: organization.id,
         }),
     );
@@ -176,7 +176,9 @@ export function SkillPackageBuilder_Packages_List({
                         <EmptyContent>
                             <Protect
                                 orgId={organization.id}
-                                permissions={{ skillPackage: ["create"] }}
+                                permissions={{
+                                    skillPackageBuilder: ["create"],
+                                }}
                             >
                                 <Button
                                     onClick={() =>
@@ -194,7 +196,7 @@ export function SkillPackageBuilder_Packages_List({
                     <Akagi.TableSearch table={table} />
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["create"] }}
+                        permissions={{ skillPackageBuilder: ["create"] }}
                     >
                         <Button
                             variant="outline"

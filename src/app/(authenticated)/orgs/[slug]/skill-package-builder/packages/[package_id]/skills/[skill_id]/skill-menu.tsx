@@ -57,13 +57,13 @@ export function SkillPackageBuilder_Skill_Menu({
     const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
-        trpc.skills.archiveSkill.mutationOptions({
+        trpc.skillPackageBuilder.archiveSkill.mutationOptions({
             onError(error) {
                 console.error("Failed to archive skill:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listSkills.queryFilter({
+                    trpc.skillPackageBuilder.listSkills.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -71,13 +71,13 @@ export function SkillPackageBuilder_Skill_Menu({
         }),
     );
     const restoreMutation = useMutation(
-        trpc.skills.restoreSkill.mutationOptions({
+        trpc.skillPackageBuilder.restoreSkill.mutationOptions({
             onError(error) {
                 console.error("Failed to restore skill:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.skills.listSkills.queryFilter({
+                    trpc.skillPackageBuilder.listSkills.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -126,7 +126,7 @@ export function SkillPackageBuilder_Skill_Menu({
 
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["update"] }}
+                        permissions={{ skillPackageBuilder: ["update"] }}
                         fallback={
                             <Empty size="sm">
                                 <EmptyHeader>

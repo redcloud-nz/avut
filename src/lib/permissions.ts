@@ -18,39 +18,55 @@ const statement = {
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
     person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["view", "create", "update", "delete", "publish"],
+    skills: ["view", "subscribe", "assess"],
+    skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
     team: ["view", "create", "update", "delete"],
 } as const;
 
 export const ac = createAccessControl(statement);
 
-export const owner = ac.newRole({
-    ...ownerAc.statements,
-    d4hAccessToken: ["view", "create", "update", "delete"],
-    invitation: ["view", "create", "cancel"],
-    member: ["view", "create", "update", "delete"],
-    organization: ["view", "update", "delete"],
-    person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["view", "create", "update", "delete", "publish"],
-    team: ["view", "create", "update", "delete"],
-});
-export const admin = ac.newRole({
-    ...adminAc.statements,
-    d4hAccessToken: ["view", "create", "update", "delete"],
-    invitation: ["view", "create", "cancel"],
-    member: ["view", "create", "update", "delete"],
-    organization: ["view", "update"],
-    person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackage: ["view", "create", "update", "delete", "publish"],
-    team: ["view", "create", "update", "delete"],
-});
-
-export const member = ac.newRole({
-    ...memberAc.statements,
-    organization: ["view"],
-    person: ["view"],
-    team: ["view"],
-});
+export const Roles = {
+    owner: ac.newRole({
+        ...ownerAc.statements,
+        d4hAccessToken: ["view", "create", "update", "delete"],
+        invitation: ["view", "create", "cancel"],
+        member: ["view", "create", "update", "delete"],
+        organization: ["view", "update", "delete"],
+        person: ["view", "create", "update", "delete", "archive", "restore"],
+        skills: ["view", "subscribe", "assess"],
+        skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
+        team: ["view", "create", "update", "delete"],
+    }),
+    admin: ac.newRole({
+        ...adminAc.statements,
+        d4hAccessToken: ["view", "create", "update", "delete"],
+        invitation: ["view", "create", "cancel"],
+        member: ["view", "create", "update", "delete"],
+        organization: ["view", "update"],
+        person: ["view", "create", "update", "delete", "archive", "restore"],
+        skills: ["view", "subscribe", "assess"],
+        skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
+        team: ["view", "create", "update", "delete"],
+    }),
+    member: ac.newRole({
+        ...memberAc.statements,
+        organization: ["view"],
+        person: ["view"],
+        skills: ["view"],
+        team: ["view"],
+    }),
+    "skills-admin": ac.newRole({
+        organization: ["view"],
+        person: ["view"],
+        skills: ["view", "subscribe", "assess"],
+    }),
+    "skills-assessor": ac.newRole({
+        organization: ["view"],
+    }),
+    "skills-author": ac.newRole({
+        skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
+    }),
+} as const;
 
 export type Permissions = {
     [K in keyof typeof statement]?: (typeof statement)[K][number][];

@@ -35,14 +35,14 @@ export default function SkillPackageBuilder_PackageContents_Page(
     const [{ data: skillPackages }, { data: groups }, { data: skills }] =
         useSuspenseQueries({
             queries: [
-                trpc.skills.listPackages.queryOptions({
+                trpc.skillPackageBuilder.listPackages.queryOptions({
                     organizationId: organization.id,
                 }),
-                trpc.skills.listGroups.queryOptions({
+                trpc.skillPackageBuilder.listGroups.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: package_id,
                 }),
-                trpc.skills.listSkills.queryOptions({
+                trpc.skillPackageBuilder.listSkills.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: package_id,
                 }),
@@ -101,11 +101,9 @@ export default function SkillPackageBuilder_PackageContents_Page(
                                                     }
                                                 >
                                                     <Link
-                                                        to={
-                                                            packagePath.group(
-                                                                skillGroup.id,
-                                                            ).index
-                                                        }
+                                                        to={packagePath.group(
+                                                            skillGroup.id,
+                                                        )}
                                                     >
                                                         {skillGroup.name}
                                                     </Link>
@@ -134,9 +132,6 @@ export default function SkillPackageBuilder_PackageContents_Page(
                                                             )
                                                                 .skillPackageBuilder.skillPackage(
                                                                     skillGroup.skillPackageId,
-                                                                )
-                                                                .group(
-                                                                    skillGroup.id,
                                                                 )
                                                                 .skill(
                                                                     skill.id,

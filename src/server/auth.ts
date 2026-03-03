@@ -13,7 +13,7 @@ import OrganizationInviteTemplate from "@/emails/organization-invite";
 
 import { NoReplyEmailAddress, sendEmail } from "@/lib/email";
 import { nanoId16 } from "@/lib/id";
-import { ac, owner, admin, member } from "@/lib/permissions";
+import { ac, Roles } from "@/lib/permissions";
 
 import { revalidateOrganization } from "./organization";
 import prisma from "./prisma";
@@ -74,7 +74,7 @@ export const auth = betterAuth({
                     revalidateOrganization(organization!.slug);
                 },
             },
-            roles: { owner, admin, member },
+            roles: Roles,
             schema: {
                 organization: {
                     modelName: "Organization",

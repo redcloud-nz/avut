@@ -545,6 +545,10 @@ function skillsModule(orgSlug: string) {
             label: "Catalogue",
             href: `${base}/catalogue`,
         },
+        cataloguePackage: (packageId: string) =>
+            ({
+                href: `${base}/catalogue/${packageId}`,
+            }) as const,
 
         checks: {
             label: "Checks",

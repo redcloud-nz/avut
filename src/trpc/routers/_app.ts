@@ -13,6 +13,7 @@ import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
 import { skillsRouter } from "./skills-router";
+import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { teamsRouter } from "./teams-router";
 
 export const appRouter = createTrpcRouter({
@@ -22,6 +23,7 @@ export const appRouter = createTrpcRouter({
     organizations: organizationsRouter,
     personnel: personnelRouter,
     settings: settingsRouter,
+    skillPackageBuilder: skillPackageBuilderRouter,
     skills: skillsRouter,
     teams: teamsRouter,
 });

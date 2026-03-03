@@ -14,13 +14,18 @@ import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
 export const getSkillPackagesCollection = perOrganization((organizationId) =>
     createCollection(
         queryCollectionOptions({
-            queryKey: trpc.skills.listPackages.queryKey({
-                organizationId,
-            }),
+            queryKey:
+                trpc.skillPackageBuilder.listPackagesOwnedByOrganization.queryKey(
+                    {
+                        organizationId,
+                    },
+                ),
             queryFn: async () => {
-                return await trpcClient.skills.listPackages.query({
-                    organizationId: organizationId,
-                });
+                return await trpcClient.skillPackageBuilder.listPackagesOwnedByOrganization.query(
+                    {
+                        organizationId: organizationId,
+                    },
+                );
             },
             queryClient: getQueryClient(),
             getKey: (skillPackage) => skillPackage.id,
@@ -29,10 +34,12 @@ export const getSkillPackagesCollection = perOrganization((organizationId) =>
             onInsert: async ({ transaction }) => {
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
-                        await trpcClient.skills.createPackage.mutate({
-                            organizationId: organizationId,
-                            ...mutation.modified,
-                        });
+                        await trpcClient.skillPackageBuilder.createPackage.mutate(
+                            {
+                                organizationId: organizationId,
+                                ...mutation.modified,
+                            },
+                        );
                     }),
                 );
             },
@@ -40,21 +47,25 @@ export const getSkillPackagesCollection = perOrganization((organizationId) =>
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
                         const data = mutation.modified;
-                        await trpcClient.skills.updatePackage.mutate({
-                            organizationId: organizationId,
-                            skillPackageId: mutation.original.id,
-                            update: data,
-                        });
+                        await trpcClient.skillPackageBuilder.updatePackage.mutate(
+                            {
+                                organizationId: organizationId,
+                                skillPackageId: mutation.original.id,
+                                update: data,
+                            },
+                        );
                     }),
                 );
             },
             onDelete: async ({ transaction }) => {
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
-                        await trpcClient.skills.deletePackage.mutate({
-                            organizationId: organizationId,
-                            skillPackageId: mutation.original.id,
-                        });
+                        await trpcClient.skillPackageBuilder.deletePackage.mutate(
+                            {
+                                organizationId: organizationId,
+                                skillPackageId: mutation.original.id,
+                            },
+                        );
                     }),
                 );
             },

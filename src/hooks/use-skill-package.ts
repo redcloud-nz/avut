@@ -19,7 +19,7 @@ export function useSkillPackage(packageId: string): SkillPackage {
     const organization = useOrganization();
 
     const { data: skillPackages } = useSuspenseQuery(
-        trpc.skills.listPackages.queryOptions({
+        trpc.skillPackageBuilder.listPackages.queryOptions({
             organizationId: organization.id,
         }),
     );

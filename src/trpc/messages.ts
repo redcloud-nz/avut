@@ -4,6 +4,9 @@
  */
 
 export const Messages = {
+    alreadySubscribedToPackage: (packageName: string) =>
+        `Your organization is already subscribed to the skill package "${packageName}".`,
+
     d4HAccessTokenNotFound: (tokenId: string) =>
         `D4H Access Token(id=${tokenId}) not found.`,
 

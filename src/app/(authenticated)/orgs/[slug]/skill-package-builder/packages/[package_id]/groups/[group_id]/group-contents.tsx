@@ -76,7 +76,7 @@ export function SkillPackageBuilder_Group_Contents_List({
     const organization = useOrganization();
 
     const skillsQuery = useQuery(
-        trpc.skills.listSkills.queryOptions({
+        trpc.skillPackageBuilder.listSkills.queryOptions({
             organizationId: organization.id,
             skillPackageId: skillPackage.id,
         }),
@@ -99,7 +99,7 @@ export function SkillPackageBuilder_Group_Contents_List({
                 <CardAction>
                     <Protect
                         orgId={organization.id}
-                        permissions={{ skillPackage: ["update"] }}
+                        permissions={{ skillPackageBuilder: ["update"] }}
                     >
                         <ButtonGroup>
                             <Button

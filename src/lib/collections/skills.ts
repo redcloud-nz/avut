@@ -20,7 +20,7 @@ import { getQueryClient, RouterInput, trpc, trpcClient } from "@/trpc/client";
 export const getSkillsCollection = perOrganization((organizationId) =>
     createCollection(
         queryCollectionOptions({
-            queryKey: trpc.skills.listSkills.queryKey({
+            queryKey: trpc.skillPackageBuilder.listSkills.queryKey({
                 organizationId,
             }),
             queryFn: async (ctx) => {
@@ -28,9 +28,10 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                     ctx.meta?.loadSubsetOptions,
                 );
 
-                const input: RouterInput["skills"]["listSkills"] = {
-                    organizationId,
-                };
+                const input: RouterInput["skillPackageBuilder"]["listSkills"] =
+                    {
+                        organizationId,
+                    };
 
                 for (const filter of filters) {
                     const field = filter.field.join(".");
@@ -39,7 +40,9 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                     }
                 }
 
-                return await trpcClient.skills.listSkills.query(input);
+                return await trpcClient.skillPackageBuilder.listSkills.query(
+                    input,
+                );
             },
             queryClient: getQueryClient(),
             getKey: (skill) => skill.id,
@@ -54,10 +57,12 @@ export const getSkillsCollection = perOrganization((organizationId) =>
             onInsert: async ({ transaction }) => {
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
-                        await trpcClient.skills.createSkill.mutate({
-                            organizationId,
-                            ...mutation.modified,
-                        });
+                        await trpcClient.skillPackageBuilder.createSkill.mutate(
+                            {
+                                organizationId,
+                                ...mutation.modified,
+                            },
+                        );
                     }),
                 );
             },
@@ -65,21 +70,25 @@ export const getSkillsCollection = perOrganization((organizationId) =>
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
                         const data = mutation.modified;
-                        await trpcClient.skills.updateSkill.mutate({
-                            organizationId,
-                            skillId: mutation.original.id,
-                            update: data,
-                        });
+                        await trpcClient.skillPackageBuilder.updateSkill.mutate(
+                            {
+                                organizationId,
+                                skillId: mutation.original.id,
+                                update: data,
+                            },
+                        );
                     }),
                 );
             },
             onDelete: async ({ transaction }) => {
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
-                        await trpcClient.skills.deleteSkill.mutate({
-                            organizationId,
-                            skillId: mutation.original.id,
-                        });
+                        await trpcClient.skillPackageBuilder.deleteSkill.mutate(
+                            {
+                                organizationId,
+                                skillId: mutation.original.id,
+                            },
+                        );
                     }),
                 );
             },
@@ -105,7 +114,7 @@ export const reorderSkillsAction = createOptimisticAction<{
         });
     },
     async mutationFn({ organizationId, skillGroupId, newOrder }) {
-        await trpcClient.skills.reorderGroupSkills.mutate({
+        await trpcClient.skillPackageBuilder.reorderGroupSkills.mutate({
             organizationId,
             skillGroupId,
             newOrder,

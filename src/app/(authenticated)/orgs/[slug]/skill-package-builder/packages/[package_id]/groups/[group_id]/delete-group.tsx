@@ -42,7 +42,7 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.skills.deleteGroup.mutationOptions({
+        trpc.skillPackageBuilder.deleteGroup.mutationOptions({
             onError(error) {
                 console.error("Failed to delete skill group:", error);
                 toast.error(`Failed to delete skill group: ${error.message}`);
@@ -66,7 +66,7 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
                 );
 
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,
                     }),
                 );

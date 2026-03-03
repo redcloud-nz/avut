@@ -42,7 +42,7 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.skills.deleteSkill.mutationOptions({
+        trpc.skillPackageBuilder.deleteSkill.mutationOptions({
             onError(error) {
                 console.error("Failed to delete skill:", error);
                 toast.error(`Failed to delete skill: ${error.message}`);
@@ -64,7 +64,7 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
                 );
 
                 await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
+                    trpc.skillPackageBuilder.listSkills.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
