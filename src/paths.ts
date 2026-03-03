@@ -118,6 +118,9 @@ export const orgs = {
         label: "Select Organization",
         href: "/orgs/--select",
     },
+    selectAuto: {
+        href: "/orgs/--select?auto",
+    },
 } as const;
 
 type OrgPaths = {

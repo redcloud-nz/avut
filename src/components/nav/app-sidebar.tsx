@@ -36,6 +36,7 @@ export function AppSidebar({
                         width={150}
                         height={50}
                         loading="eager"
+                        className="dark:invert"
                     />
                 </div>
             </SidebarHeader>

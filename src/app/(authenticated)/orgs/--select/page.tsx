@@ -28,7 +28,6 @@ import {
     ItemActions,
     ItemContent,
     ItemDescription,
-    ItemGroup,
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/items";
@@ -43,8 +42,11 @@ import { Show } from "@/components/show";
 
 export const metadata = { title: "Select Organization" };
 
-export default async function OrganizationSelect_Page() {
+export default async function OrganizationSelect_Page(
+    props: PageProps<"/orgs/--select">,
+) {
     const headers = await nextHeaders();
+    const searchParams = await props.searchParams;
 
     const session = await auth.api.getSession({ headers });
     if (!session) redirect(Paths.auth.signIn().href);
@@ -77,6 +79,14 @@ export default async function OrganizationSelect_Page() {
         (invitation) => invitation.status === "pending",
     );
 
+    if (
+        "auto" in searchParams &&
+        memberships.length === 1 &&
+        pendingInvitations.length === 0
+    ) {
+        redirect(Paths.org(memberships[0].organization.slug).dashboard.href);
+    }
+
     return (
         <Argus.Root>
             <Argus.Column>
@@ -107,82 +117,70 @@ export default async function OrganizationSelect_Page() {
 
                         <Show when={memberships.length > 0}>
                             <Separator />
-                            <ItemGroup>
-                                {memberships.map((membership) => (
-                                    <Item
-                                        key={membership.organization.id}
-                                        asChild
+
+                            {memberships.map((membership) => (
+                                <Item key={membership.organization.id} asChild>
+                                    <Link
+                                        to={
+                                            Paths.org(
+                                                membership.organization.slug,
+                                            ).dashboard
+                                        }
                                     >
-                                        <Link
-                                            to={
-                                                Paths.org(
-                                                    membership.organization
-                                                        .slug,
-                                                ).dashboard
-                                            }
-                                        >
-                                            <ItemMedia>
-                                                <Building2Icon className="size-5" />
-                                            </ItemMedia>
-                                            <ItemContent>
-                                                <ItemTitle>
-                                                    {
-                                                        membership.organization
-                                                            .name
-                                                    }
-                                                </ItemTitle>
-                                                <ItemDescription>
-                                                    {membership.role
-                                                        .split(",")
-                                                        .map(
-                                                            (role) =>
-                                                                OrganizationRole
-                                                                    .displayNames[
-                                                                    role as OrganizationRole
-                                                                ],
-                                                        )
-                                                        .join(", ")}
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                ))}
-                            </ItemGroup>
+                                        <ItemMedia>
+                                            <Building2Icon className="size-5" />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>
+                                                {membership.organization.name}
+                                            </ItemTitle>
+                                            <ItemDescription>
+                                                {membership.role
+                                                    .split(",")
+                                                    .map(
+                                                        (role) =>
+                                                            OrganizationRole
+                                                                .displayNames[
+                                                                role as OrganizationRole
+                                                            ],
+                                                    )
+                                                    .join(", ")}
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <ChevronRightIcon className="size-4" />
+                                        </ItemActions>
+                                    </Link>
+                                </Item>
+                            ))}
                         </Show>
                         <Show when={pendingInvitations.length > 0}>
                             <Separator />
-                            <ItemGroup>
-                                {pendingInvitations.map((invitation) => (
-                                    <Item key={invitation.id} asChild>
-                                        <Link
-                                            to={Paths.personal.invitation(
-                                                invitation.id,
-                                            )}
-                                        >
-                                            <ItemMedia>
-                                                <SendIcon className="size-5" />
-                                            </ItemMedia>
-                                            <ItemContent>
-                                                <ItemTitle>
-                                                    {
-                                                        invitation.organization
-                                                            .name
-                                                    }
-                                                </ItemTitle>
-                                                <ItemDescription>
-                                                    Invitation
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                ))}
-                            </ItemGroup>
+
+                            {pendingInvitations.map((invitation) => (
+                                <Item key={invitation.id} asChild>
+                                    <Link
+                                        to={Paths.personal.invitation(
+                                            invitation.id,
+                                        )}
+                                    >
+                                        <ItemMedia>
+                                            <SendIcon className="size-5" />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>
+                                                {invitation.organization.name}
+                                            </ItemTitle>
+                                            <ItemDescription>
+                                                Invitation
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <ChevronRightIcon className="size-4" />
+                                        </ItemActions>
+                                    </Link>
+                                </Item>
+                            ))}
                         </Show>
 
                         <Separator />

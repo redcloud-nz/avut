@@ -114,6 +114,9 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                     if (redirect) router.push(redirect);
                     else router.push(Paths.orgs.select.href);
                 } else {
+                    form.reset();
+                    setState({ status: "Ready" });
+
                     router.push(
                         Paths.auth.verifyEmail({
                             email: data.user.email,
@@ -249,8 +252,8 @@ export function SocialSignInButtons_Field() {
     }
 
     return (
-        <Field className="grid grid-cols-3 gap-4">
-            <Button
+        <Field className="grid grid-cols-2 gap-4">
+            {/* <Button
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("apple")}
@@ -258,12 +261,11 @@ export function SocialSignInButtons_Field() {
             >
                 <SiApple />
                 <span className="sr-only">Sign in with Apple</span>
-            </Button>
+            </Button> */}
             <Button
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("google")}
-                disabled
             >
                 <SiGoogle />
                 <span className="sr-only">Sign in with Google</span>
@@ -272,7 +274,6 @@ export function SocialSignInButtons_Field() {
                 variant="outline"
                 type="button"
                 onClick={() => handleSignIn("github")}
-                disabled
             >
                 <SiGithub />
                 <span className="sr-only">Sign in with GitHub</span>

@@ -39,6 +39,7 @@ function ArgusAppLogo() {
                 alt="A.V.U.T. Logo"
                 width={150}
                 height={50}
+                className="dark:invert"
             />
         </div>
     );

@@ -5,6 +5,7 @@
 
 "use client";
 
+import { ModeToggle } from "./mode-toggle";
 import { NotificationsMenu } from "./notifications-menu";
 import { UserMenu } from "./user-menu";
 
@@ -15,6 +16,7 @@ export function ControlBar() {
             className="fixed top-0 right-0 z-10 h-[calc(var(--header-height)-1px)] flex items-center gap-2 px-2"
         >
             <NotificationsMenu />
+            <ModeToggle />
             <UserMenu />
         </div>
     );
