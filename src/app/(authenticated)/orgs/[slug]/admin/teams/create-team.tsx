@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -12,12 +13,13 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -72,7 +74,6 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                 );
 
                 props.onOpenChange?.(false);
-                form.reset();
 
                 router.push(
                     Paths.org(organization.slug).admin.team(created.id).index
@@ -89,19 +90,23 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
         });
     });
 
-    function handleCancel() {
-        form.reset();
-        props.onOpenChange?.(false);
-    }
+    useEffect(() => {
+        if (!props.open) {
+            form.reset();
+            mutation.reset();
+        }
+    }, [props.open]);
 
     return (
         <Dialog {...props}>
             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>New Team</DialogTitle>
-                    <DialogDescription>Create a new team.</DialogDescription>
-                </DialogHeader>
                 <form id="create-team-form" onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>New Team</DialogTitle>
+                        <DialogDescription>
+                            Create a new team.
+                        </DialogDescription>
+                    </DialogHeader>
                     <FieldGroup>
                         <Controller
                             name="name"
@@ -114,6 +119,7 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                                     <Input
                                         id="team-name"
                                         autoFocus
+                                        autoComplete="off"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -146,29 +152,23 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="create-team-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Create",
-                                    pending: "Creating",
-                                    success: "Created",
-                                }}
-                            />
-                            <Show when={mutation.isIdle}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
-                                    Cancel
-                                </Button>
-                            </Show>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <MutationButton
+                        type="submit"
+                        form="create-team-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                    <DialogCloseButton variant="outline">
+                        Cancel
+                    </DialogCloseButton>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

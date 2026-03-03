@@ -59,7 +59,7 @@ export function Notification({
         <Component
             data-slot="notification"
             className={cn(
-                "group/notification w-full flex flex-col items-stretch flex-wrap [a]:transition-colors duration-100 [a]:hover:bg-accent [a]:hover:text-accent-foreground px-4 py-3 gap-2.5",
+                "group/notification w-full flex flex-col items-stretch flex-wrap [a]:transition-colors duration-100 [a]:hover:bg-accent [a]:hover:text-accent-foreground  px-4 py-3 gap-2.5",
                 className,
             )}
             {...props}
@@ -96,7 +96,7 @@ export function NotificationContent({
     return (
         <div
             data-slot="notification-content"
-            className={cn("flex flex-1 flex-col gap-2", className)}
+            className={cn("flex flex-1 flex-col gap-2 text-xs", className)}
             {...props}
         >
             {children}
@@ -151,7 +151,7 @@ export function NotificationDescription({
         <p
             data-slot="notification-description"
             className={cn(
-                "text-muted-foreground line-clamp-2 text-sm leading-normal font-normal text-balance",
+                "text-muted-foreground line-clamp-2 text-xs leading-normal font-normal text-balance",
                 "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
                 className,
             )}

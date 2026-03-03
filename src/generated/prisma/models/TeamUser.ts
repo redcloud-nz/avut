@@ -198,6 +198,7 @@ export type TeamUserOrderByWithRelationInput = {
 export type TeamUserWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        teamId_userId?: Prisma.TeamUserTeamIdUserIdCompoundUniqueInput;
         AND?: Prisma.TeamUserWhereInput | Prisma.TeamUserWhereInput[];
         OR?: Prisma.TeamUserWhereInput[];
         NOT?: Prisma.TeamUserWhereInput | Prisma.TeamUserWhereInput[];
@@ -213,7 +214,7 @@ export type TeamUserWhereUniqueInput = Prisma.AtLeast<
             Prisma.UserWhereInput
         >;
     },
-    "id"
+    "id" | "teamId_userId"
 >;
 
 export type TeamUserOrderByWithAggregationInput = {
@@ -295,6 +296,11 @@ export type TeamUserListRelationFilter = {
 
 export type TeamUserOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
+};
+
+export type TeamUserTeamIdUserIdCompoundUniqueInput = {
+    teamId: string;
+    userId: string;
 };
 
 export type TeamUserCountOrderByAggregateInput = {

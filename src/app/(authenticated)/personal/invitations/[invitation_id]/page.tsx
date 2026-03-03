@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { toast } from "sonner";
@@ -19,13 +18,12 @@ import {
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Button } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { sessionQueryOptions } from "@/lib/auth-client";
-import { formatDate } from "@/lib/datetime";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
@@ -58,64 +56,42 @@ export default function Auth_ViewInvitation_Page(
 
     const acceptMutation = useMutation(
         trpc.invitations.acceptInvitation.mutationOptions({
-            async onSettled() {
+            async onError(error) {
+                console.error("Failed to accept invitation", error);
+                toast.error("Failed to accept invitation: " + error.message);
+            },
+            async onSuccess() {
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({
                         invitationId: invitation_id,
                     }),
+                );
+
+                router.push(
+                    Paths.org(invitation.organization.slug).dashboard.href,
                 );
             },
         }),
     );
     const rejectMutation = useMutation(
         trpc.invitations.rejectInvitation.mutationOptions({
-            async onSettled() {
+            async onError(error) {
+                console.error("Failed to reject invitation", error);
+                toast.error("Failed to reject invitation: " + error.message);
+            },
+            async onSuccess() {
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({
                         invitationId: invitation_id,
                     }),
                 );
-            },
-        }),
-    );
 
-    function handleAccept() {
-        toast.promise(
-            async () => {
-                await acceptMutation.mutateAsync({
-                    invitationId: invitation_id,
-                });
                 router.push(
                     Paths.org(invitation.organization.slug).dashboard.href,
                 );
             },
-            {
-                loading: "Accepting invitation...",
-                success: "Invitation accepted.",
-                error: (error) =>
-                    "Failed to accept invitation: " + error.message,
-            },
-        );
-    }
-
-    function handleReject() {
-        toast.promise(
-            async () => {
-                await rejectMutation.mutateAsync({
-                    invitationId: invitation_id,
-                });
-                router.push(Paths.personal.invitations.href);
-            },
-            {
-                loading: "Rejecting invitation...",
-                success: "Invitation rejected.",
-                error: (error) =>
-                    "Failed to reject invitation: " + error.message,
-            },
-        );
-    }
-
-    const pending = acceptMutation.isPending || rejectMutation.isPending;
+        }),
+    );
 
     return (
         <Lexington.Root>
@@ -132,9 +108,8 @@ export default function Auth_ViewInvitation_Page(
             <Lexington.Column width="lg">
                 <Hermes.Section>
                     <Hermes.Header>
-                        <Hermes.BackButton to={Paths.personal.invitations}>
-                            Invitations
-                        </Hermes.BackButton>
+                        <Hermes.BackButton to={Paths.personal.invitations} />
+                        <Hermes.Title>Organization Invitation</Hermes.Title>
                     </Hermes.Header>
 
                     <Card>
@@ -170,7 +145,7 @@ export default function Auth_ViewInvitation_Page(
                                             .join(", ")}
                                     </FieldValue>
                                 </Field>
-                                <Field orientation="horizontal">
+                                <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue
                                         className="min-w-1/2"
@@ -180,19 +155,33 @@ export default function Auth_ViewInvitation_Page(
                                 </Field>
 
                                 <Field orientation="horizontal">
-                                    <Button
-                                        onClick={handleAccept}
-                                        disabled={pending}
-                                    >
-                                        Accept
-                                    </Button>
-                                    <Button
+                                    <MutationButton
+                                        onClick={() =>
+                                            acceptMutation.mutate({
+                                                invitationId: invitation_id,
+                                            })
+                                        }
+                                        status={acceptMutation.status}
+                                        text={{
+                                            idle: "Accept",
+                                            pending: "Accepting",
+                                            success: "Accepted",
+                                        }}
+                                    />
+                                    <MutationButton
                                         variant="outline"
-                                        onClick={handleReject}
-                                        disabled={pending}
-                                    >
-                                        Decline
-                                    </Button>
+                                        onClick={() =>
+                                            rejectMutation.mutate({
+                                                invitationId: invitation_id,
+                                            })
+                                        }
+                                        status={rejectMutation.status}
+                                        text={{
+                                            idle: "Reject",
+                                            pending: "Rejecting",
+                                            success: "Rejected",
+                                        }}
+                                    />
                                 </Field>
                             </FieldGroup>
                         </CardContent>

@@ -5,7 +5,7 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -17,24 +17,18 @@ import {
 
 import { Akagi } from "@/components/blocks/akagi";
 import { Protect } from "@/components/protect";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-    Item,
-    ItemContent,
-    ItemDescription,
-    ItemMedia,
-    ItemTitle,
-} from "@/components/ui/items";
+
 import { Link } from "@/components/ui/link";
 
 import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationUserData } from "@/lib/schemas/organization-member";
+import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
-import { getUserInitials } from "@/lib/utils";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_CreateInvitation_Dialog } from "../invitations/create-invitation";
 
 type AdminModule_UsersListProps = {
     organization: OrganizationData;
@@ -46,14 +40,14 @@ export function AdminModule_UsersList({
     currentUserId,
 }: AdminModule_UsersListProps) {
     const { data: members } = useSuspenseQuery(
-        trpc.organizations.listOrganizationUsers.queryOptions({
+        trpc.organizations.listOrganizationMembers.queryOptions({
             organizationId: organization.id,
         }),
     );
 
     const adminModule = Paths.org(organization.slug).admin;
 
-    type RowData = OrganizationUserData & { user: UserData };
+    type RowData = OrganizationMembershipData & { user: UserData };
 
     const columns = useMemo(
         () =>
@@ -67,42 +61,31 @@ export function AdminModule_UsersList({
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Item className="p-0" asChild>
-                                <Link
-                                    to={adminModule.user(ctx.row.original.id)}
-                                >
-                                    <ItemMedia>
-                                        <Avatar>
-                                            <AvatarImage
-                                                src={
-                                                    ctx.row.original.user
-                                                        .image ?? undefined
-                                                }
-                                                alt="User Avatar"
-                                            />
-                                            <AvatarFallback>
-                                                {getUserInitials(
-                                                    ctx.row.original.user.name,
-                                                )}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </ItemMedia>
-                                    <ItemContent>
-                                        <ItemTitle>
-                                            {ctx.getValue()}
-                                            {ctx.row.original.userId ===
-                                            currentUserId ? (
-                                                <span className="bg-neutral-200 border border-neutral-300 text-xs px-1.5 rounded-sm">
-                                                    You
-                                                </span>
-                                            ) : null}
-                                        </ItemTitle>
-                                        <ItemDescription>
-                                            {ctx.row.original.user.email}
-                                        </ItemDescription>
-                                    </ItemContent>
-                                </Link>
-                            </Item>
+                            <Link
+                                to={adminModule.user(ctx.row.original.userId)}
+                            >
+                                {ctx.getValue()}
+                                {ctx.row.original.userId === currentUserId ? (
+                                    <span className="bg-neutral-200 border border-neutral-300 text-xs ml-1 px-1.5 rounded-sm">
+                                        You
+                                    </span>
+                                ) : null}
+                            </Link>
+                        </Akagi.TableCell>
+                    ),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                }),
+                columnHelper.accessor("user.email", {
+                    id: "email",
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell header={ctx.header}>
+                            Email
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell cell={ctx.cell}>
+                            {ctx.getValue()}
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,
@@ -152,6 +135,8 @@ export function AdminModule_UsersList({
         },
     });
 
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
     return (
         <>
             <div className="flex items-center justify-between">
@@ -160,14 +145,19 @@ export function AdminModule_UsersList({
                     orgId={organization.id}
                     permissions={{ invitation: ["create"] }}
                 >
-                    <Button variant="outline" asChild>
-                        <Link to={adminModule.invitations.create}>
-                            <SendIcon /> Invite
-                        </Link>
+                    <Button
+                        variant="outline"
+                        onClick={() => setCreateDialogOpen(true)}
+                    >
+                        <SendIcon /> Invite
                     </Button>
                 </Protect>
             </div>
             <Akagi.Table table={table} />
+            <AdminModule_CreateInvitation_Dialog
+                open={createDialogOpen}
+                onOpenChange={(open) => setCreateDialogOpen(open)}
+            />
         </>
     );
 }

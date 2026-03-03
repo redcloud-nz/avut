@@ -35,7 +35,6 @@ import * as Paths from "@/paths";
 
 import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
 import { AdminModule_TeamMenu } from "./team-menu";
-import { Separator } from "@/components/ui/separator";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
@@ -62,10 +61,12 @@ export default function AdminModule_Team_Page(
                             tooltip="Back to teams list"
                         />
                         <Hermes.Title>{team.name}</Hermes.Title>
-                        <AdminModule_TeamMenu
-                            organization={organization}
-                            team={team}
-                        />
+                        <Hermes.Action>
+                            <AdminModule_TeamMenu
+                                organization={organization}
+                                team={team}
+                            />
+                        </Hermes.Action>
                     </Hermes.Header>
 
                     <Card>

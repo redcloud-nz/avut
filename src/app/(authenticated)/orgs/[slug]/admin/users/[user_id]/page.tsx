@@ -2,13 +2,11 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/users/[org_member_id]
+ * Paths: /orgs/[slug]/admin/users/[user_id]
  */
 "use client";
 
 import { use } from "react";
-
-import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
@@ -34,23 +32,18 @@ import { Link } from "@/components/ui/link";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
-import { trpc } from "@/trpc/client";
 
 import { AdminModule_UserMenu } from "./user-menu";
+import { useOrganizationMembership } from "@/hooks/use-organization-member";
 
 export default function AdminModule_User_Page(
-    props: PageProps<`/orgs/[slug]/admin/users/[org_member_id]`>,
+    props: PageProps<`/orgs/[slug]/admin/users/[user_id]`>,
 ) {
-    const { slug, org_member_id } = use(props.params);
+    const { slug, user_id } = use(props.params);
 
     const organization = useOrganization();
 
-    const { data: orgUser } = useSuspenseQuery(
-        trpc.organizations.getOrganizationUser.queryOptions({
-            organizationId: organization.id,
-            organizationUserId: org_member_id,
-        }),
-    );
+    const organizationMembership = useOrganizationMembership(user_id);
 
     return (
         <Lexington.Root>
@@ -58,7 +51,7 @@ export default function AdminModule_User_Page(
                 breadcrumbs={[
                     Paths.org(slug).admin.index,
                     Paths.org(slug).admin.users,
-                    orgUser.user.name,
+                    organizationMembership.user.name,
                 ]}
             />
             <Lexington.Page>
@@ -69,11 +62,13 @@ export default function AdminModule_User_Page(
                                 to={Paths.org(organization.slug).admin.users}
                                 tooltip="Back to users list"
                             />
-                            <Hermes.Title>{orgUser.user.name}</Hermes.Title>
+                            <Hermes.Title>
+                                {organizationMembership.user.name}
+                            </Hermes.Title>
                             <Hermes.Action>
                                 <AdminModule_UserMenu
-                                    organizationUser={orgUser}
-                                    user={orgUser.user}
+                                    organizationUser={organizationMembership}
+                                    user={organizationMembership.user}
                                 />
                             </Hermes.Action>
                         </Hermes.Header>
@@ -95,8 +90,7 @@ export default function AdminModule_User_Page(
                                                 to={
                                                     Paths.org(
                                                         organization.slug,
-                                                    ).admin.user(org_member_id)
-                                                        .update
+                                                    ).admin.user(user_id).update
                                                 }
                                             >
                                                 <ObjectIcons.Edit />
@@ -110,20 +104,27 @@ export default function AdminModule_User_Page(
                                     <Field orientation="responsive">
                                         <FieldLabel>User ID</FieldLabel>
                                         <FieldValue
-                                            value={orgUser.user.id}
+                                            value={
+                                                organizationMembership.user.id
+                                            }
                                             format="id"
                                         />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Name</FieldLabel>
-                                        <FieldValue value={orgUser.user.name} />
+                                        <FieldValue
+                                            value={
+                                                organizationMembership.user.name
+                                            }
+                                        />
                                     </Field>
 
                                     <Field orientation="responsive">
                                         <FieldLabel>Email</FieldLabel>
                                         <FieldValue>
-                                            {orgUser.user.email}
-                                            {orgUser.user.emailVerified ? (
+                                            {organizationMembership.user.email}
+                                            {organizationMembership.user
+                                                .emailVerified ? (
                                                 <span className="text-muted-foreground ml-2"></span>
                                             ) : null}
                                         </FieldValue>
@@ -136,7 +137,7 @@ export default function AdminModule_User_Page(
                                             Organization Member ID
                                         </FieldLabel>
                                         <FieldValue
-                                            value={orgUser.id}
+                                            value={organizationMembership.id}
                                             format="id"
                                         />
                                     </Field>
@@ -144,7 +145,7 @@ export default function AdminModule_User_Page(
                                     <Field orientation="responsive">
                                         <FieldLabel>Role</FieldLabel>
                                         <FieldValue
-                                            value={orgUser.role
+                                            value={organizationMembership.role
                                                 .map(
                                                     (role) =>
                                                         OrganizationRole
@@ -156,7 +157,9 @@ export default function AdminModule_User_Page(
                                     <Field orientation="responsive">
                                         <FieldLabel>Created</FieldLabel>
                                         <FieldValue
-                                            value={orgUser.createdAt}
+                                            value={
+                                                organizationMembership.createdAt
+                                            }
                                             format="dateWithDistance"
                                         />
                                     </Field>

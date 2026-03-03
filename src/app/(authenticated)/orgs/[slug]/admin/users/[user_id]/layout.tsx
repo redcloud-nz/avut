@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/users/[org_member_id]
+ * Paths: /orgs/[slug]/admin/users/[userId]
  */
 
 import { Metadata } from "next";
@@ -12,14 +12,11 @@ import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationUserById } from "@/server/organization-member";
 
 export async function generateMetadata(
-    props: LayoutProps<"/orgs/[slug]/admin/users/[org_member_id]">,
+    props: LayoutProps<"/orgs/[slug]/admin/users/[user_id]">,
 ): Promise<Metadata> {
-    const { slug, org_member_id } = await props.params;
+    const { slug, user_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
-    const orgMember = await getOrganizationUserById(
-        organization.id,
-        org_member_id,
-    );
+    const orgMember = await getOrganizationUserById(organization.id, user_id);
 
     return {
         title: `${orgMember.user.name} ${TITLE_SEPARATOR} Users`,
@@ -27,7 +24,7 @@ export async function generateMetadata(
 }
 
 export default async function AdminModule_User_Layout(
-    props: LayoutProps<"/orgs/[slug]/admin/users/[org_member_id]">,
+    props: LayoutProps<"/orgs/[slug]/admin/users/[user_id]">,
 ) {
     return props.children;
 }

@@ -15,7 +15,6 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { Link } from "@/components/ui/link";
 
 import { formatDate } from "@/lib/datetime";
@@ -144,11 +143,11 @@ export function Personal_Invitations_List() {
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+        </>
     );
 }

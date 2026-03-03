@@ -9,18 +9,16 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { PersonData, PersonId } from "@/lib/schemas/person";
-import { TeamData } from "@/lib/schemas/team";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
 
 import { revalidatePerson } from "@/server/person";
 
+import { FieldConflictError } from "../errors";
 import {
     AuthenticatedOrganizationContext,
     createTrpcRouter,
     organizationProcedure,
 } from "../init";
 import { Messages } from "../messages";
-import { FieldConflictError } from "../types";
 
 /**
  * Router for personnel management within an organization.
@@ -101,9 +99,10 @@ export const personnelRouter = createTrpcRouter({
             if (emailConflict)
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message:
+                    cause: new FieldConflictError(
+                        "email",
                         "A person with this email address already exists in this organization.",
-                    cause: new FieldConflictError("email"),
+                    ),
                 });
 
             const created = await ctx.prisma.person.create({
@@ -299,9 +298,10 @@ export const personnelRouter = createTrpcRouter({
                 if (emailConflict)
                     throw new TRPCError({
                         code: "CONFLICT",
-                        message:
+                        cause: new FieldConflictError(
+                            "email",
                             "A person with this email address already exists in this organisation.",
-                        cause: new FieldConflictError("email"),
+                        ),
                     });
             }
 

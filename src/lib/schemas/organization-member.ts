@@ -13,19 +13,21 @@ import { OrganizationRole } from "./organization-role";
 import { zodNanoId16 } from "../validation";
 import { UserId } from "./user";
 
-export const OrganizationUserId = {
+export const OrganizationMembershipId = {
     schema: zodNanoId16(
-        "OrganizationUserId expected",
-    ).brand<"OrganizationUserId">(),
+        "OrganizationMembershipId expected",
+    ).brand<"OrganizationMembershipId">(),
 
-    create: () => OrganizationUserId.schema.parse(nanoId16()),
+    create: () => OrganizationMembershipId.schema.parse(nanoId16()),
 } as const;
 
-export type OrganizationUserId = z.infer<typeof OrganizationUserId.schema>;
+export type OrganizationMembershipId = z.infer<
+    typeof OrganizationMembershipId.schema
+>;
 
-export const OrganizationUserData = {
+export const OrganizationMembershipData = {
     schema: z.object({
-        id: OrganizationUserId.schema,
+        id: OrganizationMembershipId.schema,
         organizationId: z.string(),
         createdAt: z.iso.datetime(),
         role: z.array(OrganizationRole.schema),
@@ -33,11 +35,13 @@ export const OrganizationUserData = {
     }),
 
     fromRecord: (record: OrganizationUserRecord) =>
-        OrganizationUserData.schema.parse({
+        OrganizationMembershipData.schema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
             role: record.role.split(","),
         }),
 };
 
-export type OrganizationUserData = z.infer<typeof OrganizationUserData.schema>;
+export type OrganizationMembershipData = z.infer<
+    typeof OrganizationMembershipData.schema
+>;

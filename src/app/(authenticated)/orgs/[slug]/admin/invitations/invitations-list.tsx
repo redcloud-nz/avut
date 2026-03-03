@@ -5,7 +5,7 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
     useMutation,
@@ -31,14 +31,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
 import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
 type AdminModule_InvitationsListProps = { organization: OrganizationData };
 
@@ -242,6 +242,8 @@ export function AdminModule_InvitationsList({
         },
     });
 
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
     return (
         <>
             <div className="flex items-center justify-between">
@@ -250,19 +252,19 @@ export function AdminModule_InvitationsList({
                     orgId={organization.id}
                     permissions={{ invitation: ["create"] }}
                 >
-                    <Button variant="outline" asChild>
-                        <Link
-                            to={
-                                Paths.org(organization.slug).admin.invitations
-                                    .create
-                            }
-                        >
-                            <SendIcon /> Invite
-                        </Link>
+                    <Button
+                        variant="outline"
+                        onClick={() => setCreateDialogOpen(true)}
+                    >
+                        <SendIcon /> Invite
                     </Button>
                 </Protect>
             </div>
             <Akagi.Table table={table} />
+            <AdminModule_CreateInvitation_Dialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+            />
         </>
     );
 }

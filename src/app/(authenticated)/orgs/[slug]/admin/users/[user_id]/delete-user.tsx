@@ -23,17 +23,17 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationUserData } from "@/lib/schemas/organization-member";
+import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_DeleteOrgMember_Dialog({
+export function AdminModule_DeleteUser_Dialog({
     organizationUser,
     user,
     ...props
 }: AlertDialogProps & {
-    organizationUser: OrganizationUserData;
+    organizationUser: OrganizationMembershipData;
     user: UserData;
 }) {
     const organization = useOrganization();
@@ -41,7 +41,7 @@ export function AdminModule_DeleteOrgMember_Dialog({
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.organizations.removeOrganizationUser.mutationOptions({
+        trpc.organizations.removeOrganizationMembership.mutationOptions({
             onError(error) {
                 console.error("Failed to delete organisation member:", error);
                 toast.error(
@@ -55,14 +55,18 @@ export function AdminModule_DeleteOrgMember_Dialog({
                         organisation.
                     </>,
                 );
+                props.onOpenChange?.(false);
+
                 // Redirect to the personnel list page after deletion
-                router.push(Paths.org(organization.slug).admin.personnel.href);
+                router.push(Paths.org(organization.slug).admin.users.href);
 
                 await queryClient.invalidateQueries(
-                    trpc.organizations.listOrganizationUsers.queryFilter({
+                    trpc.organizations.listOrganizationMembers.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
+
+                mutation.reset();
             },
         }),
     );
@@ -84,7 +88,7 @@ export function AdminModule_DeleteOrgMember_Dialog({
                         onClick={() =>
                             mutation.mutate({
                                 organizationId: organization.id,
-                                organizationUserId: organizationUser.id,
+                                userId: user.id,
                             })
                         }
                         status={mutation.status}

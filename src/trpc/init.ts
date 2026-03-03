@@ -16,6 +16,7 @@ import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { auth, AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
+import { FieldConflictError } from "./errors";
 
 // Artificial delay in development to simulate real-world conditions
 const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
@@ -87,6 +88,17 @@ const t = initTRPC.context<Context>().create({
         return {
             ...shape,
             cause: error.cause,
+            data: {
+                ...shape,
+                conflict:
+                    error.code == "CONFLICT" &&
+                    error.cause instanceof FieldConflictError
+                        ? {
+                              fieldName: error.cause.fieldName,
+                              message: error.cause.message,
+                          }
+                        : undefined,
+            },
         };
     },
 });
@@ -216,7 +228,7 @@ interface LogEventOptions {
     objectType:
         | "D4hAccessToken"
         | "Organization"
-        | "OrganizationUser"
+        | "OrganizationMembership"
         | "OrganizationSettings"
         | "Person"
         | "Skill"

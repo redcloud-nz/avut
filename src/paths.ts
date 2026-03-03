@@ -270,11 +270,6 @@ function adminModule(org_slug: string) {
         invitations: {
             label: "Invitations",
             href: `${base}/invitations`,
-
-            create: {
-                label: "Create",
-                href: `${base}/invitations/--create`,
-            },
         },
 
         organization: {
@@ -341,10 +336,6 @@ function adminModule(org_slug: string) {
         personnel: {
             label: "Personnel",
             href: `${base}/personnel`,
-            create: {
-                label: "Create",
-                href: `${base}/personnel/--create`,
-            },
 
             import: {
                 label: "Import Personnel",
@@ -403,11 +394,6 @@ function adminModule(org_slug: string) {
         teams: {
             label: "Teams",
             href: `${base}/teams`,
-
-            create: {
-                label: "Create",
-                href: `${base}/teams/--create`,
-            },
         },
         user: (userId: string) =>
             ({

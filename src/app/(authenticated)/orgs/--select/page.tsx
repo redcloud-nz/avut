@@ -9,6 +9,7 @@ import {
     Building2Icon,
     ChevronRightIcon,
     PlusIcon,
+    SendIcon,
     UserIcon,
 } from "lucide-react";
 import { headers as nextHeaders } from "next/headers";
@@ -26,15 +27,19 @@ import {
     Item,
     ItemActions,
     ItemContent,
+    ItemDescription,
     ItemGroup,
     ItemMedia,
-    ItemSeparator,
     ItemTitle,
 } from "@/components/ui/items";
 import { Link } from "@/components/ui/link";
 
 import * as Paths from "@/paths";
 import { auth } from "@/server/auth";
+import prisma from "@/server/prisma";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { Separator } from "@/components/ui/separator";
+import { Show } from "@/components/show";
 
 export const metadata = { title: "Select Organization" };
 
@@ -44,9 +49,33 @@ export default async function OrganizationSelect_Page() {
     const session = await auth.api.getSession({ headers });
     if (!session) redirect(Paths.auth.signIn().href);
 
-    const organizations = await auth.api.listOrganizations({
-        headers,
-    });
+    const [memberships, invitations] = await Promise.all([
+        await prisma.organizationUser.findMany({
+            where: {
+                userId: session.user.id,
+            },
+            include: {
+                organization: true,
+            },
+        }),
+        await prisma.organizationInvitation.findMany({
+            where: {
+                email: session.user.email,
+                status: "pending",
+            },
+            include: {
+                organization: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        }),
+    ]);
+
+    const pendingInvitations = invitations.filter(
+        (invitation) => invitation.status === "pending",
+    );
 
     return (
         <Argus.Root>
@@ -62,49 +91,111 @@ export default async function OrganizationSelect_Page() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ItemGroup>
-                            <Item asChild>
-                                <Link to={Paths.personal.dashboard}>
-                                    <ItemMedia>
-                                        <UserIcon className="size-5" />
-                                    </ItemMedia>
-                                    <ItemContent>
-                                        <ItemTitle>Personal Account</ItemTitle>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                            <ItemSeparator />
-                            {organizations.map((org) => (
-                                <Item key={org.id} asChild>
-                                    <Link to={Paths.org(org.slug).dashboard}>
-                                        <ItemMedia>
-                                            <Building2Icon className="size-5" />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>{org.name}</ItemTitle>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            ))}
+                        <Item asChild>
+                            <Link to={Paths.personal.dashboard}>
+                                <ItemMedia>
+                                    <UserIcon className="size-5" />
+                                </ItemMedia>
+                                <ItemContent>
+                                    <ItemTitle>Personal Account</ItemTitle>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
 
-                            {organizations.length > 0 && <ItemSeparator />}
-                            <Item asChild>
-                                <Link to={Paths.orgs.create}>
-                                    <ItemContent>
-                                        <ItemTitle>New Organization</ItemTitle>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <PlusIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </ItemGroup>
+                        <Show when={memberships.length > 0}>
+                            <Separator />
+                            <ItemGroup>
+                                {memberships.map((membership) => (
+                                    <Item
+                                        key={membership.organization.id}
+                                        asChild
+                                    >
+                                        <Link
+                                            to={
+                                                Paths.org(
+                                                    membership.organization
+                                                        .slug,
+                                                ).dashboard
+                                            }
+                                        >
+                                            <ItemMedia>
+                                                <Building2Icon className="size-5" />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>
+                                                    {
+                                                        membership.organization
+                                                            .name
+                                                    }
+                                                </ItemTitle>
+                                                <ItemDescription>
+                                                    {membership.role
+                                                        .split(",")
+                                                        .map(
+                                                            (role) =>
+                                                                OrganizationRole
+                                                                    .displayNames[
+                                                                    role as OrganizationRole
+                                                                ],
+                                                        )
+                                                        .join(", ")}
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </Show>
+                        <Show when={pendingInvitations.length > 0}>
+                            <Separator />
+                            <ItemGroup>
+                                {pendingInvitations.map((invitation) => (
+                                    <Item key={invitation.id} asChild>
+                                        <Link
+                                            to={Paths.personal.invitation(
+                                                invitation.id,
+                                            )}
+                                        >
+                                            <ItemMedia>
+                                                <SendIcon className="size-5" />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>
+                                                    {
+                                                        invitation.organization
+                                                            .name
+                                                    }
+                                                </ItemTitle>
+                                                <ItemDescription>
+                                                    Invitation
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </Show>
+
+                        <Separator />
+                        <Item asChild>
+                            <Link to={Paths.orgs.create}>
+                                <ItemContent>
+                                    <ItemTitle>New Organization</ItemTitle>
+                                </ItemContent>
+                                <ItemActions>
+                                    <PlusIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                     </CardContent>
                 </Card>
             </Argus.Column>

@@ -163,7 +163,7 @@ model TeamUser {
   createdAt DateTime @default(now())
 
   @@index([teamId])
-  @@index([userId])
+  @@unique([teamId, userId])
   @@map("team_users")
 }
 
@@ -177,7 +177,7 @@ model OrganizationUser {
   createdAt      DateTime     @default(now())
 
   @@index([organizationId])
-  @@index([userId])
+  @@unique([organizationId, userId])
   @@map("organization_users")
 }
 
@@ -264,7 +264,7 @@ model Person {
   skillCheckSessionsAsAssessor SkillCheckSession[] @relation("skill_check_session_assessors")
   teamMemberships              TeamMembership[]    @relation("team_membership_to_person")
 
-  @@unique([organizationId, email]) // On one person per email address in an organization
+  @@unique([organizationId, email]) // Only one person per email address in an organization
   @@unique([organizationId, userId]) // One person record per user in an organization
   @@index([organizationId])
   @@map("personnel")

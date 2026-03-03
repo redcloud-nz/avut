@@ -10,11 +10,8 @@ import { TRPCError } from "@trpc/server";
 import { diffObject } from "@/lib/diff";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import {
-    OrganizationUserData,
-    OrganizationUserId,
-} from "@/lib/schemas/organization-member";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
+import { UserData, UserId } from "@/lib/schemas/user";
 
 import { auth } from "@/server/auth";
 import { revalidateOrganization } from "@/server/organization";
@@ -49,48 +46,6 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
-     * Retrieves an organization user by ID.
-     */
-    getOrganizationUser: organizationProcedure({ member: ["view"] })
-        .input(
-            z.object({
-                organizationUserId: OrganizationUserId.schema,
-            }),
-        )
-        .output(OrganizationUserData.schema.extend({ user: UserData.schema }))
-        .query(async ({ ctx, input }) => {
-            return findOrganizationUserById(
-                ctx.organizationId,
-                input.organizationUserId,
-            );
-        }),
-
-    getOrganizationUserSelf: organizationProcedure()
-        .output(OrganizationUserData.schema.extend({ user: UserData.schema }))
-        .query(async ({ ctx }) => {
-            const organizationUser =
-                await ctx.prisma.organizationUser.findFirst({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        userId: ctx.auth.session.userId,
-                    },
-                    include: { user: true },
-                });
-
-            if (!organizationUser) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Organization user not found",
-                });
-            }
-
-            return {
-                ...OrganizationUserData.fromRecord(organizationUser),
-                user: UserData.schema.parse(organizationUser.user),
-            };
-        }),
-
-    /**
      * List all invitations for an organization.
      *
      *
@@ -116,12 +71,14 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
-     * List all users that have access to the organization.
+     * List all users that are members of the organization.
      */
-    listOrganizationUsers: organizationProcedure({ member: ["view"] })
+    listOrganizationMembers: organizationProcedure({ member: ["view"] })
         .output(
             z.array(
-                OrganizationUserData.schema.extend({ user: UserData.schema }),
+                OrganizationMembershipData.schema.extend({
+                    user: UserData.schema,
+                }),
             ),
         )
 
@@ -134,7 +91,7 @@ export const organizationsRouter = createTrpcRouter({
             });
 
             return members.map((member) => ({
-                ...OrganizationUserData.fromRecord(member),
+                ...OrganizationMembershipData.fromRecord(member),
                 user: UserData.schema.parse(member.user),
             }));
         }),
@@ -142,34 +99,35 @@ export const organizationsRouter = createTrpcRouter({
     /**
      * Remove a user from the organization.
      */
-    removeOrganizationUser: organizationProcedure({
+    removeOrganizationMembership: organizationProcedure({
         member: ["delete"],
     })
         .input(
             z.object({
-                organizationUserId: OrganizationUserId.schema,
+                userId: UserId.schema,
             }),
         )
-        .mutation(async ({ ctx, input }) => {
+        .mutation(async ({ ctx, input: { userId } }) => {
             try {
-                const organizationUser = await findOrganizationUserById(
-                    ctx.organizationId,
-                    input.organizationUserId,
-                );
+                const organizationMembership =
+                    await findOrganizationMembershipById(
+                        ctx.organizationId,
+                        userId,
+                    );
 
                 await auth.api.removeMember({
                     headers: ctx.headers,
                     body: {
                         organizationId: ctx.organizationId,
-                        memberIdOrEmail: input.organizationUserId,
+                        memberIdOrEmail: organizationMembership.id,
                     },
                 });
 
                 await ctx.logEvent({
                     action: "Delete",
-                    objectType: "OrganizationUser",
-                    objectId: input.organizationUserId,
-                    description: `Removed user (${organizationUser.user.id}, ${organizationUser.user.email}) from organization.`,
+                    objectType: "OrganizationMembership",
+                    objectId: organizationMembership.id,
+                    description: `Removed user (${organizationMembership.user.id}, ${organizationMembership.user.email}) from organization.`,
                 });
             } catch (error) {
                 console.error("Error removing organization member:", error);
@@ -187,12 +145,16 @@ export const organizationsRouter = createTrpcRouter({
      */
     updateOrganization: organizationProcedure({ organization: ["update"] })
         .input(
-            OrganizationData.schema.pick({
-                name: true,
-                slug: true,
+            z.object({
+                update: OrganizationData.modifiableSchema,
             }),
         )
-        .mutation(async ({ ctx, input }) => {
+        .output(
+            z.object({
+                updated: OrganizationData.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input: { update } }) => {
             const existing = await ctx.prisma.organization.findUnique({
                 where: { id: ctx.organizationId },
             });
@@ -209,15 +171,15 @@ export const organizationsRouter = createTrpcRouter({
                 body: {
                     organizationId: ctx.organizationId,
                     data: {
-                        slug: input.slug,
-                        name: input.name,
+                        slug: update.slug,
+                        name: update.name,
                     },
                 },
             });
 
             const changes = diffObject(
                 OrganizationData.modifiableSchema.parse(existing),
-                input,
+                update,
             );
 
             await ctx.logEvent({
@@ -227,43 +189,47 @@ export const organizationsRouter = createTrpcRouter({
                 changes,
             });
 
-            await revalidateOrganization(input.slug);
+            await revalidateOrganization(update.slug);
 
-            return OrganizationData.fromRecord({
-                ...existing,
-                ...input,
-            });
+            return {
+                updated: OrganizationData.fromRecord({
+                    ...existing,
+                    ...update,
+                }),
+            };
         }),
 });
 
 /**
- * Find an organization user by ID.
+ * Find an organization membership by ID.
  * @param organizationId The organization ID.
- * @param organizationUserId The organization user ID.
- * @returns The organization user data with user info.
- * @throws TRPCError(NOT_FOUND) if the user is not found.
+ * @param userId The user ID.
+ * @returns The organization membership data with user info.
+ * @throws TRPCError(NOT_FOUND) if the membership is not found.
  */
-async function findOrganizationUserById(
+async function findOrganizationMembershipById(
     organizationId: OrganizationId,
-    organizationUserId: OrganizationUserId,
+    userId: UserId,
 ) {
-    const member = await prisma.organizationUser.findUnique({
+    const membership = await prisma.organizationUser.findUnique({
         where: {
-            id: organizationUserId,
-            organizationId: organizationId,
+            organizationId_userId: {
+                organizationId,
+                userId,
+            },
         },
         include: { user: true },
     });
 
-    if (!member) {
+    if (!membership) {
         throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Organization user not found",
+            message: "Organization membership not found for userId = " + userId,
         });
     }
 
     return {
-        ...OrganizationUserData.fromRecord(member),
-        user: UserData.schema.parse(member.user),
+        ...OrganizationMembershipData.fromRecord(membership),
+        user: UserData.schema.parse(membership.user),
     };
 }

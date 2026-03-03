@@ -9,51 +9,51 @@ import { notFound } from "next/navigation";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
-    OrganizationUserData,
-    OrganizationUserId,
+    OrganizationMembershipData,
+    OrganizationMembershipId,
 } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 
 import prisma from "./prisma";
 
 /**
- * Get an organization member (and the associated user) by their ID within an organization.
+ * Get an organization member (and the associated user) by their user ID;
  *
  * Notes:
- * - The results are cached for performance with a cache tag of `organization-user-{orgUserId}`.
- * - The `orgUserId` parameter is not typed to allow easier integration with route parameters.
+ * - The results are cached for performance with a cache tag of `organization-user-{user_id}`.
+ * - The `user_id` parameter is not typed to allow easier integration with route parameters.
  * - If the organization user is not found, a 404 response is triggered.
  *
  * @param organizationId The ID of the organization.
- * @param orgUserId The ID of the organization user.
+ * @param user_id The ID of the user.
  * @returns The organization user data along with the associated user data.
  */
 export async function getOrganizationUserById(
     organizationId: OrganizationId,
-    orgUserId: string,
-): Promise<OrganizationUserData & { user: UserData }> {
+    user_id: string,
+): Promise<OrganizationMembershipData & { user: UserData }> {
     "use cache";
-    cacheTag(`organization-user-${orgUserId}`);
+    cacheTag(`organization-user-${user_id}`);
 
     // Fetch organization user record
-    const orgUser = await prisma.organizationUser.findUnique({
-        where: { organizationId, id: orgUserId },
+    const organizationMembership = await prisma.organizationUser.findUnique({
+        where: { organizationId_userId: { organizationId, userId: user_id } },
         include: { user: true },
     });
 
-    if (!orgUser) return notFound();
+    if (!organizationMembership) return notFound();
     return {
-        ...OrganizationUserData.fromRecord(orgUser),
-        user: UserData.fromRecord(orgUser.user),
+        ...OrganizationMembershipData.fromRecord(organizationMembership),
+        user: UserData.fromRecord(organizationMembership.user),
     };
 }
 
 /**
  * Revalidate the cache for an organization user.
- * @param orgUserId The ID of the organization user.
+ * @param user_id The ID of the user.
  */
 export async function revalidateOrganizationUser(
-    orgUserId: OrganizationUserId,
+    user_id: OrganizationMembershipId,
 ) {
-    revalidateTag(`organization-user-${orgUserId}`, { expire: 0 });
+    revalidateTag(`organization-user-${user_id}`, { expire: 0 });
 }
