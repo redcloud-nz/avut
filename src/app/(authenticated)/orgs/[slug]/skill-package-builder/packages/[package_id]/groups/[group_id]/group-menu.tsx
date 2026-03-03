@@ -4,41 +4,37 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ComponentProps, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldGroup } from "@/components/ui/field";
 import { Link } from "@/components/ui/link";
-import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { SkillPackageBuilder_DeleteSkillGroup_Dialog } from "./delete-group";
 
 interface SkillPackageBuilder_Group_MenuProps {
     skillGroup: SkillGroup & { skillPackage: SkillPackage };
@@ -120,12 +116,24 @@ export function SkillPackageBuilder_Group_Menu({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Skill Group</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
                     <Protect
                         orgId={organization.id}
                         permissions={{ skillPackage: ["delete"] }}
+                        fallback={
+                            <Empty size="sm">
+                                <EmptyHeader>
+                                    <EmptyTitle>
+                                        No Actions Available
+                                    </EmptyTitle>
+                                    <EmptyDescription>
+                                        You do not have permission to perform
+                                        any actions on this skill-group.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        }
                     >
                         <DropdownMenuGroup>
                             {/** Show the archive option if the skill group is active */}
@@ -165,94 +173,11 @@ export function SkillPackageBuilder_Group_Menu({
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <DeleteSkillGroupDialog
+            <SkillPackageBuilder_DeleteSkillGroup_Dialog
                 skillGroup={skillGroup}
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
             />
         </>
-    );
-}
-
-interface DeleteSkillGroupDialogProps extends ComponentProps<typeof Dialog> {
-    skillGroup: SkillGroup & { skillPackage: SkillPackage };
-}
-
-function DeleteSkillGroupDialog({
-    skillGroup,
-    ...props
-}: DeleteSkillGroupDialogProps) {
-    const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
-
-    const mutation = useMutation(
-        trpc.skills.deleteGroup.mutationOptions({
-            onError(error) {
-                console.error("Failed to delete skill group:", error);
-            },
-            async onSuccess() {
-                props.onOpenChange?.(false);
-
-                // Redirect to the package list page after deletion
-                router.push(
-                    Paths.org(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(
-                        skillGroup.skillPackageId,
-                    ).index.href,
-                );
-
-                await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-            },
-        }),
-    );
-
-    return (
-        <Dialog {...props}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Delete Skill Group</DialogTitle>
-                    <DialogDescription>
-                        Confirm deletion of skill group{" "}
-                        <ObjectName>{skillGroup.name}</ObjectName> from package{" "}
-                        <ObjectName>{skillGroup.skillPackage.name}</ObjectName>.
-                        This action cannot be undone.
-                    </DialogDescription>
-                </DialogHeader>
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            variant="destructive"
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    skillGroupId: skillGroup.id,
-                                })
-                            }
-                            status={mutation.status}
-                            text={{
-                                idle: "Delete",
-                                pending: "Deleting",
-                                success: "Deleted",
-                            }}
-                        />
-                        <Show when={mutation.isIdle}>
-                            <Button
-                                variant="outline"
-                                onClick={() => props.onOpenChange?.(false)}
-                            >
-                                Cancel
-                            </Button>
-                        </Show>
-                    </Field>
-                </FieldGroup>
-            </DialogContent>
-        </Dialog>
     );
 }

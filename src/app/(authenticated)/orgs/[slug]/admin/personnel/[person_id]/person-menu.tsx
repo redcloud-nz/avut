@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,16 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogProps,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -31,14 +21,20 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldGroup } from "@/components/ui/field";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 import { Link } from "@/components/ui/link";
-import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonData } from "@/lib/schemas/person";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_DeletePerson_Dialog } from "./delete-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
@@ -139,23 +135,32 @@ export function AdminModule_PersonMenu({
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {person.status == "Active" && (
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ person: ["archive"] }}
-                            >
-                                <DropdownMenuItem onSelect={handleArchive}>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ person: ["update"] }}
+                            fallback={
+                                <Empty size="sm">
+                                    <EmptyHeader>
+                                        <EmptyTitle>
+                                            No Actions Available
+                                        </EmptyTitle>
+                                        <EmptyDescription>
+                                            You do not have permission to
+                                            perform any actions on this person
+                                            record.
+                                        </EmptyDescription>
+                                    </EmptyHeader>
+                                </Empty>
+                            }
+                        >
+                            {person.status == "Active" && (
+                                <DropdownMenuItem onClick={handleArchive}>
                                     <ObjectIcons.Archive /> Archive
                                 </DropdownMenuItem>
-                            </Protect>
-                        )}
-                        {person.status != "Archived" && (
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ person: ["delete"] }}
-                            >
+                            )}
+                            {person.status != "Archived" && (
                                 <DropdownMenuItem
-                                    onSelect={() => {
+                                    onClick={() => {
                                         setDeleteDialogOpen(true);
                                     }}
                                     className="text-destructive focus:text-destructive"
@@ -163,18 +168,13 @@ export function AdminModule_PersonMenu({
                                     <ObjectIcons.Delete />
                                     Delete
                                 </DropdownMenuItem>
-                            </Protect>
-                        )}
-                        {person.status != "Active" && (
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ person: ["restore"] }}
-                            >
-                                <DropdownMenuItem onSelect={handleRestore}>
+                            )}
+                            {person.status != "Active" && (
+                                <DropdownMenuItem onClick={handleRestore}>
                                     <ObjectIcons.Restore /> Restore
                                 </DropdownMenuItem>
-                            </Protect>
-                        )}
+                            )}
+                        </Protect>
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -186,77 +186,5 @@ export function AdminModule_PersonMenu({
                 onOpenChange={setDeleteDialogOpen}
             />
         </>
-    );
-}
-
-function AdminModule_DeletePerson_Dialog({
-    person,
-    ...props
-}: DialogProps & { person: PersonData }) {
-    const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
-
-    const mutation = useMutation(
-        trpc.personnel.deletePerson.mutationOptions({
-            onError(error) {
-                console.error("Failed to delete person:", error);
-                toast.error(`Failed to delete person: ${error.message}`);
-            },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
-                props.onOpenChange?.(false);
-
-                // Redirect to the personnel list page after deletion
-                router.push(Paths.org(organization.slug).admin.personnel.href);
-            },
-        }),
-    );
-
-    return (
-        <Dialog {...props}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Delete Person</DialogTitle>
-                    <DialogDescription>
-                        Confirm deletion of personnel record for{" "}
-                        <ObjectName>{person.name}</ObjectName>.
-                    </DialogDescription>
-                </DialogHeader>
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            variant="destructive"
-                            status={mutation.status}
-                            text={{
-                                idle: "Delete",
-                                pending: "Deleting",
-                                success: "Deleted",
-                            }}
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    personId: person.id,
-                                })
-                            }
-                        />
-                        <Show when={mutation.isIdle}>
-                            <Button
-                                variant="outline"
-                                onClick={() => props.onOpenChange?.(false)}
-                            >
-                                Cancel
-                            </Button>
-                        </Show>
-                    </Field>
-                </FieldGroup>
-            </DialogContent>
-        </Dialog>
     );
 }

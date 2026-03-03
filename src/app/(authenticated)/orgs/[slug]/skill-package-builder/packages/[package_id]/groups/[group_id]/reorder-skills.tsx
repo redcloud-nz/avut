@@ -20,8 +20,10 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -32,7 +34,6 @@ import {
     EmptyHeader,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { Field, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -74,7 +75,7 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
     const mutation = useMutation(
         trpc.skills.reorderGroupSkills.mutationOptions({
             onError(error) {
-                toast.error("Failed to save changes.");
+                toast.error(`Failed to save changes: ${error.message}`);
                 console.error("Failed to save changes:", error);
             },
             async onSuccess() {
@@ -85,15 +86,19 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                     }),
                 );
 
+                // Close the dialog and reset the mutation state after successfully saving the new order.
                 props.onOpenChange?.(false);
                 mutation.reset();
             },
         }),
     );
 
-    function handleReset() {
-        setOrder(skills.map((skill) => skill.id));
-    }
+    useEffect(() => {
+        if (!props.open) {
+            mutation.reset();
+            setOrder(skills.map((skill) => skill.id));
+        }
+    }, [props.open]);
 
     return (
         <Dialog {...props}>
@@ -179,33 +184,27 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                             })}
                         </div>
                     </DragDropProvider>
-                    <FieldGroup>
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="button"
-                                onClick={() =>
-                                    mutation.mutate({
-                                        organizationId: organization.id,
-                                        skillGroupId: skillGroup.id,
-                                        newOrder: order,
-                                    })
-                                }
-                                status={mutation.status}
-                                text={{
-                                    idle: "Save",
-                                    pending: "Saving",
-                                    success: "Saved",
-                                }}
-                            />
-                            <Button
-                                variant="outline"
-                                onClick={handleReset}
-                                disabled={!mutation.isIdle}
-                            >
-                                Reset
-                            </Button>
-                        </Field>
-                    </FieldGroup>
+                    <DialogFooter>
+                        <MutationButton
+                            type="button"
+                            onClick={() =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillGroupId: skillGroup.id,
+                                    newOrder: order,
+                                })
+                            }
+                            status={mutation.status}
+                            text={{
+                                idle: "Save",
+                                pending: "Saving",
+                                success: "Saved",
+                            }}
+                        />
+                        <DialogCloseButton variant="outline">
+                            Cancel
+                        </DialogCloseButton>
+                    </DialogFooter>
                 </Show>
             </DialogContent>
         </Dialog>

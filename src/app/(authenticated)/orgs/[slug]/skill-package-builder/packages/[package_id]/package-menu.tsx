@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,17 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Show } from "@/components/show";
-import {
-    AlertDialog,
-    AlertDialogProps,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button, MutationButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,12 +22,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/components/ui/link";
-import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+
+import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
 
 export function SkillPackageBuilder_Package_Menu({
     skillPackage,
@@ -273,77 +263,5 @@ export function SkillPackageBuilder_Package_Menu({
                 onOpenChange={setDeleteDialogOpen}
             />
         </>
-    );
-}
-
-function SkillPackageBuilder_DeletePackage_Dialog({
-    skillPackage,
-    ...props
-}: AlertDialogProps & { skillPackage: SkillPackage }) {
-    const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
-
-    const mutation = useMutation(
-        trpc.skills.deletePackage.mutationOptions({
-            onError(error) {
-                console.error("Failed to delete skill package:", error);
-                toast.error(`Failed to delete skill package: ${error.message}`);
-            },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
-                props.onOpenChange?.(false);
-
-                // Redirect to the package list page after deletion
-                router.push(
-                    Paths.org(organization.slug).skillPackageBuilder.index.href,
-                );
-            },
-        }),
-    );
-
-    return (
-        <AlertDialog {...props}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Skill Package</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Confirm deletion of skill package{" "}
-                        <ObjectName>{skillPackage.name}</ObjectName>.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <Show when={mutation.isIdle}>
-                        <Button
-                            variant="outline"
-                            onClick={() => props.onOpenChange?.(false)}
-                        >
-                            Cancel
-                        </Button>
-                    </Show>
-                    <MutationButton
-                        type="button"
-                        variant="destructive"
-                        status={mutation.status}
-                        text={{
-                            idle: "Delete",
-                            pending: "Deleting",
-                            success: "Deleted",
-                        }}
-                        onClick={() =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                skillPackageId: skillPackage.id,
-                            })
-                        }
-                    />
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     );
 }

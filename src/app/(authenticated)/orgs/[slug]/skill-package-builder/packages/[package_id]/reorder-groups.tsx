@@ -19,13 +19,20 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "@/components/ui/empty";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -35,12 +42,6 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 import { Show } from "@/components/show";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
 
 /**
  * Dialog component that allows users to reorder skill groups within a skill package using drag-and-drop functionality.
@@ -78,7 +79,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
     const mutation = useMutation(
         trpc.skills.reorderGroups.mutationOptions({
             onError(error) {
-                toast.error("Failed to save changes.");
+                toast.error(`Failed to save changes: ${error.message}`);
                 console.error("Failed to save changes:", error);
             },
             async onSuccess() {
@@ -89,15 +90,19 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                     }),
                 );
 
+                // Close the dialog and reset the mutation state after successfully saving the new order.
                 props.onOpenChange?.(false);
                 mutation.reset();
             },
         }),
     );
 
-    function handleReset() {
-        setOrder(skillGroups.map((group) => group.id));
-    }
+    useEffect(() => {
+        if (!props.open) {
+            mutation.reset();
+            setOrder(skillGroups.map((group) => group.id));
+        }
+    }, [props.open]);
 
     return (
         <Dialog {...props}>
@@ -184,33 +189,27 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                         </div>
                     </DragDropProvider>
 
-                    <FieldGroup>
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="button"
-                                onClick={() =>
-                                    mutation.mutate({
-                                        organizationId: organization.id,
-                                        skillPackageId: skillPackage.id,
-                                        newOrder: order,
-                                    })
-                                }
-                                status={mutation.status}
-                                text={{
-                                    idle: "Save",
-                                    pending: "Saving",
-                                    success: "Saved",
-                                }}
-                            />
-                            <Button
-                                variant="outline"
-                                onClick={handleReset}
-                                disabled={!mutation.isIdle}
-                            >
-                                Reset
-                            </Button>
-                        </Field>
-                    </FieldGroup>
+                    <DialogFooter>
+                        <MutationButton
+                            type="button"
+                            onClick={() =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillPackageId: skillPackage.id,
+                                    newOrder: order,
+                                })
+                            }
+                            status={mutation.status}
+                            text={{
+                                idle: "Save",
+                                pending: "Saving",
+                                success: "Saved",
+                            }}
+                        />
+                        <DialogCloseButton variant="outline">
+                            Cancel
+                        </DialogCloseButton>
+                    </DialogFooter>
                 </Show>
             </DialogContent>
         </Dialog>
