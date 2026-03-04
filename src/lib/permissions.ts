@@ -14,6 +14,7 @@ import {
 const statement = {
     ...defaultStatements,
     d4hAccessToken: ["view", "create", "update", "delete"],
+    d4hEquipment: ["view"],
     invitation: ["view", "create", "cancel"],
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
@@ -29,6 +30,7 @@ export const Roles = {
     owner: ac.newRole({
         ...ownerAc.statements,
         d4hAccessToken: ["view", "create", "update", "delete"],
+        d4hEquipment: ["view"],
         invitation: ["view", "create", "cancel"],
         member: ["view", "create", "update", "delete"],
         organization: ["view", "update", "delete"],
@@ -40,6 +42,7 @@ export const Roles = {
     admin: ac.newRole({
         ...adminAc.statements,
         d4hAccessToken: ["view", "create", "update", "delete"],
+        d4hEquipment: ["view"],
         invitation: ["view", "create", "cancel"],
         member: ["view", "create", "update", "delete"],
         organization: ["view", "update"],
@@ -50,6 +53,7 @@ export const Roles = {
     }),
     member: ac.newRole({
         ...memberAc.statements,
+        d4hEquipment: ["view"],
         organization: ["view"],
         person: ["view"],
         skills: ["view"],

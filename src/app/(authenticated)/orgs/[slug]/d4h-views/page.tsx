@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/items";
 
 import * as Paths from "@/paths";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 
 export default async function D4HViews_Index_Page(
     props: PageProps<`/orgs/[slug]/d4h-views`>,
@@ -40,7 +38,7 @@ export default async function D4HViews_Index_Page(
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link to={Paths.org(slug).d4hViews.equipment}>
+                            <Link to={Paths.org(slug).d4hViews.equipment.index}>
                                 <ItemContent>
                                     <ItemTitle>Equipment</ItemTitle>
                                     <ItemDescription>

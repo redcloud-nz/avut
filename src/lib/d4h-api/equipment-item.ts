@@ -25,12 +25,26 @@ const d4HEquipmentItemBase = z.object({
 
 export const D4HEquipmentItem = {
     schema: d4HEquipmentItemBase.extend({
+        // serial: z.string().nullable(),
+        // idMarks: z.string().nullable(),
         kind: z.object({
             resourceType: z.literal("EquipmentKind"),
             id: z.number(),
             title: z.string(),
         }),
-        parents: z.array(d4HEquipmentItemBase).nullable(),
+        brand: z.object({
+            resourceType: z.literal("EquipmentBrand"),
+            id: z.number().nullable(),
+            title: z.string().optional(),
+        }),
+        model: z
+            .object({
+                resourceType: z.literal("EquipmentModel"),
+                id: z.number().nullable(),
+                title: z.string().optional(),
+            })
+            .nullable(),
+        parents: z.array(d4HEquipmentItemBase),
     }),
 } as const;
 

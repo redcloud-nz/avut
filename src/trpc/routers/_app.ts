@@ -7,6 +7,7 @@ import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTrpcRouter } from "../init";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
+import { d4hApiRouter } from "./d4h-api-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
@@ -18,6 +19,7 @@ import { teamsRouter } from "./teams-router";
 
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
+    d4hApi: d4hApiRouter,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
     organizations: organizationsRouter,

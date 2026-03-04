@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default async function Root_Layout(props: LayoutProps<"/">) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >

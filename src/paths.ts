@@ -460,14 +460,28 @@ function d4hViewsModule(orgSlug: string) {
         },
 
         equipment: {
-            label: "Equipment",
-            href: `${base}/equipment`,
-            bgColor: "bg-red-400",
+            index: {
+                label: "Equipment",
+                href: `${base}/equipment`,
+            },
 
             categories: {
                 label: "Categories",
                 href: `${base}/equipment/categories`,
             },
+            category: (categoryId: number) =>
+                ({
+                    href: `${base}/equipment/categories/${categoryId}`,
+                }) as const,
+
+            items: {
+                href: `${base}/equipment/items`,
+                label: "Items",
+            },
+            item: (itemId: number) =>
+                ({
+                    href: `${base}/equipment/items/${itemId}`,
+                }) as const,
         },
 
         personnel: {

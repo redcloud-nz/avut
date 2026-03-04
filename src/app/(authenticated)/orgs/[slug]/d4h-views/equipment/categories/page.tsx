@@ -2,42 +2,127 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-views/equipment-categories
+ * Path: /orgs/[slug]/d4h-views/equipment/categories
  */
+"use client";
 
+import { useMemo } from "react";
+
+import { useLiveSuspenseQuery } from "@tanstack/react-db";
+import {
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+
+import { Akagi } from "@/components/blocks/akagi";
+import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
+import { Link } from "@/components/ui/link";
 
-import { getD4HEquipmentCategories } from "@/lib/d4h-api/client";
+import { useOrganization } from "@/hooks/use-organization";
+import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
+import { D4HEquipmentCategory } from "@/lib/d4h-api/equipment-category";
 import * as Paths from "@/paths";
-import { getConfiguredD4HViewsAccessToken } from "@/server/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
-import { D4HViewsModules_EquipmentCategories_List } from "./equipment-categories-list";
 
-export default async function D4HViewsModule_EquipmentCategories_Page(
+export default function D4HViewsModule_EquipmentCategories_Page(
     props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories">,
 ) {
-    const { slug } = await props.params;
+    const organization = useOrganization();
 
-    const organization = await getOrganizationBySlug(slug);
+    const { data: categories } = useLiveSuspenseQuery((q) =>
+        q
+            .from({
+                category: getD4HEquipmentCategoriesCollection(organization.id),
+            })
+            .orderBy((c) => c.category.title),
+    );
 
-    const accessToken = await getConfiguredD4HViewsAccessToken(organization.id);
+    const columns = useMemo(
+        () =>
+            Akagi.defineColumns<D4HEquipmentCategory>((columnHelper) => [
+                columnHelper.accessor("id", {
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell header={ctx.header} align="center">
+                            Category ID
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell cell={ctx.cell} align="center">
+                            {ctx.getValue()}
+                        </Akagi.TableCell>
+                    ),
+                    enableGlobalFilter: false,
+                    enableSorting: true,
+                }),
+                columnHelper.accessor("title", {
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell header={ctx.header}>
+                            Title
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell cell={ctx.cell}>
+                            <Link
+                                to={Paths.org(
+                                    organization.slug,
+                                ).d4hViews.equipment.category(
+                                    ctx.row.original.id,
+                                )}
+                            >
+                                {ctx.getValue()}
+                            </Link>
+                        </Akagi.TableCell>
+                    ),
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                }),
+            ]),
+        [],
+    );
 
-    const equipmentCategories = await getD4HEquipmentCategories(accessToken);
+    const table = useReactTable({
+        data: categories,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        initialState: {
+            pagination: {
+                pageIndex: 0,
+                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+            },
+            sorting: [{ id: "title", desc: false }],
+        },
+    });
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).d4hViews.index,
-                    Paths.org(slug).d4hViews.equipment,
-                    Paths.org(slug).d4hViews.equipment.categories,
+                    Paths.org(organization.slug).d4hViews.index,
+                    Paths.org(organization.slug).d4hViews.equipment.index,
+                    Paths.org(organization.slug).d4hViews.equipment.categories,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
-                    <D4HViewsModules_EquipmentCategories_List
-                        categories={equipmentCategories}
-                    />
+                    <Hermes.Header>
+                        <Hermes.BackButton
+                            to={
+                                Paths.org(organization.slug).d4hViews.equipment
+                                    .index
+                            }
+                        />
+                        <Hermes.Title>Equipment Categories</Hermes.Title>
+                        <Hermes.Search>
+                            <Akagi.TableSearch table={table} />
+                        </Hermes.Search>
+                    </Hermes.Header>
+                    <Akagi.Table table={table} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

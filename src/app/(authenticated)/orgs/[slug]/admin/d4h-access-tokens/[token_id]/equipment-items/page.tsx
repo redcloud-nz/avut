@@ -19,6 +19,7 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
+import { omit } from "remeda";
 
 async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4hFetchClient(accessToken);
@@ -37,10 +38,16 @@ async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
                                 contextId: team.id,
                             },
                             query: {
-                                size: 100,
+                                member_id: 1156,
+                                only_current: true,
                             },
                         },
                     },
+                );
+
+                console.log(
+                    `Fetched equipment for team ${team.title}:`,
+                    omit(data as { results: any[] }, ["results"]),
                 );
 
                 return (data as { results: any[] }).results;
@@ -48,7 +55,7 @@ async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
         )
     ).flat();
 
-    return items;
+    return [items];
 }
 
 /**
@@ -67,7 +74,7 @@ export default async function Admin_D4hAccessToken_EquipmentItems_Page(
 
     if (!accessToken) notFound();
 
-    const fetched = await fetchEquipment(accessToken);
+    const [fetched] = await fetchEquipment(accessToken);
 
     const items = fetched.map((item) => ({
         raw: item,

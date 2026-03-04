@@ -64,7 +64,7 @@ export async function NavOrganizationMenu({
                     >
                         {/* <NavItem path={orgPrefix.d4hViews.activities} />
                         <NavItem path={orgPrefix.d4hViews.calendar} /> */}
-                        <NavItem path={orgPrefix.d4hViews.equipment} />
+                        <NavItem path={orgPrefix.d4hViews.equipment.index} />
                         <NavItem path={orgPrefix.d4hViews.personnel} />
                     </NavCollapsible>
                 </Show>

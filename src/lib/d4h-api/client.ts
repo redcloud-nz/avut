@@ -23,6 +23,13 @@ import { D4HOrganization } from "./organization";
 import { D4HEquipmentCategory } from "./equipment-category";
 import { D4HEquipmentItem } from "./equipment-item";
 
+export type D4HListResponse = {
+    results: unknown[];
+    page: number;
+    pageSize: number;
+    totalSize: number;
+};
+
 export const getD4hFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
 
@@ -174,13 +181,16 @@ export async function getD4HTeamsWithMembers(
     return teamsWithMembers;
 }
 
-export async function getD4HTeamEquipmentByCategory(
-    token: D4HAccessToken_ServerOnly,
-    categoryId: number,
+export async function getD4HEquipmentItems(
+    accessToken: D4HAccessToken_ServerOnly,
 ) {
-    const fetchClient = getD4hFetchClient(token);
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${accessToken.id}-equipment-items`);
 
-    const teams = await getD4HTeamsAccessibleWithToken(token);
+    const fetchClient = getD4hFetchClient(accessToken);
+
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
 
     const equipment = (
         await Promise.all(
@@ -194,7 +204,8 @@ export async function getD4HTeamEquipmentByCategory(
                                 contextId: team.id,
                             },
                             query: {
-                                category_id: [categoryId],
+                                size: 10000,
+                                only_current: true,
                             },
                         },
                     },

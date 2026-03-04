@@ -38,7 +38,10 @@ function HermesSection({ className, ...props }: ComponentProps<"section">) {
 function HermesHeader({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
-            className={cn("w-full grid grid-cols-[36px_1fr_36px]", className)}
+            className={cn(
+                "w-full grid grid-cols-[36px_1fr_36px] gap-2",
+                className,
+            )}
             data-component="HermesHeader"
             data-slot="header"
             {...props}
@@ -51,7 +54,7 @@ function HermesTitle({ className, ...props }: ComponentProps<"h3">) {
         <h3
             className={cn(
                 "col-2",
-                "scroll-m-20 text-2xl font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
+                "scroll-m-20 text-xl font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
                 className,
             )}
             data-component="HermesTitle"
@@ -112,6 +115,15 @@ function HermesAction({ className, ...props }: ComponentProps<"div">) {
     );
 }
 
+function HermesSearch({ className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            className={cn("col-2 flex items-center justify-center", className)}
+            {...props}
+        />
+    );
+}
+
 export const Hermes = {
     BackButton: HermesBackButton,
     Empty: HermesEmpty,
@@ -119,4 +131,5 @@ export const Hermes = {
     Header: HermesHeader,
     Title: HermesTitle,
     Action: HermesAction,
+    Search: HermesSearch,
 };
