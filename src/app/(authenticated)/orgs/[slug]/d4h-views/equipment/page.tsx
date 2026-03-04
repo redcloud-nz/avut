@@ -7,40 +7,59 @@
 
 "use client";
 
-import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
-import prisma from "@/server/prisma";
+import { AVUTLogo } from "@/components/art/avut-logo";
+import { Lexington } from "@/components/blocks/lexington";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/items";
+import { Link } from "@/components/ui/link";
+
+import * as Paths from "@/paths";
+import { ChevronRightIcon } from "lucide-react";
 
 export default async function D4HViewsModule_Equipment_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/equipment`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
 
-    if (settings.modules["d4h-views"].enabled === false)
-        throw new Error(
-            "D4H Views module is not enabled for this organization.",
-        );
-
-    const accessTokenId = settings.integrations.d4h.syncToken;
-
-    if (!accessTokenId)
-        throw new Error(
-            "D4H Views module is not configured properly. No sync token found.",
-        );
-
-    const record = await prisma.d4hAccessToken.findUnique({
-        where: {
-            id: accessTokenId,
-            organizationId: organization.id,
-        },
-    });
-
-    if (!record) {
-        throw new Error("Token not found");
-    }
-
-    const token = D4HAccessToken.fromRecord(record);
+    return (
+        <Lexington.Root>
+            <Lexington.Header breadcrumbs={[Paths.org(slug).d4hViews.index]} />
+            <Lexington.Page>
+                <Lexington.Column width="sm">
+                    <div className="flex flex-col items-center my-4 gap-4">
+                        <AVUTLogo />
+                        <div className="font-semibold">
+                            D4H Views Module - Equipment
+                        </div>
+                    </div>
+                    <ItemGroup>
+                        <Item asChild>
+                            <Link
+                                to={
+                                    Paths.org(slug).d4hViews.equipment
+                                        .categories
+                                }
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Equipment Categories</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment categories.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </ItemGroup>
+                </Lexington.Column>
+            </Lexington.Page>
+        </Lexington.Root>
+    );
 }

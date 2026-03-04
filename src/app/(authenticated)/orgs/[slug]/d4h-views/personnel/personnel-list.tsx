@@ -122,11 +122,11 @@ export function D4HViewsModules_Personnel_List({
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
+        <>
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-            </Hermes.Header>
+            </div>
             <Akagi.Table table={table} />
-        </Hermes.Section>
+        </>
     );
 }

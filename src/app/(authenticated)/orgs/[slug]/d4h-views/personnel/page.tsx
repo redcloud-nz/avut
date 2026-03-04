@@ -58,7 +58,7 @@ export default async function D4HViewsModules_Personnel_Page(
                 ]}
             />
             <Lexington.Page>
-                <Lexington.Column width="full">
+                <Lexington.Column width="xl">
                     <D4HViewsModules_Personnel_List
                         members={members}
                         teams={teams}

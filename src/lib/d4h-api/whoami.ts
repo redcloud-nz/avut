@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { z } from "zod";
+
 import { D4HResource } from "./resource";
 
 export interface D4HWhoami {
@@ -12,17 +14,47 @@ export interface D4HWhoami {
         name: string;
         owner: D4HResource<"Team"> & {
             title: string;
-            owner?: D4HResource<"Organization">;
+            owner?: D4HResource<"Organisation">;
         };
         permissions?: D4HPermissions;
     })[];
     officers: (D4HResource<"Officer"> & {
         hasAccess: boolean;
         name: string;
-        owner: D4HResource<"Organization"> & { title: string };
+        owner: D4HResource<"Organisation"> & { title: string };
         permissions?: D4HPermissions;
     })[];
 }
+
+export const D4hWhoami = {
+    schema: z.object({
+        account: z.object({
+            id: z.number(),
+            resourceType: z.literal("Account"),
+        }),
+        members: z.array(
+            z.object({
+                id: z.number(),
+                resourceType: z.literal("Member"),
+                hasAccess: z.boolean(),
+                name: z.string(),
+                owner: z.object({
+                    id: z.number(),
+                    resourceType: z.literal("Team"),
+                    title: z.string(),
+                    owner: z.object({
+                        id: z.number(),
+                        resourceType: z.literal("Organisation"),
+                    }), //.optional(),
+                }),
+                permissions: z.record(
+                    z.string(),
+                    z.record(z.string(), z.boolean().optional()).optional(),
+                ),
+            }),
+        ),
+    }),
+} as const;
 
 type D4HPermissions = Record<
     | "Animal"

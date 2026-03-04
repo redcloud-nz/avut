@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 
 import prisma from "./prisma";
+import { getOrganizationSettings } from "./organization-settings";
 
 type GetD4HAccessTokenArguments = { tokenId: string } & (
     | { organizationId: OrganizationId; userId?: never }
@@ -51,4 +52,37 @@ export async function getD4HAccessToken(
     }
 
     return D4HAccessToken_ServerOnly.fromRecord(record);
+}
+
+/**
+ * Geth the D4H Access Token configured for the D4H Views module for the given organization.
+ * @throws If the token is not found or if the module is not enabled.
+ */
+export async function getConfiguredD4HViewsAccessToken(
+    organizationId: OrganizationId,
+): Promise<D4HAccessToken_ServerOnly> {
+    const settings = await getOrganizationSettings(organizationId);
+
+    if (settings.modules["d4h-views"].enabled === false)
+        throw new Error(
+            "D4H Views module is not enabled for this organization.",
+        );
+
+    const accessTokenId = settings.integrations.d4h.syncToken;
+
+    if (!accessTokenId)
+        throw new Error(
+            "D4H Views module is not configured properly. No sync token found.",
+        );
+
+    const accessToken = await getD4HAccessToken({
+        tokenId: accessTokenId,
+        organizationId,
+    });
+
+    if (!accessToken) {
+        throw new Error("D4H Access Token not found");
+    }
+
+    return accessToken;
 }

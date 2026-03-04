@@ -57,6 +57,17 @@ export async function NavOrganizationMenu({
                         <NavSubItem path={orgPrefix.admin.users} />
                     </Protect>
                 </NavCollapsible>
+                <Show when={modules["d4h-views"].enabled}>
+                    <NavCollapsible
+                        path={orgPrefix.d4hViews.index}
+                        icon={<ModuleIcons.D4H />}
+                    >
+                        {/* <NavItem path={orgPrefix.d4hViews.activities} />
+                        <NavItem path={orgPrefix.d4hViews.calendar} /> */}
+                        <NavItem path={orgPrefix.d4hViews.equipment} />
+                        <NavItem path={orgPrefix.d4hViews.personnel} />
+                    </NavCollapsible>
+                </Show>
                 {/* <Show when={isModuleEnabled(organization, "d4h-views")}>
                     <NavCollapsible
                         path={orgPrefix.d4hViews.index}

@@ -28,13 +28,6 @@ export default async function D4HViews_Index_Page(
     props: PageProps<`/orgs/[slug]/d4h-views`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
-
-    if (settings.modules["d4h-views"].enabled === false)
-        throw new Error(
-            "D4H Views module is not enabled for this organization.",
-        );
 
     return (
         <Lexington.Root>
@@ -46,6 +39,19 @@ export default async function D4HViews_Index_Page(
                         <div className="font-semibold">D4H Views Module</div>
                     </div>
                     <ItemGroup>
+                        <Item asChild>
+                            <Link to={Paths.org(slug).d4hViews.equipment}>
+                                <ItemContent>
+                                    <ItemTitle>Equipment</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                         <Item asChild>
                             <Link to={Paths.org(slug).d4hViews.personnel}>
                                 <ItemContent>

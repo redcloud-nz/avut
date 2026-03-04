@@ -463,7 +463,13 @@ function d4hViewsModule(orgSlug: string) {
             label: "Equipment",
             href: `${base}/equipment`,
             bgColor: "bg-red-400",
+
+            categories: {
+                label: "Categories",
+                href: `${base}/equipment/categories`,
+            },
         },
+
         personnel: {
             label: "Personnel",
             href: `${base}/personnel`,

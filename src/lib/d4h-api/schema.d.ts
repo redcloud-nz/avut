@@ -5950,7 +5950,7 @@ export interface paths {
                     /** @description Member holding this item. Either an id or "me". Mutually exclusive with location_id */
                     member_id?: number | "me";
                     /** @description Equipment item in which this item is stored */
-                    parent_id?: null & ("null" | ("null" | null) | number);
+                    parent_id?: "null" | ("null" | null) | number;
                     /** @description Items flagged as critical */
                     is_critical?: boolean &
                         (boolean | ("true" | "false" | "1" | "0" | ""));

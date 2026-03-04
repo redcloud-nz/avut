@@ -6,6 +6,8 @@
 import { cacheLife, cacheTag } from "next/cache";
 import createFetchClient from "openapi-fetch";
 import { cache } from "react";
+import * as R from "remeda";
+import { z } from "zod";
 
 import {
     D4HAccessToken,
@@ -15,9 +17,11 @@ import {
 import { D4HMember } from "./member";
 import type { paths } from "./schema";
 import { getD4HServer } from "./servers";
-import { D4HWhoami } from "./whoami";
-import { D4HTeamRef } from "./team";
+import { D4hWhoami } from "./whoami";
+import { D4HTeam, D4HTeamRef } from "./team";
 import { D4HOrganization } from "./organization";
+import { D4HEquipmentCategory } from "./equipment-category";
+import { D4HEquipmentItem } from "./equipment-item";
 
 export const getD4hFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
@@ -47,7 +51,7 @@ export async function getD4HWhoami(token: D4HAccessToken_ServerOnly) {
             `Failed to fetch D4H whoami: ${response.status} ${response.statusText}`,
         );
     }
-    return data as D4HWhoami;
+    return D4hWhoami.schema.parse(data);
 }
 
 export async function getD4HTeamsAccessibleWithToken(
@@ -148,7 +152,7 @@ export async function getD4HTeamMembers(
             },
         },
     );
-    return (data as { results: D4HMember[] }).results;
+    return z.object({ results: D4HMember.schema.array() }).parse(data).results;
 }
 
 export async function getD4HTeamsWithMembers(
@@ -170,7 +174,74 @@ export async function getD4HTeamsWithMembers(
     return teamsWithMembers;
 }
 
-export async function getD4HTeamEquipment(
-    token: D4HAccessToken,
-    d4hTeamId: number,
-) {}
+export async function getD4HTeamEquipmentByCategory(
+    token: D4HAccessToken_ServerOnly,
+    categoryId: number,
+) {
+    const fetchClient = getD4hFetchClient(token);
+
+    const teams = await getD4HTeamsAccessibleWithToken(token);
+
+    const equipment = (
+        await Promise.all(
+            teams.map(async (team) => {
+                const { data } = await fetchClient.GET(
+                    "/v3/{context}/{contextId}/equipment",
+                    {
+                        params: {
+                            path: {
+                                context: "team",
+                                contextId: team.id,
+                            },
+                            query: {
+                                category_id: [categoryId],
+                            },
+                        },
+                    },
+                );
+
+                return z
+                    .object({ results: z.array(D4HEquipmentItem.schema) })
+                    .parse(data).results;
+            }),
+        )
+    ).flat();
+
+    return R.uniqueBy(equipment, (e) => e.id);
+}
+
+export async function getD4HEquipmentCategories(
+    accessToken: D4HAccessToken_ServerOnly,
+): Promise<D4HEquipmentCategory[]> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${accessToken.id}-equipment-categories`);
+
+    const fetchClient = getD4hFetchClient(accessToken);
+
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+
+    const categories = (
+        await Promise.all(
+            teams.map(async (team) => {
+                const { data } = await fetchClient.GET(
+                    "/v3/{context}/{contextId}/equipment-categories",
+                    {
+                        params: {
+                            path: {
+                                context: "team",
+                                contextId: team.id,
+                            },
+                        },
+                    },
+                );
+
+                return z
+                    .object({ results: z.array(D4HEquipmentCategory.schema) })
+                    .parse(data).results;
+            }),
+        )
+    ).flat();
+
+    return R.uniqueBy(categories, (c) => c.id);
+}
