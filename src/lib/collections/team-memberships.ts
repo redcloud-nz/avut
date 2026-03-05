@@ -37,7 +37,9 @@ export const getTeamMembershipsCollection = perOrganization((organizationId) =>
                     transaction.mutations.map(async (mutation) => {
                         await trpcClient.teams.createTeamMembership.mutate({
                             organizationId: organizationId,
-                            ...mutation.modified,
+                            personId: mutation.modified.personId,
+                            teamId: mutation.modified.teamId,
+                            create: mutation.modified,
                         });
                     }),
                 );

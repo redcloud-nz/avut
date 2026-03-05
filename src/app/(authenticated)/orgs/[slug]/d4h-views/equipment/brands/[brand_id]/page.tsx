@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-views/equipment/categories/[category_id]
+ * Path: /orgs/[slug]/d4h-views/equipment/brands/[brand_id]
  */
 "use client";
 
@@ -18,29 +18,29 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
+import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-brands";
 import * as Paths from "@/paths";
 
-import { D4HViewsModule_EquipmentCategory_Kinds_List } from "./category-kinds";
+import { D4HViewsModule_EquipmentBrand_Models_List } from "./brand-models";
 
-export default function D4HViewsModule_EquipmentCategory_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories/[category_id]">,
+export default function D4HViewsModule_EquipmentBrand_Page(
+    props: PageProps<"/orgs/[slug]/d4h-views/equipment/brands/[brand_id]">,
 ) {
-    const { category_id } = use(props.params);
-    const categoryId = parseInt(category_id, 10);
+    const { brand_id } = use(props.params);
+    const brandId = parseInt(brand_id, 10);
 
     const organization = useOrganization();
 
-    const { data: category } = useLiveSuspenseQuery((q) =>
+    const { data: brand } = useLiveSuspenseQuery((q) =>
         q
             .from({
-                category: getD4HEquipmentCategoriesCollection(organization.id),
+                brand: getD4HEquipmentBrandsCollection(organization.id),
             })
-            .where(({ category }) => eq(category.id, categoryId))
+            .where(({ brand }) => eq(brand.id, brandId))
             .findOne(),
     );
 
-    if (!category) throw new Error(`Category(${categoryId}) not found`);
+    if (!brand) throw new Error(`Brand(${brandId}) not found`);
 
     return (
         <Lexington.Root>
@@ -48,8 +48,8 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                 breadcrumbs={[
                     Paths.org(organization.slug).d4hViews.index,
                     Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
-                    category.title,
+                    Paths.org(organization.slug).d4hViews.equipment.brands,
+                    brand.title,
                 ]}
             />
             <Lexington.Page>
@@ -58,43 +58,46 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                         <Hermes.BackButton
                             to={
                                 Paths.org(organization.slug).d4hViews.equipment
-                                    .categories
+                                    .brands
                             }
-                            tooltip="Back to categories"
                         />
-                        <Hermes.Title>{category.title}</Hermes.Title>
+                        <Hermes.Title>{brand.title}</Hermes.Title>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
-                            <CardTitle>Category Details</CardTitle>
+                            <CardTitle>Brand Details</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <FieldGroup>
                                 <Field orientation="responsive">
-                                    <FieldLabel>Category ID</FieldLabel>
-                                    <FieldValue
-                                        value={category.id}
-                                        format="id"
-                                    />
+                                    <FieldLabel>Brand ID</FieldLabel>
+                                    <FieldValue value={brand.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Title</FieldLabel>
-                                    <FieldValue value={category.title} />
+                                    <FieldValue value={brand.title} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Owner</FieldLabel>
                                     <FieldValue>
-                                        <span>{category.owner.title}</span>
+                                        <span>{brand.owner.title}</span>
                                         <span className="text-muted-foreground pl-2">
-                                            ({category.owner.resourceType})
+                                            ({brand.owner.resourceType})
                                         </span>
                                     </FieldValue>
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Updated</FieldLabel>
+                                    <FieldValue
+                                        value={brand.updatedAt}
+                                        format="datetime"
+                                    />
                                 </Field>
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <D4HViewsModule_EquipmentCategory_Kinds_List
-                        categoryId={category.id}
+                    <D4HViewsModule_EquipmentBrand_Models_List
+                        brandId={brand.id}
                     />
                 </Lexington.Column>
             </Lexington.Page>

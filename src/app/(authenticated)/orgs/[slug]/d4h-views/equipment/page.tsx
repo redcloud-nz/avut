@@ -41,6 +41,21 @@ export default async function D4HViewsModule_Equipment_Page(
                     <ItemGroup>
                         <Item asChild>
                             <Link
+                                to={Paths.org(slug).d4hViews.equipment.brands}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Equipment Brands</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment brands.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link
                                 to={
                                     Paths.org(slug).d4hViews.equipment
                                         .categories

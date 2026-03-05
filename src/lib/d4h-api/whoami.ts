@@ -7,26 +7,7 @@ import { z } from "zod";
 
 import { D4HResource } from "./resource";
 
-export interface D4HWhoami {
-    account: D4HResource<"Account">;
-    members: (D4HResource<"Member"> & {
-        hasAccess: boolean;
-        name: string;
-        owner: D4HResource<"Team"> & {
-            title: string;
-            owner?: D4HResource<"Organisation">;
-        };
-        permissions?: D4HPermissions;
-    })[];
-    officers: (D4HResource<"Officer"> & {
-        hasAccess: boolean;
-        name: string;
-        owner: D4HResource<"Organisation"> & { title: string };
-        permissions?: D4HPermissions;
-    })[];
-}
-
-export const D4hWhoami = {
+export const D4HWhoami = {
     schema: z.object({
         account: z.object({
             id: z.number(),
@@ -55,6 +36,8 @@ export const D4hWhoami = {
         ),
     }),
 } as const;
+
+export type D4HWhoami = z.infer<typeof D4HWhoami.schema>;
 
 type D4HPermissions = Record<
     | "Animal"

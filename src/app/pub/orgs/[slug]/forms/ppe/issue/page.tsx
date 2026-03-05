@@ -80,26 +80,25 @@ export default async function Pub_PPEIssue_Page(
                 ]}
             />
             <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe}>
-                                PPE Forms
-                            </Hermes.BackButton>
-                        </Hermes.Header>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>PPE Issue Form</CardTitle>
-                                <CardDescription>
-                                    Use this form to record the issue of PPE to
-                                    an individual.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Pub_PPEIssue_Form teams={teams} />
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
+                <Lexington.Column width="md">
+                    <Hermes.Header>
+                        <Hermes.BackButton
+                            to={Paths.pub(slug).forms.ppe}
+                            tooltip="Back to PPE Forms"
+                        />
+                        <Hermes.Title>Issue PPE</Hermes.Title>
+                    </Hermes.Header>
+                    <Card>
+                        <CardHeader>
+                            <CardDescription>
+                                Use this form to record the issue of PPE to an
+                                individual.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Pub_PPEIssue_Form teams={teams} />
+                        </CardContent>
+                    </Card>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

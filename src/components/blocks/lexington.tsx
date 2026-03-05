@@ -174,7 +174,7 @@ function LexingtonEmpty({
 }
 
 const lexingtonColumnVariants = tv({
-    base: "h-fit p-4 space-y-2 peer",
+    base: "h-fit px-2 py-4 space-y-2 peer",
     variants: {
         width: {
             xs: "w-full xs:w-md xs:mx-auto",

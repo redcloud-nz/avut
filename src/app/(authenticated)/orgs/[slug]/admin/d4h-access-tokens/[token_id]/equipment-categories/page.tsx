@@ -18,6 +18,7 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
+import { Eagle } from "@/components/blocks/eagle";
 
 async function fetchEquipmentCategories(
     accessToken: D4HAccessToken_ServerOnly,
@@ -92,52 +93,24 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="full">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton
-                                to={Paths.org(slug).admin.d4hAccessToken(
-                                    token_id,
-                                )}
+                    <Hermes.Header>
+                        <Hermes.BackButton
+                            to={Paths.org(slug).admin.d4hAccessToken(token_id)}
+                        />
+                        <Hermes.Title>Equipment Categories</Hermes.Title>
+                        <Hermes.Description>
+                            Validated: {successCount} of {categories.length}
+                        </Hermes.Description>
+                    </Hermes.Header>
+                    {categories.map((item) => (
+                        <Eagle.Section key={item.raw.id}>
+                            <Eagle.Title>{item.raw.id}</Eagle.Title>
+                            <Eagle.Content
+                                raw={item.raw}
+                                parsed={item.parsed}
                             />
-                            <Hermes.Title>
-                                Equipment Categories ({successCount} of{" "}
-                                {categories.length})
-                            </Hermes.Title>
-                        </Hermes.Header>
-                        {categories.map((item) => (
-                            <div className="grid grid-cols-2 border-b py-2">
-                                <div className="col-span-full py-2 font-semibold text-center">
-                                    {item.raw.id}
-                                </div>
-                                <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                    <pre className="text-xs">
-                                        {JSON.stringify(item.raw, null, 2)}
-                                    </pre>
-                                </div>
-                                <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                    {item.parsed.success ? (
-                                        <pre className="text-xs">
-                                            {JSON.stringify(
-                                                item.parsed.data,
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    ) : (
-                                        <Alert>
-                                            <AlertTitle>
-                                                Failed to parse equipment
-                                                category data
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                {item.parsed.error.message}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </Hermes.Section>
+                        </Eagle.Section>
+                    ))}
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

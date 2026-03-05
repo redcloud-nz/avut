@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/admin/d4h-access-tokens/[token_id]/whoami
+ * Path: /orgs/[slug]/admin/d4h-access-tokens/[token_id]/organisation
  */
 
 import { notFound } from "next/navigation";
@@ -11,26 +11,44 @@ import { Eagle } from "@/components/blocks/eagle";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4hFetchClient } from "@/lib/d4h-api/client";
+import { getD4hFetchClient, fetchD4HWhoamiCached } from "@/lib/d4h-api/client";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HWhoami } from "@/lib/d4h-api/whoami";
+import { D4HOrganisation } from "@/lib/d4h-api/organisation";
 
-async function fetchWhoami(accessToken: D4HAccessToken_ServerOnly) {
+async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4hFetchClient(accessToken);
 
-    const { data } = await fetchClient.GET("/v3/whoami");
+    const whoami = await fetchD4HWhoamiCached(accessToken);
+    const team = whoami.members[0].owner;
 
+    const { data, response } = await fetchClient.GET(
+        "/v3/{context}/{contextId}/organisations/{organisationId}",
+        {
+            params: {
+                path: {
+                    context: "team",
+                    contextId: team.id,
+                    organisationId: team.owner.id,
+                },
+            },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H whoami: ${response.status} ${response.statusText}`,
+        );
+    }
     return data;
 }
 
 /**
  * DEVELOPMENT ONLY PAGE
  */
-export default async function Admin_D4hAccessToken_Whoami_Page(
-    props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/whoami`>,
+export default async function Admin_D4hAccessToken_Organisation_Page(
+    props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/organisation`>,
 ) {
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -42,11 +60,11 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
 
     if (!accesToken) notFound();
 
-    const fetched = await fetchWhoami(accesToken);
+    const fetched = await fetchOrganisation(accesToken);
 
-    const whoami = {
+    const organisation = {
         raw: fetched,
-        parsed: D4HWhoami.schema.safeParse(fetched),
+        parsed: D4HOrganisation.schema.safeParse(fetched),
     };
 
     return (
@@ -60,7 +78,7 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
                             .href,
                         label: accesToken.id,
                     },
-                    "Whoami",
+                    "Organisation",
                 ]}
             />
             <Lexington.Page>
@@ -69,12 +87,12 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
                         <Hermes.BackButton
                             to={Paths.org(slug).admin.d4hAccessToken(token_id)}
                         />
-                        <Hermes.Title>Whoami</Hermes.Title>
+                        <Hermes.Title>Organisation</Hermes.Title>
                     </Hermes.Header>
                     <Eagle.Section>
                         <Eagle.Content
-                            raw={whoami.raw}
-                            parsed={whoami.parsed}
+                            raw={organisation.raw}
+                            parsed={organisation.parsed}
                         />
                     </Eagle.Section>
                 </Lexington.Column>

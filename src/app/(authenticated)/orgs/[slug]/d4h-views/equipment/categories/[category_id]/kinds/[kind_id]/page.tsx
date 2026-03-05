@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-views/equipment/categories/[category_id]
+ * Path: /orgs/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]
  */
 "use client";
 
@@ -18,29 +18,29 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
+import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import * as Paths from "@/paths";
+import { D4HViewsModule_EquipmentKind_Items_List } from "./kind-items";
 
-import { D4HViewsModule_EquipmentCategory_Kinds_List } from "./category-kinds";
-
-export default function D4HViewsModule_EquipmentCategory_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories/[category_id]">,
+export default function D4HViewsModule_EquipmentCategory_Kind_Page(
+    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]">,
 ) {
-    const { category_id } = use(props.params);
+    const { category_id, kind_id } = use(props.params);
     const categoryId = parseInt(category_id, 10);
+    const kindId = parseInt(kind_id, 10);
 
     const organization = useOrganization();
 
-    const { data: category } = useLiveSuspenseQuery((q) =>
+    const { data: kind } = useLiveSuspenseQuery((q) =>
         q
             .from({
-                category: getD4HEquipmentCategoriesCollection(organization.id),
+                kind: getD4HEquipmentKindsCollection(organization.id),
             })
-            .where(({ category }) => eq(category.id, categoryId))
+            .where(({ kind }) => eq(kind.id, kindId))
             .findOne(),
     );
 
-    if (!category) throw new Error(`Category(${categoryId}) not found`);
+    if (!kind) throw new Error(`Kind(${kindId}) not found`);
 
     return (
         <Lexington.Root>
@@ -49,53 +49,58 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                     Paths.org(organization.slug).d4hViews.index,
                     Paths.org(organization.slug).d4hViews.equipment.index,
                     Paths.org(organization.slug).d4hViews.equipment.categories,
-                    category.title,
+                    {
+                        ...Paths.org(
+                            organization.slug,
+                        ).d4hViews.equipment.category(categoryId),
+                        label: kind.category.title,
+                    },
+                    "Kinds",
+                    kind.title,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.org(organization.slug).d4hViews.equipment
-                                    .categories
-                            }
-                            tooltip="Back to categories"
+                            to={Paths.org(
+                                organization.slug,
+                            ).d4hViews.equipment.category(categoryId)}
+                            tooltip={`Back to category ${kind.category.title}`}
                         />
-                        <Hermes.Title>{category.title}</Hermes.Title>
+                        <Hermes.Title>{kind.title}</Hermes.Title>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
-                            <CardTitle>Category Details</CardTitle>
+                            <CardTitle>Kind Details</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <FieldGroup>
                                 <Field orientation="responsive">
-                                    <FieldLabel>Category ID</FieldLabel>
-                                    <FieldValue
-                                        value={category.id}
-                                        format="id"
-                                    />
+                                    <FieldLabel>Kind ID</FieldLabel>
+                                    <FieldValue value={kind.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Title</FieldLabel>
-                                    <FieldValue value={category.title} />
+                                    <FieldValue value={kind.title} />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Category</FieldLabel>
+                                    <FieldValue value={kind.category.title} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Owner</FieldLabel>
                                     <FieldValue>
-                                        <span>{category.owner.title}</span>
+                                        <span>{kind.owner.title}</span>
                                         <span className="text-muted-foreground pl-2">
-                                            ({category.owner.resourceType})
+                                            ({kind.owner.resourceType})
                                         </span>
                                     </FieldValue>
                                 </Field>
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <D4HViewsModule_EquipmentCategory_Kinds_List
-                        categoryId={category.id}
-                    />
+                    <D4HViewsModule_EquipmentKind_Items_List kindId={kind.id} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

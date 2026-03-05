@@ -21,6 +21,7 @@ import {
 import { Link, LinkProps } from "@/components/ui/link";
 
 import { cn } from "@/lib/utils";
+import { Description } from "../ui/typography";
 
 function HermesSection({ className, ...props }: ComponentProps<"section">) {
     return (
@@ -54,11 +55,25 @@ function HermesTitle({ className, ...props }: ComponentProps<"h3">) {
         <h3
             className={cn(
                 "col-2",
-                "scroll-m-20 text-xl font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
+                "scroll-m-20 text-lg font-semibold tracking-tight text-center overflow-hidden text-ellipsis whitespace-nowrap",
                 className,
             )}
             data-component="HermesTitle"
             data-slot="title"
+            {...props}
+        />
+    );
+}
+function HermesDescription({ className, ...props }: ComponentProps<"h3">) {
+    return (
+        <h3
+            className={cn(
+                "col-2",
+                "text-xs text-center text-muted-foreground",
+                className,
+            )}
+            data-component="HermesDescription"
+            data-slot="description"
             {...props}
         />
     );
@@ -130,6 +145,7 @@ export const Hermes = {
     Section: HermesSection,
     Header: HermesHeader,
     Title: HermesTitle,
+    Description: HermesDescription,
     Action: HermesAction,
     Search: HermesSearch,
 };

@@ -465,6 +465,15 @@ function d4hViewsModule(orgSlug: string) {
                 href: `${base}/equipment`,
             },
 
+            brand: (brandId: number) =>
+                ({
+                    href: `${base}/equipment/brands/${brandId}`,
+                }) as const,
+            brands: {
+                label: "Brands",
+                href: `${base}/equipment/brands`,
+            },
+
             categories: {
                 label: "Categories",
                 href: `${base}/equipment/categories`,
@@ -472,16 +481,21 @@ function d4hViewsModule(orgSlug: string) {
             category: (categoryId: number) =>
                 ({
                     href: `${base}/equipment/categories/${categoryId}`,
+
+                    kind: (kindId: number) =>
+                        ({
+                            href: `${base}/equipment/categories/${categoryId}/kinds/${kindId}`,
+                        }) as const,
                 }) as const,
 
-            items: {
-                href: `${base}/equipment/items`,
-                label: "Items",
-            },
             item: (itemId: number) =>
                 ({
                     href: `${base}/equipment/items/${itemId}`,
                 }) as const,
+            items: {
+                href: `${base}/equipment/items`,
+                label: "Items",
+            },
         },
 
         member: (teamId: number, memberId: number) =>

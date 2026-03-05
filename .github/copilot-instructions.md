@@ -119,7 +119,7 @@ npm run lint                  # Next.js linting
 
 1. Define input/output Zod schema in router file
 2. Add procedure to router: `protectedProcedure.input(schema).mutation(async ({ ctx, input }) => { ... })`
-3. Check permissions: `await ctx.hasPermission(orgId, { resource: ['action'] })`
+3. Check permissions by passing the required permissions to the procedure builder: `orgProcedure({ resource: ['action'] })`
 4. Use server utils (e.g., `team.ts`) for queries; transform via schema's `toRecord()`
 
 **Modifying data models:**

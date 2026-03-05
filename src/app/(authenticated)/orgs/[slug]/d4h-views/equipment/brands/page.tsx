@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-views/equipment/categories
+ * Path: /orgs/[slug]/d4h-views/equipment/brands
  */
 "use client";
 
@@ -23,51 +23,55 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
+import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-brands";
 import * as Paths from "@/paths";
+import { getD4HEquipmentModelsCollection } from "@/lib/collections/equipment-models";
 
-export default function D4HViewsModule_EquipmentCategories_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories">,
+export default function D4HViewsModule_EquipmentBrands_Page(
+    props: PageProps<"/orgs/[slug]/d4h-views/equipment/brands">,
 ) {
     const organization = useOrganization();
 
-    const { data: categories } = useLiveSuspenseQuery((q) => {
-        const kindCounts = q
-            .from({
-                kind: getD4HEquipmentKindsCollection(organization.id),
-            })
-            .groupBy(({ kind }) => kind.category.id)
-            .select(({ kind }) => ({
-                categoryId: kind.category.id,
-                count: count(kind.id),
+    const { data: brands } = useLiveSuspenseQuery((q) => {
+        const modelCounts = q
+            .from({ model: getD4HEquipmentModelsCollection(organization.id) })
+            .groupBy(({ model }) => model.brand.id)
+            .select(({ model }) => ({
+                brandId: model.brand.id,
+                count: count(model.id),
             }));
 
         return q
             .from({
-                category: getD4HEquipmentCategoriesCollection(organization.id),
+                brand: getD4HEquipmentBrandsCollection(organization.id),
             })
-            .join({ kindCount: kindCounts }, ({ category, kindCount }) =>
-                eq(category.id, kindCount.categoryId),
+            .join({ modelCount: modelCounts }, ({ brand, modelCount }) =>
+                eq(brand.id, modelCount.brandId),
             )
-            .select(({ category, kindCount }) => ({
-                ...category,
-                kindCount: kindCount?.count,
+            .select(({ brand, modelCount }) => ({
+                ...brand,
+                modelCount: modelCount?.count,
             }));
     });
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof categories)[number]>((columnHelper) => [
+            Akagi.defineColumns<(typeof brands)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Category ID
+                            Brand ID
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue()}
+                            <Link
+                                to={Paths.org(
+                                    organization.slug,
+                                ).d4hViews.equipment.brand(ctx.row.original.id)}
+                            >
+                                {ctx.getValue()}
+                            </Link>
                         </Akagi.TableCell>
                     ),
                     enableGlobalFilter: false,
@@ -84,9 +88,7 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                             <Link
                                 to={Paths.org(
                                     organization.slug,
-                                ).d4hViews.equipment.category(
-                                    ctx.row.original.id,
-                                )}
+                                ).d4hViews.equipment.brand(ctx.row.original.id)}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -95,10 +97,10 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
-                columnHelper.accessor("kindCount", {
+                columnHelper.accessor("modelCount", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Kinds
+                            Models
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
@@ -130,11 +132,11 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                     enableSorting: true,
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable({
-        data: categories,
+        data: brands,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -155,7 +157,7 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                 breadcrumbs={[
                     Paths.org(organization.slug).d4hViews.index,
                     Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
+                    Paths.org(organization.slug).d4hViews.equipment.brands,
                 ]}
             />
             <Lexington.Page>
@@ -166,8 +168,9 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                                 Paths.org(organization.slug).d4hViews.equipment
                                     .index
                             }
+                            tooltip="Back to Equipment"
                         />
-                        <Hermes.Title>Equipment Categories</Hermes.Title>
+                        <Hermes.Title>Equipment Brands</Hermes.Title>
                         <Hermes.Search>
                             <Akagi.TableSearch table={table} />
                         </Hermes.Search>

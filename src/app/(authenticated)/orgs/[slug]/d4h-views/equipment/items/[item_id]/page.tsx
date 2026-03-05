@@ -269,7 +269,7 @@ export default function D4HViewsModule_EquipmentItem_Page(
                     </Card>
 
                     <div className="flex items-center justify-between mt-4">
-                        <div className="text-lg">Contents</div>
+                        <div className="text-lg font-semibold">Contents</div>
                         <Akagi.TableSearch table={table} />
                     </div>
                     <Show

@@ -5,32 +5,31 @@
 
 import { z } from "zod";
 
-export const D4HEquipmentCategory = {
+export const D4HEquipmentBrand = {
     inputSchema: z.object({
         id: z.number(),
-        resourceType: z.literal("EquipmentCategory"),
-
-        title: z.string(),
+        resourceType: z.literal("EquipmentBrand"),
         owner: z.object({
-            resourceType: z.enum(["Team", "Organisation"]),
             id: z.number(),
+            resourceType: z.enum(["Team", "Organisation"]),
         }),
+        title: z.string(),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
     }),
+
     schema: z.object({
         id: z.number(),
-        resourceType: z.literal("EquipmentCategory"),
-
-        title: z.string(),
+        resourceType: z.literal("EquipmentBrand"),
         owner: z.object({
-            resourceType: z.enum(["Team", "Organisation"]),
             id: z.number(),
+            resourceType: z.enum(["Team", "Organisation"]),
             title: z.string(),
         }),
+        title: z.string(),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
     }),
 } as const;
 
-export type D4HEquipmentCategory = z.infer<typeof D4HEquipmentCategory.schema>;
+export type D4HEquipmentBrand = z.infer<typeof D4HEquipmentBrand.schema>;
