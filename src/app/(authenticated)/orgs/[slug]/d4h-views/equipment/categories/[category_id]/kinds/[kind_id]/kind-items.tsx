@@ -57,7 +57,7 @@ export function D4HViewsModule_EquipmentKind_Items_List({
                             <Link
                                 to={Paths.org(
                                     organization.slug,
-                                ).d4hViews.equipment.item(ctx.row.original.id)}
+                                ).d4HViews.equipment.item(ctx.row.original.id)}
                             >
                                 {ctx.getValue()}
                             </Link>

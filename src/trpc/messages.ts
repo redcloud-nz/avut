@@ -9,6 +9,8 @@ export const Messages = {
 
     d4HAccessTokenNotFound: (tokenId: string) =>
         `D4H Access Token(id=${tokenId}) not found.`,
+    d4hPpeTemplateNotFound: (templateId: string) =>
+        `D4H PPE Template(id=${templateId}) not found.`,
 
     noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,
 

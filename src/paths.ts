@@ -129,7 +129,8 @@ type OrgPaths = {
     cards: ReturnType<typeof cardsModule>;
     checklists: ReturnType<typeof checklistsModule>;
     dashboard: { label: string; href: string };
-    d4hViews: ReturnType<typeof d4hViewsModule>;
+    d4HPPE: ReturnType<typeof d4HPPEModule>;
+    d4HViews: ReturnType<typeof d4HViewsModule>;
     dev: ReturnType<typeof devModule>;
     fog: ReturnType<typeof fogModule>;
     notes: ReturnType<typeof notesModule>;
@@ -148,7 +149,8 @@ export function org(orgSlug: string): OrgPaths {
             cards: cardsModule(orgSlug),
             checklists: checklistsModule(orgSlug),
             dashboard: { label: "Dashboard", href: `/orgs/${orgSlug}` },
-            d4hViews: d4hViewsModule(orgSlug),
+            d4HPPE: d4HPPEModule(orgSlug),
+            d4HViews: d4HViewsModule(orgSlug),
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),
             notes: notesModule(orgSlug),
@@ -440,7 +442,18 @@ function checklistsModule(orgSlug: string) {
     } as const;
 }
 
-function d4hViewsModule(orgSlug: string) {
+function d4HPPEModule(orgSlug: string) {
+    const base = `/orgs/${orgSlug}/d4h-ppe` as const;
+
+    return {
+        index: {
+            label: "D4H PPE",
+            href: base,
+        },
+    } as const;
+}
+
+function d4HViewsModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/d4h-views` as const;
 
     return {

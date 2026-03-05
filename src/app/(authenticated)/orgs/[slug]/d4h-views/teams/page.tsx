@@ -54,8 +54,8 @@ export default async function D4HViewsModule_Teams_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).d4hViews.index,
-                    Paths.org(slug).d4hViews.teams,
+                    Paths.org(slug).d4HViews.index,
+                    Paths.org(slug).d4HViews.teams,
                 ]}
             />
             <Lexington.Page>

@@ -29,7 +29,7 @@ export default async function D4HViewsModule_Equipment_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.org(slug).d4hViews.index]} />
+            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HViews.index]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
@@ -41,7 +41,7 @@ export default async function D4HViewsModule_Equipment_Page(
                     <ItemGroup>
                         <Item asChild>
                             <Link
-                                to={Paths.org(slug).d4hViews.equipment.brands}
+                                to={Paths.org(slug).d4HViews.equipment.brands}
                             >
                                 <ItemContent>
                                     <ItemTitle>Equipment Brands</ItemTitle>
@@ -57,7 +57,7 @@ export default async function D4HViewsModule_Equipment_Page(
                         <Item asChild>
                             <Link
                                 to={
-                                    Paths.org(slug).d4hViews.equipment
+                                    Paths.org(slug).d4HViews.equipment
                                         .categories
                                 }
                             >

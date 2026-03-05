@@ -84,7 +84,7 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                             <Link
                                 to={Paths.org(
                                     organization.slug,
-                                ).d4hViews.equipment.category(
+                                ).d4HViews.equipment.category(
                                     ctx.row.original.id,
                                 )}
                             >
@@ -153,9 +153,9 @@ export default function D4HViewsModule_EquipmentCategories_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
+                    Paths.org(organization.slug).d4HViews.index,
+                    Paths.org(organization.slug).d4HViews.equipment.index,
+                    Paths.org(organization.slug).d4HViews.equipment.categories,
                 ]}
             />
             <Lexington.Page>
@@ -163,7 +163,7 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                     <Hermes.Header>
                         <Hermes.BackButton
                             to={
-                                Paths.org(organization.slug).d4hViews.equipment
+                                Paths.org(organization.slug).d4HViews.equipment
                                     .index
                             }
                         />

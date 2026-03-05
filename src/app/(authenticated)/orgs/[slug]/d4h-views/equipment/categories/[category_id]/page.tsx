@@ -46,9 +46,9 @@ export default function D4HViewsModule_EquipmentCategory_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
+                    Paths.org(organization.slug).d4HViews.index,
+                    Paths.org(organization.slug).d4HViews.equipment.index,
+                    Paths.org(organization.slug).d4HViews.equipment.categories,
                     category.title,
                 ]}
             />
@@ -57,7 +57,7 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                     <Hermes.Header>
                         <Hermes.BackButton
                             to={
-                                Paths.org(organization.slug).d4hViews.equipment
+                                Paths.org(organization.slug).d4HViews.equipment
                                     .categories
                             }
                             tooltip="Back to categories"

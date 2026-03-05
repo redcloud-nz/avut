@@ -65,7 +65,7 @@ export default function D4HViewsModule_Members_Page(
                             <Link
                                 to={Paths.org(
                                     organization.slug,
-                                ).d4hViews.member(
+                                ).d4HViews.member(
                                     ctx.row.original.team.id,
                                     ctx.row.original.id,
                                 )}
@@ -115,15 +115,15 @@ export default function D4HViewsModule_Members_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.members,
+                    Paths.org(organization.slug).d4HViews.index,
+                    Paths.org(organization.slug).d4HViews.members,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.org(organization.slug).d4hViews.index}
+                            to={Paths.org(organization.slug).d4HViews.index}
                         />
                         <Hermes.Title>Members</Hermes.Title>
                         <Hermes.Search>

@@ -110,6 +110,7 @@ model Organization {
   personnel                 Person[]                   @relation("person_to_organization")
   d4hAccessTokens           D4hAccessToken[]           @relation("d4h_access_token_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
+  d4hPPETemplates           D4hPPETemplate[]           @relation("d4h_ppe_template_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -469,4 +470,22 @@ model SkillOverride {
   @@index([subscriptionId])
   @@index([skillId])
   @@map("skill_overrides")
+}
+
+
+model D4hPPETemplate {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("d4h_ppe_template_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  d4hCategoryId  Int
+  d4hKindId      Int
+  d4hModelsId    Int[]
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("d4h_ppe_templates")
 }

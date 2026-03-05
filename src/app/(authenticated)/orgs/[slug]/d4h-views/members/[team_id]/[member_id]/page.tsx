@@ -71,7 +71,7 @@ export default function D4HViewsModule_Member_Page(
                             <Link
                                 to={Paths.org(
                                     organization.slug,
-                                ).d4hViews.equipment.item(ctx.row.original.id)}
+                                ).d4HViews.equipment.item(ctx.row.original.id)}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -158,8 +158,8 @@ export default function D4HViewsModule_Member_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.members,
+                    Paths.org(organization.slug).d4HViews.index,
+                    Paths.org(organization.slug).d4HViews.members,
                     member.name,
                 ]}
             />
@@ -167,7 +167,7 @@ export default function D4HViewsModule_Member_Page(
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.org(organization.slug).d4hViews.members}
+                            to={Paths.org(organization.slug).d4HViews.members}
                         />
                         <Hermes.Title>{member.name}</Hermes.Title>
                     </Hermes.Header>

@@ -46,13 +46,13 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
+                    Paths.org(organization.slug).d4HViews.index,
+                    Paths.org(organization.slug).d4HViews.equipment.index,
+                    Paths.org(organization.slug).d4HViews.equipment.categories,
                     {
                         ...Paths.org(
                             organization.slug,
-                        ).d4hViews.equipment.category(categoryId),
+                        ).d4HViews.equipment.category(categoryId),
                         label: kind.category.title,
                     },
                     "Kinds",
@@ -65,7 +65,7 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
                         <Hermes.BackButton
                             to={Paths.org(
                                 organization.slug,
-                            ).d4hViews.equipment.category(categoryId)}
+                            ).d4HViews.equipment.category(categoryId)}
                             tooltip={`Back to category ${kind.category.title}`}
                         />
                         <Hermes.Title>{kind.title}</Hermes.Title>

@@ -162,7 +162,10 @@ export default function AdminModule_Settings_Page(
                                 <Hermes.Title>Modules</Hermes.Title>
                             </Hermes.Header>
 
-                            <D4hViewsModule_SettingsCard
+                            <D4HPPEModule_SettingsCard
+                                lens={lens.focus("modules.d4h-ppe")}
+                            />
+                            <D4HViewsModule_SettingsCard
                                 lens={lens.focus("modules.d4h-views")}
                             />
                             <FormsModule_SettingsCard
@@ -529,7 +532,38 @@ function EmailIntegration_SettingsCard({
     );
 }
 
-function D4hViewsModule_SettingsCard({
+function D4HPPEModule_SettingsCard({
+    lens,
+}: {
+    lens: Lens<Partial<OrganizationSettings["modules"]["d4h-ppe"]>>;
+}) {
+    const enabled = useWatch(lens.focus("enabled").interop());
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>D4H PPE Module</CardTitle>
+                <CardAction>
+                    <Controller
+                        {...lens.focus("enabled").interop()}
+                        render={({ field }) => (
+                            <Switch
+                                id="d4h-ppe-module-enabled"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+                <FieldGroup></FieldGroup>
+            </CardContent>
+        </Card>
+    );
+}
+
+function D4HViewsModule_SettingsCard({
     lens,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["d4h-views"]>>;

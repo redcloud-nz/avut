@@ -164,3 +164,8 @@ export type SkillGroupOverride = Prisma.SkillGroupOverrideModel;
  *
  */
 export type SkillOverride = Prisma.SkillOverrideModel;
+/**
+ * Model D4hPPETemplate
+ *
+ */
+export type D4hPPETemplate = Prisma.D4hPPETemplateModel;

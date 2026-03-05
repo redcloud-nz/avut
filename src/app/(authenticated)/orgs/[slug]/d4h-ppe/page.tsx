@@ -22,23 +22,23 @@ import {
 
 import * as Paths from "@/paths";
 
-export default async function D4HViews_Index_Page(
-    props: PageProps<`/orgs/[slug]/d4h-views`>,
+export default async function D4HPPE_Index_Page(
+    props: PageProps<`/orgs/[slug]/d4h-ppe`>,
 ) {
     const { slug } = await props.params;
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HViews.index]} />
+            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HPPE.index]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
-                        <div className="font-semibold">D4H Views Module</div>
+                        <div className="font-semibold">D4H PPE Module</div>
                     </div>
                     <ItemGroup>
-                        <Item asChild>
-                            <Link to={Paths.org(slug).d4HViews.equipment.index}>
+                        {/* <Item asChild>
+                            <Link to={Paths.org(slug).d4HPPE.equipment.index}>
                                 <ItemContent>
                                     <ItemTitle>Equipment</ItemTitle>
                                     <ItemDescription>
@@ -49,20 +49,7 @@ export default async function D4HViews_Index_Page(
                                     <ChevronRightIcon className="size-4" />
                                 </ItemActions>
                             </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link to={Paths.org(slug).d4HViews.members}>
-                                <ItemContent>
-                                    <ItemTitle>Members</ItemTitle>
-                                    <ItemDescription>
-                                        View your D4H members.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
+                        </Item> */}
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>

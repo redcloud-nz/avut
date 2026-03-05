@@ -59,13 +59,13 @@ export async function NavOrganizationMenu({
                 </NavCollapsible>
                 <Show when={modules["d4h-views"].enabled}>
                     <NavCollapsible
-                        path={orgPrefix.d4hViews.index}
+                        path={orgPrefix.d4HViews.index}
                         icon={<ModuleIcons.D4H />}
                     >
                         {/* <NavItem path={orgPrefix.d4hViews.activities} />
                         <NavItem path={orgPrefix.d4hViews.calendar} /> */}
-                        <NavItem path={orgPrefix.d4hViews.equipment.index} />
-                        <NavItem path={orgPrefix.d4hViews.members} />
+                        <NavItem path={orgPrefix.d4HViews.equipment.index} />
+                        <NavItem path={orgPrefix.d4HViews.members} />
                     </NavCollapsible>
                 </Show>
                 {/* <Show when={isModuleEnabled(organization, "d4h-views")}>

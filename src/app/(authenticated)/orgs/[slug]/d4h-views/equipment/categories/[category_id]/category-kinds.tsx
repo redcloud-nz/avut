@@ -55,7 +55,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
                                 to={Paths.org(organization.slug)
-                                    .d4hViews.equipment.category(categoryId)
+                                    .d4HViews.equipment.category(categoryId)
                                     .kind(ctx.row.original.id)}
                             >
                                 {ctx.getValue()}
@@ -75,7 +75,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
                                 to={Paths.org(organization.slug)
-                                    .d4hViews.equipment.category(categoryId)
+                                    .d4HViews.equipment.category(categoryId)
                                     .kind(ctx.row.original.id)}
                             >
                                 {ctx.getValue()}

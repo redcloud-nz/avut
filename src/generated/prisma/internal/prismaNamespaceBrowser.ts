@@ -78,6 +78,7 @@ export const ModelName = {
     SkillPackageSubscription: "SkillPackageSubscription",
     SkillGroupOverride: "SkillGroupOverride",
     SkillOverride: "SkillOverride",
+    D4hPPETemplate: "D4hPPETemplate",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -425,6 +426,22 @@ export const SkillOverrideScalarFieldEnum = {
 
 export type SkillOverrideScalarFieldEnum =
     (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
+
+export const D4hPPETemplateScalarFieldEnum = {
+    id: "id",
+    organizationId: "organizationId",
+    name: "name",
+    description: "description",
+    d4hCategoryId: "d4hCategoryId",
+    d4hKindId: "d4hKindId",
+    d4hModelsId: "d4hModelsId",
+    active: "active",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type D4hPPETemplateScalarFieldEnum =
+    (typeof D4hPPETemplateScalarFieldEnum)[keyof typeof D4hPPETemplateScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",

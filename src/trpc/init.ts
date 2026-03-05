@@ -229,6 +229,7 @@ interface LogEventOptions {
         | "Update";
     objectType:
         | "D4hAccessToken"
+        | "D4hPpeTemplate"
         | "Organization"
         | "OrganizationMembership"
         | "OrganizationSettings"
