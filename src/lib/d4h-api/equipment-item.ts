@@ -5,28 +5,23 @@
 
 import { z } from "zod";
 
-const d4HEquipmentItemBase = z.object({
-    id: z.number(),
-    ref: z.string(),
-    status: z.string(),
-    owner: z.object({
-        resourceType: z.literal("Team"),
-        id: z.number(),
-    }),
-    category: z.object({
-        resourceType: z.literal("EquipmentCategory"),
-        id: z.number(),
-    }),
-    model: z.object({
-        resourceType: z.literal("EquipmentModel"),
-        id: z.number().nullable(),
-    }),
-});
-
 export const D4HEquipmentItem = {
-    schema: d4HEquipmentItemBase.extend({
-        // serial: z.string().nullable(),
+    schema: z.object({
+        id: z.number(),
+        ref: z.string(),
+        status: z.string(),
+        serial: z.string().nullable(),
         // idMarks: z.string().nullable(),
+
+        owner: z.object({
+            resourceType: z.literal("Team"),
+            id: z.number(),
+        }),
+        category: z.object({
+            resourceType: z.literal("EquipmentCategory"),
+            id: z.number(),
+        }),
+
         kind: z.object({
             resourceType: z.literal("EquipmentKind"),
             id: z.number(),
@@ -44,7 +39,12 @@ export const D4HEquipmentItem = {
                 title: z.string().optional(),
             })
             .nullable(),
-        parents: z.array(d4HEquipmentItemBase),
+        parents: z.array(
+            z.object({
+                id: z.number(),
+                ref: z.string(),
+            }),
+        ),
     }),
 } as const;
 

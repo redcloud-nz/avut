@@ -141,6 +141,7 @@ export async function getD4HTeamMembers(
     d4hTeamId: number,
 ): Promise<D4HMember[]> {
     "use cache";
+    cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-members`);
 
     const fetchClient = getD4hFetchClient(token);
@@ -255,4 +256,42 @@ export async function getD4HEquipmentCategories(
     ).flat();
 
     return R.uniqueBy(categories, (c) => c.id);
+}
+
+export async function getD4HEquipmentByMember(
+    accessToken: D4HAccessToken_ServerOnly,
+    { memberId, teamId }: { memberId: number; teamId: number },
+): Promise<D4HEquipmentItem[]> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(
+        `d4h-api-${accessToken.id}-teams-${teamId}-members-${memberId}-equipment`,
+    );
+
+    const fetchClient = getD4hFetchClient(accessToken);
+
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const team = teams.find((t) => t.id === teamId);
+    if (!team) {
+        throw new Error(`Team with ID ${teamId} not found`);
+    }
+
+    const { data } = await fetchClient.GET(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: {
+                path: {
+                    context: "team",
+                    contextId: team.id,
+                },
+                query: {
+                    only_current: true,
+                    member_id: memberId,
+                },
+            },
+        },
+    );
+
+    return z.object({ results: z.array(D4HEquipmentItem.schema) }).parse(data)
+        .results;
 }

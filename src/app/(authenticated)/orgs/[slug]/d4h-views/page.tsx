@@ -51,11 +51,11 @@ export default async function D4HViews_Index_Page(
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link to={Paths.org(slug).d4hViews.personnel}>
+                            <Link to={Paths.org(slug).d4hViews.members}>
                                 <ItemContent>
-                                    <ItemTitle>Personnel</ItemTitle>
+                                    <ItemTitle>Members</ItemTitle>
                                     <ItemDescription>
-                                        View your d4h personnel data.
+                                        View your D4H members.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>

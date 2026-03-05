@@ -2,13 +2,13 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-views/equipment/categories/[category_id]
+ * Path: /orgs/[slug]/d4h-views/members/[member_id]
  */
 "use client";
 
 import { use, useMemo } from "react";
 
-import { eq, useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -25,38 +25,37 @@ import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
-import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
 import { D4HEquipmentItem } from "@/lib/d4h-api/equipment-item";
 import * as Paths from "@/paths";
+import { trpc } from "@/trpc/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FieldValue } from "@/components/ui/field-value";
 
-export default function D4HViewsModule_EquipmentCategory_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories/[category_id]">,
+export default function D4HViewsModule_Member_Page(
+    props: PageProps<"/orgs/[slug]/d4h-views/members/[team_id]/[member_id]">,
 ) {
-    const { category_id } = use(props.params);
-    const categoryId = parseInt(category_id, 10);
+    const { team_id, member_id } = use(props.params);
+    const teamId = parseInt(team_id, 10);
+    const memberId = parseInt(member_id, 10);
 
     const organization = useOrganization();
 
-    const { data: category } = useLiveSuspenseQuery((q) =>
-        q
-            .from({
-                category: getD4HEquipmentCategoriesCollection(organization.id),
-            })
-            .where(({ category }) => eq(category.id, categoryId))
-            .findOne(),
+    const { data: members } = useSuspenseQuery(
+        trpc.d4hApi.listMembers.queryOptions({
+            organizationId: organization.id,
+        }),
     );
-    const { data: items = [], isReady: isItemsReady } = useLiveQuery(
-        (q) =>
-            q
-                .from({
-                    item: getD4HEquipmentItemsCollection(organization.id),
-                })
-                .where(({ item }) => eq(item.category.id, categoryId)),
-        [organization.id, categoryId],
-    );
+    const member = members.find((m) => m.id === memberId);
+    if (!member) throw new Error("Member not found");
 
-    if (!category) throw new Error("Category not found");
+    const { data: items = [], isSuccess } = useQuery(
+        trpc.d4hApi.listMemberEquipment.queryOptions({
+            organizationId: organization.id,
+            teamId,
+            memberId,
+        }),
+    );
 
     const columns = useMemo(
         () =>
@@ -160,29 +159,67 @@ export default function D4HViewsModule_EquipmentCategory_Page(
             <Lexington.Header
                 breadcrumbs={[
                     Paths.org(organization.slug).d4hViews.index,
-                    Paths.org(organization.slug).d4hViews.equipment.index,
-                    Paths.org(organization.slug).d4hViews.equipment.categories,
-                    category.title,
+                    Paths.org(organization.slug).d4hViews.members,
+                    member.name,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.org(organization.slug).d4hViews.equipment
-                                    .categories
-                            }
+                            to={Paths.org(organization.slug).d4hViews.members}
                         />
-                        <Hermes.Title>
-                            Items in Category: {category.title}
-                        </Hermes.Title>
-                        <Hermes.Search>
-                            <Akagi.TableSearch table={table} />
-                        </Hermes.Search>
+                        <Hermes.Title>{member.name}</Hermes.Title>
                     </Hermes.Header>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Member Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field orientation="responsive">
+                                    <FieldLabel>ID</FieldLabel>
+                                    <FieldValue value={member.id} format="id" />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Name</FieldLabel>
+                                    <FieldValue value={member.name} />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Email</FieldLabel>
+                                    <FieldValue value={member.email.value} />
+                                </Field>
+                                {member.ref && (
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Ref</FieldLabel>
+                                        <FieldValue value={member.ref ?? ""} />
+                                    </Field>
+                                )}
+                                {member.position && (
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Position</FieldLabel>
+                                        <FieldValue value={member.position} />
+                                    </Field>
+                                )}
+                                <Field orientation="responsive">
+                                    <FieldLabel>Team</FieldLabel>
+                                    <FieldValue value={member.team.title} />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Status</FieldLabel>
+                                    <FieldValue value={member.status} />
+                                </Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+
+                    <div className="flex items-center justify-between mt-4">
+                        <div className="text-lg font-semibold">
+                            Issued Equipment
+                        </div>
+                    </div>
                     <Show
-                        when={isItemsReady}
+                        when={isSuccess}
                         fallback={<Skeleton className="w-full h-10" />}
                     >
                         <Akagi.Table table={table} />

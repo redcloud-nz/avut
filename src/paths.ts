@@ -484,6 +484,15 @@ function d4hViewsModule(orgSlug: string) {
                 }) as const,
         },
 
+        member: (teamId: number, memberId: number) =>
+            ({
+                href: `${base}/members/${teamId}/${memberId}`,
+            }) as const,
+        members: {
+            label: "Members",
+            href: `${base}/members`,
+        },
+
         personnel: {
             label: "Personnel",
             href: `${base}/personnel`,

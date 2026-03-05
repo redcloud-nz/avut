@@ -65,7 +65,7 @@ export async function NavOrganizationMenu({
                         {/* <NavItem path={orgPrefix.d4hViews.activities} />
                         <NavItem path={orgPrefix.d4hViews.calendar} /> */}
                         <NavItem path={orgPrefix.d4hViews.equipment.index} />
-                        <NavItem path={orgPrefix.d4hViews.personnel} />
+                        <NavItem path={orgPrefix.d4hViews.members} />
                     </NavCollapsible>
                 </Show>
                 {/* <Show when={isModuleEnabled(organization, "d4h-views")}>

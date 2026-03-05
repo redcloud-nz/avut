@@ -38,7 +38,6 @@ async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
                                 contextId: team.id,
                             },
                             query: {
-                                member_id: 1156,
                                 only_current: true,
                             },
                         },
