@@ -3,7 +3,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck
 /*
- * This file exports the `D4hPPETemplate` model and its related types.
+ * This file exports the `D4hPpeTemplate` model and its related types.
  *
  * 🟢 You can import this file directly.
  */
@@ -12,308 +12,312 @@ import type * as $Enums from "../enums";
 import type * as Prisma from "../internal/prismaNamespace";
 
 /**
- * Model D4hPPETemplate
+ * Model D4hPpeTemplate
  *
  */
-export type D4hPPETemplateModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$D4hPPETemplatePayload>;
+export type D4hPpeTemplateModel =
+    runtime.Types.Result.DefaultSelection<Prisma.$D4hPpeTemplatePayload>;
 
-export type AggregateD4hPPETemplate = {
-    _count: D4hPPETemplateCountAggregateOutputType | null;
-    _avg: D4hPPETemplateAvgAggregateOutputType | null;
-    _sum: D4hPPETemplateSumAggregateOutputType | null;
-    _min: D4hPPETemplateMinAggregateOutputType | null;
-    _max: D4hPPETemplateMaxAggregateOutputType | null;
+export type AggregateD4hPpeTemplate = {
+    _count: D4hPpeTemplateCountAggregateOutputType | null;
+    _avg: D4hPpeTemplateAvgAggregateOutputType | null;
+    _sum: D4hPpeTemplateSumAggregateOutputType | null;
+    _min: D4hPpeTemplateMinAggregateOutputType | null;
+    _max: D4hPpeTemplateMaxAggregateOutputType | null;
 };
 
-export type D4hPPETemplateAvgAggregateOutputType = {
+export type D4hPpeTemplateAvgAggregateOutputType = {
     d4hCategoryId: number | null;
     d4hKindId: number | null;
-    d4hModelsId: number | null;
+    d4hModelIds: number | null;
 };
 
-export type D4hPPETemplateSumAggregateOutputType = {
+export type D4hPpeTemplateSumAggregateOutputType = {
     d4hCategoryId: number | null;
     d4hKindId: number | null;
-    d4hModelsId: number[];
+    d4hModelIds: number[];
 };
 
-export type D4hPPETemplateMinAggregateOutputType = {
+export type D4hPpeTemplateMinAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     name: string | null;
     description: string | null;
     d4hCategoryId: number | null;
     d4hKindId: number | null;
-    active: boolean | null;
+    status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
 
-export type D4hPPETemplateMaxAggregateOutputType = {
+export type D4hPpeTemplateMaxAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     name: string | null;
     description: string | null;
     d4hCategoryId: number | null;
     d4hKindId: number | null;
-    active: boolean | null;
+    status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
 
-export type D4hPPETemplateCountAggregateOutputType = {
+export type D4hPpeTemplateCountAggregateOutputType = {
     id: number;
     organizationId: number;
     name: number;
     description: number;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId: number;
-    active: number;
+    d4hModelIds: number;
+    status: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
 };
 
-export type D4hPPETemplateAvgAggregateInputType = {
+export type D4hPpeTemplateAvgAggregateInputType = {
     d4hCategoryId?: true;
     d4hKindId?: true;
-    d4hModelsId?: true;
+    d4hModelIds?: true;
 };
 
-export type D4hPPETemplateSumAggregateInputType = {
+export type D4hPpeTemplateSumAggregateInputType = {
     d4hCategoryId?: true;
     d4hKindId?: true;
-    d4hModelsId?: true;
+    d4hModelIds?: true;
 };
 
-export type D4hPPETemplateMinAggregateInputType = {
+export type D4hPpeTemplateMinAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
     description?: true;
     d4hCategoryId?: true;
     d4hKindId?: true;
-    active?: true;
+    status?: true;
     createdAt?: true;
     updatedAt?: true;
 };
 
-export type D4hPPETemplateMaxAggregateInputType = {
+export type D4hPpeTemplateMaxAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
     description?: true;
     d4hCategoryId?: true;
     d4hKindId?: true;
-    active?: true;
+    status?: true;
     createdAt?: true;
     updatedAt?: true;
 };
 
-export type D4hPPETemplateCountAggregateInputType = {
+export type D4hPpeTemplateCountAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
     description?: true;
     d4hCategoryId?: true;
     d4hKindId?: true;
-    d4hModelsId?: true;
-    active?: true;
+    d4hModelIds?: true;
+    status?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
 };
 
-export type D4hPPETemplateAggregateArgs<
+export type D4hPpeTemplateAggregateArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Filter which D4hPPETemplate to aggregate.
+     * Filter which D4hPpeTemplate to aggregate.
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      *
-     * Determine the order of D4hPPETemplates to fetch.
+     * Determine the order of D4hPpeTemplates to fetch.
      */
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithRelationInput
-        | Prisma.D4hPPETemplateOrderByWithRelationInput[];
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
      * Sets the start position
      */
-    cursor?: Prisma.D4hPPETemplateWhereUniqueInput;
+    cursor?: Prisma.D4hPpeTemplateWhereUniqueInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Take `±n` D4hPPETemplates from the position of the cursor.
+     * Take `±n` D4hPpeTemplates from the position of the cursor.
      */
     take?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Skip the first `n` D4hPPETemplates.
+     * Skip the first `n` D4hPpeTemplates.
      */
     skip?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
-     * Count returned D4hPPETemplates
+     * Count returned D4hPpeTemplates
      **/
-    _count?: true | D4hPPETemplateCountAggregateInputType;
+    _count?: true | D4hPpeTemplateCountAggregateInputType;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
      * Select which fields to average
      **/
-    _avg?: D4hPPETemplateAvgAggregateInputType;
+    _avg?: D4hPpeTemplateAvgAggregateInputType;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
      * Select which fields to sum
      **/
-    _sum?: D4hPPETemplateSumAggregateInputType;
+    _sum?: D4hPpeTemplateSumAggregateInputType;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
      * Select which fields to find the minimum value
      **/
-    _min?: D4hPPETemplateMinAggregateInputType;
+    _min?: D4hPpeTemplateMinAggregateInputType;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
      * Select which fields to find the maximum value
      **/
-    _max?: D4hPPETemplateMaxAggregateInputType;
+    _max?: D4hPpeTemplateMaxAggregateInputType;
 };
 
-export type GetD4hPPETemplateAggregateType<
-    T extends D4hPPETemplateAggregateArgs,
+export type GetD4hPpeTemplateAggregateType<
+    T extends D4hPpeTemplateAggregateArgs,
 > = {
-    [P in keyof T & keyof AggregateD4hPPETemplate]: P extends "_count" | "count"
+    [P in keyof T & keyof AggregateD4hPpeTemplate]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
-            : Prisma.GetScalarType<T[P], AggregateD4hPPETemplate[P]>
-        : Prisma.GetScalarType<T[P], AggregateD4hPPETemplate[P]>;
+            : Prisma.GetScalarType<T[P], AggregateD4hPpeTemplate[P]>
+        : Prisma.GetScalarType<T[P], AggregateD4hPpeTemplate[P]>;
 };
 
-export type D4hPPETemplateGroupByArgs<
+export type D4hPpeTemplateGroupByArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithAggregationInput
-        | Prisma.D4hPPETemplateOrderByWithAggregationInput[];
+        | Prisma.D4hPpeTemplateOrderByWithAggregationInput
+        | Prisma.D4hPpeTemplateOrderByWithAggregationInput[];
     by:
-        | Prisma.D4hPPETemplateScalarFieldEnum[]
-        | Prisma.D4hPPETemplateScalarFieldEnum;
-    having?: Prisma.D4hPPETemplateScalarWhereWithAggregatesInput;
+        | Prisma.D4hPpeTemplateScalarFieldEnum[]
+        | Prisma.D4hPpeTemplateScalarFieldEnum;
+    having?: Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
-    _count?: D4hPPETemplateCountAggregateInputType | true;
-    _avg?: D4hPPETemplateAvgAggregateInputType;
-    _sum?: D4hPPETemplateSumAggregateInputType;
-    _min?: D4hPPETemplateMinAggregateInputType;
-    _max?: D4hPPETemplateMaxAggregateInputType;
+    _count?: D4hPpeTemplateCountAggregateInputType | true;
+    _avg?: D4hPpeTemplateAvgAggregateInputType;
+    _sum?: D4hPpeTemplateSumAggregateInputType;
+    _min?: D4hPpeTemplateMinAggregateInputType;
+    _max?: D4hPpeTemplateMaxAggregateInputType;
 };
 
-export type D4hPPETemplateGroupByOutputType = {
+export type D4hPpeTemplateGroupByOutputType = {
     id: string;
     organizationId: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId: number[];
-    active: boolean;
+    d4hModelIds: number[];
+    status: $Enums.RecordStatus;
     createdAt: Date;
     updatedAt: Date;
-    _count: D4hPPETemplateCountAggregateOutputType | null;
-    _avg: D4hPPETemplateAvgAggregateOutputType | null;
-    _sum: D4hPPETemplateSumAggregateOutputType | null;
-    _min: D4hPPETemplateMinAggregateOutputType | null;
-    _max: D4hPPETemplateMaxAggregateOutputType | null;
+    _count: D4hPpeTemplateCountAggregateOutputType | null;
+    _avg: D4hPpeTemplateAvgAggregateOutputType | null;
+    _sum: D4hPpeTemplateSumAggregateOutputType | null;
+    _min: D4hPpeTemplateMinAggregateOutputType | null;
+    _max: D4hPpeTemplateMaxAggregateOutputType | null;
 };
 
-type GetD4hPPETemplateGroupByPayload<T extends D4hPPETemplateGroupByArgs> =
+type GetD4hPpeTemplateGroupByPayload<T extends D4hPpeTemplateGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
-            Prisma.PickEnumerable<D4hPPETemplateGroupByOutputType, T["by"]> & {
+            Prisma.PickEnumerable<D4hPpeTemplateGroupByOutputType, T["by"]> & {
                 [P in keyof T &
-                    keyof D4hPPETemplateGroupByOutputType]: P extends "_count"
+                    keyof D4hPpeTemplateGroupByOutputType]: P extends "_count"
                     ? T[P] extends boolean
                         ? number
                         : Prisma.GetScalarType<
                               T[P],
-                              D4hPPETemplateGroupByOutputType[P]
+                              D4hPpeTemplateGroupByOutputType[P]
                           >
                     : Prisma.GetScalarType<
                           T[P],
-                          D4hPPETemplateGroupByOutputType[P]
+                          D4hPpeTemplateGroupByOutputType[P]
                       >;
             }
         >
     >;
 
-export type D4hPPETemplateWhereInput = {
-    AND?: Prisma.D4hPPETemplateWhereInput | Prisma.D4hPPETemplateWhereInput[];
-    OR?: Prisma.D4hPPETemplateWhereInput[];
-    NOT?: Prisma.D4hPPETemplateWhereInput | Prisma.D4hPPETemplateWhereInput[];
-    id?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    organizationId?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    name?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    description?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    d4hCategoryId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-    d4hKindId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-    d4hModelsId?: Prisma.IntNullableListFilter<"D4hPPETemplate">;
-    active?: Prisma.BoolFilter<"D4hPPETemplate"> | boolean;
-    createdAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
-    updatedAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
+export type D4hPpeTemplateWhereInput = {
+    AND?: Prisma.D4hPpeTemplateWhereInput | Prisma.D4hPpeTemplateWhereInput[];
+    OR?: Prisma.D4hPpeTemplateWhereInput[];
+    NOT?: Prisma.D4hPpeTemplateWhereInput | Prisma.D4hPpeTemplateWhereInput[];
+    id?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    organizationId?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    name?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    description?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    d4hCategoryId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+    d4hKindId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+    d4hModelIds?: Prisma.IntNullableListFilter<"D4hPpeTemplate">;
+    status?:
+        | Prisma.EnumRecordStatusFilter<"D4hPpeTemplate">
+        | $Enums.RecordStatus;
+    createdAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
 };
 
-export type D4hPPETemplateOrderByWithRelationInput = {
+export type D4hPpeTemplateOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    d4hModelsId?: Prisma.SortOrder;
-    active?: Prisma.SortOrder;
+    d4hModelIds?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
 };
 
-export type D4hPPETemplateWhereUniqueInput = Prisma.AtLeast<
+export type D4hPpeTemplateWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
         AND?:
-            | Prisma.D4hPPETemplateWhereInput
-            | Prisma.D4hPPETemplateWhereInput[];
-        OR?: Prisma.D4hPPETemplateWhereInput[];
+            | Prisma.D4hPpeTemplateWhereInput
+            | Prisma.D4hPpeTemplateWhereInput[];
+        OR?: Prisma.D4hPpeTemplateWhereInput[];
         NOT?:
-            | Prisma.D4hPPETemplateWhereInput
-            | Prisma.D4hPPETemplateWhereInput[];
-        organizationId?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-        name?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-        description?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-        d4hCategoryId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-        d4hKindId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-        d4hModelsId?: Prisma.IntNullableListFilter<"D4hPPETemplate">;
-        active?: Prisma.BoolFilter<"D4hPPETemplate"> | boolean;
-        createdAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
-        updatedAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
+            | Prisma.D4hPpeTemplateWhereInput
+            | Prisma.D4hPpeTemplateWhereInput[];
+        organizationId?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+        name?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+        description?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+        d4hCategoryId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+        d4hKindId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+        d4hModelIds?: Prisma.IntNullableListFilter<"D4hPpeTemplate">;
+        status?:
+            | Prisma.EnumRecordStatusFilter<"D4hPpeTemplate">
+            | $Enums.RecordStatus;
+        createdAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
+        updatedAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
@@ -322,149 +326,159 @@ export type D4hPPETemplateWhereUniqueInput = Prisma.AtLeast<
     "id"
 >;
 
-export type D4hPPETemplateOrderByWithAggregationInput = {
+export type D4hPpeTemplateOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    d4hModelsId?: Prisma.SortOrder;
-    active?: Prisma.SortOrder;
+    d4hModelIds?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
-    _count?: Prisma.D4hPPETemplateCountOrderByAggregateInput;
-    _avg?: Prisma.D4hPPETemplateAvgOrderByAggregateInput;
-    _max?: Prisma.D4hPPETemplateMaxOrderByAggregateInput;
-    _min?: Prisma.D4hPPETemplateMinOrderByAggregateInput;
-    _sum?: Prisma.D4hPPETemplateSumOrderByAggregateInput;
+    _count?: Prisma.D4hPpeTemplateCountOrderByAggregateInput;
+    _avg?: Prisma.D4hPpeTemplateAvgOrderByAggregateInput;
+    _max?: Prisma.D4hPpeTemplateMaxOrderByAggregateInput;
+    _min?: Prisma.D4hPpeTemplateMinOrderByAggregateInput;
+    _sum?: Prisma.D4hPpeTemplateSumOrderByAggregateInput;
 };
 
-export type D4hPPETemplateScalarWhereWithAggregatesInput = {
+export type D4hPpeTemplateScalarWhereWithAggregatesInput = {
     AND?:
-        | Prisma.D4hPPETemplateScalarWhereWithAggregatesInput
-        | Prisma.D4hPPETemplateScalarWhereWithAggregatesInput[];
-    OR?: Prisma.D4hPPETemplateScalarWhereWithAggregatesInput[];
+        | Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput
+        | Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput[];
+    OR?: Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput[];
     NOT?:
-        | Prisma.D4hPPETemplateScalarWhereWithAggregatesInput
-        | Prisma.D4hPPETemplateScalarWhereWithAggregatesInput[];
-    id?: Prisma.StringWithAggregatesFilter<"D4hPPETemplate"> | string;
+        | Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput
+        | Prisma.D4hPpeTemplateScalarWhereWithAggregatesInput[];
+    id?: Prisma.StringWithAggregatesFilter<"D4hPpeTemplate"> | string;
     organizationId?:
-        | Prisma.StringWithAggregatesFilter<"D4hPPETemplate">
+        | Prisma.StringWithAggregatesFilter<"D4hPpeTemplate">
         | string;
-    name?: Prisma.StringWithAggregatesFilter<"D4hPPETemplate"> | string;
-    description?: Prisma.StringWithAggregatesFilter<"D4hPPETemplate"> | string;
-    d4hCategoryId?: Prisma.IntWithAggregatesFilter<"D4hPPETemplate"> | number;
-    d4hKindId?: Prisma.IntWithAggregatesFilter<"D4hPPETemplate"> | number;
-    d4hModelsId?: Prisma.IntNullableListFilter<"D4hPPETemplate">;
-    active?: Prisma.BoolWithAggregatesFilter<"D4hPPETemplate"> | boolean;
+    name?: Prisma.StringWithAggregatesFilter<"D4hPpeTemplate"> | string;
+    description?: Prisma.StringWithAggregatesFilter<"D4hPpeTemplate"> | string;
+    d4hCategoryId?: Prisma.IntWithAggregatesFilter<"D4hPpeTemplate"> | number;
+    d4hKindId?: Prisma.IntWithAggregatesFilter<"D4hPpeTemplate"> | number;
+    d4hModelIds?: Prisma.IntNullableListFilter<"D4hPpeTemplate">;
+    status?:
+        | Prisma.EnumRecordStatusWithAggregatesFilter<"D4hPpeTemplate">
+        | $Enums.RecordStatus;
     createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"D4hPPETemplate">
+        | Prisma.DateTimeWithAggregatesFilter<"D4hPpeTemplate">
         | Date
         | string;
     updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"D4hPPETemplate">
+        | Prisma.DateTimeWithAggregatesFilter<"D4hPpeTemplate">
         | Date
         | string;
 };
 
-export type D4hPPETemplateCreateInput = {
+export type D4hPpeTemplateCreateInput = {
     id: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutD4hPPETemplatesInput;
 };
 
-export type D4hPPETemplateUncheckedCreateInput = {
+export type D4hPpeTemplateUncheckedCreateInput = {
     id: string;
     organizationId: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type D4hPPETemplateUpdateInput = {
+export type D4hPpeTemplateUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutD4hPPETemplatesNestedInput;
 };
 
-export type D4hPPETemplateUncheckedUpdateInput = {
+export type D4hPpeTemplateUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateCreateManyInput = {
+export type D4hPpeTemplateCreateManyInput = {
     id: string;
     organizationId: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type D4hPPETemplateUpdateManyMutationInput = {
+export type D4hPpeTemplateUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateUncheckedUpdateManyInput = {
+export type D4hPpeTemplateUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateListRelationFilter = {
-    every?: Prisma.D4hPPETemplateWhereInput;
-    some?: Prisma.D4hPPETemplateWhereInput;
-    none?: Prisma.D4hPPETemplateWhereInput;
+export type D4hPpeTemplateListRelationFilter = {
+    every?: Prisma.D4hPpeTemplateWhereInput;
+    some?: Prisma.D4hPpeTemplateWhereInput;
+    none?: Prisma.D4hPpeTemplateWhereInput;
 };
 
-export type D4hPPETemplateOrderByRelationAggregateInput = {
+export type D4hPpeTemplateOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
 
@@ -476,310 +490,318 @@ export type IntNullableListFilter<$PrismaModel = never> = {
     isEmpty?: boolean;
 };
 
-export type D4hPPETemplateCountOrderByAggregateInput = {
+export type D4hPpeTemplateCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    d4hModelsId?: Prisma.SortOrder;
-    active?: Prisma.SortOrder;
+    d4hModelIds?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 
-export type D4hPPETemplateAvgOrderByAggregateInput = {
+export type D4hPpeTemplateAvgOrderByAggregateInput = {
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    d4hModelsId?: Prisma.SortOrder;
+    d4hModelIds?: Prisma.SortOrder;
 };
 
-export type D4hPPETemplateMaxOrderByAggregateInput = {
+export type D4hPpeTemplateMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    active?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 
-export type D4hPPETemplateMinOrderByAggregateInput = {
+export type D4hPpeTemplateMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    active?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 
-export type D4hPPETemplateSumOrderByAggregateInput = {
+export type D4hPpeTemplateSumOrderByAggregateInput = {
     d4hCategoryId?: Prisma.SortOrder;
     d4hKindId?: Prisma.SortOrder;
-    d4hModelsId?: Prisma.SortOrder;
+    d4hModelIds?: Prisma.SortOrder;
 };
 
-export type D4hPPETemplateCreateNestedManyWithoutOrganizationInput = {
+export type D4hPpeTemplateCreateNestedManyWithoutOrganizationInput = {
     create?:
         | Prisma.XOR<
-              Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-              Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+              Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+              Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
           >
-        | Prisma.D4hPPETemplateCreateWithoutOrganizationInput[]
-        | Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateWithoutOrganizationInput[]
+        | Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput[];
     connectOrCreate?:
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput[];
-    createMany?: Prisma.D4hPPETemplateCreateManyOrganizationInputEnvelope;
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.D4hPpeTemplateCreateManyOrganizationInputEnvelope;
     connect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
 };
 
-export type D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput = {
+export type D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput = {
     create?:
         | Prisma.XOR<
-              Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-              Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+              Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+              Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
           >
-        | Prisma.D4hPPETemplateCreateWithoutOrganizationInput[]
-        | Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateWithoutOrganizationInput[]
+        | Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput[];
     connectOrCreate?:
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput[];
-    createMany?: Prisma.D4hPPETemplateCreateManyOrganizationInputEnvelope;
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.D4hPpeTemplateCreateManyOrganizationInputEnvelope;
     connect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
 };
 
-export type D4hPPETemplateUpdateManyWithoutOrganizationNestedInput = {
+export type D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput = {
     create?:
         | Prisma.XOR<
-              Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-              Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+              Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+              Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
           >
-        | Prisma.D4hPPETemplateCreateWithoutOrganizationInput[]
-        | Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateWithoutOrganizationInput[]
+        | Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput[];
     connectOrCreate?:
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput[];
     upsert?:
-        | Prisma.D4hPPETemplateUpsertWithWhereUniqueWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpsertWithWhereUniqueWithoutOrganizationInput[];
-    createMany?: Prisma.D4hPPETemplateCreateManyOrganizationInputEnvelope;
+        | Prisma.D4hPpeTemplateUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.D4hPpeTemplateCreateManyOrganizationInputEnvelope;
     set?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     disconnect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     delete?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     connect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     update?:
-        | Prisma.D4hPPETemplateUpdateWithWhereUniqueWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpdateWithWhereUniqueWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
-        | Prisma.D4hPPETemplateUpdateManyWithWhereWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpdateManyWithWhereWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpdateManyWithWhereWithoutOrganizationInput[];
     deleteMany?:
-        | Prisma.D4hPPETemplateScalarWhereInput
-        | Prisma.D4hPPETemplateScalarWhereInput[];
+        | Prisma.D4hPpeTemplateScalarWhereInput
+        | Prisma.D4hPpeTemplateScalarWhereInput[];
 };
 
-export type D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput = {
+export type D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput = {
     create?:
         | Prisma.XOR<
-              Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-              Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+              Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+              Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
           >
-        | Prisma.D4hPPETemplateCreateWithoutOrganizationInput[]
-        | Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateWithoutOrganizationInput[]
+        | Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput[];
     connectOrCreate?:
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput
-        | Prisma.D4hPPETemplateCreateOrConnectWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateCreateOrConnectWithoutOrganizationInput[];
     upsert?:
-        | Prisma.D4hPPETemplateUpsertWithWhereUniqueWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpsertWithWhereUniqueWithoutOrganizationInput[];
-    createMany?: Prisma.D4hPPETemplateCreateManyOrganizationInputEnvelope;
+        | Prisma.D4hPpeTemplateUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.D4hPpeTemplateCreateManyOrganizationInputEnvelope;
     set?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     disconnect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     delete?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     connect?:
-        | Prisma.D4hPPETemplateWhereUniqueInput
-        | Prisma.D4hPPETemplateWhereUniqueInput[];
+        | Prisma.D4hPpeTemplateWhereUniqueInput
+        | Prisma.D4hPpeTemplateWhereUniqueInput[];
     update?:
-        | Prisma.D4hPPETemplateUpdateWithWhereUniqueWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpdateWithWhereUniqueWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
-        | Prisma.D4hPPETemplateUpdateManyWithWhereWithoutOrganizationInput
-        | Prisma.D4hPPETemplateUpdateManyWithWhereWithoutOrganizationInput[];
+        | Prisma.D4hPpeTemplateUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.D4hPpeTemplateUpdateManyWithWhereWithoutOrganizationInput[];
     deleteMany?:
-        | Prisma.D4hPPETemplateScalarWhereInput
-        | Prisma.D4hPPETemplateScalarWhereInput[];
+        | Prisma.D4hPpeTemplateScalarWhereInput
+        | Prisma.D4hPpeTemplateScalarWhereInput[];
 };
 
-export type D4hPPETemplateCreated4hModelsIdInput = {
+export type D4hPpeTemplateCreated4hModelIdsInput = {
     set: number[];
 };
 
-export type D4hPPETemplateUpdated4hModelsIdInput = {
+export type D4hPpeTemplateUpdated4hModelIdsInput = {
     set?: number[];
     push?: number | number[];
 };
 
-export type D4hPPETemplateCreateWithoutOrganizationInput = {
+export type D4hPpeTemplateCreateWithoutOrganizationInput = {
     id: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type D4hPPETemplateUncheckedCreateWithoutOrganizationInput = {
+export type D4hPpeTemplateUncheckedCreateWithoutOrganizationInput = {
     id: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type D4hPPETemplateCreateOrConnectWithoutOrganizationInput = {
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+export type D4hPpeTemplateCreateOrConnectWithoutOrganizationInput = {
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
     create: Prisma.XOR<
-        Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-        Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+        Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+        Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
     >;
 };
 
-export type D4hPPETemplateCreateManyOrganizationInputEnvelope = {
+export type D4hPpeTemplateCreateManyOrganizationInputEnvelope = {
     data:
-        | Prisma.D4hPPETemplateCreateManyOrganizationInput
-        | Prisma.D4hPPETemplateCreateManyOrganizationInput[];
+        | Prisma.D4hPpeTemplateCreateManyOrganizationInput
+        | Prisma.D4hPpeTemplateCreateManyOrganizationInput[];
     skipDuplicates?: boolean;
 };
 
-export type D4hPPETemplateUpsertWithWhereUniqueWithoutOrganizationInput = {
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+export type D4hPpeTemplateUpsertWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
     update: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateWithoutOrganizationInput,
-        Prisma.D4hPPETemplateUncheckedUpdateWithoutOrganizationInput
+        Prisma.D4hPpeTemplateUpdateWithoutOrganizationInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateWithoutOrganizationInput
     >;
     create: Prisma.XOR<
-        Prisma.D4hPPETemplateCreateWithoutOrganizationInput,
-        Prisma.D4hPPETemplateUncheckedCreateWithoutOrganizationInput
+        Prisma.D4hPpeTemplateCreateWithoutOrganizationInput,
+        Prisma.D4hPpeTemplateUncheckedCreateWithoutOrganizationInput
     >;
 };
 
-export type D4hPPETemplateUpdateWithWhereUniqueWithoutOrganizationInput = {
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+export type D4hPpeTemplateUpdateWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateWithoutOrganizationInput,
-        Prisma.D4hPPETemplateUncheckedUpdateWithoutOrganizationInput
+        Prisma.D4hPpeTemplateUpdateWithoutOrganizationInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateWithoutOrganizationInput
     >;
 };
 
-export type D4hPPETemplateUpdateManyWithWhereWithoutOrganizationInput = {
-    where: Prisma.D4hPPETemplateScalarWhereInput;
+export type D4hPpeTemplateUpdateManyWithWhereWithoutOrganizationInput = {
+    where: Prisma.D4hPpeTemplateScalarWhereInput;
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateManyMutationInput,
-        Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationInput
+        Prisma.D4hPpeTemplateUpdateManyMutationInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationInput
     >;
 };
 
-export type D4hPPETemplateScalarWhereInput = {
+export type D4hPpeTemplateScalarWhereInput = {
     AND?:
-        | Prisma.D4hPPETemplateScalarWhereInput
-        | Prisma.D4hPPETemplateScalarWhereInput[];
-    OR?: Prisma.D4hPPETemplateScalarWhereInput[];
+        | Prisma.D4hPpeTemplateScalarWhereInput
+        | Prisma.D4hPpeTemplateScalarWhereInput[];
+    OR?: Prisma.D4hPpeTemplateScalarWhereInput[];
     NOT?:
-        | Prisma.D4hPPETemplateScalarWhereInput
-        | Prisma.D4hPPETemplateScalarWhereInput[];
-    id?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    organizationId?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    name?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    description?: Prisma.StringFilter<"D4hPPETemplate"> | string;
-    d4hCategoryId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-    d4hKindId?: Prisma.IntFilter<"D4hPPETemplate"> | number;
-    d4hModelsId?: Prisma.IntNullableListFilter<"D4hPPETemplate">;
-    active?: Prisma.BoolFilter<"D4hPPETemplate"> | boolean;
-    createdAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
-    updatedAt?: Prisma.DateTimeFilter<"D4hPPETemplate"> | Date | string;
+        | Prisma.D4hPpeTemplateScalarWhereInput
+        | Prisma.D4hPpeTemplateScalarWhereInput[];
+    id?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    organizationId?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    name?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    description?: Prisma.StringFilter<"D4hPpeTemplate"> | string;
+    d4hCategoryId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+    d4hKindId?: Prisma.IntFilter<"D4hPpeTemplate"> | number;
+    d4hModelIds?: Prisma.IntNullableListFilter<"D4hPpeTemplate">;
+    status?:
+        | Prisma.EnumRecordStatusFilter<"D4hPpeTemplate">
+        | $Enums.RecordStatus;
+    createdAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"D4hPpeTemplate"> | Date | string;
 };
 
-export type D4hPPETemplateCreateManyOrganizationInput = {
+export type D4hPpeTemplateCreateManyOrganizationInput = {
     id: string;
     name: string;
     description: string;
     d4hCategoryId: number;
     d4hKindId: number;
-    d4hModelsId?: Prisma.D4hPPETemplateCreated4hModelsIdInput | number[];
-    active?: boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateCreated4hModelIdsInput | number[];
+    status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type D4hPPETemplateUpdateWithoutOrganizationInput = {
+export type D4hPpeTemplateUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateUncheckedUpdateWithoutOrganizationInput = {
+export type D4hPpeTemplateUncheckedUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateUncheckedUpdateManyWithoutOrganizationInput = {
+export type D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hCategoryId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hKindId?: Prisma.IntFieldUpdateOperationsInput | number;
-    d4hModelsId?: Prisma.D4hPPETemplateUpdated4hModelsIdInput | number[];
-    active?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    d4hModelIds?: Prisma.D4hPpeTemplateUpdated4hModelIdsInput | number[];
+    status?:
+        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
+        | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type D4hPPETemplateSelect<
+export type D4hPpeTemplateSelect<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
@@ -790,16 +812,16 @@ export type D4hPPETemplateSelect<
         description?: boolean;
         d4hCategoryId?: boolean;
         d4hKindId?: boolean;
-        d4hModelsId?: boolean;
-        active?: boolean;
+        d4hModelIds?: boolean;
+        status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     },
-    ExtArgs["result"]["d4hPPETemplate"]
+    ExtArgs["result"]["d4hPpeTemplate"]
 >;
 
-export type D4hPPETemplateSelectCreateManyAndReturn<
+export type D4hPpeTemplateSelectCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
@@ -810,16 +832,16 @@ export type D4hPPETemplateSelectCreateManyAndReturn<
         description?: boolean;
         d4hCategoryId?: boolean;
         d4hKindId?: boolean;
-        d4hModelsId?: boolean;
-        active?: boolean;
+        d4hModelIds?: boolean;
+        status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     },
-    ExtArgs["result"]["d4hPPETemplate"]
+    ExtArgs["result"]["d4hPpeTemplate"]
 >;
 
-export type D4hPPETemplateSelectUpdateManyAndReturn<
+export type D4hPpeTemplateSelectUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
@@ -830,29 +852,29 @@ export type D4hPPETemplateSelectUpdateManyAndReturn<
         description?: boolean;
         d4hCategoryId?: boolean;
         d4hKindId?: boolean;
-        d4hModelsId?: boolean;
-        active?: boolean;
+        d4hModelIds?: boolean;
+        status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     },
-    ExtArgs["result"]["d4hPPETemplate"]
+    ExtArgs["result"]["d4hPpeTemplate"]
 >;
 
-export type D4hPPETemplateSelectScalar = {
+export type D4hPpeTemplateSelectScalar = {
     id?: boolean;
     organizationId?: boolean;
     name?: boolean;
     description?: boolean;
     d4hCategoryId?: boolean;
     d4hKindId?: boolean;
-    d4hModelsId?: boolean;
-    active?: boolean;
+    d4hModelIds?: boolean;
+    status?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
 
-export type D4hPPETemplateOmit<
+export type D4hPpeTemplateOmit<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
@@ -862,36 +884,36 @@ export type D4hPPETemplateOmit<
     | "description"
     | "d4hCategoryId"
     | "d4hKindId"
-    | "d4hModelsId"
-    | "active"
+    | "d4hModelIds"
+    | "status"
     | "createdAt"
     | "updatedAt",
-    ExtArgs["result"]["d4hPPETemplate"]
+    ExtArgs["result"]["d4hPpeTemplate"]
 >;
-export type D4hPPETemplateInclude<
+export type D4hPpeTemplateInclude<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
 };
-export type D4hPPETemplateIncludeCreateManyAndReturn<
+export type D4hPpeTemplateIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
 };
-export type D4hPPETemplateIncludeUpdateManyAndReturn<
+export type D4hPpeTemplateIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
 };
 
-export type $D4hPPETemplatePayload<
+export type $D4hPpeTemplatePayload<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    name: "D4hPPETemplate";
+    name: "D4hPpeTemplate";
     objects: {
         organization: Prisma.$OrganizationPayload<ExtArgs>;
     };
@@ -903,55 +925,55 @@ export type $D4hPPETemplatePayload<
             description: string;
             d4hCategoryId: number;
             d4hKindId: number;
-            d4hModelsId: number[];
-            active: boolean;
+            d4hModelIds: number[];
+            status: $Enums.RecordStatus;
             createdAt: Date;
             updatedAt: Date;
         },
-        ExtArgs["result"]["d4hPPETemplate"]
+        ExtArgs["result"]["d4hPpeTemplate"]
     >;
     composites: {};
 };
 
-export type D4hPPETemplateGetPayload<
-    S extends boolean | null | undefined | D4hPPETemplateDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$D4hPPETemplatePayload, S>;
+export type D4hPpeTemplateGetPayload<
+    S extends boolean | null | undefined | D4hPpeTemplateDefaultArgs,
+> = runtime.Types.Result.GetResult<Prisma.$D4hPpeTemplatePayload, S>;
 
-export type D4hPPETemplateCountArgs<
+export type D4hPpeTemplateCountArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = Omit<
-    D4hPPETemplateFindManyArgs,
+    D4hPpeTemplateFindManyArgs,
     "select" | "include" | "distinct" | "omit"
 > & {
-    select?: D4hPPETemplateCountAggregateInputType | true;
+    select?: D4hPpeTemplateCountAggregateInputType | true;
 };
 
-export interface D4hPPETemplateDelegate<
+export interface D4hPpeTemplateDelegate<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["D4hPPETemplate"];
-        meta: { name: "D4hPPETemplate" };
+        types: Prisma.TypeMap<ExtArgs>["model"]["D4hPpeTemplate"];
+        meta: { name: "D4hPpeTemplate" };
     };
     /**
-     * Find zero or one D4hPPETemplate that matches the filter.
-     * @param {D4hPPETemplateFindUniqueArgs} args - Arguments to find a D4hPPETemplate
+     * Find zero or one D4hPpeTemplate that matches the filter.
+     * @param {D4hPpeTemplateFindUniqueArgs} args - Arguments to find a D4hPpeTemplate
      * @example
-     * // Get one D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.findUnique({
+     * // Get one D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends D4hPPETemplateFindUniqueArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateFindUniqueArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    findUnique<T extends D4hPpeTemplateFindUniqueArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateFindUniqueArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "findUnique",
             GlobalOmitOptions
@@ -962,25 +984,25 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Find one D4hPPETemplate that matches the filter or throw an error with `error.code='P2025'`
+     * Find one D4hPpeTemplate that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {D4hPPETemplateFindUniqueOrThrowArgs} args - Arguments to find a D4hPPETemplate
+     * @param {D4hPpeTemplateFindUniqueOrThrowArgs} args - Arguments to find a D4hPpeTemplate
      * @example
-     * // Get one D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.findUniqueOrThrow({
+     * // Get one D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends D4hPPETemplateFindUniqueOrThrowArgs>(
+    findUniqueOrThrow<T extends D4hPpeTemplateFindUniqueOrThrowArgs>(
         args: Prisma.SelectSubset<
             T,
-            D4hPPETemplateFindUniqueOrThrowArgs<ExtArgs>
+            D4hPpeTemplateFindUniqueOrThrowArgs<ExtArgs>
         >,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "findUniqueOrThrow",
             GlobalOmitOptions
@@ -991,23 +1013,23 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Find the first D4hPPETemplate that matches the filter.
+     * Find the first D4hPpeTemplate that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateFindFirstArgs} args - Arguments to find a D4hPPETemplate
+     * @param {D4hPpeTemplateFindFirstArgs} args - Arguments to find a D4hPpeTemplate
      * @example
-     * // Get one D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.findFirst({
+     * // Get one D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends D4hPPETemplateFindFirstArgs>(
-        args?: Prisma.SelectSubset<T, D4hPPETemplateFindFirstArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    findFirst<T extends D4hPpeTemplateFindFirstArgs>(
+        args?: Prisma.SelectSubset<T, D4hPpeTemplateFindFirstArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "findFirst",
             GlobalOmitOptions
@@ -1018,27 +1040,27 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Find the first D4hPPETemplate that matches the filter or
+     * Find the first D4hPpeTemplate that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateFindFirstOrThrowArgs} args - Arguments to find a D4hPPETemplate
+     * @param {D4hPpeTemplateFindFirstOrThrowArgs} args - Arguments to find a D4hPpeTemplate
      * @example
-     * // Get one D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.findFirstOrThrow({
+     * // Get one D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends D4hPPETemplateFindFirstOrThrowArgs>(
+    findFirstOrThrow<T extends D4hPpeTemplateFindFirstOrThrowArgs>(
         args?: Prisma.SelectSubset<
             T,
-            D4hPPETemplateFindFirstOrThrowArgs<ExtArgs>
+            D4hPpeTemplateFindFirstOrThrowArgs<ExtArgs>
         >,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "findFirstOrThrow",
             GlobalOmitOptions
@@ -1049,26 +1071,26 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Find zero or more D4hPPETemplates that matches the filter.
+     * Find zero or more D4hPpeTemplates that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {D4hPpeTemplateFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all D4hPPETemplates
-     * const d4hPPETemplates = await prisma.d4hPPETemplate.findMany()
+     * // Get all D4hPpeTemplates
+     * const d4hPpeTemplates = await prisma.d4hPpeTemplate.findMany()
      *
-     * // Get first 10 D4hPPETemplates
-     * const d4hPPETemplates = await prisma.d4hPPETemplate.findMany({ take: 10 })
+     * // Get first 10 D4hPpeTemplates
+     * const d4hPpeTemplates = await prisma.d4hPpeTemplate.findMany({ take: 10 })
      *
      * // Only select the `id`
-     * const d4hPPETemplateWithIdOnly = await prisma.d4hPPETemplate.findMany({ select: { id: true } })
+     * const d4hPpeTemplateWithIdOnly = await prisma.d4hPpeTemplate.findMany({ select: { id: true } })
      *
      */
-    findMany<T extends D4hPPETemplateFindManyArgs>(
-        args?: Prisma.SelectSubset<T, D4hPPETemplateFindManyArgs<ExtArgs>>,
+    findMany<T extends D4hPpeTemplateFindManyArgs>(
+        args?: Prisma.SelectSubset<T, D4hPpeTemplateFindManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "findMany",
             GlobalOmitOptions
@@ -1076,22 +1098,22 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Create a D4hPPETemplate.
-     * @param {D4hPPETemplateCreateArgs} args - Arguments to create a D4hPPETemplate.
+     * Create a D4hPpeTemplate.
+     * @param {D4hPpeTemplateCreateArgs} args - Arguments to create a D4hPpeTemplate.
      * @example
-     * // Create one D4hPPETemplate
-     * const D4hPPETemplate = await prisma.d4hPPETemplate.create({
+     * // Create one D4hPpeTemplate
+     * const D4hPpeTemplate = await prisma.d4hPpeTemplate.create({
      *   data: {
-     *     // ... data to create a D4hPPETemplate
+     *     // ... data to create a D4hPpeTemplate
      *   }
      * })
      *
      */
-    create<T extends D4hPPETemplateCreateArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateCreateArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    create<T extends D4hPpeTemplateCreateArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateCreateArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "create",
             GlobalOmitOptions
@@ -1102,34 +1124,34 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Create many D4hPPETemplates.
-     * @param {D4hPPETemplateCreateManyArgs} args - Arguments to create many D4hPPETemplates.
+     * Create many D4hPpeTemplates.
+     * @param {D4hPpeTemplateCreateManyArgs} args - Arguments to create many D4hPpeTemplates.
      * @example
-     * // Create many D4hPPETemplates
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.createMany({
+     * // Create many D4hPpeTemplates
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *
      */
-    createMany<T extends D4hPPETemplateCreateManyArgs>(
-        args?: Prisma.SelectSubset<T, D4hPPETemplateCreateManyArgs<ExtArgs>>,
+    createMany<T extends D4hPpeTemplateCreateManyArgs>(
+        args?: Prisma.SelectSubset<T, D4hPpeTemplateCreateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
-     * Create many D4hPPETemplates and returns the data saved in the database.
-     * @param {D4hPPETemplateCreateManyAndReturnArgs} args - Arguments to create many D4hPPETemplates.
+     * Create many D4hPpeTemplates and returns the data saved in the database.
+     * @param {D4hPpeTemplateCreateManyAndReturnArgs} args - Arguments to create many D4hPpeTemplates.
      * @example
-     * // Create many D4hPPETemplates
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.createManyAndReturn({
+     * // Create many D4hPpeTemplates
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.createManyAndReturn({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *
-     * // Create many D4hPPETemplates and only return the `id`
-     * const d4hPPETemplateWithIdOnly = await prisma.d4hPPETemplate.createManyAndReturn({
+     * // Create many D4hPpeTemplates and only return the `id`
+     * const d4hPpeTemplateWithIdOnly = await prisma.d4hPpeTemplate.createManyAndReturn({
      *   select: { id: true },
      *   data: [
      *     // ... provide data here
@@ -1139,14 +1161,14 @@ export interface D4hPPETemplateDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    createManyAndReturn<T extends D4hPPETemplateCreateManyAndReturnArgs>(
+    createManyAndReturn<T extends D4hPpeTemplateCreateManyAndReturnArgs>(
         args?: Prisma.SelectSubset<
             T,
-            D4hPPETemplateCreateManyAndReturnArgs<ExtArgs>
+            D4hPpeTemplateCreateManyAndReturnArgs<ExtArgs>
         >,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "createManyAndReturn",
             GlobalOmitOptions
@@ -1154,22 +1176,22 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Delete a D4hPPETemplate.
-     * @param {D4hPPETemplateDeleteArgs} args - Arguments to delete one D4hPPETemplate.
+     * Delete a D4hPpeTemplate.
+     * @param {D4hPpeTemplateDeleteArgs} args - Arguments to delete one D4hPpeTemplate.
      * @example
-     * // Delete one D4hPPETemplate
-     * const D4hPPETemplate = await prisma.d4hPPETemplate.delete({
+     * // Delete one D4hPpeTemplate
+     * const D4hPpeTemplate = await prisma.d4hPpeTemplate.delete({
      *   where: {
-     *     // ... filter to delete one D4hPPETemplate
+     *     // ... filter to delete one D4hPpeTemplate
      *   }
      * })
      *
      */
-    delete<T extends D4hPPETemplateDeleteArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateDeleteArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    delete<T extends D4hPpeTemplateDeleteArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateDeleteArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "delete",
             GlobalOmitOptions
@@ -1180,11 +1202,11 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Update one D4hPPETemplate.
-     * @param {D4hPPETemplateUpdateArgs} args - Arguments to update one D4hPPETemplate.
+     * Update one D4hPpeTemplate.
+     * @param {D4hPpeTemplateUpdateArgs} args - Arguments to update one D4hPpeTemplate.
      * @example
-     * // Update one D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.update({
+     * // Update one D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -1194,11 +1216,11 @@ export interface D4hPPETemplateDelegate<
      * })
      *
      */
-    update<T extends D4hPPETemplateUpdateArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateUpdateArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    update<T extends D4hPpeTemplateUpdateArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateUpdateArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "update",
             GlobalOmitOptions
@@ -1209,29 +1231,29 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Delete zero or more D4hPPETemplates.
-     * @param {D4hPPETemplateDeleteManyArgs} args - Arguments to filter D4hPPETemplates to delete.
+     * Delete zero or more D4hPpeTemplates.
+     * @param {D4hPpeTemplateDeleteManyArgs} args - Arguments to filter D4hPpeTemplates to delete.
      * @example
-     * // Delete a few D4hPPETemplates
-     * const { count } = await prisma.d4hPPETemplate.deleteMany({
+     * // Delete a few D4hPpeTemplates
+     * const { count } = await prisma.d4hPpeTemplate.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      *
      */
-    deleteMany<T extends D4hPPETemplateDeleteManyArgs>(
-        args?: Prisma.SelectSubset<T, D4hPPETemplateDeleteManyArgs<ExtArgs>>,
+    deleteMany<T extends D4hPpeTemplateDeleteManyArgs>(
+        args?: Prisma.SelectSubset<T, D4hPpeTemplateDeleteManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
-     * Update zero or more D4hPPETemplates.
+     * Update zero or more D4hPpeTemplates.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {D4hPpeTemplateUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many D4hPPETemplates
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.updateMany({
+     * // Update many D4hPpeTemplates
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -1241,16 +1263,16 @@ export interface D4hPPETemplateDelegate<
      * })
      *
      */
-    updateMany<T extends D4hPPETemplateUpdateManyArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateUpdateManyArgs<ExtArgs>>,
+    updateMany<T extends D4hPpeTemplateUpdateManyArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateUpdateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
-     * Update zero or more D4hPPETemplates and returns the data updated in the database.
-     * @param {D4hPPETemplateUpdateManyAndReturnArgs} args - Arguments to update many D4hPPETemplates.
+     * Update zero or more D4hPpeTemplates and returns the data updated in the database.
+     * @param {D4hPpeTemplateUpdateManyAndReturnArgs} args - Arguments to update many D4hPpeTemplates.
      * @example
-     * // Update many D4hPPETemplates
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.updateManyAndReturn({
+     * // Update many D4hPpeTemplates
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.updateManyAndReturn({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -1259,8 +1281,8 @@ export interface D4hPPETemplateDelegate<
      *   ]
      * })
      *
-     * // Update zero or more D4hPPETemplates and only return the `id`
-     * const d4hPPETemplateWithIdOnly = await prisma.d4hPPETemplate.updateManyAndReturn({
+     * // Update zero or more D4hPpeTemplates and only return the `id`
+     * const d4hPpeTemplateWithIdOnly = await prisma.d4hPpeTemplate.updateManyAndReturn({
      *   select: { id: true },
      *   where: {
      *     // ... provide filter here
@@ -1273,14 +1295,14 @@ export interface D4hPPETemplateDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    updateManyAndReturn<T extends D4hPPETemplateUpdateManyAndReturnArgs>(
+    updateManyAndReturn<T extends D4hPpeTemplateUpdateManyAndReturnArgs>(
         args: Prisma.SelectSubset<
             T,
-            D4hPPETemplateUpdateManyAndReturnArgs<ExtArgs>
+            D4hPpeTemplateUpdateManyAndReturnArgs<ExtArgs>
         >,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "updateManyAndReturn",
             GlobalOmitOptions
@@ -1288,27 +1310,27 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Create or update one D4hPPETemplate.
-     * @param {D4hPPETemplateUpsertArgs} args - Arguments to update or create a D4hPPETemplate.
+     * Create or update one D4hPpeTemplate.
+     * @param {D4hPpeTemplateUpsertArgs} args - Arguments to update or create a D4hPpeTemplate.
      * @example
-     * // Update or create a D4hPPETemplate
-     * const d4hPPETemplate = await prisma.d4hPPETemplate.upsert({
+     * // Update or create a D4hPpeTemplate
+     * const d4hPpeTemplate = await prisma.d4hPpeTemplate.upsert({
      *   create: {
-     *     // ... data to create a D4hPPETemplate
+     *     // ... data to create a D4hPpeTemplate
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the D4hPPETemplate we want to update
+     *     // ... the filter for the D4hPpeTemplate we want to update
      *   }
      * })
      */
-    upsert<T extends D4hPPETemplateUpsertArgs>(
-        args: Prisma.SelectSubset<T, D4hPPETemplateUpsertArgs<ExtArgs>>,
-    ): Prisma.Prisma__D4hPPETemplateClient<
+    upsert<T extends D4hPpeTemplateUpsertArgs>(
+        args: Prisma.SelectSubset<T, D4hPpeTemplateUpsertArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4hPpeTemplateClient<
         runtime.Types.Result.GetResult<
-            Prisma.$D4hPPETemplatePayload<ExtArgs>,
+            Prisma.$D4hPpeTemplatePayload<ExtArgs>,
             T,
             "upsert",
             GlobalOmitOptions
@@ -1319,36 +1341,36 @@ export interface D4hPPETemplateDelegate<
     >;
 
     /**
-     * Count the number of D4hPPETemplates.
+     * Count the number of D4hPpeTemplates.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateCountArgs} args - Arguments to filter D4hPPETemplates to count.
+     * @param {D4hPpeTemplateCountArgs} args - Arguments to filter D4hPpeTemplates to count.
      * @example
-     * // Count the number of D4hPPETemplates
-     * const count = await prisma.d4hPPETemplate.count({
+     * // Count the number of D4hPpeTemplates
+     * const count = await prisma.d4hPpeTemplate.count({
      *   where: {
-     *     // ... the filter for the D4hPPETemplates we want to count
+     *     // ... the filter for the D4hPpeTemplates we want to count
      *   }
      * })
      **/
-    count<T extends D4hPPETemplateCountArgs>(
-        args?: Prisma.Subset<T, D4hPPETemplateCountArgs>,
+    count<T extends D4hPpeTemplateCountArgs>(
+        args?: Prisma.Subset<T, D4hPpeTemplateCountArgs>,
     ): Prisma.PrismaPromise<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
                 : Prisma.GetScalarType<
                       T["select"],
-                      D4hPPETemplateCountAggregateOutputType
+                      D4hPpeTemplateCountAggregateOutputType
                   >
             : number
     >;
 
     /**
-     * Allows you to perform aggregations operations on a D4hPPETemplate.
+     * Allows you to perform aggregations operations on a D4hPpeTemplate.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {D4hPpeTemplateAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -1368,15 +1390,15 @@ export interface D4hPPETemplateDelegate<
      *   take: 10,
      * })
      **/
-    aggregate<T extends D4hPPETemplateAggregateArgs>(
-        args: Prisma.Subset<T, D4hPPETemplateAggregateArgs>,
-    ): Prisma.PrismaPromise<GetD4hPPETemplateAggregateType<T>>;
+    aggregate<T extends D4hPpeTemplateAggregateArgs>(
+        args: Prisma.Subset<T, D4hPpeTemplateAggregateArgs>,
+    ): Prisma.PrismaPromise<GetD4hPpeTemplateAggregateType<T>>;
 
     /**
-     * Group by D4hPPETemplate.
+     * Group by D4hPpeTemplate.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {D4hPPETemplateGroupByArgs} args - Group by arguments.
+     * @param {D4hPpeTemplateGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -1391,14 +1413,14 @@ export interface D4hPPETemplateDelegate<
      *
      **/
     groupBy<
-        T extends D4hPPETemplateGroupByArgs,
+        T extends D4hPpeTemplateGroupByArgs,
         HasSelectOrTake extends Prisma.Or<
             Prisma.Extends<"skip", Prisma.Keys<T>>,
             Prisma.Extends<"take", Prisma.Keys<T>>
         >,
         OrderByArg extends Prisma.True extends HasSelectOrTake
-            ? { orderBy: D4hPPETemplateGroupByArgs["orderBy"] }
-            : { orderBy?: D4hPPETemplateGroupByArgs["orderBy"] },
+            ? { orderBy: D4hPpeTemplateGroupByArgs["orderBy"] }
+            : { orderBy?: D4hPpeTemplateGroupByArgs["orderBy"] },
         OrderFields extends Prisma.ExcludeUnderscoreKeys<
             Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
         >,
@@ -1452,26 +1474,26 @@ export interface D4hPPETemplateDelegate<
     >(
         args: Prisma.SubsetIntersection<
             T,
-            D4hPPETemplateGroupByArgs,
+            D4hPpeTemplateGroupByArgs,
             OrderByArg
         > &
             InputErrors,
     ): {} extends InputErrors
-        ? GetD4hPPETemplateGroupByPayload<T>
+        ? GetD4hPpeTemplateGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
     /**
-     * Fields of the D4hPPETemplate model
+     * Fields of the D4hPpeTemplate model
      */
-    readonly fields: D4hPPETemplateFieldRefs;
+    readonly fields: D4hPpeTemplateFieldRefs;
 }
 
 /**
- * The delegate class that acts as a "Promise-like" for D4hPPETemplate.
+ * The delegate class that acts as a "Promise-like" for D4hPpeTemplate.
  * Why is this prefixed with `Prisma__`?
  * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
-export interface Prisma__D4hPPETemplateClient<
+export interface Prisma__D4hPpeTemplateClient<
     T,
     Null = never,
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -1532,506 +1554,506 @@ export interface Prisma__D4hPPETemplateClient<
 }
 
 /**
- * Fields of the D4hPPETemplate model
+ * Fields of the D4hPpeTemplate model
  */
-export interface D4hPPETemplateFieldRefs {
-    readonly id: Prisma.FieldRef<"D4hPPETemplate", "String">;
-    readonly organizationId: Prisma.FieldRef<"D4hPPETemplate", "String">;
-    readonly name: Prisma.FieldRef<"D4hPPETemplate", "String">;
-    readonly description: Prisma.FieldRef<"D4hPPETemplate", "String">;
-    readonly d4hCategoryId: Prisma.FieldRef<"D4hPPETemplate", "Int">;
-    readonly d4hKindId: Prisma.FieldRef<"D4hPPETemplate", "Int">;
-    readonly d4hModelsId: Prisma.FieldRef<"D4hPPETemplate", "Int[]">;
-    readonly active: Prisma.FieldRef<"D4hPPETemplate", "Boolean">;
-    readonly createdAt: Prisma.FieldRef<"D4hPPETemplate", "DateTime">;
-    readonly updatedAt: Prisma.FieldRef<"D4hPPETemplate", "DateTime">;
+export interface D4hPpeTemplateFieldRefs {
+    readonly id: Prisma.FieldRef<"D4hPpeTemplate", "String">;
+    readonly organizationId: Prisma.FieldRef<"D4hPpeTemplate", "String">;
+    readonly name: Prisma.FieldRef<"D4hPpeTemplate", "String">;
+    readonly description: Prisma.FieldRef<"D4hPpeTemplate", "String">;
+    readonly d4hCategoryId: Prisma.FieldRef<"D4hPpeTemplate", "Int">;
+    readonly d4hKindId: Prisma.FieldRef<"D4hPpeTemplate", "Int">;
+    readonly d4hModelIds: Prisma.FieldRef<"D4hPpeTemplate", "Int[]">;
+    readonly status: Prisma.FieldRef<"D4hPpeTemplate", "RecordStatus">;
+    readonly createdAt: Prisma.FieldRef<"D4hPpeTemplate", "DateTime">;
+    readonly updatedAt: Prisma.FieldRef<"D4hPpeTemplate", "DateTime">;
 }
 
 // Custom InputTypes
 /**
- * D4hPPETemplate findUnique
+ * D4hPpeTemplate findUnique
  */
-export type D4hPPETemplateFindUniqueArgs<
+export type D4hPpeTemplateFindUniqueArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter, which D4hPPETemplate to fetch.
+     * Filter, which D4hPpeTemplate to fetch.
      */
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
 };
 
 /**
- * D4hPPETemplate findUniqueOrThrow
+ * D4hPpeTemplate findUniqueOrThrow
  */
-export type D4hPPETemplateFindUniqueOrThrowArgs<
+export type D4hPpeTemplateFindUniqueOrThrowArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter, which D4hPPETemplate to fetch.
+     * Filter, which D4hPpeTemplate to fetch.
      */
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
 };
 
 /**
- * D4hPPETemplate findFirst
+ * D4hPpeTemplate findFirst
  */
-export type D4hPPETemplateFindFirstArgs<
+export type D4hPpeTemplateFindFirstArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter, which D4hPPETemplate to fetch.
+     * Filter, which D4hPpeTemplate to fetch.
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      *
-     * Determine the order of D4hPPETemplates to fetch.
+     * Determine the order of D4hPpeTemplates to fetch.
      */
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithRelationInput
-        | Prisma.D4hPPETemplateOrderByWithRelationInput[];
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
-     * Sets the position for searching for D4hPPETemplates.
+     * Sets the position for searching for D4hPpeTemplates.
      */
-    cursor?: Prisma.D4hPPETemplateWhereUniqueInput;
+    cursor?: Prisma.D4hPpeTemplateWhereUniqueInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Take `±n` D4hPPETemplates from the position of the cursor.
+     * Take `±n` D4hPpeTemplates from the position of the cursor.
      */
     take?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Skip the first `n` D4hPPETemplates.
+     * Skip the first `n` D4hPpeTemplates.
      */
     skip?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      *
-     * Filter by unique combinations of D4hPPETemplates.
+     * Filter by unique combinations of D4hPpeTemplates.
      */
     distinct?:
-        | Prisma.D4hPPETemplateScalarFieldEnum
-        | Prisma.D4hPPETemplateScalarFieldEnum[];
+        | Prisma.D4hPpeTemplateScalarFieldEnum
+        | Prisma.D4hPpeTemplateScalarFieldEnum[];
 };
 
 /**
- * D4hPPETemplate findFirstOrThrow
+ * D4hPpeTemplate findFirstOrThrow
  */
-export type D4hPPETemplateFindFirstOrThrowArgs<
+export type D4hPpeTemplateFindFirstOrThrowArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter, which D4hPPETemplate to fetch.
+     * Filter, which D4hPpeTemplate to fetch.
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      *
-     * Determine the order of D4hPPETemplates to fetch.
+     * Determine the order of D4hPpeTemplates to fetch.
      */
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithRelationInput
-        | Prisma.D4hPPETemplateOrderByWithRelationInput[];
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
-     * Sets the position for searching for D4hPPETemplates.
+     * Sets the position for searching for D4hPpeTemplates.
      */
-    cursor?: Prisma.D4hPPETemplateWhereUniqueInput;
+    cursor?: Prisma.D4hPpeTemplateWhereUniqueInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Take `±n` D4hPPETemplates from the position of the cursor.
+     * Take `±n` D4hPpeTemplates from the position of the cursor.
      */
     take?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Skip the first `n` D4hPPETemplates.
+     * Skip the first `n` D4hPpeTemplates.
      */
     skip?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      *
-     * Filter by unique combinations of D4hPPETemplates.
+     * Filter by unique combinations of D4hPpeTemplates.
      */
     distinct?:
-        | Prisma.D4hPPETemplateScalarFieldEnum
-        | Prisma.D4hPPETemplateScalarFieldEnum[];
+        | Prisma.D4hPpeTemplateScalarFieldEnum
+        | Prisma.D4hPpeTemplateScalarFieldEnum[];
 };
 
 /**
- * D4hPPETemplate findMany
+ * D4hPpeTemplate findMany
  */
-export type D4hPPETemplateFindManyArgs<
+export type D4hPpeTemplateFindManyArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter, which D4hPPETemplates to fetch.
+     * Filter, which D4hPpeTemplates to fetch.
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      *
-     * Determine the order of D4hPPETemplates to fetch.
+     * Determine the order of D4hPpeTemplates to fetch.
      */
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithRelationInput
-        | Prisma.D4hPPETemplateOrderByWithRelationInput[];
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
-     * Sets the position for listing D4hPPETemplates.
+     * Sets the position for listing D4hPpeTemplates.
      */
-    cursor?: Prisma.D4hPPETemplateWhereUniqueInput;
+    cursor?: Prisma.D4hPpeTemplateWhereUniqueInput;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Take `±n` D4hPPETemplates from the position of the cursor.
+     * Take `±n` D4hPpeTemplates from the position of the cursor.
      */
     take?: number;
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      *
-     * Skip the first `n` D4hPPETemplates.
+     * Skip the first `n` D4hPpeTemplates.
      */
     skip?: number;
     distinct?:
-        | Prisma.D4hPPETemplateScalarFieldEnum
-        | Prisma.D4hPPETemplateScalarFieldEnum[];
+        | Prisma.D4hPpeTemplateScalarFieldEnum
+        | Prisma.D4hPpeTemplateScalarFieldEnum[];
 };
 
 /**
- * D4hPPETemplate create
+ * D4hPpeTemplate create
  */
-export type D4hPPETemplateCreateArgs<
+export type D4hPpeTemplateCreateArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * The data needed to create a D4hPPETemplate.
+     * The data needed to create a D4hPpeTemplate.
      */
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateCreateInput,
-        Prisma.D4hPPETemplateUncheckedCreateInput
+        Prisma.D4hPpeTemplateCreateInput,
+        Prisma.D4hPpeTemplateUncheckedCreateInput
     >;
 };
 
 /**
- * D4hPPETemplate createMany
+ * D4hPpeTemplate createMany
  */
-export type D4hPPETemplateCreateManyArgs<
+export type D4hPpeTemplateCreateManyArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * The data used to create many D4hPPETemplates.
+     * The data used to create many D4hPpeTemplates.
      */
     data:
-        | Prisma.D4hPPETemplateCreateManyInput
-        | Prisma.D4hPPETemplateCreateManyInput[];
+        | Prisma.D4hPpeTemplateCreateManyInput
+        | Prisma.D4hPpeTemplateCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
 /**
- * D4hPPETemplate createManyAndReturn
+ * D4hPpeTemplate createManyAndReturn
  */
-export type D4hPPETemplateCreateManyAndReturnArgs<
+export type D4hPpeTemplateCreateManyAndReturnArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelectCreateManyAndReturn<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelectCreateManyAndReturn<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
-     * The data used to create many D4hPPETemplates.
+     * The data used to create many D4hPpeTemplates.
      */
     data:
-        | Prisma.D4hPPETemplateCreateManyInput
-        | Prisma.D4hPPETemplateCreateManyInput[];
+        | Prisma.D4hPpeTemplateCreateManyInput
+        | Prisma.D4hPpeTemplateCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateIncludeCreateManyAndReturn<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateIncludeCreateManyAndReturn<ExtArgs> | null;
 };
 
 /**
- * D4hPPETemplate update
+ * D4hPpeTemplate update
  */
-export type D4hPPETemplateUpdateArgs<
+export type D4hPpeTemplateUpdateArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * The data needed to update a D4hPPETemplate.
+     * The data needed to update a D4hPpeTemplate.
      */
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateInput,
-        Prisma.D4hPPETemplateUncheckedUpdateInput
+        Prisma.D4hPpeTemplateUpdateInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateInput
     >;
     /**
-     * Choose, which D4hPPETemplate to update.
+     * Choose, which D4hPpeTemplate to update.
      */
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
 };
 
 /**
- * D4hPPETemplate updateMany
+ * D4hPpeTemplate updateMany
  */
-export type D4hPPETemplateUpdateManyArgs<
+export type D4hPpeTemplateUpdateManyArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * The data used to update D4hPPETemplates.
+     * The data used to update D4hPpeTemplates.
      */
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateManyMutationInput,
-        Prisma.D4hPPETemplateUncheckedUpdateManyInput
+        Prisma.D4hPpeTemplateUpdateManyMutationInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateManyInput
     >;
     /**
-     * Filter which D4hPPETemplates to update
+     * Filter which D4hPpeTemplates to update
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
-     * Limit how many D4hPPETemplates to update.
+     * Limit how many D4hPpeTemplates to update.
      */
     limit?: number;
 };
 
 /**
- * D4hPPETemplate updateManyAndReturn
+ * D4hPpeTemplate updateManyAndReturn
  */
-export type D4hPPETemplateUpdateManyAndReturnArgs<
+export type D4hPpeTemplateUpdateManyAndReturnArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelectUpdateManyAndReturn<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelectUpdateManyAndReturn<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
-     * The data used to update D4hPPETemplates.
+     * The data used to update D4hPpeTemplates.
      */
     data: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateManyMutationInput,
-        Prisma.D4hPPETemplateUncheckedUpdateManyInput
+        Prisma.D4hPpeTemplateUpdateManyMutationInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateManyInput
     >;
     /**
-     * Filter which D4hPPETemplates to update
+     * Filter which D4hPpeTemplates to update
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
-     * Limit how many D4hPPETemplates to update.
+     * Limit how many D4hPpeTemplates to update.
      */
     limit?: number;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateIncludeUpdateManyAndReturn<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateIncludeUpdateManyAndReturn<ExtArgs> | null;
 };
 
 /**
- * D4hPPETemplate upsert
+ * D4hPpeTemplate upsert
  */
-export type D4hPPETemplateUpsertArgs<
+export type D4hPpeTemplateUpsertArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * The filter to search for the D4hPPETemplate to update in case it exists.
+     * The filter to search for the D4hPpeTemplate to update in case it exists.
      */
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
     /**
-     * In case the D4hPPETemplate found by the `where` argument doesn't exist, create a new D4hPPETemplate with this data.
+     * In case the D4hPpeTemplate found by the `where` argument doesn't exist, create a new D4hPpeTemplate with this data.
      */
     create: Prisma.XOR<
-        Prisma.D4hPPETemplateCreateInput,
-        Prisma.D4hPPETemplateUncheckedCreateInput
+        Prisma.D4hPpeTemplateCreateInput,
+        Prisma.D4hPpeTemplateUncheckedCreateInput
     >;
     /**
-     * In case the D4hPPETemplate was found with the provided `where` argument, update it with this data.
+     * In case the D4hPpeTemplate was found with the provided `where` argument, update it with this data.
      */
     update: Prisma.XOR<
-        Prisma.D4hPPETemplateUpdateInput,
-        Prisma.D4hPPETemplateUncheckedUpdateInput
+        Prisma.D4hPpeTemplateUpdateInput,
+        Prisma.D4hPpeTemplateUncheckedUpdateInput
     >;
 };
 
 /**
- * D4hPPETemplate delete
+ * D4hPpeTemplate delete
  */
-export type D4hPPETemplateDeleteArgs<
+export type D4hPpeTemplateDeleteArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
     /**
-     * Filter which D4hPPETemplate to delete.
+     * Filter which D4hPpeTemplate to delete.
      */
-    where: Prisma.D4hPPETemplateWhereUniqueInput;
+    where: Prisma.D4hPpeTemplateWhereUniqueInput;
 };
 
 /**
- * D4hPPETemplate deleteMany
+ * D4hPpeTemplate deleteMany
  */
-export type D4hPPETemplateDeleteManyArgs<
+export type D4hPpeTemplateDeleteManyArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Filter which D4hPPETemplates to delete
+     * Filter which D4hPpeTemplates to delete
      */
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     /**
-     * Limit how many D4hPPETemplates to delete.
+     * Limit how many D4hPpeTemplates to delete.
      */
     limit?: number;
 };
 
 /**
- * D4hPPETemplate without action
+ * D4hPpeTemplate without action
  */
-export type D4hPPETemplateDefaultArgs<
+export type D4hPpeTemplateDefaultArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
 };

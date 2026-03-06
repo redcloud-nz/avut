@@ -29,7 +29,7 @@ export default async function D4HPPE_Index_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HPPE.index]} />
+            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HPpe.index]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
@@ -37,19 +37,19 @@ export default async function D4HPPE_Index_Page(
                         <div className="font-semibold">D4H PPE Module</div>
                     </div>
                     <ItemGroup>
-                        {/* <Item asChild>
-                            <Link to={Paths.org(slug).d4HPPE.equipment.index}>
+                        <Item asChild>
+                            <Link to={Paths.org(slug).d4HPpe.templates}>
                                 <ItemContent>
-                                    <ItemTitle>Equipment</ItemTitle>
+                                    <ItemTitle>Templates</ItemTitle>
                                     <ItemDescription>
-                                        View your D4H equipment.
+                                        Manage PPE item templates.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
                                 </ItemActions>
                             </Link>
-                        </Item> */}
+                        </Item>
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>

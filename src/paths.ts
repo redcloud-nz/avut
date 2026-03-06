@@ -129,7 +129,7 @@ type OrgPaths = {
     cards: ReturnType<typeof cardsModule>;
     checklists: ReturnType<typeof checklistsModule>;
     dashboard: { label: string; href: string };
-    d4HPPE: ReturnType<typeof d4HPPEModule>;
+    d4HPpe: ReturnType<typeof d4hPpeModule>;
     d4HViews: ReturnType<typeof d4HViewsModule>;
     dev: ReturnType<typeof devModule>;
     fog: ReturnType<typeof fogModule>;
@@ -149,7 +149,7 @@ export function org(orgSlug: string): OrgPaths {
             cards: cardsModule(orgSlug),
             checklists: checklistsModule(orgSlug),
             dashboard: { label: "Dashboard", href: `/orgs/${orgSlug}` },
-            d4HPPE: d4HPPEModule(orgSlug),
+            d4HPpe: d4hPpeModule(orgSlug),
             d4HViews: d4HViewsModule(orgSlug),
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),
@@ -442,7 +442,7 @@ function checklistsModule(orgSlug: string) {
     } as const;
 }
 
-function d4HPPEModule(orgSlug: string) {
+function d4hPpeModule(orgSlug: string) {
     const base = `/orgs/${orgSlug}/d4h-ppe` as const;
 
     return {
@@ -450,6 +450,20 @@ function d4HPPEModule(orgSlug: string) {
             label: "D4H PPE",
             href: base,
         },
+
+        templates: {
+            label: "Templates",
+            href: `${base}/templates`,
+        },
+
+        template: (templateId: string) =>
+            ({
+                href: `${base}/templates/${templateId}`,
+                update: {
+                    label: "Update",
+                    href: `${base}/templates/${templateId}/--update`,
+                },
+            }) as const,
     } as const;
 }
 

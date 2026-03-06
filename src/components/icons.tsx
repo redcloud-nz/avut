@@ -46,6 +46,7 @@ import {
     BookUpIcon,
     BookXIcon,
     MoveIcon,
+    ShirtIcon,
 } from "lucide-react";
 
 export {
@@ -91,7 +92,8 @@ export {
 };
 
 export const ModuleIcons = {
-    D4H: CableIcon,
+    D4HPPE: ShirtIcon,
+    D4HViews: CableIcon,
     Notes: NotebookPenIcon,
     Skills: PocketKnifeIcon,
     SkillPackageBuilder: PackageIcon,

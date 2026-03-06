@@ -219,7 +219,7 @@ export type OrganizationWhereInput = {
     personnel?: Prisma.PersonListRelationFilter;
     d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
     teamMemberships?: Prisma.TeamMembershipListRelationFilter;
-    d4hPPETemplates?: Prisma.D4hPPETemplateListRelationFilter;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateListRelationFilter;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -242,7 +242,7 @@ export type OrganizationOrderByWithRelationInput = {
     personnel?: Prisma.PersonOrderByRelationAggregateInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenOrderByRelationAggregateInput;
     teamMemberships?: Prisma.TeamMembershipOrderByRelationAggregateInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateOrderByRelationAggregateInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateOrderByRelationAggregateInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -269,7 +269,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
         personnel?: Prisma.PersonListRelationFilter;
         d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
         teamMemberships?: Prisma.TeamMembershipListRelationFilter;
-        d4hPPETemplates?: Prisma.D4hPPETemplateListRelationFilter;
+        d4hPPETemplates?: Prisma.D4hPpeTemplateListRelationFilter;
     },
     "id" | "slug"
 >;
@@ -331,7 +331,7 @@ export type OrganizationCreateInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -354,7 +354,7 @@ export type OrganizationUncheckedCreateInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -377,7 +377,7 @@ export type OrganizationUpdateInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -400,7 +400,7 @@ export type OrganizationUncheckedUpdateInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -856,7 +856,7 @@ export type OrganizationCreateWithoutConfigsInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutConfigsInput = {
@@ -878,7 +878,7 @@ export type OrganizationUncheckedCreateWithoutConfigsInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutConfigsInput = {
@@ -928,7 +928,7 @@ export type OrganizationUpdateWithoutConfigsInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutConfigsInput = {
@@ -950,7 +950,7 @@ export type OrganizationUncheckedUpdateWithoutConfigsInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutTeamsInput = {
@@ -972,7 +972,7 @@ export type OrganizationCreateWithoutTeamsInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutTeamsInput = {
@@ -994,7 +994,7 @@ export type OrganizationUncheckedCreateWithoutTeamsInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutTeamsInput = {
@@ -1044,7 +1044,7 @@ export type OrganizationUpdateWithoutTeamsInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutTeamsInput = {
@@ -1066,7 +1066,7 @@ export type OrganizationUncheckedUpdateWithoutTeamsInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutUsersInput = {
@@ -1088,7 +1088,7 @@ export type OrganizationCreateWithoutUsersInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutUsersInput = {
@@ -1110,7 +1110,7 @@ export type OrganizationUncheckedCreateWithoutUsersInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutUsersInput = {
@@ -1160,7 +1160,7 @@ export type OrganizationUpdateWithoutUsersInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutUsersInput = {
@@ -1182,7 +1182,7 @@ export type OrganizationUncheckedUpdateWithoutUsersInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -1204,7 +1204,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -1226,7 +1226,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -1276,7 +1276,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -1298,7 +1298,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutLogEntriesInput = {
@@ -1320,7 +1320,7 @@ export type OrganizationCreateWithoutLogEntriesInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
@@ -1342,7 +1342,7 @@ export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutLogEntriesInput = {
@@ -1392,7 +1392,7 @@ export type OrganizationUpdateWithoutLogEntriesInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
@@ -1414,7 +1414,7 @@ export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutD4hAccessTokensInput = {
@@ -1436,7 +1436,7 @@ export type OrganizationCreateWithoutD4hAccessTokensInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
@@ -1458,7 +1458,7 @@ export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutD4hAccessTokensInput = {
@@ -1508,7 +1508,7 @@ export type OrganizationUpdateWithoutD4hAccessTokensInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
@@ -1530,7 +1530,7 @@ export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutPersonnelInput = {
@@ -1552,7 +1552,7 @@ export type OrganizationCreateWithoutPersonnelInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutPersonnelInput = {
@@ -1574,7 +1574,7 @@ export type OrganizationUncheckedCreateWithoutPersonnelInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutPersonnelInput = {
@@ -1624,7 +1624,7 @@ export type OrganizationUpdateWithoutPersonnelInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
@@ -1646,7 +1646,7 @@ export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutTeamMembershipsInput = {
@@ -1668,7 +1668,7 @@ export type OrganizationCreateWithoutTeamMembershipsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutTeamMembershipsInput = {
@@ -1690,7 +1690,7 @@ export type OrganizationUncheckedCreateWithoutTeamMembershipsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutTeamMembershipsInput = {
@@ -1740,7 +1740,7 @@ export type OrganizationUpdateWithoutTeamMembershipsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutTeamMembershipsInput = {
@@ -1762,7 +1762,7 @@ export type OrganizationUncheckedUpdateWithoutTeamMembershipsInput = {
     skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutNotesInput = {
@@ -1784,7 +1784,7 @@ export type OrganizationCreateWithoutNotesInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutNotesInput = {
@@ -1806,7 +1806,7 @@ export type OrganizationUncheckedCreateWithoutNotesInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutNotesInput = {
@@ -1856,7 +1856,7 @@ export type OrganizationUpdateWithoutNotesInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutNotesInput = {
@@ -1878,7 +1878,7 @@ export type OrganizationUncheckedUpdateWithoutNotesInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackagesInput = {
@@ -1900,7 +1900,7 @@ export type OrganizationCreateWithoutSkillPackagesInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
@@ -1922,7 +1922,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackagesInput = {
@@ -1972,7 +1972,7 @@ export type OrganizationUpdateWithoutSkillPackagesInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
@@ -1994,7 +1994,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillCheckSessionsInput = {
@@ -2016,7 +2016,7 @@ export type OrganizationCreateWithoutSkillCheckSessionsInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
@@ -2038,7 +2038,7 @@ export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillCheckSessionsInput = {
@@ -2088,7 +2088,7 @@ export type OrganizationUpdateWithoutSkillCheckSessionsInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
@@ -2110,7 +2110,7 @@ export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillChecksInput = {
@@ -2132,7 +2132,7 @@ export type OrganizationCreateWithoutSkillChecksInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
@@ -2154,7 +2154,7 @@ export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillChecksInput = {
@@ -2204,7 +2204,7 @@ export type OrganizationUpdateWithoutSkillChecksInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
@@ -2226,7 +2226,7 @@ export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
@@ -2248,7 +2248,7 @@ export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
     personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
@@ -2270,7 +2270,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackageSubscriptionsInput = {
@@ -2321,7 +2321,7 @@ export type OrganizationUpdateWithoutSkillPackageSubscriptionsInput = {
     personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
@@ -2343,7 +2343,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
-    d4hPPETemplates?: Prisma.D4hPPETemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hPPETemplates?: Prisma.D4hPpeTemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutD4hPPETemplatesInput = {
@@ -2663,7 +2663,7 @@ export type OrganizationCountOutputTypeCountD4hPPETemplatesArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    where?: Prisma.D4hPPETemplateWhereInput;
+    where?: Prisma.D4hPpeTemplateWhereInput;
 };
 
 export type OrganizationSelect<
@@ -2814,7 +2814,7 @@ export type $OrganizationPayload<
         personnel: Prisma.$PersonPayload<ExtArgs>[];
         d4hAccessTokens: Prisma.$D4hAccessTokenPayload<ExtArgs>[];
         teamMemberships: Prisma.$TeamMembershipPayload<ExtArgs>[];
-        d4hPPETemplates: Prisma.$D4hPPETemplatePayload<ExtArgs>[];
+        d4hPPETemplates: Prisma.$D4hPpeTemplatePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -3571,7 +3571,7 @@ export interface Prisma__OrganizationClient<
         >,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
-              Prisma.$D4hPPETemplatePayload<ExtArgs>,
+              Prisma.$D4hPpeTemplatePayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -4493,27 +4493,27 @@ export type Organization$d4hPPETemplatesArgs<
         runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
-     * Select specific fields to fetch from the D4hPPETemplate
+     * Select specific fields to fetch from the D4hPpeTemplate
      */
-    select?: Prisma.D4hPPETemplateSelect<ExtArgs> | null;
+    select?: Prisma.D4hPpeTemplateSelect<ExtArgs> | null;
     /**
-     * Omit specific fields from the D4hPPETemplate
+     * Omit specific fields from the D4hPpeTemplate
      */
-    omit?: Prisma.D4hPPETemplateOmit<ExtArgs> | null;
+    omit?: Prisma.D4hPpeTemplateOmit<ExtArgs> | null;
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: Prisma.D4hPPETemplateInclude<ExtArgs> | null;
-    where?: Prisma.D4hPPETemplateWhereInput;
+    include?: Prisma.D4hPpeTemplateInclude<ExtArgs> | null;
+    where?: Prisma.D4hPpeTemplateWhereInput;
     orderBy?:
-        | Prisma.D4hPPETemplateOrderByWithRelationInput
-        | Prisma.D4hPPETemplateOrderByWithRelationInput[];
-    cursor?: Prisma.D4hPPETemplateWhereUniqueInput;
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput
+        | Prisma.D4hPpeTemplateOrderByWithRelationInput[];
+    cursor?: Prisma.D4hPpeTemplateWhereUniqueInput;
     take?: number;
     skip?: number;
     distinct?:
-        | Prisma.D4hPPETemplateScalarFieldEnum
-        | Prisma.D4hPPETemplateScalarFieldEnum[];
+        | Prisma.D4hPpeTemplateScalarFieldEnum
+        | Prisma.D4hPpeTemplateScalarFieldEnum[];
 };
 
 /**

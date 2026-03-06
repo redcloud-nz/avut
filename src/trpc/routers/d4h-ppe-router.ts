@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import * as R from "remeda";
 import { z } from "zod";
 import {
     AuthenticatedOrganizationContext,
@@ -16,6 +15,11 @@ import {
 } from "@/lib/schemas/d4h-ppe-template";
 import { diffObject } from "@/lib/diff";
 import { TRPCError } from "@trpc/server";
+import {
+    getD4HEquipmentBrands,
+    getD4HEquipmentModels,
+} from "@/lib/d4h-api/client";
+import { getConfiguredD4HViewsAccessToken } from "@/server/d4h-access-token";
 
 export const d4hPpeRouter = createTrpcRouter({
     /**
@@ -33,10 +37,11 @@ export const d4hPpeRouter = createTrpcRouter({
             const diff = diffObject({}, create);
 
             const [created] = await Promise.all([
-                ctx.prisma.d4hPPETemplate.create({
+                ctx.prisma.d4hPpeTemplate.create({
                     data: {
                         id: d4hPpeTemplateId,
                         organizationId: ctx.organizationId,
+                        d4hModelIds: [],
                         ...create,
                     },
                 }),
@@ -51,6 +56,9 @@ export const d4hPpeRouter = createTrpcRouter({
             return { created: D4hPpeTemplate.fromRecord(created) };
         }),
 
+    /**
+     * Delete a D4H PPE Template. This is a hard delete and cannot be undone.
+     */
     deleteTemplate: organizationProcedure({ d4hPpeTemplate: ["delete"] })
         .input(z.object({ d4hPpeTemplateId: D4hPpeTemplateId.schema }))
         .output(z.object({ deleted: D4hPpeTemplate.schema }))
@@ -61,7 +69,7 @@ export const d4hPpeRouter = createTrpcRouter({
             );
 
             await Promise.all([
-                ctx.prisma.d4hPPETemplate.delete({
+                ctx.prisma.d4hPpeTemplate.delete({
                     where: { id: d4hPpeTemplateId },
                 }),
                 ctx.logEvent({
@@ -75,15 +83,21 @@ export const d4hPpeRouter = createTrpcRouter({
             return { deleted: existing };
         }),
 
+    /**
+     * List all D4H PPE Templates for the organization.
+     */
     listTemplates: organizationProcedure({ d4hPpeTemplate: ["view"] })
         .output(z.array(D4hPpeTemplate.schema))
         .query(async ({ ctx }) => {
-            const templates = await ctx.prisma.d4hPPETemplate.findMany({
+            const templates = await ctx.prisma.d4hPpeTemplate.findMany({
                 where: { organizationId: ctx.organizationId },
             });
             return templates.map(D4hPpeTemplate.fromRecord);
         }),
 
+    /**
+     * Update a D4H PPE Template. Only the fields included in the input will be updated.
+     */
     updateTemplate: organizationProcedure({ d4hPpeTemplate: ["update"] })
         .input(
             z.object({
@@ -99,7 +113,7 @@ export const d4hPpeRouter = createTrpcRouter({
             );
 
             const [updated] = await Promise.all([
-                ctx.prisma.d4hPPETemplate.update({
+                ctx.prisma.d4hPpeTemplate.update({
                     where: { id: d4hPpeTemplateId },
                     data: update,
                 }),
@@ -119,7 +133,7 @@ async function getD4hPpeTemplateOrThrow(
     ctx: AuthenticatedOrganizationContext,
     d4hPpeTemplateId: D4hPpeTemplateId,
 ) {
-    const d4hPpeTemplate = await ctx.prisma.d4hPPETemplate.findUnique({
+    const d4hPpeTemplate = await ctx.prisma.d4hPpeTemplate.findUnique({
         where: { id: d4hPpeTemplateId, organizationId: ctx.organizationId },
     });
 

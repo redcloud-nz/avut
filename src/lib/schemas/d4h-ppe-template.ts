@@ -5,10 +5,10 @@
 
 import { z } from "zod";
 
-import { D4hPPETemplate as D4hPpeTemplateRecord } from "@/generated/prisma/client";
+import { D4hPpeTemplate as D4hPpeTemplateRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
-import { zodNanoId16 } from "../validation";
+import { recordStatusSchema, zodNanoId16 } from "../validation";
 
 export const D4hPpeTemplateId = {
     schema: zodNanoId16(
@@ -28,7 +28,7 @@ const d4hPpeTemplateSchema = z.object({
     d4hCategoryId: z.number(),
     d4hKindId: z.number(),
     d4hModelIds: z.array(z.number()),
-    active: z.boolean().default(true),
+    status: recordStatusSchema.default("Active"),
     createdAt: z.iso.datetime().default(() => new Date().toISOString()),
     updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
 });
@@ -41,8 +41,7 @@ export const D4hPpeTemplate = {
         description: true,
         d4hCategoryId: true,
         d4hKindId: true,
-        d4hModelIds: true,
-        active: true,
+        status: true,
     }),
 
     fromRecord: (record: D4hPpeTemplateRecord) =>

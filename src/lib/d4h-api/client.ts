@@ -19,6 +19,8 @@ import { D4HTeamRef } from "./team";
 import { D4HOrganisation } from "./organisation";
 import { D4HEquipmentCategory } from "./equipment-category";
 import { D4HEquipmentItem } from "./equipment-item";
+import { D4HEquipmentBrand } from "./equipment-brand";
+import { D4HEquipmentModel } from "./equipment-models";
 
 export type D4HListResponse = {
     results: unknown[];
@@ -286,6 +288,78 @@ export async function getD4HEquipmentCategories(
     ).flat();
 
     return R.uniqueBy(categories, (c) => c.id);
+}
+
+export async function getD4HEquipmentBrands(
+    accessToken: D4HAccessToken_ServerOnly,
+): Promise<D4HEquipmentBrand[]> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${accessToken.id}-equipment-brands`);
+
+    const fetchClient = getD4hFetchClient(accessToken);
+
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+
+    const brands = (
+        await Promise.all(
+            teams.map(async (team) => {
+                const { data } = await fetchClient.GET(
+                    "/v3/{context}/{contextId}/equipment-brands",
+                    {
+                        params: {
+                            path: {
+                                context: "team",
+                                contextId: team.id,
+                            },
+                        },
+                    },
+                );
+
+                return z
+                    .object({ results: z.array(D4HEquipmentBrand.schema) })
+                    .parse(data).results;
+            }),
+        )
+    ).flat();
+
+    return R.uniqueBy(brands, (b) => b.id);
+}
+
+export async function getD4HEquipmentModels(
+    accessToken: D4HAccessToken_ServerOnly,
+): Promise<D4HEquipmentModel[]> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${accessToken.id}-equipment-models`);
+
+    const fetchClient = getD4hFetchClient(accessToken);
+
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+
+    const models = (
+        await Promise.all(
+            teams.map(async (team) => {
+                const { data } = await fetchClient.GET(
+                    "/v3/{context}/{contextId}/equipment-models",
+                    {
+                        params: {
+                            path: {
+                                context: "team",
+                                contextId: team.id,
+                            },
+                        },
+                    },
+                );
+
+                return z
+                    .object({ results: z.array(D4HEquipmentModel.schema) })
+                    .parse(data).results;
+            }),
+        )
+    ).flat();
+
+    return R.uniqueBy(models, (m) => m.id);
 }
 
 export async function getD4HEquipmentByMember(

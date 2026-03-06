@@ -438,7 +438,7 @@ export const ModelName = {
     SkillPackageSubscription: "SkillPackageSubscription",
     SkillGroupOverride: "SkillGroupOverride",
     SkillOverride: "SkillOverride",
-    D4hPPETemplate: "D4hPPETemplate",
+    D4hPpeTemplate: "D4hPpeTemplate",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -485,7 +485,7 @@ export type TypeMap<
             | "skillPackageSubscription"
             | "skillGroupOverride"
             | "skillOverride"
-            | "d4hPPETemplate";
+            | "d4hPpeTemplate";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -2313,78 +2313,78 @@ export type TypeMap<
                 };
             };
         };
-        D4hPPETemplate: {
-            payload: Prisma.$D4hPPETemplatePayload<ExtArgs>;
-            fields: Prisma.D4hPPETemplateFieldRefs;
+        D4hPpeTemplate: {
+            payload: Prisma.$D4hPpeTemplatePayload<ExtArgs>;
+            fields: Prisma.D4hPpeTemplateFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.D4hPPETemplateFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload> | null;
+                    args: Prisma.D4hPpeTemplateFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.D4hPPETemplateFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 findFirst: {
-                    args: Prisma.D4hPPETemplateFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload> | null;
+                    args: Prisma.D4hPpeTemplateFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.D4hPPETemplateFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 findMany: {
-                    args: Prisma.D4hPPETemplateFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>[];
+                    args: Prisma.D4hPpeTemplateFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
                 };
                 create: {
-                    args: Prisma.D4hPPETemplateCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 createMany: {
-                    args: Prisma.D4hPPETemplateCreateManyArgs<ExtArgs>;
+                    args: Prisma.D4hPpeTemplateCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.D4hPPETemplateCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>[];
+                    args: Prisma.D4hPpeTemplateCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
                 };
                 delete: {
-                    args: Prisma.D4hPPETemplateDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 update: {
-                    args: Prisma.D4hPPETemplateUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 deleteMany: {
-                    args: Prisma.D4hPPETemplateDeleteManyArgs<ExtArgs>;
+                    args: Prisma.D4hPpeTemplateDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.D4hPPETemplateUpdateManyArgs<ExtArgs>;
+                    args: Prisma.D4hPpeTemplateUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.D4hPPETemplateUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>[];
+                    args: Prisma.D4hPpeTemplateUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
                 };
                 upsert: {
-                    args: Prisma.D4hPPETemplateUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPPETemplatePayload>;
+                    args: Prisma.D4hPpeTemplateUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
                 };
                 aggregate: {
-                    args: Prisma.D4hPPETemplateAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateD4hPPETemplate>;
+                    args: Prisma.D4hPpeTemplateAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateD4hPpeTemplate>;
                 };
                 groupBy: {
-                    args: Prisma.D4hPPETemplateGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.D4hPPETemplateGroupByOutputType>[];
+                    args: Prisma.D4hPpeTemplateGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.D4hPpeTemplateGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.D4hPPETemplateCountArgs<ExtArgs>;
+                    args: Prisma.D4hPpeTemplateCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.D4hPPETemplateCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.D4hPpeTemplateCountAggregateOutputType>
                         | number;
                 };
             };
@@ -2758,21 +2758,21 @@ export const SkillOverrideScalarFieldEnum = {
 export type SkillOverrideScalarFieldEnum =
     (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
 
-export const D4hPPETemplateScalarFieldEnum = {
+export const D4hPpeTemplateScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     name: "name",
     description: "description",
     d4hCategoryId: "d4hCategoryId",
     d4hKindId: "d4hKindId",
-    d4hModelsId: "d4hModelsId",
-    active: "active",
+    d4hModelIds: "d4hModelIds",
+    status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hPPETemplateScalarFieldEnum =
-    (typeof D4hPPETemplateScalarFieldEnum)[keyof typeof D4hPPETemplateScalarFieldEnum];
+export type D4hPpeTemplateScalarFieldEnum =
+    (typeof D4hPpeTemplateScalarFieldEnum)[keyof typeof D4hPpeTemplateScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",
@@ -3060,7 +3060,7 @@ export type GlobalOmitConfig = {
     skillPackageSubscription?: Prisma.SkillPackageSubscriptionOmit;
     skillGroupOverride?: Prisma.SkillGroupOverrideOmit;
     skillOverride?: Prisma.SkillOverrideOmit;
-    d4hPPETemplate?: Prisma.D4hPPETemplateOmit;
+    d4hPpeTemplate?: Prisma.D4hPpeTemplateOmit;
 };
 
 /* Types for Logging */

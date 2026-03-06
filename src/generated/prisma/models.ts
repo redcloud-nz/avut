@@ -31,5 +31,5 @@ export type * from "./models/SkillCheck";
 export type * from "./models/SkillPackageSubscription";
 export type * from "./models/SkillGroupOverride";
 export type * from "./models/SkillOverride";
-export type * from "./models/D4hPPETemplate";
+export type * from "./models/D4hPpeTemplate";
 export type * from "./commonInputTypes";
