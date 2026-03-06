@@ -438,7 +438,11 @@ export const ModelName = {
     SkillPackageSubscription: "SkillPackageSubscription",
     SkillGroupOverride: "SkillGroupOverride",
     SkillOverride: "SkillOverride",
-    D4hPpeTemplate: "D4hPpeTemplate",
+    I3IssuedItem: "I3IssuedItem",
+    I3Template: "I3Template",
+    I3Template_D4H: "I3Template_D4H",
+    I3TemplateVariant: "I3TemplateVariant",
+    I3TemplateVariant_D4H: "I3TemplateVariant_D4H",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -485,7 +489,11 @@ export type TypeMap<
             | "skillPackageSubscription"
             | "skillGroupOverride"
             | "skillOverride"
-            | "d4hPpeTemplate";
+            | "i3IssuedItem"
+            | "i3Template"
+            | "i3Template_D4H"
+            | "i3TemplateVariant"
+            | "i3TemplateVariant_D4H";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -2313,78 +2321,382 @@ export type TypeMap<
                 };
             };
         };
-        D4hPpeTemplate: {
-            payload: Prisma.$D4hPpeTemplatePayload<ExtArgs>;
-            fields: Prisma.D4hPpeTemplateFieldRefs;
+        I3IssuedItem: {
+            payload: Prisma.$I3IssuedItemPayload<ExtArgs>;
+            fields: Prisma.I3IssuedItemFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.D4hPpeTemplateFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload> | null;
+                    args: Prisma.I3IssuedItemFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.D4hPpeTemplateFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 findFirst: {
-                    args: Prisma.D4hPpeTemplateFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload> | null;
+                    args: Prisma.I3IssuedItemFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.D4hPpeTemplateFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 findMany: {
-                    args: Prisma.D4hPpeTemplateFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
+                    args: Prisma.I3IssuedItemFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>[];
                 };
                 create: {
-                    args: Prisma.D4hPpeTemplateCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 createMany: {
-                    args: Prisma.D4hPpeTemplateCreateManyArgs<ExtArgs>;
+                    args: Prisma.I3IssuedItemCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.D4hPpeTemplateCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
+                    args: Prisma.I3IssuedItemCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>[];
                 };
                 delete: {
-                    args: Prisma.D4hPpeTemplateDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 update: {
-                    args: Prisma.D4hPpeTemplateUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.D4hPpeTemplateDeleteManyArgs<ExtArgs>;
+                    args: Prisma.I3IssuedItemDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.D4hPpeTemplateUpdateManyArgs<ExtArgs>;
+                    args: Prisma.I3IssuedItemUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.D4hPpeTemplateUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>[];
+                    args: Prisma.I3IssuedItemUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>[];
                 };
                 upsert: {
-                    args: Prisma.D4hPpeTemplateUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hPpeTemplatePayload>;
+                    args: Prisma.I3IssuedItemUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3IssuedItemPayload>;
                 };
                 aggregate: {
-                    args: Prisma.D4hPpeTemplateAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateD4hPpeTemplate>;
+                    args: Prisma.I3IssuedItemAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateI3IssuedItem>;
                 };
                 groupBy: {
-                    args: Prisma.D4hPpeTemplateGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.D4hPpeTemplateGroupByOutputType>[];
+                    args: Prisma.I3IssuedItemGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.I3IssuedItemGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.D4hPpeTemplateCountArgs<ExtArgs>;
+                    args: Prisma.I3IssuedItemCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.D4hPpeTemplateCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.I3IssuedItemCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        I3Template: {
+            payload: Prisma.$I3TemplatePayload<ExtArgs>;
+            fields: Prisma.I3TemplateFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.I3TemplateFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.I3TemplateFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                findFirst: {
+                    args: Prisma.I3TemplateFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.I3TemplateFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                findMany: {
+                    args: Prisma.I3TemplateFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>[];
+                };
+                create: {
+                    args: Prisma.I3TemplateCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                createMany: {
+                    args: Prisma.I3TemplateCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.I3TemplateCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>[];
+                };
+                delete: {
+                    args: Prisma.I3TemplateDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                update: {
+                    args: Prisma.I3TemplateUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                deleteMany: {
+                    args: Prisma.I3TemplateDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.I3TemplateUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.I3TemplateUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>[];
+                };
+                upsert: {
+                    args: Prisma.I3TemplateUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplatePayload>;
+                };
+                aggregate: {
+                    args: Prisma.I3TemplateAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateI3Template>;
+                };
+                groupBy: {
+                    args: Prisma.I3TemplateGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.I3TemplateGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.I3TemplateCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.I3TemplateCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        I3Template_D4H: {
+            payload: Prisma.$I3Template_D4HPayload<ExtArgs>;
+            fields: Prisma.I3Template_D4HFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.I3Template_D4HFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.I3Template_D4HFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                findFirst: {
+                    args: Prisma.I3Template_D4HFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.I3Template_D4HFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                findMany: {
+                    args: Prisma.I3Template_D4HFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>[];
+                };
+                create: {
+                    args: Prisma.I3Template_D4HCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                createMany: {
+                    args: Prisma.I3Template_D4HCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.I3Template_D4HCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>[];
+                };
+                delete: {
+                    args: Prisma.I3Template_D4HDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                update: {
+                    args: Prisma.I3Template_D4HUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.I3Template_D4HDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.I3Template_D4HUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.I3Template_D4HUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>[];
+                };
+                upsert: {
+                    args: Prisma.I3Template_D4HUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3Template_D4HPayload>;
+                };
+                aggregate: {
+                    args: Prisma.I3Template_D4HAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateI3Template_D4H>;
+                };
+                groupBy: {
+                    args: Prisma.I3Template_D4HGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.I3Template_D4HGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.I3Template_D4HCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.I3Template_D4HCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        I3TemplateVariant: {
+            payload: Prisma.$I3TemplateVariantPayload<ExtArgs>;
+            fields: Prisma.I3TemplateVariantFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.I3TemplateVariantFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.I3TemplateVariantFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                findFirst: {
+                    args: Prisma.I3TemplateVariantFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.I3TemplateVariantFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                findMany: {
+                    args: Prisma.I3TemplateVariantFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>[];
+                };
+                create: {
+                    args: Prisma.I3TemplateVariantCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                createMany: {
+                    args: Prisma.I3TemplateVariantCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.I3TemplateVariantCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>[];
+                };
+                delete: {
+                    args: Prisma.I3TemplateVariantDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                update: {
+                    args: Prisma.I3TemplateVariantUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.I3TemplateVariantDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.I3TemplateVariantUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.I3TemplateVariantUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>[];
+                };
+                upsert: {
+                    args: Prisma.I3TemplateVariantUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariantPayload>;
+                };
+                aggregate: {
+                    args: Prisma.I3TemplateVariantAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateI3TemplateVariant>;
+                };
+                groupBy: {
+                    args: Prisma.I3TemplateVariantGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.I3TemplateVariantGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.I3TemplateVariantCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.I3TemplateVariantCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        I3TemplateVariant_D4H: {
+            payload: Prisma.$I3TemplateVariant_D4HPayload<ExtArgs>;
+            fields: Prisma.I3TemplateVariant_D4HFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.I3TemplateVariant_D4HFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.I3TemplateVariant_D4HFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                findFirst: {
+                    args: Prisma.I3TemplateVariant_D4HFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.I3TemplateVariant_D4HFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                findMany: {
+                    args: Prisma.I3TemplateVariant_D4HFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>[];
+                };
+                create: {
+                    args: Prisma.I3TemplateVariant_D4HCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                createMany: {
+                    args: Prisma.I3TemplateVariant_D4HCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.I3TemplateVariant_D4HCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>[];
+                };
+                delete: {
+                    args: Prisma.I3TemplateVariant_D4HDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                update: {
+                    args: Prisma.I3TemplateVariant_D4HUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.I3TemplateVariant_D4HDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.I3TemplateVariant_D4HUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.I3TemplateVariant_D4HUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>[];
+                };
+                upsert: {
+                    args: Prisma.I3TemplateVariant_D4HUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$I3TemplateVariant_D4HPayload>;
+                };
+                aggregate: {
+                    args: Prisma.I3TemplateVariant_D4HAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateI3TemplateVariant_D4H>;
+                };
+                groupBy: {
+                    args: Prisma.I3TemplateVariant_D4HGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.I3TemplateVariant_D4HGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.I3TemplateVariant_D4HCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.I3TemplateVariant_D4HCountAggregateOutputType>
                         | number;
                 };
             };
@@ -2758,21 +3070,67 @@ export const SkillOverrideScalarFieldEnum = {
 export type SkillOverrideScalarFieldEnum =
     (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
 
-export const D4hPpeTemplateScalarFieldEnum = {
+export const I3IssuedItemScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
+    personId: "personId",
     name: "name",
     description: "description",
-    d4hCategoryId: "d4hCategoryId",
-    d4hKindId: "d4hKindId",
-    d4hModelIds: "d4hModelIds",
+    properties: "properties",
     status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hPpeTemplateScalarFieldEnum =
-    (typeof D4hPpeTemplateScalarFieldEnum)[keyof typeof D4hPpeTemplateScalarFieldEnum];
+export type I3IssuedItemScalarFieldEnum =
+    (typeof I3IssuedItemScalarFieldEnum)[keyof typeof I3IssuedItemScalarFieldEnum];
+
+export const I3TemplateScalarFieldEnum = {
+    id: "id",
+    organizationId: "organizationId",
+    name: "name",
+    description: "description",
+    status: "status",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type I3TemplateScalarFieldEnum =
+    (typeof I3TemplateScalarFieldEnum)[keyof typeof I3TemplateScalarFieldEnum];
+
+export const I3Template_D4HScalarFieldEnum = {
+    templateId: "templateId",
+    categoryId: "categoryId",
+    categoryTitle: "categoryTitle",
+    kindId: "kindId",
+    kindTitle: "kindTitle",
+    outputRefFormat: "outputRefFormat",
+} as const;
+
+export type I3Template_D4HScalarFieldEnum =
+    (typeof I3Template_D4HScalarFieldEnum)[keyof typeof I3Template_D4HScalarFieldEnum];
+
+export const I3TemplateVariantScalarFieldEnum = {
+    id: "id",
+    i3TemplateId: "i3TemplateId",
+    name: "name",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type I3TemplateVariantScalarFieldEnum =
+    (typeof I3TemplateVariantScalarFieldEnum)[keyof typeof I3TemplateVariantScalarFieldEnum];
+
+export const I3TemplateVariant_D4HScalarFieldEnum = {
+    variantId: "variantId",
+    brandId: "brandId",
+    brandTitle: "brandTitle",
+    modelId: "modelId",
+    modelTitle: "modelTitle",
+} as const;
+
+export type I3TemplateVariant_D4HScalarFieldEnum =
+    (typeof I3TemplateVariant_D4HScalarFieldEnum)[keyof typeof I3TemplateVariant_D4HScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",
@@ -3060,7 +3418,11 @@ export type GlobalOmitConfig = {
     skillPackageSubscription?: Prisma.SkillPackageSubscriptionOmit;
     skillGroupOverride?: Prisma.SkillGroupOverrideOmit;
     skillOverride?: Prisma.SkillOverrideOmit;
-    d4hPpeTemplate?: Prisma.D4hPpeTemplateOmit;
+    i3IssuedItem?: Prisma.I3IssuedItemOmit;
+    i3Template?: Prisma.I3TemplateOmit;
+    i3Template_D4H?: Prisma.I3Template_D4HOmit;
+    i3TemplateVariant?: Prisma.I3TemplateVariantOmit;
+    i3TemplateVariant_D4H?: Prisma.I3TemplateVariant_D4HOmit;
 };
 
 /* Types for Logging */

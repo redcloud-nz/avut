@@ -23,24 +23,24 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { D4hPpeTemplate } from "@/lib/schemas/d4h-ppe-template";
+import { I3Template } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-interface D4hPPEModule_DeleteTemplate_DialogProps extends AlertDialogProps {
-    template: D4hPpeTemplate;
+interface I3Module_DeleteTemplate_DialogProps extends AlertDialogProps {
+    template: I3Template;
 }
 
-export function D4hPPEModule_DeleteTemplate_Dialog({
+export function I3Module_DeleteTemplate_Dialog({
     template,
     ...props
-}: D4hPPEModule_DeleteTemplate_DialogProps) {
+}: I3Module_DeleteTemplate_DialogProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.d4hPpe.deleteTemplate.mutationOptions({
+        trpc.i3.deleteTemplate.mutationOptions({
             onError(error) {
                 toast.error(`Failed to delete template: ${error.message}`);
             },
@@ -53,10 +53,10 @@ export function D4hPPEModule_DeleteTemplate_Dialog({
                 );
                 props.onOpenChange?.(false);
 
-                router.push(Paths.org(organization.slug).d4HPpe.templates.href);
+                router.push(Paths.org(organization.slug).i3.templates.href);
 
                 await queryClient.invalidateQueries(
-                    trpc.d4hPpe.listTemplates.queryFilter({
+                    trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -70,7 +70,7 @@ export function D4hPPEModule_DeleteTemplate_Dialog({
         <AlertDialog {...props}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete PPE Template</AlertDialogTitle>
+                    <AlertDialogTitle>Delete I3 Template</AlertDialogTitle>
                     <AlertDialogDescription>
                         Confirm deletion of template{" "}
                         <ObjectName>{template.name}</ObjectName>. This action
@@ -84,7 +84,7 @@ export function D4hPPEModule_DeleteTemplate_Dialog({
                         onClick={() =>
                             mutation.mutate({
                                 organizationId: organization.id,
-                                d4hPpeTemplateId: template.id,
+                                i3TemplateId: template.id,
                             })
                         }
                         status={mutation.status}

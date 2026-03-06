@@ -39,20 +39,20 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { useD4hPpeTemplate } from "@/hooks/use-d4h-ppe-template";
-import { D4hPpeTemplate } from "@/lib/schemas/d4h-ppe-template";
+import { useI3Template } from "@/hooks/use-i3-template";
+import { I3Template } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-export default function D4hPPEModule_UpdateTemplate_Page(
-    props: PageProps<"/orgs/[slug]/d4h-ppe/templates/[template_id]/--update">,
+export default function I3Module_UpdateTemplate_Page(
+    props: PageProps<"/orgs/[slug]/i3/templates/[template_id]/--update">,
 ) {
     const { slug, template_id } = use(props.params);
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const template = useD4hPpeTemplate(template_id);
+    const template = useI3Template(template_id);
 
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
@@ -66,38 +66,23 @@ export default function D4hPPEModule_UpdateTemplate_Page(
         }),
     );
 
-    const { data: models } = useQuery(
-        trpc.d4hApi.listEquipmentModels.queryOptions({
-            organizationId: organization.id,
-        }),
-    );
-
     const form = useForm({
-        resolver: zodResolver(D4hPpeTemplate.modifiableSchema),
+        resolver: zodResolver(I3Template.modifiableSchema),
         defaultValues: template,
     });
 
-    const selectedCategoryId = useWatch({
-        control: form.control,
-        name: "d4hCategoryId",
-    });
-
-    const filteredKinds = kinds?.filter(
-        (k) => !selectedCategoryId || k.category.id === selectedCategoryId,
-    );
-
     const mutation = useMutation(
-        trpc.d4hPpe.updateTemplate.mutationOptions({
+        trpc.i3.updateTemplate.mutationOptions({
             onError(error) {
                 toast.error(`Failed to update template: ${error.message}`);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
-                    trpc.d4hPpe.listTemplates.queryFilter({
+                    trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
-                router.push(Paths.org(slug).d4HPpe.template(template.id).href);
+                router.push(Paths.org(slug).i3.template(template.id).href);
                 mutation.reset();
             },
         }),
@@ -106,20 +91,29 @@ export default function D4hPPEModule_UpdateTemplate_Page(
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId: organization.id,
-            d4hPpeTemplateId: template.id,
+            i3TemplateId: template.id,
             update: formData,
         });
     });
+
+    const selectedCategoryId = useWatch({
+        control: form.control,
+        name: "d4h.categoryId",
+    });
+
+    const filteredKinds = kinds?.filter(
+        (k) => !selectedCategoryId || k.category.id === selectedCategoryId,
+    );
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).d4HPpe.index,
-                    Paths.org(slug).d4HPpe.templates,
+                    Paths.org(slug).i3.index,
+                    Paths.org(slug).i3.templates,
                     {
                         label: template.name,
-                        href: Paths.org(slug).d4HPpe.template(template.id).href,
+                        href: Paths.org(slug).i3.template(template.id).href,
                     },
                     "Update",
                 ]}
@@ -128,7 +122,7 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.org(slug).d4HPpe.template(template.id)}
+                            to={Paths.org(slug).i3.template(template.id)}
                             tooltip="Back to template"
                         />
                         <Hermes.Title>Update: {template.name}</Hermes.Title>
@@ -204,7 +198,7 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                         )}
                                     />
                                     <Controller
-                                        name="d4hCategoryId"
+                                        name="d4h.categoryId"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
@@ -223,12 +217,26 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                                             : ""
                                                     }
                                                     onValueChange={(v) => {
+                                                        const newCategoryId =
+                                                            parseInt(v, 10);
                                                         field.onChange(
-                                                            parseInt(v, 10),
+                                                            newCategoryId,
                                                         );
                                                         form.setValue(
-                                                            "d4hKindId",
+                                                            "d4h.categoryTitle",
+                                                            categories?.find(
+                                                                (cat) =>
+                                                                    cat.id ===
+                                                                    newCategoryId,
+                                                            )?.title || "",
+                                                        );
+                                                        form.setValue(
+                                                            "d4h.kindId",
                                                             0,
+                                                        );
+                                                        form.setValue(
+                                                            "d4h.kindTitle",
+                                                            "",
                                                         );
                                                     }}
                                                 >
@@ -264,7 +272,7 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                         )}
                                     />
                                     <Controller
-                                        name="d4hKindId"
+                                        name="d4h.kindId"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
@@ -282,11 +290,21 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                                             ? field.value.toString()
                                                             : ""
                                                     }
-                                                    onValueChange={(v) =>
+                                                    onValueChange={(v) => {
+                                                        const newKindId =
+                                                            parseInt(v, 10);
                                                         field.onChange(
-                                                            parseInt(v, 10),
-                                                        )
-                                                    }
+                                                            newKindId,
+                                                        );
+                                                        form.setValue(
+                                                            "d4h.kindTitle",
+                                                            filteredKinds?.find(
+                                                                (k) =>
+                                                                    k.id ===
+                                                                    newKindId,
+                                                            )?.title || "",
+                                                        );
+                                                    }}
                                                     disabled={
                                                         !selectedCategoryId
                                                     }
@@ -324,6 +342,36 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                             </Field>
                                         )}
                                     />
+                                    <Controller
+                                        name="d4h.outputRefFormat"
+                                        control={form.control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation="responsive"
+                                                data-invalid={
+                                                    fieldState.invalid
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="template-output-ref-format">
+                                                    D4H Output Ref Format
+                                                </FieldLabel>
+                                                <Input
+                                                    id="template-output-ref-format"
+                                                    aria-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                    {...field}
+                                                />
+                                                {fieldState.error && (
+                                                    <FieldError
+                                                        errors={[
+                                                            fieldState.error,
+                                                        ]}
+                                                    />
+                                                )}
+                                            </Field>
+                                        )}
+                                    />
                                     <Field orientation="horizontal">
                                         <MutationButton
                                             type="submit"
@@ -343,7 +391,7 @@ export default function D4hPPEModule_UpdateTemplate_Page(
                                                     router.push(
                                                         Paths.org(
                                                             slug,
-                                                        ).d4HPpe.template(
+                                                        ).i3.template(
                                                             template.id,
                                                         ).href,
                                                     )

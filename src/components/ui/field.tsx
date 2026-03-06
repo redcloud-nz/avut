@@ -36,7 +36,7 @@ export function FieldLegend({
             data-slot="field-legend"
             data-variant={variant}
             className={cn(
-                "mb-2.55 font-medium",
+                "mb-1.5 font-medium",
                 "data-[variant=legend]:text-sm",
                 "data-[variant=label]:text-xs",
                 className,

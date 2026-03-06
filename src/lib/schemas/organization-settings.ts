@@ -32,13 +32,13 @@ const organizationSettingsSchema = z.object({
         }),
     }),
     modules: z.object({
-        "d4h-ppe": z.object({
-            enabled: z.boolean().default(false),
-        }),
         "d4h-views": z.object({
             enabled: z.boolean().default(false),
         }),
         forms: z.object({
+            enabled: z.boolean().default(false),
+        }),
+        i3: z.object({
             enabled: z.boolean().default(false),
         }),
         notes: z.object({
@@ -58,9 +58,9 @@ export const OrganizationSettings = {
 
     integrationKeys: ["d4h", "email"],
     moduleKeys: [
-        "d4h-ppe",
         "d4h-views",
         "forms",
+        "i3",
         "notes",
         "skills",
         "skill-package-builder",
@@ -74,9 +74,9 @@ export const OrganizationSettings = {
                 email: {},
             },
             modules: {
-                "d4h-ppe": {},
                 "d4h-views": {},
                 forms: {},
+                i3: {},
                 notes: {},
                 skills: {},
                 "skill-package-builder": {},

@@ -6,26 +6,26 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { D4hPpeTemplate } from "@/lib/schemas/d4h-ppe-template";
+import { I3Template } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
 import { useOrganization } from "./use-organization";
 
 /**
  * Fetches a D4H PPE template by its ID using TRPC and React Query.
- * @param templateId The ID of the template to fetch.
+ * @param i3TemplateId The ID of the template to fetch.
  * @returns The template with the specified ID.
  */
-export function useD4hPpeTemplate(templateId: string): D4hPpeTemplate {
+export function useI3Template(i3TemplateId: string): I3Template {
     const organization = useOrganization();
 
     const { data: templates } = useSuspenseQuery(
-        trpc.d4hPpe.listTemplates.queryOptions({
+        trpc.i3.listTemplates.queryOptions({
             organizationId: organization.id,
         }),
     );
 
-    const template = templates.find((t) => t.id === templateId);
-    if (!template) throw new Error(`D4hPpeTemplate(${templateId}) not found`);
+    const template = templates.find((t) => t.id === i3TemplateId);
+    if (!template) throw new Error(`I3Template(${i3TemplateId}) not found`);
 
     return template;
 }

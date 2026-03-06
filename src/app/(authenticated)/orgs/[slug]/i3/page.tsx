@@ -22,27 +22,27 @@ import {
 
 import * as Paths from "@/paths";
 
-export default async function D4HPPE_Index_Page(
-    props: PageProps<`/orgs/[slug]/d4h-ppe`>,
+export default async function I3_Index_Page(
+    props: PageProps<`/orgs/[slug]/i3`>,
 ) {
     const { slug } = await props.params;
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.org(slug).d4HPpe.index]} />
+            <Lexington.Header breadcrumbs={[Paths.org(slug).i3.index]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
-                        <div className="font-semibold">D4H PPE Module</div>
+                        <div className="font-semibold">I3 Module</div>
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link to={Paths.org(slug).d4HPpe.templates}>
+                            <Link to={Paths.org(slug).i3.templates}>
                                 <ItemContent>
                                     <ItemTitle>Templates</ItemTitle>
                                     <ItemDescription>
-                                        Manage PPE item templates.
+                                        Manage I3 item templates.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>

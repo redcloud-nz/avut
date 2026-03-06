@@ -11,12 +11,12 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -26,6 +26,7 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
+    FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,14 +39,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import {
-    D4hPpeTemplate,
-    D4hPpeTemplateId,
-} from "@/lib/schemas/d4h-ppe-template";
+import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
+export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -63,24 +61,19 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
     );
 
     const form = useForm({
-        resolver: zodResolver(D4hPpeTemplate.modifiableSchema),
+        resolver: zodResolver(I3Template.modifiableSchema),
         defaultValues: {
             name: "",
             description: "",
-            d4hCategoryId: 0,
-            d4hKindId: 0,
-            status: "Active",
+            d4h: {
+                categoryId: 0,
+                categoryTitle: "",
+                kindId: 0,
+                kindTitle: "",
+                outputRefFormat: "{{teamPrefix}} {{kindTitle}} {{memberRef}}",
+            },
         },
     });
-
-    const selectedCategoryId = useWatch({
-        control: form.control,
-        name: "d4hCategoryId",
-    });
-
-    const filteredKinds = kinds?.filter(
-        (k) => !selectedCategoryId || k.category.id === selectedCategoryId,
-    );
 
     function handleOpenChange(open: boolean) {
         form.reset();
@@ -88,20 +81,19 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
     }
 
     const mutation = useMutation(
-        trpc.d4hPpe.createTemplate.mutationOptions({
+        trpc.i3.createTemplate.mutationOptions({
             onError(error) {
                 toast.error(`Failed to create template: ${error.message}`);
             },
             async onSuccess({ created }) {
                 await queryClient.invalidateQueries(
-                    trpc.d4hPpe.listTemplates.queryFilter({
+                    trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
                 handleOpenChange(false);
                 router.push(
-                    Paths.org(organization.slug).d4HPpe.template(created.id)
-                        .href,
+                    Paths.org(organization.slug).i3.template(created.id).href,
                 );
                 mutation.reset();
             },
@@ -109,24 +101,32 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
     );
 
     const handleSubmit = form.handleSubmit((formData) => {
-        console.log("Creating PPE Template with data:", formData);
         mutation.mutate({
             organizationId: organization.id,
-            d4hPpeTemplateId: D4hPpeTemplateId.create(),
+            i3TemplateId: I3TemplateId.create(),
             create: formData,
         });
     });
 
+    const selectedCategoryId = useWatch({
+        control: form.control,
+        name: "d4h.categoryId",
+    });
+    const filteredKinds = kinds?.filter(
+        (k) => k.category.id === selectedCategoryId,
+    );
+
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent className="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>New PPE Template</DialogTitle>
-                    <DialogDescription>
-                        Create a new PPE inspection template.
-                    </DialogDescription>
-                </DialogHeader>
-                <form id="create-ppe-template-form" onSubmit={handleSubmit}>
+                <form id="create-i3-template-form" onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>New I3 Template</DialogTitle>
+                        <DialogDescription>
+                            Create a new I3 item template.
+                        </DialogDescription>
+                    </DialogHeader>
+
                     <FieldGroup>
                         <Controller
                             name="name"
@@ -172,8 +172,9 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                                 </Field>
                             )}
                         />
+
                         <Controller
-                            name="d4hCategoryId"
+                            name="d4h.categoryId"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
@@ -187,8 +188,21 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                                                 : ""
                                         }
                                         onValueChange={(v) => {
-                                            field.onChange(parseInt(v, 10));
-                                            form.setValue("d4hKindId", 0);
+                                            const newCategoryId = parseInt(
+                                                v,
+                                                10,
+                                            );
+                                            field.onChange(newCategoryId);
+                                            form.setValue(
+                                                "d4h.categoryTitle",
+                                                categories?.find(
+                                                    (cat) =>
+                                                        cat.id ===
+                                                        newCategoryId,
+                                                )?.title || "",
+                                            );
+                                            form.setValue("d4h.kindId", 0);
+                                            form.setValue("d4h.kindTitle", "");
                                         }}
                                     >
                                         <SelectTrigger
@@ -217,7 +231,7 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                             )}
                         />
                         <Controller
-                            name="d4hKindId"
+                            name="d4h.kindId"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
@@ -230,9 +244,16 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                                                 ? field.value.toString()
                                                 : ""
                                         }
-                                        onValueChange={(v) =>
-                                            field.onChange(parseInt(v, 10))
-                                        }
+                                        onValueChange={(v) => {
+                                            const newKindId = parseInt(v, 10);
+                                            field.onChange(newKindId);
+                                            form.setValue(
+                                                "d4h.kindTitle",
+                                                filteredKinds?.find(
+                                                    (k) => k.id === newKindId,
+                                                )?.title || "",
+                                            );
+                                        }}
                                         disabled={!selectedCategoryId}
                                     >
                                         <SelectTrigger
@@ -260,13 +281,32 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                                 </Field>
                             )}
                         />
-                        <div>
-                            {JSON.stringify(form.formState.errors, null, 2)}
-                        </div>
-                        <Field orientation="horizontal">
+                        <Controller
+                            name="d4h.outputRefFormat"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="template-output-ref-format">
+                                        D4H Output Ref Format
+                                    </FieldLabel>
+                                    <Input
+                                        id="template-output-ref-format"
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.error && (
+                                        <FieldError
+                                            errors={[fieldState.error]}
+                                        />
+                                    )}
+                                </Field>
+                            )}
+                        />
+
+                        <DialogFooter>
                             <MutationButton
                                 type="submit"
-                                form="create-ppe-template-form"
+                                form="create-i3-template-form"
                                 status={mutation.status}
                                 text={{
                                     idle: "Create",
@@ -274,16 +314,15 @@ export function D4hPPEModule_CreateTemplate_Dialog(props: DialogProps) {
                                     success: "Created",
                                 }}
                             />
-                            <Show when={mutation.isIdle}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => handleOpenChange(false)}
-                                >
-                                    Cancel
-                                </Button>
-                            </Show>
-                        </Field>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleOpenChange(false)}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogFooter>
                     </FieldGroup>
                 </form>
             </DialogContent>

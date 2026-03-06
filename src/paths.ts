@@ -129,10 +129,10 @@ type OrgPaths = {
     cards: ReturnType<typeof cardsModule>;
     checklists: ReturnType<typeof checklistsModule>;
     dashboard: { label: string; href: string };
-    d4HPpe: ReturnType<typeof d4hPpeModule>;
     d4HViews: ReturnType<typeof d4HViewsModule>;
     dev: ReturnType<typeof devModule>;
     fog: ReturnType<typeof fogModule>;
+    i3: ReturnType<typeof i3Module>;
     notes: ReturnType<typeof notesModule>;
     skills: ReturnType<typeof skillsModule>;
     skillPackageBuilder: ReturnType<typeof skillPackageBuilderModule>;
@@ -149,10 +149,10 @@ export function org(orgSlug: string): OrgPaths {
             cards: cardsModule(orgSlug),
             checklists: checklistsModule(orgSlug),
             dashboard: { label: "Dashboard", href: `/orgs/${orgSlug}` },
-            d4HPpe: d4hPpeModule(orgSlug),
             d4HViews: d4HViewsModule(orgSlug),
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),
+            i3: i3Module(orgSlug),
             notes: notesModule(orgSlug),
             skills: skillsModule(orgSlug),
             skillPackageBuilder: skillPackageBuilderModule(orgSlug),
@@ -442,12 +442,12 @@ function checklistsModule(orgSlug: string) {
     } as const;
 }
 
-function d4hPpeModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/d4h-ppe` as const;
+function i3Module(orgSlug: string) {
+    const base = `/orgs/${orgSlug}/i3` as const;
 
     return {
         index: {
-            label: "D4H PPE",
+            label: "I3",
             href: base,
         },
 

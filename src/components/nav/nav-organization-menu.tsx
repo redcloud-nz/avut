@@ -57,12 +57,12 @@ export async function NavOrganizationMenu({
                         <NavSubItem path={orgPrefix.admin.users} />
                     </Protect>
                 </NavCollapsible>
-                <Show when={modules["d4h-ppe"].enabled}>
+                <Show when={modules["i3"].enabled}>
                     <NavCollapsible
-                        path={orgPrefix.d4HPpe.index}
-                        icon={<ModuleIcons.D4HPPE />}
+                        path={orgPrefix.i3.index}
+                        icon={<ModuleIcons.I3 />}
                     >
-                        <NavSubItem path={orgPrefix.d4HPpe.templates} />
+                        <NavSubItem path={orgPrefix.i3.templates} />
                     </NavCollapsible>
                 </Show>
                 <Show when={modules["d4h-views"].enabled}>

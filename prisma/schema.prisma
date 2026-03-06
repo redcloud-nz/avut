@@ -110,7 +110,9 @@ model Organization {
   personnel                 Person[]                   @relation("person_to_organization")
   d4hAccessTokens           D4hAccessToken[]           @relation("d4h_access_token_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
-  d4hPPETemplates           D4hPpeTemplate[]           @relation("d4h_ppe_template_to_organization")
+
+  i3IssuedItems             I3IssuedItem[]             @relation("i3_issued_item_to_organization")
+  i3Templates               I3Template[]               @relation("i3_template_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -259,6 +261,7 @@ model Person {
   updatedAt      DateTime     @updatedAt
   status         RecordStatus @default(Active)
 
+  issuedItems                  I3IssuedItem[]            @relation("i3_issued_item_to_person")
   skillChecksAsAssessee        SkillCheck[]        @relation("skill_check_assessee")
   skillChecksAsAssessor        SkillCheck[]        @relation("skill_check_assessor")
   skillCheckSessionsAsAssessee SkillCheckSession[] @relation("skill_check_session_assessees")
@@ -472,20 +475,82 @@ model SkillOverride {
   @@map("skill_overrides")
 }
 
-
-model D4hPpeTemplate {
+model I3IssuedItem {
   id             String       @id
   organizationId String
-  organization   Organization @relation("d4h_ppe_template_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("i3_issued_item_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  personId       String
+  person         Person       @relation("i3_issued_item_to_person", fields: [personId], references: [id], onDelete: Cascade)
   name           String
   description    String
-  d4hCategoryId  Int
-  d4hKindId      Int
-  d4hModelIds    Int[]
+  properties     Json         @default("{}")
   status         RecordStatus @default(Active)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
-  @@map("d4h_ppe_templates")
+  @@index([personId])
+  @@map("i3_issued_items")
+}
+
+model I3Template {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("i3_template_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  
+  status         RecordStatus @default(Active)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  d4h             I3Template_D4H? @relation("i3_template_d4h_to_i3_template")
+  variants        I3TemplateVariant[] @relation("i3_template_variant_to_i3_template")
+
+  @@index([organizationId])
+  @@map("i3_templates")
+}
+
+model I3Template_D4H {
+  templateId    String
+  template      I3Template @relation("i3_template_d4h_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
+
+  categoryId    Int
+  categoryTitle String
+  kindId        Int
+  kindTitle     String
+
+  outputRefFormat String
+
+  @@unique([templateId])  
+  @@map("i3_template_d4h")
+}
+
+
+model I3TemplateVariant {
+  id            String       @id
+  i3TemplateId   String
+  i3Template     I3Template   @relation("i3_template_variant_to_i3_template", fields: [i3TemplateId], references: [id], onDelete: Cascade)
+  name           String
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  d4h             I3TemplateVariant_D4H? @relation("i3_template_variant_d4h_to_i3_template_variant")
+
+  @@index([i3TemplateId])
+  @@map("i3_template_variants")
+}
+
+model I3TemplateVariant_D4H {
+  variantId     String
+  variant       I3TemplateVariant @relation("i3_template_variant_d4h_to_i3_template_variant", fields: [variantId], references: [id], onDelete: Cascade)
+
+  brandId       Int
+  brandTitle    String
+  modelId       Int
+  modelTitle    String
+
+  @@unique([variantId])  
+  @@map("i3_template_variant_d4h")
 }

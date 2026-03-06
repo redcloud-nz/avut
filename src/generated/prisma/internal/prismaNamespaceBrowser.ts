@@ -78,7 +78,11 @@ export const ModelName = {
     SkillPackageSubscription: "SkillPackageSubscription",
     SkillGroupOverride: "SkillGroupOverride",
     SkillOverride: "SkillOverride",
-    D4hPpeTemplate: "D4hPpeTemplate",
+    I3IssuedItem: "I3IssuedItem",
+    I3Template: "I3Template",
+    I3Template_D4H: "I3Template_D4H",
+    I3TemplateVariant: "I3TemplateVariant",
+    I3TemplateVariant_D4H: "I3TemplateVariant_D4H",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -427,21 +431,67 @@ export const SkillOverrideScalarFieldEnum = {
 export type SkillOverrideScalarFieldEnum =
     (typeof SkillOverrideScalarFieldEnum)[keyof typeof SkillOverrideScalarFieldEnum];
 
-export const D4hPpeTemplateScalarFieldEnum = {
+export const I3IssuedItemScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
+    personId: "personId",
     name: "name",
     description: "description",
-    d4hCategoryId: "d4hCategoryId",
-    d4hKindId: "d4hKindId",
-    d4hModelIds: "d4hModelIds",
+    properties: "properties",
     status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hPpeTemplateScalarFieldEnum =
-    (typeof D4hPpeTemplateScalarFieldEnum)[keyof typeof D4hPpeTemplateScalarFieldEnum];
+export type I3IssuedItemScalarFieldEnum =
+    (typeof I3IssuedItemScalarFieldEnum)[keyof typeof I3IssuedItemScalarFieldEnum];
+
+export const I3TemplateScalarFieldEnum = {
+    id: "id",
+    organizationId: "organizationId",
+    name: "name",
+    description: "description",
+    status: "status",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type I3TemplateScalarFieldEnum =
+    (typeof I3TemplateScalarFieldEnum)[keyof typeof I3TemplateScalarFieldEnum];
+
+export const I3Template_D4HScalarFieldEnum = {
+    templateId: "templateId",
+    categoryId: "categoryId",
+    categoryTitle: "categoryTitle",
+    kindId: "kindId",
+    kindTitle: "kindTitle",
+    outputRefFormat: "outputRefFormat",
+} as const;
+
+export type I3Template_D4HScalarFieldEnum =
+    (typeof I3Template_D4HScalarFieldEnum)[keyof typeof I3Template_D4HScalarFieldEnum];
+
+export const I3TemplateVariantScalarFieldEnum = {
+    id: "id",
+    i3TemplateId: "i3TemplateId",
+    name: "name",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type I3TemplateVariantScalarFieldEnum =
+    (typeof I3TemplateVariantScalarFieldEnum)[keyof typeof I3TemplateVariantScalarFieldEnum];
+
+export const I3TemplateVariant_D4HScalarFieldEnum = {
+    variantId: "variantId",
+    brandId: "brandId",
+    brandTitle: "brandTitle",
+    modelId: "modelId",
+    modelTitle: "modelTitle",
+} as const;
+
+export type I3TemplateVariant_D4HScalarFieldEnum =
+    (typeof I3TemplateVariant_D4HScalarFieldEnum)[keyof typeof I3TemplateVariant_D4HScalarFieldEnum];
 
 export const SortOrder = {
     asc: "asc",

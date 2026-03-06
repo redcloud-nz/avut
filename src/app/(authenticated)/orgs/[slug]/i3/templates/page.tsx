@@ -34,36 +34,29 @@ import {
 import { Show } from "@/components/show";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { D4hPpeTemplate } from "@/lib/schemas/d4h-ppe-template";
+import { I3Template } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-import { D4hPPEModule_CreateTemplate_Dialog } from "./create-template";
+import { I3Module_CreateTemplate_D4H_Dialog } from "./create-template-d4h";
 
-export default function D4hPPEModule_Templates_Page(
-    props: PageProps<"/orgs/[slug]/d4h-ppe/templates">,
+export default function I3Module_Templates_Page(
+    props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = use(props.params);
     const organization = useOrganization();
 
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const [{ data: templates }, { data: categories }, { data: kinds }] =
-        useSuspenseQueries({
-            queries: [
-                trpc.d4hPpe.listTemplates.queryOptions({
-                    organizationId: organization.id,
-                }),
-                trpc.d4hApi.listEquipmentCategories.queryOptions({
-                    organizationId: organization.id,
-                }),
-                trpc.d4hApi.listEquipmentKinds.queryOptions({
-                    organizationId: organization.id,
-                }),
-            ],
-        });
+    const [{ data: templates }] = useSuspenseQueries({
+        queries: [
+            trpc.i3.listTemplates.queryOptions({
+                organizationId: organization.id,
+            }),
+        ],
+    });
 
-    type RowData = D4hPpeTemplate;
+    type RowData = I3Template;
 
     const columns = useMemo(
         () =>
@@ -77,7 +70,7 @@ export default function D4hPPEModule_Templates_Page(
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.org(slug).d4HPpe.template(
+                                to={Paths.org(slug).i3.template(
                                     ctx.row.original.id,
                                 )}
                             >
@@ -86,55 +79,25 @@ export default function D4hPPEModule_Templates_Page(
                         </Akagi.TableCell>
                     ),
                 }),
-                col.accessor("d4hCategoryId", {
+                col.accessor("d4h", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>
                             D4H Category
                         </Akagi.TableHeadCell>
                     ),
-                    cell: (ctx) => {
-                        const category = categories?.find(
-                            (c) => c.id === ctx.getValue(),
-                        );
-                        return (
-                            <Akagi.TableCell cell={ctx.cell}>
-                                {category?.title ?? "Unknown"}
-                            </Akagi.TableCell>
-                        );
-                    },
-                    enableSorting: true,
-                    enableGlobalFilter: false,
-                }),
-                col.accessor("d4hKindId", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            D4H Kind
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => {
-                        const kind = kinds?.find(
-                            (k) => k.id === ctx.getValue(),
-                        );
-                        return (
-                            <Akagi.TableCell cell={ctx.cell}>
-                                {kind?.title ?? "Unknown"}
-                            </Akagi.TableCell>
-                        );
-                    },
-                    enableSorting: true,
-                    enableGlobalFilter: false,
-                }),
-                col.accessor("d4hModelIds", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Models
-                        </Akagi.TableHeadCell>
-                    ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue().length}
+                        <Akagi.TableCell cell={ctx.cell}>
+                            {ctx.row.original.d4h ? (
+                                <>
+                                    {ctx.row.original.d4h.categoryTitle} &gt;{" "}
+                                    {ctx.row.original.d4h.kindTitle}
+                                </>
+                            ) : (
+                                ""
+                            )}
                         </Akagi.TableCell>
                     ),
+                    enableSorting: false,
                     enableGlobalFilter: false,
                 }),
 
@@ -177,22 +140,22 @@ export default function D4hPPEModule_Templates_Page(
             <Lexington.Root>
                 <Lexington.Header
                     breadcrumbs={[
-                        Paths.org(slug).d4HPpe.index,
-                        Paths.org(slug).d4HPpe.templates,
+                        Paths.org(slug).i3.index,
+                        Paths.org(slug).i3.templates,
                     ]}
                 />
                 <Lexington.Page>
                     <Lexington.Column width="xl">
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.org(slug).d4HPpe.index}
+                                to={Paths.org(slug).i3.index}
                                 tooltip="Back to D4H PPE"
                             />
                             <Hermes.Title>PPE Templates</Hermes.Title>
                             <Hermes.Action>
                                 <Protect
                                     orgId={organization.id}
-                                    permissions={{ d4hPpeTemplate: ["create"] }}
+                                    permissions={{ i3Template: ["create"] }}
                                 >
                                     <Button
                                         variant="outline"
@@ -222,7 +185,7 @@ export default function D4hPPEModule_Templates_Page(
                                         <Protect
                                             orgId={organization.id}
                                             permissions={{
-                                                d4hPpeTemplate: ["create"],
+                                                i3Template: ["create"],
                                             }}
                                         >
                                             <Button
@@ -246,7 +209,7 @@ export default function D4hPPEModule_Templates_Page(
                 </Lexington.Page>
             </Lexington.Root>
 
-            <D4hPPEModule_CreateTemplate_Dialog
+            <I3Module_CreateTemplate_D4H_Dialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
             />

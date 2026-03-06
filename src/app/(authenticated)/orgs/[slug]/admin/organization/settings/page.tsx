@@ -53,10 +53,10 @@ import { useOrganization } from "@/hooks/use-organization";
 import { D4HServerList } from "@/lib/d4h-api/servers";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { countDirtyFields } from "@/lib/utils";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
-import { countDirtyFields } from "@/lib/utils";
 
 export default function AdminModule_Settings_Page(
     props: PageProps<`/orgs/[slug]/admin/organization/settings`>,
@@ -162,8 +162,8 @@ export default function AdminModule_Settings_Page(
                                 <Hermes.Title>Modules</Hermes.Title>
                             </Hermes.Header>
 
-                            <D4HPPEModule_SettingsCard
-                                lens={lens.focus("modules.d4h-ppe")}
+                            <I3Module_SettingsCard
+                                lens={lens.focus("modules.i3")}
                             />
                             <D4HViewsModule_SettingsCard
                                 lens={lens.focus("modules.d4h-views")}
@@ -532,23 +532,23 @@ function EmailIntegration_SettingsCard({
     );
 }
 
-function D4HPPEModule_SettingsCard({
+function I3Module_SettingsCard({
     lens,
 }: {
-    lens: Lens<Partial<OrganizationSettings["modules"]["d4h-ppe"]>>;
+    lens: Lens<Partial<OrganizationSettings["modules"]["i3"]>>;
 }) {
     const enabled = useWatch(lens.focus("enabled").interop());
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>D4H PPE Module</CardTitle>
+                <CardTitle>I3 Module</CardTitle>
                 <CardAction>
                     <Controller
                         {...lens.focus("enabled").interop()}
                         render={({ field }) => (
                             <Switch
-                                id="d4h-ppe-module-enabled"
+                                id="i3-module-enabled"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                             />

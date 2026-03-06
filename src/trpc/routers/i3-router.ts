@@ -1,0 +1,268 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+import { z } from "zod";
+import {
+    AuthenticatedOrganizationContext,
+    createTrpcRouter,
+    organizationProcedure,
+} from "../init";
+import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
+import { diffObject } from "@/lib/diff";
+import { TRPCError } from "@trpc/server";
+import {
+    I3TemplateVariant,
+    I3TemplateVariantId,
+} from "@/lib/schemas/i3-template-variant";
+import { Messages } from "../messages";
+
+export const i3Router = createTrpcRouter({
+    /**
+     * Create a new I3 Template.
+     */
+    createTemplate: organizationProcedure({ i3Template: ["create"] })
+        .input(
+            z.object({
+                i3TemplateId: I3TemplateId.schema,
+                create: I3Template.modifiableSchema,
+            }),
+        )
+        .output(z.object({ created: I3Template.schema }))
+        .mutation(async ({ ctx, input: { i3TemplateId, create } }) => {
+            const diff = diffObject({}, create);
+
+            const [created] = await Promise.all([
+                ctx.prisma.i3Template.create({
+                    data: {
+                        id: i3TemplateId,
+                        organizationId: ctx.organizationId,
+                        name: create.name,
+                        description: create.description,
+                        d4h: create.d4h
+                            ? {
+                                  create: {
+                                      categoryId: create.d4h.categoryId,
+                                      categoryTitle: create.d4h.categoryTitle,
+                                      kindId: create.d4h.kindId,
+                                      kindTitle: create.d4h.kindTitle,
+                                      outputRefFormat:
+                                          create.d4h.outputRefFormat,
+                                  },
+                              }
+                            : undefined,
+                    },
+                    include: {
+                        d4h: true,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "I3Template",
+                    objectId: i3TemplateId,
+                    changes: diff,
+                }),
+            ]);
+
+            return { created: I3Template.fromRecord(created) };
+        }),
+
+    createTemplateVariant: organizationProcedure({ i3Template: ["update"] })
+        .input(
+            z.object({
+                i3TemplateId: I3TemplateId.schema,
+                variantId: I3TemplateVariantId.schema,
+                create: I3TemplateVariant.modifiableSchema,
+            }),
+        )
+        .output(z.object({ created: I3TemplateVariant.schema }))
+        .mutation(
+            async ({ ctx, input: { i3TemplateId, variantId, create } }) => {
+                // Ensure the template exists and belongs to the organization
+                await getI3TemplateOrThrow(ctx, i3TemplateId);
+
+                const diff = diffObject({}, create);
+
+                const [created] = await Promise.all([
+                    ctx.prisma.i3TemplateVariant.create({
+                        data: {
+                            id: variantId,
+                            i3TemplateId,
+                            name: create.name,
+                            d4h: create.d4h
+                                ? {
+                                      create: {
+                                          brandId: create.d4h.brandId,
+                                          brandTitle: create.d4h.brandTitle,
+                                          modelId: create.d4h.modelId,
+                                          modelTitle: create.d4h.modelTitle,
+                                      },
+                                  }
+                                : undefined,
+                        },
+                        include: {
+                            d4h: true,
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Create",
+                        objectType: "I3TemplateVariant",
+                        objectId: variantId,
+                        changes: diff,
+                    }),
+                ]);
+
+                return { created: I3TemplateVariant.fromRecord(created) };
+            },
+        ),
+
+    /**
+     * Delete a D4H PPE Template. This is a hard delete and cannot be undone.
+     */
+    deleteTemplate: organizationProcedure({ i3Template: ["delete"] })
+        .input(z.object({ i3TemplateId: I3TemplateId.schema }))
+        .output(z.object({ deleted: I3Template.schema }))
+        .mutation(async ({ ctx, input: { i3TemplateId } }) => {
+            const existing = await getI3TemplateOrThrow(ctx, i3TemplateId);
+
+            await Promise.all([
+                ctx.prisma.i3Template.delete({
+                    where: { id: i3TemplateId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "I3Template",
+                    objectId: i3TemplateId,
+                    changes: diffObject(existing, {}),
+                }),
+            ]);
+
+            return { deleted: existing };
+        }),
+
+    /**
+     * List all D4H PPE Templates for the organization.
+     */
+    listTemplates: organizationProcedure({ i3Template: ["view"] })
+        .output(
+            z.array(
+                I3Template.schema.extend({
+                    variants: z.array(I3TemplateVariant.schema),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const templates = await ctx.prisma.i3Template.findMany({
+                where: { organizationId: ctx.organizationId },
+                include: {
+                    d4h: true,
+                    variants: {
+                        include: {
+                            d4h: true,
+                        },
+                    },
+                },
+            });
+            return templates.map((template) => ({
+                ...I3Template.fromRecord(template),
+                variants: template.variants.map(I3TemplateVariant.fromRecord),
+            }));
+        }),
+
+    listTemplateVariants: organizationProcedure({ i3Template: ["view"] })
+        .input(z.object({ i3TemplateId: I3TemplateId.schema }))
+        .output(z.array(I3TemplateVariant.schema))
+        .query(async ({ ctx, input: { i3TemplateId } }) => {
+            const template = await ctx.prisma.i3Template.findUnique({
+                where: { id: i3TemplateId, organizationId: ctx.organizationId },
+                include: { variants: { include: { d4h: true } } },
+            });
+
+            if (!template)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.i3TemplateNotFound(i3TemplateId),
+                });
+
+            return template.variants.map(I3TemplateVariant.fromRecord);
+        }),
+
+    /**
+     * Update a D4H PPE Template. Only the fields included in the input will be updated.
+     */
+    updateTemplate: organizationProcedure({ i3Template: ["update"] })
+        .input(
+            z.object({
+                i3TemplateId: I3TemplateId.schema,
+                update: I3Template.modifiableSchema,
+            }),
+        )
+        .output(z.object({ updated: I3Template.schema }))
+        .mutation(async ({ ctx, input: { i3TemplateId, update } }) => {
+            const existing = await getI3TemplateOrThrow(ctx, i3TemplateId);
+
+            const [updated] = await Promise.all([
+                ctx.prisma.i3Template.update({
+                    where: { id: i3TemplateId },
+                    data: {
+                        name: update.name,
+                        description: update.description,
+                        d4h: update.d4h
+                            ? {
+                                  upsert: {
+                                      create: {
+                                          categoryId: update.d4h.categoryId,
+                                          categoryTitle:
+                                              update.d4h.categoryTitle,
+                                          kindId: update.d4h.kindId,
+                                          kindTitle: update.d4h.kindTitle,
+                                          outputRefFormat:
+                                              update.d4h.outputRefFormat,
+                                      },
+                                      update: {
+                                          categoryId: update.d4h.categoryId,
+                                          categoryTitle:
+                                              update.d4h.categoryTitle,
+                                          kindId: update.d4h.kindId,
+                                          kindTitle: update.d4h.kindTitle,
+                                          outputRefFormat:
+                                              update.d4h.outputRefFormat,
+                                      },
+                                  },
+                              }
+                            : {
+                                  delete: true,
+                              },
+                    },
+                    include: { d4h: true },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "I3Template",
+                    objectId: i3TemplateId,
+                    changes: diffObject(existing, update),
+                }),
+            ]);
+
+            return { updated: I3Template.fromRecord(updated) };
+        }),
+});
+
+async function getI3TemplateOrThrow(
+    ctx: AuthenticatedOrganizationContext,
+    i3TemplateId: I3TemplateId,
+) {
+    const i3Template = await ctx.prisma.i3Template.findUnique({
+        where: { id: i3TemplateId, organizationId: ctx.organizationId },
+        include: { d4h: true },
+    });
+
+    if (!i3Template) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: Messages.i3TemplateNotFound(i3TemplateId),
+        });
+    }
+    return I3Template.fromRecord(i3Template);
+}

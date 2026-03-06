@@ -165,7 +165,27 @@ export type SkillGroupOverride = Prisma.SkillGroupOverrideModel;
  */
 export type SkillOverride = Prisma.SkillOverrideModel;
 /**
- * Model D4hPpeTemplate
+ * Model I3IssuedItem
  *
  */
-export type D4hPpeTemplate = Prisma.D4hPpeTemplateModel;
+export type I3IssuedItem = Prisma.I3IssuedItemModel;
+/**
+ * Model I3Template
+ *
+ */
+export type I3Template = Prisma.I3TemplateModel;
+/**
+ * Model I3Template_D4H
+ *
+ */
+export type I3Template_D4H = Prisma.I3Template_D4HModel;
+/**
+ * Model I3TemplateVariant
+ *
+ */
+export type I3TemplateVariant = Prisma.I3TemplateVariantModel;
+/**
+ * Model I3TemplateVariant_D4H
+ *
+ */
+export type I3TemplateVariant_D4H = Prisma.I3TemplateVariant_D4HModel;

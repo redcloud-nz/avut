@@ -11,7 +11,6 @@ import { useQueries, useSuspenseQueries } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -20,22 +19,9 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
-import {
-    Table,
-    TableBody,
-    TableHeadCell,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { D4hPpeTemplateId } from "@/lib/schemas/d4h-ppe-template";
+import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 
 import { trpc } from "@/trpc/client";
 import {
@@ -57,50 +43,39 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export function D4hPPEModule_Template_Models_List({
-    templateId,
+export function I3Module_Template_Variants_List({
+    template,
 }: {
-    templateId: D4hPpeTemplateId;
+    template: I3Template;
 }) {
     const organization = useOrganization();
 
-    const [{ data: templates }, { data: brands }, { data: models }] =
-        useSuspenseQueries({
-            queries: [
-                trpc.d4hPpe.listTemplates.queryOptions({
-                    organizationId: organization.id,
-                }),
-                trpc.d4hApi.listEquipmentBrands.queryOptions({
-                    organizationId: organization.id,
-                }),
-                trpc.d4hApi.listEquipmentModels.queryOptions({
-                    organizationId: organization.id,
-                }),
-            ],
-        });
+    const [{ data: brands }, { data: models }] = useSuspenseQueries({
+        queries: [
+            trpc.d4hApi.listEquipmentBrands.queryOptions({
+                organizationId: organization.id,
+            }),
+            trpc.d4hApi.listEquipmentModels.queryOptions({
+                organizationId: organization.id,
+            }),
+        ],
+    });
 
     const [addDialogOpen, setAddDialogOpen] = useState(false);
-
-    const template = templates.find((t) => t.id === templateId);
-    if (!template) throw new Error("Template not found");
-
-    const templateModels = models.filter((model) =>
-        template.d4hModelIds.includes(model.id),
-    );
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Models</CardTitle>
+                <CardTitle>Variants</CardTitle>
                 <CardAction>
                     <Protect
                         orgId={organization.id}
-                        permissions={{ d4hPpeTemplate: ["update"] }}
+                        permissions={{ i3Template: ["update"] }}
                     >
                         <Button
                             variant="ghost"
                             size="icon"
-                            tooltip="Add model"
+                            tooltip="Add variant"
                             onClick={() => setAddDialogOpen(true)}
                         >
                             <ObjectIcons.Create />
@@ -109,17 +84,17 @@ export function D4hPPEModule_Template_Models_List({
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <Show
+                {/* <Show
                     when={templateModels.length > 0}
                     fallback={
                         <Empty>
                             <EmptyHeader>
-                                <EmptyTitle>No models yet</EmptyTitle>
+                                <EmptyTitle>No variants yet</EmptyTitle>
                                 <EmptyDescription>
-                                    You have not added any models to this
+                                    You have not added any variants to this
                                     template yet. Click the
                                     <ObjectIcons.Create className="inline-block mx-1 size-4" />
-                                    button to add a model.
+                                    button to add a variant.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -151,7 +126,7 @@ export function D4hPPEModule_Template_Models_List({
                             })}
                         </TableBody>
                     </Table>
-                </Show>
+                </Show> */}
             </CardContent>
 
             <AddModel_Dialog

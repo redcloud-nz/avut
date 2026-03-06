@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { Tmpl } from "./tmpl";
 
 export const zodColor = z
     .string()
@@ -44,3 +45,11 @@ export const recordStatusSchema = z.enum(["Active", "Archived", "Deleted"]);
 export const tagsSchema = z.array(z.string().nonempty());
 
 export type RecordStatus = z.infer<typeof recordStatusSchema>;
+
+export function zodTmplString(data: Record<string, any>) {
+    return z.stringFormat(
+        "tmpl-string",
+        (val) => Tmpl.validate(val, data),
+        "Invalid template string",
+    );
+}

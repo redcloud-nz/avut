@@ -24,51 +24,38 @@ import {
 } from "@/components/ui/card";
 import {
     Field,
+    FieldDescription,
     FieldGroup,
     FieldLabel,
+    FieldLegend,
     FieldSeparator,
+    FieldSet,
 } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { useD4hPpeTemplate } from "@/hooks/use-d4h-ppe-template";
+import { useI3Template } from "@/hooks/use-i3-template";
+import { I3Template } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
-import { D4hPPEModule_DeleteTemplate_Dialog } from "./delete-template";
-import { D4hPPEModule_Template_Models_List } from "./template-models";
+import { I3Module_Template_Menu } from "./template-menu";
+import { I3Module_Template_Variants_List } from "./template-variants";
 
-export default function D4hPPEModule_Template_Page(
-    props: PageProps<"/orgs/[slug]/d4h-ppe/templates/[template_id]">,
+export default function I3Module_Template_Page(
+    props: PageProps<"/orgs/[slug]/i3/templates/[template_id]">,
 ) {
     const { slug, template_id } = use(props.params);
     const organization = useOrganization();
-    const template = useD4hPpeTemplate(template_id);
-
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-    const { data: categories } = useQuery(
-        trpc.d4hApi.listEquipmentCategories.queryOptions({
-            organizationId: organization.id,
-        }),
-    );
-
-    const { data: kinds } = useQuery(
-        trpc.d4hApi.listEquipmentKinds.queryOptions({
-            organizationId: organization.id,
-        }),
-    );
-
-    const category = categories?.find((c) => c.id === template.d4hCategoryId);
-    const kind = kinds?.find((k) => k.id === template.d4hKindId);
+    const template = useI3Template(template_id);
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.org(slug).d4HPpe.index,
-                    Paths.org(slug).d4HPpe.templates,
+                    Paths.org(slug).i3.index,
+                    Paths.org(slug).i3.templates,
                     template.name,
                 ]}
             />
@@ -76,10 +63,13 @@ export default function D4hPPEModule_Template_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.org(slug).d4HPpe.templates}
+                            to={Paths.org(slug).i3.templates}
                             tooltip="Back to templates"
                         />
                         <Hermes.Title>{template.name}</Hermes.Title>
+                        <Hermes.Action>
+                            <I3Module_Template_Menu template={template} />
+                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
@@ -87,7 +77,7 @@ export default function D4hPPEModule_Template_Page(
                             <CardAction className="flex gap-2">
                                 <Protect
                                     orgId={organization.id}
-                                    permissions={{ d4hPpeTemplate: ["update"] }}
+                                    permissions={{ i3Template: ["update"] }}
                                 >
                                     <Button
                                         variant="ghost"
@@ -97,28 +87,13 @@ export default function D4hPPEModule_Template_Page(
                                     >
                                         <Link
                                             to={
-                                                Paths.org(slug).d4HPpe.template(
+                                                Paths.org(slug).i3.template(
                                                     template.id,
                                                 ).update
                                             }
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>
-                                    </Button>
-                                </Protect>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ d4hPpeTemplate: ["delete"] }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        tooltip="Delete template"
-                                        onClick={() =>
-                                            setDeleteDialogOpen(true)
-                                        }
-                                    >
-                                        <ObjectIcons.Delete />
                                     </Button>
                                 </Protect>
                             </CardAction>
@@ -129,33 +104,48 @@ export default function D4hPPEModule_Template_Page(
                                     <FieldLabel>Name</FieldLabel>
                                     <FieldValue value={template.name} />
                                 </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue value={template.description} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={template.status} />
-                                </Field>
+                                {template.description && (
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Description</FieldLabel>
+                                        <FieldValue
+                                            value={template.description}
+                                        />
+                                    </Field>
+                                )}
+
                                 <Field orientation="responsive">
                                     <FieldLabel>D4H Category</FieldLabel>
                                     <FieldValue
                                         value={
-                                            category?.title ??
-                                            `ID: ${template.d4hCategoryId}`
+                                            template.d4h?.categoryTitle ?? ""
                                         }
                                     />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>D4H Kind</FieldLabel>
                                     <FieldValue
-                                        value={
-                                            kind?.title ??
-                                            `ID: ${template.d4hKindId}`
-                                        }
+                                        value={template.d4h?.kindTitle ?? ""}
                                     />
                                 </Field>
+
+                                <FieldSet>
+                                    <FieldLegend>Output Format</FieldLegend>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Item Ref</FieldLabel>
+                                        <FieldValue
+                                            value={
+                                                template.d4h?.outputRefFormat ??
+                                                ""
+                                            }
+                                        />
+                                    </Field>
+                                </FieldSet>
+
                                 <FieldSeparator />
+                                <Field orientation="responsive">
+                                    <FieldLabel>Status</FieldLabel>
+                                    <FieldValue value={template.status} />
+                                </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue
@@ -173,17 +163,9 @@ export default function D4hPPEModule_Template_Page(
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <D4hPPEModule_Template_Models_List
-                        templateId={template.id}
-                    />
+                    <I3Module_Template_Variants_List template={template} />
                 </Lexington.Column>
             </Lexington.Page>
-
-            <D4hPPEModule_DeleteTemplate_Dialog
-                template={template}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-            />
         </Lexington.Root>
     );
 }

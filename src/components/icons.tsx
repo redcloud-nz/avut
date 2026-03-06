@@ -92,7 +92,7 @@ export {
 };
 
 export const ModuleIcons = {
-    D4HPPE: ShirtIcon,
+    I3: ShirtIcon,
     D4HViews: CableIcon,
     Notes: NotebookPenIcon,
     Skills: PocketKnifeIcon,
