@@ -1,4 +1,9 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 interface PackageData {
     name: string;
@@ -33,4 +38,6 @@ const nextConfig: NextConfig = {
     },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin();
+
+export default withNextIntl(nextConfig);
