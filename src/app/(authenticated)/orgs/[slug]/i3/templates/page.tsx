@@ -48,13 +48,11 @@ export default function I3Module_Templates_Page(
 
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const [{ data: templates }] = useSuspenseQueries({
-        queries: [
-            trpc.i3.listTemplates.queryOptions({
-                organizationId: organization.id,
-            }),
-        ],
-    });
+    const { data: templates } = useSuspenseQuery(
+        trpc.i3.listTemplates.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
 
     type RowData = I3Template;
 
@@ -79,7 +77,7 @@ export default function I3Module_Templates_Page(
                         </Akagi.TableCell>
                     ),
                 }),
-                col.accessor("d4h", {
+                col.accessor("d4h.categoryTitle", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>
                             D4H Category
@@ -87,14 +85,21 @@ export default function I3Module_Templates_Page(
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.row.original.d4h ? (
-                                <>
-                                    {ctx.row.original.d4h.categoryTitle} &gt;{" "}
-                                    {ctx.row.original.d4h.kindTitle}
-                                </>
-                            ) : (
-                                ""
-                            )}
+                            {ctx.getValue()}
+                        </Akagi.TableCell>
+                    ),
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                }),
+                col.accessor("d4h.kindTitle", {
+                    header: (ctx) => (
+                        <Akagi.TableHeadCell header={ctx.header}>
+                            D4H Kind
+                        </Akagi.TableHeadCell>
+                    ),
+                    cell: (ctx) => (
+                        <Akagi.TableCell cell={ctx.cell}>
+                            {ctx.getValue()}
                         </Akagi.TableCell>
                     ),
                     enableSorting: false,

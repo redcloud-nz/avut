@@ -518,9 +518,10 @@ model I3Template_D4H {
   categoryId    Int
   categoryTitle String
   kindId        Int
-  kindTitle     String
+  kindTitle       String
 
   outputRefFormat String
+  requireSN       Boolean
 
   @@unique([templateId])  
   @@map("i3_template_d4h")
@@ -529,8 +530,8 @@ model I3Template_D4H {
 
 model I3TemplateVariant {
   id            String       @id
-  i3TemplateId   String
-  i3Template     I3Template   @relation("i3_template_variant_to_i3_template", fields: [i3TemplateId], references: [id], onDelete: Cascade)
+  templateId   String
+  template     I3Template   @relation("i3_template_variant_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
   name           String
   
   createdAt      DateTime     @default(now())
@@ -538,7 +539,7 @@ model I3TemplateVariant {
 
   d4h             I3TemplateVariant_D4H? @relation("i3_template_variant_d4h_to_i3_template_variant")
 
-  @@index([i3TemplateId])
+  @@index([templateId])
   @@map("i3_template_variants")
 }
 

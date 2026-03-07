@@ -307,7 +307,7 @@ export type I3TemplateCreateInput = {
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutI3TemplatesInput;
     d4h?: Prisma.I3Template_D4HCreateNestedOneWithoutTemplateInput;
-    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateUncheckedCreateInput = {
@@ -319,7 +319,7 @@ export type I3TemplateUncheckedCreateInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     d4h?: Prisma.I3Template_D4HUncheckedCreateNestedOneWithoutTemplateInput;
-    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateUpdateInput = {
@@ -333,7 +333,7 @@ export type I3TemplateUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutI3TemplatesNestedInput;
     d4h?: Prisma.I3Template_D4HUpdateOneWithoutTemplateNestedInput;
-    variants?: Prisma.I3TemplateVariantUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateUncheckedUpdateInput = {
@@ -347,7 +347,7 @@ export type I3TemplateUncheckedUpdateInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     d4h?: Prisma.I3Template_D4HUncheckedUpdateOneWithoutTemplateNestedInput;
-    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateCreateManyInput = {
@@ -598,7 +598,7 @@ export type I3TemplateCreateWithoutOrganizationInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     d4h?: Prisma.I3Template_D4HCreateNestedOneWithoutTemplateInput;
-    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateUncheckedCreateWithoutOrganizationInput = {
@@ -609,7 +609,7 @@ export type I3TemplateUncheckedCreateWithoutOrganizationInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     d4h?: Prisma.I3Template_D4HUncheckedCreateNestedOneWithoutTemplateInput;
-    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateCreateOrConnectWithoutOrganizationInput = {
@@ -680,7 +680,7 @@ export type I3TemplateCreateWithoutD4hInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutI3TemplatesInput;
-    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateUncheckedCreateWithoutD4hInput = {
@@ -691,7 +691,7 @@ export type I3TemplateUncheckedCreateWithoutD4hInput = {
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
-    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutI3TemplateInput;
+    variants?: Prisma.I3TemplateVariantUncheckedCreateNestedManyWithoutTemplateInput;
 };
 
 export type I3TemplateCreateOrConnectWithoutD4hInput = {
@@ -732,7 +732,7 @@ export type I3TemplateUpdateWithoutD4hInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutI3TemplatesNestedInput;
-    variants?: Prisma.I3TemplateVariantUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateUncheckedUpdateWithoutD4hInput = {
@@ -745,7 +745,7 @@ export type I3TemplateUncheckedUpdateWithoutD4hInput = {
         | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateCreateWithoutVariantsInput = {
@@ -843,7 +843,7 @@ export type I3TemplateUpdateWithoutOrganizationInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     d4h?: Prisma.I3Template_D4HUpdateOneWithoutTemplateNestedInput;
-    variants?: Prisma.I3TemplateVariantUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateUncheckedUpdateWithoutOrganizationInput = {
@@ -856,7 +856,7 @@ export type I3TemplateUncheckedUpdateWithoutOrganizationInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     d4h?: Prisma.I3Template_D4HUncheckedUpdateOneWithoutTemplateNestedInput;
-    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateNestedInput;
+    variants?: Prisma.I3TemplateVariantUncheckedUpdateManyWithoutTemplateNestedInput;
 };
 
 export type I3TemplateUncheckedUpdateManyWithoutOrganizationInput = {

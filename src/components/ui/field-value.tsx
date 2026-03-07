@@ -37,6 +37,7 @@ type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
             | "uppercase"
             | "lowercase"
             | "capitalize"
+            | "tmplExpr"
             | ((input: string) => ReactNode);
     };
 
@@ -127,6 +128,8 @@ function formatValue(
             return value.toLowerCase();
         case "capitalize":
             return value.charAt(0).toUpperCase() + value.slice(1);
+        case "tmplExpr":
+            return <span className="font-mono">{value}</span>;
         case "default":
         default:
             return value;

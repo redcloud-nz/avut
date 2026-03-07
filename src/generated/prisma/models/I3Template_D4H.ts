@@ -43,6 +43,7 @@ export type I3Template_D4HMinAggregateOutputType = {
     kindId: number | null;
     kindTitle: string | null;
     outputRefFormat: string | null;
+    requireSN: boolean | null;
 };
 
 export type I3Template_D4HMaxAggregateOutputType = {
@@ -52,6 +53,7 @@ export type I3Template_D4HMaxAggregateOutputType = {
     kindId: number | null;
     kindTitle: string | null;
     outputRefFormat: string | null;
+    requireSN: boolean | null;
 };
 
 export type I3Template_D4HCountAggregateOutputType = {
@@ -61,6 +63,7 @@ export type I3Template_D4HCountAggregateOutputType = {
     kindId: number;
     kindTitle: number;
     outputRefFormat: number;
+    requireSN: number;
     _all: number;
 };
 
@@ -81,6 +84,7 @@ export type I3Template_D4HMinAggregateInputType = {
     kindId?: true;
     kindTitle?: true;
     outputRefFormat?: true;
+    requireSN?: true;
 };
 
 export type I3Template_D4HMaxAggregateInputType = {
@@ -90,6 +94,7 @@ export type I3Template_D4HMaxAggregateInputType = {
     kindId?: true;
     kindTitle?: true;
     outputRefFormat?: true;
+    requireSN?: true;
 };
 
 export type I3Template_D4HCountAggregateInputType = {
@@ -99,6 +104,7 @@ export type I3Template_D4HCountAggregateInputType = {
     kindId?: true;
     kindTitle?: true;
     outputRefFormat?: true;
+    requireSN?: true;
     _all?: true;
 };
 
@@ -206,6 +212,7 @@ export type I3Template_D4HGroupByOutputType = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
     _count: I3Template_D4HCountAggregateOutputType | null;
     _avg: I3Template_D4HAvgAggregateOutputType | null;
     _sum: I3Template_D4HSumAggregateOutputType | null;
@@ -243,6 +250,7 @@ export type I3Template_D4HWhereInput = {
     kindId?: Prisma.IntFilter<"I3Template_D4H"> | number;
     kindTitle?: Prisma.StringFilter<"I3Template_D4H"> | string;
     outputRefFormat?: Prisma.StringFilter<"I3Template_D4H"> | string;
+    requireSN?: Prisma.BoolFilter<"I3Template_D4H"> | boolean;
     template?: Prisma.XOR<
         Prisma.I3TemplateScalarRelationFilter,
         Prisma.I3TemplateWhereInput
@@ -256,6 +264,7 @@ export type I3Template_D4HOrderByWithRelationInput = {
     kindId?: Prisma.SortOrder;
     kindTitle?: Prisma.SortOrder;
     outputRefFormat?: Prisma.SortOrder;
+    requireSN?: Prisma.SortOrder;
     template?: Prisma.I3TemplateOrderByWithRelationInput;
 };
 
@@ -274,6 +283,7 @@ export type I3Template_D4HWhereUniqueInput = Prisma.AtLeast<
         kindId?: Prisma.IntFilter<"I3Template_D4H"> | number;
         kindTitle?: Prisma.StringFilter<"I3Template_D4H"> | string;
         outputRefFormat?: Prisma.StringFilter<"I3Template_D4H"> | string;
+        requireSN?: Prisma.BoolFilter<"I3Template_D4H"> | boolean;
         template?: Prisma.XOR<
             Prisma.I3TemplateScalarRelationFilter,
             Prisma.I3TemplateWhereInput
@@ -289,6 +299,7 @@ export type I3Template_D4HOrderByWithAggregationInput = {
     kindId?: Prisma.SortOrder;
     kindTitle?: Prisma.SortOrder;
     outputRefFormat?: Prisma.SortOrder;
+    requireSN?: Prisma.SortOrder;
     _count?: Prisma.I3Template_D4HCountOrderByAggregateInput;
     _avg?: Prisma.I3Template_D4HAvgOrderByAggregateInput;
     _max?: Prisma.I3Template_D4HMaxOrderByAggregateInput;
@@ -314,6 +325,7 @@ export type I3Template_D4HScalarWhereWithAggregatesInput = {
     outputRefFormat?:
         | Prisma.StringWithAggregatesFilter<"I3Template_D4H">
         | string;
+    requireSN?: Prisma.BoolWithAggregatesFilter<"I3Template_D4H"> | boolean;
 };
 
 export type I3Template_D4HCreateInput = {
@@ -322,6 +334,7 @@ export type I3Template_D4HCreateInput = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
     template: Prisma.I3TemplateCreateNestedOneWithoutD4hInput;
 };
 
@@ -332,6 +345,7 @@ export type I3Template_D4HUncheckedCreateInput = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
 };
 
 export type I3Template_D4HUpdateInput = {
@@ -340,6 +354,7 @@ export type I3Template_D4HUpdateInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     template?: Prisma.I3TemplateUpdateOneRequiredWithoutD4hNestedInput;
 };
 
@@ -350,6 +365,7 @@ export type I3Template_D4HUncheckedUpdateInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type I3Template_D4HCreateManyInput = {
@@ -359,6 +375,7 @@ export type I3Template_D4HCreateManyInput = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
 };
 
 export type I3Template_D4HUpdateManyMutationInput = {
@@ -367,6 +384,7 @@ export type I3Template_D4HUpdateManyMutationInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type I3Template_D4HUncheckedUpdateManyInput = {
@@ -376,6 +394,7 @@ export type I3Template_D4HUncheckedUpdateManyInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type I3Template_D4HNullableScalarRelationFilter = {
@@ -390,6 +409,7 @@ export type I3Template_D4HCountOrderByAggregateInput = {
     kindId?: Prisma.SortOrder;
     kindTitle?: Prisma.SortOrder;
     outputRefFormat?: Prisma.SortOrder;
+    requireSN?: Prisma.SortOrder;
 };
 
 export type I3Template_D4HAvgOrderByAggregateInput = {
@@ -404,6 +424,7 @@ export type I3Template_D4HMaxOrderByAggregateInput = {
     kindId?: Prisma.SortOrder;
     kindTitle?: Prisma.SortOrder;
     outputRefFormat?: Prisma.SortOrder;
+    requireSN?: Prisma.SortOrder;
 };
 
 export type I3Template_D4HMinOrderByAggregateInput = {
@@ -413,6 +434,7 @@ export type I3Template_D4HMinOrderByAggregateInput = {
     kindId?: Prisma.SortOrder;
     kindTitle?: Prisma.SortOrder;
     outputRefFormat?: Prisma.SortOrder;
+    requireSN?: Prisma.SortOrder;
 };
 
 export type I3Template_D4HSumOrderByAggregateInput = {
@@ -482,6 +504,7 @@ export type I3Template_D4HCreateWithoutTemplateInput = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
 };
 
 export type I3Template_D4HUncheckedCreateWithoutTemplateInput = {
@@ -490,6 +513,7 @@ export type I3Template_D4HUncheckedCreateWithoutTemplateInput = {
     kindId: number;
     kindTitle: string;
     outputRefFormat: string;
+    requireSN: boolean;
 };
 
 export type I3Template_D4HCreateOrConnectWithoutTemplateInput = {
@@ -526,6 +550,7 @@ export type I3Template_D4HUpdateWithoutTemplateInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type I3Template_D4HUncheckedUpdateWithoutTemplateInput = {
@@ -534,6 +559,7 @@ export type I3Template_D4HUncheckedUpdateWithoutTemplateInput = {
     kindId?: Prisma.IntFieldUpdateOperationsInput | number;
     kindTitle?: Prisma.StringFieldUpdateOperationsInput | string;
     outputRefFormat?: Prisma.StringFieldUpdateOperationsInput | string;
+    requireSN?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type I3Template_D4HSelect<
@@ -547,6 +573,7 @@ export type I3Template_D4HSelect<
         kindId?: boolean;
         kindTitle?: boolean;
         outputRefFormat?: boolean;
+        requireSN?: boolean;
         template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3Template_D4H"]
@@ -563,6 +590,7 @@ export type I3Template_D4HSelectCreateManyAndReturn<
         kindId?: boolean;
         kindTitle?: boolean;
         outputRefFormat?: boolean;
+        requireSN?: boolean;
         template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3Template_D4H"]
@@ -579,6 +607,7 @@ export type I3Template_D4HSelectUpdateManyAndReturn<
         kindId?: boolean;
         kindTitle?: boolean;
         outputRefFormat?: boolean;
+        requireSN?: boolean;
         template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3Template_D4H"]
@@ -591,6 +620,7 @@ export type I3Template_D4HSelectScalar = {
     kindId?: boolean;
     kindTitle?: boolean;
     outputRefFormat?: boolean;
+    requireSN?: boolean;
 };
 
 export type I3Template_D4HOmit<
@@ -602,7 +632,8 @@ export type I3Template_D4HOmit<
     | "categoryTitle"
     | "kindId"
     | "kindTitle"
-    | "outputRefFormat",
+    | "outputRefFormat"
+    | "requireSN",
     ExtArgs["result"]["i3Template_D4H"]
 >;
 export type I3Template_D4HInclude<
@@ -640,6 +671,7 @@ export type $I3Template_D4HPayload<
             kindId: number;
             kindTitle: string;
             outputRefFormat: string;
+            requireSN: boolean;
         },
         ExtArgs["result"]["i3Template_D4H"]
     >;
@@ -1274,6 +1306,7 @@ export interface I3Template_D4HFieldRefs {
     readonly kindId: Prisma.FieldRef<"I3Template_D4H", "Int">;
     readonly kindTitle: Prisma.FieldRef<"I3Template_D4H", "String">;
     readonly outputRefFormat: Prisma.FieldRef<"I3Template_D4H", "String">;
+    readonly requireSN: Prisma.FieldRef<"I3Template_D4H", "Boolean">;
 }
 
 // Custom InputTypes

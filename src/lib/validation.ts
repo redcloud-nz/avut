@@ -46,10 +46,10 @@ export const tagsSchema = z.array(z.string().nonempty());
 
 export type RecordStatus = z.infer<typeof recordStatusSchema>;
 
-export function zodTmplString(data: Record<string, any>) {
+export function zodTmplString(availableKeys: string[]) {
     return z.stringFormat(
         "tmpl-string",
-        (val) => Tmpl.validate(val, data),
+        (val) => Tmpl.validate(val, availableKeys),
         "Invalid template string",
     );
 }

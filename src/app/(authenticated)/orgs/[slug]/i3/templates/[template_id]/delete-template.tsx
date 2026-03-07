@@ -84,7 +84,7 @@ export function I3Module_DeleteTemplate_Dialog({
                         onClick={() =>
                             mutation.mutate({
                                 organizationId: organization.id,
-                                i3TemplateId: template.id,
+                                templateId: template.id,
                             })
                         }
                         status={mutation.status}

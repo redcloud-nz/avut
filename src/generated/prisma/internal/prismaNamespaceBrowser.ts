@@ -466,6 +466,7 @@ export const I3Template_D4HScalarFieldEnum = {
     kindId: "kindId",
     kindTitle: "kindTitle",
     outputRefFormat: "outputRefFormat",
+    requireSN: "requireSN",
 } as const;
 
 export type I3Template_D4HScalarFieldEnum =
@@ -473,7 +474,7 @@ export type I3Template_D4HScalarFieldEnum =
 
 export const I3TemplateVariantScalarFieldEnum = {
     id: "id",
-    i3TemplateId: "i3TemplateId",
+    templateId: "templateId",
     name: "name",
     createdAt: "createdAt",
     updatedAt: "updatedAt",

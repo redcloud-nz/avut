@@ -92,7 +92,7 @@ export function ObjectName({
 }: React.ComponentProps<"span">) {
     return (
         <span
-            className={cn("font-semibold text-gray-800", className)}
+            className={cn("font-semibold", className)}
             data-component="ObjectName"
             {...props}
         />

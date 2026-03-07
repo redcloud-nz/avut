@@ -4,7 +4,12 @@
  */
 
 export const Tmpl = {
-    validate(tmpl: string, data: Record<string, any>): boolean {
+    validate(tmpl: string, keys: string[]): boolean {
+        const data: Record<string, any> = {};
+        for (const key of keys) {
+            data[key] = "test";
+        }
+
         const result = this.renderSafe(tmpl, data);
         return result.error === undefined;
     },

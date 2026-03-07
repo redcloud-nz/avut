@@ -25,30 +25,25 @@ export const i3Router = createTrpcRouter({
     createTemplate: organizationProcedure({ i3Template: ["create"] })
         .input(
             z.object({
-                i3TemplateId: I3TemplateId.schema,
+                templateId: I3TemplateId.schema,
                 create: I3Template.modifiableSchema,
             }),
         )
         .output(z.object({ created: I3Template.schema }))
-        .mutation(async ({ ctx, input: { i3TemplateId, create } }) => {
+        .mutation(async ({ ctx, input: { templateId, create } }) => {
             const diff = diffObject({}, create);
 
             const [created] = await Promise.all([
                 ctx.prisma.i3Template.create({
                     data: {
-                        id: i3TemplateId,
+                        id: templateId,
                         organizationId: ctx.organizationId,
                         name: create.name,
                         description: create.description,
                         d4h: create.d4h
                             ? {
                                   create: {
-                                      categoryId: create.d4h.categoryId,
-                                      categoryTitle: create.d4h.categoryTitle,
-                                      kindId: create.d4h.kindId,
-                                      kindTitle: create.d4h.kindTitle,
-                                      outputRefFormat:
-                                          create.d4h.outputRefFormat,
+                                      ...create.d4h,
                                   },
                               }
                             : undefined,
@@ -60,7 +55,7 @@ export const i3Router = createTrpcRouter({
                 ctx.logEvent({
                     action: "Create",
                     objectType: "I3Template",
-                    objectId: i3TemplateId,
+                    objectId: templateId,
                     changes: diff,
                 }),
             ]);
@@ -68,77 +63,122 @@ export const i3Router = createTrpcRouter({
             return { created: I3Template.fromRecord(created) };
         }),
 
+    /**
+     * Create a new I3 Template Variant for a given template.
+     * @param templateId The ID of the template to create the variant for. The template must belong to the organization.
+     * @param variantId The ID of the new template variant.
+     * @param create The data for the new template variant.
+     * @returns The created template variant.
+     */
     createTemplateVariant: organizationProcedure({ i3Template: ["update"] })
         .input(
             z.object({
-                i3TemplateId: I3TemplateId.schema,
+                templateId: I3TemplateId.schema,
                 variantId: I3TemplateVariantId.schema,
                 create: I3TemplateVariant.modifiableSchema,
             }),
         )
         .output(z.object({ created: I3TemplateVariant.schema }))
-        .mutation(
-            async ({ ctx, input: { i3TemplateId, variantId, create } }) => {
-                // Ensure the template exists and belongs to the organization
-                await getI3TemplateOrThrow(ctx, i3TemplateId);
+        .mutation(async ({ ctx, input: { templateId, variantId, create } }) => {
+            // Ensure the template exists and belongs to the organization
+            await getI3TemplateOrThrow(ctx, templateId);
 
-                const diff = diffObject({}, create);
+            const diff = diffObject({}, create);
 
-                const [created] = await Promise.all([
-                    ctx.prisma.i3TemplateVariant.create({
-                        data: {
-                            id: variantId,
-                            i3TemplateId,
-                            name: create.name,
-                            d4h: create.d4h
-                                ? {
-                                      create: {
-                                          brandId: create.d4h.brandId,
-                                          brandTitle: create.d4h.brandTitle,
-                                          modelId: create.d4h.modelId,
-                                          modelTitle: create.d4h.modelTitle,
-                                      },
-                                  }
-                                : undefined,
-                        },
-                        include: {
-                            d4h: true,
-                        },
-                    }),
-                    ctx.logEvent({
-                        action: "Create",
-                        objectType: "I3TemplateVariant",
-                        objectId: variantId,
-                        changes: diff,
-                    }),
-                ]);
+            const [created] = await Promise.all([
+                ctx.prisma.i3TemplateVariant.create({
+                    data: {
+                        id: variantId,
+                        templateId: templateId,
+                        name: create.name,
+                        d4h: create.d4h
+                            ? {
+                                  create: {
+                                      ...create.d4h,
+                                  },
+                              }
+                            : undefined,
+                    },
+                    include: {
+                        d4h: true,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "I3TemplateVariant",
+                    objectId: variantId,
+                    changes: diff,
+                }),
+            ]);
 
-                return { created: I3TemplateVariant.fromRecord(created) };
-            },
-        ),
+            return { created: I3TemplateVariant.fromRecord(created) };
+        }),
 
     /**
      * Delete a D4H PPE Template. This is a hard delete and cannot be undone.
      */
     deleteTemplate: organizationProcedure({ i3Template: ["delete"] })
-        .input(z.object({ i3TemplateId: I3TemplateId.schema }))
+        .input(z.object({ templateId: I3TemplateId.schema }))
         .output(z.object({ deleted: I3Template.schema }))
-        .mutation(async ({ ctx, input: { i3TemplateId } }) => {
-            const existing = await getI3TemplateOrThrow(ctx, i3TemplateId);
+        .mutation(async ({ ctx, input: { templateId } }) => {
+            const existing = await getI3TemplateOrThrow(ctx, templateId);
 
             await Promise.all([
                 ctx.prisma.i3Template.delete({
-                    where: { id: i3TemplateId },
+                    where: { id: templateId },
                 }),
                 ctx.logEvent({
                     action: "Delete",
                     objectType: "I3Template",
-                    objectId: i3TemplateId,
+                    objectId: templateId,
                     changes: diffObject(existing, {}),
                 }),
             ]);
 
             return { deleted: existing };
+        }),
+
+    /**
+     * Delete a D4H PPE Template Variant. This is a hard delete and cannot be undone.
+     */
+    deleteTemplateVariant: organizationProcedure({ i3Template: ["update"] })
+        .input(
+            z.object({
+                templateId: I3TemplateId.schema,
+                variantId: I3TemplateVariantId.schema,
+            }),
+        )
+        .output(z.object({ deleted: I3TemplateVariant.schema }))
+        .mutation(async ({ ctx, input: { templateId, variantId } }) => {
+            const existing = await ctx.prisma.i3TemplateVariant.findUnique({
+                where: {
+                    id: variantId,
+                    template: {
+                        id: templateId,
+                        organizationId: ctx.organizationId,
+                    },
+                },
+                include: { d4h: true },
+            });
+
+            if (!existing)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.i3TemplateVariantNotFound(variantId),
+                });
+
+            await Promise.all([
+                ctx.prisma.i3TemplateVariant.delete({
+                    where: { id: variantId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "I3TemplateVariant",
+                    objectId: variantId,
+                }),
+            ]);
+
+            return { deleted: I3TemplateVariant.fromRecord(existing) };
         }),
 
     /**
@@ -171,9 +211,13 @@ export const i3Router = createTrpcRouter({
         }),
 
     listTemplateVariants: organizationProcedure({ i3Template: ["view"] })
-        .input(z.object({ i3TemplateId: I3TemplateId.schema }))
+        .input(
+            z.object({
+                templateId: I3TemplateId.schema,
+            }),
+        )
         .output(z.array(I3TemplateVariant.schema))
-        .query(async ({ ctx, input: { i3TemplateId } }) => {
+        .query(async ({ ctx, input: { templateId: i3TemplateId } }) => {
             const template = await ctx.prisma.i3Template.findUnique({
                 where: { id: i3TemplateId, organizationId: ctx.organizationId },
                 include: { variants: { include: { d4h: true } } },
@@ -194,17 +238,17 @@ export const i3Router = createTrpcRouter({
     updateTemplate: organizationProcedure({ i3Template: ["update"] })
         .input(
             z.object({
-                i3TemplateId: I3TemplateId.schema,
+                templateId: I3TemplateId.schema,
                 update: I3Template.modifiableSchema,
             }),
         )
         .output(z.object({ updated: I3Template.schema }))
-        .mutation(async ({ ctx, input: { i3TemplateId, update } }) => {
-            const existing = await getI3TemplateOrThrow(ctx, i3TemplateId);
+        .mutation(async ({ ctx, input: { templateId, update } }) => {
+            const existing = await getI3TemplateOrThrow(ctx, templateId);
 
             const [updated] = await Promise.all([
                 ctx.prisma.i3Template.update({
-                    where: { id: i3TemplateId },
+                    where: { id: templateId },
                     data: {
                         name: update.name,
                         description: update.description,
@@ -212,22 +256,10 @@ export const i3Router = createTrpcRouter({
                             ? {
                                   upsert: {
                                       create: {
-                                          categoryId: update.d4h.categoryId,
-                                          categoryTitle:
-                                              update.d4h.categoryTitle,
-                                          kindId: update.d4h.kindId,
-                                          kindTitle: update.d4h.kindTitle,
-                                          outputRefFormat:
-                                              update.d4h.outputRefFormat,
+                                          ...update.d4h,
                                       },
                                       update: {
-                                          categoryId: update.d4h.categoryId,
-                                          categoryTitle:
-                                              update.d4h.categoryTitle,
-                                          kindId: update.d4h.kindId,
-                                          kindTitle: update.d4h.kindTitle,
-                                          outputRefFormat:
-                                              update.d4h.outputRefFormat,
+                                          ...update.d4h,
                                       },
                                   },
                               }
@@ -240,7 +272,7 @@ export const i3Router = createTrpcRouter({
                 ctx.logEvent({
                     action: "Update",
                     objectType: "I3Template",
-                    objectId: i3TemplateId,
+                    objectId: templateId,
                     changes: diffObject(existing, update),
                 }),
             ]);
@@ -251,18 +283,18 @@ export const i3Router = createTrpcRouter({
 
 async function getI3TemplateOrThrow(
     ctx: AuthenticatedOrganizationContext,
-    i3TemplateId: I3TemplateId,
+    templateId: I3TemplateId,
 ) {
-    const i3Template = await ctx.prisma.i3Template.findUnique({
-        where: { id: i3TemplateId, organizationId: ctx.organizationId },
+    const template = await ctx.prisma.i3Template.findUnique({
+        where: { id: templateId, organizationId: ctx.organizationId },
         include: { d4h: true },
     });
 
-    if (!i3Template) {
+    if (!template) {
         throw new TRPCError({
             code: "NOT_FOUND",
-            message: Messages.i3TemplateNotFound(i3TemplateId),
+            message: Messages.i3TemplateNotFound(templateId),
         });
     }
-    return I3Template.fromRecord(i3Template);
+    return I3Template.fromRecord(template);
 }

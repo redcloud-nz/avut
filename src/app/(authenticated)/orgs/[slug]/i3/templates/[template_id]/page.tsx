@@ -6,9 +6,7 @@
  */
 "use client";
 
-import { use, useState } from "react";
-
-import { useQuery } from "@tanstack/react-query";
+import { use } from "react";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
@@ -24,21 +22,16 @@ import {
 } from "@/components/ui/card";
 import {
     Field,
-    FieldDescription,
     FieldGroup,
     FieldLabel,
-    FieldLegend,
     FieldSeparator,
-    FieldSet,
 } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useI3Template } from "@/hooks/use-i3-template";
-import { I3Template } from "@/lib/schemas/i3-template";
 import * as Paths from "@/paths";
-import { trpc } from "@/trpc/client";
 
 import { I3Module_Template_Menu } from "./template-menu";
 import { I3Module_Template_Variants_List } from "./template-variants";
@@ -127,20 +120,30 @@ export default function I3Module_Template_Page(
                                         value={template.d4h?.kindTitle ?? ""}
                                     />
                                 </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>
+                                        Require Serial Number
+                                    </FieldLabel>
+                                    <FieldValue
+                                        value={
+                                            template.d4h?.requireSN
+                                                ? "Yes"
+                                                : "No"
+                                        }
+                                    />
+                                </Field>
 
-                                <FieldSet>
-                                    <FieldLegend>Output Format</FieldLegend>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Item Ref</FieldLabel>
-                                        <FieldValue
-                                            value={
-                                                template.d4h?.outputRefFormat ??
-                                                ""
-                                            }
-                                        />
-                                    </Field>
-                                </FieldSet>
-
+                                <Field>
+                                    <FieldLabel>
+                                        D4H Output Format Ref
+                                    </FieldLabel>
+                                    <FieldValue
+                                        value={
+                                            template.d4h?.outputRefFormat ?? ""
+                                        }
+                                        format="tmplExpr"
+                                    />
+                                </Field>
                                 <FieldSeparator />
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>

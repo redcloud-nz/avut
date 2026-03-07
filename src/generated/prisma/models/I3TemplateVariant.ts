@@ -26,7 +26,7 @@ export type AggregateI3TemplateVariant = {
 
 export type I3TemplateVariantMinAggregateOutputType = {
     id: string | null;
-    i3TemplateId: string | null;
+    templateId: string | null;
     name: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -34,7 +34,7 @@ export type I3TemplateVariantMinAggregateOutputType = {
 
 export type I3TemplateVariantMaxAggregateOutputType = {
     id: string | null;
-    i3TemplateId: string | null;
+    templateId: string | null;
     name: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -42,7 +42,7 @@ export type I3TemplateVariantMaxAggregateOutputType = {
 
 export type I3TemplateVariantCountAggregateOutputType = {
     id: number;
-    i3TemplateId: number;
+    templateId: number;
     name: number;
     createdAt: number;
     updatedAt: number;
@@ -51,7 +51,7 @@ export type I3TemplateVariantCountAggregateOutputType = {
 
 export type I3TemplateVariantMinAggregateInputType = {
     id?: true;
-    i3TemplateId?: true;
+    templateId?: true;
     name?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -59,7 +59,7 @@ export type I3TemplateVariantMinAggregateInputType = {
 
 export type I3TemplateVariantMaxAggregateInputType = {
     id?: true;
-    i3TemplateId?: true;
+    templateId?: true;
     name?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -67,7 +67,7 @@ export type I3TemplateVariantMaxAggregateInputType = {
 
 export type I3TemplateVariantCountAggregateInputType = {
     id?: true;
-    i3TemplateId?: true;
+    templateId?: true;
     name?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -161,7 +161,7 @@ export type I3TemplateVariantGroupByArgs<
 
 export type I3TemplateVariantGroupByOutputType = {
     id: string;
-    i3TemplateId: string;
+    templateId: string;
     name: string;
     createdAt: Date;
     updatedAt: Date;
@@ -200,11 +200,11 @@ export type I3TemplateVariantWhereInput = {
         | Prisma.I3TemplateVariantWhereInput
         | Prisma.I3TemplateVariantWhereInput[];
     id?: Prisma.StringFilter<"I3TemplateVariant"> | string;
-    i3TemplateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
+    templateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
     name?: Prisma.StringFilter<"I3TemplateVariant"> | string;
     createdAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
-    i3Template?: Prisma.XOR<
+    template?: Prisma.XOR<
         Prisma.I3TemplateScalarRelationFilter,
         Prisma.I3TemplateWhereInput
     >;
@@ -216,11 +216,11 @@ export type I3TemplateVariantWhereInput = {
 
 export type I3TemplateVariantOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
-    i3TemplateId?: Prisma.SortOrder;
+    templateId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
-    i3Template?: Prisma.I3TemplateOrderByWithRelationInput;
+    template?: Prisma.I3TemplateOrderByWithRelationInput;
     d4h?: Prisma.I3TemplateVariant_D4HOrderByWithRelationInput;
 };
 
@@ -234,11 +234,11 @@ export type I3TemplateVariantWhereUniqueInput = Prisma.AtLeast<
         NOT?:
             | Prisma.I3TemplateVariantWhereInput
             | Prisma.I3TemplateVariantWhereInput[];
-        i3TemplateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
+        templateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
         name?: Prisma.StringFilter<"I3TemplateVariant"> | string;
         createdAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
         updatedAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
-        i3Template?: Prisma.XOR<
+        template?: Prisma.XOR<
             Prisma.I3TemplateScalarRelationFilter,
             Prisma.I3TemplateWhereInput
         >;
@@ -252,7 +252,7 @@ export type I3TemplateVariantWhereUniqueInput = Prisma.AtLeast<
 
 export type I3TemplateVariantOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
-    i3TemplateId?: Prisma.SortOrder;
+    templateId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -270,7 +270,7 @@ export type I3TemplateVariantScalarWhereWithAggregatesInput = {
         | Prisma.I3TemplateVariantScalarWhereWithAggregatesInput
         | Prisma.I3TemplateVariantScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"I3TemplateVariant"> | string;
-    i3TemplateId?:
+    templateId?:
         | Prisma.StringWithAggregatesFilter<"I3TemplateVariant">
         | string;
     name?: Prisma.StringWithAggregatesFilter<"I3TemplateVariant"> | string;
@@ -289,13 +289,13 @@ export type I3TemplateVariantCreateInput = {
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
-    i3Template: Prisma.I3TemplateCreateNestedOneWithoutVariantsInput;
+    template: Prisma.I3TemplateCreateNestedOneWithoutVariantsInput;
     d4h?: Prisma.I3TemplateVariant_D4HCreateNestedOneWithoutVariantInput;
 };
 
 export type I3TemplateVariantUncheckedCreateInput = {
     id: string;
-    i3TemplateId: string;
+    templateId: string;
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -307,13 +307,13 @@ export type I3TemplateVariantUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    i3Template?: Prisma.I3TemplateUpdateOneRequiredWithoutVariantsNestedInput;
+    template?: Prisma.I3TemplateUpdateOneRequiredWithoutVariantsNestedInput;
     d4h?: Prisma.I3TemplateVariant_D4HUpdateOneWithoutVariantNestedInput;
 };
 
 export type I3TemplateVariantUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    i3TemplateId?: Prisma.StringFieldUpdateOperationsInput | string;
+    templateId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -322,7 +322,7 @@ export type I3TemplateVariantUncheckedUpdateInput = {
 
 export type I3TemplateVariantCreateManyInput = {
     id: string;
-    i3TemplateId: string;
+    templateId: string;
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -337,7 +337,7 @@ export type I3TemplateVariantUpdateManyMutationInput = {
 
 export type I3TemplateVariantUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    i3TemplateId?: Prisma.StringFieldUpdateOperationsInput | string;
+    templateId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -355,7 +355,7 @@ export type I3TemplateVariantOrderByRelationAggregateInput = {
 
 export type I3TemplateVariantCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    i3TemplateId?: Prisma.SortOrder;
+    templateId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -363,7 +363,7 @@ export type I3TemplateVariantCountOrderByAggregateInput = {
 
 export type I3TemplateVariantMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    i3TemplateId?: Prisma.SortOrder;
+    templateId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -371,7 +371,7 @@ export type I3TemplateVariantMaxOrderByAggregateInput = {
 
 export type I3TemplateVariantMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
-    i3TemplateId?: Prisma.SortOrder;
+    templateId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -382,55 +382,55 @@ export type I3TemplateVariantScalarRelationFilter = {
     isNot?: Prisma.I3TemplateVariantWhereInput;
 };
 
-export type I3TemplateVariantCreateNestedManyWithoutI3TemplateInput = {
+export type I3TemplateVariantCreateNestedManyWithoutTemplateInput = {
     create?:
         | Prisma.XOR<
-              Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-              Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+              Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+              Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
           >
-        | Prisma.I3TemplateVariantCreateWithoutI3TemplateInput[]
-        | Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateWithoutTemplateInput[]
+        | Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput[];
     connectOrCreate?:
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput[];
-    createMany?: Prisma.I3TemplateVariantCreateManyI3TemplateInputEnvelope;
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput[];
+    createMany?: Prisma.I3TemplateVariantCreateManyTemplateInputEnvelope;
     connect?:
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
 };
 
-export type I3TemplateVariantUncheckedCreateNestedManyWithoutI3TemplateInput = {
+export type I3TemplateVariantUncheckedCreateNestedManyWithoutTemplateInput = {
     create?:
         | Prisma.XOR<
-              Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-              Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+              Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+              Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
           >
-        | Prisma.I3TemplateVariantCreateWithoutI3TemplateInput[]
-        | Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateWithoutTemplateInput[]
+        | Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput[];
     connectOrCreate?:
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput[];
-    createMany?: Prisma.I3TemplateVariantCreateManyI3TemplateInputEnvelope;
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput[];
+    createMany?: Prisma.I3TemplateVariantCreateManyTemplateInputEnvelope;
     connect?:
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
 };
 
-export type I3TemplateVariantUpdateManyWithoutI3TemplateNestedInput = {
+export type I3TemplateVariantUpdateManyWithoutTemplateNestedInput = {
     create?:
         | Prisma.XOR<
-              Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-              Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+              Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+              Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
           >
-        | Prisma.I3TemplateVariantCreateWithoutI3TemplateInput[]
-        | Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateWithoutTemplateInput[]
+        | Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput[];
     connectOrCreate?:
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput[];
     upsert?:
-        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutI3TemplateInput[];
-    createMany?: Prisma.I3TemplateVariantCreateManyI3TemplateInputEnvelope;
+        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutTemplateInput[];
+    createMany?: Prisma.I3TemplateVariantCreateManyTemplateInputEnvelope;
     set?:
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
@@ -444,31 +444,31 @@ export type I3TemplateVariantUpdateManyWithoutI3TemplateNestedInput = {
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
     update?:
-        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutTemplateInput[];
     updateMany?:
-        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutTemplateInput[];
     deleteMany?:
         | Prisma.I3TemplateVariantScalarWhereInput
         | Prisma.I3TemplateVariantScalarWhereInput[];
 };
 
-export type I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateNestedInput = {
+export type I3TemplateVariantUncheckedUpdateManyWithoutTemplateNestedInput = {
     create?:
         | Prisma.XOR<
-              Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-              Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+              Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+              Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
           >
-        | Prisma.I3TemplateVariantCreateWithoutI3TemplateInput[]
-        | Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateWithoutTemplateInput[]
+        | Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput[];
     connectOrCreate?:
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantCreateOrConnectWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput
+        | Prisma.I3TemplateVariantCreateOrConnectWithoutTemplateInput[];
     upsert?:
-        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutI3TemplateInput[];
-    createMany?: Prisma.I3TemplateVariantCreateManyI3TemplateInputEnvelope;
+        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpsertWithWhereUniqueWithoutTemplateInput[];
+    createMany?: Prisma.I3TemplateVariantCreateManyTemplateInputEnvelope;
     set?:
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
@@ -482,11 +482,11 @@ export type I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateNestedInput = {
         | Prisma.I3TemplateVariantWhereUniqueInput
         | Prisma.I3TemplateVariantWhereUniqueInput[];
     update?:
-        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpdateWithWhereUniqueWithoutTemplateInput[];
     updateMany?:
-        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutI3TemplateInput
-        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutI3TemplateInput[];
+        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutTemplateInput
+        | Prisma.I3TemplateVariantUpdateManyWithWhereWithoutTemplateInput[];
     deleteMany?:
         | Prisma.I3TemplateVariantScalarWhereInput
         | Prisma.I3TemplateVariantScalarWhereInput[];
@@ -518,7 +518,7 @@ export type I3TemplateVariantUpdateOneRequiredWithoutD4hNestedInput = {
     >;
 };
 
-export type I3TemplateVariantCreateWithoutI3TemplateInput = {
+export type I3TemplateVariantCreateWithoutTemplateInput = {
     id: string;
     name: string;
     createdAt?: Date | string;
@@ -526,7 +526,7 @@ export type I3TemplateVariantCreateWithoutI3TemplateInput = {
     d4h?: Prisma.I3TemplateVariant_D4HCreateNestedOneWithoutVariantInput;
 };
 
-export type I3TemplateVariantUncheckedCreateWithoutI3TemplateInput = {
+export type I3TemplateVariantUncheckedCreateWithoutTemplateInput = {
     id: string;
     name: string;
     createdAt?: Date | string;
@@ -534,46 +534,46 @@ export type I3TemplateVariantUncheckedCreateWithoutI3TemplateInput = {
     d4h?: Prisma.I3TemplateVariant_D4HUncheckedCreateNestedOneWithoutVariantInput;
 };
 
-export type I3TemplateVariantCreateOrConnectWithoutI3TemplateInput = {
+export type I3TemplateVariantCreateOrConnectWithoutTemplateInput = {
     where: Prisma.I3TemplateVariantWhereUniqueInput;
     create: Prisma.XOR<
-        Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-        Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+        Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+        Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
     >;
 };
 
-export type I3TemplateVariantCreateManyI3TemplateInputEnvelope = {
+export type I3TemplateVariantCreateManyTemplateInputEnvelope = {
     data:
-        | Prisma.I3TemplateVariantCreateManyI3TemplateInput
-        | Prisma.I3TemplateVariantCreateManyI3TemplateInput[];
+        | Prisma.I3TemplateVariantCreateManyTemplateInput
+        | Prisma.I3TemplateVariantCreateManyTemplateInput[];
     skipDuplicates?: boolean;
 };
 
-export type I3TemplateVariantUpsertWithWhereUniqueWithoutI3TemplateInput = {
+export type I3TemplateVariantUpsertWithWhereUniqueWithoutTemplateInput = {
     where: Prisma.I3TemplateVariantWhereUniqueInput;
     update: Prisma.XOR<
-        Prisma.I3TemplateVariantUpdateWithoutI3TemplateInput,
-        Prisma.I3TemplateVariantUncheckedUpdateWithoutI3TemplateInput
+        Prisma.I3TemplateVariantUpdateWithoutTemplateInput,
+        Prisma.I3TemplateVariantUncheckedUpdateWithoutTemplateInput
     >;
     create: Prisma.XOR<
-        Prisma.I3TemplateVariantCreateWithoutI3TemplateInput,
-        Prisma.I3TemplateVariantUncheckedCreateWithoutI3TemplateInput
+        Prisma.I3TemplateVariantCreateWithoutTemplateInput,
+        Prisma.I3TemplateVariantUncheckedCreateWithoutTemplateInput
     >;
 };
 
-export type I3TemplateVariantUpdateWithWhereUniqueWithoutI3TemplateInput = {
+export type I3TemplateVariantUpdateWithWhereUniqueWithoutTemplateInput = {
     where: Prisma.I3TemplateVariantWhereUniqueInput;
     data: Prisma.XOR<
-        Prisma.I3TemplateVariantUpdateWithoutI3TemplateInput,
-        Prisma.I3TemplateVariantUncheckedUpdateWithoutI3TemplateInput
+        Prisma.I3TemplateVariantUpdateWithoutTemplateInput,
+        Prisma.I3TemplateVariantUncheckedUpdateWithoutTemplateInput
     >;
 };
 
-export type I3TemplateVariantUpdateManyWithWhereWithoutI3TemplateInput = {
+export type I3TemplateVariantUpdateManyWithWhereWithoutTemplateInput = {
     where: Prisma.I3TemplateVariantScalarWhereInput;
     data: Prisma.XOR<
         Prisma.I3TemplateVariantUpdateManyMutationInput,
-        Prisma.I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateInput
+        Prisma.I3TemplateVariantUncheckedUpdateManyWithoutTemplateInput
     >;
 };
 
@@ -586,7 +586,7 @@ export type I3TemplateVariantScalarWhereInput = {
         | Prisma.I3TemplateVariantScalarWhereInput
         | Prisma.I3TemplateVariantScalarWhereInput[];
     id?: Prisma.StringFilter<"I3TemplateVariant"> | string;
-    i3TemplateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
+    templateId?: Prisma.StringFilter<"I3TemplateVariant"> | string;
     name?: Prisma.StringFilter<"I3TemplateVariant"> | string;
     createdAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"I3TemplateVariant"> | Date | string;
@@ -597,12 +597,12 @@ export type I3TemplateVariantCreateWithoutD4hInput = {
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
-    i3Template: Prisma.I3TemplateCreateNestedOneWithoutVariantsInput;
+    template: Prisma.I3TemplateCreateNestedOneWithoutVariantsInput;
 };
 
 export type I3TemplateVariantUncheckedCreateWithoutD4hInput = {
     id: string;
-    i3TemplateId: string;
+    templateId: string;
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -641,25 +641,25 @@ export type I3TemplateVariantUpdateWithoutD4hInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    i3Template?: Prisma.I3TemplateUpdateOneRequiredWithoutVariantsNestedInput;
+    template?: Prisma.I3TemplateUpdateOneRequiredWithoutVariantsNestedInput;
 };
 
 export type I3TemplateVariantUncheckedUpdateWithoutD4hInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    i3TemplateId?: Prisma.StringFieldUpdateOperationsInput | string;
+    templateId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type I3TemplateVariantCreateManyI3TemplateInput = {
+export type I3TemplateVariantCreateManyTemplateInput = {
     id: string;
     name: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 
-export type I3TemplateVariantUpdateWithoutI3TemplateInput = {
+export type I3TemplateVariantUpdateWithoutTemplateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -667,7 +667,7 @@ export type I3TemplateVariantUpdateWithoutI3TemplateInput = {
     d4h?: Prisma.I3TemplateVariant_D4HUpdateOneWithoutVariantNestedInput;
 };
 
-export type I3TemplateVariantUncheckedUpdateWithoutI3TemplateInput = {
+export type I3TemplateVariantUncheckedUpdateWithoutTemplateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -675,7 +675,7 @@ export type I3TemplateVariantUncheckedUpdateWithoutI3TemplateInput = {
     d4h?: Prisma.I3TemplateVariant_D4HUncheckedUpdateOneWithoutVariantNestedInput;
 };
 
-export type I3TemplateVariantUncheckedUpdateManyWithoutI3TemplateInput = {
+export type I3TemplateVariantUncheckedUpdateManyWithoutTemplateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -688,11 +688,11 @@ export type I3TemplateVariantSelect<
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
-        i3TemplateId?: boolean;
+        templateId?: boolean;
         name?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+        template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
         d4h?: boolean | Prisma.I3TemplateVariant$d4hArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3TemplateVariant"]
@@ -704,11 +704,11 @@ export type I3TemplateVariantSelectCreateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
-        i3TemplateId?: boolean;
+        templateId?: boolean;
         name?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+        template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3TemplateVariant"]
 >;
@@ -719,18 +719,18 @@ export type I3TemplateVariantSelectUpdateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
-        i3TemplateId?: boolean;
+        templateId?: boolean;
         name?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+        template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["i3TemplateVariant"]
 >;
 
 export type I3TemplateVariantSelectScalar = {
     id?: boolean;
-    i3TemplateId?: boolean;
+    templateId?: boolean;
     name?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -740,27 +740,27 @@ export type I3TemplateVariantOmit<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-    "id" | "i3TemplateId" | "name" | "createdAt" | "updatedAt",
+    "id" | "templateId" | "name" | "createdAt" | "updatedAt",
     ExtArgs["result"]["i3TemplateVariant"]
 >;
 export type I3TemplateVariantInclude<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+    template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
     d4h?: boolean | Prisma.I3TemplateVariant$d4hArgs<ExtArgs>;
 };
 export type I3TemplateVariantIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+    template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
 };
 export type I3TemplateVariantIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs =
         runtime.Types.Extensions.DefaultArgs,
 > = {
-    i3Template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
+    template?: boolean | Prisma.I3TemplateDefaultArgs<ExtArgs>;
 };
 
 export type $I3TemplateVariantPayload<
@@ -769,13 +769,13 @@ export type $I3TemplateVariantPayload<
 > = {
     name: "I3TemplateVariant";
     objects: {
-        i3Template: Prisma.$I3TemplatePayload<ExtArgs>;
+        template: Prisma.$I3TemplatePayload<ExtArgs>;
         d4h: Prisma.$I3TemplateVariant_D4HPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
             id: string;
-            i3TemplateId: string;
+            templateId: string;
             name: string;
             createdAt: Date;
             updatedAt: Date;
@@ -1351,7 +1351,7 @@ export interface Prisma__I3TemplateVariantClient<
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
-    i3Template<T extends Prisma.I3TemplateDefaultArgs<ExtArgs> = {}>(
+    template<T extends Prisma.I3TemplateDefaultArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.I3TemplateDefaultArgs<ExtArgs>>,
     ): Prisma.Prisma__I3TemplateClient<
         | runtime.Types.Result.GetResult<
@@ -1421,7 +1421,7 @@ export interface Prisma__I3TemplateVariantClient<
  */
 export interface I3TemplateVariantFieldRefs {
     readonly id: Prisma.FieldRef<"I3TemplateVariant", "String">;
-    readonly i3TemplateId: Prisma.FieldRef<"I3TemplateVariant", "String">;
+    readonly templateId: Prisma.FieldRef<"I3TemplateVariant", "String">;
     readonly name: Prisma.FieldRef<"I3TemplateVariant", "String">;
     readonly createdAt: Prisma.FieldRef<"I3TemplateVariant", "DateTime">;
     readonly updatedAt: Prisma.FieldRef<"I3TemplateVariant", "DateTime">;

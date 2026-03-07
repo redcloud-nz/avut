@@ -13,6 +13,9 @@ export const Messages = {
     i3TemplateNotFound: (templateId: string) =>
         `I3Template(id=${templateId}) not found.`,
 
+    i3TemplateVariantNotFound: (variantId: string) =>
+        `I3TemplateVariant(id=${variantId}) not found.`,
+
     noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,
 
     organizationNotFound: (organizationId: string) =>

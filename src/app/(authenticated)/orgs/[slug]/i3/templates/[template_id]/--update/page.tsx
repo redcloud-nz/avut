@@ -16,10 +16,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
+import { TmplExprInput } from "@/components/controls/tmpl-expr-input";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     Field,
     FieldError,
@@ -27,7 +27,7 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import {
     Select,
     SelectContent,
@@ -35,7 +35,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -91,7 +90,7 @@ export default function I3Module_UpdateTemplate_Page(
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId: organization.id,
-            i3TemplateId: template.id,
+            templateId: template.id,
             update: formData,
         });
     });
@@ -343,6 +342,50 @@ export default function I3Module_UpdateTemplate_Page(
                                         )}
                                     />
                                     <Controller
+                                        name="d4h.requireSN"
+                                        control={form.control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                data-invalid={
+                                                    fieldState.invalid
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="template-require-sn">
+                                                    Require Serial Number
+                                                </FieldLabel>
+                                                <Select
+                                                    value={
+                                                        field.value
+                                                            ? "yes"
+                                                            : "no"
+                                                    }
+                                                    onValueChange={(v) =>
+                                                        field.onChange(
+                                                            v === "yes",
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id="template-require-sn"
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                    >
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="yes">
+                                                            Yes
+                                                        </SelectItem>
+                                                        <SelectItem value="no">
+                                                            No
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                        )}
+                                    />
+                                    <Controller
                                         name="d4h.outputRefFormat"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
@@ -355,7 +398,7 @@ export default function I3Module_UpdateTemplate_Page(
                                                 <FieldLabel htmlFor="template-output-ref-format">
                                                     D4H Output Ref Format
                                                 </FieldLabel>
-                                                <Input
+                                                <TmplExprInput
                                                     id="template-output-ref-format"
                                                     aria-invalid={
                                                         fieldState.invalid
