@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
     Collapsible,
     CollapsibleContent,
-    CollapsibleProps,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ExternalLink, Link } from "@/components/ui/link";
@@ -57,6 +56,7 @@ type NavItemInternalProps = {
 type NavItemProps = (NavItemExternalProps | NavItemInternalProps) &
     Omit<ComponentProps<typeof SidebarMenuItem>, "children"> & {
         icon?: ReactNode;
+        size?: ComponentProps<typeof SidebarMenuButton>["size"];
     };
 
 export function NavItem({
@@ -65,6 +65,7 @@ export function NavItem({
     icon,
     label,
     path,
+    size = "default",
     ...props
 }: NavItemProps) {
     const pathname = usePathname();
@@ -72,7 +73,7 @@ export function NavItem({
     if (external) {
         return (
             <SidebarMenuItem {...props}>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild size={size}>
                     <ExternalLink href={href} noDecoration>
                         {icon}
                         <span>{label}</span>
@@ -83,7 +84,11 @@ export function NavItem({
     } else {
         return (
             <SidebarMenuItem {...props}>
-                <SidebarMenuButton asChild isActive={pathname == path.href}>
+                <SidebarMenuButton
+                    asChild
+                    isActive={pathname == path.href}
+                    size={size}
+                >
                     <Link to={path}>
                         {icon}
                         <span>{label ?? path.label}</span>
@@ -95,7 +100,7 @@ export function NavItem({
 }
 
 type NavCollapsibleProps = Omit<
-    CollapsibleProps,
+    ComponentProps<typeof Collapsible>,
     "asChild" | "open" | "onOpenChange"
 > & {
     icon?: ReactNode;

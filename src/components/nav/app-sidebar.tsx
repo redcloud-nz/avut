@@ -4,7 +4,7 @@
  */
 
 import Image from "next/image";
-import { Suspense } from "react";
+import { ReactNode, Suspense } from "react";
 
 import { Link } from "@/components/ui/link";
 import {
@@ -20,15 +20,17 @@ import * as Paths from "@/paths";
 import { NavSkeleton } from "./nav-skeleton";
 
 export function AppSidebar({
+    appName,
     children,
     name,
 }: {
-    children?: React.ReactNode;
+    appName?: ReactNode;
+    children?: ReactNode;
     name: string;
 }) {
     return (
         <Sidebar>
-            <SidebarHeader className="flex items-center justify-between border-b h-(--header-height)">
+            <SidebarHeader className="flex flex-row items-center justify-evenly border-b h-(--header-height)">
                 <div className="w-[100px] self-center">
                     <Image
                         src="/avut-logo.svg"
@@ -39,10 +41,11 @@ export function AppSidebar({
                         className="dark:invert"
                     />
                 </div>
+                {appName}
             </SidebarHeader>
             <SidebarContent>
                 <Link
-                    className="w-full text-center font-semibold px-2 pt-2"
+                    className="w-full text-center text-sm font-semibold px-2 pt-2"
                     to={Paths.orgs.select}
                 >
                     {name}

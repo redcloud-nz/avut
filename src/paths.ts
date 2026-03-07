@@ -246,6 +246,36 @@ export function pub(slug: string) {
     } as const;
 }
 
+export function i3(slug: string) {
+    const base = `/i3/${slug}` as const;
+
+    return {
+        index: {
+            label: "I3",
+            href: base,
+        },
+
+        borrow: {
+            label: "Borrow",
+            href: `${base}/borrow`,
+        },
+
+        inspect: {
+            label: "Inspect",
+            href: `${base}/inspect`,
+        },
+
+        issue: {
+            label: "Issue",
+            href: `${base}/issue`,
+        },
+
+        return: {
+            label: "Return",
+            href: `${base}/return`,
+        },
+    } as const;
+}
 // Modules
 
 function adminModule(org_slug: string) {
