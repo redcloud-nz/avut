@@ -18,9 +18,11 @@ export type LinkProps = Omit<ComponentProps<typeof NextLink>, "href"> & {
     to: { href: string };
 };
 
+type HrefType = ComponentProps<typeof NextLink>["href"];
+
 export function Link({ children, to: path, ...props }: LinkProps) {
     return (
-        <NextLink href={path.href} {...props}>
+        <NextLink href={path.href as HrefType} {...props}>
             {children}
         </NextLink>
     );
@@ -118,7 +120,7 @@ export function TextLink({
                 "text-blue-900 hover:underline cursor-pointer",
                 className,
             )}
-            href={path.href}
+            href={path.href as HrefType}
             {...props}
         >
             {children ?? path.label}

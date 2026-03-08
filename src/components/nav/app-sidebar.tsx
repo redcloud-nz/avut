@@ -4,9 +4,9 @@
  */
 
 import Image from "next/image";
+import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 
-import { Link } from "@/components/ui/link";
 import {
     Sidebar,
     SidebarContent,
@@ -15,18 +15,18 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 
-import * as Paths from "@/paths";
+import { SubappId } from "@/lib/subapp";
 
 import { NavSkeleton } from "./nav-skeleton";
 
 export function AppSidebar({
-    appName,
     children,
     name,
+    subappId,
 }: {
-    appName?: ReactNode;
     children?: ReactNode;
     name: string;
+    subappId: SubappId;
 }) {
     return (
         <Sidebar>
@@ -41,12 +41,11 @@ export function AppSidebar({
                         className="dark:invert"
                     />
                 </div>
-                {appName}
             </SidebarHeader>
             <SidebarContent>
                 <Link
                     className="w-full text-center text-sm font-semibold px-2 pt-2"
-                    to={Paths.orgs.select}
+                    href={`/${subappId}`}
                 >
                     {name}
                 </Link>

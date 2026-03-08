@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
         NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata?.displayName,
         NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata?.repositoryUrl,
     },
+    typedRoutes: true,
 };
 
 const withNextIntl = createNextIntlPlugin();

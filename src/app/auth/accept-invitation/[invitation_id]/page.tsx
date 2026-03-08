@@ -8,7 +8,6 @@
 import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 
-import * as Paths from "@/paths";
 import { auth } from "@/server/auth";
 
 export default async function Auth_AcceptInvitation_Page(
@@ -30,23 +29,14 @@ export default async function Auth_AcceptInvitation_Page(
 
         if (invitation.email == session.user.email) {
             // Correct user, redirect to the invitation page which will handle the rest
-            redirect(Paths.personal.invitation(invitation_id).href);
+            redirect(`/personal/invitations/${invitation_id}`);
         } else {
             // Signed in as the wrong user, sign out and redirect to sign-in page with redirect back to this invite
             await auth.api.signOut({ headers });
-            redirect(
-                Paths.auth.signIn({
-                    email: invitation.email,
-                    redirect: Paths.auth.acceptInvitation(invitation_id).href,
-                }).href,
-            );
+            redirect(`/auth/sign-in?email=${invitation.email}`);
         }
     } else {
         // Not signed in, redirect to sign-in page with redirect back to this invite
-        redirect(
-            Paths.auth.signIn({
-                redirect: Paths.auth.acceptInvitation(invitation_id).href,
-            }).href,
-        );
+        redirect(`/auth/sign-in`);
     }
 }

@@ -17,16 +17,11 @@ export default async function Auth_VerifyEmail_Page(
     const params = await props.searchParams;
     const email = Array.isArray(params.e) ? params.e[0] : params.e || "";
 
-    // Extract redirect parameter from the URL search parameters
-    let redirect = Array.isArray(params.r) ? params.r[0] : params.r;
-
-    if (redirect) redirect = decodeURIComponent(redirect);
-
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <VerifyEmail_Card email={email} redirect={redirect} />
+                <VerifyEmail_Card email={email} />
             </Argus.Column>
         </Argus.Root>
     );

@@ -24,23 +24,19 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
-import { InputOTP } from "@/components/ui/input-otp";
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 import { authClient } from "@/lib/auth-client";
-import * as Paths from "@/paths";
 
 /**
  * Card for verifying user's email with OTP code.
  * @param email - The email address to verify.
- * @param redirect - Optional redirect URL after verification.
  */
-export function VerifyEmail_Card({
-    email,
-    redirect,
-}: {
-    email: string;
-    redirect?: string;
-}) {
+export function VerifyEmail_Card({ email }: { email: string }) {
     const router = useRouter();
 
     const [code, setCode] = useState<string>("");
@@ -62,8 +58,7 @@ export function VerifyEmail_Card({
                 console.log("Email verification error", error);
             } else {
                 console.log("Email verified successfully", data);
-                if (redirect) router.push(redirect);
-                else router.push(Paths.orgs.select.href);
+                router.push("/orgs");
             }
         } catch (error) {
             console.log("Email verification error", error);
@@ -94,22 +89,22 @@ export function VerifyEmail_Card({
                 <FieldGroup>
                     <Field>
                         <FieldLabel>Verification Code</FieldLabel>
-                        <InputOTP.Root
+                        <InputOTP
                             maxLength={6}
                             value={code}
                             onChange={setCode}
                             pattern={REGEXP_ONLY_DIGITS}
                             disabled={state.status === "InProgress"}
                         >
-                            <InputOTP.Group className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                <InputOTP.Slot index={0} />
-                                <InputOTP.Slot index={1} />
-                                <InputOTP.Slot index={2} />
-                                <InputOTP.Slot index={3} />
-                                <InputOTP.Slot index={4} />
-                                <InputOTP.Slot index={5} />
-                            </InputOTP.Group>
-                        </InputOTP.Root>
+                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                        </InputOTP>
                         <FieldDescription>
                             Enter the 6-digit code sent to your email.
                         </FieldDescription>

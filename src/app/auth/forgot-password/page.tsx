@@ -6,7 +6,7 @@
  */
 
 import { Argus } from "@/components/blocks/argus";
-import { ForgotPassword_Card } from "@/components/cards/forgot-password";
+import { Auth_ForgotPassword_Card } from "@/components/cards/forgot-password";
 
 export const metadata = { title: "Forgot Password" };
 
@@ -15,7 +15,7 @@ export default function Auth_ForgotPassword_Page() {
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <ForgotPassword_Card />
+                <Auth_ForgotPassword_Card />
             </Argus.Column>
         </Argus.Root>
     );

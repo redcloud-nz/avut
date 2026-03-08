@@ -7,6 +7,7 @@
  * A page that contains a header and main content area, designed to be used within a sidebar layout.
  */
 
+import type { Route } from "next";
 import Link from "next/link";
 import { Slot } from "radix-ui";
 import { ComponentProps, Fragment, ReactNode } from "react";
@@ -52,7 +53,10 @@ const lexingtonPageVariants = tv({
     },
 });
 
-type BreadcrumbItem = { label: string; href?: string };
+type BreadcrumbItem = {
+    label: string;
+    href?: string;
+};
 
 function normalizeBreadcrumbs(
     breadcrumbs: (BreadcrumbItem | string)[],
@@ -77,7 +81,7 @@ function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
                         <BreadcrumbItem className="hidden md:block">
                             {breadcrumb.href ? (
                                 <BreadcrumbLink asChild>
-                                    <Link href={breadcrumb.href}>
+                                    <Link href={breadcrumb.href as Route}>
                                         {breadcrumb.label}
                                     </Link>
                                 </BreadcrumbLink>

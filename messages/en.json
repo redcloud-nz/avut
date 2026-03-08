@@ -3,5 +3,11 @@
     "enterButton": "Go to Dashboard",
     "signInButton": "Sign In",
     "signUpButton": "Sign Up"
+  },
+
+  "I3Module": {
+    "IndexPage": {
+      "title": "I3"
+    }
   }
 }

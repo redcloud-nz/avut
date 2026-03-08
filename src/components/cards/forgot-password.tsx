@@ -28,9 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { authClient } from "@/lib/auth-client";
-import * as Paths from "@/paths";
 
-export function ForgotPassword_Card() {
+export function Auth_ForgotPassword_Card() {
     const router = useRouter();
 
     const form = useForm({
@@ -58,7 +57,9 @@ export function ForgotPassword_Card() {
                 setState({ status: "Error", error });
             } else {
                 console.log("Forgot password email sent", data);
-                router.push(Paths.auth.resetPassword(formData.email).href);
+                router.push(
+                    `/auth/reset-password?email=${encodeURIComponent(formData.email)}`,
+                );
             }
         } catch (error) {
             setState({
@@ -73,7 +74,7 @@ export function ForgotPassword_Card() {
             <CardHeader>
                 <CardTitle>Forgot Password</CardTitle>
                 <CardDescription>
-                    Enter your email to get an a reset code sent to you.
+                    Enter your email to get a reset code sent to you.
                 </CardDescription>
             </CardHeader>
             <CardContent>

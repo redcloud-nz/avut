@@ -6,13 +6,40 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
 
-export default async function proxy(request: NextRequest) {
-    const sessionCookie = getSessionCookie(request);
+export async function proxy(request: NextRequest) {
+    const pathname = request.nextUrl.pathname;
 
-    // if (!sessionCookie)
-    //     return NextResponse.redirect(new URL("/auth/sign-in", request.url));
+    if (
+        pathname == "/" ||
+        pathname.startsWith("/auth") ||
+        pathname.startsWith("/public")
+    ) {
+        // Public routes that don't require authentication, allow through
+        return NextResponse.next();
+    } else {
+        // Secure routes
+        const sessionCookie = getSessionCookie(request);
 
-    return NextResponse.next();
+        if (sessionCookie) {
+            // Session exists
+            return NextResponse.next();
+        } else {
+            // No session
+
+            const signInUrl = new URL("/auth/sign-in", request.url);
+
+            // Set the redirect cookie so that after signing in, the user is redirected back to the page they were trying to access
+            const response = NextResponse.redirect(signInUrl);
+            response.cookies.set({
+                name: "avut.post_sign_in_redirect",
+                value: pathname,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 60 * 60, // 1 hour
+            });
+            return response;
+        }
+    }
 }
 
 export const config = {

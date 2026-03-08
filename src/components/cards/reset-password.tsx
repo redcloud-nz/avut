@@ -27,10 +27,13 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputOTP } from "@/components/ui/input-otp";
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 import { authClient } from "@/lib/auth-client";
-import * as Paths from "@/paths";
 
 export function ResetPassword_Card({ email }: { email: string }) {
     const router = useRouter();
@@ -65,7 +68,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                 setState({ status: "Error", error });
             } else {
                 console.log("Reset password successful", data);
-                router.push(Paths.auth.signIn({ email }).href);
+                router.push(`/auth/sign-in?email=${encodeURIComponent(email)}`);
             }
         } catch (error) {
             setState({
@@ -85,7 +88,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form id="forgot-password-form" onSubmit={handleSubmit}>
+                <form id="reset-password-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="code"
@@ -95,7 +98,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                     <FieldLabel htmlFor="verification-code">
                                         Verification Code
                                     </FieldLabel>
-                                    <InputOTP.Root
+                                    <InputOTP
                                         id="verification-code"
                                         maxLength={6}
                                         value={field.value}
@@ -104,15 +107,15 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                         disabled={state.status === "InProgress"}
                                         aria-invalid={fieldState.invalid}
                                     >
-                                        <InputOTP.Group className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                            <InputOTP.Slot index={0} />
-                                            <InputOTP.Slot index={1} />
-                                            <InputOTP.Slot index={2} />
-                                            <InputOTP.Slot index={3} />
-                                            <InputOTP.Slot index={4} />
-                                            <InputOTP.Slot index={5} />
-                                        </InputOTP.Group>
-                                    </InputOTP.Root>
+                                        <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                            <InputOTPSlot index={0} />
+                                            <InputOTPSlot index={1} />
+                                            <InputOTPSlot index={2} />
+                                            <InputOTPSlot index={3} />
+                                            <InputOTPSlot index={4} />
+                                            <InputOTPSlot index={5} />
+                                        </InputOTPGroup>
+                                    </InputOTP>
                                     {fieldState.invalid && (
                                         <FieldError
                                             errors={[fieldState.error]}

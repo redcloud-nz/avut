@@ -7,11 +7,13 @@
 
 import { LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import {
     PersonalD4HAccessTokensIcon,
     PersonalProfileIcon,
     PersonalSettingsIcon,
+    SwitchOrganizationIcon,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,9 +30,10 @@ import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
 import { getUserInitials } from "@/lib/utils";
+import { SubappId } from "@/lib/subapp";
 import * as Paths from "@/paths";
 
-export function UserMenu() {
+export function UserMenu({ subappId }: { subappId: SubappId }) {
     const router = useRouter();
 
     const { data: session } = authClient.useSession();
@@ -41,9 +44,13 @@ export function UserMenu() {
     const initials = getUserInitials(user.name);
 
     function handleSignOut() {
-        authClient.signOut();
+        toast.promise(authClient.signOut(), {
+            loading: "Signing out...",
+            success: "Signed out successfully",
+            error: (error) => `Error signing out: ${error.message}`,
+        });
 
-        router.push(Paths.auth.signIn().href);
+        router.push("/auth/sign-in");
     }
 
     return (
@@ -103,12 +110,12 @@ export function UserMenu() {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    {/* <DropdownMenuItem asChild>
-                        <Link to={Paths.orgs.select}>
+                    <DropdownMenuItem asChild>
+                        <Link to={{ href: `/${subappId}` }}>
                             <SwitchOrganizationIcon />
                             <span>Switch Organization</span>
                         </Link>
-                    </DropdownMenuItem> */}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                         <LogOutIcon />
                         Sign out

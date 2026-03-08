@@ -35,7 +35,7 @@ export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
                                 AVUT <span className="ml-1">I3</span>
                             </Hermes.Title>
                             <Hermes.Description>
-                                Items Issued to Individuals
+                                Individual Issue Items
                             </Hermes.Description>
                         </Hermes.Header>
                         <div className="flex flex-col gap-4 mt-4">

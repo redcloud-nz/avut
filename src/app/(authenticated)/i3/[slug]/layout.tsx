@@ -56,10 +56,7 @@ export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
 
     return (
         <OrganizationProvider organization={organization}>
-            <AppSidebar
-                appName={<div className="flex text-2xl">I3</div>}
-                name={organization.name}
-            >
+            <AppSidebar subappId="i3" name={organization.name}>
                 <SidebarGroup>
                     <SidebarMenu>
                         <NavItem
@@ -80,7 +77,7 @@ export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
                     </SidebarMenu>
                 </SidebarGroup>
             </AppSidebar>
-            <ControlBar />
+            <ControlBar subappId="i3" slug={slug} />
             {props.children}
         </OrganizationProvider>
     );

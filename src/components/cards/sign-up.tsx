@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -29,14 +30,13 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
 import * as Paths from "@/paths";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
-export function SignUp_Card({ redirect }: { redirect?: string }) {
+export function SignUp_Card() {
     return (
         <Card>
             <CardHeader>
@@ -47,7 +47,7 @@ export function SignUp_Card({ redirect }: { redirect?: string }) {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Auth_EmailPasswordSignUp_Form redirect={redirect} />
+                    <Auth_EmailPasswordSignUp_Form />
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
@@ -57,9 +57,7 @@ export function SignUp_Card({ redirect }: { redirect?: string }) {
 
                     <FieldDescription className="text-center">
                         Already have an account?{" "}
-                        <Link to={Paths.auth.signIn({ redirect })}>
-                            Sign in
-                        </Link>
+                        <Link href="/auth/sign-in">Sign in</Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -110,8 +108,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                 // Successful signup. BetterAuth automatically sends a verification email.
                 console.log("Sign up successful", data);
                 router.push(
-                    Paths.auth.verifyEmail({ email: data.user.email, redirect })
-                        .href,
+                    `/auth/verify-email?email=${encodeURIComponent(formData.email)}`,
                 );
             }
         } catch (error) {

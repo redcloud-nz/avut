@@ -54,10 +54,10 @@ export default async function Organization_Layout(
 
     return (
         <OrganizationProvider organization={organization}>
-            <AppSidebar name={organization.name}>
+            <AppSidebar subappId="orgs" name={organization.name}>
                 <NavOrganizationMenu organization={organization} />
             </AppSidebar>
-            <ControlBar />
+            <ControlBar subappId="orgs" slug={organization.slug} />
             {props.children}
         </OrganizationProvider>
     );

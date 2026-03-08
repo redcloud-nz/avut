@@ -2,18 +2,18 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /
+ * Path: /invitations/[invitation_id]
  */
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { use } from "react";
 
 import Auth_ViewInvitation_Dialog from "@/components/dialogs/invitation";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
-import { useRouter } from "next/navigation";
 
-export default function Organizations_Modal_Invitation_Dialog(
+export default function Invitation_Dialog_Page(
     props: PageProps<"/personal/invitations/[invitation_id]">,
 ) {
     const { invitation_id } = use(props.params);

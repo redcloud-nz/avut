@@ -27,7 +27,6 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export default function Auth_ViewInvitation_Dialog({
@@ -54,9 +53,7 @@ export default function Auth_ViewInvitation_Dialog({
             async onSuccess() {
                 props.onOpenChange?.(false);
 
-                router.push(
-                    Paths.org(invitation.organization.slug).dashboard.href,
-                );
+                router.push(`/orgs/${invitation.organization.slug}`);
 
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({

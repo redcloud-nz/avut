@@ -6,6 +6,7 @@
  */
 
 import { getSessionCookie } from "better-auth/cookies";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { headers as nextHeaders } from "next/headers";
@@ -13,8 +14,6 @@ import { headers as nextHeaders } from "next/headers";
 import { Argus } from "@/components/blocks/argus";
 import { Button } from "@/components/ui/button";
 import { CopyrightString } from "@/components/ui/copyright";
-import { Link } from "@/components/ui/link";
-import * as Paths from "@/paths";
 
 export default async function HomePage() {
     const headers = await nextHeaders();
@@ -30,7 +29,7 @@ export default async function HomePage() {
                     {hasSession ? (
                         <>
                             <Button asChild>
-                                <Link to={Paths.orgs.selectAuto}>
+                                <Link href="/orgs/--select?auto">
                                     {t("enterButton")}
                                 </Link>
                             </Button>
@@ -38,12 +37,12 @@ export default async function HomePage() {
                     ) : (
                         <>
                             <Button asChild>
-                                <Link to={Paths.auth.signIn()}>
+                                <Link href="/auth/sign-in">
                                     {t("signInButton")}
                                 </Link>
                             </Button>
                             <Button asChild>
-                                <Link to={Paths.auth.signUp()}>
+                                <Link href="/auth/sign-up">
                                     {t("signUpButton")}
                                 </Link>
                             </Button>

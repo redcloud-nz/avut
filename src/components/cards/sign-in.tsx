@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -13,6 +14,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -30,18 +32,15 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
-import * as Paths from "@/paths";
 
 /**
  * Card for a user to sign in to the application.
  *
  * @param redirect Optional redirect URL after successful sign-in.
  */
-export function SignIn_Card({ redirect }: { redirect?: string }) {
+export function SignIn_Card() {
     return (
         <Card>
             <CardHeader>
@@ -52,16 +51,14 @@ export function SignIn_Card({ redirect }: { redirect?: string }) {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <EmailPasswordSignIn_Form redirect={redirect} />
+                    <EmailPasswordSignIn_Form />
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
                     <SocialSignInButtons_Field />
                     <FieldDescription className="text-center">
                         Don't have an account?{" "}
-                        <Link to={Paths.auth.signUp({ redirect })}>
-                            Sign Up
-                        </Link>
+                        <Link href="/auth/sign-up">Sign Up</Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -74,7 +71,7 @@ export function SignIn_Card({ redirect }: { redirect?: string }) {
  *
  * @param redirect Optional redirect URL after successful sign-in.
  */
-function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
+function EmailPasswordSignIn_Form() {
     const router = useRouter();
 
     const form = useForm({
@@ -111,17 +108,13 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
 
                 if (data.user.emailVerified) {
                     // Email is verfified
-                    if (redirect) router.push(redirect);
-                    else router.push(Paths.orgs.select.href);
+                    router.push("/auth/post-sign-in");
                 } else {
                     form.reset();
                     setState({ status: "Ready" });
 
                     router.push(
-                        Paths.auth.verifyEmail({
-                            email: data.user.email,
-                            redirect,
-                        }).href,
+                        `/auth/verify-email?email=${encodeURIComponent(formData.email)}`,
                     );
                 }
             }
@@ -166,7 +159,7 @@ function EmailPasswordSignIn_Form({ redirect }: { redirect?: string }) {
                                     Password
                                 </FieldLabel>
                                 <Link
-                                    to={Paths.auth.forgotPassword}
+                                    href="/auth/forgot-password"
                                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                 >
                                     Forgot password?
@@ -236,7 +229,7 @@ export function SocialSignInButtons_Field() {
         try {
             const { data, error } = await authClient.signIn.social({
                 provider,
-                callbackURL: Paths.orgs.select.href,
+                callbackURL: "/auth/post-sign-in",
             });
 
             if (error) {
