@@ -21,7 +21,7 @@ export function ControlBar({ subappId, slug }: ControlBarProps) {
         >
             {/* <NotificationsMenu /> */}
             <ModeToggle />
-            <UserMenu subappId={subappId} />
+            <UserMenu subappId={subappId} slug={slug} />
         </div>
     );
 }

@@ -2,7 +2,7 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/--create
+ * Path: /main/--create
  */
 "use client";
 
@@ -111,7 +111,7 @@ export function CreateOrganization_Card() {
             } else {
                 console.log("Organization created", data);
                 toast.success("Organization created successfully.");
-                router.push(Paths.org(data.slug).dashboard.href);
+                router.push(Paths.main(data.slug).dashboard.href);
             }
         } catch (error) {
             console.error("Organization creation error:", error);

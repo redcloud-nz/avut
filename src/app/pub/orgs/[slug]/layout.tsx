@@ -12,7 +12,7 @@ import { getOrganizationBySlug } from "@/server/organization";
 
 import { CommonProviders } from "@/components/providers";
 
-export async function generateMetadata(props: LayoutProps<`/pub/orgs/[slug]`>) {
+export async function generateMetadata(props: LayoutProps<`/pub/main/[slug]`>) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
@@ -25,7 +25,7 @@ export async function generateMetadata(props: LayoutProps<`/pub/orgs/[slug]`>) {
 }
 
 export default async function Pub_Organization_Layout(
-    props: LayoutProps<`/pub/orgs/[slug]`>,
+    props: LayoutProps<`/pub/main/[slug]`>,
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);

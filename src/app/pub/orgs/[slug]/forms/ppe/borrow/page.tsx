@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /pub/orgs/[slug]/forms/ppe/return
+ * Paths: /pub/main/[slug]/forms/ppe/return
  */
 
 import { Hermes } from "@/components/blocks/hermes";
@@ -25,7 +25,7 @@ export const metadata = {
 };
 
 export default async function Pub_PPEBorrow_Page(
-    props: PageProps<"/pub/orgs/[slug]/forms/ppe/borrow">,
+    props: PageProps<"/pub/main/[slug]/forms/ppe/borrow">,
 ) {
     const { slug } = await props.params;
 

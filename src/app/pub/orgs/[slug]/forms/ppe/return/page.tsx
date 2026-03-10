@@ -23,7 +23,7 @@ export const metadata = {
 };
 
 export default async function Pub_PPEReturn_Page(
-    props: PageProps<"/pub/orgs/[slug]/forms/ppe/return">,
+    props: PageProps<"/pub/main/[slug]/forms/ppe/return">,
 ) {
     const { slug } = await props.params;
 

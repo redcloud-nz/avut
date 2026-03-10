@@ -45,7 +45,7 @@ export default function I3_Error({
                 </EmptyHeader>
                 <EmptyContent>
                     <Button variant="outline" asChild>
-                        <Link to={Paths.org(organization.slug).dashboard}>
+                        <Link to={Paths.main(organization.slug).dashboard}>
                             Dashboard
                         </Link>
                     </Button>

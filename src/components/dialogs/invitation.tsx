@@ -53,7 +53,7 @@ export default function Auth_ViewInvitation_Dialog({
             async onSuccess() {
                 props.onOpenChange?.(false);
 
-                router.push(`/orgs/${invitation.organization.slug}`);
+                router.push(`/main/${invitation.organization.slug}`);
 
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({

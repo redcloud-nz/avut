@@ -6,7 +6,9 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
+import { AVUTLogo } from "@/components/art/avut-logo";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import {
@@ -17,30 +19,31 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
-import { Link } from "@/components/ui/link";
-
-import * as Paths from "@/paths";
+import { getTranslations } from "next-intl/server";
 
 export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
     const { slug } = await props.params;
+    const t = await getTranslations("I3App.IndexPage");
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.i3(slug).index]} />
+            <Lexington.Header
+                breadcrumbs={[{ label: t("title"), href: `/i3/${slug}` }]}
+            />
             <Lexington.Page>
                 <Lexington.Column width="md">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.Title>
-                                AVUT <span className="ml-1">I3</span>
-                            </Hermes.Title>
-                            <Hermes.Description>
-                                Individual Issue Items
-                            </Hermes.Description>
-                        </Hermes.Header>
-                        <div className="flex flex-col gap-4 mt-4">
-                            <ItemGroup>
-                                {/* <Item asChild>
+                    <div className="flex flex-col items-center my-4">
+                        <AVUTLogo />
+                    </div>
+                    <Hermes.Header>
+                        <Hermes.Title>{t("title")}</Hermes.Title>
+                        <Hermes.Description>
+                            {t("description")}
+                        </Hermes.Description>
+                    </Hermes.Header>
+                    <div className="flex flex-col gap-4 mt-4">
+                        <ItemGroup>
+                            {/* <Item asChild>
                                     <Link to={Paths.i3(slug).borrow}>
                                         <ItemContent>
                                             <ItemTitle>Borrow PPE</ItemTitle>
@@ -54,52 +57,51 @@ export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
                                         </ItemActions>
                                     </Link>
                                 </Item> */}
-                                <Item asChild>
-                                    <Link to={Paths.i3(slug).inspect}>
-                                        <ItemContent>
-                                            <ItemTitle>Inspect Items</ItemTitle>
-                                            <ItemDescription>
-                                                Record an inspection of the
-                                                items that have been issued to
-                                                an individual.
-                                            </ItemDescription>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                                <Item asChild>
-                                    <Link to={Paths.i3(slug).issue}>
-                                        <ItemContent>
-                                            <ItemTitle>Issue Items</ItemTitle>
-                                            <ItemDescription>
-                                                Record items being issued to an
-                                                individual.
-                                            </ItemDescription>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                                <Item asChild>
-                                    <Link to={Paths.i3(slug).return}>
-                                        <ItemContent>
-                                            <ItemTitle>Return Items</ItemTitle>
-                                            <ItemDescription>
-                                                Record items being returned from
-                                                an individual.
-                                            </ItemDescription>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </ItemGroup>
-                        </div>
-                    </Hermes.Section>
+                            <Item asChild>
+                                <Link href={`/i3/${slug}/inspect`}>
+                                    <ItemContent>
+                                        <ItemTitle>Inspect Items</ItemTitle>
+                                        <ItemDescription>
+                                            Record an inspection of the items
+                                            that have been issued to an
+                                            individual.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link href={`/i3/${slug}/issue`}>
+                                    <ItemContent>
+                                        <ItemTitle>Issue Items</ItemTitle>
+                                        <ItemDescription>
+                                            Record items being issued to an
+                                            individual.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link href={`/i3/${slug}/return`}>
+                                    <ItemContent>
+                                        <ItemTitle>Return Items</ItemTitle>
+                                        <ItemDescription>
+                                            Record items being returned from an
+                                            individual.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </ItemGroup>
+                    </div>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

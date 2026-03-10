@@ -19,7 +19,7 @@ export async function NavOrganizationMenu({
 }: {
     organization: OrganizationData;
 }) {
-    const orgPrefix = Paths.org(organization.slug);
+    const orgPrefix = Paths.main(organization.slug);
 
     const { modules } = await getOrganizationSettings(organization.id);
 

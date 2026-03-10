@@ -56,21 +56,21 @@ export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
 
     return (
         <OrganizationProvider organization={organization}>
-            <AppSidebar subappId="i3" name={organization.name}>
+            <AppSidebar subappId="i3" slug={slug}>
                 <SidebarGroup>
                     <SidebarMenu>
                         <NavItem
-                            path={Paths.i3(organization.slug).inspect}
+                            path={Paths.i3(slug).inspect}
                             icon={<EyeIcon />}
                             size="lg"
                         />
                         <NavItem
-                            path={Paths.i3(organization.slug).issue}
+                            path={Paths.i3(slug).issue}
                             icon={<SquareArrowRightExitIcon />}
                             size="lg"
                         />
                         <NavItem
-                            path={Paths.i3(organization.slug).return}
+                            path={Paths.i3(slug).return}
                             icon={<SquareArrowRightEnterIcon />}
                             size="lg"
                         />

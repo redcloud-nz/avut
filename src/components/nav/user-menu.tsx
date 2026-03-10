@@ -6,11 +6,12 @@
 "use client";
 
 import { LogOutIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
-    PersonalD4HAccessTokensIcon,
     PersonalProfileIcon,
     PersonalSettingsIcon,
     SwitchOrganizationIcon,
@@ -26,15 +27,20 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
 
 import { authClient } from "@/lib/auth-client";
-import { getUserInitials } from "@/lib/utils";
 import { SubappId } from "@/lib/subapp";
-import * as Paths from "@/paths";
+import { getUserInitials } from "@/lib/utils";
 
-export function UserMenu({ subappId }: { subappId: SubappId }) {
+export function UserMenu({
+    subappId,
+    slug,
+}: {
+    subappId: SubappId;
+    slug: string;
+}) {
     const router = useRouter();
+    const t = useTranslations("UserMenu");
 
     const { data: session } = authClient.useSession();
     if (!session) return null;
@@ -89,36 +95,33 @@ export function UserMenu({ subappId }: { subappId: SubappId }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                    <DropdownMenuLabel>
+                        {t("personalSection")}
+                    </DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                        <Link to={Paths.personal.profile}>
+                        <Link href={`/${subappId}/${slug}/personal/profile`}>
                             <PersonalProfileIcon />
-                            <span>{Paths.personal.profile.label}</span>
+                            <span>{t("profile")}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link to={Paths.personal.settings}>
+                        <Link href={`/${subappId}/${slug}/personal/settings`}>
                             <PersonalSettingsIcon />
-                            <span>{Paths.personal.settings.label}</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link to={Paths.personal.d4hAccessTokens}>
-                            <PersonalD4HAccessTokensIcon />
-                            <span>{Paths.personal.d4hAccessTokens.label}</span>
+                            <span>{t("settings")}</span>
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link to={{ href: `/${subappId}` }}>
+                        <Link href={`/${subappId}/--select-org`}>
                             <SwitchOrganizationIcon />
-                            <span>Switch Organization</span>
+                            <span>{t("switchOrganization")}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                         <LogOutIcon />
-                        Sign out
+                        <span>{t("signOut")}</span>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
             </DropdownMenuContent>

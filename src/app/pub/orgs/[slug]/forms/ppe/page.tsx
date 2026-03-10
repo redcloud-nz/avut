@@ -28,7 +28,7 @@ export const metadata = {
 };
 
 export default async function Pub_PPEIndex_Page(
-    props: PageProps<"/pub/orgs/[slug]/forms/ppe">,
+    props: PageProps<"/pub/main/[slug]/forms/ppe">,
 ) {
     const { slug } = await props.params;
 

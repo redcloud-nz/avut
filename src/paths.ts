@@ -109,21 +109,7 @@ export const onboarding = {
     },
 };
 
-export const orgs = {
-    create: {
-        label: "Create Organization",
-        href: "/orgs/--create",
-    },
-    select: {
-        label: "Select Organization",
-        href: "/orgs/--select",
-    },
-    selectAuto: {
-        href: "/orgs/--select?auto",
-    },
-} as const;
-
-type OrgPaths = {
+type MainAppPaths = {
     admin: ReturnType<typeof adminModule>;
     availability: ReturnType<typeof availabilityModule>;
     cards: ReturnType<typeof cardsModule>;
@@ -138,17 +124,17 @@ type OrgPaths = {
     skillPackageBuilder: ReturnType<typeof skillPackageBuilderModule>;
 };
 
-const orgPathCache = new Map<string, OrgPaths>();
+const mainPathCache = new Map<string, MainAppPaths>();
 
-export function org(orgSlug: string): OrgPaths {
-    let paths = orgPathCache.get(orgSlug);
+export function main(orgSlug: string): MainAppPaths {
+    let paths = mainPathCache.get(orgSlug);
     if (!paths) {
         paths = {
             admin: adminModule(orgSlug),
             availability: availabilityModule(orgSlug),
             cards: cardsModule(orgSlug),
             checklists: checklistsModule(orgSlug),
-            dashboard: { label: "Dashboard", href: `/orgs/${orgSlug}` },
+            dashboard: { label: "Dashboard", href: `/main/${orgSlug}` },
             d4HViews: d4HViewsModule(orgSlug),
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),
@@ -156,8 +142,8 @@ export function org(orgSlug: string): OrgPaths {
             notes: notesModule(orgSlug),
             skills: skillsModule(orgSlug),
             skillPackageBuilder: skillPackageBuilderModule(orgSlug),
-        } satisfies OrgPaths;
-        orgPathCache.set(orgSlug, paths);
+        } satisfies MainAppPaths;
+        mainPathCache.set(orgSlug, paths);
     }
 
     return paths;
@@ -209,7 +195,7 @@ export const personal = {
 } as const;
 
 export function pub(slug: string) {
-    const base = `/pub/orgs/${slug}` as const;
+    const base = `/pub/main/${slug}` as const;
 
     return {
         forms: {
@@ -279,7 +265,7 @@ export function i3(slug: string) {
 // Modules
 
 function adminModule(org_slug: string) {
-    const base = `/orgs/${org_slug}/admin` as const;
+    const base = `/main/${org_slug}/admin` as const;
 
     return {
         index: {
@@ -446,7 +432,7 @@ function adminModule(org_slug: string) {
 }
 
 function availabilityModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/availability` as const;
+    const base = `/main/${orgSlug}/availability` as const;
 
     return {
         label: "Availability",
@@ -455,7 +441,7 @@ function availabilityModule(orgSlug: string) {
 }
 
 function cardsModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/cards` as const;
+    const base = `/main/${orgSlug}/cards` as const;
 
     return {
         label: "Reference Cards",
@@ -464,7 +450,7 @@ function cardsModule(orgSlug: string) {
 }
 
 function checklistsModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/checklists` as const;
+    const base = `/main/${orgSlug}/checklists` as const;
 
     return {
         label: "Checklists",
@@ -473,7 +459,7 @@ function checklistsModule(orgSlug: string) {
 }
 
 function i3Module(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/i3` as const;
+    const base = `/main/${orgSlug}/i3` as const;
 
     return {
         index: {
@@ -498,7 +484,7 @@ function i3Module(orgSlug: string) {
 }
 
 function d4HViewsModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/d4h-views` as const;
+    const base = `/main/${orgSlug}/d4h-views` as const;
 
     return {
         index: {
@@ -578,7 +564,7 @@ function d4HViewsModule(orgSlug: string) {
 }
 
 function devModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/dev` as const;
+    const base = `/main/${orgSlug}/dev` as const;
 
     return {
         label: "Dev",
@@ -593,12 +579,12 @@ function devModule(orgSlug: string) {
 function fogModule(orgSlug: string) {
     return {
         label: "Field Operations Guide",
-        href: `/orgs/${orgSlug}/fog`,
+        href: `/main/${orgSlug}/fog`,
     } as const;
 }
 
 function notesModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/notes` as const;
+    const base = `/main/${orgSlug}/notes` as const;
     return {
         index: {
             label: "Notes",
@@ -630,11 +616,11 @@ function notesModule(orgSlug: string) {
 }
 
 function personalModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/personal` as const;
+    const base = `/main/${orgSlug}/personal` as const;
 }
 
 function skillsModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/skills` as const;
+    const base = `/main/${orgSlug}/skills` as const;
     return {
         index: {
             label: "Skills",
@@ -704,7 +690,7 @@ function skillsModule(orgSlug: string) {
 }
 
 function skillPackageBuilderModule(orgSlug: string) {
-    const base = `/orgs/${orgSlug}/skill-package-builder` as const;
+    const base = `/main/${orgSlug}/skill-package-builder` as const;
 
     return {
         index: {

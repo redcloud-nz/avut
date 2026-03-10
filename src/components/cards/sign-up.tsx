@@ -32,7 +32,6 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { authClient } from "@/lib/auth-client";
-import * as Paths from "@/paths";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 

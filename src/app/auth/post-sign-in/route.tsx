@@ -20,5 +20,5 @@ export async function GET(request: NextRequest) {
     }
 
     // Default redirect to the dashboard page.
-    return NextResponse.redirect(new URL("/orgs", request.url));
+    return NextResponse.redirect(new URL("/main", request.url));
 }

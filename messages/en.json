@@ -5,9 +5,30 @@
     "signUpButton": "Sign Up"
   },
 
+  "I3App": {
+    "IndexPage": {
+      "title": "I3",
+      "description": "Individual Issue Items"
+    }
+  },
+
   "I3Module": {
     "IndexPage": {
       "title": "I3"
+    }
+  },
+
+  "UserMenu": {
+    "personalSection": "Personal",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "switchOrganization": "Switch Organization",
+
+    "SignOutToast": {
+      "loading": "Signing out...",
+      "success": "Signed out successfully",
+      "error": "Error signing out: {message}"
     }
   }
 }
