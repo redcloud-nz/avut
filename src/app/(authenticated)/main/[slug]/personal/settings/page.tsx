@@ -7,7 +7,8 @@
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { UserD4HAccessToken_Card } from "@/components/cards/user-d4h-access-token";
+
+import { UserD4HAccess_Card } from "@/components/cards/user-d4h-access";
 import { UserSettings_Card } from "@/components/cards/user-settings";
 
 export default function Main_Personal_Settings_Page() {
@@ -19,8 +20,8 @@ export default function Main_Personal_Settings_Page() {
                     <Hermes.Header>
                         <Hermes.Title>User Settings</Hermes.Title>
                     </Hermes.Header>
-                    {/* <UserSettings_Card /> */}
-                    <UserD4HAccessToken_Card />
+                    <UserSettings_Card />
+                    <UserD4HAccess_Card />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

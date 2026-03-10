@@ -53,4 +53,6 @@ export const Messages = {
         teamId: string;
     }) =>
         `Team membership not found for Person(id=${personId}) and Team(id=${teamId}).`,
+
+    userNotFound: (userId: string) => `User(id=${userId}) not found.`,
 } as const;

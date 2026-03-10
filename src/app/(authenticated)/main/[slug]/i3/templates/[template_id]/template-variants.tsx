@@ -269,7 +269,6 @@ function I3Module_Template_AddVariant_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        logger.log("handleOpenChange: " + open);
         props.onOpenChange?.(open);
 
         form.reset();

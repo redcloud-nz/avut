@@ -47,6 +47,9 @@ import {
     BookXIcon,
     MoveIcon,
     ShirtIcon,
+    ShovelIcon,
+    CircleCheckBigIcon,
+    ShieldXIcon,
 } from "lucide-react";
 
 export {
@@ -89,6 +92,13 @@ export {
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
     SendIcon as InvitationsIcon,
+};
+
+export const AlertIcons = {
+    NotAllowed: ShieldXIcon,
+    Success: CircleCheckBigIcon,
+    UnderConstruction: ShovelIcon,
+    Warning: TriangleAlertIcon,
 };
 
 export const ModuleIcons = {

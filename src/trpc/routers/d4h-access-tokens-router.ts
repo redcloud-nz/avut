@@ -19,6 +19,7 @@ import {
     D4HAccessToken_ServerOnly,
     D4hAccessTokenId,
 } from "@/lib/schemas/d4h-access-token";
+import { D4HServerCode } from "@/lib/d4h-api/servers";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -35,22 +36,82 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                accessTokenId: D4hAccessTokenId.schema,
-                create: D4HAccessToken.schema
-                    .pick({
-                        label: true,
-                        serverCode: true,
-                    })
-                    .extend({ token: z.string() }),
+                tokenId: D4hAccessTokenId.schema,
+                create: z.object({
+                    serverCode: D4HServerCode.schema,
+                    label: z.string(),
+                    token: z.string(),
+                }),
             }),
         )
         .output(z.object({ created: D4HAccessToken.schema }))
-        .mutation(async ({ ctx, input: { accessTokenId, create } }) => {
+        .mutation(async ({ ctx, input: { tokenId, create } }) => {
             const token = {
                 ...create,
-                id: accessTokenId,
+                id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
+                status: "",
+                createdAt: new Date().toISOString(),
+                expiresAt: addYears(new Date(), 10).toISOString(),
+                metadata: {
+                    d4HTeams: [],
+                    d4HOrganizations: [],
+                },
+            } satisfies D4HAccessToken;
+
+            // Check the token by making a request to the D4H API
+            const fetchClient = getD4hFetchClient(token);
+            const { response } = await fetchClient.GET("/v3/whoami");
+
+            // Check which teams and organizations are accessible with this token
+            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
+            const d4HOrganizations =
+                await getD4HOrganizationsAccessibleWithToken(token);
+
+            const created = await ctx.prisma.d4hAccessToken.create({
+                data: {
+                    ...token,
+                    status: response.statusText,
+                    metadata: {
+                        d4HTeams: d4HTeams as object[],
+                        d4HOrganizations: d4HOrganizations as object[],
+                    },
+                },
+            });
+
+            const changes = diffObject({}, create);
+
+            await ctx.logEvent({
+                action: "Create",
+                objectType: "D4hAccessToken",
+                objectId: created.id,
+                changes,
+            });
+
+            return { created: D4HAccessToken.fromRecord(created) };
+        }),
+
+    /**
+     * Create a personal D4H access token for the current user/organization. Each user can only have one personal access token per organization and it is not visible to other users.
+     */
+    createPersonalAccessToken: organizationProcedure({ organization: ["view"] })
+        .input(
+            z.object({
+                tokenId: D4hAccessTokenId.schema,
+                create: z.object({
+                    serverCode: D4HServerCode.schema,
+                    token: z.string(),
+                }),
+            }),
+        )
+        .mutation(async ({ ctx, input: { tokenId, create } }) => {
+            const token = {
+                ...create,
+                id: tokenId,
+                organizationId: ctx.organizationId,
+                userId: ctx.auth.user.id,
+                label: `Personal token for ${ctx.auth.user.name}`,
                 status: "",
                 createdAt: new Date().toISOString(),
                 expiresAt: addYears(new Date(), 10).toISOString(),
@@ -115,27 +176,57 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 });
             }
 
-            await ctx.prisma.d4hAccessToken.delete({
-                where: { id: input.tokenId },
-            });
+            await Promise.all([
+                ctx.prisma.d4hAccessToken.delete({
+                    where: { id: input.tokenId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "D4hAccessToken",
+                    objectId: existing.id,
+                }),
+                // Delete any organization config entries that reference this token
+                ctx.prisma.organizationConfig.delete({
+                    where: {
+                        organizationId_key: {
+                            organizationId: ctx.organizationId,
+                            key: `integrations.d4h.syncToken`,
+                        },
+                        value: { equals: input.tokenId },
+                    },
+                }),
+            ]);
+        }),
 
-            await ctx.logEvent({
+    deletePersonalAccessToken: organizationProcedure({
+        organization: ["view"],
+    }).mutation(async ({ ctx }) => {
+        const existing = await ctx.prisma.d4hAccessToken.findFirst({
+            where: {
+                organizationId: ctx.organizationId,
+                userId: ctx.auth.user.id,
+            },
+        });
+
+        if (!existing) {
+            throw new TRPCError({
+                code: "NOT_FOUND",
+                message: `Personal access token for user ${ctx.auth.user.id} not found.`,
+            });
+        }
+
+        await Promise.all([
+            ctx.prisma.d4hAccessToken.delete({
+                where: { id: existing.id },
+            }),
+
+            ctx.logEvent({
                 action: "Delete",
                 objectType: "D4hAccessToken",
                 objectId: existing.id,
-            });
-
-            // Delete any organization config entries that reference this token
-            await ctx.prisma.organizationConfig.delete({
-                where: {
-                    organizationId_key: {
-                        organizationId: ctx.organizationId,
-                        key: `integrations.d4h.syncToken`,
-                    },
-                    value: { equals: input.tokenId },
-                },
-            });
-        }),
+            }),
+        ]);
+    }),
 
     /**
      * Get a specific D4H access token by ID. Only returns tokens that belong to the organization.
@@ -164,6 +255,22 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 });
 
             return D4HAccessToken.fromRecord(record);
+        }),
+
+    /**
+     * Get the D4H access token that belongs to the current user, if it exists.
+     */
+    getPersonalAccessToken: organizationProcedure({})
+        .output(D4HAccessToken.schema.nullable())
+        .query(async ({ ctx }) => {
+            const record = await ctx.prisma.d4hAccessToken.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    userId: ctx.auth.user.id,
+                },
+            });
+
+            return record ? D4HAccessToken.fromRecord(record) : null;
         }),
 
     /**
