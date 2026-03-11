@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { z } from "zod";
+import * as z from "zod";
 import { formatDate } from "../datetime";
 
 export type DateRange = z.infer<typeof DateRange.schema>;

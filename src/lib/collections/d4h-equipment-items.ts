@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { z } from "zod";
+import * as z from "zod";
 
 import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";

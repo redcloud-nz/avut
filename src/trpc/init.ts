@@ -6,7 +6,7 @@
 import { headers as nextHeaders } from "next/headers";
 import { cache } from "react";
 import superjson from "superjson";
-import { z } from "zod";
+import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
@@ -17,6 +17,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { auth, AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
 import { FieldConflictError } from "./errors";
+import { UserId } from "@/lib/schemas/user";
 
 // Artificial delay in development to simulate real-world conditions
 const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
@@ -130,7 +131,10 @@ export const publicProcedure = t.procedure.use(
     },
 );
 
-export type AuthenticatedContext = Context & { auth: AuthSession };
+export type AuthenticatedContext = Context & {
+    auth: AuthSession;
+    userId: UserId;
+};
 
 /**
  * Procedure that requires the user to be authenticated.
@@ -148,6 +152,7 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
     const enhancedCtx: AuthenticatedContext = {
         ...ctx,
         auth: ctx.auth,
+        userId: UserId.schema.parse(ctx.auth.user.id),
     };
 
     return opts.next({

@@ -4,7 +4,7 @@
  */
 
 import * as R from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 
 import {
     D4HListResponse,
@@ -35,6 +35,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -94,6 +95,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -153,6 +155,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const equipmentItems = await getD4HEquipmentItems(accessToken);
@@ -170,6 +173,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -229,6 +233,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -270,6 +275,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -321,6 +327,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx, input: { teamId, memberId } }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const fetchClient = getD4hFetchClient(accessToken);
@@ -354,6 +361,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HViewsAccessToken(
                 ctx.organizationId,
+                ctx.userId,
             );
 
             const teams = await getD4HTeamsAccessibleWithToken(accessToken);

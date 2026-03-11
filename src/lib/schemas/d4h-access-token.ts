@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { z } from "zod";
+import * as z from "zod";
 
 import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 import { D4HServerCode } from "../d4h-api/servers";
-import { addYears } from "date-fns";
+import { decryptDBValue } from "@/server/encrypt";
 
 export const D4hAccessTokenId = {
     schema: zodNanoId16(
@@ -77,7 +77,7 @@ export const D4HAccessToken_ServerOnly = {
     fromRecord: (record: D4hAccessTokenRecord) =>
         D4HAccessToken_ServerOnly.schema.parse({
             ...record,
-            token: record.token,
+            token: decryptDBValue(record.token),
         }),
 };
 

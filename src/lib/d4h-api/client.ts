@@ -7,7 +7,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import createFetchClient from "openapi-fetch";
 import { cache } from "react";
 import * as R from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 

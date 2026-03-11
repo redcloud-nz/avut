@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { z } from "zod";
+import * as z from "zod";
 
 import { Notification } from "@/lib/schemas/notification";
 import prisma from "@/server/prisma";

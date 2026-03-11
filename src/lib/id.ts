@@ -5,7 +5,7 @@
 
 import { customAlphabet } from "nanoid";
 import { v4 as uuidv4, validate } from "uuid";
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Create a new v4 UUID

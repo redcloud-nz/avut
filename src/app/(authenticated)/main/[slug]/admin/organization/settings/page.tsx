@@ -7,7 +7,7 @@
 "use client";
 
 import { use } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch, Watch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Lens, useLens } from "@hookform/lenses";
@@ -57,6 +57,7 @@ import { countDirtyFields } from "@/lib/utils";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
+import { Show } from "@/components/show";
 
 export default function AdminModule_Settings_Page(
     props: PageProps<`/main/[slug]/admin/organization/settings`>,
@@ -162,14 +163,14 @@ export default function AdminModule_Settings_Page(
                                 <Hermes.Title>Modules</Hermes.Title>
                             </Hermes.Header>
 
-                            <I3Module_SettingsCard
-                                lens={lens.focus("modules.i3")}
-                            />
                             <D4HViewsModule_SettingsCard
                                 lens={lens.focus("modules.d4h-views")}
                             />
                             <FormsModule_SettingsCard
                                 lens={lens.focus("modules.forms")}
+                            />
+                            <I3Module_SettingsCard
+                                lens={lens.focus("modules.i3")}
                             />
                             <NotesModule_SettingsCard
                                 lens={lens.focus("modules.notes")}
@@ -353,11 +354,10 @@ function D4hIntegration_SettingsCard({
                                         Synchronization Token
                                     </FieldLabel>
                                     <FieldDescription>
-                                        Already configured Personal Access Token
-                                        to use for synchronizing data between
-                                        AVUT and D4H. Select an existing token
-                                        or leave empty to disable
-                                        synchronization.
+                                        Already configured D4H Access Token to
+                                        use for synchronizing data between AVUT
+                                        and D4H. Select an existing token or
+                                        leave empty to disable synchronization.
                                     </FieldDescription>
                                 </FieldContent>
 
@@ -532,43 +532,14 @@ function EmailIntegration_SettingsCard({
     );
 }
 
-function I3Module_SettingsCard({
-    lens,
-}: {
-    lens: Lens<Partial<OrganizationSettings["modules"]["i3"]>>;
-}) {
-    const enabled = useWatch(lens.focus("enabled").interop());
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>I3 Module</CardTitle>
-                <CardAction>
-                    <Controller
-                        {...lens.focus("enabled").interop()}
-                        render={({ field }) => (
-                            <Switch
-                                id="i3-module-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <FieldGroup></FieldGroup>
-            </CardContent>
-        </Card>
-    );
-}
-
 function D4HViewsModule_SettingsCard({
     lens,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["d4h-views"]>>;
 }) {
     const enabled = useWatch(lens.focus("enabled").interop());
+
+    const tokenPolicy = useWatch(lens.focus("tokenPolicy").interop());
 
     return (
         <Card>
@@ -588,7 +559,146 @@ function D4HViewsModule_SettingsCard({
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <FieldGroup></FieldGroup>
+                <FieldGroup>
+                    <Controller
+                        {...lens.focus("mode").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation="responsive"
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldLabel htmlFor="d4h-views-mode">
+                                    Write Mode
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="d4h-views-mode"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select mode" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Read-only">
+                                            Read-only
+                                        </SelectItem>
+                                        <SelectItem value="Read-write">
+                                            Read-write
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    In "Read-only" mode, the D4H Views module
+                                    will only read data from D4H and display it
+                                    in AVUT. In "Read-write" mode, the module
+                                    will also write data back to D4H when
+                                    changes are made in AVUT.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("tokenPolicy").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation="responsive"
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldLabel htmlFor="d4h-views-token-policy">
+                                    Token Policy
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="d4h-views-token-policy"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select token policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Shared">
+                                            Shared Token
+                                        </SelectItem>
+                                        <SelectItem value="Personal">
+                                            Personal Tokens
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    If "Shared Token" is selected, the module
+                                    will use a single, shared D4H Access Token
+                                    for all users in the organization. If
+                                    "Personal Tokens" is selected, each user
+                                    will need to configure their own D4H Access
+                                    Token in their personal settings to use the
+                                    module.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
+                            </Field>
+                        )}
+                    />
+                    <Show when={tokenPolicy === "Shared"}>
+                        <Controller
+                            {...lens.focus("token").interop()}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation="responsive"
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldLabel htmlFor="d4h-views-token">
+                                        Shared Token
+                                    </FieldLabel>
+
+                                    <Input
+                                        id="d4h-views-token"
+                                        aria-invalid={fieldState.invalid}
+                                        value={field.value || ""}
+                                        onChange={(ev) => {
+                                            const value = ev.target.value;
+                                            if (value === "") {
+                                                field.onChange(null);
+                                            } else {
+                                                field.onChange(value);
+                                            }
+                                        }}
+                                        disabled={
+                                            !enabled || tokenPolicy !== "Shared"
+                                        }
+                                    />
+                                    <FieldDescription>
+                                        D4H Access Token to use for the module
+                                        when "Shared Token" policy is selected.
+                                        Make sure to use a token with
+                                        appropriate permissions and keep it
+                                        secure.
+                                    </FieldDescription>
+                                    {fieldState.error && (
+                                        <FieldError
+                                            errors={[fieldState.error]}
+                                        />
+                                    )}
+                                </Field>
+                            )}
+                        />
+                    </Show>
+                </FieldGroup>
             </CardContent>
         </Card>
     );
@@ -620,6 +730,79 @@ function FormsModule_SettingsCard({
             </CardHeader>
             <CardContent>
                 <FieldGroup></FieldGroup>
+            </CardContent>
+        </Card>
+    );
+}
+
+function I3Module_SettingsCard({
+    lens,
+}: {
+    lens: Lens<Partial<OrganizationSettings["modules"]["i3"]>>;
+}) {
+    const enabled = useWatch(lens.focus("enabled").interop());
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>I3 Module</CardTitle>
+                <CardAction>
+                    <Controller
+                        {...lens.focus("enabled").interop()}
+                        render={({ field }) => (
+                            <Switch
+                                id="i3-module-enabled"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+                <FieldGroup>
+                    <Controller
+                        {...lens.focus("storage").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation="responsive"
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldLabel htmlFor="i3-storage">
+                                    I3 Data Storage
+                                </FieldLabel>
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="i3-storage"
+                                        aria-invalid={fieldState.invalid}
+                                    >
+                                        <SelectValue placeholder="Select I3 data storage" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="AVUT" disabled>
+                                            AVUT
+                                        </SelectItem>
+                                        <SelectItem value="D4H">D4H</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FieldDescription>
+                                    Where should I3 item-data be stored? If AVUT
+                                    is selected, I3 data will be stored in
+                                    AVUT's database. If D4H is selected, I3 data
+                                    will be stored in D4H and associated with
+                                    the corresponding teams and team members.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
+                            </Field>
+                        )}
+                    />
+                </FieldGroup>
             </CardContent>
         </Card>
     );

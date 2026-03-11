@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { z } from "zod";
+import * as z from "zod";
 
 import type { OrganizationInvitation as InvitationRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "../id";

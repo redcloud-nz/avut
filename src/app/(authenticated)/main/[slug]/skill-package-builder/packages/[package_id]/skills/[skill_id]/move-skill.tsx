@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as z from "zod";
 
 import {
     useMutation,

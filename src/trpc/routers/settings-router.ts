@@ -4,7 +4,7 @@
  */
 
 import * as R from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 
 import { diffObject } from "@/lib/diff";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";

@@ -4,10 +4,11 @@
  */
 
 import * as R from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 
 import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-api/servers";
+import { read } from "fs";
 
 const organizationSettingsSchema = z.object({
     general: z.object({
@@ -34,12 +35,16 @@ const organizationSettingsSchema = z.object({
     modules: z.object({
         "d4h-views": z.object({
             enabled: z.boolean().default(false),
+            mode: z.enum(["Read-only", "Read-write"]).default("Read-only"),
+            tokenPolicy: z.enum(["Shared", "Personal"]).default("Shared"),
+            token: z.string().nullable().default(null),
         }),
         forms: z.object({
             enabled: z.boolean().default(false),
         }),
         i3: z.object({
             enabled: z.boolean().default(false),
+            storage: z.enum(["AVUT", "D4H"]).default("D4H"),
         }),
         notes: z.object({
             enabled: z.boolean().default(false),

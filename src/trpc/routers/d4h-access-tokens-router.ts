@@ -4,7 +4,7 @@
  */
 
 import { addYears } from "date-fns";
-import { z } from "zod";
+import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
@@ -21,8 +21,11 @@ import {
 } from "@/lib/schemas/d4h-access-token";
 import { D4HServerCode } from "@/lib/d4h-api/servers";
 
+import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
+
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -51,14 +54,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
-                status: "",
-                createdAt: new Date().toISOString(),
-                expiresAt: addYears(new Date(), 10).toISOString(),
-                metadata: {
-                    d4HTeams: [],
-                    d4HOrganizations: [],
-                },
-            } satisfies D4HAccessToken;
+            } satisfies D4HAccessToken_ServerOnly;
 
             // Check the token by making a request to the D4H API
             const fetchClient = getD4hFetchClient(token);
@@ -72,7 +68,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             const created = await ctx.prisma.d4hAccessToken.create({
                 data: {
                     ...token,
+                    token: encryptDBValue(token.token),
                     status: response.statusText,
+                    expiresAt: addYears(new Date(), 10).toISOString(),
                     metadata: {
                         d4HTeams: d4HTeams as object[],
                         d4HOrganizations: d4HOrganizations as object[],
@@ -112,14 +110,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 organizationId: ctx.organizationId,
                 userId: ctx.auth.user.id,
                 label: `Personal token for ${ctx.auth.user.name}`,
-                status: "",
-                createdAt: new Date().toISOString(),
-                expiresAt: addYears(new Date(), 10).toISOString(),
-                metadata: {
-                    d4HTeams: [],
-                    d4HOrganizations: [],
-                },
-            } satisfies D4HAccessToken;
+            } satisfies D4HAccessToken_ServerOnly;
 
             // Check the token by making a request to the D4H API
             const fetchClient = getD4hFetchClient(token);
@@ -133,7 +124,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             const created = await ctx.prisma.d4hAccessToken.create({
                 data: {
                     ...token,
+                    token: encryptDBValue(token.token),
                     status: response.statusText,
+                    expiresAt: addYears(new Date(), 10).toISOString(),
                     metadata: {
                         d4HTeams: d4HTeams as object[],
                         d4HOrganizations: d4HOrganizations as object[],
@@ -195,6 +188,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         value: { equals: input.tokenId },
                     },
                 }),
+                // Revalidate organization settings in case this token was being used.
+                revalidateOrganizationSettings(ctx.organizationId),
             ]);
         }),
 

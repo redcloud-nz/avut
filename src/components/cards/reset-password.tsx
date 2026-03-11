@@ -8,7 +8,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import z from "zod";
+import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
