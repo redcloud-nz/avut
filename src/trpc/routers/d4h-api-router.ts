@@ -8,10 +8,8 @@ import * as z from "zod";
 
 import {
     D4HListResponse,
-    getD4HEquipmentItems,
-    getD4hFetchClient,
-    getD4HOrganizationsAccessibleWithToken,
-    getD4HTeamsAccessibleWithToken,
+    getD4HFetchClient,
+    getD4HTokenMetadata,
 } from "@/lib/d4h-api/client";
 import { D4HEquipmentBrand } from "@/lib/d4h-api/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/d4h-api/equipment-category";
@@ -38,16 +36,13 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
-
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-            const organisations =
-                await getD4HOrganizationsAccessibleWithToken(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
             const brands = (
                 await Promise.all(
-                    teams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                    d4HTeams.map(async (team) => {
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment-brands",
                             {
                                 params: {
@@ -59,23 +54,22 @@ export const d4hApiRouter = createTrpcRouter({
                             },
                         );
 
+                        if (error)
+                            throw new Error(
+                                `Failed to fetch equipment brands for team ${team.id}`,
+                                { cause: error },
+                            );
+
                         return (data as D4HListResponse).results.map((raw) => {
-                            const parsed =
+                            const brand =
                                 D4HEquipmentBrand.inputSchema.parse(raw);
 
                             return {
-                                ...parsed,
-                                owner: {
-                                    ...parsed.owner,
-                                    title:
-                                        parsed.owner.resourceType == "Team"
-                                            ? team.title
-                                            : (organisations.find(
-                                                  (o) =>
-                                                      o.id === parsed.owner.id,
-                                              )?.title ??
-                                              `Organization ${parsed.owner.id}`),
-                                },
+                                ...brand,
+                                owner:
+                                    brand.owner.resourceType == "Team"
+                                        ? team
+                                        : team.owner!,
                             };
                         });
                     }),
@@ -98,16 +92,13 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
-
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-            const organisations =
-                await getD4HOrganizationsAccessibleWithToken(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
             const categories = (
                 await Promise.all(
-                    teams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                    d4HTeams.map(async (team) => {
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment-categories",
                             {
                                 params: {
@@ -119,23 +110,22 @@ export const d4hApiRouter = createTrpcRouter({
                             },
                         );
 
+                        if (error)
+                            throw new Error(
+                                `Failed to fetch equipment categories for team ${team.id}`,
+                                { cause: error },
+                            );
+
                         return (data as D4HListResponse).results.map((raw) => {
-                            const parsed =
+                            const category =
                                 D4HEquipmentCategory.inputSchema.parse(raw);
 
                             return {
-                                ...parsed,
-                                owner: {
-                                    ...parsed.owner,
-                                    title:
-                                        parsed.owner.resourceType == "Team"
-                                            ? team.title
-                                            : (organisations.find(
-                                                  (o) =>
-                                                      o.id === parsed.owner.id,
-                                              )?.title ??
-                                              `Organization ${parsed.owner.id}`),
-                                },
+                                ...category,
+                                owner:
+                                    category.owner.resourceType == "Team"
+                                        ? team
+                                        : team.owner!,
                             };
                         });
                     }),
@@ -158,9 +148,38 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const equipmentItems = await getD4HEquipmentItems(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
-            return equipmentItems;
+            const items = (
+                await Promise.all(
+                    d4HTeams.map(async (team) => {
+                        const { data } = await fetchClient.GET(
+                            "/v3/{context}/{contextId}/equipment",
+                            {
+                                params: {
+                                    path: {
+                                        context: "team",
+                                        contextId: team.id,
+                                    },
+                                    query: {
+                                        size: 10000,
+                                        only_current: true,
+                                    },
+                                },
+                            },
+                        );
+
+                        return (data as D4HListResponse).results.map((raw) => {
+                            const item = D4HEquipmentItem.schema.parse(raw);
+
+                            return item;
+                        });
+                    }),
+                )
+            ).flat();
+
+            return R.uniqueBy(items, (e) => e.id);
         }),
 
     /**
@@ -176,16 +195,13 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
-
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-            const organisations =
-                await getD4HOrganizationsAccessibleWithToken(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = accessToken.metadata;
 
             const kinds = (
                 await Promise.all(
-                    teams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                    d4HTeams.map(async (team) => {
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment-kinds",
                             {
                                 params: {
@@ -197,23 +213,22 @@ export const d4hApiRouter = createTrpcRouter({
                             },
                         );
 
+                        if (error)
+                            throw new Error(
+                                `Failed to fetch equipment kinds for team ${team.id}`,
+                                { cause: error },
+                            );
+
                         return (data as D4HListResponse).results.map((raw) => {
-                            const parsed =
+                            const kind =
                                 D4HEquipmentKind.inputSchema.parse(raw);
 
                             return {
-                                ...parsed,
-                                owner: {
-                                    ...parsed.owner,
-                                    title:
-                                        parsed.owner.resourceType == "Team"
-                                            ? team.title
-                                            : (organisations.find(
-                                                  (o) =>
-                                                      o.id === parsed.owner.id,
-                                              )?.title ??
-                                              `Organization ${parsed.owner.id}`),
-                                },
+                                ...kind,
+                                owner:
+                                    kind.owner.resourceType == "Team"
+                                        ? team
+                                        : team.owner!,
                             };
                         });
                     }),
@@ -236,14 +251,13 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
-
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
             const models = (
                 await Promise.all(
-                    teams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                    d4HTeams.map(async (team) => {
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment-models",
                             {
                                 params: {
@@ -254,12 +268,24 @@ export const d4hApiRouter = createTrpcRouter({
                                 },
                             },
                         );
+                        if (error)
+                            throw new Error(
+                                `Failed to fetch equipment models for team ${team.id}`,
+                                { cause: error },
+                            );
 
-                        return z
-                            .object({
-                                results: z.array(D4HEquipmentModel.schema),
-                            })
-                            .parse(data).results;
+                        return (data as D4HListResponse).results.map((raw) => {
+                            const model =
+                                D4HEquipmentModel.inputSchema.parse(raw);
+
+                            return {
+                                ...model,
+                                owner:
+                                    model.owner.resourceType == "Team"
+                                        ? team
+                                        : team.owner!,
+                            };
+                        });
                     }),
                 )
             ).flat();
@@ -278,14 +304,13 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
-
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
             const members = (
                 await Promise.all(
-                    teams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                    d4HTeams.map(async (team) => {
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/members",
                             {
                                 params: {
@@ -302,10 +327,16 @@ export const d4hApiRouter = createTrpcRouter({
                                 },
                             },
                         );
-                        return z
-                            .object({ results: D4HMember.schema.array() })
-                            .parse(data)
-                            .results.map((member) => ({ ...member, team }));
+                        if (error)
+                            throw new Error(
+                                `Failed to fetch members for team ${team.id}`,
+                                { cause: error },
+                            );
+
+                        return (data as D4HListResponse).results.map((raw) => {
+                            const member = D4HMember.schema.parse(raw);
+                            return { ...member, team };
+                        });
                     }),
                 )
             ).flat();
@@ -330,9 +361,9 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const fetchClient = getD4hFetchClient(accessToken);
+            const fetchClient = getD4HFetchClient(accessToken);
 
-            const { data } = await fetchClient.GET(
+            const { data, error } = await fetchClient.GET(
                 "/v3/{context}/{contextId}/equipment",
                 {
                     params: {
@@ -348,9 +379,16 @@ export const d4hApiRouter = createTrpcRouter({
                 },
             );
 
-            return z
-                .object({ results: z.array(D4HEquipmentItem.schema) })
-                .parse(data).results;
+            if (error)
+                throw new Error(
+                    `Failed to fetch equipment for member ${memberId} in team ${teamId}`,
+                    { cause: error },
+                );
+
+            return (data as D4HListResponse).results.map((raw) => {
+                const item = D4HEquipmentItem.schema.parse(raw);
+                return item;
+            });
         }),
 
     /**
@@ -364,7 +402,7 @@ export const d4hApiRouter = createTrpcRouter({
                 ctx.userId,
             );
 
-            const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-            return teams;
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            return d4HTeams;
         }),
 });

@@ -4,7 +4,6 @@
  */
 
 import * as z from "zod";
-import { D4HResource } from "./resource";
 
 export const D4HTeam = {
     schema: z.object({

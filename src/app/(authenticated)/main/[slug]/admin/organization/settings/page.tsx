@@ -165,6 +165,7 @@ export default function AdminModule_Settings_Page(
 
                             <D4HViewsModule_SettingsCard
                                 lens={lens.focus("modules.d4h-views")}
+                                organizationId={organization.id}
                             />
                             <FormsModule_SettingsCard
                                 lens={lens.focus("modules.forms")}
@@ -534,11 +535,18 @@ function EmailIntegration_SettingsCard({
 
 function D4HViewsModule_SettingsCard({
     lens,
+    organizationId,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["d4h-views"]>>;
+    organizationId: OrganizationId;
 }) {
-    const enabled = useWatch(lens.focus("enabled").interop());
+    const { data: d4hAccessTokens } = useQuery(
+        trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
+            organizationId,
+        }),
+    );
 
+    const enabled = useWatch(lens.focus("enabled").interop());
     const tokenPolicy = useWatch(lens.focus("tokenPolicy").interop());
 
     return (
@@ -654,50 +662,63 @@ function D4HViewsModule_SettingsCard({
                             </Field>
                         )}
                     />
-                    <Show when={tokenPolicy === "Shared"}>
-                        <Controller
-                            {...lens.focus("token").interop()}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation="responsive"
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldLabel htmlFor="d4h-views-token">
-                                        Shared Token
-                                    </FieldLabel>
+                    <Controller
+                        {...lens.focus("token").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation="responsive"
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldLabel htmlFor="d4h-views-token">
+                                    Shared Token
+                                </FieldLabel>
 
-                                    <Input
+                                <Select
+                                    value={field.value || ""}
+                                    onValueChange={(value) => {
+                                        if (value === "EMPTY") {
+                                            field.onChange(null);
+                                        } else {
+                                            field.onChange(value);
+                                        }
+                                    }}
+                                    disabled={
+                                        tokenPolicy !== "Shared" || !enabled
+                                    }
+                                >
+                                    <SelectTrigger
                                         id="d4h-views-token"
                                         aria-invalid={fieldState.invalid}
-                                        value={field.value || ""}
-                                        onChange={(ev) => {
-                                            const value = ev.target.value;
-                                            if (value === "") {
-                                                field.onChange(null);
-                                            } else {
-                                                field.onChange(value);
-                                            }
-                                        }}
-                                        disabled={
-                                            !enabled || tokenPolicy !== "Shared"
-                                        }
-                                    />
-                                    <FieldDescription>
-                                        D4H Access Token to use for the module
-                                        when "Shared Token" policy is selected.
-                                        Make sure to use a token with
-                                        appropriate permissions and keep it
-                                        secure.
-                                    </FieldDescription>
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
-                                </Field>
-                            )}
-                        />
-                    </Show>
+                                    >
+                                        <SelectValue placeholder="Select a shared access token" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="EMPTY">
+                                            None
+                                        </SelectItem>
+                                        <SelectSeparator />
+                                        {d4hAccessTokens?.map((token) => (
+                                            <SelectItem
+                                                key={token.id}
+                                                value={token.id}
+                                            >
+                                                {token.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FieldDescription>
+                                    D4H Access Token to use for the module when
+                                    "Shared Token" policy is selected. Make sure
+                                    to use a token with appropriate permissions
+                                    and keep it secure.
+                                </FieldDescription>
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
+                            </Field>
+                        )}
+                    />
                 </FieldGroup>
             </CardContent>
         </Card>

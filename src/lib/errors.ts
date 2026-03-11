@@ -12,3 +12,10 @@ export class NotConfiguredError extends Error {
         this.name = "NotConfiguredError";
     }
 }
+
+export class InvalidD4HAccessTokenError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidD4HAccessTokenError";
+    }
+}

@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { D4HServerList } from "@/lib/d4h-api/servers";
 import {
     D4HAccessToken,
-    D4hAccessTokenId,
+    D4HAccessTokenId,
 } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
 import * as Paths from "@/paths";
@@ -97,7 +97,7 @@ export function AdminModule_CreateD4hAccessToken_Form({
     const handleCreate = form.handleSubmit((formData) => {
         createTokenMutation.mutate({
             organizationId: organization.id,
-            tokenId: D4hAccessTokenId.create(),
+            tokenId: D4HAccessTokenId.create(),
             create: formData,
         });
     });

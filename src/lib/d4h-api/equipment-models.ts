@@ -6,6 +6,21 @@
 import * as z from "zod";
 
 export const D4HEquipmentModel = {
+    inputSchema: z.object({
+        id: z.number(),
+        resourceType: z.literal("EquipmentModel"),
+
+        title: z.string(),
+        owner: z.object({
+            id: z.number(),
+            resourceType: z.enum(["Team", "Organisation"]),
+        }),
+        brand: z.object({
+            id: z.number(),
+            resourceType: z.literal("EquipmentBrand"),
+        }),
+        updatedAt: z.iso.datetime(),
+    }),
     schema: z.object({
         id: z.number(),
         resourceType: z.literal("EquipmentModel"),

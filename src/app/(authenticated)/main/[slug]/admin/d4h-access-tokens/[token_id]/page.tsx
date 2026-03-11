@@ -168,7 +168,7 @@ export default function AdminModule_D4hAccessToken_Page(
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <Card>
+                    {/* <Card>
                         <CardHeader>
                             <CardTitle>Organizations</CardTitle>
                             <CardDescription>
@@ -187,7 +187,7 @@ export default function AdminModule_D4hAccessToken_Page(
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {accessToken.metadata.d4HOrganizations.map(
+                                    {accessToken.metadata.d4HOrganisations.map(
                                         (org) => (
                                             <TableRow key={org.id}>
                                                 <TableCell className="text-center">
@@ -202,7 +202,7 @@ export default function AdminModule_D4hAccessToken_Page(
                                 </TableBody>
                             </Table>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Teams</CardTitle>
@@ -218,6 +218,9 @@ export default function AdminModule_D4hAccessToken_Page(
                                             D4H ID
                                         </TableHeadCell>
                                         <TableHeadCell>Name</TableHeadCell>
+                                        <TableHeadCell>
+                                            Organization
+                                        </TableHeadCell>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -229,6 +232,9 @@ export default function AdminModule_D4hAccessToken_Page(
                                                 </TableCell>
                                                 <TableCell>
                                                     {team.title}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {team.owner?.title}
                                                 </TableCell>
                                             </TableRow>
                                         ),

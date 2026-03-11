@@ -3,24 +3,24 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
 import { cacheLife, cacheTag } from "next/cache";
 import createFetchClient from "openapi-fetch";
 import { cache } from "react";
-import * as R from "remeda";
 import * as z from "zod";
 
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import {
+    D4HAccessToken_ServerOnly,
+    D4HAccessTokenMetadata,
+} from "@/lib/schemas/d4h-access-token";
 
 import { D4HMember } from "./member";
+import { D4HOrganisation } from "./organisation";
 import type { paths } from "./schema";
 import { getD4HServer } from "./servers";
-import { D4HWhoami } from "./whoami";
 import { D4HTeamRef } from "./team";
-import { D4HOrganisation } from "./organisation";
-import { D4HEquipmentCategory } from "./equipment-category";
-import { D4HEquipmentItem } from "./equipment-item";
-import { D4HEquipmentBrand } from "./equipment-brand";
-import { D4HEquipmentModel } from "./equipment-models";
+import { D4HWhoami } from "./whoami";
 
 export type D4HListResponse = {
     results: unknown[];
@@ -29,7 +29,10 @@ export type D4HListResponse = {
     totalSize: number;
 };
 
-export const getD4hFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
+/**
+ * Get a D4H Fetch client for the given access token. The client will automatically include the access token in the Authorization header of each request.
+ */
+export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
 
     const fetchClient = createFetchClient<paths>({
@@ -45,12 +48,15 @@ export const getD4hFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     return fetchClient;
 });
 
-export async function fetchD4HWhoamiCached(token: D4HAccessToken_ServerOnly) {
+export async function fetchD4HWhoamiCached(
+    token: D4HAccessToken_ServerOnly,
+    options: { fetchClient?: ReturnType<typeof getD4HFetchClient> } = {},
+): Promise<D4HWhoami> {
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-whoami`);
 
-    const fetchClient = getD4hFetchClient(token);
+    const fetchClient = options.fetchClient ?? getD4HFetchClient(token);
     const { data, response } = await fetchClient.GET("/v3/whoami");
     if (!response.ok) {
         throw new Error(
@@ -60,33 +66,73 @@ export async function fetchD4HWhoamiCached(token: D4HAccessToken_ServerOnly) {
     return D4HWhoami.schema.parse(data);
 }
 
-export async function fetchD4HOrganisationCached(
+/**
+ * Get the teams and owning organizations that are accessible with the given D4H access token.
+ * This is used to determine the scope of a D4H access token.
+ */
+export async function getD4HTokenMetadata(
     token: D4HAccessToken_ServerOnly,
-) {
-    const fetchClient = getD4hFetchClient(token);
+    options: {
+        whoami?: D4HWhoami;
+    } = {},
+): Promise<D4HAccessTokenMetadata> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${token.id}-metadata`);
 
-    const whoami = await fetchD4HWhoamiCached(token);
+    const fetchClient = getD4HFetchClient(token);
+    const whoami =
+        options.whoami ?? (await fetchD4HWhoamiCached(token, { fetchClient }));
 
-    const team = whoami.members[0].owner;
+    const d4HOrganisations: D4HOrganisation[] = [];
+    const d4HTeams: (D4HTeamRef & {
+        permissions: Record<string, Record<string, boolean>>;
+        owner: D4HOrganisation | undefined;
+    })[] = [];
 
-    const { data, response } = await fetchClient.GET(
-        "/v3/{context}/{contextId}/organisations/{organisationId}",
-        {
-            params: {
-                path: {
-                    context: "team",
-                    contextId: team.id,
-                    organisationId: team.owner.id,
-                },
-            },
-        },
-    );
-    if (!response.ok) {
-        throw new Error(
-            `Failed to fetch D4H whoami: ${response.status} ${response.statusText}`,
-        );
+    for (const member of whoami.members) {
+        const team = member.owner;
+
+        let organisation: D4HOrganisation | undefined = undefined;
+
+        if (team.owner && team.owner.id) {
+            // Try to find the organisation in the list of already fetched organisations.
+            organisation = d4HOrganisations.find(
+                (o) => o.id === team.owner?.id,
+            );
+
+            // Fetch the organization if it hasn't been fetched yet
+            if (!organisation) {
+                const { data, response } = await fetchClient.GET(
+                    "/v3/{context}/{contextId}/organisations/{organisationId}",
+                    {
+                        params: {
+                            path: {
+                                context: "team",
+                                contextId: team.id,
+                                organisationId: team.owner?.id,
+                            },
+                        },
+                    },
+                );
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to fetch D4H organisation: ${response.status} ${response.statusText}`,
+                    );
+                }
+                organisation = D4HOrganisation.schema.parse(data);
+                d4HOrganisations.push(organisation);
+            }
+        }
+
+        d4HTeams.push({
+            ...team,
+            owner: organisation,
+            permissions: member.permissions,
+        });
     }
-    return D4HOrganisation.schema.parse(data);
+
+    return D4HAccessTokenMetadata.schema.parse({ d4HTeams, d4HOrganisations });
 }
 
 export async function getD4HTeamsAccessibleWithToken(
@@ -97,77 +143,6 @@ export async function getD4HTeamsAccessibleWithToken(
     return whoami.members.map((member) => member.owner);
 }
 
-export async function getD4HOrganizationsAccessibleWithToken(
-    token: D4HAccessToken_ServerOnly,
-): Promise<D4HOrganisation[]> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-organizations`);
-
-    const fetchClient = getD4hFetchClient(token);
-
-    const whoami = await fetchD4HWhoamiCached(token);
-
-    const organizations: D4HOrganisation[] = [];
-
-    for (const member of whoami.members) {
-        const team = member.owner;
-
-        if (!team.owner) continue;
-
-        // Skip if the organization has already been fetched
-        if (organizations.some((org) => org.id === team.owner!.id)) continue;
-
-        const { data, response } = await fetchClient.GET(
-            "/v3/{context}/{contextId}/organisations/{organisationId}",
-            {
-                params: {
-                    path: {
-                        context: "team",
-                        contextId: team.id,
-                        organisationId: team.owner!.id,
-                    },
-                },
-            },
-        );
-        if (!response.ok) {
-            throw new Error(
-                `Failed to fetch D4H organisation: ${response.status} ${response.statusText}`,
-            );
-        }
-
-        organizations.push(data as D4HOrganisation);
-    }
-
-    // for (const officer of whoami.officers) {
-    //     const organization = officer.owner;
-
-    //     // Skip if the organization has already been fetched
-    //     if (organizations.some((org) => org.id === organization.id)) continue;
-
-    //     const { data, response } = await fetchClient.GET(
-    //         "/v3/{context}/{contextId}/organisations/{organisationId}",
-    //         {
-    //             params: {
-    //                 path: {
-    //                     context: "organisation",
-    //                     contextId: organization.id,
-    //                     organisationId: organization.id,
-    //                 },
-    //             },
-    //         },
-    //     );
-    //     if (!response.ok) {
-    //         throw new Error(
-    //             `Failed to fetch D4H organisation: ${response.status} ${response.statusText}`,
-    //         );
-    //     }
-    //     organizations.push(data as D4HOrganisation);
-    // }
-
-    return organizations;
-}
-
 export async function getD4HTeamMembers(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
@@ -176,7 +151,7 @@ export async function getD4HTeamMembers(
     cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-members`);
 
-    const fetchClient = getD4hFetchClient(token);
+    const fetchClient = getD4HFetchClient(token);
 
     const { data } = await fetchClient.GET(
         "/v3/{context}/{contextId}/members",
@@ -212,190 +187,4 @@ export async function getD4HTeamsWithMembers(
     );
 
     return teamsWithMembers;
-}
-
-export async function getD4HEquipmentItems(
-    accessToken: D4HAccessToken_ServerOnly,
-) {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${accessToken.id}-equipment-items`);
-
-    const fetchClient = getD4hFetchClient(accessToken);
-
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-
-    const equipment = (
-        await Promise.all(
-            teams.map(async (team) => {
-                const { data } = await fetchClient.GET(
-                    "/v3/{context}/{contextId}/equipment",
-                    {
-                        params: {
-                            path: {
-                                context: "team",
-                                contextId: team.id,
-                            },
-                            query: {
-                                size: 10000,
-                                only_current: true,
-                            },
-                        },
-                    },
-                );
-
-                return z
-                    .object({ results: z.array(D4HEquipmentItem.schema) })
-                    .parse(data).results;
-            }),
-        )
-    ).flat();
-
-    return R.uniqueBy(equipment, (e) => e.id);
-}
-
-export async function getD4HEquipmentCategories(
-    accessToken: D4HAccessToken_ServerOnly,
-): Promise<D4HEquipmentCategory[]> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${accessToken.id}-equipment-categories`);
-
-    const fetchClient = getD4hFetchClient(accessToken);
-
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-
-    const categories = (
-        await Promise.all(
-            teams.map(async (team) => {
-                const { data } = await fetchClient.GET(
-                    "/v3/{context}/{contextId}/equipment-categories",
-                    {
-                        params: {
-                            path: {
-                                context: "team",
-                                contextId: team.id,
-                            },
-                        },
-                    },
-                );
-
-                return z
-                    .object({ results: z.array(D4HEquipmentCategory.schema) })
-                    .parse(data).results;
-            }),
-        )
-    ).flat();
-
-    return R.uniqueBy(categories, (c) => c.id);
-}
-
-export async function getD4HEquipmentBrands(
-    accessToken: D4HAccessToken_ServerOnly,
-): Promise<D4HEquipmentBrand[]> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${accessToken.id}-equipment-brands`);
-
-    const fetchClient = getD4hFetchClient(accessToken);
-
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-
-    const brands = (
-        await Promise.all(
-            teams.map(async (team) => {
-                const { data } = await fetchClient.GET(
-                    "/v3/{context}/{contextId}/equipment-brands",
-                    {
-                        params: {
-                            path: {
-                                context: "team",
-                                contextId: team.id,
-                            },
-                        },
-                    },
-                );
-
-                return z
-                    .object({ results: z.array(D4HEquipmentBrand.schema) })
-                    .parse(data).results;
-            }),
-        )
-    ).flat();
-
-    return R.uniqueBy(brands, (b) => b.id);
-}
-
-export async function getD4HEquipmentModels(
-    accessToken: D4HAccessToken_ServerOnly,
-): Promise<D4HEquipmentModel[]> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${accessToken.id}-equipment-models`);
-
-    const fetchClient = getD4hFetchClient(accessToken);
-
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-
-    const models = (
-        await Promise.all(
-            teams.map(async (team) => {
-                const { data } = await fetchClient.GET(
-                    "/v3/{context}/{contextId}/equipment-models",
-                    {
-                        params: {
-                            path: {
-                                context: "team",
-                                contextId: team.id,
-                            },
-                        },
-                    },
-                );
-
-                return z
-                    .object({ results: z.array(D4HEquipmentModel.schema) })
-                    .parse(data).results;
-            }),
-        )
-    ).flat();
-
-    return R.uniqueBy(models, (m) => m.id);
-}
-
-export async function getD4HEquipmentByMember(
-    accessToken: D4HAccessToken_ServerOnly,
-    { memberId, teamId }: { memberId: number; teamId: number },
-): Promise<D4HEquipmentItem[]> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(
-        `d4h-api-${accessToken.id}-teams-${teamId}-members-${memberId}-equipment`,
-    );
-
-    const fetchClient = getD4hFetchClient(accessToken);
-
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
-    const team = teams.find((t) => t.id === teamId);
-    if (!team) {
-        throw new Error(`Team with ID ${teamId} not found`);
-    }
-
-    const { data } = await fetchClient.GET(
-        "/v3/{context}/{contextId}/equipment",
-        {
-            params: {
-                path: {
-                    context: "team",
-                    contextId: team.id,
-                },
-                query: {
-                    only_current: true,
-                    member_id: memberId,
-                },
-            },
-        },
-    );
-
-    return z.object({ results: z.array(D4HEquipmentItem.schema) }).parse(data)
-        .results;
 }

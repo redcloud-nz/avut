@@ -7,12 +7,8 @@ import { notFound } from "next/navigation";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
-import {
-    getD4hFetchClient,
-    getD4HTeamsAccessibleWithToken,
-} from "@/lib/d4h-api/client";
+import { getD4HFetchClient, getD4HTokenMetadata } from "@/lib/d4h-api/client";
 import { D4HEquipmentCategory } from "@/lib/d4h-api/equipment-category";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
@@ -25,13 +21,13 @@ async function fetchEquipmentCategories(
 ) {
     "use cache";
 
-    const fetchClient = getD4hFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(accessToken);
 
     const items = (
         await Promise.all(
-            teams.map(async (team) => {
+            d4HTeams.map(async (team) => {
                 const { data } = await fetchClient.GET(
                     "/v3/{context}/{contextId}/equipment-categories",
                     {

@@ -69,7 +69,7 @@ import {
     D4HServerList,
     getD4HServer,
 } from "@/lib/d4h-api/servers";
-import { D4hAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { trpc } from "@/trpc/client";
 
 export function UserD4HAccess_Card() {
@@ -273,7 +273,7 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
-            const tokenId = D4hAccessTokenId.create();
+            const tokenId = D4HAccessTokenId.create();
 
             logger.log("Creating D4H Access Token", { tokenId, ...formData });
 

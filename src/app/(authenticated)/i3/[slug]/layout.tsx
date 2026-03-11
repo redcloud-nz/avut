@@ -23,6 +23,7 @@ import { TITLE_SEPARATOR } from "@/lib/constants";
 import * as Paths from "@/paths";
 import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationSettings } from "@/server/organization-settings";
 
 export async function generateMetadata(
     props: LayoutProps<"/i3/[slug]">,

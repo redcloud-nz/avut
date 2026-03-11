@@ -11,7 +11,7 @@ import { Eagle } from "@/components/blocks/eagle";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4hFetchClient } from "@/lib/d4h-api/client";
+import { getD4HFetchClient } from "@/lib/d4h-api/client";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -19,7 +19,7 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HWhoami } from "@/lib/d4h-api/whoami";
 
 async function fetchWhoami(accessToken: D4HAccessToken_ServerOnly) {
-    const fetchClient = getD4hFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(accessToken);
 
     const { data } = await fetchClient.GET("/v3/whoami");
 

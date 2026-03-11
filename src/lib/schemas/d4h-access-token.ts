@@ -7,43 +7,65 @@ import * as z from "zod";
 
 import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/client";
 
-import { nanoId16 } from "../id";
-import { zodNanoId16 } from "../validation";
-import { D4HServerCode } from "../d4h-api/servers";
+import { D4HServerCode } from "@/lib/d4h-api/servers";
+import { nanoId16 } from "@/lib/id";
+import { zodNanoId16 } from "@/lib/validation";
 import { decryptDBValue } from "@/server/encrypt";
 
-export const D4hAccessTokenId = {
+export const D4HAccessTokenId = {
     schema: zodNanoId16(
-        "D4hAccessTokenId expected",
-    ).brand<"D4hAccessTokenId">(),
+        "D4HAccessTokenId expected",
+    ).brand<"D4HAccessTokenId">(),
 
-    create: () => D4hAccessTokenId.schema.parse(nanoId16()),
+    create: () => D4HAccessTokenId.schema.parse(nanoId16()),
 } as const;
 
-export type D4hAccessTokenId = z.infer<typeof D4hAccessTokenId.schema>;
+export type D4HAccessTokenId = z.infer<typeof D4HAccessTokenId.schema>;
 
-export const D4hAccessTokenMetadata = {
-    schema: z.object({
-        d4HTeams: z.array(
-            z.object({
-                id: z.number(),
-                title: z.string(),
-                resourceType: z.literal("Team"),
-            }),
-        ),
-        d4HOrganizations: z.array(
-            z.object({
-                id: z.number(),
-                title: z.string(),
-                resourceType: z.literal("Organisation"),
-            }),
-        ),
+const metadataSchema = z.object({
+    d4HTeams: z.array(
+        z.object({
+            id: z.number(),
+            title: z.string(),
+            resourceType: z.literal("Team"),
+            owner: z
+                .object({
+                    id: z.number(),
+                    resourceType: z.literal("Organisation"),
+                    title: z.string(),
+                })
+                .optional(),
+            permissions: z.record(
+                z.string(),
+                z.record(z.string(), z.boolean()),
+            ),
+        }),
+    ),
+    d4HOrganisations: z.array(
+        z.object({
+            id: z.number(),
+            title: z.string(),
+            resourceType: z.literal("Organisation"),
+        }),
+    ),
+});
+
+export const D4HAccessTokenMetadata = {
+    schema: metadataSchema,
+
+    empty: metadataSchema.parse({
+        d4HTeams: [],
+        d4HOrganisations: [],
     }),
 };
 
+export type D4HAccessTokenMetadata = z.infer<
+    typeof D4HAccessTokenMetadata.schema
+>;
+
 export const D4HAccessToken = {
     schema: z.object({
-        id: D4hAccessTokenId.schema,
+        id: D4HAccessTokenId.schema,
         organizationId: z.string().nullable(),
         userId: z.string().nullable(),
         label: z.string(),
@@ -51,7 +73,7 @@ export const D4HAccessToken = {
         status: z.string(),
         expiresAt: z.string(),
         createdAt: z.string(),
-        metadata: D4hAccessTokenMetadata.schema,
+        metadata: D4HAccessTokenMetadata.schema,
     }),
 
     fromRecord: (record: D4hAccessTokenRecord) =>
@@ -66,12 +88,13 @@ export type D4HAccessToken = z.infer<typeof D4HAccessToken.schema>;
 
 export const D4HAccessToken_ServerOnly = {
     schema: z.object({
-        id: D4hAccessTokenId.schema,
+        id: D4HAccessTokenId.schema,
         organizationId: z.string().nullable(),
         userId: z.string().nullable(),
         label: z.string(),
         serverCode: D4HServerCode.schema,
         token: z.string(),
+        metadata: D4HAccessTokenMetadata.schema,
     }),
 
     fromRecord: (record: D4hAccessTokenRecord) =>

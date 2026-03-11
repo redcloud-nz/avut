@@ -8,24 +8,22 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import {
-    getD4hFetchClient,
-    getD4HOrganizationsAccessibleWithToken,
-    getD4HTeamsAccessibleWithToken,
-} from "@/lib/d4h-api/client";
+import { getD4HFetchClient, getD4HTokenMetadata } from "@/lib/d4h-api/client";
+import { D4HWhoami } from "@/lib/d4h-api/whoami";
 import { diffObject } from "@/lib/diff";
 import {
     D4HAccessToken,
     D4HAccessToken_ServerOnly,
-    D4hAccessTokenId,
+    D4HAccessTokenId,
+    D4HAccessTokenMetadata,
 } from "@/lib/schemas/d4h-access-token";
 import { D4HServerCode } from "@/lib/d4h-api/servers";
 
-import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
+import { encryptDBValue } from "@/server/encrypt";
+import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -39,7 +37,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4hAccessTokenId.schema,
+                tokenId: D4HAccessTokenId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     label: z.string(),
@@ -54,38 +52,38 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
+                metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token by making a request to the D4H API
-            const fetchClient = getD4hFetchClient(token);
-            const { response } = await fetchClient.GET("/v3/whoami");
+            // Check the token and fetch metadata
+            const fetchClient = getD4HFetchClient(token);
+            const { data, response } = await fetchClient.GET("/v3/whoami");
 
-            // Check which teams and organizations are accessible with this token
-            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
-            const d4HOrganizations =
-                await getD4HOrganizationsAccessibleWithToken(token);
-
-            const created = await ctx.prisma.d4hAccessToken.create({
-                data: {
-                    ...token,
-                    token: encryptDBValue(token.token),
-                    status: response.statusText,
-                    expiresAt: addYears(new Date(), 10).toISOString(),
-                    metadata: {
-                        d4HTeams: d4HTeams as object[],
-                        d4HOrganizations: d4HOrganizations as object[],
-                    },
-                },
-            });
+            const metadata = data
+                ? await getD4HTokenMetadata(token, {
+                      whoami: D4HWhoami.schema.parse(data),
+                  })
+                : { d4HTeams: [], d4HOrganisations: [] };
 
             const changes = diffObject({}, create);
 
-            await ctx.logEvent({
-                action: "Create",
-                objectType: "D4hAccessToken",
-                objectId: created.id,
-                changes,
-            });
+            const [created] = await Promise.all([
+                ctx.prisma.d4hAccessToken.create({
+                    data: {
+                        ...token,
+                        token: encryptDBValue(token.token),
+                        status: response.statusText,
+                        expiresAt: addYears(new Date(), 10).toISOString(),
+                        metadata,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "D4hAccessToken",
+                    objectId: tokenId,
+                    changes,
+                }),
+            ]);
 
             return { created: D4HAccessToken.fromRecord(created) };
         }),
@@ -96,7 +94,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     createPersonalAccessToken: organizationProcedure({ organization: ["view"] })
         .input(
             z.object({
-                tokenId: D4hAccessTokenId.schema,
+                tokenId: D4HAccessTokenId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     token: z.string(),
@@ -110,38 +108,38 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 organizationId: ctx.organizationId,
                 userId: ctx.auth.user.id,
                 label: `Personal token for ${ctx.auth.user.name}`,
+                metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token by making a request to the D4H API
-            const fetchClient = getD4hFetchClient(token);
-            const { response } = await fetchClient.GET("/v3/whoami");
+            // Check the token and fetch metadata
+            const fetchClient = getD4HFetchClient(token);
+            const { data, response } = await fetchClient.GET("/v3/whoami");
 
-            // Check which teams and organizations are accessible with this token
-            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
-            const d4HOrganizations =
-                await getD4HOrganizationsAccessibleWithToken(token);
-
-            const created = await ctx.prisma.d4hAccessToken.create({
-                data: {
-                    ...token,
-                    token: encryptDBValue(token.token),
-                    status: response.statusText,
-                    expiresAt: addYears(new Date(), 10).toISOString(),
-                    metadata: {
-                        d4HTeams: d4HTeams as object[],
-                        d4HOrganizations: d4HOrganizations as object[],
-                    },
-                },
-            });
+            const metadata = data
+                ? await getD4HTokenMetadata(token, {
+                      whoami: D4HWhoami.schema.parse(data),
+                  })
+                : { d4HTeams: [], d4HOrganizations: [] };
 
             const changes = diffObject({}, create);
 
-            await ctx.logEvent({
-                action: "Create",
-                objectType: "D4hAccessToken",
-                objectId: created.id,
-                changes,
-            });
+            const [created] = await Promise.all([
+                ctx.prisma.d4hAccessToken.create({
+                    data: {
+                        ...token,
+                        token: encryptDBValue(token.token),
+                        status: response.statusText,
+                        expiresAt: addYears(new Date(), 10).toISOString(),
+                        metadata,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "D4hAccessToken",
+                    objectId: tokenId,
+                    changes,
+                }),
+            ]);
 
             return { created: D4HAccessToken.fromRecord(created) };
         }),
@@ -154,7 +152,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4hAccessTokenId.schema,
+                tokenId: D4HAccessTokenId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -231,7 +229,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4hAccessTokenId.schema,
+                tokenId: D4HAccessTokenId.schema,
             }),
         )
         .output(D4HAccessToken.schema)
@@ -288,7 +286,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4hAccessTokenId.schema,
+                tokenId: D4HAccessTokenId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -307,17 +305,20 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             const token = D4HAccessToken_ServerOnly.fromRecord(record);
 
-            const d4HTeams = await getD4HTeamsAccessibleWithToken(token);
-            const d4HOrganizations =
-                await getD4HOrganizationsAccessibleWithToken(token);
+            const fetchClient = getD4HFetchClient(token);
+            const { data, response } = await fetchClient.GET("/v3/whoami");
+
+            const metadata: D4HAccessTokenMetadata = data
+                ? await getD4HTokenMetadata(token, {
+                      whoami: D4HWhoami.schema.parse(data),
+                  })
+                : { d4HTeams: [], d4HOrganisations: [] };
 
             await ctx.prisma.d4hAccessToken.update({
                 where: { id: input.tokenId },
                 data: {
-                    metadata: {
-                        d4HTeams: d4HTeams as object[],
-                        d4HOrganizations: d4HOrganizations as object[],
-                    },
+                    metadata,
+                    status: response.statusText,
                 },
             });
         }),

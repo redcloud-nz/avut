@@ -10,7 +10,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
 import {
-    getD4hFetchClient,
+    getD4HFetchClient,
     getD4HTeamsAccessibleWithToken,
 } from "@/lib/d4h-api/client";
 import { D4HEquipmentItem } from "@/lib/d4h-api/equipment-item";
@@ -22,7 +22,7 @@ import { getOrganizationBySlug } from "@/server/organization";
 import { omit } from "remeda";
 
 async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
-    const fetchClient = getD4hFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(accessToken);
 
     const teams = await getD4HTeamsAccessibleWithToken(accessToken);
 

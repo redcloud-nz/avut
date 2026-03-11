@@ -10,7 +10,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
 import {
-    getD4hFetchClient,
+    getD4HFetchClient,
     getD4HTeamsAccessibleWithToken,
 } from "@/lib/d4h-api/client";
 import { D4HMember } from "@/lib/d4h-api/member";
@@ -34,7 +34,7 @@ export default async function Admin_D4hAccessToken_Members_Page(
 
     if (!accesToken) notFound();
 
-    const fetchClient = getD4hFetchClient(accesToken);
+    const fetchClient = getD4HFetchClient(accesToken);
 
     const teams = await getD4HTeamsAccessibleWithToken(accesToken);
 

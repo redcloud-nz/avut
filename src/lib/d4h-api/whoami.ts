@@ -21,14 +21,16 @@ export const D4HWhoami = {
                     id: z.number(),
                     resourceType: z.literal("Team"),
                     title: z.string(),
-                    owner: z.object({
-                        id: z.number(),
-                        resourceType: z.literal("Organisation"),
-                    }), //.optional(),
+                    owner: z
+                        .object({
+                            id: z.number().nullable(),
+                            resourceType: z.literal("Organisation"),
+                        })
+                        .optional(),
                 }),
                 permissions: z.record(
                     z.string(),
-                    z.record(z.string(), z.boolean().optional()).optional(),
+                    z.record(z.string(), z.boolean()),
                 ),
             }),
         ),
