@@ -50,13 +50,12 @@ export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
 
 export async function fetchD4HWhoamiCached(
     token: D4HAccessToken_ServerOnly,
-    options: { fetchClient?: ReturnType<typeof getD4HFetchClient> } = {},
 ): Promise<D4HWhoami> {
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-whoami`);
 
-    const fetchClient = options.fetchClient ?? getD4HFetchClient(token);
+    const fetchClient = getD4HFetchClient(token);
     const { data, response } = await fetchClient.GET("/v3/whoami");
     if (!response.ok) {
         throw new Error(
@@ -81,8 +80,7 @@ export async function getD4HTokenMetadata(
     cacheTag(`d4h-api-${token.id}-metadata`);
 
     const fetchClient = getD4HFetchClient(token);
-    const whoami =
-        options.whoami ?? (await fetchD4HWhoamiCached(token, { fetchClient }));
+    const whoami = options.whoami ?? (await fetchD4HWhoamiCached(token));
 
     const d4HOrganisations: D4HOrganisation[] = [];
     const d4HTeams: (D4HTeamRef & {

@@ -16,21 +16,22 @@ const OrganizationContext = createContext<OrganizationClient | null>(null);
 export function OrganizationProvider({
     children,
     organization: initialOrganization,
+    settings: initialSettings,
 }: {
     children: ReactNode;
     organization: OrganizationData;
+    settings: OrganizationSettings;
 }) {
-    const [
-        { data: organization = initialOrganization },
-        { data: settings = OrganizationSettings.default() },
-    ] = useQueries({
+    const [{ data: organization }, { data: settings }] = useQueries({
         queries: [
-            trpc.organizations.getOrganization.queryOptions({
-                organizationId: initialOrganization.id,
-            }),
-            trpc.settings.getOrganizationSettings.queryOptions({
-                organizationId: initialOrganization.id,
-            }),
+            trpc.organizations.getOrganization.queryOptions(
+                { organizationId: initialOrganization.id },
+                { initialData: initialOrganization },
+            ),
+            trpc.settings.getOrganizationSettings.queryOptions(
+                { organizationId: initialOrganization.id },
+                { initialData: initialSettings },
+            ),
         ],
     });
 

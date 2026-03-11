@@ -11,18 +11,22 @@ import { Eagle } from "@/components/blocks/eagle";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4HFetchClient, fetchD4HWhoamiCached } from "@/lib/d4h-api/client";
+import {
+    getD4HFetchClient,
+    fetchD4HWhoamiCached,
+    getD4HTokenMetadata,
+} from "@/lib/d4h-api/client";
+import { D4HOrganisation } from "@/lib/d4h-api/organisation";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HOrganisation } from "@/lib/d4h-api/organisation";
 
 async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
 
     const whoami = await fetchD4HWhoamiCached(accessToken);
-    const team = whoami.members[0].owner;
+    const { d4HTeams } = await getD4HTokenMetadata(accessToken, { whoami });
 
     const { data, response } = await fetchClient.GET(
         "/v3/{context}/{contextId}/organisations/{organisationId}",
@@ -30,8 +34,8 @@ async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
             params: {
                 path: {
                     context: "team",
-                    contextId: team.id,
-                    organisationId: team.owner.id,
+                    contextId: d4HTeams[0].id,
+                    organisationId: d4HTeams[0].owner!.id,
                 },
             },
         },

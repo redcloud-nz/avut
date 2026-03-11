@@ -5,7 +5,7 @@
  * Path: /main/[slug]/d4h-views/equipment
  */
 
-"use client";
+import { ChevronRightIcon } from "lucide-react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
@@ -20,7 +20,6 @@ import {
 import { Link } from "@/components/ui/link";
 
 import * as Paths from "@/paths";
-import { ChevronRightIcon } from "lucide-react";
 
 export default async function D4HViewsModule_Equipment_Page(
     props: PageProps<`/main/[slug]/d4h-views/equipment`>,

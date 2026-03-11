@@ -12,10 +12,11 @@ import { AppSidebar } from "@/components/nav/app-sidebar";
 import { ControlBar } from "@/components/nav/control-bar";
 import { NavOrganizationMenu } from "@/components/nav/nav-organization-menu";
 
-import { TITLE_SEPARATOR } from "@/lib/constants";
-import { getOrganizationBySlug } from "@/server/organization";
 import { OrganizationProvider } from "@/hooks/use-organization";
+import { TITLE_SEPARATOR } from "@/lib/constants";
 import { auth } from "@/server/auth";
+import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationSettings } from "@/server/organization-settings";
 
 export async function generateMetadata(
     props: LayoutProps<"/main/[slug]">,
@@ -36,6 +37,7 @@ export default async function Organization_Layout(
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
+    const organizationSettings = await getOrganizationSettings(organization.id);
 
     const res = await auth.api.hasPermission({
         headers: await nextHeaders(),
@@ -53,7 +55,10 @@ export default async function Organization_Layout(
     }
 
     return (
-        <OrganizationProvider organization={organization}>
+        <OrganizationProvider
+            organization={organization}
+            settings={organizationSettings}
+        >
             <AppSidebar subappId="main" slug={slug}>
                 <NavOrganizationMenu organization={organization} />
             </AppSidebar>

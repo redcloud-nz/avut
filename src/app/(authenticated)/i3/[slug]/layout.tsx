@@ -39,6 +39,7 @@ export async function generateMetadata(
 export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
+    const organizationSettings = await getOrganizationSettings(organization.id);
 
     const res = await auth.api.hasPermission({
         headers: await nextHeaders(),
@@ -56,7 +57,10 @@ export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
     }
 
     return (
-        <OrganizationProvider organization={organization}>
+        <OrganizationProvider
+            organization={organization}
+            settings={organizationSettings}
+        >
             <AppSidebar subappId="i3" slug={slug}>
                 <SidebarGroup>
                     <SidebarMenu>
