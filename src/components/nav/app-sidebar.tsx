@@ -26,6 +26,7 @@ import {
 import { SubappId, Subapps } from "@/lib/subapp";
 
 import { NavSkeleton } from "./nav-skeleton";
+import { AppIcons } from "../icons";
 
 export function AppSidebar({
     children,
@@ -61,10 +62,14 @@ export function AppSidebar({
                         <DropdownMenuContent>
                             <DropdownMenuLabel>Switch App</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href={`/i3/${slug}`}>AVUT - I3</Link>
+                                <Link href={`/i3/${slug}`}>
+                                    <AppIcons.I3 /> I3
+                                </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href={`/main/${slug}`}>AVUT - Main</Link>
+                                <Link href={`/main/${slug}`}>
+                                    <AppIcons.Main /> Main
+                                </Link>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

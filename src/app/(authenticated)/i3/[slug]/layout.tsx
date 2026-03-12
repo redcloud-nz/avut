@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Metadata } from "next";
 import { headers as nextHeaders } from "next/headers";
+import { getTranslations } from "next-intl/server";
 
 import { AppSidebar } from "@/components/nav/app-sidebar";
 import { ControlBar } from "@/components/nav/control-bar";
@@ -20,7 +21,6 @@ import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import * as Paths from "@/paths";
 import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -36,10 +36,11 @@ export async function generateMetadata(
     };
 }
 
-export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
+export default async function I3App_Layout(props: LayoutProps<"/i3/[slug]">) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const organizationSettings = await getOrganizationSettings(organization.id);
+    const t = await getTranslations("I3App");
 
     const res = await auth.api.hasPermission({
         headers: await nextHeaders(),
@@ -65,17 +66,20 @@ export default async function I3_Layout(props: LayoutProps<"/i3/[slug]">) {
                 <SidebarGroup>
                     <SidebarMenu>
                         <NavItem
-                            path={Paths.i3(slug).inspect}
+                            label={t("inspect")}
+                            href={`/i3/${slug}/inspect`}
                             icon={<EyeIcon />}
                             size="lg"
                         />
                         <NavItem
-                            path={Paths.i3(slug).issue}
+                            label={t("issue")}
+                            href={`/i3/${slug}/issue`}
                             icon={<SquareArrowRightExitIcon />}
                             size="lg"
                         />
                         <NavItem
-                            path={Paths.i3(slug).return}
+                            label={t("return")}
+                            href={`/i3/${slug}/return`}
                             icon={<SquareArrowRightEnterIcon />}
                             size="lg"
                         />

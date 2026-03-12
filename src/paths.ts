@@ -114,7 +114,7 @@ type MainAppPaths = {
     availability: ReturnType<typeof availabilityModule>;
     cards: ReturnType<typeof cardsModule>;
     checklists: ReturnType<typeof checklistsModule>;
-    dashboard: { label: string; href: string };
+    index: { label: string; href: string };
     d4HViews: ReturnType<typeof d4HViewsModule>;
     dev: ReturnType<typeof devModule>;
     fog: ReturnType<typeof fogModule>;
@@ -134,7 +134,7 @@ export function main(orgSlug: string): MainAppPaths {
             availability: availabilityModule(orgSlug),
             cards: cardsModule(orgSlug),
             checklists: checklistsModule(orgSlug),
-            dashboard: { label: "Dashboard", href: `/main/${orgSlug}` },
+            index: { label: "Dashboard", href: `/main/${orgSlug}` },
             d4HViews: d4HViewsModule(orgSlug),
             dev: devModule(orgSlug),
             fog: fogModule(orgSlug),

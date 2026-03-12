@@ -111,7 +111,7 @@ export function CreateOrganization_Card() {
             } else {
                 console.log("Organization created", data);
                 toast.success("Organization created successfully.");
-                router.push(Paths.main(data.slug).dashboard.href);
+                router.push(Paths.main(data.slug).index.href);
             }
         } catch (error) {
             console.error("Organization creation error:", error);

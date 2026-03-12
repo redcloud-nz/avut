@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/items";
 import { getTranslations } from "next-intl/server";
 
-export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
+export default async function I3App_Index_Page(props: PageProps<"/i3/[slug]">) {
     const { slug } = await props.params;
-    const t = await getTranslations("I3App.IndexPage");
+    const t = await getTranslations("I3App");
 
     return (
         <Lexington.Root>
@@ -60,11 +60,9 @@ export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
                             <Item asChild>
                                 <Link href={`/i3/${slug}/inspect`}>
                                     <ItemContent>
-                                        <ItemTitle>Inspect Items</ItemTitle>
+                                        <ItemTitle>{t("inspect")}</ItemTitle>
                                         <ItemDescription>
-                                            Record an inspection of the items
-                                            that have been issued to an
-                                            individual.
+                                            {t("inspectDescription")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -75,10 +73,9 @@ export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
                             <Item asChild>
                                 <Link href={`/i3/${slug}/issue`}>
                                     <ItemContent>
-                                        <ItemTitle>Issue Items</ItemTitle>
+                                        <ItemTitle>{t("issue")}</ItemTitle>
                                         <ItemDescription>
-                                            Record items being issued to an
-                                            individual.
+                                            {t("issueDescription")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -89,10 +86,9 @@ export default async function I3_Index_Page(props: PageProps<"/i3/[slug]">) {
                             <Item asChild>
                                 <Link href={`/i3/${slug}/return`}>
                                     <ItemContent>
-                                        <ItemTitle>Return Items</ItemTitle>
+                                        <ItemTitle>{t("return")}</ItemTitle>
                                         <ItemDescription>
-                                            Record items being returned from an
-                                            individual.
+                                            {t("returnDescription")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

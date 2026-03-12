@@ -41,6 +41,25 @@ export default async function AdminIndex_Page(
                     </div>
                     <ItemGroup>
                         <Protect
+                            permissions={{ d4hAccessToken: ["view"] }}
+                            orgId={organization.id}
+                        >
+                            <Item asChild>
+                                <Link to={Paths.main(slug).admin.invitations}>
+                                    <ItemContent>
+                                        <ItemTitle>D4H Access Tokens</ItemTitle>
+                                        <ItemDescription>
+                                            Manage the shared D4H access tokens
+                                            for your organisation.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect
                             orgId={organization.id}
                             permissions={{ invitation: ["view"] }}
                         >
@@ -90,6 +109,29 @@ export default async function AdminIndex_Page(
                                         <ItemDescription>
                                             Manage your organisation's
                                             personnel.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ organization: ["update"] }}
+                        >
+                            <Item asChild>
+                                <Link
+                                    to={
+                                        Paths.main(slug).admin.organization
+                                            .settings
+                                    }
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Settings</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's settings.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

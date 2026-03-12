@@ -68,7 +68,7 @@ export default function Auth_ViewInvitation_Page(
                 );
 
                 router.push(
-                    Paths.main(invitation.organization.slug).dashboard.href,
+                    Paths.main(invitation.organization.slug).index.href,
                 );
             },
         }),
@@ -87,7 +87,7 @@ export default function Auth_ViewInvitation_Page(
                 );
 
                 router.push(
-                    Paths.main(invitation.organization.slug).dashboard.href,
+                    Paths.main(invitation.organization.slug).index.href,
                 );
             },
         }),

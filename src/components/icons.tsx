@@ -50,6 +50,7 @@ import {
     ShovelIcon,
     CircleCheckBigIcon,
     ShieldXIcon,
+    BuildingIcon,
 } from "lucide-react";
 
 export {
@@ -99,6 +100,11 @@ export const AlertIcons = {
     Success: CircleCheckBigIcon,
     UnderConstruction: ShovelIcon,
     Warning: TriangleAlertIcon,
+};
+
+export const AppIcons = {
+    I3: ShirtIcon,
+    Main: BuildingIcon,
 };
 
 export const ModuleIcons = {

@@ -6,6 +6,8 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
@@ -18,32 +20,24 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
-import { Link } from "@/components/ui/link";
 
-import { d4hViewsModuleFlag, notesModuleFlag } from "@/lib/flags";
-import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 
 export const metadata = { title: "Organisation Dashboard" };
 
-export default async function OrganizationDashboard_Page(
+export default async function MainApp_Index_Page(
     props: PageProps<`/main/[slug]`>,
 ) {
     const { slug } = await props.params;
 
-    const [organization, notesModuleAllowed, d4hViewsModuleAllowed] =
-        await Promise.all([
-            getOrganizationBySlug(slug),
-            notesModuleFlag(),
-            d4hViewsModuleFlag(),
-        ]);
-
+    const organization = await getOrganizationBySlug(slug);
     const { modules } = await getOrganizationSettings(organization.id);
+    const t = await getTranslations("MainApp");
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Dashboard"]} />
+            <Lexington.Header breadcrumbs={[t("Index_Page.title")]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4">
@@ -51,12 +45,13 @@ export default async function OrganizationDashboard_Page(
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link to={Paths.main(slug).admin.index}>
+                            <Link href={`/main/${slug}/admin`}>
                                 <ItemContent>
-                                    <ItemTitle>Admin</ItemTitle>
+                                    <ItemTitle>
+                                        {t("AdminModule.title")}
+                                    </ItemTitle>
                                     <ItemDescription>
-                                        Manage personnel, teams, and
-                                        organization settings.
+                                        {t("AdminModule.description")}
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
@@ -64,16 +59,43 @@ export default async function OrganizationDashboard_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Show
-                            when={notesModuleAllowed && modules.notes.enabled}
-                        >
+                        <Item asChild>
+                            <Link href={`/main/${slug}/d4h-views`}>
+                                <ItemContent>
+                                    <ItemTitle>
+                                        {t("D4HViewsModule.title")}
+                                    </ItemTitle>
+                                    <ItemDescription>
+                                        {t("D4HViewsModule.description")}
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link href={`/main/${slug}/i3`}>
+                                <ItemContent>
+                                    <ItemTitle>{t("I3Module.title")}</ItemTitle>
+                                    <ItemDescription>
+                                        {t("I3Module.description")}
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Show when={modules.notes.enabled}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).notes.index}>
+                                <Link href={`/main/${slug}/notes`}>
                                     <ItemContent>
-                                        <ItemTitle>Notes</ItemTitle>
+                                        <ItemTitle>
+                                            {t("NotesModule.title")}
+                                        </ItemTitle>
                                         <ItemDescription>
-                                            Create and manage organizational
-                                            notes.
+                                            {t("NotesModule.description")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -82,36 +104,21 @@ export default async function OrganizationDashboard_Page(
                                 </Link>
                             </Item>
                         </Show>
-                        {/* <Show when={modules.d4hViews.enabled}>
-                            <Item asChild>
-                                <Link to={Paths.org(slug).d4hViews.index}>
-                                    <ItemContent>
-                                        <ItemTitle>D4H Views</ItemTitle>
-                                        <ItemDescription>
-                                            Alternate views of the data stored
-                                            in D4H Team Manager.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Show> */}
                         <Show when={modules["skill-package-builder"].enabled}>
                             <Item asChild>
                                 <Link
-                                    to={
-                                        Paths.main(slug).skillPackageBuilder
-                                            .index
-                                    }
+                                    href={`/main/${slug}/skill-package-builder`}
                                 >
                                     <ItemContent>
                                         <ItemTitle>
-                                            Skill Package Builder
+                                            {t(
+                                                "SkillPackageBuilderModule.title",
+                                            )}
                                         </ItemTitle>
                                         <ItemDescription>
-                                            Create and edit skill packages.
+                                            {t(
+                                                "SkillPackageBuilderModule.description",
+                                            )}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -122,12 +129,13 @@ export default async function OrganizationDashboard_Page(
                         </Show>
                         <Show when={modules.skills.enabled}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).skills.index}>
+                                <Link href={`/main/${slug}/skills`}>
                                     <ItemContent>
-                                        <ItemTitle>Skills</ItemTitle>
+                                        <ItemTitle>
+                                            {t("SkillsModule.title")}
+                                        </ItemTitle>
                                         <ItemDescription>
-                                            Manage, assess, and report skills
-                                            for your team.
+                                            {t("SkillsModule.description")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

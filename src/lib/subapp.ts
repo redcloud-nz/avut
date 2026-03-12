@@ -4,8 +4,8 @@
  */
 
 export const Subapps = {
-    i3: { name: "AVUT - I3" },
-    main: { name: "AVUT - Main" },
+    i3: { name: "I3" },
+    main: { name: "Main" },
 } as const;
 
 export type SubappId = keyof typeof Subapps;

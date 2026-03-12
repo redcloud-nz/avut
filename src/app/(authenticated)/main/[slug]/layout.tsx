@@ -10,13 +10,14 @@ import { headers as nextHeaders } from "next/headers";
 
 import { AppSidebar } from "@/components/nav/app-sidebar";
 import { ControlBar } from "@/components/nav/control-bar";
-import { NavOrganizationMenu } from "@/components/nav/nav-organization-menu";
 
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
+
+import { MainApp_Sidebar_Menu } from "./sidebar-menu";
 
 export async function generateMetadata(
     props: LayoutProps<"/main/[slug]">,
@@ -32,7 +33,7 @@ export async function generateMetadata(
     };
 }
 
-export default async function Organization_Layout(
+export default async function MainApp_Layout(
     props: LayoutProps<"/main/[slug]">,
 ) {
     const { slug } = await props.params;
@@ -60,7 +61,10 @@ export default async function Organization_Layout(
             settings={organizationSettings}
         >
             <AppSidebar subappId="main" slug={slug}>
-                <NavOrganizationMenu organization={organization} />
+                <MainApp_Sidebar_Menu
+                    organization={organization}
+                    settings={organizationSettings}
+                />
             </AppSidebar>
             <ControlBar subappId="main" slug={slug} />
             {props.children}
