@@ -4,18 +4,11 @@
  */
 
 import * as z from "zod";
-import {
-    AuthenticatedOrganizationContext,
-    createTrpcRouter,
-    organizationProcedure,
-} from "../init";
+import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { diffObject } from "@/lib/diff";
 import { TRPCError } from "@trpc/server";
-import {
-    I3TemplateVariant,
-    I3TemplateVariantId,
-} from "@/lib/schemas/i3-template-variant";
+import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { Messages } from "../messages";
 
 export const i3Router = createTrpcRouter({
@@ -213,23 +206,22 @@ export const i3Router = createTrpcRouter({
     listTemplateVariants: organizationProcedure({ i3Template: ["view"] })
         .input(
             z.object({
-                templateId: I3TemplateId.schema,
+                templateId: I3TemplateId.schema.optional(),
             }),
         )
         .output(z.array(I3TemplateVariant.schema))
         .query(async ({ ctx, input: { templateId: i3TemplateId } }) => {
-            const template = await ctx.prisma.i3Template.findUnique({
-                where: { id: i3TemplateId, organizationId: ctx.organizationId },
-                include: { variants: { include: { d4h: true } } },
+            const variants = await ctx.prisma.i3TemplateVariant.findMany({
+                where: {
+                    template: {
+                        organizationId: ctx.organizationId,
+                        id: i3TemplateId,
+                    },
+                },
+                include: { d4h: true },
             });
 
-            if (!template)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.i3TemplateNotFound(i3TemplateId),
-                });
-
-            return template.variants.map(I3TemplateVariant.fromRecord);
+            return variants.map(I3TemplateVariant.fromRecord);
         }),
 
     /**

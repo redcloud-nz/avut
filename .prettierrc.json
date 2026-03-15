@@ -1,4 +1,5 @@
 {
   "bracketSpacing": true,
-  "brackSameLine": false
+  "brackSameLine": false,
+  "printWidth": 100
 }
