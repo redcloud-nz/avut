@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model TeamConfig
  *
  */
-export type TeamConfigModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$TeamConfigPayload>;
+export type TeamConfigModel = runtime.Types.Result.DefaultSelection<Prisma.$TeamConfigPayload>;
 
 export type AggregateTeamConfig = {
     _count: TeamConfigCountAggregateOutputType | null;
@@ -59,8 +58,7 @@ export type TeamConfigCountAggregateInputType = {
 };
 
 export type TeamConfigAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which TeamConfig to aggregate.
@@ -121,8 +119,7 @@ export type GetTeamConfigAggregateType<T extends TeamConfigAggregateArgs> = {
 };
 
 export type TeamConfigGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.TeamConfigWhereInput;
     orderBy?:
@@ -146,25 +143,17 @@ export type TeamConfigGroupByOutputType = {
     _max: TeamConfigMaxAggregateOutputType | null;
 };
 
-type GetTeamConfigGroupByPayload<T extends TeamConfigGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<TeamConfigGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof TeamConfigGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              TeamConfigGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          TeamConfigGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetTeamConfigGroupByPayload<T extends TeamConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<TeamConfigGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof TeamConfigGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], TeamConfigGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], TeamConfigGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type TeamConfigWhereInput = {
     AND?: Prisma.TeamConfigWhereInput | Prisma.TeamConfigWhereInput[];
@@ -192,10 +181,7 @@ export type TeamConfigWhereUniqueInput = Prisma.AtLeast<
         teamId?: Prisma.StringFilter<"TeamConfig"> | string;
         key?: Prisma.StringFilter<"TeamConfig"> | string;
         value?: Prisma.JsonFilter<"TeamConfig">;
-        team?: Prisma.XOR<
-            Prisma.TeamScalarRelationFilter,
-            Prisma.TeamWhereInput
-        >;
+        team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     },
     "teamId_key"
 >;
@@ -306,9 +292,7 @@ export type TeamConfigCreateNestedManyWithoutTeamInput = {
         | Prisma.TeamConfigCreateOrConnectWithoutTeamInput
         | Prisma.TeamConfigCreateOrConnectWithoutTeamInput[];
     createMany?: Prisma.TeamConfigCreateManyTeamInputEnvelope;
-    connect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
+    connect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
 };
 
 export type TeamConfigUncheckedCreateNestedManyWithoutTeamInput = {
@@ -323,9 +307,7 @@ export type TeamConfigUncheckedCreateNestedManyWithoutTeamInput = {
         | Prisma.TeamConfigCreateOrConnectWithoutTeamInput
         | Prisma.TeamConfigCreateOrConnectWithoutTeamInput[];
     createMany?: Prisma.TeamConfigCreateManyTeamInputEnvelope;
-    connect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
+    connect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
 };
 
 export type TeamConfigUpdateManyWithoutTeamNestedInput = {
@@ -343,27 +325,17 @@ export type TeamConfigUpdateManyWithoutTeamNestedInput = {
         | Prisma.TeamConfigUpsertWithWhereUniqueWithoutTeamInput
         | Prisma.TeamConfigUpsertWithWhereUniqueWithoutTeamInput[];
     createMany?: Prisma.TeamConfigCreateManyTeamInputEnvelope;
-    set?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
+    set?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    disconnect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    delete?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    connect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
     update?:
         | Prisma.TeamConfigUpdateWithWhereUniqueWithoutTeamInput
         | Prisma.TeamConfigUpdateWithWhereUniqueWithoutTeamInput[];
     updateMany?:
         | Prisma.TeamConfigUpdateManyWithWhereWithoutTeamInput
         | Prisma.TeamConfigUpdateManyWithWhereWithoutTeamInput[];
-    deleteMany?:
-        | Prisma.TeamConfigScalarWhereInput
-        | Prisma.TeamConfigScalarWhereInput[];
+    deleteMany?: Prisma.TeamConfigScalarWhereInput | Prisma.TeamConfigScalarWhereInput[];
 };
 
 export type TeamConfigUncheckedUpdateManyWithoutTeamNestedInput = {
@@ -381,27 +353,17 @@ export type TeamConfigUncheckedUpdateManyWithoutTeamNestedInput = {
         | Prisma.TeamConfigUpsertWithWhereUniqueWithoutTeamInput
         | Prisma.TeamConfigUpsertWithWhereUniqueWithoutTeamInput[];
     createMany?: Prisma.TeamConfigCreateManyTeamInputEnvelope;
-    set?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamConfigWhereUniqueInput
-        | Prisma.TeamConfigWhereUniqueInput[];
+    set?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    disconnect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    delete?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
+    connect?: Prisma.TeamConfigWhereUniqueInput | Prisma.TeamConfigWhereUniqueInput[];
     update?:
         | Prisma.TeamConfigUpdateWithWhereUniqueWithoutTeamInput
         | Prisma.TeamConfigUpdateWithWhereUniqueWithoutTeamInput[];
     updateMany?:
         | Prisma.TeamConfigUpdateManyWithWhereWithoutTeamInput
         | Prisma.TeamConfigUpdateManyWithWhereWithoutTeamInput[];
-    deleteMany?:
-        | Prisma.TeamConfigScalarWhereInput
-        | Prisma.TeamConfigScalarWhereInput[];
+    deleteMany?: Prisma.TeamConfigScalarWhereInput | Prisma.TeamConfigScalarWhereInput[];
 };
 
 export type TeamConfigCreateWithoutTeamInput = {
@@ -423,9 +385,7 @@ export type TeamConfigCreateOrConnectWithoutTeamInput = {
 };
 
 export type TeamConfigCreateManyTeamInputEnvelope = {
-    data:
-        | Prisma.TeamConfigCreateManyTeamInput
-        | Prisma.TeamConfigCreateManyTeamInput[];
+    data: Prisma.TeamConfigCreateManyTeamInput | Prisma.TeamConfigCreateManyTeamInput[];
     skipDuplicates?: boolean;
 };
 
@@ -458,13 +418,9 @@ export type TeamConfigUpdateManyWithWhereWithoutTeamInput = {
 };
 
 export type TeamConfigScalarWhereInput = {
-    AND?:
-        | Prisma.TeamConfigScalarWhereInput
-        | Prisma.TeamConfigScalarWhereInput[];
+    AND?: Prisma.TeamConfigScalarWhereInput | Prisma.TeamConfigScalarWhereInput[];
     OR?: Prisma.TeamConfigScalarWhereInput[];
-    NOT?:
-        | Prisma.TeamConfigScalarWhereInput
-        | Prisma.TeamConfigScalarWhereInput[];
+    NOT?: Prisma.TeamConfigScalarWhereInput | Prisma.TeamConfigScalarWhereInput[];
     teamId?: Prisma.StringFilter<"TeamConfig"> | string;
     key?: Prisma.StringFilter<"TeamConfig"> | string;
     value?: Prisma.JsonFilter<"TeamConfig">;
@@ -491,8 +447,7 @@ export type TeamConfigUncheckedUpdateManyWithoutTeamInput = {
 };
 
 export type TeamConfigSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         teamId?: boolean;
@@ -504,8 +459,7 @@ export type TeamConfigSelect<
 >;
 
 export type TeamConfigSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         teamId?: boolean;
@@ -517,8 +471,7 @@ export type TeamConfigSelectCreateManyAndReturn<
 >;
 
 export type TeamConfigSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         teamId?: boolean;
@@ -536,34 +489,26 @@ export type TeamConfigSelectScalar = {
 };
 
 export type TeamConfigOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = runtime.Types.Extensions.GetOmit<
-    "teamId" | "key" | "value",
-    ExtArgs["result"]["teamConfig"]
->;
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = runtime.Types.Extensions.GetOmit<"teamId" | "key" | "value", ExtArgs["result"]["teamConfig"]>;
 export type TeamConfigInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
 };
 export type TeamConfigIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
 };
 export type TeamConfigIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
 };
 
 export type $TeamConfigPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "TeamConfig";
     objects: {
@@ -580,20 +525,17 @@ export type $TeamConfigPayload<
     composites: {};
 };
 
-export type TeamConfigGetPayload<
-    S extends boolean | null | undefined | TeamConfigDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$TeamConfigPayload, S>;
+export type TeamConfigGetPayload<S extends boolean | null | undefined | TeamConfigDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$TeamConfigPayload, S>;
 
 export type TeamConfigCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<TeamConfigFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: TeamConfigCountAggregateInputType | true;
 };
 
 export interface TeamConfigDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -798,10 +740,7 @@ export interface TeamConfigDelegate<
      *
      */
     createManyAndReturn<T extends TeamConfigCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            TeamConfigCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, TeamConfigCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$TeamConfigPayload<ExtArgs>,
@@ -932,10 +871,7 @@ export interface TeamConfigDelegate<
      *
      */
     updateManyAndReturn<T extends TeamConfigUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            TeamConfigUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, TeamConfigUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$TeamConfigPayload<ExtArgs>,
@@ -995,10 +931,7 @@ export interface TeamConfigDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      TeamConfigCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], TeamConfigCountAggregateOutputType>
             : number
     >;
 
@@ -1073,12 +1006,7 @@ export interface TeamConfigDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1108,11 +1036,8 @@ export interface TeamConfigDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, TeamConfigGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetTeamConfigGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, TeamConfigGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetTeamConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the TeamConfig model
      */
@@ -1128,8 +1053,7 @@ export interface TeamConfigDelegate<
 export interface Prisma__TeamConfigClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1154,14 +1078,8 @@ export interface Prisma__TeamConfigClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1169,10 +1087,7 @@ export interface Prisma__TeamConfigClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1180,9 +1095,7 @@ export interface Prisma__TeamConfigClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1199,8 +1112,7 @@ export interface TeamConfigFieldRefs {
  * TeamConfig findUnique
  */
 export type TeamConfigFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1224,8 +1136,7 @@ export type TeamConfigFindUniqueArgs<
  * TeamConfig findUniqueOrThrow
  */
 export type TeamConfigFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1249,8 +1160,7 @@ export type TeamConfigFindUniqueOrThrowArgs<
  * TeamConfig findFirst
  */
 export type TeamConfigFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1299,17 +1209,14 @@ export type TeamConfigFindFirstArgs<
      *
      * Filter by unique combinations of TeamConfigs.
      */
-    distinct?:
-        | Prisma.TeamConfigScalarFieldEnum
-        | Prisma.TeamConfigScalarFieldEnum[];
+    distinct?: Prisma.TeamConfigScalarFieldEnum | Prisma.TeamConfigScalarFieldEnum[];
 };
 
 /**
  * TeamConfig findFirstOrThrow
  */
 export type TeamConfigFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1358,17 +1265,14 @@ export type TeamConfigFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of TeamConfigs.
      */
-    distinct?:
-        | Prisma.TeamConfigScalarFieldEnum
-        | Prisma.TeamConfigScalarFieldEnum[];
+    distinct?: Prisma.TeamConfigScalarFieldEnum | Prisma.TeamConfigScalarFieldEnum[];
 };
 
 /**
  * TeamConfig findMany
  */
 export type TeamConfigFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1412,17 +1316,14 @@ export type TeamConfigFindManyArgs<
      * Skip the first `n` TeamConfigs.
      */
     skip?: number;
-    distinct?:
-        | Prisma.TeamConfigScalarFieldEnum
-        | Prisma.TeamConfigScalarFieldEnum[];
+    distinct?: Prisma.TeamConfigScalarFieldEnum | Prisma.TeamConfigScalarFieldEnum[];
 };
 
 /**
  * TeamConfig create
  */
 export type TeamConfigCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1439,18 +1340,14 @@ export type TeamConfigCreateArgs<
     /**
      * The data needed to create a TeamConfig.
      */
-    data: Prisma.XOR<
-        Prisma.TeamConfigCreateInput,
-        Prisma.TeamConfigUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.TeamConfigCreateInput, Prisma.TeamConfigUncheckedCreateInput>;
 };
 
 /**
  * TeamConfig createMany
  */
 export type TeamConfigCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many TeamConfigs.
@@ -1463,8 +1360,7 @@ export type TeamConfigCreateManyArgs<
  * TeamConfig createManyAndReturn
  */
 export type TeamConfigCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1489,8 +1385,7 @@ export type TeamConfigCreateManyAndReturnArgs<
  * TeamConfig update
  */
 export type TeamConfigUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1507,10 +1402,7 @@ export type TeamConfigUpdateArgs<
     /**
      * The data needed to update a TeamConfig.
      */
-    data: Prisma.XOR<
-        Prisma.TeamConfigUpdateInput,
-        Prisma.TeamConfigUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.TeamConfigUpdateInput, Prisma.TeamConfigUncheckedUpdateInput>;
     /**
      * Choose, which TeamConfig to update.
      */
@@ -1521,8 +1413,7 @@ export type TeamConfigUpdateArgs<
  * TeamConfig updateMany
  */
 export type TeamConfigUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update TeamConfigs.
@@ -1545,8 +1436,7 @@ export type TeamConfigUpdateManyArgs<
  * TeamConfig updateManyAndReturn
  */
 export type TeamConfigUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1581,8 +1471,7 @@ export type TeamConfigUpdateManyAndReturnArgs<
  * TeamConfig upsert
  */
 export type TeamConfigUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1603,25 +1492,18 @@ export type TeamConfigUpsertArgs<
     /**
      * In case the TeamConfig found by the `where` argument doesn't exist, create a new TeamConfig with this data.
      */
-    create: Prisma.XOR<
-        Prisma.TeamConfigCreateInput,
-        Prisma.TeamConfigUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.TeamConfigCreateInput, Prisma.TeamConfigUncheckedCreateInput>;
     /**
      * In case the TeamConfig was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.TeamConfigUpdateInput,
-        Prisma.TeamConfigUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.TeamConfigUpdateInput, Prisma.TeamConfigUncheckedUpdateInput>;
 };
 
 /**
  * TeamConfig delete
  */
 export type TeamConfigDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig
@@ -1645,8 +1527,7 @@ export type TeamConfigDeleteArgs<
  * TeamConfig deleteMany
  */
 export type TeamConfigDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which TeamConfigs to delete
@@ -1662,8 +1543,7 @@ export type TeamConfigDeleteManyArgs<
  * TeamConfig without action
  */
 export type TeamConfigDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamConfig

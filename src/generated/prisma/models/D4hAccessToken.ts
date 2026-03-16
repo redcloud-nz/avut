@@ -107,8 +107,7 @@ export type D4hAccessTokenCountAggregateInputType = {
 };
 
 export type D4hAccessTokenAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which D4hAccessToken to aggregate.
@@ -160,9 +159,7 @@ export type D4hAccessTokenAggregateArgs<
     _max?: D4hAccessTokenMaxAggregateInputType;
 };
 
-export type GetD4hAccessTokenAggregateType<
-    T extends D4hAccessTokenAggregateArgs,
-> = {
+export type GetD4hAccessTokenAggregateType<T extends D4hAccessTokenAggregateArgs> = {
     [P in keyof T & keyof AggregateD4hAccessToken]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
@@ -171,16 +168,13 @@ export type GetD4hAccessTokenAggregateType<
 };
 
 export type D4hAccessTokenGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.D4hAccessTokenWhereInput;
     orderBy?:
         | Prisma.D4hAccessTokenOrderByWithAggregationInput
         | Prisma.D4hAccessTokenOrderByWithAggregationInput[];
-    by:
-        | Prisma.D4hAccessTokenScalarFieldEnum[]
-        | Prisma.D4hAccessTokenScalarFieldEnum;
+    by: Prisma.D4hAccessTokenScalarFieldEnum[] | Prisma.D4hAccessTokenScalarFieldEnum;
     having?: Prisma.D4hAccessTokenScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -206,35 +200,24 @@ export type D4hAccessTokenGroupByOutputType = {
     _max: D4hAccessTokenMaxAggregateOutputType | null;
 };
 
-type GetD4hAccessTokenGroupByPayload<T extends D4hAccessTokenGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<D4hAccessTokenGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof D4hAccessTokenGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              D4hAccessTokenGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          D4hAccessTokenGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetD4hAccessTokenGroupByPayload<T extends D4hAccessTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<D4hAccessTokenGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof D4hAccessTokenGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type D4hAccessTokenWhereInput = {
     AND?: Prisma.D4hAccessTokenWhereInput | Prisma.D4hAccessTokenWhereInput[];
     OR?: Prisma.D4hAccessTokenWhereInput[];
     NOT?: Prisma.D4hAccessTokenWhereInput | Prisma.D4hAccessTokenWhereInput[];
     id?: Prisma.StringFilter<"D4hAccessToken"> | string;
-    organizationId?:
-        | Prisma.StringNullableFilter<"D4hAccessToken">
-        | string
-        | null;
+    organizationId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
     userId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
     label?: Prisma.StringFilter<"D4hAccessToken"> | string;
     token?: Prisma.StringFilter<"D4hAccessToken"> | string;
@@ -248,10 +231,7 @@ export type D4hAccessTokenWhereInput = {
         Prisma.OrganizationNullableScalarRelationFilter,
         Prisma.OrganizationWhereInput
     > | null;
-    user?: Prisma.XOR<
-        Prisma.UserNullableScalarRelationFilter,
-        Prisma.UserWhereInput
-    > | null;
+    user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
 };
 
 export type D4hAccessTokenOrderByWithRelationInput = {
@@ -273,17 +253,10 @@ export type D4hAccessTokenOrderByWithRelationInput = {
 export type D4hAccessTokenWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
-        AND?:
-            | Prisma.D4hAccessTokenWhereInput
-            | Prisma.D4hAccessTokenWhereInput[];
+        AND?: Prisma.D4hAccessTokenWhereInput | Prisma.D4hAccessTokenWhereInput[];
         OR?: Prisma.D4hAccessTokenWhereInput[];
-        NOT?:
-            | Prisma.D4hAccessTokenWhereInput
-            | Prisma.D4hAccessTokenWhereInput[];
-        organizationId?:
-            | Prisma.StringNullableFilter<"D4hAccessToken">
-            | string
-            | null;
+        NOT?: Prisma.D4hAccessTokenWhereInput | Prisma.D4hAccessTokenWhereInput[];
+        organizationId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
         userId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
         label?: Prisma.StringFilter<"D4hAccessToken"> | string;
         token?: Prisma.StringFilter<"D4hAccessToken"> | string;
@@ -297,10 +270,7 @@ export type D4hAccessTokenWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationNullableScalarRelationFilter,
             Prisma.OrganizationWhereInput
         > | null;
-        user?: Prisma.XOR<
-            Prisma.UserNullableScalarRelationFilter,
-            Prisma.UserWhereInput
-        > | null;
+        user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     },
     "id"
 >;
@@ -331,31 +301,16 @@ export type D4hAccessTokenScalarWhereWithAggregatesInput = {
         | Prisma.D4hAccessTokenScalarWhereWithAggregatesInput
         | Prisma.D4hAccessTokenScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"D4hAccessToken"> | string;
-    organizationId?:
-        | Prisma.StringNullableWithAggregatesFilter<"D4hAccessToken">
-        | string
-        | null;
-    userId?:
-        | Prisma.StringNullableWithAggregatesFilter<"D4hAccessToken">
-        | string
-        | null;
+    organizationId?: Prisma.StringNullableWithAggregatesFilter<"D4hAccessToken"> | string | null;
+    userId?: Prisma.StringNullableWithAggregatesFilter<"D4hAccessToken"> | string | null;
     label?: Prisma.StringWithAggregatesFilter<"D4hAccessToken"> | string;
     token?: Prisma.StringWithAggregatesFilter<"D4hAccessToken"> | string;
     serverCode?: Prisma.StringWithAggregatesFilter<"D4hAccessToken"> | string;
     status?: Prisma.StringWithAggregatesFilter<"D4hAccessToken"> | string;
-    expiresAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken">
-        | Date
-        | string;
+    expiresAt?: Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken"> | Date | string;
     metadata?: Prisma.JsonWithAggregatesFilter<"D4hAccessToken">;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"D4hAccessToken"> | Date | string;
 };
 
 export type D4hAccessTokenCreateInput = {
@@ -402,10 +357,7 @@ export type D4hAccessTokenUpdateInput = {
 
 export type D4hAccessTokenUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     label?: Prisma.StringFieldUpdateOperationsInput | string;
     token?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -445,10 +397,7 @@ export type D4hAccessTokenUpdateManyMutationInput = {
 
 export type D4hAccessTokenUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     label?: Prisma.StringFieldUpdateOperationsInput | string;
     token?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -522,9 +471,7 @@ export type D4hAccessTokenCreateNestedManyWithoutUserInput = {
         | Prisma.D4hAccessTokenCreateOrConnectWithoutUserInput
         | Prisma.D4hAccessTokenCreateOrConnectWithoutUserInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyUserInputEnvelope;
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
 };
 
 export type D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput = {
@@ -539,9 +486,7 @@ export type D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput = {
         | Prisma.D4hAccessTokenCreateOrConnectWithoutUserInput
         | Prisma.D4hAccessTokenCreateOrConnectWithoutUserInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyUserInputEnvelope;
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
 };
 
 export type D4hAccessTokenUpdateManyWithoutUserNestedInput = {
@@ -559,27 +504,17 @@ export type D4hAccessTokenUpdateManyWithoutUserNestedInput = {
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutUserInput
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyUserInputEnvelope;
-    set?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    disconnect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    delete?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    set?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    disconnect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    delete?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
     update?:
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutUserInput
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutUserInput[];
     updateMany?:
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutUserInput
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    deleteMany?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
 };
 
 export type D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput = {
@@ -597,27 +532,17 @@ export type D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput = {
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutUserInput
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyUserInputEnvelope;
-    set?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    disconnect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    delete?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    set?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    disconnect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    delete?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
     update?:
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutUserInput
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutUserInput[];
     updateMany?:
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutUserInput
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    deleteMany?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
 };
 
 export type D4hAccessTokenCreateNestedManyWithoutOrganizationInput = {
@@ -632,9 +557,7 @@ export type D4hAccessTokenCreateNestedManyWithoutOrganizationInput = {
         | Prisma.D4hAccessTokenCreateOrConnectWithoutOrganizationInput
         | Prisma.D4hAccessTokenCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
 };
 
 export type D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput = {
@@ -649,9 +572,7 @@ export type D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput = {
         | Prisma.D4hAccessTokenCreateOrConnectWithoutOrganizationInput
         | Prisma.D4hAccessTokenCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
 };
 
 export type D4hAccessTokenUpdateManyWithoutOrganizationNestedInput = {
@@ -669,27 +590,17 @@ export type D4hAccessTokenUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    disconnect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    delete?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    set?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    disconnect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    delete?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
     update?:
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    deleteMany?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
 };
 
 export type D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput = {
@@ -707,27 +618,17 @@ export type D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.D4hAccessTokenCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    disconnect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    delete?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
-    connect?:
-        | Prisma.D4hAccessTokenWhereUniqueInput
-        | Prisma.D4hAccessTokenWhereUniqueInput[];
+    set?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    disconnect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    delete?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
+    connect?: Prisma.D4hAccessTokenWhereUniqueInput | Prisma.D4hAccessTokenWhereUniqueInput[];
     update?:
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.D4hAccessTokenUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    deleteMany?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
 };
 
 export type D4hAccessTokenCreateWithoutUserInput = {
@@ -765,9 +666,7 @@ export type D4hAccessTokenCreateOrConnectWithoutUserInput = {
 };
 
 export type D4hAccessTokenCreateManyUserInputEnvelope = {
-    data:
-        | Prisma.D4hAccessTokenCreateManyUserInput
-        | Prisma.D4hAccessTokenCreateManyUserInput[];
+    data: Prisma.D4hAccessTokenCreateManyUserInput | Prisma.D4hAccessTokenCreateManyUserInput[];
     skipDuplicates?: boolean;
 };
 
@@ -800,18 +699,11 @@ export type D4hAccessTokenUpdateManyWithWhereWithoutUserInput = {
 };
 
 export type D4hAccessTokenScalarWhereInput = {
-    AND?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    AND?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
     OR?: Prisma.D4hAccessTokenScalarWhereInput[];
-    NOT?:
-        | Prisma.D4hAccessTokenScalarWhereInput
-        | Prisma.D4hAccessTokenScalarWhereInput[];
+    NOT?: Prisma.D4hAccessTokenScalarWhereInput | Prisma.D4hAccessTokenScalarWhereInput[];
     id?: Prisma.StringFilter<"D4hAccessToken"> | string;
-    organizationId?:
-        | Prisma.StringNullableFilter<"D4hAccessToken">
-        | string
-        | null;
+    organizationId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
     userId?: Prisma.StringNullableFilter<"D4hAccessToken"> | string | null;
     label?: Prisma.StringFilter<"D4hAccessToken"> | string;
     token?: Prisma.StringFilter<"D4hAccessToken"> | string;
@@ -920,10 +812,7 @@ export type D4hAccessTokenUpdateWithoutUserInput = {
 
 export type D4hAccessTokenUncheckedUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     label?: Prisma.StringFieldUpdateOperationsInput | string;
     token?: Prisma.StringFieldUpdateOperationsInput | string;
     serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -936,10 +825,7 @@ export type D4hAccessTokenUncheckedUpdateWithoutUserInput = {
 
 export type D4hAccessTokenUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     label?: Prisma.StringFieldUpdateOperationsInput | string;
     token?: Prisma.StringFieldUpdateOperationsInput | string;
     serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1003,8 +889,7 @@ export type D4hAccessTokenUncheckedUpdateManyWithoutOrganizationInput = {
 };
 
 export type D4hAccessTokenSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1018,17 +903,14 @@ export type D4hAccessTokenSelect<
         metadata?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        organization?:
-            | boolean
-            | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
+        organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
         user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
     },
     ExtArgs["result"]["d4hAccessToken"]
 >;
 
 export type D4hAccessTokenSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1042,17 +924,14 @@ export type D4hAccessTokenSelectCreateManyAndReturn<
         metadata?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        organization?:
-            | boolean
-            | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
+        organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
         user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
     },
     ExtArgs["result"]["d4hAccessToken"]
 >;
 
 export type D4hAccessTokenSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1066,9 +945,7 @@ export type D4hAccessTokenSelectUpdateManyAndReturn<
         metadata?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
-        organization?:
-            | boolean
-            | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
+        organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
         user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
     },
     ExtArgs["result"]["d4hAccessToken"]
@@ -1089,8 +966,7 @@ export type D4hAccessTokenSelectScalar = {
 };
 
 export type D4hAccessTokenOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1106,30 +982,26 @@ export type D4hAccessTokenOmit<
     ExtArgs["result"]["d4hAccessToken"]
 >;
 export type D4hAccessTokenInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
     user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
 };
 export type D4hAccessTokenIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
     user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
 };
 export type D4hAccessTokenIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.D4hAccessToken$organizationArgs<ExtArgs>;
     user?: boolean | Prisma.D4hAccessToken$userArgs<ExtArgs>;
 };
 
 export type $D4hAccessTokenPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "D4hAccessToken";
     objects: {
@@ -1160,18 +1032,13 @@ export type D4hAccessTokenGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$D4hAccessTokenPayload, S>;
 
 export type D4hAccessTokenCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    D4hAccessTokenFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<D4hAccessTokenFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: D4hAccessTokenCountAggregateInputType | true;
 };
 
 export interface D4hAccessTokenDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1216,10 +1083,7 @@ export interface D4hAccessTokenDelegate<
      * })
      */
     findUniqueOrThrow<T extends D4hAccessTokenFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            D4hAccessTokenFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, D4hAccessTokenFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__D4hAccessTokenClient<
         runtime.Types.Result.GetResult<
             Prisma.$D4hAccessTokenPayload<ExtArgs>,
@@ -1274,10 +1138,7 @@ export interface D4hAccessTokenDelegate<
      * })
      */
     findFirstOrThrow<T extends D4hAccessTokenFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            D4hAccessTokenFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, D4hAccessTokenFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__D4hAccessTokenClient<
         runtime.Types.Result.GetResult<
             Prisma.$D4hAccessTokenPayload<ExtArgs>,
@@ -1382,10 +1243,7 @@ export interface D4hAccessTokenDelegate<
      *
      */
     createManyAndReturn<T extends D4hAccessTokenCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            D4hAccessTokenCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, D4hAccessTokenCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$D4hAccessTokenPayload<ExtArgs>,
@@ -1516,10 +1374,7 @@ export interface D4hAccessTokenDelegate<
      *
      */
     updateManyAndReturn<T extends D4hAccessTokenUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            D4hAccessTokenUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, D4hAccessTokenUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$D4hAccessTokenPayload<ExtArgs>,
@@ -1579,10 +1434,7 @@ export interface D4hAccessTokenDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      D4hAccessTokenCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], D4hAccessTokenCountAggregateOutputType>
             : number
     >;
 
@@ -1657,12 +1509,7 @@ export interface D4hAccessTokenDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1692,12 +1539,7 @@ export interface D4hAccessTokenDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            D4hAccessTokenGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, D4hAccessTokenGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetD4hAccessTokenGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1716,18 +1558,12 @@ export interface D4hAccessTokenDelegate<
 export interface Prisma__D4hAccessTokenClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
-    organization<
-        T extends Prisma.D4hAccessToken$organizationArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.D4hAccessToken$organizationArgs<ExtArgs>
-        >,
+    organization<T extends Prisma.D4hAccessToken$organizationArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.D4hAccessToken$organizationArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationPayload<ExtArgs>,
@@ -1759,14 +1595,8 @@ export interface Prisma__D4hAccessTokenClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1774,10 +1604,7 @@ export interface Prisma__D4hAccessTokenClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1785,9 +1612,7 @@ export interface Prisma__D4hAccessTokenClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1812,8 +1637,7 @@ export interface D4hAccessTokenFieldRefs {
  * D4hAccessToken findUnique
  */
 export type D4hAccessTokenFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -1837,8 +1661,7 @@ export type D4hAccessTokenFindUniqueArgs<
  * D4hAccessToken findUniqueOrThrow
  */
 export type D4hAccessTokenFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -1862,8 +1685,7 @@ export type D4hAccessTokenFindUniqueOrThrowArgs<
  * D4hAccessToken findFirst
  */
 export type D4hAccessTokenFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -1912,17 +1734,14 @@ export type D4hAccessTokenFindFirstArgs<
      *
      * Filter by unique combinations of D4hAccessTokens.
      */
-    distinct?:
-        | Prisma.D4hAccessTokenScalarFieldEnum
-        | Prisma.D4hAccessTokenScalarFieldEnum[];
+    distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**
  * D4hAccessToken findFirstOrThrow
  */
 export type D4hAccessTokenFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -1971,17 +1790,14 @@ export type D4hAccessTokenFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of D4hAccessTokens.
      */
-    distinct?:
-        | Prisma.D4hAccessTokenScalarFieldEnum
-        | Prisma.D4hAccessTokenScalarFieldEnum[];
+    distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**
  * D4hAccessToken findMany
  */
 export type D4hAccessTokenFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2025,17 +1841,14 @@ export type D4hAccessTokenFindManyArgs<
      * Skip the first `n` D4hAccessTokens.
      */
     skip?: number;
-    distinct?:
-        | Prisma.D4hAccessTokenScalarFieldEnum
-        | Prisma.D4hAccessTokenScalarFieldEnum[];
+    distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**
  * D4hAccessToken create
  */
 export type D4hAccessTokenCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2052,25 +1865,19 @@ export type D4hAccessTokenCreateArgs<
     /**
      * The data needed to create a D4hAccessToken.
      */
-    data: Prisma.XOR<
-        Prisma.D4hAccessTokenCreateInput,
-        Prisma.D4hAccessTokenUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.D4hAccessTokenCreateInput, Prisma.D4hAccessTokenUncheckedCreateInput>;
 };
 
 /**
  * D4hAccessToken createMany
  */
 export type D4hAccessTokenCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many D4hAccessTokens.
      */
-    data:
-        | Prisma.D4hAccessTokenCreateManyInput
-        | Prisma.D4hAccessTokenCreateManyInput[];
+    data: Prisma.D4hAccessTokenCreateManyInput | Prisma.D4hAccessTokenCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -2078,8 +1885,7 @@ export type D4hAccessTokenCreateManyArgs<
  * D4hAccessToken createManyAndReturn
  */
 export type D4hAccessTokenCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2092,9 +1898,7 @@ export type D4hAccessTokenCreateManyAndReturnArgs<
     /**
      * The data used to create many D4hAccessTokens.
      */
-    data:
-        | Prisma.D4hAccessTokenCreateManyInput
-        | Prisma.D4hAccessTokenCreateManyInput[];
+    data: Prisma.D4hAccessTokenCreateManyInput | Prisma.D4hAccessTokenCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -2106,8 +1910,7 @@ export type D4hAccessTokenCreateManyAndReturnArgs<
  * D4hAccessToken update
  */
 export type D4hAccessTokenUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2124,10 +1927,7 @@ export type D4hAccessTokenUpdateArgs<
     /**
      * The data needed to update a D4hAccessToken.
      */
-    data: Prisma.XOR<
-        Prisma.D4hAccessTokenUpdateInput,
-        Prisma.D4hAccessTokenUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.D4hAccessTokenUpdateInput, Prisma.D4hAccessTokenUncheckedUpdateInput>;
     /**
      * Choose, which D4hAccessToken to update.
      */
@@ -2138,8 +1938,7 @@ export type D4hAccessTokenUpdateArgs<
  * D4hAccessToken updateMany
  */
 export type D4hAccessTokenUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update D4hAccessTokens.
@@ -2162,8 +1961,7 @@ export type D4hAccessTokenUpdateManyArgs<
  * D4hAccessToken updateManyAndReturn
  */
 export type D4hAccessTokenUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2198,8 +1996,7 @@ export type D4hAccessTokenUpdateManyAndReturnArgs<
  * D4hAccessToken upsert
  */
 export type D4hAccessTokenUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2220,25 +2017,18 @@ export type D4hAccessTokenUpsertArgs<
     /**
      * In case the D4hAccessToken found by the `where` argument doesn't exist, create a new D4hAccessToken with this data.
      */
-    create: Prisma.XOR<
-        Prisma.D4hAccessTokenCreateInput,
-        Prisma.D4hAccessTokenUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.D4hAccessTokenCreateInput, Prisma.D4hAccessTokenUncheckedCreateInput>;
     /**
      * In case the D4hAccessToken was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.D4hAccessTokenUpdateInput,
-        Prisma.D4hAccessTokenUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.D4hAccessTokenUpdateInput, Prisma.D4hAccessTokenUncheckedUpdateInput>;
 };
 
 /**
  * D4hAccessToken delete
  */
 export type D4hAccessTokenDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -2262,8 +2052,7 @@ export type D4hAccessTokenDeleteArgs<
  * D4hAccessToken deleteMany
  */
 export type D4hAccessTokenDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which D4hAccessTokens to delete
@@ -2279,8 +2068,7 @@ export type D4hAccessTokenDeleteManyArgs<
  * D4hAccessToken.organization
  */
 export type D4hAccessToken$organizationArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -2301,8 +2089,7 @@ export type D4hAccessToken$organizationArgs<
  * D4hAccessToken.user
  */
 export type D4hAccessToken$userArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2323,8 +2110,7 @@ export type D4hAccessToken$userArgs<
  * D4hAccessToken without action
  */
 export type D4hAccessTokenDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken

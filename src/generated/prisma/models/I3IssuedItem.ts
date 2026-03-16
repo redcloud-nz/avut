@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model I3IssuedItem
  *
  */
-export type I3IssuedItemModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$I3IssuedItemPayload>;
+export type I3IssuedItemModel = runtime.Types.Result.DefaultSelection<Prisma.$I3IssuedItemPayload>;
 
 export type AggregateI3IssuedItem = {
     _count: I3IssuedItemCountAggregateOutputType | null;
@@ -95,8 +94,7 @@ export type I3IssuedItemCountAggregateInputType = {
 };
 
 export type I3IssuedItemAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which I3IssuedItem to aggregate.
@@ -148,28 +146,22 @@ export type I3IssuedItemAggregateArgs<
     _max?: I3IssuedItemMaxAggregateInputType;
 };
 
-export type GetI3IssuedItemAggregateType<T extends I3IssuedItemAggregateArgs> =
-    {
-        [P in keyof T & keyof AggregateI3IssuedItem]: P extends
-            | "_count"
-            | "count"
-            ? T[P] extends true
-                ? number
-                : Prisma.GetScalarType<T[P], AggregateI3IssuedItem[P]>
-            : Prisma.GetScalarType<T[P], AggregateI3IssuedItem[P]>;
-    };
+export type GetI3IssuedItemAggregateType<T extends I3IssuedItemAggregateArgs> = {
+    [P in keyof T & keyof AggregateI3IssuedItem]: P extends "_count" | "count"
+        ? T[P] extends true
+            ? number
+            : Prisma.GetScalarType<T[P], AggregateI3IssuedItem[P]>
+        : Prisma.GetScalarType<T[P], AggregateI3IssuedItem[P]>;
+};
 
 export type I3IssuedItemGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.I3IssuedItemWhereInput;
     orderBy?:
         | Prisma.I3IssuedItemOrderByWithAggregationInput
         | Prisma.I3IssuedItemOrderByWithAggregationInput[];
-    by:
-        | Prisma.I3IssuedItemScalarFieldEnum[]
-        | Prisma.I3IssuedItemScalarFieldEnum;
+    by: Prisma.I3IssuedItemScalarFieldEnum[] | Prisma.I3IssuedItemScalarFieldEnum;
     having?: Prisma.I3IssuedItemScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -193,25 +185,17 @@ export type I3IssuedItemGroupByOutputType = {
     _max: I3IssuedItemMaxAggregateOutputType | null;
 };
 
-type GetI3IssuedItemGroupByPayload<T extends I3IssuedItemGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<I3IssuedItemGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof I3IssuedItemGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              I3IssuedItemGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          I3IssuedItemGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetI3IssuedItemGroupByPayload<T extends I3IssuedItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<I3IssuedItemGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof I3IssuedItemGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], I3IssuedItemGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], I3IssuedItemGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type I3IssuedItemWhereInput = {
     AND?: Prisma.I3IssuedItemWhereInput | Prisma.I3IssuedItemWhereInput[];
@@ -223,19 +207,14 @@ export type I3IssuedItemWhereInput = {
     name?: Prisma.StringFilter<"I3IssuedItem"> | string;
     description?: Prisma.StringFilter<"I3IssuedItem"> | string;
     properties?: Prisma.JsonFilter<"I3IssuedItem">;
-    status?:
-        | Prisma.EnumRecordStatusFilter<"I3IssuedItem">
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFilter<"I3IssuedItem"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
-    person?: Prisma.XOR<
-        Prisma.PersonScalarRelationFilter,
-        Prisma.PersonWhereInput
-    >;
+    person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
 };
 
 export type I3IssuedItemOrderByWithRelationInput = {
@@ -263,19 +242,14 @@ export type I3IssuedItemWhereUniqueInput = Prisma.AtLeast<
         name?: Prisma.StringFilter<"I3IssuedItem"> | string;
         description?: Prisma.StringFilter<"I3IssuedItem"> | string;
         properties?: Prisma.JsonFilter<"I3IssuedItem">;
-        status?:
-            | Prisma.EnumRecordStatusFilter<"I3IssuedItem">
-            | $Enums.RecordStatus;
+        status?: Prisma.EnumRecordStatusFilter<"I3IssuedItem"> | $Enums.RecordStatus;
         createdAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
         updatedAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        person?: Prisma.XOR<
-            Prisma.PersonScalarRelationFilter,
-            Prisma.PersonWhereInput
-        >;
+        person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
     },
     "id"
 >;
@@ -309,17 +283,9 @@ export type I3IssuedItemScalarWhereWithAggregatesInput = {
     name?: Prisma.StringWithAggregatesFilter<"I3IssuedItem"> | string;
     description?: Prisma.StringWithAggregatesFilter<"I3IssuedItem"> | string;
     properties?: Prisma.JsonWithAggregatesFilter<"I3IssuedItem">;
-    status?:
-        | Prisma.EnumRecordStatusWithAggregatesFilter<"I3IssuedItem">
-        | $Enums.RecordStatus;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"I3IssuedItem">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"I3IssuedItem">
-        | Date
-        | string;
+    status?: Prisma.EnumRecordStatusWithAggregatesFilter<"I3IssuedItem"> | $Enums.RecordStatus;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"I3IssuedItem"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"I3IssuedItem"> | Date | string;
 };
 
 export type I3IssuedItemCreateInput = {
@@ -351,9 +317,7 @@ export type I3IssuedItemUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutI3IssuedItemsNestedInput;
@@ -367,9 +331,7 @@ export type I3IssuedItemUncheckedUpdateInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -391,9 +353,7 @@ export type I3IssuedItemUpdateManyMutationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -405,9 +365,7 @@ export type I3IssuedItemUncheckedUpdateManyInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -468,9 +426,7 @@ export type I3IssuedItemCreateNestedManyWithoutOrganizationInput = {
         | Prisma.I3IssuedItemCreateOrConnectWithoutOrganizationInput
         | Prisma.I3IssuedItemCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.I3IssuedItemCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
 };
 
 export type I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput = {
@@ -485,9 +441,7 @@ export type I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput = {
         | Prisma.I3IssuedItemCreateOrConnectWithoutOrganizationInput
         | Prisma.I3IssuedItemCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.I3IssuedItemCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
 };
 
 export type I3IssuedItemUpdateManyWithoutOrganizationNestedInput = {
@@ -505,27 +459,17 @@ export type I3IssuedItemUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.I3IssuedItemCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    disconnect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    delete?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    set?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    disconnect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    delete?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
     update?:
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    deleteMany?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
 };
 
 export type I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput = {
@@ -543,27 +487,17 @@ export type I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.I3IssuedItemCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    disconnect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    delete?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    set?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    disconnect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    delete?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
     update?:
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    deleteMany?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
 };
 
 export type I3IssuedItemCreateNestedManyWithoutPersonInput = {
@@ -578,9 +512,7 @@ export type I3IssuedItemCreateNestedManyWithoutPersonInput = {
         | Prisma.I3IssuedItemCreateOrConnectWithoutPersonInput
         | Prisma.I3IssuedItemCreateOrConnectWithoutPersonInput[];
     createMany?: Prisma.I3IssuedItemCreateManyPersonInputEnvelope;
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
 };
 
 export type I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput = {
@@ -595,9 +527,7 @@ export type I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput = {
         | Prisma.I3IssuedItemCreateOrConnectWithoutPersonInput
         | Prisma.I3IssuedItemCreateOrConnectWithoutPersonInput[];
     createMany?: Prisma.I3IssuedItemCreateManyPersonInputEnvelope;
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
 };
 
 export type I3IssuedItemUpdateManyWithoutPersonNestedInput = {
@@ -615,27 +545,17 @@ export type I3IssuedItemUpdateManyWithoutPersonNestedInput = {
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutPersonInput
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutPersonInput[];
     createMany?: Prisma.I3IssuedItemCreateManyPersonInputEnvelope;
-    set?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    disconnect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    delete?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    set?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    disconnect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    delete?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
     update?:
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutPersonInput
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutPersonInput[];
     updateMany?:
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutPersonInput
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutPersonInput[];
-    deleteMany?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    deleteMany?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
 };
 
 export type I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput = {
@@ -653,27 +573,17 @@ export type I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput = {
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutPersonInput
         | Prisma.I3IssuedItemUpsertWithWhereUniqueWithoutPersonInput[];
     createMany?: Prisma.I3IssuedItemCreateManyPersonInputEnvelope;
-    set?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    disconnect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    delete?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
-    connect?:
-        | Prisma.I3IssuedItemWhereUniqueInput
-        | Prisma.I3IssuedItemWhereUniqueInput[];
+    set?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    disconnect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    delete?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
+    connect?: Prisma.I3IssuedItemWhereUniqueInput | Prisma.I3IssuedItemWhereUniqueInput[];
     update?:
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutPersonInput
         | Prisma.I3IssuedItemUpdateWithWhereUniqueWithoutPersonInput[];
     updateMany?:
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutPersonInput
         | Prisma.I3IssuedItemUpdateManyWithWhereWithoutPersonInput[];
-    deleteMany?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    deleteMany?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
 };
 
 export type I3IssuedItemCreateWithoutOrganizationInput = {
@@ -742,22 +652,16 @@ export type I3IssuedItemUpdateManyWithWhereWithoutOrganizationInput = {
 };
 
 export type I3IssuedItemScalarWhereInput = {
-    AND?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    AND?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
     OR?: Prisma.I3IssuedItemScalarWhereInput[];
-    NOT?:
-        | Prisma.I3IssuedItemScalarWhereInput
-        | Prisma.I3IssuedItemScalarWhereInput[];
+    NOT?: Prisma.I3IssuedItemScalarWhereInput | Prisma.I3IssuedItemScalarWhereInput[];
     id?: Prisma.StringFilter<"I3IssuedItem"> | string;
     organizationId?: Prisma.StringFilter<"I3IssuedItem"> | string;
     personId?: Prisma.StringFilter<"I3IssuedItem"> | string;
     name?: Prisma.StringFilter<"I3IssuedItem"> | string;
     description?: Prisma.StringFilter<"I3IssuedItem"> | string;
     properties?: Prisma.JsonFilter<"I3IssuedItem">;
-    status?:
-        | Prisma.EnumRecordStatusFilter<"I3IssuedItem">
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFilter<"I3IssuedItem"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"I3IssuedItem"> | Date | string;
 };
@@ -793,9 +697,7 @@ export type I3IssuedItemCreateOrConnectWithoutPersonInput = {
 };
 
 export type I3IssuedItemCreateManyPersonInputEnvelope = {
-    data:
-        | Prisma.I3IssuedItemCreateManyPersonInput
-        | Prisma.I3IssuedItemCreateManyPersonInput[];
+    data: Prisma.I3IssuedItemCreateManyPersonInput | Prisma.I3IssuedItemCreateManyPersonInput[];
     skipDuplicates?: boolean;
 };
 
@@ -843,9 +745,7 @@ export type I3IssuedItemUpdateWithoutOrganizationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     person?: Prisma.PersonUpdateOneRequiredWithoutIssuedItemsNestedInput;
@@ -857,9 +757,7 @@ export type I3IssuedItemUncheckedUpdateWithoutOrganizationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -870,9 +768,7 @@ export type I3IssuedItemUncheckedUpdateManyWithoutOrganizationInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -893,9 +789,7 @@ export type I3IssuedItemUpdateWithoutPersonInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutI3IssuedItemsNestedInput;
@@ -907,9 +801,7 @@ export type I3IssuedItemUncheckedUpdateWithoutPersonInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -920,16 +812,13 @@ export type I3IssuedItemUncheckedUpdateManyWithoutPersonInput = {
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type I3IssuedItemSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -948,8 +837,7 @@ export type I3IssuedItemSelect<
 >;
 
 export type I3IssuedItemSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -968,8 +856,7 @@ export type I3IssuedItemSelectCreateManyAndReturn<
 >;
 
 export type I3IssuedItemSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1000,8 +887,7 @@ export type I3IssuedItemSelectScalar = {
 };
 
 export type I3IssuedItemOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1015,30 +901,26 @@ export type I3IssuedItemOmit<
     ExtArgs["result"]["i3IssuedItem"]
 >;
 export type I3IssuedItemInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
 };
 export type I3IssuedItemIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
 };
 export type I3IssuedItemIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
 };
 
 export type $I3IssuedItemPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "I3IssuedItem";
     objects: {
@@ -1062,23 +944,17 @@ export type $I3IssuedItemPayload<
     composites: {};
 };
 
-export type I3IssuedItemGetPayload<
-    S extends boolean | null | undefined | I3IssuedItemDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$I3IssuedItemPayload, S>;
+export type I3IssuedItemGetPayload<S extends boolean | null | undefined | I3IssuedItemDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$I3IssuedItemPayload, S>;
 
 export type I3IssuedItemCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    I3IssuedItemFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<I3IssuedItemFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: I3IssuedItemCountAggregateInputType | true;
 };
 
 export interface I3IssuedItemDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1123,10 +999,7 @@ export interface I3IssuedItemDelegate<
      * })
      */
     findUniqueOrThrow<T extends I3IssuedItemFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            I3IssuedItemFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, I3IssuedItemFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__I3IssuedItemClient<
         runtime.Types.Result.GetResult<
             Prisma.$I3IssuedItemPayload<ExtArgs>,
@@ -1181,10 +1054,7 @@ export interface I3IssuedItemDelegate<
      * })
      */
     findFirstOrThrow<T extends I3IssuedItemFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            I3IssuedItemFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, I3IssuedItemFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__I3IssuedItemClient<
         runtime.Types.Result.GetResult<
             Prisma.$I3IssuedItemPayload<ExtArgs>,
@@ -1289,10 +1159,7 @@ export interface I3IssuedItemDelegate<
      *
      */
     createManyAndReturn<T extends I3IssuedItemCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            I3IssuedItemCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, I3IssuedItemCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$I3IssuedItemPayload<ExtArgs>,
@@ -1423,10 +1290,7 @@ export interface I3IssuedItemDelegate<
      *
      */
     updateManyAndReturn<T extends I3IssuedItemUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            I3IssuedItemUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, I3IssuedItemUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$I3IssuedItemPayload<ExtArgs>,
@@ -1486,10 +1350,7 @@ export interface I3IssuedItemDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      I3IssuedItemCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], I3IssuedItemCountAggregateOutputType>
             : number
     >;
 
@@ -1564,12 +1425,7 @@ export interface I3IssuedItemDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1599,12 +1455,7 @@ export interface I3IssuedItemDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            I3IssuedItemGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, I3IssuedItemGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetI3IssuedItemGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1623,8 +1474,7 @@ export interface I3IssuedItemDelegate<
 export interface Prisma__I3IssuedItemClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1663,14 +1513,8 @@ export interface Prisma__I3IssuedItemClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1678,10 +1522,7 @@ export interface Prisma__I3IssuedItemClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1689,9 +1530,7 @@ export interface Prisma__I3IssuedItemClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1714,8 +1553,7 @@ export interface I3IssuedItemFieldRefs {
  * I3IssuedItem findUnique
  */
 export type I3IssuedItemFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1739,8 +1577,7 @@ export type I3IssuedItemFindUniqueArgs<
  * I3IssuedItem findUniqueOrThrow
  */
 export type I3IssuedItemFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1764,8 +1601,7 @@ export type I3IssuedItemFindUniqueOrThrowArgs<
  * I3IssuedItem findFirst
  */
 export type I3IssuedItemFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1814,17 +1650,14 @@ export type I3IssuedItemFindFirstArgs<
      *
      * Filter by unique combinations of I3IssuedItems.
      */
-    distinct?:
-        | Prisma.I3IssuedItemScalarFieldEnum
-        | Prisma.I3IssuedItemScalarFieldEnum[];
+    distinct?: Prisma.I3IssuedItemScalarFieldEnum | Prisma.I3IssuedItemScalarFieldEnum[];
 };
 
 /**
  * I3IssuedItem findFirstOrThrow
  */
 export type I3IssuedItemFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1873,17 +1706,14 @@ export type I3IssuedItemFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of I3IssuedItems.
      */
-    distinct?:
-        | Prisma.I3IssuedItemScalarFieldEnum
-        | Prisma.I3IssuedItemScalarFieldEnum[];
+    distinct?: Prisma.I3IssuedItemScalarFieldEnum | Prisma.I3IssuedItemScalarFieldEnum[];
 };
 
 /**
  * I3IssuedItem findMany
  */
 export type I3IssuedItemFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1927,17 +1757,14 @@ export type I3IssuedItemFindManyArgs<
      * Skip the first `n` I3IssuedItems.
      */
     skip?: number;
-    distinct?:
-        | Prisma.I3IssuedItemScalarFieldEnum
-        | Prisma.I3IssuedItemScalarFieldEnum[];
+    distinct?: Prisma.I3IssuedItemScalarFieldEnum | Prisma.I3IssuedItemScalarFieldEnum[];
 };
 
 /**
  * I3IssuedItem create
  */
 export type I3IssuedItemCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1954,25 +1781,19 @@ export type I3IssuedItemCreateArgs<
     /**
      * The data needed to create a I3IssuedItem.
      */
-    data: Prisma.XOR<
-        Prisma.I3IssuedItemCreateInput,
-        Prisma.I3IssuedItemUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.I3IssuedItemCreateInput, Prisma.I3IssuedItemUncheckedCreateInput>;
 };
 
 /**
  * I3IssuedItem createMany
  */
 export type I3IssuedItemCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many I3IssuedItems.
      */
-    data:
-        | Prisma.I3IssuedItemCreateManyInput
-        | Prisma.I3IssuedItemCreateManyInput[];
+    data: Prisma.I3IssuedItemCreateManyInput | Prisma.I3IssuedItemCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1980,8 +1801,7 @@ export type I3IssuedItemCreateManyArgs<
  * I3IssuedItem createManyAndReturn
  */
 export type I3IssuedItemCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -1994,9 +1814,7 @@ export type I3IssuedItemCreateManyAndReturnArgs<
     /**
      * The data used to create many I3IssuedItems.
      */
-    data:
-        | Prisma.I3IssuedItemCreateManyInput
-        | Prisma.I3IssuedItemCreateManyInput[];
+    data: Prisma.I3IssuedItemCreateManyInput | Prisma.I3IssuedItemCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -2008,8 +1826,7 @@ export type I3IssuedItemCreateManyAndReturnArgs<
  * I3IssuedItem update
  */
 export type I3IssuedItemUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -2026,10 +1843,7 @@ export type I3IssuedItemUpdateArgs<
     /**
      * The data needed to update a I3IssuedItem.
      */
-    data: Prisma.XOR<
-        Prisma.I3IssuedItemUpdateInput,
-        Prisma.I3IssuedItemUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.I3IssuedItemUpdateInput, Prisma.I3IssuedItemUncheckedUpdateInput>;
     /**
      * Choose, which I3IssuedItem to update.
      */
@@ -2040,8 +1854,7 @@ export type I3IssuedItemUpdateArgs<
  * I3IssuedItem updateMany
  */
 export type I3IssuedItemUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update I3IssuedItems.
@@ -2064,8 +1877,7 @@ export type I3IssuedItemUpdateManyArgs<
  * I3IssuedItem updateManyAndReturn
  */
 export type I3IssuedItemUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -2100,8 +1912,7 @@ export type I3IssuedItemUpdateManyAndReturnArgs<
  * I3IssuedItem upsert
  */
 export type I3IssuedItemUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -2122,25 +1933,18 @@ export type I3IssuedItemUpsertArgs<
     /**
      * In case the I3IssuedItem found by the `where` argument doesn't exist, create a new I3IssuedItem with this data.
      */
-    create: Prisma.XOR<
-        Prisma.I3IssuedItemCreateInput,
-        Prisma.I3IssuedItemUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.I3IssuedItemCreateInput, Prisma.I3IssuedItemUncheckedCreateInput>;
     /**
      * In case the I3IssuedItem was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.I3IssuedItemUpdateInput,
-        Prisma.I3IssuedItemUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.I3IssuedItemUpdateInput, Prisma.I3IssuedItemUncheckedUpdateInput>;
 };
 
 /**
  * I3IssuedItem delete
  */
 export type I3IssuedItemDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -2164,8 +1968,7 @@ export type I3IssuedItemDeleteArgs<
  * I3IssuedItem deleteMany
  */
 export type I3IssuedItemDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which I3IssuedItems to delete
@@ -2181,8 +1984,7 @@ export type I3IssuedItemDeleteManyArgs<
  * I3IssuedItem without action
  */
 export type I3IssuedItemDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem

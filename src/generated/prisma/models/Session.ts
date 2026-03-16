@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Session
  *
  */
-export type SessionModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$SessionPayload>;
+export type SessionModel = runtime.Types.Result.DefaultSelection<Prisma.$SessionPayload>;
 
 export type AggregateSession = {
     _count: SessionCountAggregateOutputType | null;
@@ -105,8 +104,7 @@ export type SessionCountAggregateInputType = {
 };
 
 export type SessionAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Session to aggregate.
@@ -117,9 +115,7 @@ export type SessionAggregateArgs<
      *
      * Determine the order of Sessions to fetch.
      */
-    orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
+    orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -167,8 +163,7 @@ export type GetSessionAggregateType<T extends SessionAggregateArgs> = {
 };
 
 export type SessionGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SessionWhereInput;
     orderBy?:
@@ -199,22 +194,17 @@ export type SessionGroupByOutputType = {
     _max: SessionMaxAggregateOutputType | null;
 };
 
-type GetSessionGroupByPayload<T extends SessionGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<SessionGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof SessionGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              SessionGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<T[P], SessionGroupByOutputType[P]>;
-            }
-        >
-    >;
+type GetSessionGroupByPayload<T extends SessionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<SessionGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof SessionGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], SessionGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], SessionGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type SessionWhereInput = {
     AND?: Prisma.SessionWhereInput | Prisma.SessionWhereInput[];
@@ -228,10 +218,7 @@ export type SessionWhereInput = {
     ipAddress?: Prisma.StringNullableFilter<"Session"> | string | null;
     userAgent?: Prisma.StringNullableFilter<"Session"> | string | null;
     userId?: Prisma.StringFilter<"Session"> | string;
-    activeOrganizationId?:
-        | Prisma.StringNullableFilter<"Session">
-        | string
-        | null;
+    activeOrganizationId?: Prisma.StringNullableFilter<"Session"> | string | null;
     activeTeamId?: Prisma.StringNullableFilter<"Session"> | string | null;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
 };
@@ -263,15 +250,9 @@ export type SessionWhereUniqueInput = Prisma.AtLeast<
         ipAddress?: Prisma.StringNullableFilter<"Session"> | string | null;
         userAgent?: Prisma.StringNullableFilter<"Session"> | string | null;
         userId?: Prisma.StringFilter<"Session"> | string;
-        activeOrganizationId?:
-            | Prisma.StringNullableFilter<"Session">
-            | string
-            | null;
+        activeOrganizationId?: Prisma.StringNullableFilter<"Session"> | string | null;
         activeTeamId?: Prisma.StringNullableFilter<"Session"> | string | null;
-        user?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id" | "token"
 >;
@@ -305,23 +286,11 @@ export type SessionScalarWhereWithAggregatesInput = {
     token?: Prisma.StringWithAggregatesFilter<"Session"> | string;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Session"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Session"> | Date | string;
-    ipAddress?:
-        | Prisma.StringNullableWithAggregatesFilter<"Session">
-        | string
-        | null;
-    userAgent?:
-        | Prisma.StringNullableWithAggregatesFilter<"Session">
-        | string
-        | null;
+    ipAddress?: Prisma.StringNullableWithAggregatesFilter<"Session"> | string | null;
+    userAgent?: Prisma.StringNullableWithAggregatesFilter<"Session"> | string | null;
     userId?: Prisma.StringWithAggregatesFilter<"Session"> | string;
-    activeOrganizationId?:
-        | Prisma.StringNullableWithAggregatesFilter<"Session">
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.StringNullableWithAggregatesFilter<"Session">
-        | string
-        | null;
+    activeOrganizationId?: Prisma.StringNullableWithAggregatesFilter<"Session"> | string | null;
+    activeTeamId?: Prisma.StringNullableWithAggregatesFilter<"Session"> | string | null;
 };
 
 export type SessionCreateInput = {
@@ -358,14 +327,8 @@ export type SessionUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user?: Prisma.UserUpdateOneRequiredWithoutSessionsNestedInput;
 };
 
@@ -378,14 +341,8 @@ export type SessionUncheckedUpdateInput = {
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionCreateManyInput = {
@@ -409,14 +366,8 @@ export type SessionUpdateManyMutationInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionUncheckedUpdateManyInput = {
@@ -428,14 +379,8 @@ export type SessionUncheckedUpdateManyInput = {
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionListRelationFilter = {
@@ -533,9 +478,7 @@ export type SessionUpdateManyWithoutUserNestedInput = {
         | Prisma.SessionUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.SessionCreateManyUserInputEnvelope;
     set?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SessionWhereUniqueInput
-        | Prisma.SessionWhereUniqueInput[];
+    disconnect?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     delete?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     connect?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     update?:
@@ -544,9 +487,7 @@ export type SessionUpdateManyWithoutUserNestedInput = {
     updateMany?:
         | Prisma.SessionUpdateManyWithWhereWithoutUserInput
         | Prisma.SessionUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.SessionScalarWhereInput
-        | Prisma.SessionScalarWhereInput[];
+    deleteMany?: Prisma.SessionScalarWhereInput | Prisma.SessionScalarWhereInput[];
 };
 
 export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
@@ -565,9 +506,7 @@ export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
         | Prisma.SessionUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.SessionCreateManyUserInputEnvelope;
     set?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SessionWhereUniqueInput
-        | Prisma.SessionWhereUniqueInput[];
+    disconnect?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     delete?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     connect?: Prisma.SessionWhereUniqueInput | Prisma.SessionWhereUniqueInput[];
     update?:
@@ -576,9 +515,7 @@ export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     updateMany?:
         | Prisma.SessionUpdateManyWithWhereWithoutUserInput
         | Prisma.SessionUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.SessionScalarWhereInput
-        | Prisma.SessionScalarWhereInput[];
+    deleteMany?: Prisma.SessionScalarWhereInput | Prisma.SessionScalarWhereInput[];
 };
 
 export type SessionCreateWithoutUserInput = {
@@ -614,9 +551,7 @@ export type SessionCreateOrConnectWithoutUserInput = {
 };
 
 export type SessionCreateManyUserInputEnvelope = {
-    data:
-        | Prisma.SessionCreateManyUserInput
-        | Prisma.SessionCreateManyUserInput[];
+    data: Prisma.SessionCreateManyUserInput | Prisma.SessionCreateManyUserInput[];
     skipDuplicates?: boolean;
 };
 
@@ -660,10 +595,7 @@ export type SessionScalarWhereInput = {
     ipAddress?: Prisma.StringNullableFilter<"Session"> | string | null;
     userAgent?: Prisma.StringNullableFilter<"Session"> | string | null;
     userId?: Prisma.StringFilter<"Session"> | string;
-    activeOrganizationId?:
-        | Prisma.StringNullableFilter<"Session">
-        | string
-        | null;
+    activeOrganizationId?: Prisma.StringNullableFilter<"Session"> | string | null;
     activeTeamId?: Prisma.StringNullableFilter<"Session"> | string | null;
 };
 
@@ -687,14 +619,8 @@ export type SessionUpdateWithoutUserInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionUncheckedUpdateWithoutUserInput = {
@@ -705,14 +631,8 @@ export type SessionUncheckedUpdateWithoutUserInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionUncheckedUpdateManyWithoutUserInput = {
@@ -723,19 +643,12 @@ export type SessionUncheckedUpdateManyWithoutUserInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     userAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    activeOrganizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    activeTeamId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    activeOrganizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    activeTeamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type SessionSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -754,8 +667,7 @@ export type SessionSelect<
 >;
 
 export type SessionSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -774,8 +686,7 @@ export type SessionSelectCreateManyAndReturn<
 >;
 
 export type SessionSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -807,8 +718,7 @@ export type SessionSelectScalar = {
 };
 
 export type SessionOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "expiresAt"
@@ -823,27 +733,23 @@ export type SessionOmit<
     ExtArgs["result"]["session"]
 >;
 export type SessionInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type SessionIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type SessionIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $SessionPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Session";
     objects: {
@@ -867,26 +773,20 @@ export type $SessionPayload<
     composites: {};
 };
 
-export type SessionGetPayload<
-    S extends boolean | null | undefined | SessionDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$SessionPayload, S>;
+export type SessionGetPayload<S extends boolean | null | undefined | SessionDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$SessionPayload, S>;
 
 export type SessionCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<SessionFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: SessionCountAggregateInputType | true;
 };
 
 export interface SessionDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
-    [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["Session"];
-        meta: { name: "Session" };
-    };
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>["model"]["Session"]; meta: { name: "Session" } };
     /**
      * Find zero or one Session that matches the filter.
      * @param {SessionFindUniqueArgs} args - Arguments to find a Session
@@ -1276,10 +1176,7 @@ export interface SessionDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      SessionCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], SessionCountAggregateOutputType>
             : number
     >;
 
@@ -1354,12 +1251,7 @@ export interface SessionDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1389,11 +1281,8 @@ export interface SessionDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, SessionGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetSessionGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, SessionGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetSessionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the Session model
      */
@@ -1409,8 +1298,7 @@ export interface SessionDelegate<
 export interface Prisma__SessionClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1435,14 +1323,8 @@ export interface Prisma__SessionClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1450,10 +1332,7 @@ export interface Prisma__SessionClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1461,9 +1340,7 @@ export interface Prisma__SessionClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1487,8 +1364,7 @@ export interface SessionFieldRefs {
  * Session findUnique
  */
 export type SessionFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1512,8 +1388,7 @@ export type SessionFindUniqueArgs<
  * Session findUniqueOrThrow
  */
 export type SessionFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1537,8 +1412,7 @@ export type SessionFindUniqueOrThrowArgs<
  * Session findFirst
  */
 export type SessionFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1561,9 +1435,7 @@ export type SessionFindFirstArgs<
      *
      * Determine the order of Sessions to fetch.
      */
-    orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
+    orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1594,8 +1466,7 @@ export type SessionFindFirstArgs<
  * Session findFirstOrThrow
  */
 export type SessionFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1618,9 +1489,7 @@ export type SessionFindFirstOrThrowArgs<
      *
      * Determine the order of Sessions to fetch.
      */
-    orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
+    orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1651,8 +1520,7 @@ export type SessionFindFirstOrThrowArgs<
  * Session findMany
  */
 export type SessionFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1675,9 +1543,7 @@ export type SessionFindManyArgs<
      *
      * Determine the order of Sessions to fetch.
      */
-    orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
+    orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1703,8 +1569,7 @@ export type SessionFindManyArgs<
  * Session create
  */
 export type SessionCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1721,18 +1586,14 @@ export type SessionCreateArgs<
     /**
      * The data needed to create a Session.
      */
-    data: Prisma.XOR<
-        Prisma.SessionCreateInput,
-        Prisma.SessionUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.SessionCreateInput, Prisma.SessionUncheckedCreateInput>;
 };
 
 /**
  * Session createMany
  */
 export type SessionCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Sessions.
@@ -1745,8 +1606,7 @@ export type SessionCreateManyArgs<
  * Session createManyAndReturn
  */
 export type SessionCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1771,8 +1631,7 @@ export type SessionCreateManyAndReturnArgs<
  * Session update
  */
 export type SessionUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1789,10 +1648,7 @@ export type SessionUpdateArgs<
     /**
      * The data needed to update a Session.
      */
-    data: Prisma.XOR<
-        Prisma.SessionUpdateInput,
-        Prisma.SessionUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.SessionUpdateInput, Prisma.SessionUncheckedUpdateInput>;
     /**
      * Choose, which Session to update.
      */
@@ -1803,16 +1659,12 @@ export type SessionUpdateArgs<
  * Session updateMany
  */
 export type SessionUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Sessions.
      */
-    data: Prisma.XOR<
-        Prisma.SessionUpdateManyMutationInput,
-        Prisma.SessionUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.SessionUpdateManyMutationInput, Prisma.SessionUncheckedUpdateManyInput>;
     /**
      * Filter which Sessions to update
      */
@@ -1827,8 +1679,7 @@ export type SessionUpdateManyArgs<
  * Session updateManyAndReturn
  */
 export type SessionUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1841,10 +1692,7 @@ export type SessionUpdateManyAndReturnArgs<
     /**
      * The data used to update Sessions.
      */
-    data: Prisma.XOR<
-        Prisma.SessionUpdateManyMutationInput,
-        Prisma.SessionUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.SessionUpdateManyMutationInput, Prisma.SessionUncheckedUpdateManyInput>;
     /**
      * Filter which Sessions to update
      */
@@ -1863,8 +1711,7 @@ export type SessionUpdateManyAndReturnArgs<
  * Session upsert
  */
 export type SessionUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1885,25 +1732,18 @@ export type SessionUpsertArgs<
     /**
      * In case the Session found by the `where` argument doesn't exist, create a new Session with this data.
      */
-    create: Prisma.XOR<
-        Prisma.SessionCreateInput,
-        Prisma.SessionUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.SessionCreateInput, Prisma.SessionUncheckedCreateInput>;
     /**
      * In case the Session was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.SessionUpdateInput,
-        Prisma.SessionUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.SessionUpdateInput, Prisma.SessionUncheckedUpdateInput>;
 };
 
 /**
  * Session delete
  */
 export type SessionDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -1927,8 +1767,7 @@ export type SessionDeleteArgs<
  * Session deleteMany
  */
 export type SessionDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Sessions to delete
@@ -1944,8 +1783,7 @@ export type SessionDeleteManyArgs<
  * Session without action
  */
 export type SessionDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session

@@ -37,10 +37,8 @@ export * from "./enums";
 export const PrismaClient = $Class.getPrismaClientClass();
 export type PrismaClient<
     LogOpts extends Prisma.LogLevel = never,
-    OmitOpts extends Prisma.PrismaClientOptions["omit"] =
-        Prisma.PrismaClientOptions["omit"],
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"],
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>;
 export { Prisma };
 
@@ -189,3 +187,13 @@ export type I3TemplateVariant = Prisma.I3TemplateVariantModel;
  *
  */
 export type I3TemplateVariant_D4H = Prisma.I3TemplateVariant_D4HModel;
+/**
+ * Model FormInstance
+ *
+ */
+export type FormInstance = Prisma.FormInstanceModel;
+/**
+ * Model FormInstanceItem
+ *
+ */
+export type FormInstanceItem = Prisma.FormInstanceItemModel;

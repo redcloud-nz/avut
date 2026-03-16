@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model User
  *
  */
-export type UserModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$UserPayload>;
+export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayload>;
 
 export type AggregateUser = {
     _count: UserCountAggregateOutputType | null;
@@ -87,8 +86,7 @@ export type UserCountAggregateInputType = {
 };
 
 export type UserAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which User to aggregate.
@@ -99,9 +97,7 @@ export type UserAggregateArgs<
      *
      * Determine the order of Users to fetch.
      */
-    orderBy?:
-        | Prisma.UserOrderByWithRelationInput
-        | Prisma.UserOrderByWithRelationInput[];
+    orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -149,13 +145,10 @@ export type GetUserAggregateType<T extends UserAggregateArgs> = {
 };
 
 export type UserGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.UserWhereInput;
-    orderBy?:
-        | Prisma.UserOrderByWithAggregationInput
-        | Prisma.UserOrderByWithAggregationInput[];
+    orderBy?: Prisma.UserOrderByWithAggregationInput | Prisma.UserOrderByWithAggregationInput[];
     by: Prisma.UserScalarFieldEnum[] | Prisma.UserScalarFieldEnum;
     having?: Prisma.UserScalarWhereWithAggregatesInput;
     take?: number;
@@ -208,6 +201,7 @@ export type UserWhereInput = {
     invitations?: Prisma.OrganizationInvitationListRelationFilter;
     d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
     authoredNotes?: Prisma.NoteListRelationFilter;
+    formInstances?: Prisma.FormInstanceListRelationFilter;
     logEntries?: Prisma.OrganizationLogEntryListRelationFilter;
     personnel?: Prisma.PersonListRelationFilter;
 };
@@ -227,6 +221,7 @@ export type UserOrderByWithRelationInput = {
     invitations?: Prisma.OrganizationInvitationOrderByRelationAggregateInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenOrderByRelationAggregateInput;
     authoredNotes?: Prisma.NoteOrderByRelationAggregateInput;
+    formInstances?: Prisma.FormInstanceOrderByRelationAggregateInput;
     logEntries?: Prisma.OrganizationLogEntryOrderByRelationAggregateInput;
     personnel?: Prisma.PersonOrderByRelationAggregateInput;
 };
@@ -250,6 +245,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
         invitations?: Prisma.OrganizationInvitationListRelationFilter;
         d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
         authoredNotes?: Prisma.NoteListRelationFilter;
+        formInstances?: Prisma.FormInstanceListRelationFilter;
         logEntries?: Prisma.OrganizationLogEntryListRelationFilter;
         personnel?: Prisma.PersonListRelationFilter;
     },
@@ -270,13 +266,9 @@ export type UserOrderByWithAggregationInput = {
 };
 
 export type UserScalarWhereWithAggregatesInput = {
-    AND?:
-        | Prisma.UserScalarWhereWithAggregatesInput
-        | Prisma.UserScalarWhereWithAggregatesInput[];
+    AND?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
     OR?: Prisma.UserScalarWhereWithAggregatesInput[];
-    NOT?:
-        | Prisma.UserScalarWhereWithAggregatesInput
-        | Prisma.UserScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"User"> | string;
     name?: Prisma.StringWithAggregatesFilter<"User"> | string;
     email?: Prisma.StringWithAggregatesFilter<"User"> | string;
@@ -301,6 +293,7 @@ export type UserCreateInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -320,6 +313,7 @@ export type UserUncheckedCreateInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -339,6 +333,7 @@ export type UserUpdateInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -358,6 +353,7 @@ export type UserUncheckedUpdateInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -686,6 +682,34 @@ export type UserUpdateOneRequiredWithoutAuthoredNotesNestedInput = {
     >;
 };
 
+export type UserCreateNestedOneWithoutFormInstancesInput = {
+    create?: Prisma.XOR<
+        Prisma.UserCreateWithoutFormInstancesInput,
+        Prisma.UserUncheckedCreateWithoutFormInstancesInput
+    >;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutFormInstancesInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutFormInstancesNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.UserCreateWithoutFormInstancesInput,
+        Prisma.UserUncheckedCreateWithoutFormInstancesInput
+    >;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutFormInstancesInput;
+    upsert?: Prisma.UserUpsertWithoutFormInstancesInput;
+    disconnect?: Prisma.UserWhereInput | boolean;
+    delete?: Prisma.UserWhereInput | boolean;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.UserUpdateToOneWithWhereWithoutFormInstancesInput,
+            Prisma.UserUpdateWithoutFormInstancesInput
+        >,
+        Prisma.UserUncheckedUpdateWithoutFormInstancesInput
+    >;
+};
+
 export type UserCreateWithoutSessionsInput = {
     id: string;
     name: string;
@@ -700,6 +724,7 @@ export type UserCreateWithoutSessionsInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -718,6 +743,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -764,6 +790,7 @@ export type UserUpdateWithoutSessionsInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -782,6 +809,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -800,6 +828,7 @@ export type UserCreateWithoutAccountsInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -818,6 +847,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -864,6 +894,7 @@ export type UserUpdateWithoutAccountsInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -882,6 +913,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -900,6 +932,7 @@ export type UserCreateWithoutTeamUsersInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -918,6 +951,7 @@ export type UserUncheckedCreateWithoutTeamUsersInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -964,6 +998,7 @@ export type UserUpdateWithoutTeamUsersInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -982,6 +1017,7 @@ export type UserUncheckedUpdateWithoutTeamUsersInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1000,6 +1036,7 @@ export type UserCreateWithoutOrganizationUsersInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1018,6 +1055,7 @@ export type UserUncheckedCreateWithoutOrganizationUsersInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1064,6 +1102,7 @@ export type UserUpdateWithoutOrganizationUsersInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1082,6 +1121,7 @@ export type UserUncheckedUpdateWithoutOrganizationUsersInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1100,6 +1140,7 @@ export type UserCreateWithoutInvitationsInput = {
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1118,6 +1159,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1164,6 +1206,7 @@ export type UserUpdateWithoutInvitationsInput = {
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1182,6 +1225,7 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1201,6 +1245,7 @@ export type UserCreateWithoutLogEntriesInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
 
@@ -1219,6 +1264,7 @@ export type UserUncheckedCreateWithoutLogEntriesInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
 
@@ -1265,6 +1311,7 @@ export type UserUpdateWithoutLogEntriesInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
 
@@ -1283,6 +1330,7 @@ export type UserUncheckedUpdateWithoutLogEntriesInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
 
@@ -1300,6 +1348,7 @@ export type UserCreateWithoutD4hAccessTokensInput = {
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1318,6 +1367,7 @@ export type UserUncheckedCreateWithoutD4hAccessTokensInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1364,6 +1414,7 @@ export type UserUpdateWithoutD4hAccessTokensInput = {
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1382,6 +1433,7 @@ export type UserUncheckedUpdateWithoutD4hAccessTokensInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1401,6 +1453,7 @@ export type UserCreateWithoutPersonnelInput = {
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
 };
 
@@ -1419,6 +1472,7 @@ export type UserUncheckedCreateWithoutPersonnelInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
 };
 
@@ -1465,6 +1519,7 @@ export type UserUpdateWithoutPersonnelInput = {
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
 };
 
@@ -1483,6 +1538,7 @@ export type UserUncheckedUpdateWithoutPersonnelInput = {
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
 };
 
@@ -1500,6 +1556,7 @@ export type UserCreateWithoutAuthoredNotesInput = {
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
 };
@@ -1518,6 +1575,7 @@ export type UserUncheckedCreateWithoutAuthoredNotesInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
     personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
 };
@@ -1564,6 +1622,7 @@ export type UserUpdateWithoutAuthoredNotesInput = {
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
 };
@@ -1582,6 +1641,111 @@ export type UserUncheckedUpdateWithoutAuthoredNotesInput = {
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
+    personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutFormInstancesInput = {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified?: boolean;
+    image?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+    accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
+    organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
+    invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
+    authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
+    logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutUserInput;
+    personnel?: Prisma.PersonCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutFormInstancesInput = {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified?: boolean;
+    image?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+    accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
+    organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutUserInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+    authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutUserInput;
+    personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutFormInstancesInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.UserCreateWithoutFormInstancesInput,
+        Prisma.UserUncheckedCreateWithoutFormInstancesInput
+    >;
+};
+
+export type UserUpsertWithoutFormInstancesInput = {
+    update: Prisma.XOR<
+        Prisma.UserUpdateWithoutFormInstancesInput,
+        Prisma.UserUncheckedUpdateWithoutFormInstancesInput
+    >;
+    create: Prisma.XOR<
+        Prisma.UserCreateWithoutFormInstancesInput,
+        Prisma.UserUncheckedCreateWithoutFormInstancesInput
+    >;
+    where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutFormInstancesInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<
+        Prisma.UserUpdateWithoutFormInstancesInput,
+        Prisma.UserUncheckedUpdateWithoutFormInstancesInput
+    >;
+};
+
+export type UserUpdateWithoutFormInstancesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+    accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
+    organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
+    invitations?: Prisma.OrganizationInvitationUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
+    authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutUserNestedInput;
+    personnel?: Prisma.PersonUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutFormInstancesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+    accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
+    organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutUserNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+    authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
     logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutUserNestedInput;
     personnel?: Prisma.PersonUncheckedUpdateManyWithoutUserNestedInput;
 };
@@ -1598,13 +1762,13 @@ export type UserCountOutputType = {
     invitations: number;
     d4hAccessTokens: number;
     authoredNotes: number;
+    formInstances: number;
     logEntries: number;
     personnel: number;
 };
 
 export type UserCountOutputTypeSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs;
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs;
@@ -1613,6 +1777,7 @@ export type UserCountOutputTypeSelect<
     invitations?: boolean | UserCountOutputTypeCountInvitationsArgs;
     d4hAccessTokens?: boolean | UserCountOutputTypeCountD4hAccessTokensArgs;
     authoredNotes?: boolean | UserCountOutputTypeCountAuthoredNotesArgs;
+    formInstances?: boolean | UserCountOutputTypeCountFormInstancesArgs;
     logEntries?: boolean | UserCountOutputTypeCountLogEntriesArgs;
     personnel?: boolean | UserCountOutputTypeCountPersonnelArgs;
 };
@@ -1621,8 +1786,7 @@ export type UserCountOutputTypeSelect<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the UserCountOutputType
@@ -1634,8 +1798,7 @@ export type UserCountOutputTypeDefaultArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountSessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SessionWhereInput;
 };
@@ -1644,8 +1807,7 @@ export type UserCountOutputTypeCountSessionsArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountAccountsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.AccountWhereInput;
 };
@@ -1654,8 +1816,7 @@ export type UserCountOutputTypeCountAccountsArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountTeamUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.TeamUserWhereInput;
 };
@@ -1664,8 +1825,7 @@ export type UserCountOutputTypeCountTeamUsersArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountOrganizationUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationUserWhereInput;
 };
@@ -1674,8 +1834,7 @@ export type UserCountOutputTypeCountOrganizationUsersArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountInvitationsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationInvitationWhereInput;
 };
@@ -1684,8 +1843,7 @@ export type UserCountOutputTypeCountInvitationsArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountD4hAccessTokensArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.D4hAccessTokenWhereInput;
 };
@@ -1694,8 +1852,7 @@ export type UserCountOutputTypeCountD4hAccessTokensArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountAuthoredNotesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.NoteWhereInput;
 };
@@ -1703,9 +1860,17 @@ export type UserCountOutputTypeCountAuthoredNotesArgs<
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountFormInstancesArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.FormInstanceWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountLogEntriesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationLogEntryWhereInput;
 };
@@ -1714,15 +1879,13 @@ export type UserCountOutputTypeCountLogEntriesArgs<
  * UserCountOutputType without action
  */
 export type UserCountOutputTypeCountPersonnelArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.PersonWhereInput;
 };
 
 export type UserSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1735,12 +1898,11 @@ export type UserSelect<
         sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
         accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
         teamUsers?: boolean | Prisma.User$teamUsersArgs<ExtArgs>;
-        organizationUsers?:
-            | boolean
-            | Prisma.User$organizationUsersArgs<ExtArgs>;
+        organizationUsers?: boolean | Prisma.User$organizationUsersArgs<ExtArgs>;
         invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
         d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
         authoredNotes?: boolean | Prisma.User$authoredNotesArgs<ExtArgs>;
+        formInstances?: boolean | Prisma.User$formInstancesArgs<ExtArgs>;
         logEntries?: boolean | Prisma.User$logEntriesArgs<ExtArgs>;
         personnel?: boolean | Prisma.User$personnelArgs<ExtArgs>;
         _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
@@ -1749,8 +1911,7 @@ export type UserSelect<
 >;
 
 export type UserSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1765,8 +1926,7 @@ export type UserSelectCreateManyAndReturn<
 >;
 
 export type UserSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1791,21 +1951,13 @@ export type UserSelectScalar = {
 };
 
 export type UserOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-    | "id"
-    | "name"
-    | "email"
-    | "emailVerified"
-    | "image"
-    | "createdAt"
-    | "updatedAt",
+    "id" | "name" | "email" | "emailVerified" | "image" | "createdAt" | "updatedAt",
     ExtArgs["result"]["user"]
 >;
 export type UserInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
     accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
@@ -1814,22 +1966,20 @@ export type UserInclude<
     invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
     d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
     authoredNotes?: boolean | Prisma.User$authoredNotesArgs<ExtArgs>;
+    formInstances?: boolean | Prisma.User$formInstancesArgs<ExtArgs>;
     logEntries?: boolean | Prisma.User$logEntriesArgs<ExtArgs>;
     personnel?: boolean | Prisma.User$personnelArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type UserIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {};
 export type UserIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {};
 
 export type $UserPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "User";
     objects: {
@@ -1840,6 +1990,7 @@ export type $UserPayload<
         invitations: Prisma.$OrganizationInvitationPayload<ExtArgs>[];
         d4hAccessTokens: Prisma.$D4hAccessTokenPayload<ExtArgs>[];
         authoredNotes: Prisma.$NotePayload<ExtArgs>[];
+        formInstances: Prisma.$FormInstancePayload<ExtArgs>[];
         logEntries: Prisma.$OrganizationLogEntryPayload<ExtArgs>[];
         personnel: Prisma.$PersonPayload<ExtArgs>[];
     };
@@ -1858,26 +2009,20 @@ export type $UserPayload<
     composites: {};
 };
 
-export type UserGetPayload<
-    S extends boolean | null | undefined | UserDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$UserPayload, S>;
+export type UserGetPayload<S extends boolean | null | undefined | UserDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$UserPayload, S>;
 
 export type UserCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<UserFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: UserCountAggregateInputType | true;
 };
 
 export interface UserDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
-    [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["User"];
-        meta: { name: "User" };
-    };
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>["model"]["User"]; meta: { name: "User" } };
     /**
      * Find zero or one User that matches the filter.
      * @param {UserFindUniqueArgs} args - Arguments to find a User
@@ -2267,10 +2412,7 @@ export interface UserDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      UserCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], UserCountAggregateOutputType>
             : number
     >;
 
@@ -2345,12 +2487,7 @@ export interface UserDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -2380,11 +2517,8 @@ export interface UserDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, UserGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetUserGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, UserGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetUserGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the User model
      */
@@ -2400,8 +2534,7 @@ export interface UserDelegate<
 export interface Prisma__UserClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -2438,9 +2571,7 @@ export interface Prisma__UserClient<
           >
         | Null
     >;
-    organizationUsers<
-        T extends Prisma.User$organizationUsersArgs<ExtArgs> = {},
-    >(
+    organizationUsers<T extends Prisma.User$organizationUsersArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.User$organizationUsersArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
@@ -2484,6 +2615,17 @@ export interface Prisma__UserClient<
           >
         | Null
     >;
+    formInstances<T extends Prisma.User$formInstancesArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.User$formInstancesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$FormInstancePayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
     logEntries<T extends Prisma.User$logEntriesArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.User$logEntriesArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
@@ -2513,14 +2655,8 @@ export interface Prisma__UserClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -2528,10 +2664,7 @@ export interface Prisma__UserClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -2539,9 +2672,7 @@ export interface Prisma__UserClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -2562,8 +2693,7 @@ export interface UserFieldRefs {
  * User findUnique
  */
 export type UserFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2587,8 +2717,7 @@ export type UserFindUniqueArgs<
  * User findUniqueOrThrow
  */
 export type UserFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2612,8 +2741,7 @@ export type UserFindUniqueOrThrowArgs<
  * User findFirst
  */
 export type UserFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2636,9 +2764,7 @@ export type UserFindFirstArgs<
      *
      * Determine the order of Users to fetch.
      */
-    orderBy?:
-        | Prisma.UserOrderByWithRelationInput
-        | Prisma.UserOrderByWithRelationInput[];
+    orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2669,8 +2795,7 @@ export type UserFindFirstArgs<
  * User findFirstOrThrow
  */
 export type UserFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2693,9 +2818,7 @@ export type UserFindFirstOrThrowArgs<
      *
      * Determine the order of Users to fetch.
      */
-    orderBy?:
-        | Prisma.UserOrderByWithRelationInput
-        | Prisma.UserOrderByWithRelationInput[];
+    orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2726,8 +2849,7 @@ export type UserFindFirstOrThrowArgs<
  * User findMany
  */
 export type UserFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2750,9 +2872,7 @@ export type UserFindManyArgs<
      *
      * Determine the order of Users to fetch.
      */
-    orderBy?:
-        | Prisma.UserOrderByWithRelationInput
-        | Prisma.UserOrderByWithRelationInput[];
+    orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2778,8 +2898,7 @@ export type UserFindManyArgs<
  * User create
  */
 export type UserCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2803,8 +2922,7 @@ export type UserCreateArgs<
  * User createMany
  */
 export type UserCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Users.
@@ -2817,8 +2935,7 @@ export type UserCreateManyArgs<
  * User createManyAndReturn
  */
 export type UserCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2839,8 +2956,7 @@ export type UserCreateManyAndReturnArgs<
  * User update
  */
 export type UserUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2868,16 +2984,12 @@ export type UserUpdateArgs<
  * User updateMany
  */
 export type UserUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Users.
      */
-    data: Prisma.XOR<
-        Prisma.UserUpdateManyMutationInput,
-        Prisma.UserUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.UserUpdateManyMutationInput, Prisma.UserUncheckedUpdateManyInput>;
     /**
      * Filter which Users to update
      */
@@ -2892,8 +3004,7 @@ export type UserUpdateManyArgs<
  * User updateManyAndReturn
  */
 export type UserUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2906,10 +3017,7 @@ export type UserUpdateManyAndReturnArgs<
     /**
      * The data used to update Users.
      */
-    data: Prisma.XOR<
-        Prisma.UserUpdateManyMutationInput,
-        Prisma.UserUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.UserUpdateManyMutationInput, Prisma.UserUncheckedUpdateManyInput>;
     /**
      * Filter which Users to update
      */
@@ -2924,8 +3032,7 @@ export type UserUpdateManyAndReturnArgs<
  * User upsert
  */
 export type UserUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2957,8 +3064,7 @@ export type UserUpsertArgs<
  * User delete
  */
 export type UserDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User
@@ -2982,8 +3088,7 @@ export type UserDeleteArgs<
  * User deleteMany
  */
 export type UserDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Users to delete
@@ -2999,8 +3104,7 @@ export type UserDeleteManyArgs<
  * User.sessions
  */
 export type User$sessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Session
@@ -3015,9 +3119,7 @@ export type User$sessionsArgs<
      */
     include?: Prisma.SessionInclude<ExtArgs> | null;
     where?: Prisma.SessionWhereInput;
-    orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
+    orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[];
     cursor?: Prisma.SessionWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -3028,8 +3130,7 @@ export type User$sessionsArgs<
  * User.accounts
  */
 export type User$accountsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -3044,9 +3145,7 @@ export type User$accountsArgs<
      */
     include?: Prisma.AccountInclude<ExtArgs> | null;
     where?: Prisma.AccountWhereInput;
-    orderBy?:
-        | Prisma.AccountOrderByWithRelationInput
-        | Prisma.AccountOrderByWithRelationInput[];
+    orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
     cursor?: Prisma.AccountWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -3057,8 +3156,7 @@ export type User$accountsArgs<
  * User.teamUsers
  */
 export type User$teamUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamUser
@@ -3073,23 +3171,18 @@ export type User$teamUsersArgs<
      */
     include?: Prisma.TeamUserInclude<ExtArgs> | null;
     where?: Prisma.TeamUserWhereInput;
-    orderBy?:
-        | Prisma.TeamUserOrderByWithRelationInput
-        | Prisma.TeamUserOrderByWithRelationInput[];
+    orderBy?: Prisma.TeamUserOrderByWithRelationInput | Prisma.TeamUserOrderByWithRelationInput[];
     cursor?: Prisma.TeamUserWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.TeamUserScalarFieldEnum
-        | Prisma.TeamUserScalarFieldEnum[];
+    distinct?: Prisma.TeamUserScalarFieldEnum | Prisma.TeamUserScalarFieldEnum[];
 };
 
 /**
  * User.organizationUsers
  */
 export type User$organizationUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -3110,17 +3203,14 @@ export type User$organizationUsersArgs<
     cursor?: Prisma.OrganizationUserWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.OrganizationUserScalarFieldEnum
-        | Prisma.OrganizationUserScalarFieldEnum[];
+    distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
 /**
  * User.invitations
  */
 export type User$invitationsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -3150,8 +3240,7 @@ export type User$invitationsArgs<
  * User.d4hAccessTokens
  */
 export type User$d4hAccessTokensArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -3172,17 +3261,14 @@ export type User$d4hAccessTokensArgs<
     cursor?: Prisma.D4hAccessTokenWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.D4hAccessTokenScalarFieldEnum
-        | Prisma.D4hAccessTokenScalarFieldEnum[];
+    distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**
  * User.authoredNotes
  */
 export type User$authoredNotesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -3197,9 +3283,7 @@ export type User$authoredNotesArgs<
      */
     include?: Prisma.NoteInclude<ExtArgs> | null;
     where?: Prisma.NoteWhereInput;
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     cursor?: Prisma.NoteWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -3207,11 +3291,38 @@ export type User$authoredNotesArgs<
 };
 
 /**
+ * User.formInstances
+ */
+export type User$formInstancesArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the FormInstance
+     */
+    select?: Prisma.FormInstanceSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the FormInstance
+     */
+    omit?: Prisma.FormInstanceOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.FormInstanceInclude<ExtArgs> | null;
+    where?: Prisma.FormInstanceWhereInput;
+    orderBy?:
+        | Prisma.FormInstanceOrderByWithRelationInput
+        | Prisma.FormInstanceOrderByWithRelationInput[];
+    cursor?: Prisma.FormInstanceWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.FormInstanceScalarFieldEnum | Prisma.FormInstanceScalarFieldEnum[];
+};
+
+/**
  * User.logEntries
  */
 export type User$logEntriesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -3241,8 +3352,7 @@ export type User$logEntriesArgs<
  * User.personnel
  */
 export type User$personnelArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Person
@@ -3257,9 +3367,7 @@ export type User$personnelArgs<
      */
     include?: Prisma.PersonInclude<ExtArgs> | null;
     where?: Prisma.PersonWhereInput;
-    orderBy?:
-        | Prisma.PersonOrderByWithRelationInput
-        | Prisma.PersonOrderByWithRelationInput[];
+    orderBy?: Prisma.PersonOrderByWithRelationInput | Prisma.PersonOrderByWithRelationInput[];
     cursor?: Prisma.PersonWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -3270,8 +3378,7 @@ export type User$personnelArgs<
  * User without action
  */
 export type UserDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the User

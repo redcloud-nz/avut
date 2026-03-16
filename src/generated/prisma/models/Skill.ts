@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Skill
  *
  */
-export type SkillModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$SkillPayload>;
+export type SkillModel = runtime.Types.Result.DefaultSelection<Prisma.$SkillPayload>;
 
 export type AggregateSkill = {
     _count: SkillCountAggregateOutputType | null;
@@ -143,8 +142,7 @@ export type SkillCountAggregateInputType = {
 };
 
 export type SkillAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Skill to aggregate.
@@ -155,9 +153,7 @@ export type SkillAggregateArgs<
      *
      * Determine the order of Skills to fetch.
      */
-    orderBy?:
-        | Prisma.SkillOrderByWithRelationInput
-        | Prisma.SkillOrderByWithRelationInput[];
+    orderBy?: Prisma.SkillOrderByWithRelationInput | Prisma.SkillOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -217,13 +213,10 @@ export type GetSkillAggregateType<T extends SkillAggregateArgs> = {
 };
 
 export type SkillGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillWhereInput;
-    orderBy?:
-        | Prisma.SkillOrderByWithAggregationInput
-        | Prisma.SkillOrderByWithAggregationInput[];
+    orderBy?: Prisma.SkillOrderByWithAggregationInput | Prisma.SkillOrderByWithAggregationInput[];
     by: Prisma.SkillScalarFieldEnum[] | Prisma.SkillScalarFieldEnum;
     having?: Prisma.SkillScalarWhereWithAggregatesInput;
     take?: number;
@@ -291,10 +284,7 @@ export type SkillWhereInput = {
         Prisma.SkillPackageScalarRelationFilter,
         Prisma.SkillPackageWhereInput
     >;
-    skillGroup?: Prisma.XOR<
-        Prisma.SkillGroupScalarRelationFilter,
-        Prisma.SkillGroupWhereInput
-    >;
+    skillGroup?: Prisma.XOR<Prisma.SkillGroupScalarRelationFilter, Prisma.SkillGroupWhereInput>;
     checks?: Prisma.SkillCheckListRelationFilter;
     sessions?: Prisma.SkillCheckSessionListRelationFilter;
     subscriptionOverrides?: Prisma.SkillOverrideListRelationFilter;
@@ -345,10 +335,7 @@ export type SkillWhereUniqueInput = Prisma.AtLeast<
             Prisma.SkillPackageScalarRelationFilter,
             Prisma.SkillPackageWhereInput
         >;
-        skillGroup?: Prisma.XOR<
-            Prisma.SkillGroupScalarRelationFilter,
-            Prisma.SkillGroupWhereInput
-        >;
+        skillGroup?: Prisma.XOR<Prisma.SkillGroupScalarRelationFilter, Prisma.SkillGroupWhereInput>;
         checks?: Prisma.SkillCheckListRelationFilter;
         sessions?: Prisma.SkillCheckSessionListRelationFilter;
         subscriptionOverrides?: Prisma.SkillOverrideListRelationFilter;
@@ -379,13 +366,9 @@ export type SkillOrderByWithAggregationInput = {
 };
 
 export type SkillScalarWhereWithAggregatesInput = {
-    AND?:
-        | Prisma.SkillScalarWhereWithAggregatesInput
-        | Prisma.SkillScalarWhereWithAggregatesInput[];
+    AND?: Prisma.SkillScalarWhereWithAggregatesInput | Prisma.SkillScalarWhereWithAggregatesInput[];
     OR?: Prisma.SkillScalarWhereWithAggregatesInput[];
-    NOT?:
-        | Prisma.SkillScalarWhereWithAggregatesInput
-        | Prisma.SkillScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.SkillScalarWhereWithAggregatesInput | Prisma.SkillScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"Skill"> | string;
     skillPackageId?: Prisma.StringWithAggregatesFilter<"Skill"> | string;
     skillGroupId?: Prisma.StringWithAggregatesFilter<"Skill"> | string;
@@ -397,9 +380,7 @@ export type SkillScalarWhereWithAggregatesInput = {
     frequency?: Prisma.IntWithAggregatesFilter<"Skill"> | number;
     defaultInclude?: Prisma.BoolWithAggregatesFilter<"Skill"> | boolean;
     defaultRequired?: Prisma.BoolWithAggregatesFilter<"Skill"> | boolean;
-    status?:
-        | Prisma.EnumRecordStatusWithAggregatesFilter<"Skill">
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusWithAggregatesFilter<"Skill"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Skill"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Skill"> | Date | string;
 };
@@ -454,9 +435,7 @@ export type SkillUpdateInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
@@ -478,9 +457,7 @@ export type SkillUncheckedUpdateInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
@@ -515,9 +492,7 @@ export type SkillUpdateManyMutationInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -534,9 +509,7 @@ export type SkillUncheckedUpdateManyInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -975,9 +948,7 @@ export type SkillCreateOrConnectWithoutSkillPackageInput = {
 };
 
 export type SkillCreateManySkillPackageInputEnvelope = {
-    data:
-        | Prisma.SkillCreateManySkillPackageInput
-        | Prisma.SkillCreateManySkillPackageInput[];
+    data: Prisma.SkillCreateManySkillPackageInput | Prisma.SkillCreateManySkillPackageInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1076,9 +1047,7 @@ export type SkillCreateOrConnectWithoutSkillGroupInput = {
 };
 
 export type SkillCreateManySkillGroupInputEnvelope = {
-    data:
-        | Prisma.SkillCreateManySkillGroupInput
-        | Prisma.SkillCreateManySkillGroupInput[];
+    data: Prisma.SkillCreateManySkillGroupInput | Prisma.SkillCreateManySkillGroupInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1260,9 +1229,7 @@ export type SkillUpdateWithoutChecksInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
@@ -1283,9 +1250,7 @@ export type SkillUncheckedUpdateWithoutChecksInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     sessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutSkillsNestedInput;
@@ -1368,9 +1333,7 @@ export type SkillUpdateWithoutSubscriptionOverridesInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
@@ -1391,9 +1354,7 @@ export type SkillUncheckedUpdateWithoutSubscriptionOverridesInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
@@ -1426,9 +1387,7 @@ export type SkillUpdateWithoutSkillPackageInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillGroup?: Prisma.SkillGroupUpdateOneRequiredWithoutSkillsNestedInput;
@@ -1448,9 +1407,7 @@ export type SkillUncheckedUpdateWithoutSkillPackageInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
@@ -1469,9 +1426,7 @@ export type SkillUncheckedUpdateManyWithoutSkillPackageInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1502,9 +1457,7 @@ export type SkillUpdateWithoutSkillGroupInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
@@ -1524,9 +1477,7 @@ export type SkillUncheckedUpdateWithoutSkillGroupInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
@@ -1545,9 +1496,7 @@ export type SkillUncheckedUpdateManyWithoutSkillGroupInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1562,9 +1511,7 @@ export type SkillUpdateWithoutSessionsInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     skillPackage?: Prisma.SkillPackageUpdateOneRequiredWithoutSkillsNestedInput;
@@ -1585,9 +1532,7 @@ export type SkillUncheckedUpdateWithoutSessionsInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     checks?: Prisma.SkillCheckUncheckedUpdateManyWithoutSkillNestedInput;
@@ -1606,9 +1551,7 @@ export type SkillUncheckedUpdateManyWithoutSessionsInput = {
     frequency?: Prisma.IntFieldUpdateOperationsInput | number;
     defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     defaultRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    status?:
-        | Prisma.EnumRecordStatusFieldUpdateOperationsInput
-        | $Enums.RecordStatus;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1624,22 +1567,18 @@ export type SkillCountOutputType = {
 };
 
 export type SkillCountOutputTypeSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     checks?: boolean | SkillCountOutputTypeCountChecksArgs;
     sessions?: boolean | SkillCountOutputTypeCountSessionsArgs;
-    subscriptionOverrides?:
-        | boolean
-        | SkillCountOutputTypeCountSubscriptionOverridesArgs;
+    subscriptionOverrides?: boolean | SkillCountOutputTypeCountSubscriptionOverridesArgs;
 };
 
 /**
  * SkillCountOutputType without action
  */
 export type SkillCountOutputTypeDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCountOutputType
@@ -1651,8 +1590,7 @@ export type SkillCountOutputTypeDefaultArgs<
  * SkillCountOutputType without action
  */
 export type SkillCountOutputTypeCountChecksArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillCheckWhereInput;
 };
@@ -1661,8 +1599,7 @@ export type SkillCountOutputTypeCountChecksArgs<
  * SkillCountOutputType without action
  */
 export type SkillCountOutputTypeCountSessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillCheckSessionWhereInput;
 };
@@ -1671,15 +1608,13 @@ export type SkillCountOutputTypeCountSessionsArgs<
  * SkillCountOutputType without action
  */
 export type SkillCountOutputTypeCountSubscriptionOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillOverrideWhereInput;
 };
 
 export type SkillSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1700,17 +1635,14 @@ export type SkillSelect<
         skillGroup?: boolean | Prisma.SkillGroupDefaultArgs<ExtArgs>;
         checks?: boolean | Prisma.Skill$checksArgs<ExtArgs>;
         sessions?: boolean | Prisma.Skill$sessionsArgs<ExtArgs>;
-        subscriptionOverrides?:
-            | boolean
-            | Prisma.Skill$subscriptionOverridesArgs<ExtArgs>;
+        subscriptionOverrides?: boolean | Prisma.Skill$subscriptionOverridesArgs<ExtArgs>;
         _count?: boolean | Prisma.SkillCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["skill"]
 >;
 
 export type SkillSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1734,8 +1666,7 @@ export type SkillSelectCreateManyAndReturn<
 >;
 
 export type SkillSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1776,8 +1707,7 @@ export type SkillSelectScalar = {
 };
 
 export type SkillOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "skillPackageId"
@@ -1796,36 +1726,30 @@ export type SkillOmit<
     ExtArgs["result"]["skill"]
 >;
 export type SkillInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
     skillGroup?: boolean | Prisma.SkillGroupDefaultArgs<ExtArgs>;
     checks?: boolean | Prisma.Skill$checksArgs<ExtArgs>;
     sessions?: boolean | Prisma.Skill$sessionsArgs<ExtArgs>;
-    subscriptionOverrides?:
-        | boolean
-        | Prisma.Skill$subscriptionOverridesArgs<ExtArgs>;
+    subscriptionOverrides?: boolean | Prisma.Skill$subscriptionOverridesArgs<ExtArgs>;
     _count?: boolean | Prisma.SkillCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type SkillIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
     skillGroup?: boolean | Prisma.SkillGroupDefaultArgs<ExtArgs>;
 };
 export type SkillIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
     skillGroup?: boolean | Prisma.SkillGroupDefaultArgs<ExtArgs>;
 };
 
 export type $SkillPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Skill";
     objects: {
@@ -1857,26 +1781,20 @@ export type $SkillPayload<
     composites: {};
 };
 
-export type SkillGetPayload<
-    S extends boolean | null | undefined | SkillDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$SkillPayload, S>;
+export type SkillGetPayload<S extends boolean | null | undefined | SkillDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$SkillPayload, S>;
 
 export type SkillCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<SkillFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: SkillCountAggregateInputType | true;
 };
 
 export interface SkillDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
-    [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["Skill"];
-        meta: { name: "Skill" };
-    };
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>["model"]["Skill"]; meta: { name: "Skill" } };
     /**
      * Find zero or one Skill that matches the filter.
      * @param {SkillFindUniqueArgs} args - Arguments to find a Skill
@@ -2266,10 +2184,7 @@ export interface SkillDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      SkillCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], SkillCountAggregateOutputType>
             : number
     >;
 
@@ -2344,12 +2259,7 @@ export interface SkillDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -2379,11 +2289,8 @@ export interface SkillDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, SkillGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetSkillGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, SkillGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetSkillGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the Skill model
      */
@@ -2399,8 +2306,7 @@ export interface SkillDelegate<
 export interface Prisma__SkillClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -2454,13 +2360,8 @@ export interface Prisma__SkillClient<
           >
         | Null
     >;
-    subscriptionOverrides<
-        T extends Prisma.Skill$subscriptionOverridesArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.Skill$subscriptionOverridesArgs<ExtArgs>
-        >,
+    subscriptionOverrides<T extends Prisma.Skill$subscriptionOverridesArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Skill$subscriptionOverridesArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillOverridePayload<ExtArgs>,
@@ -2477,14 +2378,8 @@ export interface Prisma__SkillClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -2492,10 +2387,7 @@ export interface Prisma__SkillClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -2503,9 +2395,7 @@ export interface Prisma__SkillClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -2533,8 +2423,7 @@ export interface SkillFieldRefs {
  * Skill findUnique
  */
 export type SkillFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2558,8 +2447,7 @@ export type SkillFindUniqueArgs<
  * Skill findUniqueOrThrow
  */
 export type SkillFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2583,8 +2471,7 @@ export type SkillFindUniqueOrThrowArgs<
  * Skill findFirst
  */
 export type SkillFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2607,9 +2494,7 @@ export type SkillFindFirstArgs<
      *
      * Determine the order of Skills to fetch.
      */
-    orderBy?:
-        | Prisma.SkillOrderByWithRelationInput
-        | Prisma.SkillOrderByWithRelationInput[];
+    orderBy?: Prisma.SkillOrderByWithRelationInput | Prisma.SkillOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2640,8 +2525,7 @@ export type SkillFindFirstArgs<
  * Skill findFirstOrThrow
  */
 export type SkillFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2664,9 +2548,7 @@ export type SkillFindFirstOrThrowArgs<
      *
      * Determine the order of Skills to fetch.
      */
-    orderBy?:
-        | Prisma.SkillOrderByWithRelationInput
-        | Prisma.SkillOrderByWithRelationInput[];
+    orderBy?: Prisma.SkillOrderByWithRelationInput | Prisma.SkillOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2697,8 +2579,7 @@ export type SkillFindFirstOrThrowArgs<
  * Skill findMany
  */
 export type SkillFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2721,9 +2602,7 @@ export type SkillFindManyArgs<
      *
      * Determine the order of Skills to fetch.
      */
-    orderBy?:
-        | Prisma.SkillOrderByWithRelationInput
-        | Prisma.SkillOrderByWithRelationInput[];
+    orderBy?: Prisma.SkillOrderByWithRelationInput | Prisma.SkillOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -2749,8 +2628,7 @@ export type SkillFindManyArgs<
  * Skill create
  */
 export type SkillCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2774,8 +2652,7 @@ export type SkillCreateArgs<
  * Skill createMany
  */
 export type SkillCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Skills.
@@ -2788,8 +2665,7 @@ export type SkillCreateManyArgs<
  * Skill createManyAndReturn
  */
 export type SkillCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2814,8 +2690,7 @@ export type SkillCreateManyAndReturnArgs<
  * Skill update
  */
 export type SkillUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2843,16 +2718,12 @@ export type SkillUpdateArgs<
  * Skill updateMany
  */
 export type SkillUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Skills.
      */
-    data: Prisma.XOR<
-        Prisma.SkillUpdateManyMutationInput,
-        Prisma.SkillUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.SkillUpdateManyMutationInput, Prisma.SkillUncheckedUpdateManyInput>;
     /**
      * Filter which Skills to update
      */
@@ -2867,8 +2738,7 @@ export type SkillUpdateManyArgs<
  * Skill updateManyAndReturn
  */
 export type SkillUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2881,10 +2751,7 @@ export type SkillUpdateManyAndReturnArgs<
     /**
      * The data used to update Skills.
      */
-    data: Prisma.XOR<
-        Prisma.SkillUpdateManyMutationInput,
-        Prisma.SkillUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.SkillUpdateManyMutationInput, Prisma.SkillUncheckedUpdateManyInput>;
     /**
      * Filter which Skills to update
      */
@@ -2903,8 +2770,7 @@ export type SkillUpdateManyAndReturnArgs<
  * Skill upsert
  */
 export type SkillUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2925,25 +2791,18 @@ export type SkillUpsertArgs<
     /**
      * In case the Skill found by the `where` argument doesn't exist, create a new Skill with this data.
      */
-    create: Prisma.XOR<
-        Prisma.SkillCreateInput,
-        Prisma.SkillUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.SkillCreateInput, Prisma.SkillUncheckedCreateInput>;
     /**
      * In case the Skill was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.SkillUpdateInput,
-        Prisma.SkillUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.SkillUpdateInput, Prisma.SkillUncheckedUpdateInput>;
 };
 
 /**
  * Skill delete
  */
 export type SkillDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill
@@ -2967,8 +2826,7 @@ export type SkillDeleteArgs<
  * Skill deleteMany
  */
 export type SkillDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Skills to delete
@@ -2984,8 +2842,7 @@ export type SkillDeleteManyArgs<
  * Skill.checks
  */
 export type Skill$checksArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -3006,17 +2863,14 @@ export type Skill$checksArgs<
     cursor?: Prisma.SkillCheckWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillCheckScalarFieldEnum
-        | Prisma.SkillCheckScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
 /**
  * Skill.sessions
  */
 export type Skill$sessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheckSession
@@ -3037,17 +2891,14 @@ export type Skill$sessionsArgs<
     cursor?: Prisma.SkillCheckSessionWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillCheckSessionScalarFieldEnum
-        | Prisma.SkillCheckSessionScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckSessionScalarFieldEnum | Prisma.SkillCheckSessionScalarFieldEnum[];
 };
 
 /**
  * Skill.subscriptionOverrides
  */
 export type Skill$subscriptionOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -3068,17 +2919,14 @@ export type Skill$subscriptionOverridesArgs<
     cursor?: Prisma.SkillOverrideWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillOverrideScalarFieldEnum
-        | Prisma.SkillOverrideScalarFieldEnum[];
+    distinct?: Prisma.SkillOverrideScalarFieldEnum | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**
  * Skill without action
  */
 export type SkillDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Skill

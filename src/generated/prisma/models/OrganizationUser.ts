@@ -75,8 +75,7 @@ export type OrganizationUserCountAggregateInputType = {
 };
 
 export type OrganizationUserAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationUser to aggregate.
@@ -128,12 +127,8 @@ export type OrganizationUserAggregateArgs<
     _max?: OrganizationUserMaxAggregateInputType;
 };
 
-export type GetOrganizationUserAggregateType<
-    T extends OrganizationUserAggregateArgs,
-> = {
-    [P in keyof T & keyof AggregateOrganizationUser]: P extends
-        | "_count"
-        | "count"
+export type GetOrganizationUserAggregateType<T extends OrganizationUserAggregateArgs> = {
+    [P in keyof T & keyof AggregateOrganizationUser]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
             : Prisma.GetScalarType<T[P], AggregateOrganizationUser[P]>
@@ -141,16 +136,13 @@ export type GetOrganizationUserAggregateType<
 };
 
 export type OrganizationUserGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationUserWhereInput;
     orderBy?:
         | Prisma.OrganizationUserOrderByWithAggregationInput
         | Prisma.OrganizationUserOrderByWithAggregationInput[];
-    by:
-        | Prisma.OrganizationUserScalarFieldEnum[]
-        | Prisma.OrganizationUserScalarFieldEnum;
+    by: Prisma.OrganizationUserScalarFieldEnum[] | Prisma.OrganizationUserScalarFieldEnum;
     having?: Prisma.OrganizationUserScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -173,34 +165,20 @@ export type OrganizationUserGroupByOutputType = {
 type GetOrganizationUserGroupByPayload<T extends OrganizationUserGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
-            Prisma.PickEnumerable<
-                OrganizationUserGroupByOutputType,
-                T["by"]
-            > & {
-                [P in keyof T &
-                    keyof OrganizationUserGroupByOutputType]: P extends "_count"
+            Prisma.PickEnumerable<OrganizationUserGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof OrganizationUserGroupByOutputType]: P extends "_count"
                     ? T[P] extends boolean
                         ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              OrganizationUserGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          OrganizationUserGroupByOutputType[P]
-                      >;
+                        : Prisma.GetScalarType<T[P], OrganizationUserGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], OrganizationUserGroupByOutputType[P]>;
             }
         >
     >;
 
 export type OrganizationUserWhereInput = {
-    AND?:
-        | Prisma.OrganizationUserWhereInput
-        | Prisma.OrganizationUserWhereInput[];
+    AND?: Prisma.OrganizationUserWhereInput | Prisma.OrganizationUserWhereInput[];
     OR?: Prisma.OrganizationUserWhereInput[];
-    NOT?:
-        | Prisma.OrganizationUserWhereInput
-        | Prisma.OrganizationUserWhereInput[];
+    NOT?: Prisma.OrganizationUserWhereInput | Prisma.OrganizationUserWhereInput[];
     id?: Prisma.StringFilter<"OrganizationUser"> | string;
     organizationId?: Prisma.StringFilter<"OrganizationUser"> | string;
     userId?: Prisma.StringFilter<"OrganizationUser"> | string;
@@ -227,13 +205,9 @@ export type OrganizationUserWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
         organizationId_userId?: Prisma.OrganizationUserOrganizationIdUserIdCompoundUniqueInput;
-        AND?:
-            | Prisma.OrganizationUserWhereInput
-            | Prisma.OrganizationUserWhereInput[];
+        AND?: Prisma.OrganizationUserWhereInput | Prisma.OrganizationUserWhereInput[];
         OR?: Prisma.OrganizationUserWhereInput[];
-        NOT?:
-            | Prisma.OrganizationUserWhereInput
-            | Prisma.OrganizationUserWhereInput[];
+        NOT?: Prisma.OrganizationUserWhereInput | Prisma.OrganizationUserWhereInput[];
         organizationId?: Prisma.StringFilter<"OrganizationUser"> | string;
         userId?: Prisma.StringFilter<"OrganizationUser"> | string;
         role?: Prisma.StringFilter<"OrganizationUser"> | string;
@@ -242,10 +216,7 @@ export type OrganizationUserWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        user?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id" | "organizationId_userId"
 >;
@@ -270,15 +241,10 @@ export type OrganizationUserScalarWhereWithAggregatesInput = {
         | Prisma.OrganizationUserScalarWhereWithAggregatesInput
         | Prisma.OrganizationUserScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
-    organizationId?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationUser">
-        | string;
+    organizationId?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
     userId?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
     role?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"OrganizationUser">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"OrganizationUser"> | Date | string;
 };
 
 export type OrganizationUserCreateInput = {
@@ -386,9 +352,7 @@ export type OrganizationUserCreateNestedManyWithoutUserInput = {
         | Prisma.OrganizationUserCreateOrConnectWithoutUserInput
         | Prisma.OrganizationUserCreateOrConnectWithoutUserInput[];
     createMany?: Prisma.OrganizationUserCreateManyUserInputEnvelope;
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
 };
 
 export type OrganizationUserUncheckedCreateNestedManyWithoutUserInput = {
@@ -403,9 +367,7 @@ export type OrganizationUserUncheckedCreateNestedManyWithoutUserInput = {
         | Prisma.OrganizationUserCreateOrConnectWithoutUserInput
         | Prisma.OrganizationUserCreateOrConnectWithoutUserInput[];
     createMany?: Prisma.OrganizationUserCreateManyUserInputEnvelope;
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
 };
 
 export type OrganizationUserUpdateManyWithoutUserNestedInput = {
@@ -423,18 +385,12 @@ export type OrganizationUserUpdateManyWithoutUserNestedInput = {
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutUserInput
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.OrganizationUserCreateManyUserInputEnvelope;
-    set?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    set?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     disconnect?:
         | Prisma.OrganizationUserWhereUniqueInput
         | Prisma.OrganizationUserWhereUniqueInput[];
-    delete?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    delete?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     update?:
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutUserInput
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutUserInput[];
@@ -461,18 +417,12 @@ export type OrganizationUserUncheckedUpdateManyWithoutUserNestedInput = {
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutUserInput
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.OrganizationUserCreateManyUserInputEnvelope;
-    set?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    set?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     disconnect?:
         | Prisma.OrganizationUserWhereUniqueInput
         | Prisma.OrganizationUserWhereUniqueInput[];
-    delete?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    delete?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     update?:
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutUserInput
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutUserInput[];
@@ -496,28 +446,23 @@ export type OrganizationUserCreateNestedManyWithoutOrganizationInput = {
         | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput
         | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
 };
 
-export type OrganizationUserUncheckedCreateNestedManyWithoutOrganizationInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationUserCreateWithoutOrganizationInput,
-                  Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationUserCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
-        connect?:
-            | Prisma.OrganizationUserWhereUniqueInput
-            | Prisma.OrganizationUserWhereUniqueInput[];
-    };
+export type OrganizationUserUncheckedCreateNestedManyWithoutOrganizationInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationUserCreateWithoutOrganizationInput,
+              Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationUserCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+};
 
 export type OrganizationUserUpdateManyWithoutOrganizationNestedInput = {
     create?:
@@ -534,18 +479,12 @@ export type OrganizationUserUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    set?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     disconnect?:
         | Prisma.OrganizationUserWhereUniqueInput
         | Prisma.OrganizationUserWhereUniqueInput[];
-    delete?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
-    connect?:
-        | Prisma.OrganizationUserWhereUniqueInput
-        | Prisma.OrganizationUserWhereUniqueInput[];
+    delete?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
     update?:
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput[];
@@ -557,44 +496,37 @@ export type OrganizationUserUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.OrganizationUserScalarWhereInput[];
 };
 
-export type OrganizationUserUncheckedUpdateManyWithoutOrganizationNestedInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationUserCreateWithoutOrganizationInput,
-                  Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationUserCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput[];
-        upsert?:
-            | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
-        set?:
-            | Prisma.OrganizationUserWhereUniqueInput
-            | Prisma.OrganizationUserWhereUniqueInput[];
-        disconnect?:
-            | Prisma.OrganizationUserWhereUniqueInput
-            | Prisma.OrganizationUserWhereUniqueInput[];
-        delete?:
-            | Prisma.OrganizationUserWhereUniqueInput
-            | Prisma.OrganizationUserWhereUniqueInput[];
-        connect?:
-            | Prisma.OrganizationUserWhereUniqueInput
-            | Prisma.OrganizationUserWhereUniqueInput[];
-        update?:
-            | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput[];
-        updateMany?:
-            | Prisma.OrganizationUserUpdateManyWithWhereWithoutOrganizationInput
-            | Prisma.OrganizationUserUpdateManyWithWhereWithoutOrganizationInput[];
-        deleteMany?:
-            | Prisma.OrganizationUserScalarWhereInput
-            | Prisma.OrganizationUserScalarWhereInput[];
-    };
+export type OrganizationUserUncheckedUpdateManyWithoutOrganizationNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationUserCreateWithoutOrganizationInput,
+              Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationUserCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationUserUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationUserCreateOrConnectWithoutOrganizationInput[];
+    upsert?:
+        | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationUserUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationUserCreateManyOrganizationInputEnvelope;
+    set?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    disconnect?:
+        | Prisma.OrganizationUserWhereUniqueInput
+        | Prisma.OrganizationUserWhereUniqueInput[];
+    delete?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    connect?: Prisma.OrganizationUserWhereUniqueInput | Prisma.OrganizationUserWhereUniqueInput[];
+    update?:
+        | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationUserUpdateWithWhereUniqueWithoutOrganizationInput[];
+    updateMany?:
+        | Prisma.OrganizationUserUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.OrganizationUserUpdateManyWithWhereWithoutOrganizationInput[];
+    deleteMany?:
+        | Prisma.OrganizationUserScalarWhereInput
+        | Prisma.OrganizationUserScalarWhereInput[];
+};
 
 export type OrganizationUserCreateWithoutUserInput = {
     id: string;
@@ -619,9 +551,7 @@ export type OrganizationUserCreateOrConnectWithoutUserInput = {
 };
 
 export type OrganizationUserCreateManyUserInputEnvelope = {
-    data:
-        | Prisma.OrganizationUserCreateManyUserInput
-        | Prisma.OrganizationUserCreateManyUserInput[];
+    data: Prisma.OrganizationUserCreateManyUserInput | Prisma.OrganizationUserCreateManyUserInput[];
     skipDuplicates?: boolean;
 };
 
@@ -654,13 +584,9 @@ export type OrganizationUserUpdateManyWithWhereWithoutUserInput = {
 };
 
 export type OrganizationUserScalarWhereInput = {
-    AND?:
-        | Prisma.OrganizationUserScalarWhereInput
-        | Prisma.OrganizationUserScalarWhereInput[];
+    AND?: Prisma.OrganizationUserScalarWhereInput | Prisma.OrganizationUserScalarWhereInput[];
     OR?: Prisma.OrganizationUserScalarWhereInput[];
-    NOT?:
-        | Prisma.OrganizationUserScalarWhereInput
-        | Prisma.OrganizationUserScalarWhereInput[];
+    NOT?: Prisma.OrganizationUserScalarWhereInput | Prisma.OrganizationUserScalarWhereInput[];
     id?: Prisma.StringFilter<"OrganizationUser"> | string;
     organizationId?: Prisma.StringFilter<"OrganizationUser"> | string;
     userId?: Prisma.StringFilter<"OrganizationUser"> | string;
@@ -782,8 +708,7 @@ export type OrganizationUserUncheckedUpdateManyWithoutOrganizationInput = {
 };
 
 export type OrganizationUserSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -798,8 +723,7 @@ export type OrganizationUserSelect<
 >;
 
 export type OrganizationUserSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -814,8 +738,7 @@ export type OrganizationUserSelectCreateManyAndReturn<
 >;
 
 export type OrganizationUserSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -838,37 +761,32 @@ export type OrganizationUserSelectScalar = {
 };
 
 export type OrganizationUserOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     "id" | "organizationId" | "userId" | "role" | "createdAt",
     ExtArgs["result"]["organizationUser"]
 >;
 export type OrganizationUserInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationUserIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationUserIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $OrganizationUserPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "OrganizationUser";
     objects: {
@@ -893,18 +811,13 @@ export type OrganizationUserGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$OrganizationUserPayload, S>;
 
 export type OrganizationUserCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    OrganizationUserFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<OrganizationUserFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: OrganizationUserCountAggregateInputType | true;
 };
 
 export interface OrganizationUserDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -949,10 +862,7 @@ export interface OrganizationUserDelegate<
      * })
      */
     findUniqueOrThrow<T extends OrganizationUserFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationUserFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationUserFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationUserClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationUserPayload<ExtArgs>,
@@ -1007,10 +917,7 @@ export interface OrganizationUserDelegate<
      * })
      */
     findFirstOrThrow<T extends OrganizationUserFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationUserFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationUserFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationUserClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationUserPayload<ExtArgs>,
@@ -1115,10 +1022,7 @@ export interface OrganizationUserDelegate<
      *
      */
     createManyAndReturn<T extends OrganizationUserCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationUserCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationUserCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationUserPayload<ExtArgs>,
@@ -1249,10 +1153,7 @@ export interface OrganizationUserDelegate<
      *
      */
     updateManyAndReturn<T extends OrganizationUserUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationUserUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationUserUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationUserPayload<ExtArgs>,
@@ -1312,10 +1213,7 @@ export interface OrganizationUserDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      OrganizationUserCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], OrganizationUserCountAggregateOutputType>
             : number
     >;
 
@@ -1390,12 +1288,7 @@ export interface OrganizationUserDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1425,12 +1318,7 @@ export interface OrganizationUserDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            OrganizationUserGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, OrganizationUserGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetOrganizationUserGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1449,8 +1337,7 @@ export interface OrganizationUserDelegate<
 export interface Prisma__OrganizationUserClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1489,14 +1376,8 @@ export interface Prisma__OrganizationUserClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1504,10 +1385,7 @@ export interface Prisma__OrganizationUserClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1515,9 +1393,7 @@ export interface Prisma__OrganizationUserClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1536,8 +1412,7 @@ export interface OrganizationUserFieldRefs {
  * OrganizationUser findUnique
  */
 export type OrganizationUserFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1561,8 +1436,7 @@ export type OrganizationUserFindUniqueArgs<
  * OrganizationUser findUniqueOrThrow
  */
 export type OrganizationUserFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1586,8 +1460,7 @@ export type OrganizationUserFindUniqueOrThrowArgs<
  * OrganizationUser findFirst
  */
 export type OrganizationUserFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1636,17 +1509,14 @@ export type OrganizationUserFindFirstArgs<
      *
      * Filter by unique combinations of OrganizationUsers.
      */
-    distinct?:
-        | Prisma.OrganizationUserScalarFieldEnum
-        | Prisma.OrganizationUserScalarFieldEnum[];
+    distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
 /**
  * OrganizationUser findFirstOrThrow
  */
 export type OrganizationUserFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1695,17 +1565,14 @@ export type OrganizationUserFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of OrganizationUsers.
      */
-    distinct?:
-        | Prisma.OrganizationUserScalarFieldEnum
-        | Prisma.OrganizationUserScalarFieldEnum[];
+    distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
 /**
  * OrganizationUser findMany
  */
 export type OrganizationUserFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1749,17 +1616,14 @@ export type OrganizationUserFindManyArgs<
      * Skip the first `n` OrganizationUsers.
      */
     skip?: number;
-    distinct?:
-        | Prisma.OrganizationUserScalarFieldEnum
-        | Prisma.OrganizationUserScalarFieldEnum[];
+    distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
 /**
  * OrganizationUser create
  */
 export type OrganizationUserCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1786,15 +1650,12 @@ export type OrganizationUserCreateArgs<
  * OrganizationUser createMany
  */
 export type OrganizationUserCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many OrganizationUsers.
      */
-    data:
-        | Prisma.OrganizationUserCreateManyInput
-        | Prisma.OrganizationUserCreateManyInput[];
+    data: Prisma.OrganizationUserCreateManyInput | Prisma.OrganizationUserCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1802,8 +1663,7 @@ export type OrganizationUserCreateManyArgs<
  * OrganizationUser createManyAndReturn
  */
 export type OrganizationUserCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1816,9 +1676,7 @@ export type OrganizationUserCreateManyAndReturnArgs<
     /**
      * The data used to create many OrganizationUsers.
      */
-    data:
-        | Prisma.OrganizationUserCreateManyInput
-        | Prisma.OrganizationUserCreateManyInput[];
+    data: Prisma.OrganizationUserCreateManyInput | Prisma.OrganizationUserCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -1830,8 +1688,7 @@ export type OrganizationUserCreateManyAndReturnArgs<
  * OrganizationUser update
  */
 export type OrganizationUserUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1862,8 +1719,7 @@ export type OrganizationUserUpdateArgs<
  * OrganizationUser updateMany
  */
 export type OrganizationUserUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update OrganizationUsers.
@@ -1886,8 +1742,7 @@ export type OrganizationUserUpdateManyArgs<
  * OrganizationUser updateManyAndReturn
  */
 export type OrganizationUserUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1922,8 +1777,7 @@ export type OrganizationUserUpdateManyAndReturnArgs<
  * OrganizationUser upsert
  */
 export type OrganizationUserUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1961,8 +1815,7 @@ export type OrganizationUserUpsertArgs<
  * OrganizationUser delete
  */
 export type OrganizationUserDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -1986,8 +1839,7 @@ export type OrganizationUserDeleteArgs<
  * OrganizationUser deleteMany
  */
 export type OrganizationUserDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationUsers to delete
@@ -2003,8 +1855,7 @@ export type OrganizationUserDeleteManyArgs<
  * OrganizationUser without action
  */
 export type OrganizationUserDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser

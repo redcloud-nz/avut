@@ -36,4 +36,6 @@ export type * from "./models/I3Template";
 export type * from "./models/I3Template_D4H";
 export type * from "./models/I3TemplateVariant";
 export type * from "./models/I3TemplateVariant_D4H";
+export type * from "./models/FormInstance";
+export type * from "./models/FormInstanceItem";
 export type * from "./commonInputTypes";

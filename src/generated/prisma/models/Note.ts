@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Note
  *
  */
-export type NoteModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$NotePayload>;
+export type NoteModel = runtime.Types.Result.DefaultSelection<Prisma.$NotePayload>;
 
 export type AggregateNote = {
     _count: NoteCountAggregateOutputType | null;
@@ -85,8 +84,7 @@ export type NoteCountAggregateInputType = {
 };
 
 export type NoteAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Note to aggregate.
@@ -97,9 +95,7 @@ export type NoteAggregateArgs<
      *
      * Determine the order of Notes to fetch.
      */
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -147,13 +143,10 @@ export type GetNoteAggregateType<T extends NoteAggregateArgs> = {
 };
 
 export type NoteGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.NoteWhereInput;
-    orderBy?:
-        | Prisma.NoteOrderByWithAggregationInput
-        | Prisma.NoteOrderByWithAggregationInput[];
+    orderBy?: Prisma.NoteOrderByWithAggregationInput | Prisma.NoteOrderByWithAggregationInput[];
     by: Prisma.NoteScalarFieldEnum[] | Prisma.NoteScalarFieldEnum;
     having?: Prisma.NoteScalarWhereWithAggregatesInput;
     take?: number;
@@ -238,10 +231,7 @@ export type NoteWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationNullableScalarRelationFilter,
             Prisma.OrganizationWhereInput
         > | null;
-        author?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id"
 >;
@@ -261,18 +251,11 @@ export type NoteOrderByWithAggregationInput = {
 };
 
 export type NoteScalarWhereWithAggregatesInput = {
-    AND?:
-        | Prisma.NoteScalarWhereWithAggregatesInput
-        | Prisma.NoteScalarWhereWithAggregatesInput[];
+    AND?: Prisma.NoteScalarWhereWithAggregatesInput | Prisma.NoteScalarWhereWithAggregatesInput[];
     OR?: Prisma.NoteScalarWhereWithAggregatesInput[];
-    NOT?:
-        | Prisma.NoteScalarWhereWithAggregatesInput
-        | Prisma.NoteScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.NoteScalarWhereWithAggregatesInput | Prisma.NoteScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"Note"> | string;
-    organizationId?:
-        | Prisma.StringNullableWithAggregatesFilter<"Note">
-        | string
-        | null;
+    organizationId?: Prisma.StringNullableWithAggregatesFilter<"Note"> | string | null;
     authorId?: Prisma.StringWithAggregatesFilter<"Note"> | string;
     content?: Prisma.StringWithAggregatesFilter<"Note"> | string;
     tags?: Prisma.StringNullableListFilter<"Note">;
@@ -316,10 +299,7 @@ export type NoteUpdateInput = {
 
 export type NoteUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     authorId?: Prisma.StringFieldUpdateOperationsInput | string;
     content?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.NoteUpdatetagsInput | string[];
@@ -350,10 +330,7 @@ export type NoteUpdateManyMutationInput = {
 
 export type NoteUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     authorId?: Prisma.StringFieldUpdateOperationsInput | string;
     content?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.NoteUpdatetagsInput | string[];
@@ -686,9 +663,7 @@ export type NoteCreateOrConnectWithoutOrganizationInput = {
 };
 
 export type NoteCreateManyOrganizationInputEnvelope = {
-    data:
-        | Prisma.NoteCreateManyOrganizationInput
-        | Prisma.NoteCreateManyOrganizationInput[];
+    data: Prisma.NoteCreateManyOrganizationInput | Prisma.NoteCreateManyOrganizationInput[];
     skipDuplicates?: boolean;
 };
 
@@ -742,10 +717,7 @@ export type NoteUpdateWithoutAuthorInput = {
 
 export type NoteUncheckedUpdateWithoutAuthorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     content?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.NoteUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
@@ -755,10 +727,7 @@ export type NoteUncheckedUpdateWithoutAuthorInput = {
 
 export type NoteUncheckedUpdateManyWithoutAuthorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     content?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.NoteUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
@@ -807,8 +776,7 @@ export type NoteUncheckedUpdateManyWithoutOrganizationInput = {
 };
 
 export type NoteSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -826,8 +794,7 @@ export type NoteSelect<
 >;
 
 export type NoteSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -845,8 +812,7 @@ export type NoteSelectCreateManyAndReturn<
 >;
 
 export type NoteSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -875,8 +841,7 @@ export type NoteSelectScalar = {
 };
 
 export type NoteOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -889,30 +854,26 @@ export type NoteOmit<
     ExtArgs["result"]["note"]
 >;
 export type NoteInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.Note$organizationArgs<ExtArgs>;
     author?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type NoteIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.Note$organizationArgs<ExtArgs>;
     author?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type NoteIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.Note$organizationArgs<ExtArgs>;
     author?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $NotePayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Note";
     objects: {
@@ -935,26 +896,20 @@ export type $NotePayload<
     composites: {};
 };
 
-export type NoteGetPayload<
-    S extends boolean | null | undefined | NoteDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$NotePayload, S>;
+export type NoteGetPayload<S extends boolean | null | undefined | NoteDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$NotePayload, S>;
 
 export type NoteCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<NoteFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: NoteCountAggregateInputType | true;
 };
 
 export interface NoteDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
-    [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["Note"];
-        meta: { name: "Note" };
-    };
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>["model"]["Note"]; meta: { name: "Note" } };
     /**
      * Find zero or one Note that matches the filter.
      * @param {NoteFindUniqueArgs} args - Arguments to find a Note
@@ -1344,10 +1299,7 @@ export interface NoteDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      NoteCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], NoteCountAggregateOutputType>
             : number
     >;
 
@@ -1422,12 +1374,7 @@ export interface NoteDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1457,11 +1404,8 @@ export interface NoteDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, NoteGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetNoteGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, NoteGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetNoteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the Note model
      */
@@ -1477,8 +1421,7 @@ export interface NoteDelegate<
 export interface Prisma__NoteClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1516,14 +1459,8 @@ export interface Prisma__NoteClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1531,10 +1468,7 @@ export interface Prisma__NoteClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1542,9 +1476,7 @@ export interface Prisma__NoteClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1566,8 +1498,7 @@ export interface NoteFieldRefs {
  * Note findUnique
  */
 export type NoteFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1591,8 +1522,7 @@ export type NoteFindUniqueArgs<
  * Note findUniqueOrThrow
  */
 export type NoteFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1616,8 +1546,7 @@ export type NoteFindUniqueOrThrowArgs<
  * Note findFirst
  */
 export type NoteFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1640,9 +1569,7 @@ export type NoteFindFirstArgs<
      *
      * Determine the order of Notes to fetch.
      */
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1673,8 +1600,7 @@ export type NoteFindFirstArgs<
  * Note findFirstOrThrow
  */
 export type NoteFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1697,9 +1623,7 @@ export type NoteFindFirstOrThrowArgs<
      *
      * Determine the order of Notes to fetch.
      */
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1730,8 +1654,7 @@ export type NoteFindFirstOrThrowArgs<
  * Note findMany
  */
 export type NoteFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1754,9 +1677,7 @@ export type NoteFindManyArgs<
      *
      * Determine the order of Notes to fetch.
      */
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1782,8 +1703,7 @@ export type NoteFindManyArgs<
  * Note create
  */
 export type NoteCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1807,8 +1727,7 @@ export type NoteCreateArgs<
  * Note createMany
  */
 export type NoteCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Notes.
@@ -1821,8 +1740,7 @@ export type NoteCreateManyArgs<
  * Note createManyAndReturn
  */
 export type NoteCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1847,8 +1765,7 @@ export type NoteCreateManyAndReturnArgs<
  * Note update
  */
 export type NoteUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1876,16 +1793,12 @@ export type NoteUpdateArgs<
  * Note updateMany
  */
 export type NoteUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Notes.
      */
-    data: Prisma.XOR<
-        Prisma.NoteUpdateManyMutationInput,
-        Prisma.NoteUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.NoteUpdateManyMutationInput, Prisma.NoteUncheckedUpdateManyInput>;
     /**
      * Filter which Notes to update
      */
@@ -1900,8 +1813,7 @@ export type NoteUpdateManyArgs<
  * Note updateManyAndReturn
  */
 export type NoteUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1914,10 +1826,7 @@ export type NoteUpdateManyAndReturnArgs<
     /**
      * The data used to update Notes.
      */
-    data: Prisma.XOR<
-        Prisma.NoteUpdateManyMutationInput,
-        Prisma.NoteUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.NoteUpdateManyMutationInput, Prisma.NoteUncheckedUpdateManyInput>;
     /**
      * Filter which Notes to update
      */
@@ -1936,8 +1845,7 @@ export type NoteUpdateManyAndReturnArgs<
  * Note upsert
  */
 export type NoteUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1969,8 +1877,7 @@ export type NoteUpsertArgs<
  * Note delete
  */
 export type NoteDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -1994,8 +1901,7 @@ export type NoteDeleteArgs<
  * Note deleteMany
  */
 export type NoteDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Notes to delete
@@ -2011,8 +1917,7 @@ export type NoteDeleteManyArgs<
  * Note.organization
  */
 export type Note$organizationArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -2033,8 +1938,7 @@ export type Note$organizationArgs<
  * Note without action
  */
 export type NoteDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note

@@ -99,8 +99,7 @@ export type OrganizationInvitationCountAggregateInputType = {
 };
 
 export type OrganizationInvitationAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationInvitation to aggregate.
@@ -152,21 +151,17 @@ export type OrganizationInvitationAggregateArgs<
     _max?: OrganizationInvitationMaxAggregateInputType;
 };
 
-export type GetOrganizationInvitationAggregateType<
-    T extends OrganizationInvitationAggregateArgs,
-> = {
-    [P in keyof T & keyof AggregateOrganizationInvitation]: P extends
-        | "_count"
-        | "count"
-        ? T[P] extends true
-            ? number
-            : Prisma.GetScalarType<T[P], AggregateOrganizationInvitation[P]>
-        : Prisma.GetScalarType<T[P], AggregateOrganizationInvitation[P]>;
-};
+export type GetOrganizationInvitationAggregateType<T extends OrganizationInvitationAggregateArgs> =
+    {
+        [P in keyof T & keyof AggregateOrganizationInvitation]: P extends "_count" | "count"
+            ? T[P] extends true
+                ? number
+                : Prisma.GetScalarType<T[P], AggregateOrganizationInvitation[P]>
+            : Prisma.GetScalarType<T[P], AggregateOrganizationInvitation[P]>;
+    };
 
 export type OrganizationInvitationGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationInvitationWhereInput;
     orderBy?:
@@ -198,49 +193,28 @@ export type OrganizationInvitationGroupByOutputType = {
     _max: OrganizationInvitationMaxAggregateOutputType | null;
 };
 
-type GetOrganizationInvitationGroupByPayload<
-    T extends OrganizationInvitationGroupByArgs,
-> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<
-            OrganizationInvitationGroupByOutputType,
-            T["by"]
-        > & {
-            [P in keyof T &
-                keyof OrganizationInvitationGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<
-                          T[P],
-                          OrganizationInvitationGroupByOutputType[P]
-                      >
-                : Prisma.GetScalarType<
-                      T[P],
-                      OrganizationInvitationGroupByOutputType[P]
-                  >;
-        }
-    >
->;
+type GetOrganizationInvitationGroupByPayload<T extends OrganizationInvitationGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<OrganizationInvitationGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof OrganizationInvitationGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], OrganizationInvitationGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], OrganizationInvitationGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type OrganizationInvitationWhereInput = {
-    AND?:
-        | Prisma.OrganizationInvitationWhereInput
-        | Prisma.OrganizationInvitationWhereInput[];
+    AND?: Prisma.OrganizationInvitationWhereInput | Prisma.OrganizationInvitationWhereInput[];
     OR?: Prisma.OrganizationInvitationWhereInput[];
-    NOT?:
-        | Prisma.OrganizationInvitationWhereInput
-        | Prisma.OrganizationInvitationWhereInput[];
+    NOT?: Prisma.OrganizationInvitationWhereInput | Prisma.OrganizationInvitationWhereInput[];
     id?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     organizationId?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     email?: Prisma.StringFilter<"OrganizationInvitation"> | string;
-    role?:
-        | Prisma.StringNullableFilter<"OrganizationInvitation">
-        | string
-        | null;
-    teamId?:
-        | Prisma.StringNullableFilter<"OrganizationInvitation">
-        | string
-        | null;
+    role?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
+    teamId?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
     status?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     expiresAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
     createdAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
@@ -269,41 +243,22 @@ export type OrganizationInvitationOrderByWithRelationInput = {
 export type OrganizationInvitationWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
-        AND?:
-            | Prisma.OrganizationInvitationWhereInput
-            | Prisma.OrganizationInvitationWhereInput[];
+        AND?: Prisma.OrganizationInvitationWhereInput | Prisma.OrganizationInvitationWhereInput[];
         OR?: Prisma.OrganizationInvitationWhereInput[];
-        NOT?:
-            | Prisma.OrganizationInvitationWhereInput
-            | Prisma.OrganizationInvitationWhereInput[];
+        NOT?: Prisma.OrganizationInvitationWhereInput | Prisma.OrganizationInvitationWhereInput[];
         organizationId?: Prisma.StringFilter<"OrganizationInvitation"> | string;
         email?: Prisma.StringFilter<"OrganizationInvitation"> | string;
-        role?:
-            | Prisma.StringNullableFilter<"OrganizationInvitation">
-            | string
-            | null;
-        teamId?:
-            | Prisma.StringNullableFilter<"OrganizationInvitation">
-            | string
-            | null;
+        role?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
+        teamId?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
         status?: Prisma.StringFilter<"OrganizationInvitation"> | string;
-        expiresAt?:
-            | Prisma.DateTimeFilter<"OrganizationInvitation">
-            | Date
-            | string;
-        createdAt?:
-            | Prisma.DateTimeFilter<"OrganizationInvitation">
-            | Date
-            | string;
+        expiresAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
+        createdAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
         inviterId?: Prisma.StringFilter<"OrganizationInvitation"> | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        user?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id"
 >;
@@ -332,34 +287,14 @@ export type OrganizationInvitationScalarWhereWithAggregatesInput = {
         | Prisma.OrganizationInvitationScalarWhereWithAggregatesInput
         | Prisma.OrganizationInvitationScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"OrganizationInvitation"> | string;
-    organizationId?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationInvitation">
-        | string;
-    email?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationInvitation">
-        | string;
-    role?:
-        | Prisma.StringNullableWithAggregatesFilter<"OrganizationInvitation">
-        | string
-        | null;
-    teamId?:
-        | Prisma.StringNullableWithAggregatesFilter<"OrganizationInvitation">
-        | string
-        | null;
-    status?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationInvitation">
-        | string;
-    expiresAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"OrganizationInvitation">
-        | Date
-        | string;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"OrganizationInvitation">
-        | Date
-        | string;
-    inviterId?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationInvitation">
-        | string;
+    organizationId?: Prisma.StringWithAggregatesFilter<"OrganizationInvitation"> | string;
+    email?: Prisma.StringWithAggregatesFilter<"OrganizationInvitation"> | string;
+    role?: Prisma.StringNullableWithAggregatesFilter<"OrganizationInvitation"> | string | null;
+    teamId?: Prisma.StringNullableWithAggregatesFilter<"OrganizationInvitation"> | string | null;
+    status?: Prisma.StringWithAggregatesFilter<"OrganizationInvitation"> | string;
+    expiresAt?: Prisma.DateTimeWithAggregatesFilter<"OrganizationInvitation"> | Date | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"OrganizationInvitation"> | Date | string;
+    inviterId?: Prisma.StringWithAggregatesFilter<"OrganizationInvitation"> | string;
 };
 
 export type OrganizationInvitationCreateInput = {
@@ -617,23 +552,22 @@ export type OrganizationInvitationCreateNestedManyWithoutOrganizationInput = {
         | Prisma.OrganizationInvitationWhereUniqueInput[];
 };
 
-export type OrganizationInvitationUncheckedCreateNestedManyWithoutOrganizationInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
-                  Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationInvitationCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationInvitationCreateManyOrganizationInputEnvelope;
-        connect?:
-            | Prisma.OrganizationInvitationWhereUniqueInput
-            | Prisma.OrganizationInvitationWhereUniqueInput[];
-    };
+export type OrganizationInvitationUncheckedCreateNestedManyWithoutOrganizationInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
+              Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationInvitationCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationInvitationCreateManyOrganizationInputEnvelope;
+    connect?:
+        | Prisma.OrganizationInvitationWhereUniqueInput
+        | Prisma.OrganizationInvitationWhereUniqueInput[];
+};
 
 export type OrganizationInvitationUpdateManyWithoutOrganizationNestedInput = {
     create?:
@@ -673,44 +607,43 @@ export type OrganizationInvitationUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.OrganizationInvitationScalarWhereInput[];
 };
 
-export type OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
-                  Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationInvitationCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput[];
-        upsert?:
-            | Prisma.OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationInvitationCreateManyOrganizationInputEnvelope;
-        set?:
-            | Prisma.OrganizationInvitationWhereUniqueInput
-            | Prisma.OrganizationInvitationWhereUniqueInput[];
-        disconnect?:
-            | Prisma.OrganizationInvitationWhereUniqueInput
-            | Prisma.OrganizationInvitationWhereUniqueInput[];
-        delete?:
-            | Prisma.OrganizationInvitationWhereUniqueInput
-            | Prisma.OrganizationInvitationWhereUniqueInput[];
-        connect?:
-            | Prisma.OrganizationInvitationWhereUniqueInput
-            | Prisma.OrganizationInvitationWhereUniqueInput[];
-        update?:
-            | Prisma.OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput[];
-        updateMany?:
-            | Prisma.OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput
-            | Prisma.OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput[];
-        deleteMany?:
-            | Prisma.OrganizationInvitationScalarWhereInput
-            | Prisma.OrganizationInvitationScalarWhereInput[];
-    };
+export type OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
+              Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationInvitationCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationInvitationCreateOrConnectWithoutOrganizationInput[];
+    upsert?:
+        | Prisma.OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationInvitationCreateManyOrganizationInputEnvelope;
+    set?:
+        | Prisma.OrganizationInvitationWhereUniqueInput
+        | Prisma.OrganizationInvitationWhereUniqueInput[];
+    disconnect?:
+        | Prisma.OrganizationInvitationWhereUniqueInput
+        | Prisma.OrganizationInvitationWhereUniqueInput[];
+    delete?:
+        | Prisma.OrganizationInvitationWhereUniqueInput
+        | Prisma.OrganizationInvitationWhereUniqueInput[];
+    connect?:
+        | Prisma.OrganizationInvitationWhereUniqueInput
+        | Prisma.OrganizationInvitationWhereUniqueInput[];
+    update?:
+        | Prisma.OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput[];
+    updateMany?:
+        | Prisma.OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput[];
+    deleteMany?:
+        | Prisma.OrganizationInvitationScalarWhereInput
+        | Prisma.OrganizationInvitationScalarWhereInput[];
+};
 
 export type OrganizationInvitationCreateWithoutUserInput = {
     id: string;
@@ -788,14 +721,8 @@ export type OrganizationInvitationScalarWhereInput = {
     id?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     organizationId?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     email?: Prisma.StringFilter<"OrganizationInvitation"> | string;
-    role?:
-        | Prisma.StringNullableFilter<"OrganizationInvitation">
-        | string
-        | null;
-    teamId?:
-        | Prisma.StringNullableFilter<"OrganizationInvitation">
-        | string
-        | null;
+    role?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
+    teamId?: Prisma.StringNullableFilter<"OrganizationInvitation"> | string | null;
     status?: Prisma.StringFilter<"OrganizationInvitation"> | string;
     expiresAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
     createdAt?: Prisma.DateTimeFilter<"OrganizationInvitation"> | Date | string;
@@ -839,36 +766,33 @@ export type OrganizationInvitationCreateManyOrganizationInputEnvelope = {
     skipDuplicates?: boolean;
 };
 
-export type OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.OrganizationInvitationWhereUniqueInput;
-        update: Prisma.XOR<
-            Prisma.OrganizationInvitationUpdateWithoutOrganizationInput,
-            Prisma.OrganizationInvitationUncheckedUpdateWithoutOrganizationInput
-        >;
-        create: Prisma.XOR<
-            Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
-            Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
-        >;
-    };
+export type OrganizationInvitationUpsertWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.OrganizationInvitationWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.OrganizationInvitationUpdateWithoutOrganizationInput,
+        Prisma.OrganizationInvitationUncheckedUpdateWithoutOrganizationInput
+    >;
+    create: Prisma.XOR<
+        Prisma.OrganizationInvitationCreateWithoutOrganizationInput,
+        Prisma.OrganizationInvitationUncheckedCreateWithoutOrganizationInput
+    >;
+};
 
-export type OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.OrganizationInvitationWhereUniqueInput;
-        data: Prisma.XOR<
-            Prisma.OrganizationInvitationUpdateWithoutOrganizationInput,
-            Prisma.OrganizationInvitationUncheckedUpdateWithoutOrganizationInput
-        >;
-    };
+export type OrganizationInvitationUpdateWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.OrganizationInvitationWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationInvitationUpdateWithoutOrganizationInput,
+        Prisma.OrganizationInvitationUncheckedUpdateWithoutOrganizationInput
+    >;
+};
 
-export type OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput =
-    {
-        where: Prisma.OrganizationInvitationScalarWhereInput;
-        data: Prisma.XOR<
-            Prisma.OrganizationInvitationUpdateManyMutationInput,
-            Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationInput
-        >;
-    };
+export type OrganizationInvitationUpdateManyWithWhereWithoutOrganizationInput = {
+    where: Prisma.OrganizationInvitationScalarWhereInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationInvitationUpdateManyMutationInput,
+        Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationInput
+    >;
+};
 
 export type OrganizationInvitationCreateManyUserInput = {
     id: string;
@@ -947,24 +871,19 @@ export type OrganizationInvitationUncheckedUpdateWithoutOrganizationInput = {
     inviterId?: Prisma.StringFieldUpdateOperationsInput | string;
 };
 
-export type OrganizationInvitationUncheckedUpdateManyWithoutOrganizationInput =
-    {
-        id?: Prisma.StringFieldUpdateOperationsInput | string;
-        email?: Prisma.StringFieldUpdateOperationsInput | string;
-        role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-        teamId?:
-            | Prisma.NullableStringFieldUpdateOperationsInput
-            | string
-            | null;
-        status?: Prisma.StringFieldUpdateOperationsInput | string;
-        expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        inviterId?: Prisma.StringFieldUpdateOperationsInput | string;
-    };
+export type OrganizationInvitationUncheckedUpdateManyWithoutOrganizationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    teamId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    inviterId?: Prisma.StringFieldUpdateOperationsInput | string;
+};
 
 export type OrganizationInvitationSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -983,8 +902,7 @@ export type OrganizationInvitationSelect<
 >;
 
 export type OrganizationInvitationSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1003,8 +921,7 @@ export type OrganizationInvitationSelectCreateManyAndReturn<
 >;
 
 export type OrganizationInvitationSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1035,8 +952,7 @@ export type OrganizationInvitationSelectScalar = {
 };
 
 export type OrganizationInvitationOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1050,30 +966,26 @@ export type OrganizationInvitationOmit<
     ExtArgs["result"]["organizationInvitation"]
 >;
 export type OrganizationInvitationInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationInvitationIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationInvitationIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $OrganizationInvitationPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "OrganizationInvitation";
     objects: {
@@ -1102,18 +1014,13 @@ export type OrganizationInvitationGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$OrganizationInvitationPayload, S>;
 
 export type OrganizationInvitationCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    OrganizationInvitationFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<OrganizationInvitationFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: OrganizationInvitationCountAggregateInputType | true;
 };
 
 export interface OrganizationInvitationDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1132,10 +1039,7 @@ export interface OrganizationInvitationDelegate<
      * })
      */
     findUnique<T extends OrganizationInvitationFindUniqueArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationFindUniqueArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationInvitationFindUniqueArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationInvitationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1161,10 +1065,7 @@ export interface OrganizationInvitationDelegate<
      * })
      */
     findUniqueOrThrow<T extends OrganizationInvitationFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationInvitationFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationInvitationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1191,10 +1092,7 @@ export interface OrganizationInvitationDelegate<
      * })
      */
     findFirst<T extends OrganizationInvitationFindFirstArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationFindFirstArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationInvitationFindFirstArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationInvitationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1222,10 +1120,7 @@ export interface OrganizationInvitationDelegate<
      * })
      */
     findFirstOrThrow<T extends OrganizationInvitationFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationInvitationFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationInvitationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1255,10 +1150,7 @@ export interface OrganizationInvitationDelegate<
      *
      */
     findMany<T extends OrganizationInvitationFindManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationFindManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationInvitationFindManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1307,10 +1199,7 @@ export interface OrganizationInvitationDelegate<
      *
      */
     createMany<T extends OrganizationInvitationCreateManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationCreateManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationInvitationCreateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1335,13 +1224,8 @@ export interface OrganizationInvitationDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    createManyAndReturn<
-        T extends OrganizationInvitationCreateManyAndReturnArgs,
-    >(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationCreateManyAndReturnArgs<ExtArgs>
-        >,
+    createManyAndReturn<T extends OrganizationInvitationCreateManyAndReturnArgs>(
+        args?: Prisma.SelectSubset<T, OrganizationInvitationCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1419,10 +1303,7 @@ export interface OrganizationInvitationDelegate<
      *
      */
     deleteMany<T extends OrganizationInvitationDeleteManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationDeleteManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationInvitationDeleteManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1443,10 +1324,7 @@ export interface OrganizationInvitationDelegate<
      *
      */
     updateMany<T extends OrganizationInvitationUpdateManyArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationUpdateManyArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationInvitationUpdateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1477,13 +1355,8 @@ export interface OrganizationInvitationDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    updateManyAndReturn<
-        T extends OrganizationInvitationUpdateManyAndReturnArgs,
-    >(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationInvitationUpdateManyAndReturnArgs<ExtArgs>
-        >,
+    updateManyAndReturn<T extends OrganizationInvitationUpdateManyAndReturnArgs>(
+        args: Prisma.SelectSubset<T, OrganizationInvitationUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationInvitationPayload<ExtArgs>,
@@ -1543,10 +1416,7 @@ export interface OrganizationInvitationDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      OrganizationInvitationCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], OrganizationInvitationCountAggregateOutputType>
             : number
     >;
 
@@ -1621,12 +1491,7 @@ export interface OrganizationInvitationDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1656,11 +1521,7 @@ export interface OrganizationInvitationDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            OrganizationInvitationGroupByArgs,
-            OrderByArg
-        > &
+        args: Prisma.SubsetIntersection<T, OrganizationInvitationGroupByArgs, OrderByArg> &
             InputErrors,
     ): {} extends InputErrors
         ? GetOrganizationInvitationGroupByPayload<T>
@@ -1680,8 +1541,7 @@ export interface OrganizationInvitationDelegate<
 export interface Prisma__OrganizationInvitationClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1720,14 +1580,8 @@ export interface Prisma__OrganizationInvitationClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1735,10 +1589,7 @@ export interface Prisma__OrganizationInvitationClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1746,9 +1597,7 @@ export interface Prisma__OrganizationInvitationClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1756,10 +1605,7 @@ export interface Prisma__OrganizationInvitationClient<
  */
 export interface OrganizationInvitationFieldRefs {
     readonly id: Prisma.FieldRef<"OrganizationInvitation", "String">;
-    readonly organizationId: Prisma.FieldRef<
-        "OrganizationInvitation",
-        "String"
-    >;
+    readonly organizationId: Prisma.FieldRef<"OrganizationInvitation", "String">;
     readonly email: Prisma.FieldRef<"OrganizationInvitation", "String">;
     readonly role: Prisma.FieldRef<"OrganizationInvitation", "String">;
     readonly teamId: Prisma.FieldRef<"OrganizationInvitation", "String">;
@@ -1774,8 +1620,7 @@ export interface OrganizationInvitationFieldRefs {
  * OrganizationInvitation findUnique
  */
 export type OrganizationInvitationFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -1799,8 +1644,7 @@ export type OrganizationInvitationFindUniqueArgs<
  * OrganizationInvitation findUniqueOrThrow
  */
 export type OrganizationInvitationFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -1824,8 +1668,7 @@ export type OrganizationInvitationFindUniqueOrThrowArgs<
  * OrganizationInvitation findFirst
  */
 export type OrganizationInvitationFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -1883,8 +1726,7 @@ export type OrganizationInvitationFindFirstArgs<
  * OrganizationInvitation findFirstOrThrow
  */
 export type OrganizationInvitationFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -1942,8 +1784,7 @@ export type OrganizationInvitationFindFirstOrThrowArgs<
  * OrganizationInvitation findMany
  */
 export type OrganizationInvitationFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -1996,8 +1837,7 @@ export type OrganizationInvitationFindManyArgs<
  * OrganizationInvitation create
  */
 export type OrganizationInvitationCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2024,8 +1864,7 @@ export type OrganizationInvitationCreateArgs<
  * OrganizationInvitation createMany
  */
 export type OrganizationInvitationCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many OrganizationInvitations.
@@ -2040,8 +1879,7 @@ export type OrganizationInvitationCreateManyArgs<
  * OrganizationInvitation createManyAndReturn
  */
 export type OrganizationInvitationCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2068,8 +1906,7 @@ export type OrganizationInvitationCreateManyAndReturnArgs<
  * OrganizationInvitation update
  */
 export type OrganizationInvitationUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2100,8 +1937,7 @@ export type OrganizationInvitationUpdateArgs<
  * OrganizationInvitation updateMany
  */
 export type OrganizationInvitationUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update OrganizationInvitations.
@@ -2124,8 +1960,7 @@ export type OrganizationInvitationUpdateManyArgs<
  * OrganizationInvitation updateManyAndReturn
  */
 export type OrganizationInvitationUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2160,8 +1995,7 @@ export type OrganizationInvitationUpdateManyAndReturnArgs<
  * OrganizationInvitation upsert
  */
 export type OrganizationInvitationUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2199,8 +2033,7 @@ export type OrganizationInvitationUpsertArgs<
  * OrganizationInvitation delete
  */
 export type OrganizationInvitationDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -2224,8 +2057,7 @@ export type OrganizationInvitationDeleteArgs<
  * OrganizationInvitation deleteMany
  */
 export type OrganizationInvitationDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationInvitations to delete
@@ -2241,8 +2073,7 @@ export type OrganizationInvitationDeleteManyArgs<
  * OrganizationInvitation without action
  */
 export type OrganizationInvitationDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation

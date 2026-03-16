@@ -22,5 +22,4 @@ export const SkillCheckStatus = {
     Exclude: "Exclude",
 } as const;
 
-export type SkillCheckStatus =
-    (typeof SkillCheckStatus)[keyof typeof SkillCheckStatus];
+export type SkillCheckStatus = (typeof SkillCheckStatus)[keyof typeof SkillCheckStatus];

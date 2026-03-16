@@ -75,8 +75,7 @@ export type SkillPackageSubscriptionCountAggregateInputType = {
 };
 
 export type SkillPackageSubscriptionAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillPackageSubscription to aggregate.
@@ -131,9 +130,7 @@ export type SkillPackageSubscriptionAggregateArgs<
 export type GetSkillPackageSubscriptionAggregateType<
     T extends SkillPackageSubscriptionAggregateArgs,
 > = {
-    [P in keyof T & keyof AggregateSkillPackageSubscription]: P extends
-        | "_count"
-        | "count"
+    [P in keyof T & keyof AggregateSkillPackageSubscription]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
             : Prisma.GetScalarType<T[P], AggregateSkillPackageSubscription[P]>
@@ -141,8 +138,7 @@ export type GetSkillPackageSubscriptionAggregateType<
 };
 
 export type SkillPackageSubscriptionGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillPackageSubscriptionWhereInput;
     orderBy?:
@@ -170,49 +166,28 @@ export type SkillPackageSubscriptionGroupByOutputType = {
     _max: SkillPackageSubscriptionMaxAggregateOutputType | null;
 };
 
-type GetSkillPackageSubscriptionGroupByPayload<
-    T extends SkillPackageSubscriptionGroupByArgs,
-> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<
-            SkillPackageSubscriptionGroupByOutputType,
-            T["by"]
-        > & {
-            [P in keyof T &
-                keyof SkillPackageSubscriptionGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<
-                          T[P],
-                          SkillPackageSubscriptionGroupByOutputType[P]
-                      >
-                : Prisma.GetScalarType<
-                      T[P],
-                      SkillPackageSubscriptionGroupByOutputType[P]
-                  >;
-        }
-    >
->;
+type GetSkillPackageSubscriptionGroupByPayload<T extends SkillPackageSubscriptionGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<SkillPackageSubscriptionGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof SkillPackageSubscriptionGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type SkillPackageSubscriptionWhereInput = {
-    AND?:
-        | Prisma.SkillPackageSubscriptionWhereInput
-        | Prisma.SkillPackageSubscriptionWhereInput[];
+    AND?: Prisma.SkillPackageSubscriptionWhereInput | Prisma.SkillPackageSubscriptionWhereInput[];
     OR?: Prisma.SkillPackageSubscriptionWhereInput[];
-    NOT?:
-        | Prisma.SkillPackageSubscriptionWhereInput
-        | Prisma.SkillPackageSubscriptionWhereInput[];
+    NOT?: Prisma.SkillPackageSubscriptionWhereInput | Prisma.SkillPackageSubscriptionWhereInput[];
     id?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
     organizationId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
     skillPackageId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
-    createdAt?:
-        | Prisma.DateTimeFilter<"SkillPackageSubscription">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeFilter<"SkillPackageSubscription">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
@@ -248,20 +223,10 @@ export type SkillPackageSubscriptionWhereUniqueInput = Prisma.AtLeast<
         NOT?:
             | Prisma.SkillPackageSubscriptionWhereInput
             | Prisma.SkillPackageSubscriptionWhereInput[];
-        organizationId?:
-            | Prisma.StringFilter<"SkillPackageSubscription">
-            | string;
-        skillPackageId?:
-            | Prisma.StringFilter<"SkillPackageSubscription">
-            | string;
-        createdAt?:
-            | Prisma.DateTimeFilter<"SkillPackageSubscription">
-            | Date
-            | string;
-        updatedAt?:
-            | Prisma.DateTimeFilter<"SkillPackageSubscription">
-            | Date
-            | string;
+        organizationId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
+        skillPackageId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
+        createdAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
+        updatedAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
@@ -296,20 +261,10 @@ export type SkillPackageSubscriptionScalarWhereWithAggregatesInput = {
         | Prisma.SkillPackageSubscriptionScalarWhereWithAggregatesInput
         | Prisma.SkillPackageSubscriptionScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"SkillPackageSubscription"> | string;
-    organizationId?:
-        | Prisma.StringWithAggregatesFilter<"SkillPackageSubscription">
-        | string;
-    skillPackageId?:
-        | Prisma.StringWithAggregatesFilter<"SkillPackageSubscription">
-        | string;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"SkillPackageSubscription">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"SkillPackageSubscription">
-        | Date
-        | string;
+    organizationId?: Prisma.StringWithAggregatesFilter<"SkillPackageSubscription"> | string;
+    skillPackageId?: Prisma.StringWithAggregatesFilter<"SkillPackageSubscription"> | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"SkillPackageSubscription"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SkillPackageSubscription"> | Date | string;
 };
 
 export type SkillPackageSubscriptionCreateInput = {
@@ -384,11 +339,10 @@ export type SkillPackageSubscriptionOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
 
-export type SkillPackageSubscriptionOrganizationIdSkillPackageIdCompoundUniqueInput =
-    {
-        organizationId: string;
-        skillPackageId: string;
-    };
+export type SkillPackageSubscriptionOrganizationIdSkillPackageIdCompoundUniqueInput = {
+    organizationId: string;
+    skillPackageId: string;
+};
 
 export type SkillPackageSubscriptionCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -436,23 +390,22 @@ export type SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput = {
         | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
 };
 
-export type SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
-                  Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput[]
-            | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput[];
-        createMany?: Prisma.SkillPackageSubscriptionCreateManyOrganizationInputEnvelope;
-        connect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-    };
+export type SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
+              Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput[]
+        | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.SkillPackageSubscriptionCreateManyOrganizationInputEnvelope;
+    connect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+};
 
 export type SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput = {
     create?:
@@ -492,44 +445,43 @@ export type SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.SkillPackageSubscriptionScalarWhereInput[];
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
-                  Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput[]
-            | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput[];
-        upsert?:
-            | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput
-            | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput[];
-        createMany?: Prisma.SkillPackageSubscriptionCreateManyOrganizationInputEnvelope;
-        set?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        disconnect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        delete?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        connect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        update?:
-            | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput
-            | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput[];
-        updateMany?:
-            | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput
-            | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput[];
-        deleteMany?:
-            | Prisma.SkillPackageSubscriptionScalarWhereInput
-            | Prisma.SkillPackageSubscriptionScalarWhereInput[];
-    };
+export type SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
+              Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput[]
+        | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutOrganizationInput[];
+    upsert?:
+        | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.SkillPackageSubscriptionCreateManyOrganizationInputEnvelope;
+    set?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    disconnect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    delete?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    connect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    update?:
+        | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput[];
+    updateMany?:
+        | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput[];
+    deleteMany?:
+        | Prisma.SkillPackageSubscriptionScalarWhereInput
+        | Prisma.SkillPackageSubscriptionScalarWhereInput[];
+};
 
 export type SkillPackageSubscriptionCreateNestedManyWithoutSkillPackageInput = {
     create?:
@@ -548,23 +500,22 @@ export type SkillPackageSubscriptionCreateNestedManyWithoutSkillPackageInput = {
         | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
 };
 
-export type SkillPackageSubscriptionUncheckedCreateNestedManyWithoutSkillPackageInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
-                  Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
-              >
-            | Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput[]
-            | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput[];
-        connectOrCreate?:
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput[];
-        createMany?: Prisma.SkillPackageSubscriptionCreateManySkillPackageInputEnvelope;
-        connect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-    };
+export type SkillPackageSubscriptionUncheckedCreateNestedManyWithoutSkillPackageInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
+              Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
+          >
+        | Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput[]
+        | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput[];
+    connectOrCreate?:
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput[];
+    createMany?: Prisma.SkillPackageSubscriptionCreateManySkillPackageInputEnvelope;
+    connect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+};
 
 export type SkillPackageSubscriptionUpdateManyWithoutSkillPackageNestedInput = {
     create?:
@@ -604,100 +555,95 @@ export type SkillPackageSubscriptionUpdateManyWithoutSkillPackageNestedInput = {
         | Prisma.SkillPackageSubscriptionScalarWhereInput[];
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageNestedInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
-                  Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
-              >
-            | Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput[]
-            | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput[];
-        connectOrCreate?:
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput
-            | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput[];
-        upsert?:
-            | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput
-            | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput[];
-        createMany?: Prisma.SkillPackageSubscriptionCreateManySkillPackageInputEnvelope;
-        set?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        disconnect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        delete?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        connect?:
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput
-            | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
-        update?:
-            | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput
-            | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput[];
-        updateMany?:
-            | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput
-            | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput[];
-        deleteMany?:
-            | Prisma.SkillPackageSubscriptionScalarWhereInput
-            | Prisma.SkillPackageSubscriptionScalarWhereInput[];
-    };
+export type SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
+              Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
+          >
+        | Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput[]
+        | Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput[];
+    connectOrCreate?:
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput
+        | Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillPackageInput[];
+    upsert?:
+        | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput
+        | Prisma.SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput[];
+    createMany?: Prisma.SkillPackageSubscriptionCreateManySkillPackageInputEnvelope;
+    set?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    disconnect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    delete?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    connect?:
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput
+        | Prisma.SkillPackageSubscriptionWhereUniqueInput[];
+    update?:
+        | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput
+        | Prisma.SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput[];
+    updateMany?:
+        | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput
+        | Prisma.SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput[];
+    deleteMany?:
+        | Prisma.SkillPackageSubscriptionScalarWhereInput
+        | Prisma.SkillPackageSubscriptionScalarWhereInput[];
+};
 
-export type SkillPackageSubscriptionCreateNestedOneWithoutGroupOverridesInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
-        >;
-        connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput;
-        connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-    };
+export type SkillPackageSubscriptionCreateNestedOneWithoutGroupOverridesInput = {
+    create?: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
+    >;
+    connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput;
+    connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+};
 
-export type SkillPackageSubscriptionUpdateOneRequiredWithoutGroupOverridesNestedInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
-        >;
-        connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput;
-        upsert?: Prisma.SkillPackageSubscriptionUpsertWithoutGroupOverridesInput;
-        connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        update?: Prisma.XOR<
-            Prisma.XOR<
-                Prisma.SkillPackageSubscriptionUpdateToOneWithWhereWithoutGroupOverridesInput,
-                Prisma.SkillPackageSubscriptionUpdateWithoutGroupOverridesInput
-            >,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateOneRequiredWithoutGroupOverridesNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
+    >;
+    connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput;
+    upsert?: Prisma.SkillPackageSubscriptionUpsertWithoutGroupOverridesInput;
+    connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.SkillPackageSubscriptionUpdateToOneWithWhereWithoutGroupOverridesInput,
+            Prisma.SkillPackageSubscriptionUpdateWithoutGroupOverridesInput
+        >,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput
+    >;
+};
 
-export type SkillPackageSubscriptionCreateNestedOneWithoutSkillOverridesInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
-        >;
-        connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput;
-        connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-    };
+export type SkillPackageSubscriptionCreateNestedOneWithoutSkillOverridesInput = {
+    create?: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
+    >;
+    connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput;
+    connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+};
 
-export type SkillPackageSubscriptionUpdateOneRequiredWithoutSkillOverridesNestedInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
-        >;
-        connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput;
-        upsert?: Prisma.SkillPackageSubscriptionUpsertWithoutSkillOverridesInput;
-        connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        update?: Prisma.XOR<
-            Prisma.XOR<
-                Prisma.SkillPackageSubscriptionUpdateToOneWithWhereWithoutSkillOverridesInput,
-                Prisma.SkillPackageSubscriptionUpdateWithoutSkillOverridesInput
-            >,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateOneRequiredWithoutSkillOverridesNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
+    >;
+    connectOrCreate?: Prisma.SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput;
+    upsert?: Prisma.SkillPackageSubscriptionUpsertWithoutSkillOverridesInput;
+    connect?: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.SkillPackageSubscriptionUpdateToOneWithWhereWithoutSkillOverridesInput,
+            Prisma.SkillPackageSubscriptionUpdateWithoutSkillOverridesInput
+        >,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput
+    >;
+};
 
 export type SkillPackageSubscriptionCreateWithoutOrganizationInput = {
     id: string;
@@ -732,36 +678,33 @@ export type SkillPackageSubscriptionCreateManyOrganizationInputEnvelope = {
     skipDuplicates?: boolean;
 };
 
-export type SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        update: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutOrganizationInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutOrganizationInput
-        >;
-        create: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
-        >;
-    };
+export type SkillPackageSubscriptionUpsertWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutOrganizationInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutOrganizationInput
+    >;
+    create: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutOrganizationInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutOrganizationInput
+    >;
+};
 
-export type SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutOrganizationInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutOrganizationInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutOrganizationInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutOrganizationInput
+    >;
+};
 
-export type SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput =
-    {
-        where: Prisma.SkillPackageSubscriptionScalarWhereInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateManyMutationInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateManyWithWhereWithoutOrganizationInput = {
+    where: Prisma.SkillPackageSubscriptionScalarWhereInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateManyMutationInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationInput
+    >;
+};
 
 export type SkillPackageSubscriptionScalarWhereInput = {
     AND?:
@@ -774,14 +717,8 @@ export type SkillPackageSubscriptionScalarWhereInput = {
     id?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
     organizationId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
     skillPackageId?: Prisma.StringFilter<"SkillPackageSubscription"> | string;
-    createdAt?:
-        | Prisma.DateTimeFilter<"SkillPackageSubscription">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeFilter<"SkillPackageSubscription">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"SkillPackageSubscription"> | Date | string;
 };
 
 export type SkillPackageSubscriptionCreateWithoutSkillPackageInput = {
@@ -817,36 +754,33 @@ export type SkillPackageSubscriptionCreateManySkillPackageInputEnvelope = {
     skipDuplicates?: boolean;
 };
 
-export type SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        update: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutSkillPackageInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillPackageInput
-        >;
-        create: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
-        >;
-    };
+export type SkillPackageSubscriptionUpsertWithWhereUniqueWithoutSkillPackageInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutSkillPackageInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillPackageInput
+    >;
+    create: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutSkillPackageInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillPackageInput
+    >;
+};
 
-export type SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutSkillPackageInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillPackageInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateWithWhereUniqueWithoutSkillPackageInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutSkillPackageInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillPackageInput
+    >;
+};
 
-export type SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput =
-    {
-        where: Prisma.SkillPackageSubscriptionScalarWhereInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateManyMutationInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateManyWithWhereWithoutSkillPackageInput = {
+    where: Prisma.SkillPackageSubscriptionScalarWhereInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateManyMutationInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageInput
+    >;
+};
 
 export type SkillPackageSubscriptionCreateWithoutGroupOverridesInput = {
     id: string;
@@ -857,24 +791,22 @@ export type SkillPackageSubscriptionCreateWithoutGroupOverridesInput = {
     skillOverrides?: Prisma.SkillOverrideCreateNestedManyWithoutSubscriptionInput;
 };
 
-export type SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput =
-    {
-        id: string;
-        organizationId: string;
-        skillPackageId: string;
-        createdAt?: Date | string;
-        updatedAt?: Date | string;
-        skillOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSubscriptionInput;
-    };
+export type SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput = {
+    id: string;
+    organizationId: string;
+    skillPackageId: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    skillOverrides?: Prisma.SkillOverrideUncheckedCreateNestedManyWithoutSubscriptionInput;
+};
 
-export type SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        create: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionCreateOrConnectWithoutGroupOverridesInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutGroupOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutGroupOverridesInput
+    >;
+};
 
 export type SkillPackageSubscriptionUpsertWithoutGroupOverridesInput = {
     update: Prisma.XOR<
@@ -888,14 +820,13 @@ export type SkillPackageSubscriptionUpsertWithoutGroupOverridesInput = {
     where?: Prisma.SkillPackageSubscriptionWhereInput;
 };
 
-export type SkillPackageSubscriptionUpdateToOneWithWhereWithoutGroupOverridesInput =
-    {
-        where?: Prisma.SkillPackageSubscriptionWhereInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutGroupOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateToOneWithWhereWithoutGroupOverridesInput = {
+    where?: Prisma.SkillPackageSubscriptionWhereInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutGroupOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput
+    >;
+};
 
 export type SkillPackageSubscriptionUpdateWithoutGroupOverridesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -906,15 +837,14 @@ export type SkillPackageSubscriptionUpdateWithoutGroupOverridesInput = {
     skillOverrides?: Prisma.SkillOverrideUpdateManyWithoutSubscriptionNestedInput;
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput =
-    {
-        id?: Prisma.StringFieldUpdateOperationsInput | string;
-        organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-        skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
-        createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        skillOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
-    };
+export type SkillPackageSubscriptionUncheckedUpdateWithoutGroupOverridesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    skillOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
+};
 
 export type SkillPackageSubscriptionCreateWithoutSkillOverridesInput = {
     id: string;
@@ -925,24 +855,22 @@ export type SkillPackageSubscriptionCreateWithoutSkillOverridesInput = {
     groupOverrides?: Prisma.SkillGroupOverrideCreateNestedManyWithoutSubscriptionInput;
 };
 
-export type SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput =
-    {
-        id: string;
-        organizationId: string;
-        skillPackageId: string;
-        createdAt?: Date | string;
-        updatedAt?: Date | string;
-        groupOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSubscriptionInput;
-    };
+export type SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput = {
+    id: string;
+    organizationId: string;
+    skillPackageId: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    groupOverrides?: Prisma.SkillGroupOverrideUncheckedCreateNestedManyWithoutSubscriptionInput;
+};
 
-export type SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput =
-    {
-        where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
-        create: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionCreateOrConnectWithoutSkillOverridesInput = {
+    where: Prisma.SkillPackageSubscriptionWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionCreateWithoutSkillOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedCreateWithoutSkillOverridesInput
+    >;
+};
 
 export type SkillPackageSubscriptionUpsertWithoutSkillOverridesInput = {
     update: Prisma.XOR<
@@ -956,14 +884,13 @@ export type SkillPackageSubscriptionUpsertWithoutSkillOverridesInput = {
     where?: Prisma.SkillPackageSubscriptionWhereInput;
 };
 
-export type SkillPackageSubscriptionUpdateToOneWithWhereWithoutSkillOverridesInput =
-    {
-        where?: Prisma.SkillPackageSubscriptionWhereInput;
-        data: Prisma.XOR<
-            Prisma.SkillPackageSubscriptionUpdateWithoutSkillOverridesInput,
-            Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput
-        >;
-    };
+export type SkillPackageSubscriptionUpdateToOneWithWhereWithoutSkillOverridesInput = {
+    where?: Prisma.SkillPackageSubscriptionWhereInput;
+    data: Prisma.XOR<
+        Prisma.SkillPackageSubscriptionUpdateWithoutSkillOverridesInput,
+        Prisma.SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput
+    >;
+};
 
 export type SkillPackageSubscriptionUpdateWithoutSkillOverridesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -974,15 +901,14 @@ export type SkillPackageSubscriptionUpdateWithoutSkillOverridesInput = {
     groupOverrides?: Prisma.SkillGroupOverrideUpdateManyWithoutSubscriptionNestedInput;
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput =
-    {
-        id?: Prisma.StringFieldUpdateOperationsInput | string;
-        organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-        skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
-        createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        groupOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
-    };
+export type SkillPackageSubscriptionUncheckedUpdateWithoutSkillOverridesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    groupOverrides?: Prisma.SkillGroupOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
+};
 
 export type SkillPackageSubscriptionCreateManyOrganizationInput = {
     id: string;
@@ -1009,13 +935,12 @@ export type SkillPackageSubscriptionUncheckedUpdateWithoutOrganizationInput = {
     skillOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationInput =
-    {
-        id?: Prisma.StringFieldUpdateOperationsInput | string;
-        skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
-        createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    };
+export type SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    skillPackageId?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
 
 export type SkillPackageSubscriptionCreateManySkillPackageInput = {
     id: string;
@@ -1042,13 +967,12 @@ export type SkillPackageSubscriptionUncheckedUpdateWithoutSkillPackageInput = {
     skillOverrides?: Prisma.SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput;
 };
 
-export type SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageInput =
-    {
-        id?: Prisma.StringFieldUpdateOperationsInput | string;
-        organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-        createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-        updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    };
+export type SkillPackageSubscriptionUncheckedUpdateManyWithoutSkillPackageInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
 
 /**
  * Count Type SkillPackageSubscriptionCountOutputType
@@ -1060,23 +984,17 @@ export type SkillPackageSubscriptionCountOutputType = {
 };
 
 export type SkillPackageSubscriptionCountOutputTypeSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-    groupOverrides?:
-        | boolean
-        | SkillPackageSubscriptionCountOutputTypeCountGroupOverridesArgs;
-    skillOverrides?:
-        | boolean
-        | SkillPackageSubscriptionCountOutputTypeCountSkillOverridesArgs;
+    groupOverrides?: boolean | SkillPackageSubscriptionCountOutputTypeCountGroupOverridesArgs;
+    skillOverrides?: boolean | SkillPackageSubscriptionCountOutputTypeCountSkillOverridesArgs;
 };
 
 /**
  * SkillPackageSubscriptionCountOutputType without action
  */
 export type SkillPackageSubscriptionCountOutputTypeDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscriptionCountOutputType
@@ -1088,8 +1006,7 @@ export type SkillPackageSubscriptionCountOutputTypeDefaultArgs<
  * SkillPackageSubscriptionCountOutputType without action
  */
 export type SkillPackageSubscriptionCountOutputTypeCountGroupOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillGroupOverrideWhereInput;
 };
@@ -1098,15 +1015,13 @@ export type SkillPackageSubscriptionCountOutputTypeCountGroupOverridesArgs<
  * SkillPackageSubscriptionCountOutputType without action
  */
 export type SkillPackageSubscriptionCountOutputTypeCountSkillOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillOverrideWhereInput;
 };
 
 export type SkillPackageSubscriptionSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1116,22 +1031,15 @@ export type SkillPackageSubscriptionSelect<
         updatedAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
         skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
-        groupOverrides?:
-            | boolean
-            | Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>;
-        skillOverrides?:
-            | boolean
-            | Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>;
-        _count?:
-            | boolean
-            | Prisma.SkillPackageSubscriptionCountOutputTypeDefaultArgs<ExtArgs>;
+        groupOverrides?: boolean | Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>;
+        skillOverrides?: boolean | Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>;
+        _count?: boolean | Prisma.SkillPackageSubscriptionCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["skillPackageSubscription"]
 >;
 
 export type SkillPackageSubscriptionSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1146,8 +1054,7 @@ export type SkillPackageSubscriptionSelectCreateManyAndReturn<
 >;
 
 export type SkillPackageSubscriptionSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1170,46 +1077,35 @@ export type SkillPackageSubscriptionSelectScalar = {
 };
 
 export type SkillPackageSubscriptionOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     "id" | "organizationId" | "skillPackageId" | "createdAt" | "updatedAt",
     ExtArgs["result"]["skillPackageSubscription"]
 >;
 export type SkillPackageSubscriptionInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
-    groupOverrides?:
-        | boolean
-        | Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>;
-    skillOverrides?:
-        | boolean
-        | Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>;
-    _count?:
-        | boolean
-        | Prisma.SkillPackageSubscriptionCountOutputTypeDefaultArgs<ExtArgs>;
+    groupOverrides?: boolean | Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>;
+    skillOverrides?: boolean | Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>;
+    _count?: boolean | Prisma.SkillPackageSubscriptionCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type SkillPackageSubscriptionIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
 };
 export type SkillPackageSubscriptionIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     skillPackage?: boolean | Prisma.SkillPackageDefaultArgs<ExtArgs>;
 };
 
 export type $SkillPackageSubscriptionPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "SkillPackageSubscription";
     objects: {
@@ -1236,18 +1132,13 @@ export type SkillPackageSubscriptionGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$SkillPackageSubscriptionPayload, S>;
 
 export type SkillPackageSubscriptionCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    SkillPackageSubscriptionFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<SkillPackageSubscriptionFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: SkillPackageSubscriptionCountAggregateInputType | true;
 };
 
 export interface SkillPackageSubscriptionDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1266,10 +1157,7 @@ export interface SkillPackageSubscriptionDelegate<
      * })
      */
     findUnique<T extends SkillPackageSubscriptionFindUniqueArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionFindUniqueArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionFindUniqueArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1295,10 +1183,7 @@ export interface SkillPackageSubscriptionDelegate<
      * })
      */
     findUniqueOrThrow<T extends SkillPackageSubscriptionFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1325,10 +1210,7 @@ export interface SkillPackageSubscriptionDelegate<
      * })
      */
     findFirst<T extends SkillPackageSubscriptionFindFirstArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionFindFirstArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionFindFirstArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1356,10 +1238,7 @@ export interface SkillPackageSubscriptionDelegate<
      * })
      */
     findFirstOrThrow<T extends SkillPackageSubscriptionFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1389,10 +1268,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     findMany<T extends SkillPackageSubscriptionFindManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionFindManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionFindManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1415,10 +1291,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     create<T extends SkillPackageSubscriptionCreateArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionCreateArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionCreateArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1444,10 +1317,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     createMany<T extends SkillPackageSubscriptionCreateManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionCreateManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionCreateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1472,13 +1342,8 @@ export interface SkillPackageSubscriptionDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    createManyAndReturn<
-        T extends SkillPackageSubscriptionCreateManyAndReturnArgs,
-    >(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionCreateManyAndReturnArgs<ExtArgs>
-        >,
+    createManyAndReturn<T extends SkillPackageSubscriptionCreateManyAndReturnArgs>(
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1501,10 +1366,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     delete<T extends SkillPackageSubscriptionDeleteArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionDeleteArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionDeleteArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1533,10 +1395,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     update<T extends SkillPackageSubscriptionUpdateArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionUpdateArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionUpdateArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1562,10 +1421,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     deleteMany<T extends SkillPackageSubscriptionDeleteManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionDeleteManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillPackageSubscriptionDeleteManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1586,10 +1442,7 @@ export interface SkillPackageSubscriptionDelegate<
      *
      */
     updateMany<T extends SkillPackageSubscriptionUpdateManyArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionUpdateManyArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionUpdateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1620,13 +1473,8 @@ export interface SkillPackageSubscriptionDelegate<
      * Read more here: https://pris.ly/d/null-undefined
      *
      */
-    updateManyAndReturn<
-        T extends SkillPackageSubscriptionUpdateManyAndReturnArgs,
-    >(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionUpdateManyAndReturnArgs<ExtArgs>
-        >,
+    updateManyAndReturn<T extends SkillPackageSubscriptionUpdateManyAndReturnArgs>(
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1654,10 +1502,7 @@ export interface SkillPackageSubscriptionDelegate<
      * })
      */
     upsert<T extends SkillPackageSubscriptionUpsertArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillPackageSubscriptionUpsertArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillPackageSubscriptionUpsertArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1767,12 +1612,7 @@ export interface SkillPackageSubscriptionDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1802,11 +1642,7 @@ export interface SkillPackageSubscriptionDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            SkillPackageSubscriptionGroupByArgs,
-            OrderByArg
-        > &
+        args: Prisma.SubsetIntersection<T, SkillPackageSubscriptionGroupByArgs, OrderByArg> &
             InputErrors,
     ): {} extends InputErrors
         ? GetSkillPackageSubscriptionGroupByPayload<T>
@@ -1826,8 +1662,7 @@ export interface SkillPackageSubscriptionDelegate<
 export interface Prisma__SkillPackageSubscriptionClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1859,14 +1694,8 @@ export interface Prisma__SkillPackageSubscriptionClient<
         ExtArgs,
         GlobalOmitOptions
     >;
-    groupOverrides<
-        T extends Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs> =
-            {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>
-        >,
+    groupOverrides<T extends Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.SkillPackageSubscription$groupOverridesArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillGroupOverridePayload<ExtArgs>,
@@ -1876,14 +1705,8 @@ export interface Prisma__SkillPackageSubscriptionClient<
           >
         | Null
     >;
-    skillOverrides<
-        T extends Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs> =
-            {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>
-        >,
+    skillOverrides<T extends Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.SkillPackageSubscription$skillOverridesArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillOverridePayload<ExtArgs>,
@@ -1900,14 +1723,8 @@ export interface Prisma__SkillPackageSubscriptionClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1915,10 +1732,7 @@ export interface Prisma__SkillPackageSubscriptionClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1926,9 +1740,7 @@ export interface Prisma__SkillPackageSubscriptionClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1936,14 +1748,8 @@ export interface Prisma__SkillPackageSubscriptionClient<
  */
 export interface SkillPackageSubscriptionFieldRefs {
     readonly id: Prisma.FieldRef<"SkillPackageSubscription", "String">;
-    readonly organizationId: Prisma.FieldRef<
-        "SkillPackageSubscription",
-        "String"
-    >;
-    readonly skillPackageId: Prisma.FieldRef<
-        "SkillPackageSubscription",
-        "String"
-    >;
+    readonly organizationId: Prisma.FieldRef<"SkillPackageSubscription", "String">;
+    readonly skillPackageId: Prisma.FieldRef<"SkillPackageSubscription", "String">;
     readonly createdAt: Prisma.FieldRef<"SkillPackageSubscription", "DateTime">;
     readonly updatedAt: Prisma.FieldRef<"SkillPackageSubscription", "DateTime">;
 }
@@ -1953,8 +1759,7 @@ export interface SkillPackageSubscriptionFieldRefs {
  * SkillPackageSubscription findUnique
  */
 export type SkillPackageSubscriptionFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -1978,8 +1783,7 @@ export type SkillPackageSubscriptionFindUniqueArgs<
  * SkillPackageSubscription findUniqueOrThrow
  */
 export type SkillPackageSubscriptionFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2003,8 +1807,7 @@ export type SkillPackageSubscriptionFindUniqueOrThrowArgs<
  * SkillPackageSubscription findFirst
  */
 export type SkillPackageSubscriptionFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2062,8 +1865,7 @@ export type SkillPackageSubscriptionFindFirstArgs<
  * SkillPackageSubscription findFirstOrThrow
  */
 export type SkillPackageSubscriptionFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2121,8 +1923,7 @@ export type SkillPackageSubscriptionFindFirstOrThrowArgs<
  * SkillPackageSubscription findMany
  */
 export type SkillPackageSubscriptionFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2175,8 +1976,7 @@ export type SkillPackageSubscriptionFindManyArgs<
  * SkillPackageSubscription create
  */
 export type SkillPackageSubscriptionCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2203,8 +2003,7 @@ export type SkillPackageSubscriptionCreateArgs<
  * SkillPackageSubscription createMany
  */
 export type SkillPackageSubscriptionCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many SkillPackageSubscriptions.
@@ -2219,8 +2018,7 @@ export type SkillPackageSubscriptionCreateManyArgs<
  * SkillPackageSubscription createManyAndReturn
  */
 export type SkillPackageSubscriptionCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2247,8 +2045,7 @@ export type SkillPackageSubscriptionCreateManyAndReturnArgs<
  * SkillPackageSubscription update
  */
 export type SkillPackageSubscriptionUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2279,8 +2076,7 @@ export type SkillPackageSubscriptionUpdateArgs<
  * SkillPackageSubscription updateMany
  */
 export type SkillPackageSubscriptionUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update SkillPackageSubscriptions.
@@ -2303,8 +2099,7 @@ export type SkillPackageSubscriptionUpdateManyArgs<
  * SkillPackageSubscription updateManyAndReturn
  */
 export type SkillPackageSubscriptionUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2339,8 +2134,7 @@ export type SkillPackageSubscriptionUpdateManyAndReturnArgs<
  * SkillPackageSubscription upsert
  */
 export type SkillPackageSubscriptionUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2378,8 +2172,7 @@ export type SkillPackageSubscriptionUpsertArgs<
  * SkillPackageSubscription delete
  */
 export type SkillPackageSubscriptionDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -2403,8 +2196,7 @@ export type SkillPackageSubscriptionDeleteArgs<
  * SkillPackageSubscription deleteMany
  */
 export type SkillPackageSubscriptionDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillPackageSubscriptions to delete
@@ -2420,8 +2212,7 @@ export type SkillPackageSubscriptionDeleteManyArgs<
  * SkillPackageSubscription.groupOverrides
  */
 export type SkillPackageSubscription$groupOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillGroupOverride
@@ -2451,8 +2242,7 @@ export type SkillPackageSubscription$groupOverridesArgs<
  * SkillPackageSubscription.skillOverrides
  */
 export type SkillPackageSubscription$skillOverridesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -2473,17 +2263,14 @@ export type SkillPackageSubscription$skillOverridesArgs<
     cursor?: Prisma.SkillOverrideWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillOverrideScalarFieldEnum
-        | Prisma.SkillOverrideScalarFieldEnum[];
+    distinct?: Prisma.SkillOverrideScalarFieldEnum | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**
  * SkillPackageSubscription without action
  */
 export type SkillPackageSubscriptionDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription

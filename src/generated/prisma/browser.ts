@@ -161,3 +161,13 @@ export type I3TemplateVariant = Prisma.I3TemplateVariantModel;
  *
  */
 export type I3TemplateVariant_D4H = Prisma.I3TemplateVariant_D4HModel;
+/**
+ * Model FormInstance
+ *
+ */
+export type FormInstance = Prisma.FormInstanceModel;
+/**
+ * Model FormInstanceItem
+ *
+ */
+export type FormInstanceItem = Prisma.FormInstanceItemModel;

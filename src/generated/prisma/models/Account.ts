@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Account
  *
  */
-export type AccountModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$AccountPayload>;
+export type AccountModel = runtime.Types.Result.DefaultSelection<Prisma.$AccountPayload>;
 
 export type AggregateAccount = {
     _count: AccountCountAggregateOutputType | null;
@@ -123,8 +122,7 @@ export type AccountCountAggregateInputType = {
 };
 
 export type AccountAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Account to aggregate.
@@ -135,9 +133,7 @@ export type AccountAggregateArgs<
      *
      * Determine the order of Accounts to fetch.
      */
-    orderBy?:
-        | Prisma.AccountOrderByWithRelationInput
-        | Prisma.AccountOrderByWithRelationInput[];
+    orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -185,8 +181,7 @@ export type GetAccountAggregateType<T extends AccountAggregateArgs> = {
 };
 
 export type AccountGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.AccountWhereInput;
     orderBy?:
@@ -220,22 +215,17 @@ export type AccountGroupByOutputType = {
     _max: AccountMaxAggregateOutputType | null;
 };
 
-type GetAccountGroupByPayload<T extends AccountGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<AccountGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof AccountGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              AccountGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<T[P], AccountGroupByOutputType[P]>;
-            }
-        >
-    >;
+type GetAccountGroupByPayload<T extends AccountGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<AccountGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof AccountGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], AccountGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], AccountGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type AccountWhereInput = {
     AND?: Prisma.AccountWhereInput | Prisma.AccountWhereInput[];
@@ -248,16 +238,8 @@ export type AccountWhereInput = {
     accessToken?: Prisma.StringNullableFilter<"Account"> | string | null;
     refreshToken?: Prisma.StringNullableFilter<"Account"> | string | null;
     idToken?: Prisma.StringNullableFilter<"Account"> | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.DateTimeNullableFilter<"Account">
-        | Date
-        | string
-        | null;
-    refreshTokenExpiresAt?:
-        | Prisma.DateTimeNullableFilter<"Account">
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
+    refreshTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
     scope?: Prisma.StringNullableFilter<"Account"> | string | null;
     password?: Prisma.StringNullableFilter<"Account"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Account"> | Date | string;
@@ -294,24 +276,13 @@ export type AccountWhereUniqueInput = Prisma.AtLeast<
         accessToken?: Prisma.StringNullableFilter<"Account"> | string | null;
         refreshToken?: Prisma.StringNullableFilter<"Account"> | string | null;
         idToken?: Prisma.StringNullableFilter<"Account"> | string | null;
-        accessTokenExpiresAt?:
-            | Prisma.DateTimeNullableFilter<"Account">
-            | Date
-            | string
-            | null;
-        refreshTokenExpiresAt?:
-            | Prisma.DateTimeNullableFilter<"Account">
-            | Date
-            | string
-            | null;
+        accessTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
+        refreshTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
         scope?: Prisma.StringNullableFilter<"Account"> | string | null;
         password?: Prisma.StringNullableFilter<"Account"> | string | null;
         createdAt?: Prisma.DateTimeFilter<"Account"> | Date | string;
         updatedAt?: Prisma.DateTimeFilter<"Account"> | Date | string;
-        user?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id"
 >;
@@ -347,18 +318,9 @@ export type AccountScalarWhereWithAggregatesInput = {
     accountId?: Prisma.StringWithAggregatesFilter<"Account"> | string;
     providerId?: Prisma.StringWithAggregatesFilter<"Account"> | string;
     userId?: Prisma.StringWithAggregatesFilter<"Account"> | string;
-    accessToken?:
-        | Prisma.StringNullableWithAggregatesFilter<"Account">
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.StringNullableWithAggregatesFilter<"Account">
-        | string
-        | null;
-    idToken?:
-        | Prisma.StringNullableWithAggregatesFilter<"Account">
-        | string
-        | null;
+    accessToken?: Prisma.StringNullableWithAggregatesFilter<"Account"> | string | null;
+    refreshToken?: Prisma.StringNullableWithAggregatesFilter<"Account"> | string | null;
+    idToken?: Prisma.StringNullableWithAggregatesFilter<"Account"> | string | null;
     accessTokenExpiresAt?:
         | Prisma.DateTimeNullableWithAggregatesFilter<"Account">
         | Date
@@ -369,14 +331,8 @@ export type AccountScalarWhereWithAggregatesInput = {
         | Date
         | string
         | null;
-    scope?:
-        | Prisma.StringNullableWithAggregatesFilter<"Account">
-        | string
-        | null;
-    password?:
-        | Prisma.StringNullableWithAggregatesFilter<"Account">
-        | string
-        | null;
+    scope?: Prisma.StringNullableWithAggregatesFilter<"Account"> | string | null;
+    password?: Prisma.StringNullableWithAggregatesFilter<"Account"> | string | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Account"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Account"> | Date | string;
 };
@@ -417,20 +373,10 @@ export type AccountUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -448,20 +394,10 @@ export type AccountUncheckedUpdateInput = {
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -493,20 +429,10 @@ export type AccountUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -523,20 +449,10 @@ export type AccountUncheckedUpdateManyInput = {
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -652,9 +568,7 @@ export type AccountUpdateManyWithoutUserNestedInput = {
         | Prisma.AccountUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.AccountCreateManyUserInputEnvelope;
     set?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
-    disconnect?:
-        | Prisma.AccountWhereUniqueInput
-        | Prisma.AccountWhereUniqueInput[];
+    disconnect?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     delete?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     connect?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     update?:
@@ -663,9 +577,7 @@ export type AccountUpdateManyWithoutUserNestedInput = {
     updateMany?:
         | Prisma.AccountUpdateManyWithWhereWithoutUserInput
         | Prisma.AccountUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.AccountScalarWhereInput
-        | Prisma.AccountScalarWhereInput[];
+    deleteMany?: Prisma.AccountScalarWhereInput | Prisma.AccountScalarWhereInput[];
 };
 
 export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
@@ -684,9 +596,7 @@ export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
         | Prisma.AccountUpsertWithWhereUniqueWithoutUserInput[];
     createMany?: Prisma.AccountCreateManyUserInputEnvelope;
     set?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
-    disconnect?:
-        | Prisma.AccountWhereUniqueInput
-        | Prisma.AccountWhereUniqueInput[];
+    disconnect?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     delete?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     connect?: Prisma.AccountWhereUniqueInput | Prisma.AccountWhereUniqueInput[];
     update?:
@@ -695,9 +605,7 @@ export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
     updateMany?:
         | Prisma.AccountUpdateManyWithWhereWithoutUserInput
         | Prisma.AccountUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?:
-        | Prisma.AccountScalarWhereInput
-        | Prisma.AccountScalarWhereInput[];
+    deleteMany?: Prisma.AccountScalarWhereInput | Prisma.AccountScalarWhereInput[];
 };
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -743,9 +651,7 @@ export type AccountCreateOrConnectWithoutUserInput = {
 };
 
 export type AccountCreateManyUserInputEnvelope = {
-    data:
-        | Prisma.AccountCreateManyUserInput
-        | Prisma.AccountCreateManyUserInput[];
+    data: Prisma.AccountCreateManyUserInput | Prisma.AccountCreateManyUserInput[];
     skipDuplicates?: boolean;
 };
 
@@ -788,16 +694,8 @@ export type AccountScalarWhereInput = {
     accessToken?: Prisma.StringNullableFilter<"Account"> | string | null;
     refreshToken?: Prisma.StringNullableFilter<"Account"> | string | null;
     idToken?: Prisma.StringNullableFilter<"Account"> | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.DateTimeNullableFilter<"Account">
-        | Date
-        | string
-        | null;
-    refreshTokenExpiresAt?:
-        | Prisma.DateTimeNullableFilter<"Account">
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
+    refreshTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Account"> | Date | string | null;
     scope?: Prisma.StringNullableFilter<"Account"> | string | null;
     password?: Prisma.StringNullableFilter<"Account"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Account"> | Date | string;
@@ -823,20 +721,10 @@ export type AccountUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -852,20 +740,10 @@ export type AccountUncheckedUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -881,20 +759,10 @@ export type AccountUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     accountId?: Prisma.StringFieldUpdateOperationsInput | string;
     providerId?: Prisma.StringFieldUpdateOperationsInput | string;
-    accessToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
-    refreshToken?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    accessToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     idToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    accessTokenExpiresAt?:
-        | Prisma.NullableDateTimeFieldUpdateOperationsInput
-        | Date
-        | string
-        | null;
+    accessTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     refreshTokenExpiresAt?:
         | Prisma.NullableDateTimeFieldUpdateOperationsInput
         | Date
@@ -907,8 +775,7 @@ export type AccountUncheckedUpdateManyWithoutUserInput = {
 };
 
 export type AccountSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -930,8 +797,7 @@ export type AccountSelect<
 >;
 
 export type AccountSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -953,8 +819,7 @@ export type AccountSelectCreateManyAndReturn<
 >;
 
 export type AccountSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -992,8 +857,7 @@ export type AccountSelectScalar = {
 };
 
 export type AccountOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "accountId"
@@ -1011,27 +875,23 @@ export type AccountOmit<
     ExtArgs["result"]["account"]
 >;
 export type AccountInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type AccountIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type AccountIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $AccountPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Account";
     objects: {
@@ -1058,26 +918,20 @@ export type $AccountPayload<
     composites: {};
 };
 
-export type AccountGetPayload<
-    S extends boolean | null | undefined | AccountDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$AccountPayload, S>;
+export type AccountGetPayload<S extends boolean | null | undefined | AccountDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$AccountPayload, S>;
 
 export type AccountCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<AccountFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: AccountCountAggregateInputType | true;
 };
 
 export interface AccountDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
-    [K: symbol]: {
-        types: Prisma.TypeMap<ExtArgs>["model"]["Account"];
-        meta: { name: "Account" };
-    };
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>["model"]["Account"]; meta: { name: "Account" } };
     /**
      * Find zero or one Account that matches the filter.
      * @param {AccountFindUniqueArgs} args - Arguments to find a Account
@@ -1467,10 +1321,7 @@ export interface AccountDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      AccountCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], AccountCountAggregateOutputType>
             : number
     >;
 
@@ -1545,12 +1396,7 @@ export interface AccountDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1580,11 +1426,8 @@ export interface AccountDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, AccountGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetAccountGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, AccountGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetAccountGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the Account model
      */
@@ -1600,8 +1443,7 @@ export interface AccountDelegate<
 export interface Prisma__AccountClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1626,14 +1468,8 @@ export interface Prisma__AccountClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1641,10 +1477,7 @@ export interface Prisma__AccountClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1652,9 +1485,7 @@ export interface Prisma__AccountClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1681,8 +1512,7 @@ export interface AccountFieldRefs {
  * Account findUnique
  */
 export type AccountFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1706,8 +1536,7 @@ export type AccountFindUniqueArgs<
  * Account findUniqueOrThrow
  */
 export type AccountFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1731,8 +1560,7 @@ export type AccountFindUniqueOrThrowArgs<
  * Account findFirst
  */
 export type AccountFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1755,9 +1583,7 @@ export type AccountFindFirstArgs<
      *
      * Determine the order of Accounts to fetch.
      */
-    orderBy?:
-        | Prisma.AccountOrderByWithRelationInput
-        | Prisma.AccountOrderByWithRelationInput[];
+    orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1788,8 +1614,7 @@ export type AccountFindFirstArgs<
  * Account findFirstOrThrow
  */
 export type AccountFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1812,9 +1637,7 @@ export type AccountFindFirstOrThrowArgs<
      *
      * Determine the order of Accounts to fetch.
      */
-    orderBy?:
-        | Prisma.AccountOrderByWithRelationInput
-        | Prisma.AccountOrderByWithRelationInput[];
+    orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1845,8 +1668,7 @@ export type AccountFindFirstOrThrowArgs<
  * Account findMany
  */
 export type AccountFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1869,9 +1691,7 @@ export type AccountFindManyArgs<
      *
      * Determine the order of Accounts to fetch.
      */
-    orderBy?:
-        | Prisma.AccountOrderByWithRelationInput
-        | Prisma.AccountOrderByWithRelationInput[];
+    orderBy?: Prisma.AccountOrderByWithRelationInput | Prisma.AccountOrderByWithRelationInput[];
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      *
@@ -1897,8 +1717,7 @@ export type AccountFindManyArgs<
  * Account create
  */
 export type AccountCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1915,18 +1734,14 @@ export type AccountCreateArgs<
     /**
      * The data needed to create a Account.
      */
-    data: Prisma.XOR<
-        Prisma.AccountCreateInput,
-        Prisma.AccountUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.AccountCreateInput, Prisma.AccountUncheckedCreateInput>;
 };
 
 /**
  * Account createMany
  */
 export type AccountCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Accounts.
@@ -1939,8 +1754,7 @@ export type AccountCreateManyArgs<
  * Account createManyAndReturn
  */
 export type AccountCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1965,8 +1779,7 @@ export type AccountCreateManyAndReturnArgs<
  * Account update
  */
 export type AccountUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -1983,10 +1796,7 @@ export type AccountUpdateArgs<
     /**
      * The data needed to update a Account.
      */
-    data: Prisma.XOR<
-        Prisma.AccountUpdateInput,
-        Prisma.AccountUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.AccountUpdateInput, Prisma.AccountUncheckedUpdateInput>;
     /**
      * Choose, which Account to update.
      */
@@ -1997,16 +1807,12 @@ export type AccountUpdateArgs<
  * Account updateMany
  */
 export type AccountUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Accounts.
      */
-    data: Prisma.XOR<
-        Prisma.AccountUpdateManyMutationInput,
-        Prisma.AccountUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.AccountUpdateManyMutationInput, Prisma.AccountUncheckedUpdateManyInput>;
     /**
      * Filter which Accounts to update
      */
@@ -2021,8 +1827,7 @@ export type AccountUpdateManyArgs<
  * Account updateManyAndReturn
  */
 export type AccountUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -2035,10 +1840,7 @@ export type AccountUpdateManyAndReturnArgs<
     /**
      * The data used to update Accounts.
      */
-    data: Prisma.XOR<
-        Prisma.AccountUpdateManyMutationInput,
-        Prisma.AccountUncheckedUpdateManyInput
-    >;
+    data: Prisma.XOR<Prisma.AccountUpdateManyMutationInput, Prisma.AccountUncheckedUpdateManyInput>;
     /**
      * Filter which Accounts to update
      */
@@ -2057,8 +1859,7 @@ export type AccountUpdateManyAndReturnArgs<
  * Account upsert
  */
 export type AccountUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -2079,25 +1880,18 @@ export type AccountUpsertArgs<
     /**
      * In case the Account found by the `where` argument doesn't exist, create a new Account with this data.
      */
-    create: Prisma.XOR<
-        Prisma.AccountCreateInput,
-        Prisma.AccountUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.AccountCreateInput, Prisma.AccountUncheckedCreateInput>;
     /**
      * In case the Account was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.AccountUpdateInput,
-        Prisma.AccountUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.AccountUpdateInput, Prisma.AccountUncheckedUpdateInput>;
 };
 
 /**
  * Account delete
  */
 export type AccountDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account
@@ -2121,8 +1915,7 @@ export type AccountDeleteArgs<
  * Account deleteMany
  */
 export type AccountDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Accounts to delete
@@ -2138,8 +1931,7 @@ export type AccountDeleteManyArgs<
  * Account without action
  */
 export type AccountDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Account

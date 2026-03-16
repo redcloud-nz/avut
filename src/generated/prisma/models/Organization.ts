@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Organization
  *
  */
-export type OrganizationModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$OrganizationPayload>;
+export type OrganizationModel = runtime.Types.Result.DefaultSelection<Prisma.$OrganizationPayload>;
 
 export type AggregateOrganization = {
     _count: OrganizationCountAggregateOutputType | null;
@@ -81,8 +80,7 @@ export type OrganizationCountAggregateInputType = {
 };
 
 export type OrganizationAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Organization to aggregate.
@@ -134,28 +132,22 @@ export type OrganizationAggregateArgs<
     _max?: OrganizationMaxAggregateInputType;
 };
 
-export type GetOrganizationAggregateType<T extends OrganizationAggregateArgs> =
-    {
-        [P in keyof T & keyof AggregateOrganization]: P extends
-            | "_count"
-            | "count"
-            ? T[P] extends true
-                ? number
-                : Prisma.GetScalarType<T[P], AggregateOrganization[P]>
-            : Prisma.GetScalarType<T[P], AggregateOrganization[P]>;
-    };
+export type GetOrganizationAggregateType<T extends OrganizationAggregateArgs> = {
+    [P in keyof T & keyof AggregateOrganization]: P extends "_count" | "count"
+        ? T[P] extends true
+            ? number
+            : Prisma.GetScalarType<T[P], AggregateOrganization[P]>
+        : Prisma.GetScalarType<T[P], AggregateOrganization[P]>;
+};
 
 export type OrganizationGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationWhereInput;
     orderBy?:
         | Prisma.OrganizationOrderByWithAggregationInput
         | Prisma.OrganizationOrderByWithAggregationInput[];
-    by:
-        | Prisma.OrganizationScalarFieldEnum[]
-        | Prisma.OrganizationScalarFieldEnum;
+    by: Prisma.OrganizationScalarFieldEnum[] | Prisma.OrganizationScalarFieldEnum;
     having?: Prisma.OrganizationScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -176,25 +168,17 @@ export type OrganizationGroupByOutputType = {
     _max: OrganizationMaxAggregateOutputType | null;
 };
 
-type GetOrganizationGroupByPayload<T extends OrganizationGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<OrganizationGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof OrganizationGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              OrganizationGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          OrganizationGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetOrganizationGroupByPayload<T extends OrganizationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<OrganizationGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof OrganizationGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], OrganizationGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], OrganizationGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type OrganizationWhereInput = {
     AND?: Prisma.OrganizationWhereInput | Prisma.OrganizationWhereInput[];
@@ -221,6 +205,7 @@ export type OrganizationWhereInput = {
     teamMemberships?: Prisma.TeamMembershipListRelationFilter;
     i3IssuedItems?: Prisma.I3IssuedItemListRelationFilter;
     i3Templates?: Prisma.I3TemplateListRelationFilter;
+    formInstances?: Prisma.FormInstanceListRelationFilter;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -245,6 +230,7 @@ export type OrganizationOrderByWithRelationInput = {
     teamMemberships?: Prisma.TeamMembershipOrderByRelationAggregateInput;
     i3IssuedItems?: Prisma.I3IssuedItemOrderByRelationAggregateInput;
     i3Templates?: Prisma.I3TemplateOrderByRelationAggregateInput;
+    formInstances?: Prisma.FormInstanceOrderByRelationAggregateInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -273,6 +259,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
         teamMemberships?: Prisma.TeamMembershipListRelationFilter;
         i3IssuedItems?: Prisma.I3IssuedItemListRelationFilter;
         i3Templates?: Prisma.I3TemplateListRelationFilter;
+        formInstances?: Prisma.FormInstanceListRelationFilter;
     },
     "id" | "slug"
 >;
@@ -300,18 +287,9 @@ export type OrganizationScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"Organization"> | string;
     name?: Prisma.StringWithAggregatesFilter<"Organization"> | string;
     slug?: Prisma.StringWithAggregatesFilter<"Organization"> | string;
-    logo?:
-        | Prisma.StringNullableWithAggregatesFilter<"Organization">
-        | string
-        | null;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"Organization">
-        | Date
-        | string;
-    metadata?:
-        | Prisma.StringNullableWithAggregatesFilter<"Organization">
-        | string
-        | null;
+    logo?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string;
+    metadata?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null;
 };
 
 export type OrganizationCreateInput = {
@@ -336,6 +314,7 @@ export type OrganizationCreateInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -360,6 +339,7 @@ export type OrganizationUncheckedCreateInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -384,6 +364,7 @@ export type OrganizationUpdateInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -408,6 +389,7 @@ export type OrganizationUncheckedUpdateInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -747,23 +729,22 @@ export type OrganizationCreateNestedOneWithoutSkillCheckSessionsInput = {
     connect?: Prisma.OrganizationWhereUniqueInput;
 };
 
-export type OrganizationUpdateOneRequiredWithoutSkillCheckSessionsNestedInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.OrganizationCreateWithoutSkillCheckSessionsInput,
-            Prisma.OrganizationUncheckedCreateWithoutSkillCheckSessionsInput
-        >;
-        connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutSkillCheckSessionsInput;
-        upsert?: Prisma.OrganizationUpsertWithoutSkillCheckSessionsInput;
-        connect?: Prisma.OrganizationWhereUniqueInput;
-        update?: Prisma.XOR<
-            Prisma.XOR<
-                Prisma.OrganizationUpdateToOneWithWhereWithoutSkillCheckSessionsInput,
-                Prisma.OrganizationUpdateWithoutSkillCheckSessionsInput
-            >,
-            Prisma.OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput
-        >;
-    };
+export type OrganizationUpdateOneRequiredWithoutSkillCheckSessionsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutSkillCheckSessionsInput,
+        Prisma.OrganizationUncheckedCreateWithoutSkillCheckSessionsInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutSkillCheckSessionsInput;
+    upsert?: Prisma.OrganizationUpsertWithoutSkillCheckSessionsInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUpdateToOneWithWhereWithoutSkillCheckSessionsInput,
+            Prisma.OrganizationUpdateWithoutSkillCheckSessionsInput
+        >,
+        Prisma.OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput
+    >;
+};
 
 export type OrganizationCreateNestedOneWithoutSkillChecksInput = {
     create?: Prisma.XOR<
@@ -800,23 +781,22 @@ export type OrganizationCreateNestedOneWithoutSkillPackageSubscriptionsInput = {
     connect?: Prisma.OrganizationWhereUniqueInput;
 };
 
-export type OrganizationUpdateOneRequiredWithoutSkillPackageSubscriptionsNestedInput =
-    {
-        create?: Prisma.XOR<
-            Prisma.OrganizationCreateWithoutSkillPackageSubscriptionsInput,
-            Prisma.OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput
-        >;
-        connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutSkillPackageSubscriptionsInput;
-        upsert?: Prisma.OrganizationUpsertWithoutSkillPackageSubscriptionsInput;
-        connect?: Prisma.OrganizationWhereUniqueInput;
-        update?: Prisma.XOR<
-            Prisma.XOR<
-                Prisma.OrganizationUpdateToOneWithWhereWithoutSkillPackageSubscriptionsInput,
-                Prisma.OrganizationUpdateWithoutSkillPackageSubscriptionsInput
-            >,
-            Prisma.OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput
-        >;
-    };
+export type OrganizationUpdateOneRequiredWithoutSkillPackageSubscriptionsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutSkillPackageSubscriptionsInput,
+        Prisma.OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutSkillPackageSubscriptionsInput;
+    upsert?: Prisma.OrganizationUpsertWithoutSkillPackageSubscriptionsInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUpdateToOneWithWhereWithoutSkillPackageSubscriptionsInput,
+            Prisma.OrganizationUpdateWithoutSkillPackageSubscriptionsInput
+        >,
+        Prisma.OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput
+    >;
+};
 
 export type OrganizationCreateNestedOneWithoutI3IssuedItemsInput = {
     create?: Prisma.XOR<
@@ -870,6 +850,32 @@ export type OrganizationUpdateOneRequiredWithoutI3TemplatesNestedInput = {
     >;
 };
 
+export type OrganizationCreateNestedOneWithoutFormInstancesInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedCreateWithoutFormInstancesInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutFormInstancesInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUpdateOneRequiredWithoutFormInstancesNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedCreateWithoutFormInstancesInput
+    >;
+    connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutFormInstancesInput;
+    upsert?: Prisma.OrganizationUpsertWithoutFormInstancesInput;
+    connect?: Prisma.OrganizationWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUpdateToOneWithWhereWithoutFormInstancesInput,
+            Prisma.OrganizationUpdateWithoutFormInstancesInput
+        >,
+        Prisma.OrganizationUncheckedUpdateWithoutFormInstancesInput
+    >;
+};
+
 export type OrganizationCreateWithoutConfigsInput = {
     id: string;
     name: string;
@@ -891,6 +897,7 @@ export type OrganizationCreateWithoutConfigsInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutConfigsInput = {
@@ -914,6 +921,7 @@ export type OrganizationUncheckedCreateWithoutConfigsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutConfigsInput = {
@@ -965,6 +973,7 @@ export type OrganizationUpdateWithoutConfigsInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutConfigsInput = {
@@ -988,6 +997,7 @@ export type OrganizationUncheckedUpdateWithoutConfigsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutTeamsInput = {
@@ -1011,6 +1021,7 @@ export type OrganizationCreateWithoutTeamsInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutTeamsInput = {
@@ -1034,6 +1045,7 @@ export type OrganizationUncheckedCreateWithoutTeamsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutTeamsInput = {
@@ -1085,6 +1097,7 @@ export type OrganizationUpdateWithoutTeamsInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutTeamsInput = {
@@ -1108,6 +1121,7 @@ export type OrganizationUncheckedUpdateWithoutTeamsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutUsersInput = {
@@ -1131,6 +1145,7 @@ export type OrganizationCreateWithoutUsersInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutUsersInput = {
@@ -1154,6 +1169,7 @@ export type OrganizationUncheckedCreateWithoutUsersInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutUsersInput = {
@@ -1205,6 +1221,7 @@ export type OrganizationUpdateWithoutUsersInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutUsersInput = {
@@ -1228,6 +1245,7 @@ export type OrganizationUncheckedUpdateWithoutUsersInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -1251,6 +1269,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -1274,6 +1293,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -1325,6 +1345,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -1348,6 +1369,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutLogEntriesInput = {
@@ -1371,6 +1393,7 @@ export type OrganizationCreateWithoutLogEntriesInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
@@ -1394,6 +1417,7 @@ export type OrganizationUncheckedCreateWithoutLogEntriesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutLogEntriesInput = {
@@ -1445,6 +1469,7 @@ export type OrganizationUpdateWithoutLogEntriesInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
@@ -1468,6 +1493,7 @@ export type OrganizationUncheckedUpdateWithoutLogEntriesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutD4hAccessTokensInput = {
@@ -1491,6 +1517,7 @@ export type OrganizationCreateWithoutD4hAccessTokensInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
@@ -1514,6 +1541,7 @@ export type OrganizationUncheckedCreateWithoutD4hAccessTokensInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutD4hAccessTokensInput = {
@@ -1565,6 +1593,7 @@ export type OrganizationUpdateWithoutD4hAccessTokensInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
@@ -1588,6 +1617,7 @@ export type OrganizationUncheckedUpdateWithoutD4hAccessTokensInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutPersonnelInput = {
@@ -1611,6 +1641,7 @@ export type OrganizationCreateWithoutPersonnelInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutPersonnelInput = {
@@ -1634,6 +1665,7 @@ export type OrganizationUncheckedCreateWithoutPersonnelInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutPersonnelInput = {
@@ -1685,6 +1717,7 @@ export type OrganizationUpdateWithoutPersonnelInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
@@ -1708,6 +1741,7 @@ export type OrganizationUncheckedUpdateWithoutPersonnelInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutTeamMembershipsInput = {
@@ -1731,6 +1765,7 @@ export type OrganizationCreateWithoutTeamMembershipsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutTeamMembershipsInput = {
@@ -1754,6 +1789,7 @@ export type OrganizationUncheckedCreateWithoutTeamMembershipsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutTeamMembershipsInput = {
@@ -1805,6 +1841,7 @@ export type OrganizationUpdateWithoutTeamMembershipsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutTeamMembershipsInput = {
@@ -1828,6 +1865,7 @@ export type OrganizationUncheckedUpdateWithoutTeamMembershipsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutNotesInput = {
@@ -1851,6 +1889,7 @@ export type OrganizationCreateWithoutNotesInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutNotesInput = {
@@ -1874,6 +1913,7 @@ export type OrganizationUncheckedCreateWithoutNotesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutNotesInput = {
@@ -1925,6 +1965,7 @@ export type OrganizationUpdateWithoutNotesInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutNotesInput = {
@@ -1948,6 +1989,7 @@ export type OrganizationUncheckedUpdateWithoutNotesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackagesInput = {
@@ -1971,6 +2013,7 @@ export type OrganizationCreateWithoutSkillPackagesInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
@@ -1994,6 +2037,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackagesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackagesInput = {
@@ -2045,6 +2089,7 @@ export type OrganizationUpdateWithoutSkillPackagesInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
@@ -2068,6 +2113,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackagesInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillCheckSessionsInput = {
@@ -2091,6 +2137,7 @@ export type OrganizationCreateWithoutSkillCheckSessionsInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
@@ -2114,6 +2161,7 @@ export type OrganizationUncheckedCreateWithoutSkillCheckSessionsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillCheckSessionsInput = {
@@ -2165,6 +2213,7 @@ export type OrganizationUpdateWithoutSkillCheckSessionsInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
@@ -2188,6 +2237,7 @@ export type OrganizationUncheckedUpdateWithoutSkillCheckSessionsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillChecksInput = {
@@ -2211,6 +2261,7 @@ export type OrganizationCreateWithoutSkillChecksInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
@@ -2234,6 +2285,7 @@ export type OrganizationUncheckedCreateWithoutSkillChecksInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillChecksInput = {
@@ -2285,6 +2337,7 @@ export type OrganizationUpdateWithoutSkillChecksInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
@@ -2308,6 +2361,7 @@ export type OrganizationUncheckedUpdateWithoutSkillChecksInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
@@ -2331,6 +2385,7 @@ export type OrganizationCreateWithoutSkillPackageSubscriptionsInput = {
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
@@ -2354,6 +2409,7 @@ export type OrganizationUncheckedCreateWithoutSkillPackageSubscriptionsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSkillPackageSubscriptionsInput = {
@@ -2376,14 +2432,13 @@ export type OrganizationUpsertWithoutSkillPackageSubscriptionsInput = {
     where?: Prisma.OrganizationWhereInput;
 };
 
-export type OrganizationUpdateToOneWithWhereWithoutSkillPackageSubscriptionsInput =
-    {
-        where?: Prisma.OrganizationWhereInput;
-        data: Prisma.XOR<
-            Prisma.OrganizationUpdateWithoutSkillPackageSubscriptionsInput,
-            Prisma.OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput
-        >;
-    };
+export type OrganizationUpdateToOneWithWhereWithoutSkillPackageSubscriptionsInput = {
+    where?: Prisma.OrganizationWhereInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationUpdateWithoutSkillPackageSubscriptionsInput,
+        Prisma.OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput
+    >;
+};
 
 export type OrganizationUpdateWithoutSkillPackageSubscriptionsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -2406,6 +2461,7 @@ export type OrganizationUpdateWithoutSkillPackageSubscriptionsInput = {
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
@@ -2429,6 +2485,7 @@ export type OrganizationUncheckedUpdateWithoutSkillPackageSubscriptionsInput = {
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutI3IssuedItemsInput = {
@@ -2452,6 +2509,7 @@ export type OrganizationCreateWithoutI3IssuedItemsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutI3IssuedItemsInput = {
@@ -2475,6 +2533,7 @@ export type OrganizationUncheckedCreateWithoutI3IssuedItemsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutI3IssuedItemsInput = {
@@ -2526,6 +2585,7 @@ export type OrganizationUpdateWithoutI3IssuedItemsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutI3IssuedItemsInput = {
@@ -2549,6 +2609,7 @@ export type OrganizationUncheckedUpdateWithoutI3IssuedItemsInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutI3TemplatesInput = {
@@ -2572,6 +2633,7 @@ export type OrganizationCreateWithoutI3TemplatesInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutI3TemplatesInput = {
@@ -2595,6 +2657,7 @@ export type OrganizationUncheckedCreateWithoutI3TemplatesInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
+    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutI3TemplatesInput = {
@@ -2646,6 +2709,7 @@ export type OrganizationUpdateWithoutI3TemplatesInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutI3TemplatesInput = {
@@ -2669,6 +2733,131 @@ export type OrganizationUncheckedUpdateWithoutI3TemplatesInput = {
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
     i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
+    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationCreateWithoutFormInstancesInput = {
+    id: string;
+    name: string;
+    slug: string;
+    logo?: string | null;
+    createdAt: Date | string;
+    metadata?: string | null;
+    configs?: Prisma.OrganizationConfigCreateNestedManyWithoutOrganizationInput;
+    invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutOrganizationInput;
+    teams?: Prisma.TeamCreateNestedManyWithoutOrganizationInput;
+    users?: Prisma.OrganizationUserCreateNestedManyWithoutOrganizationInput;
+    logEntries?: Prisma.OrganizationLogEntryCreateNestedManyWithoutOrganizationInput;
+    notes?: Prisma.NoteCreateNestedManyWithoutOrganizationInput;
+    skillChecks?: Prisma.SkillCheckCreateNestedManyWithoutOrganizationInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionCreateNestedManyWithoutOrganizationInput;
+    skillPackages?: Prisma.SkillPackageCreateNestedManyWithoutOrganizationInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionCreateNestedManyWithoutOrganizationInput;
+    personnel?: Prisma.PersonCreateNestedManyWithoutOrganizationInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutOrganizationInput;
+    i3IssuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutOrganizationInput;
+    i3Templates?: Prisma.I3TemplateCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationUncheckedCreateWithoutFormInstancesInput = {
+    id: string;
+    name: string;
+    slug: string;
+    logo?: string | null;
+    createdAt: Date | string;
+    metadata?: string | null;
+    configs?: Prisma.OrganizationConfigUncheckedCreateNestedManyWithoutOrganizationInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+    teams?: Prisma.TeamUncheckedCreateNestedManyWithoutOrganizationInput;
+    users?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutOrganizationInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedCreateNestedManyWithoutOrganizationInput;
+    notes?: Prisma.NoteUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillChecks?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillPackages?: Prisma.SkillPackageUncheckedCreateNestedManyWithoutOrganizationInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedCreateNestedManyWithoutOrganizationInput;
+    personnel?: Prisma.PersonUncheckedCreateNestedManyWithoutOrganizationInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutOrganizationInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput;
+    i3IssuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutOrganizationInput;
+    i3Templates?: Prisma.I3TemplateUncheckedCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationCreateOrConnectWithoutFormInstancesInput = {
+    where: Prisma.OrganizationWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedCreateWithoutFormInstancesInput
+    >;
+};
+
+export type OrganizationUpsertWithoutFormInstancesInput = {
+    update: Prisma.XOR<
+        Prisma.OrganizationUpdateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedUpdateWithoutFormInstancesInput
+    >;
+    create: Prisma.XOR<
+        Prisma.OrganizationCreateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedCreateWithoutFormInstancesInput
+    >;
+    where?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationUpdateToOneWithWhereWithoutFormInstancesInput = {
+    where?: Prisma.OrganizationWhereInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationUpdateWithoutFormInstancesInput,
+        Prisma.OrganizationUncheckedUpdateWithoutFormInstancesInput
+    >;
+};
+
+export type OrganizationUpdateWithoutFormInstancesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    slug?: Prisma.StringFieldUpdateOperationsInput | string;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configs?: Prisma.OrganizationConfigUpdateManyWithoutOrganizationNestedInput;
+    invitations?: Prisma.OrganizationInvitationUpdateManyWithoutOrganizationNestedInput;
+    teams?: Prisma.TeamUpdateManyWithoutOrganizationNestedInput;
+    users?: Prisma.OrganizationUserUpdateManyWithoutOrganizationNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUpdateManyWithoutOrganizationNestedInput;
+    notes?: Prisma.NoteUpdateManyWithoutOrganizationNestedInput;
+    skillChecks?: Prisma.SkillCheckUpdateManyWithoutOrganizationNestedInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUpdateManyWithoutOrganizationNestedInput;
+    skillPackages?: Prisma.SkillPackageUpdateManyWithoutOrganizationNestedInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUpdateManyWithoutOrganizationNestedInput;
+    personnel?: Prisma.PersonUpdateManyWithoutOrganizationNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutOrganizationNestedInput;
+    i3IssuedItems?: Prisma.I3IssuedItemUpdateManyWithoutOrganizationNestedInput;
+    i3Templates?: Prisma.I3TemplateUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationUncheckedUpdateWithoutFormInstancesInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    slug?: Prisma.StringFieldUpdateOperationsInput | string;
+    logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configs?: Prisma.OrganizationConfigUncheckedUpdateManyWithoutOrganizationNestedInput;
+    invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teams?: Prisma.TeamUncheckedUpdateManyWithoutOrganizationNestedInput;
+    users?: Prisma.OrganizationUserUncheckedUpdateManyWithoutOrganizationNestedInput;
+    logEntries?: Prisma.OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationNestedInput;
+    notes?: Prisma.NoteUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillChecks?: Prisma.SkillCheckUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillCheckSessions?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillPackages?: Prisma.SkillPackageUncheckedUpdateManyWithoutOrganizationNestedInput;
+    skillPackageSubscriptions?: Prisma.SkillPackageSubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput;
+    personnel?: Prisma.PersonUncheckedUpdateManyWithoutOrganizationNestedInput;
+    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput;
+    i3IssuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutOrganizationNestedInput;
+    i3Templates?: Prisma.I3TemplateUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 /**
@@ -2691,11 +2880,11 @@ export type OrganizationCountOutputType = {
     teamMemberships: number;
     i3IssuedItems: number;
     i3Templates: number;
+    formInstances: number;
 };
 
 export type OrganizationCountOutputTypeSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     configs?: boolean | OrganizationCountOutputTypeCountConfigsArgs;
     invitations?: boolean | OrganizationCountOutputTypeCountInvitationsArgs;
@@ -2704,30 +2893,24 @@ export type OrganizationCountOutputTypeSelect<
     logEntries?: boolean | OrganizationCountOutputTypeCountLogEntriesArgs;
     notes?: boolean | OrganizationCountOutputTypeCountNotesArgs;
     skillChecks?: boolean | OrganizationCountOutputTypeCountSkillChecksArgs;
-    skillCheckSessions?:
-        | boolean
-        | OrganizationCountOutputTypeCountSkillCheckSessionsArgs;
+    skillCheckSessions?: boolean | OrganizationCountOutputTypeCountSkillCheckSessionsArgs;
     skillPackages?: boolean | OrganizationCountOutputTypeCountSkillPackagesArgs;
     skillPackageSubscriptions?:
         | boolean
         | OrganizationCountOutputTypeCountSkillPackageSubscriptionsArgs;
     personnel?: boolean | OrganizationCountOutputTypeCountPersonnelArgs;
-    d4hAccessTokens?:
-        | boolean
-        | OrganizationCountOutputTypeCountD4hAccessTokensArgs;
-    teamMemberships?:
-        | boolean
-        | OrganizationCountOutputTypeCountTeamMembershipsArgs;
+    d4hAccessTokens?: boolean | OrganizationCountOutputTypeCountD4hAccessTokensArgs;
+    teamMemberships?: boolean | OrganizationCountOutputTypeCountTeamMembershipsArgs;
     i3IssuedItems?: boolean | OrganizationCountOutputTypeCountI3IssuedItemsArgs;
     i3Templates?: boolean | OrganizationCountOutputTypeCountI3TemplatesArgs;
+    formInstances?: boolean | OrganizationCountOutputTypeCountFormInstancesArgs;
 };
 
 /**
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationCountOutputType
@@ -2739,8 +2922,7 @@ export type OrganizationCountOutputTypeDefaultArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountConfigsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationConfigWhereInput;
 };
@@ -2749,8 +2931,7 @@ export type OrganizationCountOutputTypeCountConfigsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountInvitationsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationInvitationWhereInput;
 };
@@ -2759,8 +2940,7 @@ export type OrganizationCountOutputTypeCountInvitationsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountTeamsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.TeamWhereInput;
 };
@@ -2769,8 +2949,7 @@ export type OrganizationCountOutputTypeCountTeamsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationUserWhereInput;
 };
@@ -2779,8 +2958,7 @@ export type OrganizationCountOutputTypeCountUsersArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountLogEntriesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationLogEntryWhereInput;
 };
@@ -2789,8 +2967,7 @@ export type OrganizationCountOutputTypeCountLogEntriesArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountNotesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.NoteWhereInput;
 };
@@ -2799,8 +2976,7 @@ export type OrganizationCountOutputTypeCountNotesArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountSkillChecksArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillCheckWhereInput;
 };
@@ -2809,8 +2985,7 @@ export type OrganizationCountOutputTypeCountSkillChecksArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountSkillCheckSessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillCheckSessionWhereInput;
 };
@@ -2819,8 +2994,7 @@ export type OrganizationCountOutputTypeCountSkillCheckSessionsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountSkillPackagesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillPackageWhereInput;
 };
@@ -2829,8 +3003,7 @@ export type OrganizationCountOutputTypeCountSkillPackagesArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountSkillPackageSubscriptionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillPackageSubscriptionWhereInput;
 };
@@ -2839,8 +3012,7 @@ export type OrganizationCountOutputTypeCountSkillPackageSubscriptionsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountPersonnelArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.PersonWhereInput;
 };
@@ -2849,8 +3021,7 @@ export type OrganizationCountOutputTypeCountPersonnelArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountD4hAccessTokensArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.D4hAccessTokenWhereInput;
 };
@@ -2859,8 +3030,7 @@ export type OrganizationCountOutputTypeCountD4hAccessTokensArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountTeamMembershipsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.TeamMembershipWhereInput;
 };
@@ -2869,8 +3039,7 @@ export type OrganizationCountOutputTypeCountTeamMembershipsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountI3IssuedItemsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.I3IssuedItemWhereInput;
 };
@@ -2879,15 +3048,22 @@ export type OrganizationCountOutputTypeCountI3IssuedItemsArgs<
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountI3TemplatesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.I3TemplateWhereInput;
 };
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountFormInstancesArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.FormInstanceWhereInput;
+};
+
 export type OrganizationSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -2903,36 +3079,24 @@ export type OrganizationSelect<
         logEntries?: boolean | Prisma.Organization$logEntriesArgs<ExtArgs>;
         notes?: boolean | Prisma.Organization$notesArgs<ExtArgs>;
         skillChecks?: boolean | Prisma.Organization$skillChecksArgs<ExtArgs>;
-        skillCheckSessions?:
-            | boolean
-            | Prisma.Organization$skillCheckSessionsArgs<ExtArgs>;
-        skillPackages?:
-            | boolean
-            | Prisma.Organization$skillPackagesArgs<ExtArgs>;
+        skillCheckSessions?: boolean | Prisma.Organization$skillCheckSessionsArgs<ExtArgs>;
+        skillPackages?: boolean | Prisma.Organization$skillPackagesArgs<ExtArgs>;
         skillPackageSubscriptions?:
             | boolean
             | Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs>;
         personnel?: boolean | Prisma.Organization$personnelArgs<ExtArgs>;
-        d4hAccessTokens?:
-            | boolean
-            | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
-        teamMemberships?:
-            | boolean
-            | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
-        i3IssuedItems?:
-            | boolean
-            | Prisma.Organization$i3IssuedItemsArgs<ExtArgs>;
+        d4hAccessTokens?: boolean | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
+        teamMemberships?: boolean | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
+        i3IssuedItems?: boolean | Prisma.Organization$i3IssuedItemsArgs<ExtArgs>;
         i3Templates?: boolean | Prisma.Organization$i3TemplatesArgs<ExtArgs>;
-        _count?:
-            | boolean
-            | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
+        formInstances?: boolean | Prisma.Organization$formInstancesArgs<ExtArgs>;
+        _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["organization"]
 >;
 
 export type OrganizationSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -2946,8 +3110,7 @@ export type OrganizationSelectCreateManyAndReturn<
 >;
 
 export type OrganizationSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -2970,15 +3133,13 @@ export type OrganizationSelectScalar = {
 };
 
 export type OrganizationOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     "id" | "name" | "slug" | "logo" | "createdAt" | "metadata",
     ExtArgs["result"]["organization"]
 >;
 export type OrganizationInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     configs?: boolean | Prisma.Organization$configsArgs<ExtArgs>;
     invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
@@ -2987,36 +3148,28 @@ export type OrganizationInclude<
     logEntries?: boolean | Prisma.Organization$logEntriesArgs<ExtArgs>;
     notes?: boolean | Prisma.Organization$notesArgs<ExtArgs>;
     skillChecks?: boolean | Prisma.Organization$skillChecksArgs<ExtArgs>;
-    skillCheckSessions?:
-        | boolean
-        | Prisma.Organization$skillCheckSessionsArgs<ExtArgs>;
+    skillCheckSessions?: boolean | Prisma.Organization$skillCheckSessionsArgs<ExtArgs>;
     skillPackages?: boolean | Prisma.Organization$skillPackagesArgs<ExtArgs>;
     skillPackageSubscriptions?:
         | boolean
         | Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs>;
     personnel?: boolean | Prisma.Organization$personnelArgs<ExtArgs>;
-    d4hAccessTokens?:
-        | boolean
-        | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
-    teamMemberships?:
-        | boolean
-        | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
+    d4hAccessTokens?: boolean | Prisma.Organization$d4hAccessTokensArgs<ExtArgs>;
+    teamMemberships?: boolean | Prisma.Organization$teamMembershipsArgs<ExtArgs>;
     i3IssuedItems?: boolean | Prisma.Organization$i3IssuedItemsArgs<ExtArgs>;
     i3Templates?: boolean | Prisma.Organization$i3TemplatesArgs<ExtArgs>;
+    formInstances?: boolean | Prisma.Organization$formInstancesArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrganizationIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {};
 export type OrganizationIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {};
 
 export type $OrganizationPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Organization";
     objects: {
@@ -3035,6 +3188,7 @@ export type $OrganizationPayload<
         teamMemberships: Prisma.$TeamMembershipPayload<ExtArgs>[];
         i3IssuedItems: Prisma.$I3IssuedItemPayload<ExtArgs>[];
         i3Templates: Prisma.$I3TemplatePayload<ExtArgs>[];
+        formInstances: Prisma.$FormInstancePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -3050,23 +3204,17 @@ export type $OrganizationPayload<
     composites: {};
 };
 
-export type OrganizationGetPayload<
-    S extends boolean | null | undefined | OrganizationDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$OrganizationPayload, S>;
+export type OrganizationGetPayload<S extends boolean | null | undefined | OrganizationDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$OrganizationPayload, S>;
 
 export type OrganizationCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    OrganizationFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<OrganizationFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: OrganizationCountAggregateInputType | true;
 };
 
 export interface OrganizationDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -3111,10 +3259,7 @@ export interface OrganizationDelegate<
      * })
      */
     findUniqueOrThrow<T extends OrganizationFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationPayload<ExtArgs>,
@@ -3169,10 +3314,7 @@ export interface OrganizationDelegate<
      * })
      */
     findFirstOrThrow<T extends OrganizationFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationPayload<ExtArgs>,
@@ -3277,10 +3419,7 @@ export interface OrganizationDelegate<
      *
      */
     createManyAndReturn<T extends OrganizationCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationPayload<ExtArgs>,
@@ -3411,10 +3550,7 @@ export interface OrganizationDelegate<
      *
      */
     updateManyAndReturn<T extends OrganizationUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationPayload<ExtArgs>,
@@ -3474,10 +3610,7 @@ export interface OrganizationDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      OrganizationCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], OrganizationCountAggregateOutputType>
             : number
     >;
 
@@ -3552,12 +3685,7 @@ export interface OrganizationDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -3587,12 +3715,7 @@ export interface OrganizationDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            OrganizationGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, OrganizationGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetOrganizationGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -3611,8 +3734,7 @@ export interface OrganizationDelegate<
 export interface Prisma__OrganizationClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -3693,13 +3815,8 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
-    skillCheckSessions<
-        T extends Prisma.Organization$skillCheckSessionsArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.Organization$skillCheckSessionsArgs<ExtArgs>
-        >,
+    skillCheckSessions<T extends Prisma.Organization$skillCheckSessionsArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Organization$skillCheckSessionsArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillCheckSessionPayload<ExtArgs>,
@@ -3709,9 +3826,7 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
-    skillPackages<
-        T extends Prisma.Organization$skillPackagesArgs<ExtArgs> = {},
-    >(
+    skillPackages<T extends Prisma.Organization$skillPackagesArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.Organization$skillPackagesArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
@@ -3723,13 +3838,9 @@ export interface Prisma__OrganizationClient<
         | Null
     >;
     skillPackageSubscriptions<
-        T extends Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs> =
-            {},
+        T extends Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs> = {},
     >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs>
-        >,
+        args?: Prisma.Subset<T, Prisma.Organization$skillPackageSubscriptionsArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -3750,13 +3861,8 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
-    d4hAccessTokens<
-        T extends Prisma.Organization$d4hAccessTokensArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.Organization$d4hAccessTokensArgs<ExtArgs>
-        >,
+    d4hAccessTokens<T extends Prisma.Organization$d4hAccessTokensArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Organization$d4hAccessTokensArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$D4hAccessTokenPayload<ExtArgs>,
@@ -3766,13 +3872,8 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
-    teamMemberships<
-        T extends Prisma.Organization$teamMembershipsArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.Organization$teamMembershipsArgs<ExtArgs>
-        >,
+    teamMemberships<T extends Prisma.Organization$teamMembershipsArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Organization$teamMembershipsArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$TeamMembershipPayload<ExtArgs>,
@@ -3782,9 +3883,7 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
-    i3IssuedItems<
-        T extends Prisma.Organization$i3IssuedItemsArgs<ExtArgs> = {},
-    >(
+    i3IssuedItems<T extends Prisma.Organization$i3IssuedItemsArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.Organization$i3IssuedItemsArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
@@ -3806,6 +3905,17 @@ export interface Prisma__OrganizationClient<
           >
         | Null
     >;
+    formInstances<T extends Prisma.Organization$formInstancesArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Organization$formInstancesArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$FormInstancePayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3813,14 +3923,8 @@ export interface Prisma__OrganizationClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -3828,10 +3932,7 @@ export interface Prisma__OrganizationClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -3839,9 +3940,7 @@ export interface Prisma__OrganizationClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -3861,8 +3960,7 @@ export interface OrganizationFieldRefs {
  * Organization findUnique
  */
 export type OrganizationFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -3886,8 +3984,7 @@ export type OrganizationFindUniqueArgs<
  * Organization findUniqueOrThrow
  */
 export type OrganizationFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -3911,8 +4008,7 @@ export type OrganizationFindUniqueOrThrowArgs<
  * Organization findFirst
  */
 export type OrganizationFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -3961,17 +4057,14 @@ export type OrganizationFindFirstArgs<
      *
      * Filter by unique combinations of Organizations.
      */
-    distinct?:
-        | Prisma.OrganizationScalarFieldEnum
-        | Prisma.OrganizationScalarFieldEnum[];
+    distinct?: Prisma.OrganizationScalarFieldEnum | Prisma.OrganizationScalarFieldEnum[];
 };
 
 /**
  * Organization findFirstOrThrow
  */
 export type OrganizationFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4020,17 +4113,14 @@ export type OrganizationFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of Organizations.
      */
-    distinct?:
-        | Prisma.OrganizationScalarFieldEnum
-        | Prisma.OrganizationScalarFieldEnum[];
+    distinct?: Prisma.OrganizationScalarFieldEnum | Prisma.OrganizationScalarFieldEnum[];
 };
 
 /**
  * Organization findMany
  */
 export type OrganizationFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4074,17 +4164,14 @@ export type OrganizationFindManyArgs<
      * Skip the first `n` Organizations.
      */
     skip?: number;
-    distinct?:
-        | Prisma.OrganizationScalarFieldEnum
-        | Prisma.OrganizationScalarFieldEnum[];
+    distinct?: Prisma.OrganizationScalarFieldEnum | Prisma.OrganizationScalarFieldEnum[];
 };
 
 /**
  * Organization create
  */
 export type OrganizationCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4101,25 +4188,19 @@ export type OrganizationCreateArgs<
     /**
      * The data needed to create a Organization.
      */
-    data: Prisma.XOR<
-        Prisma.OrganizationCreateInput,
-        Prisma.OrganizationUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.OrganizationCreateInput, Prisma.OrganizationUncheckedCreateInput>;
 };
 
 /**
  * Organization createMany
  */
 export type OrganizationCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Organizations.
      */
-    data:
-        | Prisma.OrganizationCreateManyInput
-        | Prisma.OrganizationCreateManyInput[];
+    data: Prisma.OrganizationCreateManyInput | Prisma.OrganizationCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -4127,8 +4208,7 @@ export type OrganizationCreateManyArgs<
  * Organization createManyAndReturn
  */
 export type OrganizationCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4141,9 +4221,7 @@ export type OrganizationCreateManyAndReturnArgs<
     /**
      * The data used to create many Organizations.
      */
-    data:
-        | Prisma.OrganizationCreateManyInput
-        | Prisma.OrganizationCreateManyInput[];
+    data: Prisma.OrganizationCreateManyInput | Prisma.OrganizationCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -4151,8 +4229,7 @@ export type OrganizationCreateManyAndReturnArgs<
  * Organization update
  */
 export type OrganizationUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4169,10 +4246,7 @@ export type OrganizationUpdateArgs<
     /**
      * The data needed to update a Organization.
      */
-    data: Prisma.XOR<
-        Prisma.OrganizationUpdateInput,
-        Prisma.OrganizationUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.OrganizationUpdateInput, Prisma.OrganizationUncheckedUpdateInput>;
     /**
      * Choose, which Organization to update.
      */
@@ -4183,8 +4257,7 @@ export type OrganizationUpdateArgs<
  * Organization updateMany
  */
 export type OrganizationUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Organizations.
@@ -4207,8 +4280,7 @@ export type OrganizationUpdateManyArgs<
  * Organization updateManyAndReturn
  */
 export type OrganizationUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4239,8 +4311,7 @@ export type OrganizationUpdateManyAndReturnArgs<
  * Organization upsert
  */
 export type OrganizationUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4261,25 +4332,18 @@ export type OrganizationUpsertArgs<
     /**
      * In case the Organization found by the `where` argument doesn't exist, create a new Organization with this data.
      */
-    create: Prisma.XOR<
-        Prisma.OrganizationCreateInput,
-        Prisma.OrganizationUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.OrganizationCreateInput, Prisma.OrganizationUncheckedCreateInput>;
     /**
      * In case the Organization was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.OrganizationUpdateInput,
-        Prisma.OrganizationUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.OrganizationUpdateInput, Prisma.OrganizationUncheckedUpdateInput>;
 };
 
 /**
  * Organization delete
  */
 export type OrganizationDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization
@@ -4303,8 +4367,7 @@ export type OrganizationDeleteArgs<
  * Organization deleteMany
  */
 export type OrganizationDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Organizations to delete
@@ -4320,8 +4383,7 @@ export type OrganizationDeleteManyArgs<
  * Organization.configs
  */
 export type Organization$configsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationConfig
@@ -4351,8 +4413,7 @@ export type Organization$configsArgs<
  * Organization.invitations
  */
 export type Organization$invitationsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationInvitation
@@ -4382,8 +4443,7 @@ export type Organization$invitationsArgs<
  * Organization.teams
  */
 export type Organization$teamsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Team
@@ -4398,9 +4458,7 @@ export type Organization$teamsArgs<
      */
     include?: Prisma.TeamInclude<ExtArgs> | null;
     where?: Prisma.TeamWhereInput;
-    orderBy?:
-        | Prisma.TeamOrderByWithRelationInput
-        | Prisma.TeamOrderByWithRelationInput[];
+    orderBy?: Prisma.TeamOrderByWithRelationInput | Prisma.TeamOrderByWithRelationInput[];
     cursor?: Prisma.TeamWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -4411,8 +4469,7 @@ export type Organization$teamsArgs<
  * Organization.users
  */
 export type Organization$usersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationUser
@@ -4433,17 +4490,14 @@ export type Organization$usersArgs<
     cursor?: Prisma.OrganizationUserWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.OrganizationUserScalarFieldEnum
-        | Prisma.OrganizationUserScalarFieldEnum[];
+    distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
 /**
  * Organization.logEntries
  */
 export type Organization$logEntriesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -4473,8 +4527,7 @@ export type Organization$logEntriesArgs<
  * Organization.notes
  */
 export type Organization$notesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Note
@@ -4489,9 +4542,7 @@ export type Organization$notesArgs<
      */
     include?: Prisma.NoteInclude<ExtArgs> | null;
     where?: Prisma.NoteWhereInput;
-    orderBy?:
-        | Prisma.NoteOrderByWithRelationInput
-        | Prisma.NoteOrderByWithRelationInput[];
+    orderBy?: Prisma.NoteOrderByWithRelationInput | Prisma.NoteOrderByWithRelationInput[];
     cursor?: Prisma.NoteWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -4502,8 +4553,7 @@ export type Organization$notesArgs<
  * Organization.skillChecks
  */
 export type Organization$skillChecksArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -4524,17 +4574,14 @@ export type Organization$skillChecksArgs<
     cursor?: Prisma.SkillCheckWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillCheckScalarFieldEnum
-        | Prisma.SkillCheckScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
 /**
  * Organization.skillCheckSessions
  */
 export type Organization$skillCheckSessionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheckSession
@@ -4555,17 +4602,14 @@ export type Organization$skillCheckSessionsArgs<
     cursor?: Prisma.SkillCheckSessionWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillCheckSessionScalarFieldEnum
-        | Prisma.SkillCheckSessionScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckSessionScalarFieldEnum | Prisma.SkillCheckSessionScalarFieldEnum[];
 };
 
 /**
  * Organization.skillPackages
  */
 export type Organization$skillPackagesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackage
@@ -4586,17 +4630,14 @@ export type Organization$skillPackagesArgs<
     cursor?: Prisma.SkillPackageWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.SkillPackageScalarFieldEnum
-        | Prisma.SkillPackageScalarFieldEnum[];
+    distinct?: Prisma.SkillPackageScalarFieldEnum | Prisma.SkillPackageScalarFieldEnum[];
 };
 
 /**
  * Organization.skillPackageSubscriptions
  */
 export type Organization$skillPackageSubscriptionsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillPackageSubscription
@@ -4626,8 +4667,7 @@ export type Organization$skillPackageSubscriptionsArgs<
  * Organization.personnel
  */
 export type Organization$personnelArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Person
@@ -4642,9 +4682,7 @@ export type Organization$personnelArgs<
      */
     include?: Prisma.PersonInclude<ExtArgs> | null;
     where?: Prisma.PersonWhereInput;
-    orderBy?:
-        | Prisma.PersonOrderByWithRelationInput
-        | Prisma.PersonOrderByWithRelationInput[];
+    orderBy?: Prisma.PersonOrderByWithRelationInput | Prisma.PersonOrderByWithRelationInput[];
     cursor?: Prisma.PersonWhereUniqueInput;
     take?: number;
     skip?: number;
@@ -4655,8 +4693,7 @@ export type Organization$personnelArgs<
  * Organization.d4hAccessTokens
  */
 export type Organization$d4hAccessTokensArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the D4hAccessToken
@@ -4677,17 +4714,14 @@ export type Organization$d4hAccessTokensArgs<
     cursor?: Prisma.D4hAccessTokenWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.D4hAccessTokenScalarFieldEnum
-        | Prisma.D4hAccessTokenScalarFieldEnum[];
+    distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 
 /**
  * Organization.teamMemberships
  */
 export type Organization$teamMembershipsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -4708,17 +4742,14 @@ export type Organization$teamMembershipsArgs<
     cursor?: Prisma.TeamMembershipWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.TeamMembershipScalarFieldEnum
-        | Prisma.TeamMembershipScalarFieldEnum[];
+    distinct?: Prisma.TeamMembershipScalarFieldEnum | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**
  * Organization.i3IssuedItems
  */
 export type Organization$i3IssuedItemsArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3IssuedItem
@@ -4739,17 +4770,14 @@ export type Organization$i3IssuedItemsArgs<
     cursor?: Prisma.I3IssuedItemWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.I3IssuedItemScalarFieldEnum
-        | Prisma.I3IssuedItemScalarFieldEnum[];
+    distinct?: Prisma.I3IssuedItemScalarFieldEnum | Prisma.I3IssuedItemScalarFieldEnum[];
 };
 
 /**
  * Organization.i3Templates
  */
 export type Organization$i3TemplatesArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the I3Template
@@ -4770,17 +4798,42 @@ export type Organization$i3TemplatesArgs<
     cursor?: Prisma.I3TemplateWhereUniqueInput;
     take?: number;
     skip?: number;
-    distinct?:
-        | Prisma.I3TemplateScalarFieldEnum
-        | Prisma.I3TemplateScalarFieldEnum[];
+    distinct?: Prisma.I3TemplateScalarFieldEnum | Prisma.I3TemplateScalarFieldEnum[];
+};
+
+/**
+ * Organization.formInstances
+ */
+export type Organization$formInstancesArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the FormInstance
+     */
+    select?: Prisma.FormInstanceSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the FormInstance
+     */
+    omit?: Prisma.FormInstanceOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.FormInstanceInclude<ExtArgs> | null;
+    where?: Prisma.FormInstanceWhereInput;
+    orderBy?:
+        | Prisma.FormInstanceOrderByWithRelationInput
+        | Prisma.FormInstanceOrderByWithRelationInput[];
+    cursor?: Prisma.FormInstanceWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.FormInstanceScalarFieldEnum | Prisma.FormInstanceScalarFieldEnum[];
 };
 
 /**
  * Organization without action
  */
 export type OrganizationDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Organization

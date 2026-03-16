@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model Verification
  *
  */
-export type VerificationModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$VerificationPayload>;
+export type VerificationModel = runtime.Types.Result.DefaultSelection<Prisma.$VerificationPayload>;
 
 export type AggregateVerification = {
     _count: VerificationCountAggregateOutputType | null;
@@ -81,8 +80,7 @@ export type VerificationCountAggregateInputType = {
 };
 
 export type VerificationAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Verification to aggregate.
@@ -134,28 +132,22 @@ export type VerificationAggregateArgs<
     _max?: VerificationMaxAggregateInputType;
 };
 
-export type GetVerificationAggregateType<T extends VerificationAggregateArgs> =
-    {
-        [P in keyof T & keyof AggregateVerification]: P extends
-            | "_count"
-            | "count"
-            ? T[P] extends true
-                ? number
-                : Prisma.GetScalarType<T[P], AggregateVerification[P]>
-            : Prisma.GetScalarType<T[P], AggregateVerification[P]>;
-    };
+export type GetVerificationAggregateType<T extends VerificationAggregateArgs> = {
+    [P in keyof T & keyof AggregateVerification]: P extends "_count" | "count"
+        ? T[P] extends true
+            ? number
+            : Prisma.GetScalarType<T[P], AggregateVerification[P]>
+        : Prisma.GetScalarType<T[P], AggregateVerification[P]>;
+};
 
 export type VerificationGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.VerificationWhereInput;
     orderBy?:
         | Prisma.VerificationOrderByWithAggregationInput
         | Prisma.VerificationOrderByWithAggregationInput[];
-    by:
-        | Prisma.VerificationScalarFieldEnum[]
-        | Prisma.VerificationScalarFieldEnum;
+    by: Prisma.VerificationScalarFieldEnum[] | Prisma.VerificationScalarFieldEnum;
     having?: Prisma.VerificationScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -176,25 +168,17 @@ export type VerificationGroupByOutputType = {
     _max: VerificationMaxAggregateOutputType | null;
 };
 
-type GetVerificationGroupByPayload<T extends VerificationGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<VerificationGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof VerificationGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              VerificationGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          VerificationGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetVerificationGroupByPayload<T extends VerificationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<VerificationGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof VerificationGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], VerificationGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], VerificationGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type VerificationWhereInput = {
     AND?: Prisma.VerificationWhereInput | Prisma.VerificationWhereInput[];
@@ -255,18 +239,9 @@ export type VerificationScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"Verification"> | string;
     identifier?: Prisma.StringWithAggregatesFilter<"Verification"> | string;
     value?: Prisma.StringWithAggregatesFilter<"Verification"> | string;
-    expiresAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"Verification">
-        | Date
-        | string;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"Verification">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"Verification">
-        | Date
-        | string;
+    expiresAt?: Prisma.DateTimeWithAggregatesFilter<"Verification"> | Date | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"Verification"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Verification"> | Date | string;
 };
 
 export type VerificationCreateInput = {
@@ -360,8 +335,7 @@ export type VerificationMinOrderByAggregateInput = {
 };
 
 export type VerificationSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -375,8 +349,7 @@ export type VerificationSelect<
 >;
 
 export type VerificationSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -390,8 +363,7 @@ export type VerificationSelectCreateManyAndReturn<
 >;
 
 export type VerificationSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -414,16 +386,14 @@ export type VerificationSelectScalar = {
 };
 
 export type VerificationOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     "id" | "identifier" | "value" | "expiresAt" | "createdAt" | "updatedAt",
     ExtArgs["result"]["verification"]
 >;
 
 export type $VerificationPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "Verification";
     objects: {};
@@ -441,23 +411,17 @@ export type $VerificationPayload<
     composites: {};
 };
 
-export type VerificationGetPayload<
-    S extends boolean | null | undefined | VerificationDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$VerificationPayload, S>;
+export type VerificationGetPayload<S extends boolean | null | undefined | VerificationDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$VerificationPayload, S>;
 
 export type VerificationCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    VerificationFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<VerificationFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: VerificationCountAggregateInputType | true;
 };
 
 export interface VerificationDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -502,10 +466,7 @@ export interface VerificationDelegate<
      * })
      */
     findUniqueOrThrow<T extends VerificationFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            VerificationFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, VerificationFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__VerificationClient<
         runtime.Types.Result.GetResult<
             Prisma.$VerificationPayload<ExtArgs>,
@@ -560,10 +521,7 @@ export interface VerificationDelegate<
      * })
      */
     findFirstOrThrow<T extends VerificationFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            VerificationFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, VerificationFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__VerificationClient<
         runtime.Types.Result.GetResult<
             Prisma.$VerificationPayload<ExtArgs>,
@@ -668,10 +626,7 @@ export interface VerificationDelegate<
      *
      */
     createManyAndReturn<T extends VerificationCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            VerificationCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, VerificationCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$VerificationPayload<ExtArgs>,
@@ -802,10 +757,7 @@ export interface VerificationDelegate<
      *
      */
     updateManyAndReturn<T extends VerificationUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            VerificationUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, VerificationUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$VerificationPayload<ExtArgs>,
@@ -865,10 +817,7 @@ export interface VerificationDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      VerificationCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], VerificationCountAggregateOutputType>
             : number
     >;
 
@@ -943,12 +892,7 @@ export interface VerificationDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -978,12 +922,7 @@ export interface VerificationDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            VerificationGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, VerificationGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetVerificationGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1002,8 +941,7 @@ export interface VerificationDelegate<
 export interface Prisma__VerificationClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1014,14 +952,8 @@ export interface Prisma__VerificationClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1029,10 +961,7 @@ export interface Prisma__VerificationClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1040,9 +969,7 @@ export interface Prisma__VerificationClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1062,8 +989,7 @@ export interface VerificationFieldRefs {
  * Verification findUnique
  */
 export type VerificationFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1083,8 +1009,7 @@ export type VerificationFindUniqueArgs<
  * Verification findUniqueOrThrow
  */
 export type VerificationFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1104,8 +1029,7 @@ export type VerificationFindUniqueOrThrowArgs<
  * Verification findFirst
  */
 export type VerificationFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1150,17 +1074,14 @@ export type VerificationFindFirstArgs<
      *
      * Filter by unique combinations of Verifications.
      */
-    distinct?:
-        | Prisma.VerificationScalarFieldEnum
-        | Prisma.VerificationScalarFieldEnum[];
+    distinct?: Prisma.VerificationScalarFieldEnum | Prisma.VerificationScalarFieldEnum[];
 };
 
 /**
  * Verification findFirstOrThrow
  */
 export type VerificationFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1205,17 +1126,14 @@ export type VerificationFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of Verifications.
      */
-    distinct?:
-        | Prisma.VerificationScalarFieldEnum
-        | Prisma.VerificationScalarFieldEnum[];
+    distinct?: Prisma.VerificationScalarFieldEnum | Prisma.VerificationScalarFieldEnum[];
 };
 
 /**
  * Verification findMany
  */
 export type VerificationFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1255,17 +1173,14 @@ export type VerificationFindManyArgs<
      * Skip the first `n` Verifications.
      */
     skip?: number;
-    distinct?:
-        | Prisma.VerificationScalarFieldEnum
-        | Prisma.VerificationScalarFieldEnum[];
+    distinct?: Prisma.VerificationScalarFieldEnum | Prisma.VerificationScalarFieldEnum[];
 };
 
 /**
  * Verification create
  */
 export type VerificationCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1278,25 +1193,19 @@ export type VerificationCreateArgs<
     /**
      * The data needed to create a Verification.
      */
-    data: Prisma.XOR<
-        Prisma.VerificationCreateInput,
-        Prisma.VerificationUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.VerificationCreateInput, Prisma.VerificationUncheckedCreateInput>;
 };
 
 /**
  * Verification createMany
  */
 export type VerificationCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many Verifications.
      */
-    data:
-        | Prisma.VerificationCreateManyInput
-        | Prisma.VerificationCreateManyInput[];
+    data: Prisma.VerificationCreateManyInput | Prisma.VerificationCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1304,8 +1213,7 @@ export type VerificationCreateManyArgs<
  * Verification createManyAndReturn
  */
 export type VerificationCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1318,9 +1226,7 @@ export type VerificationCreateManyAndReturnArgs<
     /**
      * The data used to create many Verifications.
      */
-    data:
-        | Prisma.VerificationCreateManyInput
-        | Prisma.VerificationCreateManyInput[];
+    data: Prisma.VerificationCreateManyInput | Prisma.VerificationCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1328,8 +1234,7 @@ export type VerificationCreateManyAndReturnArgs<
  * Verification update
  */
 export type VerificationUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1342,10 +1247,7 @@ export type VerificationUpdateArgs<
     /**
      * The data needed to update a Verification.
      */
-    data: Prisma.XOR<
-        Prisma.VerificationUpdateInput,
-        Prisma.VerificationUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.VerificationUpdateInput, Prisma.VerificationUncheckedUpdateInput>;
     /**
      * Choose, which Verification to update.
      */
@@ -1356,8 +1258,7 @@ export type VerificationUpdateArgs<
  * Verification updateMany
  */
 export type VerificationUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update Verifications.
@@ -1380,8 +1281,7 @@ export type VerificationUpdateManyArgs<
  * Verification updateManyAndReturn
  */
 export type VerificationUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1412,8 +1312,7 @@ export type VerificationUpdateManyAndReturnArgs<
  * Verification upsert
  */
 export type VerificationUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1430,25 +1329,18 @@ export type VerificationUpsertArgs<
     /**
      * In case the Verification found by the `where` argument doesn't exist, create a new Verification with this data.
      */
-    create: Prisma.XOR<
-        Prisma.VerificationCreateInput,
-        Prisma.VerificationUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.VerificationCreateInput, Prisma.VerificationUncheckedCreateInput>;
     /**
      * In case the Verification was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.VerificationUpdateInput,
-        Prisma.VerificationUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.VerificationUpdateInput, Prisma.VerificationUncheckedUpdateInput>;
 };
 
 /**
  * Verification delete
  */
 export type VerificationDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification
@@ -1468,8 +1360,7 @@ export type VerificationDeleteArgs<
  * Verification deleteMany
  */
 export type VerificationDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which Verifications to delete
@@ -1485,8 +1376,7 @@ export type VerificationDeleteManyArgs<
  * Verification without action
  */
 export type VerificationDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the Verification

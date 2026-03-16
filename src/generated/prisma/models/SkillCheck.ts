@@ -15,8 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace";
  * Model SkillCheck
  *
  */
-export type SkillCheckModel =
-    runtime.Types.Result.DefaultSelection<Prisma.$SkillCheckPayload>;
+export type SkillCheckModel = runtime.Types.Result.DefaultSelection<Prisma.$SkillCheckPayload>;
 
 export type AggregateSkillCheck = {
     _count: SkillCheckCountAggregateOutputType | null;
@@ -99,8 +98,7 @@ export type SkillCheckCountAggregateInputType = {
 };
 
 export type SkillCheckAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillCheck to aggregate.
@@ -161,8 +159,7 @@ export type GetSkillCheckAggregateType<T extends SkillCheckAggregateArgs> = {
 };
 
 export type SkillCheckGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillCheckWhereInput;
     orderBy?:
@@ -192,25 +189,17 @@ export type SkillCheckGroupByOutputType = {
     _max: SkillCheckMaxAggregateOutputType | null;
 };
 
-type GetSkillCheckGroupByPayload<T extends SkillCheckGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<SkillCheckGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof SkillCheckGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              SkillCheckGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          SkillCheckGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetSkillCheckGroupByPayload<T extends SkillCheckGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<SkillCheckGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof SkillCheckGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], SkillCheckGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], SkillCheckGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type SkillCheckWhereInput = {
     AND?: Prisma.SkillCheckWhereInput | Prisma.SkillCheckWhereInput[];
@@ -223,26 +212,15 @@ export type SkillCheckWhereInput = {
     skillId?: Prisma.StringFilter<"SkillCheck"> | string;
     result?: Prisma.StringFilter<"SkillCheck"> | string;
     notes?: Prisma.StringFilter<"SkillCheck"> | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFilter<"SkillCheck">
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheck"> | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillCheck"> | Date | string;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
-    assessee?: Prisma.XOR<
-        Prisma.PersonScalarRelationFilter,
-        Prisma.PersonWhereInput
-    >;
-    assessor?: Prisma.XOR<
-        Prisma.PersonScalarRelationFilter,
-        Prisma.PersonWhereInput
-    >;
-    skill?: Prisma.XOR<
-        Prisma.SkillScalarRelationFilter,
-        Prisma.SkillWhereInput
-    >;
+    assessee?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
+    assessor?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
+    skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
 };
 
 export type SkillCheckOrderByWithRelationInput = {
@@ -273,26 +251,15 @@ export type SkillCheckWhereUniqueInput = Prisma.AtLeast<
         skillId?: Prisma.StringFilter<"SkillCheck"> | string;
         result?: Prisma.StringFilter<"SkillCheck"> | string;
         notes?: Prisma.StringFilter<"SkillCheck"> | string;
-        status?:
-            | Prisma.EnumSkillCheckStatusFilter<"SkillCheck">
-            | $Enums.SkillCheckStatus;
+        status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheck"> | $Enums.SkillCheckStatus;
         createdAt?: Prisma.DateTimeFilter<"SkillCheck"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        assessee?: Prisma.XOR<
-            Prisma.PersonScalarRelationFilter,
-            Prisma.PersonWhereInput
-        >;
-        assessor?: Prisma.XOR<
-            Prisma.PersonScalarRelationFilter,
-            Prisma.PersonWhereInput
-        >;
-        skill?: Prisma.XOR<
-            Prisma.SkillScalarRelationFilter,
-            Prisma.SkillWhereInput
-        >;
+        assessee?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
+        assessor?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
+        skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
     },
     "id"
 >;
@@ -330,10 +297,7 @@ export type SkillCheckScalarWhereWithAggregatesInput = {
     status?:
         | Prisma.EnumSkillCheckStatusWithAggregatesFilter<"SkillCheck">
         | $Enums.SkillCheckStatus;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"SkillCheck">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"SkillCheck"> | Date | string;
 };
 
 export type SkillCheckCreateInput = {
@@ -364,9 +328,7 @@ export type SkillCheckUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
@@ -382,9 +344,7 @@ export type SkillCheckUncheckedUpdateInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -404,9 +364,7 @@ export type SkillCheckUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -418,9 +376,7 @@ export type SkillCheckUncheckedUpdateManyInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -482,9 +438,7 @@ export type SkillCheckCreateNestedManyWithoutOrganizationInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutOrganizationInput
         | Prisma.SkillCheckCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.SkillCheckCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUncheckedCreateNestedManyWithoutOrganizationInput = {
@@ -499,9 +453,7 @@ export type SkillCheckUncheckedCreateNestedManyWithoutOrganizationInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutOrganizationInput
         | Prisma.SkillCheckCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.SkillCheckCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUpdateManyWithoutOrganizationNestedInput = {
@@ -519,27 +471,17 @@ export type SkillCheckUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.SkillCheckCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckUncheckedUpdateManyWithoutOrganizationNestedInput = {
@@ -557,27 +499,17 @@ export type SkillCheckUncheckedUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.SkillCheckCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckCreateNestedManyWithoutAssesseeInput = {
@@ -592,9 +524,7 @@ export type SkillCheckCreateNestedManyWithoutAssesseeInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutAssesseeInput
         | Prisma.SkillCheckCreateOrConnectWithoutAssesseeInput[];
     createMany?: Prisma.SkillCheckCreateManyAssesseeInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckCreateNestedManyWithoutAssessorInput = {
@@ -609,9 +539,7 @@ export type SkillCheckCreateNestedManyWithoutAssessorInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutAssessorInput
         | Prisma.SkillCheckCreateOrConnectWithoutAssessorInput[];
     createMany?: Prisma.SkillCheckCreateManyAssessorInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput = {
@@ -626,9 +554,7 @@ export type SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutAssesseeInput
         | Prisma.SkillCheckCreateOrConnectWithoutAssesseeInput[];
     createMany?: Prisma.SkillCheckCreateManyAssesseeInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUncheckedCreateNestedManyWithoutAssessorInput = {
@@ -643,9 +569,7 @@ export type SkillCheckUncheckedCreateNestedManyWithoutAssessorInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutAssessorInput
         | Prisma.SkillCheckCreateOrConnectWithoutAssessorInput[];
     createMany?: Prisma.SkillCheckCreateManyAssessorInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUpdateManyWithoutAssesseeNestedInput = {
@@ -663,27 +587,17 @@ export type SkillCheckUpdateManyWithoutAssesseeNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssesseeInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssesseeInput[];
     createMany?: Prisma.SkillCheckCreateManyAssesseeInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssesseeInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssesseeInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssesseeInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssesseeInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckUpdateManyWithoutAssessorNestedInput = {
@@ -701,27 +615,17 @@ export type SkillCheckUpdateManyWithoutAssessorNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssessorInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssessorInput[];
     createMany?: Prisma.SkillCheckCreateManyAssessorInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssessorInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssessorInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssessorInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssessorInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput = {
@@ -739,27 +643,17 @@ export type SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssesseeInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssesseeInput[];
     createMany?: Prisma.SkillCheckCreateManyAssesseeInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssesseeInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssesseeInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssesseeInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssesseeInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput = {
@@ -777,27 +671,17 @@ export type SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssessorInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutAssessorInput[];
     createMany?: Prisma.SkillCheckCreateManyAssessorInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssessorInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutAssessorInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssessorInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutAssessorInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckCreateNestedManyWithoutSkillInput = {
@@ -812,9 +696,7 @@ export type SkillCheckCreateNestedManyWithoutSkillInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutSkillInput
         | Prisma.SkillCheckCreateOrConnectWithoutSkillInput[];
     createMany?: Prisma.SkillCheckCreateManySkillInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUncheckedCreateNestedManyWithoutSkillInput = {
@@ -829,9 +711,7 @@ export type SkillCheckUncheckedCreateNestedManyWithoutSkillInput = {
         | Prisma.SkillCheckCreateOrConnectWithoutSkillInput
         | Prisma.SkillCheckCreateOrConnectWithoutSkillInput[];
     createMany?: Prisma.SkillCheckCreateManySkillInputEnvelope;
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
 };
 
 export type SkillCheckUpdateManyWithoutSkillNestedInput = {
@@ -849,27 +729,17 @@ export type SkillCheckUpdateManyWithoutSkillNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSkillInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSkillInput[];
     createMany?: Prisma.SkillCheckCreateManySkillInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSkillInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSkillInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutSkillInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutSkillInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckUncheckedUpdateManyWithoutSkillNestedInput = {
@@ -887,27 +757,17 @@ export type SkillCheckUncheckedUpdateManyWithoutSkillNestedInput = {
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSkillInput
         | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSkillInput[];
     createMany?: Prisma.SkillCheckCreateManySkillInputEnvelope;
-    set?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillCheckWhereUniqueInput
-        | Prisma.SkillCheckWhereUniqueInput[];
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
     update?:
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSkillInput
         | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSkillInput[];
     updateMany?:
         | Prisma.SkillCheckUpdateManyWithWhereWithoutSkillInput
         | Prisma.SkillCheckUpdateManyWithWhereWithoutSkillInput[];
-    deleteMany?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
 export type SkillCheckCreateWithoutOrganizationInput = {
@@ -976,13 +836,9 @@ export type SkillCheckUpdateManyWithWhereWithoutOrganizationInput = {
 };
 
 export type SkillCheckScalarWhereInput = {
-    AND?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    AND?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
     OR?: Prisma.SkillCheckScalarWhereInput[];
-    NOT?:
-        | Prisma.SkillCheckScalarWhereInput
-        | Prisma.SkillCheckScalarWhereInput[];
+    NOT?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
     id?: Prisma.StringFilter<"SkillCheck"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheck"> | string;
     assesseeId?: Prisma.StringFilter<"SkillCheck"> | string;
@@ -990,9 +846,7 @@ export type SkillCheckScalarWhereInput = {
     skillId?: Prisma.StringFilter<"SkillCheck"> | string;
     result?: Prisma.StringFilter<"SkillCheck"> | string;
     notes?: Prisma.StringFilter<"SkillCheck"> | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFilter<"SkillCheck">
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheck"> | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillCheck"> | Date | string;
 };
 
@@ -1027,9 +881,7 @@ export type SkillCheckCreateOrConnectWithoutAssesseeInput = {
 };
 
 export type SkillCheckCreateManyAssesseeInputEnvelope = {
-    data:
-        | Prisma.SkillCheckCreateManyAssesseeInput
-        | Prisma.SkillCheckCreateManyAssesseeInput[];
+    data: Prisma.SkillCheckCreateManyAssesseeInput | Prisma.SkillCheckCreateManyAssesseeInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1064,9 +916,7 @@ export type SkillCheckCreateOrConnectWithoutAssessorInput = {
 };
 
 export type SkillCheckCreateManyAssessorInputEnvelope = {
-    data:
-        | Prisma.SkillCheckCreateManyAssessorInput
-        | Prisma.SkillCheckCreateManyAssessorInput[];
+    data: Prisma.SkillCheckCreateManyAssessorInput | Prisma.SkillCheckCreateManyAssessorInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1157,9 +1007,7 @@ export type SkillCheckCreateOrConnectWithoutSkillInput = {
 };
 
 export type SkillCheckCreateManySkillInputEnvelope = {
-    data:
-        | Prisma.SkillCheckCreateManySkillInput
-        | Prisma.SkillCheckCreateManySkillInput[];
+    data: Prisma.SkillCheckCreateManySkillInput | Prisma.SkillCheckCreateManySkillInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1206,9 +1054,7 @@ export type SkillCheckUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
@@ -1222,9 +1068,7 @@ export type SkillCheckUncheckedUpdateWithoutOrganizationInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1235,9 +1079,7 @@ export type SkillCheckUncheckedUpdateManyWithoutOrganizationInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1267,9 +1109,7 @@ export type SkillCheckUpdateWithoutAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
@@ -1283,9 +1123,7 @@ export type SkillCheckUncheckedUpdateWithoutAssesseeInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1296,9 +1134,7 @@ export type SkillCheckUncheckedUpdateManyWithoutAssesseeInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1306,9 +1142,7 @@ export type SkillCheckUpdateWithoutAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
@@ -1322,9 +1156,7 @@ export type SkillCheckUncheckedUpdateWithoutAssessorInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1335,9 +1167,7 @@ export type SkillCheckUncheckedUpdateManyWithoutAssessorInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1356,9 +1186,7 @@ export type SkillCheckUpdateWithoutSkillInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
@@ -1372,9 +1200,7 @@ export type SkillCheckUncheckedUpdateWithoutSkillInput = {
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -1385,15 +1211,12 @@ export type SkillCheckUncheckedUpdateManyWithoutSkillInput = {
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
-    status?:
-        | Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput
-        | $Enums.SkillCheckStatus;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type SkillCheckSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1414,8 +1237,7 @@ export type SkillCheckSelect<
 >;
 
 export type SkillCheckSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1436,8 +1258,7 @@ export type SkillCheckSelectCreateManyAndReturn<
 >;
 
 export type SkillCheckSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1470,8 +1291,7 @@ export type SkillCheckSelectScalar = {
 };
 
 export type SkillCheckOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1485,8 +1305,7 @@ export type SkillCheckOmit<
     ExtArgs["result"]["skillCheck"]
 >;
 export type SkillCheckInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
@@ -1494,8 +1313,7 @@ export type SkillCheckInclude<
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
 };
 export type SkillCheckIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
@@ -1503,8 +1321,7 @@ export type SkillCheckIncludeCreateManyAndReturn<
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
 };
 export type SkillCheckIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
@@ -1513,8 +1330,7 @@ export type SkillCheckIncludeUpdateManyAndReturn<
 };
 
 export type $SkillCheckPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "SkillCheck";
     objects: {
@@ -1540,20 +1356,17 @@ export type $SkillCheckPayload<
     composites: {};
 };
 
-export type SkillCheckGetPayload<
-    S extends boolean | null | undefined | SkillCheckDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$SkillCheckPayload, S>;
+export type SkillCheckGetPayload<S extends boolean | null | undefined | SkillCheckDefaultArgs> =
+    runtime.Types.Result.GetResult<Prisma.$SkillCheckPayload, S>;
 
 export type SkillCheckCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<SkillCheckFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: SkillCheckCountAggregateInputType | true;
 };
 
 export interface SkillCheckDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1758,10 +1571,7 @@ export interface SkillCheckDelegate<
      *
      */
     createManyAndReturn<T extends SkillCheckCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillCheckCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillCheckCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillCheckPayload<ExtArgs>,
@@ -1892,10 +1702,7 @@ export interface SkillCheckDelegate<
      *
      */
     updateManyAndReturn<T extends SkillCheckUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillCheckUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillCheckUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillCheckPayload<ExtArgs>,
@@ -1955,10 +1762,7 @@ export interface SkillCheckDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      SkillCheckCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], SkillCheckCountAggregateOutputType>
             : number
     >;
 
@@ -2033,12 +1837,7 @@ export interface SkillCheckDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -2068,11 +1867,8 @@ export interface SkillCheckDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<T, SkillCheckGroupByArgs, OrderByArg> &
-            InputErrors,
-    ): {} extends InputErrors
-        ? GetSkillCheckGroupByPayload<T>
-        : Prisma.PrismaPromise<InputErrors>;
+        args: Prisma.SubsetIntersection<T, SkillCheckGroupByArgs, OrderByArg> & InputErrors,
+    ): {} extends InputErrors ? GetSkillCheckGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
     /**
      * Fields of the SkillCheck model
      */
@@ -2088,8 +1884,7 @@ export interface SkillCheckDelegate<
 export interface Prisma__SkillCheckClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -2156,14 +1951,8 @@ export interface Prisma__SkillCheckClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -2171,10 +1960,7 @@ export interface Prisma__SkillCheckClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -2182,9 +1968,7 @@ export interface Prisma__SkillCheckClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -2207,8 +1991,7 @@ export interface SkillCheckFieldRefs {
  * SkillCheck findUnique
  */
 export type SkillCheckFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2232,8 +2015,7 @@ export type SkillCheckFindUniqueArgs<
  * SkillCheck findUniqueOrThrow
  */
 export type SkillCheckFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2257,8 +2039,7 @@ export type SkillCheckFindUniqueOrThrowArgs<
  * SkillCheck findFirst
  */
 export type SkillCheckFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2307,17 +2088,14 @@ export type SkillCheckFindFirstArgs<
      *
      * Filter by unique combinations of SkillChecks.
      */
-    distinct?:
-        | Prisma.SkillCheckScalarFieldEnum
-        | Prisma.SkillCheckScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
 /**
  * SkillCheck findFirstOrThrow
  */
 export type SkillCheckFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2366,17 +2144,14 @@ export type SkillCheckFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of SkillChecks.
      */
-    distinct?:
-        | Prisma.SkillCheckScalarFieldEnum
-        | Prisma.SkillCheckScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
 /**
  * SkillCheck findMany
  */
 export type SkillCheckFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2420,17 +2195,14 @@ export type SkillCheckFindManyArgs<
      * Skip the first `n` SkillChecks.
      */
     skip?: number;
-    distinct?:
-        | Prisma.SkillCheckScalarFieldEnum
-        | Prisma.SkillCheckScalarFieldEnum[];
+    distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
 /**
  * SkillCheck create
  */
 export type SkillCheckCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2447,18 +2219,14 @@ export type SkillCheckCreateArgs<
     /**
      * The data needed to create a SkillCheck.
      */
-    data: Prisma.XOR<
-        Prisma.SkillCheckCreateInput,
-        Prisma.SkillCheckUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.SkillCheckCreateInput, Prisma.SkillCheckUncheckedCreateInput>;
 };
 
 /**
  * SkillCheck createMany
  */
 export type SkillCheckCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many SkillChecks.
@@ -2471,8 +2239,7 @@ export type SkillCheckCreateManyArgs<
  * SkillCheck createManyAndReturn
  */
 export type SkillCheckCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2497,8 +2264,7 @@ export type SkillCheckCreateManyAndReturnArgs<
  * SkillCheck update
  */
 export type SkillCheckUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2515,10 +2281,7 @@ export type SkillCheckUpdateArgs<
     /**
      * The data needed to update a SkillCheck.
      */
-    data: Prisma.XOR<
-        Prisma.SkillCheckUpdateInput,
-        Prisma.SkillCheckUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.SkillCheckUpdateInput, Prisma.SkillCheckUncheckedUpdateInput>;
     /**
      * Choose, which SkillCheck to update.
      */
@@ -2529,8 +2292,7 @@ export type SkillCheckUpdateArgs<
  * SkillCheck updateMany
  */
 export type SkillCheckUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update SkillChecks.
@@ -2553,8 +2315,7 @@ export type SkillCheckUpdateManyArgs<
  * SkillCheck updateManyAndReturn
  */
 export type SkillCheckUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2589,8 +2350,7 @@ export type SkillCheckUpdateManyAndReturnArgs<
  * SkillCheck upsert
  */
 export type SkillCheckUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2611,25 +2371,18 @@ export type SkillCheckUpsertArgs<
     /**
      * In case the SkillCheck found by the `where` argument doesn't exist, create a new SkillCheck with this data.
      */
-    create: Prisma.XOR<
-        Prisma.SkillCheckCreateInput,
-        Prisma.SkillCheckUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.SkillCheckCreateInput, Prisma.SkillCheckUncheckedCreateInput>;
     /**
      * In case the SkillCheck was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.SkillCheckUpdateInput,
-        Prisma.SkillCheckUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.SkillCheckUpdateInput, Prisma.SkillCheckUncheckedUpdateInput>;
 };
 
 /**
  * SkillCheck delete
  */
 export type SkillCheckDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck
@@ -2653,8 +2406,7 @@ export type SkillCheckDeleteArgs<
  * SkillCheck deleteMany
  */
 export type SkillCheckDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillChecks to delete
@@ -2670,8 +2422,7 @@ export type SkillCheckDeleteManyArgs<
  * SkillCheck without action
  */
 export type SkillCheckDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillCheck

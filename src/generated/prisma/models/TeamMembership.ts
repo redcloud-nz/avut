@@ -85,8 +85,7 @@ export type TeamMembershipCountAggregateInputType = {
 };
 
 export type TeamMembershipAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which TeamMembership to aggregate.
@@ -138,9 +137,7 @@ export type TeamMembershipAggregateArgs<
     _max?: TeamMembershipMaxAggregateInputType;
 };
 
-export type GetTeamMembershipAggregateType<
-    T extends TeamMembershipAggregateArgs,
-> = {
+export type GetTeamMembershipAggregateType<T extends TeamMembershipAggregateArgs> = {
     [P in keyof T & keyof AggregateTeamMembership]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
@@ -149,16 +146,13 @@ export type GetTeamMembershipAggregateType<
 };
 
 export type TeamMembershipGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.TeamMembershipWhereInput;
     orderBy?:
         | Prisma.TeamMembershipOrderByWithAggregationInput
         | Prisma.TeamMembershipOrderByWithAggregationInput[];
-    by:
-        | Prisma.TeamMembershipScalarFieldEnum[]
-        | Prisma.TeamMembershipScalarFieldEnum;
+    by: Prisma.TeamMembershipScalarFieldEnum[] | Prisma.TeamMembershipScalarFieldEnum;
     having?: Prisma.TeamMembershipScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -181,25 +175,17 @@ export type TeamMembershipGroupByOutputType = {
     _max: TeamMembershipMaxAggregateOutputType | null;
 };
 
-type GetTeamMembershipGroupByPayload<T extends TeamMembershipGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<TeamMembershipGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof TeamMembershipGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              TeamMembershipGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          TeamMembershipGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetTeamMembershipGroupByPayload<T extends TeamMembershipGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<TeamMembershipGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof TeamMembershipGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type TeamMembershipWhereInput = {
     AND?: Prisma.TeamMembershipWhereInput | Prisma.TeamMembershipWhereInput[];
@@ -218,10 +204,7 @@ export type TeamMembershipWhereInput = {
         Prisma.OrganizationWhereInput
     >;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
-    person?: Prisma.XOR<
-        Prisma.PersonScalarRelationFilter,
-        Prisma.PersonWhereInput
-    >;
+    person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
 };
 
 export type TeamMembershipOrderByWithRelationInput = {
@@ -242,13 +225,9 @@ export type TeamMembershipWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
         teamId_personId?: Prisma.TeamMembershipTeamIdPersonIdCompoundUniqueInput;
-        AND?:
-            | Prisma.TeamMembershipWhereInput
-            | Prisma.TeamMembershipWhereInput[];
+        AND?: Prisma.TeamMembershipWhereInput | Prisma.TeamMembershipWhereInput[];
         OR?: Prisma.TeamMembershipWhereInput[];
-        NOT?:
-            | Prisma.TeamMembershipWhereInput
-            | Prisma.TeamMembershipWhereInput[];
+        NOT?: Prisma.TeamMembershipWhereInput | Prisma.TeamMembershipWhereInput[];
         organizationId?: Prisma.StringFilter<"TeamMembership"> | string;
         teamId?: Prisma.StringFilter<"TeamMembership"> | string;
         personId?: Prisma.StringFilter<"TeamMembership"> | string;
@@ -260,14 +239,8 @@ export type TeamMembershipWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        team?: Prisma.XOR<
-            Prisma.TeamScalarRelationFilter,
-            Prisma.TeamWhereInput
-        >;
-        person?: Prisma.XOR<
-            Prisma.PersonScalarRelationFilter,
-            Prisma.PersonWhereInput
-        >;
+        team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
+        person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
     },
     "id" | "teamId_personId"
 >;
@@ -295,21 +268,13 @@ export type TeamMembershipScalarWhereWithAggregatesInput = {
         | Prisma.TeamMembershipScalarWhereWithAggregatesInput
         | Prisma.TeamMembershipScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"TeamMembership"> | string;
-    organizationId?:
-        | Prisma.StringWithAggregatesFilter<"TeamMembership">
-        | string;
+    organizationId?: Prisma.StringWithAggregatesFilter<"TeamMembership"> | string;
     teamId?: Prisma.StringWithAggregatesFilter<"TeamMembership"> | string;
     personId?: Prisma.StringWithAggregatesFilter<"TeamMembership"> | string;
     tags?: Prisma.StringNullableListFilter<"TeamMembership">;
     properties?: Prisma.JsonWithAggregatesFilter<"TeamMembership">;
-    createdAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"TeamMembership">
-        | Date
-        | string;
-    updatedAt?:
-        | Prisma.DateTimeWithAggregatesFilter<"TeamMembership">
-        | Date
-        | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"TeamMembership"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"TeamMembership"> | Date | string;
 };
 
 export type TeamMembershipCreateInput = {
@@ -442,9 +407,7 @@ export type TeamMembershipCreateNestedManyWithoutOrganizationInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutOrganizationInput
         | Prisma.TeamMembershipCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.TeamMembershipCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput = {
@@ -459,9 +422,7 @@ export type TeamMembershipUncheckedCreateNestedManyWithoutOrganizationInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutOrganizationInput
         | Prisma.TeamMembershipCreateOrConnectWithoutOrganizationInput[];
     createMany?: Prisma.TeamMembershipCreateManyOrganizationInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUpdateManyWithoutOrganizationNestedInput = {
@@ -479,27 +440,17 @@ export type TeamMembershipUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.TeamMembershipCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput = {
@@ -517,27 +468,17 @@ export type TeamMembershipUncheckedUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutOrganizationInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutOrganizationInput[];
     createMany?: Prisma.TeamMembershipCreateManyOrganizationInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutOrganizationInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutOrganizationInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutOrganizationInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipCreateNestedManyWithoutTeamInput = {
@@ -552,9 +493,7 @@ export type TeamMembershipCreateNestedManyWithoutTeamInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutTeamInput
         | Prisma.TeamMembershipCreateOrConnectWithoutTeamInput[];
     createMany?: Prisma.TeamMembershipCreateManyTeamInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUncheckedCreateNestedManyWithoutTeamInput = {
@@ -569,9 +508,7 @@ export type TeamMembershipUncheckedCreateNestedManyWithoutTeamInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutTeamInput
         | Prisma.TeamMembershipCreateOrConnectWithoutTeamInput[];
     createMany?: Prisma.TeamMembershipCreateManyTeamInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUpdateManyWithoutTeamNestedInput = {
@@ -589,27 +526,17 @@ export type TeamMembershipUpdateManyWithoutTeamNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutTeamInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutTeamInput[];
     createMany?: Prisma.TeamMembershipCreateManyTeamInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutTeamInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutTeamInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutTeamInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutTeamInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput = {
@@ -627,27 +554,17 @@ export type TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutTeamInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutTeamInput[];
     createMany?: Prisma.TeamMembershipCreateManyTeamInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutTeamInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutTeamInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutTeamInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutTeamInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipCreateNestedManyWithoutPersonInput = {
@@ -662,9 +579,7 @@ export type TeamMembershipCreateNestedManyWithoutPersonInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutPersonInput
         | Prisma.TeamMembershipCreateOrConnectWithoutPersonInput[];
     createMany?: Prisma.TeamMembershipCreateManyPersonInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUncheckedCreateNestedManyWithoutPersonInput = {
@@ -679,9 +594,7 @@ export type TeamMembershipUncheckedCreateNestedManyWithoutPersonInput = {
         | Prisma.TeamMembershipCreateOrConnectWithoutPersonInput
         | Prisma.TeamMembershipCreateOrConnectWithoutPersonInput[];
     createMany?: Prisma.TeamMembershipCreateManyPersonInputEnvelope;
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
 };
 
 export type TeamMembershipUpdateManyWithoutPersonNestedInput = {
@@ -699,27 +612,17 @@ export type TeamMembershipUpdateManyWithoutPersonNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutPersonInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutPersonInput[];
     createMany?: Prisma.TeamMembershipCreateManyPersonInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutPersonInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutPersonInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutPersonInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutPersonInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput = {
@@ -737,27 +640,17 @@ export type TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput = {
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutPersonInput
         | Prisma.TeamMembershipUpsertWithWhereUniqueWithoutPersonInput[];
     createMany?: Prisma.TeamMembershipCreateManyPersonInputEnvelope;
-    set?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    disconnect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    delete?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
-    connect?:
-        | Prisma.TeamMembershipWhereUniqueInput
-        | Prisma.TeamMembershipWhereUniqueInput[];
+    set?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    disconnect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    delete?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
+    connect?: Prisma.TeamMembershipWhereUniqueInput | Prisma.TeamMembershipWhereUniqueInput[];
     update?:
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutPersonInput
         | Prisma.TeamMembershipUpdateWithWhereUniqueWithoutPersonInput[];
     updateMany?:
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutPersonInput
         | Prisma.TeamMembershipUpdateManyWithWhereWithoutPersonInput[];
-    deleteMany?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    deleteMany?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
 };
 
 export type TeamMembershipCreatetagsInput = {
@@ -833,13 +726,9 @@ export type TeamMembershipUpdateManyWithWhereWithoutOrganizationInput = {
 };
 
 export type TeamMembershipScalarWhereInput = {
-    AND?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    AND?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
     OR?: Prisma.TeamMembershipScalarWhereInput[];
-    NOT?:
-        | Prisma.TeamMembershipScalarWhereInput
-        | Prisma.TeamMembershipScalarWhereInput[];
+    NOT?: Prisma.TeamMembershipScalarWhereInput | Prisma.TeamMembershipScalarWhereInput[];
     id?: Prisma.StringFilter<"TeamMembership"> | string;
     organizationId?: Prisma.StringFilter<"TeamMembership"> | string;
     teamId?: Prisma.StringFilter<"TeamMembership"> | string;
@@ -879,9 +768,7 @@ export type TeamMembershipCreateOrConnectWithoutTeamInput = {
 };
 
 export type TeamMembershipCreateManyTeamInputEnvelope = {
-    data:
-        | Prisma.TeamMembershipCreateManyTeamInput
-        | Prisma.TeamMembershipCreateManyTeamInput[];
+    data: Prisma.TeamMembershipCreateManyTeamInput | Prisma.TeamMembershipCreateManyTeamInput[];
     skipDuplicates?: boolean;
 };
 
@@ -942,9 +829,7 @@ export type TeamMembershipCreateOrConnectWithoutPersonInput = {
 };
 
 export type TeamMembershipCreateManyPersonInputEnvelope = {
-    data:
-        | Prisma.TeamMembershipCreateManyPersonInput
-        | Prisma.TeamMembershipCreateManyPersonInput[];
+    data: Prisma.TeamMembershipCreateManyPersonInput | Prisma.TeamMembershipCreateManyPersonInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1097,8 +982,7 @@ export type TeamMembershipUncheckedUpdateManyWithoutPersonInput = {
 };
 
 export type TeamMembershipSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1117,8 +1001,7 @@ export type TeamMembershipSelect<
 >;
 
 export type TeamMembershipSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1137,8 +1020,7 @@ export type TeamMembershipSelectCreateManyAndReturn<
 >;
 
 export type TeamMembershipSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1168,8 +1050,7 @@ export type TeamMembershipSelectScalar = {
 };
 
 export type TeamMembershipOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1182,24 +1063,21 @@ export type TeamMembershipOmit<
     ExtArgs["result"]["teamMembership"]
 >;
 export type TeamMembershipInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
 };
 export type TeamMembershipIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
     person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
 };
 export type TeamMembershipIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
@@ -1207,8 +1085,7 @@ export type TeamMembershipIncludeUpdateManyAndReturn<
 };
 
 export type $TeamMembershipPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "TeamMembership";
     objects: {
@@ -1237,18 +1114,13 @@ export type TeamMembershipGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$TeamMembershipPayload, S>;
 
 export type TeamMembershipCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    TeamMembershipFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<TeamMembershipFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: TeamMembershipCountAggregateInputType | true;
 };
 
 export interface TeamMembershipDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1293,10 +1165,7 @@ export interface TeamMembershipDelegate<
      * })
      */
     findUniqueOrThrow<T extends TeamMembershipFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            TeamMembershipFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, TeamMembershipFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__TeamMembershipClient<
         runtime.Types.Result.GetResult<
             Prisma.$TeamMembershipPayload<ExtArgs>,
@@ -1351,10 +1220,7 @@ export interface TeamMembershipDelegate<
      * })
      */
     findFirstOrThrow<T extends TeamMembershipFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            TeamMembershipFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, TeamMembershipFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__TeamMembershipClient<
         runtime.Types.Result.GetResult<
             Prisma.$TeamMembershipPayload<ExtArgs>,
@@ -1459,10 +1325,7 @@ export interface TeamMembershipDelegate<
      *
      */
     createManyAndReturn<T extends TeamMembershipCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            TeamMembershipCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, TeamMembershipCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$TeamMembershipPayload<ExtArgs>,
@@ -1593,10 +1456,7 @@ export interface TeamMembershipDelegate<
      *
      */
     updateManyAndReturn<T extends TeamMembershipUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            TeamMembershipUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, TeamMembershipUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$TeamMembershipPayload<ExtArgs>,
@@ -1656,10 +1516,7 @@ export interface TeamMembershipDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      TeamMembershipCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], TeamMembershipCountAggregateOutputType>
             : number
     >;
 
@@ -1734,12 +1591,7 @@ export interface TeamMembershipDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1769,12 +1621,7 @@ export interface TeamMembershipDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            TeamMembershipGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, TeamMembershipGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetTeamMembershipGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1793,8 +1640,7 @@ export interface TeamMembershipDelegate<
 export interface Prisma__TeamMembershipClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1847,14 +1693,8 @@ export interface Prisma__TeamMembershipClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1862,10 +1702,7 @@ export interface Prisma__TeamMembershipClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1873,9 +1710,7 @@ export interface Prisma__TeamMembershipClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1897,8 +1732,7 @@ export interface TeamMembershipFieldRefs {
  * TeamMembership findUnique
  */
 export type TeamMembershipFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -1922,8 +1756,7 @@ export type TeamMembershipFindUniqueArgs<
  * TeamMembership findUniqueOrThrow
  */
 export type TeamMembershipFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -1947,8 +1780,7 @@ export type TeamMembershipFindUniqueOrThrowArgs<
  * TeamMembership findFirst
  */
 export type TeamMembershipFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -1997,17 +1829,14 @@ export type TeamMembershipFindFirstArgs<
      *
      * Filter by unique combinations of TeamMemberships.
      */
-    distinct?:
-        | Prisma.TeamMembershipScalarFieldEnum
-        | Prisma.TeamMembershipScalarFieldEnum[];
+    distinct?: Prisma.TeamMembershipScalarFieldEnum | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**
  * TeamMembership findFirstOrThrow
  */
 export type TeamMembershipFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2056,17 +1885,14 @@ export type TeamMembershipFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of TeamMemberships.
      */
-    distinct?:
-        | Prisma.TeamMembershipScalarFieldEnum
-        | Prisma.TeamMembershipScalarFieldEnum[];
+    distinct?: Prisma.TeamMembershipScalarFieldEnum | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**
  * TeamMembership findMany
  */
 export type TeamMembershipFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2110,17 +1936,14 @@ export type TeamMembershipFindManyArgs<
      * Skip the first `n` TeamMemberships.
      */
     skip?: number;
-    distinct?:
-        | Prisma.TeamMembershipScalarFieldEnum
-        | Prisma.TeamMembershipScalarFieldEnum[];
+    distinct?: Prisma.TeamMembershipScalarFieldEnum | Prisma.TeamMembershipScalarFieldEnum[];
 };
 
 /**
  * TeamMembership create
  */
 export type TeamMembershipCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2137,25 +1960,19 @@ export type TeamMembershipCreateArgs<
     /**
      * The data needed to create a TeamMembership.
      */
-    data: Prisma.XOR<
-        Prisma.TeamMembershipCreateInput,
-        Prisma.TeamMembershipUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.TeamMembershipCreateInput, Prisma.TeamMembershipUncheckedCreateInput>;
 };
 
 /**
  * TeamMembership createMany
  */
 export type TeamMembershipCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many TeamMemberships.
      */
-    data:
-        | Prisma.TeamMembershipCreateManyInput
-        | Prisma.TeamMembershipCreateManyInput[];
+    data: Prisma.TeamMembershipCreateManyInput | Prisma.TeamMembershipCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -2163,8 +1980,7 @@ export type TeamMembershipCreateManyArgs<
  * TeamMembership createManyAndReturn
  */
 export type TeamMembershipCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2177,9 +1993,7 @@ export type TeamMembershipCreateManyAndReturnArgs<
     /**
      * The data used to create many TeamMemberships.
      */
-    data:
-        | Prisma.TeamMembershipCreateManyInput
-        | Prisma.TeamMembershipCreateManyInput[];
+    data: Prisma.TeamMembershipCreateManyInput | Prisma.TeamMembershipCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -2191,8 +2005,7 @@ export type TeamMembershipCreateManyAndReturnArgs<
  * TeamMembership update
  */
 export type TeamMembershipUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2209,10 +2022,7 @@ export type TeamMembershipUpdateArgs<
     /**
      * The data needed to update a TeamMembership.
      */
-    data: Prisma.XOR<
-        Prisma.TeamMembershipUpdateInput,
-        Prisma.TeamMembershipUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.TeamMembershipUpdateInput, Prisma.TeamMembershipUncheckedUpdateInput>;
     /**
      * Choose, which TeamMembership to update.
      */
@@ -2223,8 +2033,7 @@ export type TeamMembershipUpdateArgs<
  * TeamMembership updateMany
  */
 export type TeamMembershipUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update TeamMemberships.
@@ -2247,8 +2056,7 @@ export type TeamMembershipUpdateManyArgs<
  * TeamMembership updateManyAndReturn
  */
 export type TeamMembershipUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2283,8 +2091,7 @@ export type TeamMembershipUpdateManyAndReturnArgs<
  * TeamMembership upsert
  */
 export type TeamMembershipUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2305,25 +2112,18 @@ export type TeamMembershipUpsertArgs<
     /**
      * In case the TeamMembership found by the `where` argument doesn't exist, create a new TeamMembership with this data.
      */
-    create: Prisma.XOR<
-        Prisma.TeamMembershipCreateInput,
-        Prisma.TeamMembershipUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.TeamMembershipCreateInput, Prisma.TeamMembershipUncheckedCreateInput>;
     /**
      * In case the TeamMembership was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.TeamMembershipUpdateInput,
-        Prisma.TeamMembershipUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.TeamMembershipUpdateInput, Prisma.TeamMembershipUncheckedUpdateInput>;
 };
 
 /**
  * TeamMembership delete
  */
 export type TeamMembershipDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership
@@ -2347,8 +2147,7 @@ export type TeamMembershipDeleteArgs<
  * TeamMembership deleteMany
  */
 export type TeamMembershipDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which TeamMemberships to delete
@@ -2364,8 +2163,7 @@ export type TeamMembershipDeleteManyArgs<
  * TeamMembership without action
  */
 export type TeamMembershipDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the TeamMembership

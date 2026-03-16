@@ -22,15 +22,9 @@ export type * from "./prismaNamespace";
 export const Decimal = runtime.Decimal;
 
 export const NullTypes = {
-    DbNull: runtime.NullTypes.DbNull as new (
-        secret: never,
-    ) => typeof runtime.DbNull,
-    JsonNull: runtime.NullTypes.JsonNull as new (
-        secret: never,
-    ) => typeof runtime.JsonNull,
-    AnyNull: runtime.NullTypes.AnyNull as new (
-        secret: never,
-    ) => typeof runtime.AnyNull,
+    DbNull: runtime.NullTypes.DbNull as new (secret: never) => typeof runtime.DbNull,
+    JsonNull: runtime.NullTypes.JsonNull as new (secret: never) => typeof runtime.JsonNull,
+    AnyNull: runtime.NullTypes.AnyNull as new (secret: never) => typeof runtime.AnyNull,
 };
 /**
  * Helper for filtering JSON entries that have `null` on the database (empty on the db)
@@ -83,6 +77,8 @@ export const ModelName = {
     I3Template_D4H: "I3Template_D4H",
     I3TemplateVariant: "I3TemplateVariant",
     I3TemplateVariant_D4H: "I3TemplateVariant_D4H",
+    FormInstance: "FormInstance",
+    FormInstanceItem: "FormInstanceItem",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -111,8 +107,7 @@ export const UserScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type UserScalarFieldEnum =
-    (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
 
 export const SessionScalarFieldEnum = {
     id: "id",
@@ -193,8 +188,7 @@ export const TeamScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type TeamScalarFieldEnum =
-    (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
+export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
 
 export const TeamConfigScalarFieldEnum = {
     teamId: "teamId",
@@ -314,8 +308,7 @@ export const NoteScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type NoteScalarFieldEnum =
-    (typeof NoteScalarFieldEnum)[keyof typeof NoteScalarFieldEnum];
+export type NoteScalarFieldEnum = (typeof NoteScalarFieldEnum)[keyof typeof NoteScalarFieldEnum];
 
 export const SkillPackageScalarFieldEnum = {
     id: "id",
@@ -367,8 +360,7 @@ export const SkillScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type SkillScalarFieldEnum =
-    (typeof SkillScalarFieldEnum)[keyof typeof SkillScalarFieldEnum];
+export type SkillScalarFieldEnum = (typeof SkillScalarFieldEnum)[keyof typeof SkillScalarFieldEnum];
 
 export const SkillCheckSessionScalarFieldEnum = {
     id: "id",
@@ -494,6 +486,31 @@ export const I3TemplateVariant_D4HScalarFieldEnum = {
 export type I3TemplateVariant_D4HScalarFieldEnum =
     (typeof I3TemplateVariant_D4HScalarFieldEnum)[keyof typeof I3TemplateVariant_D4HScalarFieldEnum];
 
+export const FormInstanceScalarFieldEnum = {
+    id: "id",
+    formKey: "formKey",
+    organizationId: "organizationId",
+    userId: "userId",
+    formData: "formData",
+    formStatus: "formStatus",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+} as const;
+
+export type FormInstanceScalarFieldEnum =
+    (typeof FormInstanceScalarFieldEnum)[keyof typeof FormInstanceScalarFieldEnum];
+
+export const FormInstanceItemScalarFieldEnum = {
+    id: "id",
+    formInstanceId: "formInstanceId",
+    parentItemId: "parentItemId",
+    collectionKey: "collectionKey",
+    formData: "formData",
+} as const;
+
+export type FormInstanceItemScalarFieldEnum =
+    (typeof FormInstanceItemScalarFieldEnum)[keyof typeof FormInstanceItemScalarFieldEnum];
+
 export const SortOrder = {
     asc: "asc",
     desc: "desc",
@@ -505,8 +522,7 @@ export const JsonNullValueInput = {
     JsonNull: JsonNull,
 } as const;
 
-export type JsonNullValueInput =
-    (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
 
 export const QueryMode = {
     default: "default",
@@ -528,5 +544,4 @@ export const JsonNullValueFilter = {
     AnyNull: AnyNull,
 } as const;
 
-export type JsonNullValueFilter =
-    (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];

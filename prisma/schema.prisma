@@ -30,6 +30,7 @@ model User {
   d4hAccessTokens   D4hAccessToken[]         @relation("d4h_access_token_to_user")
 
   authoredNotes Note[]                 @relation("note_to_author")
+  formInstances FormInstance[]         @relation("form_instance_to_user")
   logEntries    OrganizationLogEntry[] @relation("organization_log_entry_to_user")
   personnel     Person[]               @relation("person_to_user")
 
@@ -113,6 +114,7 @@ model Organization {
 
   i3IssuedItems             I3IssuedItem[]             @relation("i3_issued_item_to_organization")
   i3Templates               I3Template[]               @relation("i3_template_to_organization")
+  formInstances             FormInstance[]             @relation("form_instance_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -554,4 +556,42 @@ model I3TemplateVariant_D4H {
 
   @@unique([variantId])  
   @@map("i3_template_variant_d4h")
+}
+
+
+model FormInstance {
+  id             String       @id
+  formKey        String
+  organizationId String
+  organization   Organization @relation("form_instance_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?        @relation("form_instance_to_user", fields: [userId], references: [id], onDelete: SetNull)
+
+  formData       Json         @default("{}")
+  formStatus     String       @default("Draft")
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  items          FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+
+  @@index([formKey, organizationId, userId])
+  @@map("form_instances")
+}
+
+model FormInstanceItem {
+  id             String             @id
+  formInstanceId String
+  formInstance   FormInstance       @relation("form_instance_item_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
+  
+  parentItemId   String?            
+  parentItem     FormInstanceItem?  @relation("form_instance_item_to_parent_item", fields: [parentItemId], references: [id], onDelete: Cascade)
+
+  collectionKey  String
+  formData       Json               @default("{}")
+
+  children       FormInstanceItem[] @relation("form_instance_item_to_parent_item")
+
+  @@index([formInstanceId])
+  @@map("form_instance_items")
 }

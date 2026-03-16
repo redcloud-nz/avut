@@ -93,8 +93,7 @@ export type SkillOverrideCountAggregateInputType = {
 };
 
 export type SkillOverrideAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillOverride to aggregate.
@@ -158,9 +157,7 @@ export type SkillOverrideAggregateArgs<
     _max?: SkillOverrideMaxAggregateInputType;
 };
 
-export type GetSkillOverrideAggregateType<
-    T extends SkillOverrideAggregateArgs,
-> = {
+export type GetSkillOverrideAggregateType<T extends SkillOverrideAggregateArgs> = {
     [P in keyof T & keyof AggregateSkillOverride]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
@@ -169,16 +166,13 @@ export type GetSkillOverrideAggregateType<
 };
 
 export type SkillOverrideGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.SkillOverrideWhereInput;
     orderBy?:
         | Prisma.SkillOverrideOrderByWithAggregationInput
         | Prisma.SkillOverrideOrderByWithAggregationInput[];
-    by:
-        | Prisma.SkillOverrideScalarFieldEnum[]
-        | Prisma.SkillOverrideScalarFieldEnum;
+    by: Prisma.SkillOverrideScalarFieldEnum[] | Prisma.SkillOverrideScalarFieldEnum;
     having?: Prisma.SkillOverrideScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -202,25 +196,17 @@ export type SkillOverrideGroupByOutputType = {
     _max: SkillOverrideMaxAggregateOutputType | null;
 };
 
-type GetSkillOverrideGroupByPayload<T extends SkillOverrideGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<SkillOverrideGroupByOutputType, T["by"]> & {
-                [P in keyof T &
-                    keyof SkillOverrideGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<
-                              T[P],
-                              SkillOverrideGroupByOutputType[P]
-                          >
-                    : Prisma.GetScalarType<
-                          T[P],
-                          SkillOverrideGroupByOutputType[P]
-                      >;
-            }
-        >
-    >;
+type GetSkillOverrideGroupByPayload<T extends SkillOverrideGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<SkillOverrideGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof SkillOverrideGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], SkillOverrideGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], SkillOverrideGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type SkillOverrideWhereInput = {
     AND?: Prisma.SkillOverrideWhereInput | Prisma.SkillOverrideWhereInput[];
@@ -235,10 +221,7 @@ export type SkillOverrideWhereInput = {
         Prisma.SkillPackageSubscriptionScalarRelationFilter,
         Prisma.SkillPackageSubscriptionWhereInput
     >;
-    skill?: Prisma.XOR<
-        Prisma.SkillScalarRelationFilter,
-        Prisma.SkillWhereInput
-    >;
+    skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
 };
 
 export type SkillOverrideOrderByWithRelationInput = {
@@ -259,20 +242,14 @@ export type SkillOverrideWhereUniqueInput = Prisma.AtLeast<
         NOT?: Prisma.SkillOverrideWhereInput | Prisma.SkillOverrideWhereInput[];
         subscriptionId?: Prisma.StringFilter<"SkillOverride"> | string;
         skillId?: Prisma.StringFilter<"SkillOverride"> | string;
-        description?:
-            | Prisma.StringNullableFilter<"SkillOverride">
-            | string
-            | null;
+        description?: Prisma.StringNullableFilter<"SkillOverride"> | string | null;
         frequency?: Prisma.IntNullableFilter<"SkillOverride"> | number | null;
         include?: Prisma.BoolFilter<"SkillOverride"> | boolean;
         subscription?: Prisma.XOR<
             Prisma.SkillPackageSubscriptionScalarRelationFilter,
             Prisma.SkillPackageSubscriptionWhereInput
         >;
-        skill?: Prisma.XOR<
-            Prisma.SkillScalarRelationFilter,
-            Prisma.SkillWhereInput
-        >;
+        skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
     },
     "subscriptionId_skillId"
 >;
@@ -298,18 +275,10 @@ export type SkillOverrideScalarWhereWithAggregatesInput = {
     NOT?:
         | Prisma.SkillOverrideScalarWhereWithAggregatesInput
         | Prisma.SkillOverrideScalarWhereWithAggregatesInput[];
-    subscriptionId?:
-        | Prisma.StringWithAggregatesFilter<"SkillOverride">
-        | string;
+    subscriptionId?: Prisma.StringWithAggregatesFilter<"SkillOverride"> | string;
     skillId?: Prisma.StringWithAggregatesFilter<"SkillOverride"> | string;
-    description?:
-        | Prisma.StringNullableWithAggregatesFilter<"SkillOverride">
-        | string
-        | null;
-    frequency?:
-        | Prisma.IntNullableWithAggregatesFilter<"SkillOverride">
-        | number
-        | null;
+    description?: Prisma.StringNullableWithAggregatesFilter<"SkillOverride"> | string | null;
+    frequency?: Prisma.IntNullableWithAggregatesFilter<"SkillOverride"> | number | null;
     include?: Prisma.BoolWithAggregatesFilter<"SkillOverride"> | boolean;
 };
 
@@ -330,10 +299,7 @@ export type SkillOverrideUncheckedCreateInput = {
 };
 
 export type SkillOverrideUpdateInput = {
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     subscription?: Prisma.SkillPackageSubscriptionUpdateOneRequiredWithoutSkillOverridesNestedInput;
@@ -343,10 +309,7 @@ export type SkillOverrideUpdateInput = {
 export type SkillOverrideUncheckedUpdateInput = {
     subscriptionId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
@@ -360,10 +323,7 @@ export type SkillOverrideCreateManyInput = {
 };
 
 export type SkillOverrideUpdateManyMutationInput = {
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
@@ -371,10 +331,7 @@ export type SkillOverrideUpdateManyMutationInput = {
 export type SkillOverrideUncheckedUpdateManyInput = {
     subscriptionId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
@@ -438,9 +395,7 @@ export type SkillOverrideCreateNestedManyWithoutSkillInput = {
         | Prisma.SkillOverrideCreateOrConnectWithoutSkillInput
         | Prisma.SkillOverrideCreateOrConnectWithoutSkillInput[];
     createMany?: Prisma.SkillOverrideCreateManySkillInputEnvelope;
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
 };
 
 export type SkillOverrideUncheckedCreateNestedManyWithoutSkillInput = {
@@ -455,9 +410,7 @@ export type SkillOverrideUncheckedCreateNestedManyWithoutSkillInput = {
         | Prisma.SkillOverrideCreateOrConnectWithoutSkillInput
         | Prisma.SkillOverrideCreateOrConnectWithoutSkillInput[];
     createMany?: Prisma.SkillOverrideCreateManySkillInputEnvelope;
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
 };
 
 export type SkillOverrideUpdateManyWithoutSkillNestedInput = {
@@ -475,27 +428,17 @@ export type SkillOverrideUpdateManyWithoutSkillNestedInput = {
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSkillInput
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSkillInput[];
     createMany?: Prisma.SkillOverrideCreateManySkillInputEnvelope;
-    set?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    set?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    disconnect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    delete?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
     update?:
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSkillInput
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSkillInput[];
     updateMany?:
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSkillInput
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSkillInput[];
-    deleteMany?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    deleteMany?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
 };
 
 export type SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput = {
@@ -513,27 +456,17 @@ export type SkillOverrideUncheckedUpdateManyWithoutSkillNestedInput = {
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSkillInput
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSkillInput[];
     createMany?: Prisma.SkillOverrideCreateManySkillInputEnvelope;
-    set?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    set?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    disconnect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    delete?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
     update?:
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSkillInput
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSkillInput[];
     updateMany?:
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSkillInput
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSkillInput[];
-    deleteMany?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    deleteMany?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
 };
 
 export type SkillOverrideCreateNestedManyWithoutSubscriptionInput = {
@@ -548,9 +481,7 @@ export type SkillOverrideCreateNestedManyWithoutSubscriptionInput = {
         | Prisma.SkillOverrideCreateOrConnectWithoutSubscriptionInput
         | Prisma.SkillOverrideCreateOrConnectWithoutSubscriptionInput[];
     createMany?: Prisma.SkillOverrideCreateManySubscriptionInputEnvelope;
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
 };
 
 export type SkillOverrideUncheckedCreateNestedManyWithoutSubscriptionInput = {
@@ -565,9 +496,7 @@ export type SkillOverrideUncheckedCreateNestedManyWithoutSubscriptionInput = {
         | Prisma.SkillOverrideCreateOrConnectWithoutSubscriptionInput
         | Prisma.SkillOverrideCreateOrConnectWithoutSubscriptionInput[];
     createMany?: Prisma.SkillOverrideCreateManySubscriptionInputEnvelope;
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
 };
 
 export type SkillOverrideUpdateManyWithoutSubscriptionNestedInput = {
@@ -585,27 +514,17 @@ export type SkillOverrideUpdateManyWithoutSubscriptionNestedInput = {
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSubscriptionInput
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSubscriptionInput[];
     createMany?: Prisma.SkillOverrideCreateManySubscriptionInputEnvelope;
-    set?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    set?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    disconnect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    delete?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
     update?:
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSubscriptionInput
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSubscriptionInput[];
     updateMany?:
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSubscriptionInput
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSubscriptionInput[];
-    deleteMany?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    deleteMany?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
 };
 
 export type SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput = {
@@ -623,27 +542,17 @@ export type SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput = {
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSubscriptionInput
         | Prisma.SkillOverrideUpsertWithWhereUniqueWithoutSubscriptionInput[];
     createMany?: Prisma.SkillOverrideCreateManySubscriptionInputEnvelope;
-    set?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    disconnect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    delete?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
-    connect?:
-        | Prisma.SkillOverrideWhereUniqueInput
-        | Prisma.SkillOverrideWhereUniqueInput[];
+    set?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    disconnect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    delete?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
+    connect?: Prisma.SkillOverrideWhereUniqueInput | Prisma.SkillOverrideWhereUniqueInput[];
     update?:
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSubscriptionInput
         | Prisma.SkillOverrideUpdateWithWhereUniqueWithoutSubscriptionInput[];
     updateMany?:
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSubscriptionInput
         | Prisma.SkillOverrideUpdateManyWithWhereWithoutSubscriptionInput[];
-    deleteMany?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    deleteMany?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
 };
 
 export type NullableIntFieldUpdateOperationsInput = {
@@ -677,9 +586,7 @@ export type SkillOverrideCreateOrConnectWithoutSkillInput = {
 };
 
 export type SkillOverrideCreateManySkillInputEnvelope = {
-    data:
-        | Prisma.SkillOverrideCreateManySkillInput
-        | Prisma.SkillOverrideCreateManySkillInput[];
+    data: Prisma.SkillOverrideCreateManySkillInput | Prisma.SkillOverrideCreateManySkillInput[];
     skipDuplicates?: boolean;
 };
 
@@ -712,13 +619,9 @@ export type SkillOverrideUpdateManyWithWhereWithoutSkillInput = {
 };
 
 export type SkillOverrideScalarWhereInput = {
-    AND?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    AND?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
     OR?: Prisma.SkillOverrideScalarWhereInput[];
-    NOT?:
-        | Prisma.SkillOverrideScalarWhereInput
-        | Prisma.SkillOverrideScalarWhereInput[];
+    NOT?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
     subscriptionId?: Prisma.StringFilter<"SkillOverride"> | string;
     skillId?: Prisma.StringFilter<"SkillOverride"> | string;
     description?: Prisma.StringNullableFilter<"SkillOverride"> | string | null;
@@ -791,10 +694,7 @@ export type SkillOverrideCreateManySkillInput = {
 };
 
 export type SkillOverrideUpdateWithoutSkillInput = {
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     subscription?: Prisma.SkillPackageSubscriptionUpdateOneRequiredWithoutSkillOverridesNestedInput;
@@ -802,20 +702,14 @@ export type SkillOverrideUpdateWithoutSkillInput = {
 
 export type SkillOverrideUncheckedUpdateWithoutSkillInput = {
     subscriptionId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type SkillOverrideUncheckedUpdateManyWithoutSkillInput = {
     subscriptionId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
@@ -828,10 +722,7 @@ export type SkillOverrideCreateManySubscriptionInput = {
 };
 
 export type SkillOverrideUpdateWithoutSubscriptionInput = {
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     skill?: Prisma.SkillUpdateOneRequiredWithoutSubscriptionOverridesNestedInput;
@@ -839,27 +730,20 @@ export type SkillOverrideUpdateWithoutSubscriptionInput = {
 
 export type SkillOverrideUncheckedUpdateWithoutSubscriptionInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type SkillOverrideUncheckedUpdateManyWithoutSubscriptionInput = {
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     frequency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     include?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type SkillOverrideSelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         subscriptionId?: boolean;
@@ -867,17 +751,14 @@ export type SkillOverrideSelect<
         description?: boolean;
         frequency?: boolean;
         include?: boolean;
-        subscription?:
-            | boolean
-            | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+        subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["skillOverride"]
 >;
 
 export type SkillOverrideSelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         subscriptionId?: boolean;
@@ -885,17 +766,14 @@ export type SkillOverrideSelectCreateManyAndReturn<
         description?: boolean;
         frequency?: boolean;
         include?: boolean;
-        subscription?:
-            | boolean
-            | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+        subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["skillOverride"]
 >;
 
 export type SkillOverrideSelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         subscriptionId?: boolean;
@@ -903,9 +781,7 @@ export type SkillOverrideSelectUpdateManyAndReturn<
         description?: boolean;
         frequency?: boolean;
         include?: boolean;
-        subscription?:
-            | boolean
-            | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+        subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["skillOverride"]
@@ -920,43 +796,32 @@ export type SkillOverrideSelectScalar = {
 };
 
 export type SkillOverrideOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     "subscriptionId" | "skillId" | "description" | "frequency" | "include",
     ExtArgs["result"]["skillOverride"]
 >;
 export type SkillOverrideInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-    subscription?:
-        | boolean
-        | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+    subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
 };
 export type SkillOverrideIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-    subscription?:
-        | boolean
-        | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+    subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
 };
 export type SkillOverrideIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-    subscription?:
-        | boolean
-        | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
+    subscription?: boolean | Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
 };
 
 export type $SkillOverridePayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "SkillOverride";
     objects: {
@@ -981,18 +846,13 @@ export type SkillOverrideGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$SkillOverridePayload, S>;
 
 export type SkillOverrideCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    SkillOverrideFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<SkillOverrideFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: SkillOverrideCountAggregateInputType | true;
 };
 
 export interface SkillOverrideDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1037,10 +897,7 @@ export interface SkillOverrideDelegate<
      * })
      */
     findUniqueOrThrow<T extends SkillOverrideFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillOverrideFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillOverrideFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillOverrideClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillOverridePayload<ExtArgs>,
@@ -1095,10 +952,7 @@ export interface SkillOverrideDelegate<
      * })
      */
     findFirstOrThrow<T extends SkillOverrideFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillOverrideFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillOverrideFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillOverrideClient<
         runtime.Types.Result.GetResult<
             Prisma.$SkillOverridePayload<ExtArgs>,
@@ -1203,10 +1057,7 @@ export interface SkillOverrideDelegate<
      *
      */
     createManyAndReturn<T extends SkillOverrideCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            SkillOverrideCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, SkillOverrideCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillOverridePayload<ExtArgs>,
@@ -1337,10 +1188,7 @@ export interface SkillOverrideDelegate<
      *
      */
     updateManyAndReturn<T extends SkillOverrideUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            SkillOverrideUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, SkillOverrideUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$SkillOverridePayload<ExtArgs>,
@@ -1400,10 +1248,7 @@ export interface SkillOverrideDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      SkillOverrideCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], SkillOverrideCountAggregateOutputType>
             : number
     >;
 
@@ -1478,12 +1323,7 @@ export interface SkillOverrideDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1513,12 +1353,7 @@ export interface SkillOverrideDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            SkillOverrideGroupByArgs,
-            OrderByArg
-        > &
-            InputErrors,
+        args: Prisma.SubsetIntersection<T, SkillOverrideGroupByArgs, OrderByArg> & InputErrors,
     ): {} extends InputErrors
         ? GetSkillOverrideGroupByPayload<T>
         : Prisma.PrismaPromise<InputErrors>;
@@ -1537,18 +1372,12 @@ export interface SkillOverrideDelegate<
 export interface Prisma__SkillOverrideClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
-    subscription<
-        T extends Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs> = {},
-    >(
-        args?: Prisma.Subset<
-            T,
-            Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>
-        >,
+    subscription<T extends Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.SkillPackageSubscriptionDefaultArgs<ExtArgs>>,
     ): Prisma.Prisma__SkillPackageSubscriptionClient<
         | runtime.Types.Result.GetResult<
               Prisma.$SkillPackageSubscriptionPayload<ExtArgs>,
@@ -1582,14 +1411,8 @@ export interface Prisma__SkillOverrideClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1597,10 +1420,7 @@ export interface Prisma__SkillOverrideClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1608,9 +1428,7 @@ export interface Prisma__SkillOverrideClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1629,8 +1447,7 @@ export interface SkillOverrideFieldRefs {
  * SkillOverride findUnique
  */
 export type SkillOverrideFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1654,8 +1471,7 @@ export type SkillOverrideFindUniqueArgs<
  * SkillOverride findUniqueOrThrow
  */
 export type SkillOverrideFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1679,8 +1495,7 @@ export type SkillOverrideFindUniqueOrThrowArgs<
  * SkillOverride findFirst
  */
 export type SkillOverrideFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1729,17 +1544,14 @@ export type SkillOverrideFindFirstArgs<
      *
      * Filter by unique combinations of SkillOverrides.
      */
-    distinct?:
-        | Prisma.SkillOverrideScalarFieldEnum
-        | Prisma.SkillOverrideScalarFieldEnum[];
+    distinct?: Prisma.SkillOverrideScalarFieldEnum | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**
  * SkillOverride findFirstOrThrow
  */
 export type SkillOverrideFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1788,17 +1600,14 @@ export type SkillOverrideFindFirstOrThrowArgs<
      *
      * Filter by unique combinations of SkillOverrides.
      */
-    distinct?:
-        | Prisma.SkillOverrideScalarFieldEnum
-        | Prisma.SkillOverrideScalarFieldEnum[];
+    distinct?: Prisma.SkillOverrideScalarFieldEnum | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**
  * SkillOverride findMany
  */
 export type SkillOverrideFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1842,17 +1651,14 @@ export type SkillOverrideFindManyArgs<
      * Skip the first `n` SkillOverrides.
      */
     skip?: number;
-    distinct?:
-        | Prisma.SkillOverrideScalarFieldEnum
-        | Prisma.SkillOverrideScalarFieldEnum[];
+    distinct?: Prisma.SkillOverrideScalarFieldEnum | Prisma.SkillOverrideScalarFieldEnum[];
 };
 
 /**
  * SkillOverride create
  */
 export type SkillOverrideCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1869,25 +1675,19 @@ export type SkillOverrideCreateArgs<
     /**
      * The data needed to create a SkillOverride.
      */
-    data: Prisma.XOR<
-        Prisma.SkillOverrideCreateInput,
-        Prisma.SkillOverrideUncheckedCreateInput
-    >;
+    data: Prisma.XOR<Prisma.SkillOverrideCreateInput, Prisma.SkillOverrideUncheckedCreateInput>;
 };
 
 /**
  * SkillOverride createMany
  */
 export type SkillOverrideCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many SkillOverrides.
      */
-    data:
-        | Prisma.SkillOverrideCreateManyInput
-        | Prisma.SkillOverrideCreateManyInput[];
+    data: Prisma.SkillOverrideCreateManyInput | Prisma.SkillOverrideCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -1895,8 +1695,7 @@ export type SkillOverrideCreateManyArgs<
  * SkillOverride createManyAndReturn
  */
 export type SkillOverrideCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1909,9 +1708,7 @@ export type SkillOverrideCreateManyAndReturnArgs<
     /**
      * The data used to create many SkillOverrides.
      */
-    data:
-        | Prisma.SkillOverrideCreateManyInput
-        | Prisma.SkillOverrideCreateManyInput[];
+    data: Prisma.SkillOverrideCreateManyInput | Prisma.SkillOverrideCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -1923,8 +1720,7 @@ export type SkillOverrideCreateManyAndReturnArgs<
  * SkillOverride update
  */
 export type SkillOverrideUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -1941,10 +1737,7 @@ export type SkillOverrideUpdateArgs<
     /**
      * The data needed to update a SkillOverride.
      */
-    data: Prisma.XOR<
-        Prisma.SkillOverrideUpdateInput,
-        Prisma.SkillOverrideUncheckedUpdateInput
-    >;
+    data: Prisma.XOR<Prisma.SkillOverrideUpdateInput, Prisma.SkillOverrideUncheckedUpdateInput>;
     /**
      * Choose, which SkillOverride to update.
      */
@@ -1955,8 +1748,7 @@ export type SkillOverrideUpdateArgs<
  * SkillOverride updateMany
  */
 export type SkillOverrideUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update SkillOverrides.
@@ -1979,8 +1771,7 @@ export type SkillOverrideUpdateManyArgs<
  * SkillOverride updateManyAndReturn
  */
 export type SkillOverrideUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -2015,8 +1806,7 @@ export type SkillOverrideUpdateManyAndReturnArgs<
  * SkillOverride upsert
  */
 export type SkillOverrideUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -2037,25 +1827,18 @@ export type SkillOverrideUpsertArgs<
     /**
      * In case the SkillOverride found by the `where` argument doesn't exist, create a new SkillOverride with this data.
      */
-    create: Prisma.XOR<
-        Prisma.SkillOverrideCreateInput,
-        Prisma.SkillOverrideUncheckedCreateInput
-    >;
+    create: Prisma.XOR<Prisma.SkillOverrideCreateInput, Prisma.SkillOverrideUncheckedCreateInput>;
     /**
      * In case the SkillOverride was found with the provided `where` argument, update it with this data.
      */
-    update: Prisma.XOR<
-        Prisma.SkillOverrideUpdateInput,
-        Prisma.SkillOverrideUncheckedUpdateInput
-    >;
+    update: Prisma.XOR<Prisma.SkillOverrideUpdateInput, Prisma.SkillOverrideUncheckedUpdateInput>;
 };
 
 /**
  * SkillOverride delete
  */
 export type SkillOverrideDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride
@@ -2079,8 +1862,7 @@ export type SkillOverrideDeleteArgs<
  * SkillOverride deleteMany
  */
 export type SkillOverrideDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which SkillOverrides to delete
@@ -2096,8 +1878,7 @@ export type SkillOverrideDeleteManyArgs<
  * SkillOverride without action
  */
 export type SkillOverrideDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the SkillOverride

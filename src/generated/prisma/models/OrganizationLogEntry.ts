@@ -95,8 +95,7 @@ export type OrganizationLogEntryCountAggregateInputType = {
 };
 
 export type OrganizationLogEntryAggregateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationLogEntry to aggregate.
@@ -148,12 +147,8 @@ export type OrganizationLogEntryAggregateArgs<
     _max?: OrganizationLogEntryMaxAggregateInputType;
 };
 
-export type GetOrganizationLogEntryAggregateType<
-    T extends OrganizationLogEntryAggregateArgs,
-> = {
-    [P in keyof T & keyof AggregateOrganizationLogEntry]: P extends
-        | "_count"
-        | "count"
+export type GetOrganizationLogEntryAggregateType<T extends OrganizationLogEntryAggregateArgs> = {
+    [P in keyof T & keyof AggregateOrganizationLogEntry]: P extends "_count" | "count"
         ? T[P] extends true
             ? number
             : Prisma.GetScalarType<T[P], AggregateOrganizationLogEntry[P]>
@@ -161,16 +156,13 @@ export type GetOrganizationLogEntryAggregateType<
 };
 
 export type OrganizationLogEntryGroupByArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.OrganizationLogEntryWhereInput;
     orderBy?:
         | Prisma.OrganizationLogEntryOrderByWithAggregationInput
         | Prisma.OrganizationLogEntryOrderByWithAggregationInput[];
-    by:
-        | Prisma.OrganizationLogEntryScalarFieldEnum[]
-        | Prisma.OrganizationLogEntryScalarFieldEnum;
+    by: Prisma.OrganizationLogEntryScalarFieldEnum[] | Prisma.OrganizationLogEntryScalarFieldEnum;
     having?: Prisma.OrganizationLogEntryScalarWhereWithAggregatesInput;
     take?: number;
     skip?: number;
@@ -194,38 +186,23 @@ export type OrganizationLogEntryGroupByOutputType = {
     _max: OrganizationLogEntryMaxAggregateOutputType | null;
 };
 
-type GetOrganizationLogEntryGroupByPayload<
-    T extends OrganizationLogEntryGroupByArgs,
-> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<
-            OrganizationLogEntryGroupByOutputType,
-            T["by"]
-        > & {
-            [P in keyof T &
-                keyof OrganizationLogEntryGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<
-                          T[P],
-                          OrganizationLogEntryGroupByOutputType[P]
-                      >
-                : Prisma.GetScalarType<
-                      T[P],
-                      OrganizationLogEntryGroupByOutputType[P]
-                  >;
-        }
-    >
->;
+type GetOrganizationLogEntryGroupByPayload<T extends OrganizationLogEntryGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<OrganizationLogEntryGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof OrganizationLogEntryGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], OrganizationLogEntryGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], OrganizationLogEntryGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type OrganizationLogEntryWhereInput = {
-    AND?:
-        | Prisma.OrganizationLogEntryWhereInput
-        | Prisma.OrganizationLogEntryWhereInput[];
+    AND?: Prisma.OrganizationLogEntryWhereInput | Prisma.OrganizationLogEntryWhereInput[];
     OR?: Prisma.OrganizationLogEntryWhereInput[];
-    NOT?:
-        | Prisma.OrganizationLogEntryWhereInput
-        | Prisma.OrganizationLogEntryWhereInput[];
+    NOT?: Prisma.OrganizationLogEntryWhereInput | Prisma.OrganizationLogEntryWhereInput[];
     id?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     organizationId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     userId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
@@ -233,10 +210,7 @@ export type OrganizationLogEntryWhereInput = {
     objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
-    description?:
-        | Prisma.StringNullableFilter<"OrganizationLogEntry">
-        | string
-        | null;
+    description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
     timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
@@ -262,35 +236,22 @@ export type OrganizationLogEntryOrderByWithRelationInput = {
 export type OrganizationLogEntryWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
-        AND?:
-            | Prisma.OrganizationLogEntryWhereInput
-            | Prisma.OrganizationLogEntryWhereInput[];
+        AND?: Prisma.OrganizationLogEntryWhereInput | Prisma.OrganizationLogEntryWhereInput[];
         OR?: Prisma.OrganizationLogEntryWhereInput[];
-        NOT?:
-            | Prisma.OrganizationLogEntryWhereInput
-            | Prisma.OrganizationLogEntryWhereInput[];
+        NOT?: Prisma.OrganizationLogEntryWhereInput | Prisma.OrganizationLogEntryWhereInput[];
         organizationId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         userId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         action?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
-        description?:
-            | Prisma.StringNullableFilter<"OrganizationLogEntry">
-            | string
-            | null;
-        timestamp?:
-            | Prisma.DateTimeFilter<"OrganizationLogEntry">
-            | Date
-            | string;
+        description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
+        timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        user?: Prisma.XOR<
-            Prisma.UserScalarRelationFilter,
-            Prisma.UserWhereInput
-        >;
+        user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
     "id"
 >;
@@ -319,26 +280,14 @@ export type OrganizationLogEntryScalarWhereWithAggregatesInput = {
         | Prisma.OrganizationLogEntryScalarWhereWithAggregatesInput
         | Prisma.OrganizationLogEntryScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
-    organizationId?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationLogEntry">
-        | string;
+    organizationId?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
     userId?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
     action?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
-    objectType?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationLogEntry">
-        | string;
-    objectId?:
-        | Prisma.StringWithAggregatesFilter<"OrganizationLogEntry">
-        | string;
+    objectType?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
+    objectId?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
     changes?: Prisma.JsonWithAggregatesFilter<"OrganizationLogEntry">;
-    description?:
-        | Prisma.StringNullableWithAggregatesFilter<"OrganizationLogEntry">
-        | string
-        | null;
-    timestamp?:
-        | Prisma.DateTimeWithAggregatesFilter<"OrganizationLogEntry">
-        | Date
-        | string;
+    description?: Prisma.StringNullableWithAggregatesFilter<"OrganizationLogEntry"> | string | null;
+    timestamp?: Prisma.DateTimeWithAggregatesFilter<"OrganizationLogEntry"> | Date | string;
 };
 
 export type OrganizationLogEntryCreateInput = {
@@ -371,10 +320,7 @@ export type OrganizationLogEntryUpdateInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutLogEntriesNestedInput;
     user?: Prisma.UserUpdateOneRequiredWithoutLogEntriesNestedInput;
@@ -388,10 +334,7 @@ export type OrganizationLogEntryUncheckedUpdateInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -413,10 +356,7 @@ export type OrganizationLogEntryUpdateManyMutationInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -428,10 +368,7 @@ export type OrganizationLogEntryUncheckedUpdateManyInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -606,23 +543,22 @@ export type OrganizationLogEntryCreateNestedManyWithoutOrganizationInput = {
         | Prisma.OrganizationLogEntryWhereUniqueInput[];
 };
 
-export type OrganizationLogEntryUncheckedCreateNestedManyWithoutOrganizationInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
-                  Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationLogEntryCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationLogEntryCreateManyOrganizationInputEnvelope;
-        connect?:
-            | Prisma.OrganizationLogEntryWhereUniqueInput
-            | Prisma.OrganizationLogEntryWhereUniqueInput[];
-    };
+export type OrganizationLogEntryUncheckedCreateNestedManyWithoutOrganizationInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
+              Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationLogEntryCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationLogEntryCreateManyOrganizationInputEnvelope;
+    connect?:
+        | Prisma.OrganizationLogEntryWhereUniqueInput
+        | Prisma.OrganizationLogEntryWhereUniqueInput[];
+};
 
 export type OrganizationLogEntryUpdateManyWithoutOrganizationNestedInput = {
     create?:
@@ -662,44 +598,43 @@ export type OrganizationLogEntryUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.OrganizationLogEntryScalarWhereInput[];
 };
 
-export type OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationNestedInput =
-    {
-        create?:
-            | Prisma.XOR<
-                  Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
-                  Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
-              >
-            | Prisma.OrganizationLogEntryCreateWithoutOrganizationInput[]
-            | Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput[];
-        connectOrCreate?:
-            | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput
-            | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput[];
-        upsert?:
-            | Prisma.OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput[];
-        createMany?: Prisma.OrganizationLogEntryCreateManyOrganizationInputEnvelope;
-        set?:
-            | Prisma.OrganizationLogEntryWhereUniqueInput
-            | Prisma.OrganizationLogEntryWhereUniqueInput[];
-        disconnect?:
-            | Prisma.OrganizationLogEntryWhereUniqueInput
-            | Prisma.OrganizationLogEntryWhereUniqueInput[];
-        delete?:
-            | Prisma.OrganizationLogEntryWhereUniqueInput
-            | Prisma.OrganizationLogEntryWhereUniqueInput[];
-        connect?:
-            | Prisma.OrganizationLogEntryWhereUniqueInput
-            | Prisma.OrganizationLogEntryWhereUniqueInput[];
-        update?:
-            | Prisma.OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput
-            | Prisma.OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput[];
-        updateMany?:
-            | Prisma.OrganizationLogEntryUpdateManyWithWhereWithoutOrganizationInput
-            | Prisma.OrganizationLogEntryUpdateManyWithWhereWithoutOrganizationInput[];
-        deleteMany?:
-            | Prisma.OrganizationLogEntryScalarWhereInput
-            | Prisma.OrganizationLogEntryScalarWhereInput[];
-    };
+export type OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
+              Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
+          >
+        | Prisma.OrganizationLogEntryCreateWithoutOrganizationInput[]
+        | Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput[];
+    connectOrCreate?:
+        | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput
+        | Prisma.OrganizationLogEntryCreateOrConnectWithoutOrganizationInput[];
+    upsert?:
+        | Prisma.OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput[];
+    createMany?: Prisma.OrganizationLogEntryCreateManyOrganizationInputEnvelope;
+    set?:
+        | Prisma.OrganizationLogEntryWhereUniqueInput
+        | Prisma.OrganizationLogEntryWhereUniqueInput[];
+    disconnect?:
+        | Prisma.OrganizationLogEntryWhereUniqueInput
+        | Prisma.OrganizationLogEntryWhereUniqueInput[];
+    delete?:
+        | Prisma.OrganizationLogEntryWhereUniqueInput
+        | Prisma.OrganizationLogEntryWhereUniqueInput[];
+    connect?:
+        | Prisma.OrganizationLogEntryWhereUniqueInput
+        | Prisma.OrganizationLogEntryWhereUniqueInput[];
+    update?:
+        | Prisma.OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput
+        | Prisma.OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput[];
+    updateMany?:
+        | Prisma.OrganizationLogEntryUpdateManyWithWhereWithoutOrganizationInput
+        | Prisma.OrganizationLogEntryUpdateManyWithWhereWithoutOrganizationInput[];
+    deleteMany?:
+        | Prisma.OrganizationLogEntryScalarWhereInput
+        | Prisma.OrganizationLogEntryScalarWhereInput[];
+};
 
 export type OrganizationLogEntryCreateWithoutUserInput = {
     id: string;
@@ -781,10 +716,7 @@ export type OrganizationLogEntryScalarWhereInput = {
     objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
-    description?:
-        | Prisma.StringNullableFilter<"OrganizationLogEntry">
-        | string
-        | null;
+    description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
     timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
 };
 
@@ -825,27 +757,25 @@ export type OrganizationLogEntryCreateManyOrganizationInputEnvelope = {
     skipDuplicates?: boolean;
 };
 
-export type OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.OrganizationLogEntryWhereUniqueInput;
-        update: Prisma.XOR<
-            Prisma.OrganizationLogEntryUpdateWithoutOrganizationInput,
-            Prisma.OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput
-        >;
-        create: Prisma.XOR<
-            Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
-            Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
-        >;
-    };
+export type OrganizationLogEntryUpsertWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.OrganizationLogEntryWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.OrganizationLogEntryUpdateWithoutOrganizationInput,
+        Prisma.OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput
+    >;
+    create: Prisma.XOR<
+        Prisma.OrganizationLogEntryCreateWithoutOrganizationInput,
+        Prisma.OrganizationLogEntryUncheckedCreateWithoutOrganizationInput
+    >;
+};
 
-export type OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput =
-    {
-        where: Prisma.OrganizationLogEntryWhereUniqueInput;
-        data: Prisma.XOR<
-            Prisma.OrganizationLogEntryUpdateWithoutOrganizationInput,
-            Prisma.OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput
-        >;
-    };
+export type OrganizationLogEntryUpdateWithWhereUniqueWithoutOrganizationInput = {
+    where: Prisma.OrganizationLogEntryWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationLogEntryUpdateWithoutOrganizationInput,
+        Prisma.OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput
+    >;
+};
 
 export type OrganizationLogEntryUpdateManyWithWhereWithoutOrganizationInput = {
     where: Prisma.OrganizationLogEntryScalarWhereInput;
@@ -872,10 +802,7 @@ export type OrganizationLogEntryUpdateWithoutUserInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutLogEntriesNestedInput;
 };
@@ -887,10 +814,7 @@ export type OrganizationLogEntryUncheckedUpdateWithoutUserInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -901,10 +825,7 @@ export type OrganizationLogEntryUncheckedUpdateManyWithoutUserInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -925,10 +846,7 @@ export type OrganizationLogEntryUpdateWithoutOrganizationInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user?: Prisma.UserUpdateOneRequiredWithoutLogEntriesNestedInput;
 };
@@ -940,10 +858,7 @@ export type OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -954,16 +869,12 @@ export type OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationInput = {
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    description?:
-        | Prisma.NullableStringFieldUpdateOperationsInput
-        | string
-        | null;
+    description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type OrganizationLogEntrySelect<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -982,8 +893,7 @@ export type OrganizationLogEntrySelect<
 >;
 
 export type OrganizationLogEntrySelectCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1002,8 +912,7 @@ export type OrganizationLogEntrySelectCreateManyAndReturn<
 >;
 
 export type OrganizationLogEntrySelectUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
     {
         id?: boolean;
@@ -1034,8 +943,7 @@ export type OrganizationLogEntrySelectScalar = {
 };
 
 export type OrganizationLogEntryOmit<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
@@ -1049,30 +957,26 @@ export type OrganizationLogEntryOmit<
     ExtArgs["result"]["organizationLogEntry"]
 >;
 export type OrganizationLogEntryInclude<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationLogEntryIncludeCreateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 export type OrganizationLogEntryIncludeUpdateManyAndReturn<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
 };
 
 export type $OrganizationLogEntryPayload<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     name: "OrganizationLogEntry";
     objects: {
@@ -1101,18 +1005,13 @@ export type OrganizationLogEntryGetPayload<
 > = runtime.Types.Result.GetResult<Prisma.$OrganizationLogEntryPayload, S>;
 
 export type OrganizationLogEntryCountArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
-> = Omit<
-    OrganizationLogEntryFindManyArgs,
-    "select" | "include" | "distinct" | "omit"
-> & {
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = Omit<OrganizationLogEntryFindManyArgs, "select" | "include" | "distinct" | "omit"> & {
     select?: OrganizationLogEntryCountAggregateInputType | true;
 };
 
 export interface OrganizationLogEntryDelegate<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > {
     [K: symbol]: {
@@ -1131,10 +1030,7 @@ export interface OrganizationLogEntryDelegate<
      * })
      */
     findUnique<T extends OrganizationLogEntryFindUniqueArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryFindUniqueArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationLogEntryFindUniqueArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationLogEntryClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1160,10 +1056,7 @@ export interface OrganizationLogEntryDelegate<
      * })
      */
     findUniqueOrThrow<T extends OrganizationLogEntryFindUniqueOrThrowArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryFindUniqueOrThrowArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationLogEntryFindUniqueOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationLogEntryClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1190,10 +1083,7 @@ export interface OrganizationLogEntryDelegate<
      * })
      */
     findFirst<T extends OrganizationLogEntryFindFirstArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryFindFirstArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryFindFirstArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationLogEntryClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1221,10 +1111,7 @@ export interface OrganizationLogEntryDelegate<
      * })
      */
     findFirstOrThrow<T extends OrganizationLogEntryFindFirstOrThrowArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryFindFirstOrThrowArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryFindFirstOrThrowArgs<ExtArgs>>,
     ): Prisma.Prisma__OrganizationLogEntryClient<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1254,10 +1141,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     findMany<T extends OrganizationLogEntryFindManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryFindManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryFindManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1306,10 +1190,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     createMany<T extends OrganizationLogEntryCreateManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryCreateManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryCreateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1335,10 +1216,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     createManyAndReturn<T extends OrganizationLogEntryCreateManyAndReturnArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryCreateManyAndReturnArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryCreateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1416,10 +1294,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     deleteMany<T extends OrganizationLogEntryDeleteManyArgs>(
-        args?: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryDeleteManyArgs<ExtArgs>
-        >,
+        args?: Prisma.SelectSubset<T, OrganizationLogEntryDeleteManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1440,10 +1315,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     updateMany<T extends OrganizationLogEntryUpdateManyArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryUpdateManyArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationLogEntryUpdateManyArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
     /**
@@ -1475,10 +1347,7 @@ export interface OrganizationLogEntryDelegate<
      *
      */
     updateManyAndReturn<T extends OrganizationLogEntryUpdateManyAndReturnArgs>(
-        args: Prisma.SelectSubset<
-            T,
-            OrganizationLogEntryUpdateManyAndReturnArgs<ExtArgs>
-        >,
+        args: Prisma.SelectSubset<T, OrganizationLogEntryUpdateManyAndReturnArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
         runtime.Types.Result.GetResult<
             Prisma.$OrganizationLogEntryPayload<ExtArgs>,
@@ -1538,10 +1407,7 @@ export interface OrganizationLogEntryDelegate<
         T extends runtime.Types.Utils.Record<"select", any>
             ? T["select"] extends true
                 ? number
-                : Prisma.GetScalarType<
-                      T["select"],
-                      OrganizationLogEntryCountAggregateOutputType
-                  >
+                : Prisma.GetScalarType<T["select"], OrganizationLogEntryCountAggregateOutputType>
             : number
     >;
 
@@ -1616,12 +1482,7 @@ export interface OrganizationLogEntryDelegate<
                         ? never
                         : P extends string
                           ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-                          : [
-                                Error,
-                                "Field ",
-                                P,
-                                ` in "having" needs to be provided in "by"`,
-                            ];
+                          : [Error, "Field ", P, ` in "having" needs to be provided in "by"`];
                 }[HavingFields]
               : "take" extends Prisma.Keys<T>
                 ? "orderBy" extends Prisma.Keys<T>
@@ -1651,11 +1512,7 @@ export interface OrganizationLogEntryDelegate<
                               : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                       }[OrderFields],
     >(
-        args: Prisma.SubsetIntersection<
-            T,
-            OrganizationLogEntryGroupByArgs,
-            OrderByArg
-        > &
+        args: Prisma.SubsetIntersection<T, OrganizationLogEntryGroupByArgs, OrderByArg> &
             InputErrors,
     ): {} extends InputErrors
         ? GetOrganizationLogEntryGroupByPayload<T>
@@ -1675,8 +1532,7 @@ export interface OrganizationLogEntryDelegate<
 export interface Prisma__OrganizationLogEntryClient<
     T,
     Null = never,
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
     GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
@@ -1715,14 +1571,8 @@ export interface Prisma__OrganizationLogEntryClient<
      * @returns A Promise for the completion of which ever callback is executed.
      */
     then<TResult1 = T, TResult2 = never>(
-        onfulfilled?:
-            | ((value: T) => TResult1 | PromiseLike<TResult1>)
-            | undefined
-            | null,
-        onrejected?:
-            | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-            | undefined
-            | null,
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
     /**
      * Attaches a callback for only the rejection of the Promise.
@@ -1730,10 +1580,7 @@ export interface Prisma__OrganizationLogEntryClient<
      * @returns A Promise for the completion of the callback.
      */
     catch<TResult = never>(
-        onrejected?:
-            | ((reason: any) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null,
+        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
     ): runtime.Types.Utils.JsPromise<T | TResult>;
     /**
      * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1741,9 +1588,7 @@ export interface Prisma__OrganizationLogEntryClient<
      * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
      * @returns A Promise for the completion of the callback.
      */
-    finally(
-        onfinally?: (() => void) | undefined | null,
-    ): runtime.Types.Utils.JsPromise<T>;
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
 }
 
 /**
@@ -1766,8 +1611,7 @@ export interface OrganizationLogEntryFieldRefs {
  * OrganizationLogEntry findUnique
  */
 export type OrganizationLogEntryFindUniqueArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -1791,8 +1635,7 @@ export type OrganizationLogEntryFindUniqueArgs<
  * OrganizationLogEntry findUniqueOrThrow
  */
 export type OrganizationLogEntryFindUniqueOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -1816,8 +1659,7 @@ export type OrganizationLogEntryFindUniqueOrThrowArgs<
  * OrganizationLogEntry findFirst
  */
 export type OrganizationLogEntryFindFirstArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -1875,8 +1717,7 @@ export type OrganizationLogEntryFindFirstArgs<
  * OrganizationLogEntry findFirstOrThrow
  */
 export type OrganizationLogEntryFindFirstOrThrowArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -1934,8 +1775,7 @@ export type OrganizationLogEntryFindFirstOrThrowArgs<
  * OrganizationLogEntry findMany
  */
 export type OrganizationLogEntryFindManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -1988,8 +1828,7 @@ export type OrganizationLogEntryFindManyArgs<
  * OrganizationLogEntry create
  */
 export type OrganizationLogEntryCreateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2016,15 +1855,12 @@ export type OrganizationLogEntryCreateArgs<
  * OrganizationLogEntry createMany
  */
 export type OrganizationLogEntryCreateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to create many OrganizationLogEntries.
      */
-    data:
-        | Prisma.OrganizationLogEntryCreateManyInput
-        | Prisma.OrganizationLogEntryCreateManyInput[];
+    data: Prisma.OrganizationLogEntryCreateManyInput | Prisma.OrganizationLogEntryCreateManyInput[];
     skipDuplicates?: boolean;
 };
 
@@ -2032,8 +1868,7 @@ export type OrganizationLogEntryCreateManyArgs<
  * OrganizationLogEntry createManyAndReturn
  */
 export type OrganizationLogEntryCreateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2046,9 +1881,7 @@ export type OrganizationLogEntryCreateManyAndReturnArgs<
     /**
      * The data used to create many OrganizationLogEntries.
      */
-    data:
-        | Prisma.OrganizationLogEntryCreateManyInput
-        | Prisma.OrganizationLogEntryCreateManyInput[];
+    data: Prisma.OrganizationLogEntryCreateManyInput | Prisma.OrganizationLogEntryCreateManyInput[];
     skipDuplicates?: boolean;
     /**
      * Choose, which related nodes to fetch as well
@@ -2060,8 +1893,7 @@ export type OrganizationLogEntryCreateManyAndReturnArgs<
  * OrganizationLogEntry update
  */
 export type OrganizationLogEntryUpdateArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2092,8 +1924,7 @@ export type OrganizationLogEntryUpdateArgs<
  * OrganizationLogEntry updateMany
  */
 export type OrganizationLogEntryUpdateManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * The data used to update OrganizationLogEntries.
@@ -2116,8 +1947,7 @@ export type OrganizationLogEntryUpdateManyArgs<
  * OrganizationLogEntry updateManyAndReturn
  */
 export type OrganizationLogEntryUpdateManyAndReturnArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2152,8 +1982,7 @@ export type OrganizationLogEntryUpdateManyAndReturnArgs<
  * OrganizationLogEntry upsert
  */
 export type OrganizationLogEntryUpsertArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2191,8 +2020,7 @@ export type OrganizationLogEntryUpsertArgs<
  * OrganizationLogEntry delete
  */
 export type OrganizationLogEntryDeleteArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry
@@ -2216,8 +2044,7 @@ export type OrganizationLogEntryDeleteArgs<
  * OrganizationLogEntry deleteMany
  */
 export type OrganizationLogEntryDeleteManyArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Filter which OrganizationLogEntries to delete
@@ -2233,8 +2060,7 @@ export type OrganizationLogEntryDeleteManyArgs<
  * OrganizationLogEntry without action
  */
 export type OrganizationLogEntryDefaultArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs =
-        runtime.Types.Extensions.DefaultArgs,
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     /**
      * Select specific fields to fetch from the OrganizationLogEntry

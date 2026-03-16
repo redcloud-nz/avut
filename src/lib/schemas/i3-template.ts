@@ -63,9 +63,7 @@ export const I3Template = {
         d4h: true,
     }),
 
-    fromRecord: (
-        record: I3TemplateRecord & { d4h: I3Template_D4HRecord | null },
-    ): I3Template => {
+    fromRecord: (record: I3TemplateRecord & { d4h: I3Template_D4HRecord | null }): I3Template => {
         return i3TemplateSchema.parse({
             ...record,
             createdAt: record?.createdAt?.toISOString(),
