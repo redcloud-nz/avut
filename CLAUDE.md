@@ -57,16 +57,6 @@ src/
 
 ## Key Conventions
 
-### Routing / Paths
-
-All hrefs must be constructed via the typed helpers in `src/paths.ts`. Never hardcode URL strings.
-
-```ts
-import * as Paths from "@/paths";
-Paths.org(orgSlug).d4HViews.members.href;
-Paths.org(orgSlug).admin.person(person).index.href;
-```
-
 ### tRPC Routers
 
 - One file per domain in `src/trpc/routers/`
