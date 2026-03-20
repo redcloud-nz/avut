@@ -69,7 +69,7 @@ import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
-export default function I3_Issue_Page(props: PageProps<"/i3/[slug]/issue">) {
+export default function I3_Issue_Page(props: PageProps<"/main/[slug]/i3/issue">) {
     const { slug } = use(props.params);
     const organization = useOrganization();
 
@@ -88,14 +88,17 @@ export default function I3_Issue_Page(props: PageProps<"/i3/[slug]/issue">) {
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/i3/${slug}` },
-                    { label: "Issue", href: `/i3/${slug}/issue` },
+                    { label: "I3", href: `/main/${slug}/i3` },
+                    { label: "Issue", href: `/main/${slug}/i3/issue` },
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
-                        <Hermes.BackButton to={{ href: `/i3/${slug}` }} tooltip="Back to I3" />
+                        <Hermes.BackButton
+                            to={{ href: `/main/${slug}/i3` }}
+                            tooltip="Back to I3 Index"
+                        />
                         <Hermes.Title>Issue Items</Hermes.Title>
                     </Hermes.Header>
                     <Card>

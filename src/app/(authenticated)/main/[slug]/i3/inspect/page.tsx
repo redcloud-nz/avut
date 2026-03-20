@@ -5,8 +5,6 @@
  * Path: /i3/[slug]/inspect
  */
 
-export default function I3_Inspect_Page(
-    props: PageProps<"/i3/[slug]/inspect">,
-) {
+export default function I3_Inspect_Page(props: PageProps<"/i3/[slug]/inspect">) {
     return <div>TODO</div>;
 }

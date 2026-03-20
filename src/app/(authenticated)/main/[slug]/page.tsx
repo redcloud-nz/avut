@@ -26,14 +26,12 @@ import { getOrganizationSettings } from "@/server/organization-settings";
 
 export const metadata = { title: "Organisation Dashboard" };
 
-export default async function MainApp_Index_Page(
-    props: PageProps<`/main/[slug]`>,
-) {
+export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`>) {
     const { slug } = await props.params;
 
     const organization = await getOrganizationBySlug(slug);
     const { modules } = await getOrganizationSettings(organization.id);
-    const t = await getTranslations("MainApp");
+    const t = await getTranslations();
 
     return (
         <Lexington.Root>
@@ -47,9 +45,7 @@ export default async function MainApp_Index_Page(
                         <Item asChild>
                             <Link href={`/main/${slug}/admin`}>
                                 <ItemContent>
-                                    <ItemTitle>
-                                        {t("AdminModule.title")}
-                                    </ItemTitle>
+                                    <ItemTitle>{t("AdminModule.title")}</ItemTitle>
                                     <ItemDescription>
                                         {t("AdminModule.description")}
                                     </ItemDescription>
@@ -62,9 +58,7 @@ export default async function MainApp_Index_Page(
                         <Item asChild>
                             <Link href={`/main/${slug}/d4h-views`}>
                                 <ItemContent>
-                                    <ItemTitle>
-                                        {t("D4HViewsModule.title")}
-                                    </ItemTitle>
+                                    <ItemTitle>{t("D4HViewsModule.title")}</ItemTitle>
                                     <ItemDescription>
                                         {t("D4HViewsModule.description")}
                                     </ItemDescription>
@@ -78,9 +72,7 @@ export default async function MainApp_Index_Page(
                             <Link href={`/main/${slug}/i3`}>
                                 <ItemContent>
                                     <ItemTitle>{t("I3Module.title")}</ItemTitle>
-                                    <ItemDescription>
-                                        {t("I3Module.description")}
-                                    </ItemDescription>
+                                    <ItemDescription>{t("I3Module.description")}</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -91,9 +83,7 @@ export default async function MainApp_Index_Page(
                             <Item asChild>
                                 <Link href={`/main/${slug}/notes`}>
                                     <ItemContent>
-                                        <ItemTitle>
-                                            {t("NotesModule.title")}
-                                        </ItemTitle>
+                                        <ItemTitle>{t("NotesModule.title")}</ItemTitle>
                                         <ItemDescription>
                                             {t("NotesModule.description")}
                                         </ItemDescription>
@@ -106,19 +96,13 @@ export default async function MainApp_Index_Page(
                         </Show>
                         <Show when={modules["skill-package-builder"].enabled}>
                             <Item asChild>
-                                <Link
-                                    href={`/main/${slug}/skill-package-builder`}
-                                >
+                                <Link href={`/main/${slug}/skill-package-builder`}>
                                     <ItemContent>
                                         <ItemTitle>
-                                            {t(
-                                                "SkillPackageBuilderModule.title",
-                                            )}
+                                            {t("SkillPackageBuilderModule.title")}
                                         </ItemTitle>
                                         <ItemDescription>
-                                            {t(
-                                                "SkillPackageBuilderModule.description",
-                                            )}
+                                            {t("SkillPackageBuilderModule.description")}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -131,9 +115,7 @@ export default async function MainApp_Index_Page(
                             <Item asChild>
                                 <Link href={`/main/${slug}/skills`}>
                                     <ItemContent>
-                                        <ItemTitle>
-                                            {t("SkillsModule.title")}
-                                        </ItemTitle>
+                                        <ItemTitle>{t("SkillsModule.title")}</ItemTitle>
                                         <ItemDescription>
                                             {t("SkillsModule.description")}
                                         </ItemDescription>

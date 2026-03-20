@@ -22,7 +22,7 @@ export default async function Main_SelectOrg_Page(props: PageProps<"/main/--sele
         <Argus.Root>
             <Argus.Column>
                 <AVUTLogo />
-                <OrgSelector_Card subappId="main" entryControl={entryControl} />
+                <OrgSelector_Card entryControl={entryControl} />
             </Argus.Column>
         </Argus.Root>
     );

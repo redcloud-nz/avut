@@ -19,9 +19,7 @@ import { getOrganizationSettings } from "@/server/organization-settings";
 
 import { MainApp_Sidebar_Menu } from "./sidebar-menu";
 
-export async function generateMetadata(
-    props: LayoutProps<"/main/[slug]">,
-): Promise<Metadata> {
+export async function generateMetadata(props: LayoutProps<"/main/[slug]">): Promise<Metadata> {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
@@ -33,9 +31,7 @@ export async function generateMetadata(
     };
 }
 
-export default async function MainApp_Layout(
-    props: LayoutProps<"/main/[slug]">,
-) {
+export default async function MainApp_Layout(props: LayoutProps<"/main/[slug]">) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const organizationSettings = await getOrganizationSettings(organization.id);
@@ -50,23 +46,15 @@ export default async function MainApp_Layout(
         },
     });
     if (!res.success) {
-        throw new Error(
-            "You do not have permission to access this organization.",
-        );
+        throw new Error("You do not have permission to access this organization.");
     }
 
     return (
-        <OrganizationProvider
-            organization={organization}
-            settings={organizationSettings}
-        >
-            <AppSidebar subappId="main" slug={slug}>
-                <MainApp_Sidebar_Menu
-                    organization={organization}
-                    settings={organizationSettings}
-                />
+        <OrganizationProvider organization={organization} settings={organizationSettings}>
+            <AppSidebar>
+                <MainApp_Sidebar_Menu organization={organization} settings={organizationSettings} />
             </AppSidebar>
-            <ControlBar subappId="main" slug={slug} />
+            <ControlBar slug={slug} />
             {props.children}
         </OrganizationProvider>
     );

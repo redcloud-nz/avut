@@ -8,11 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { ModuleIcons, OrgDashboardIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import {
-    NavCollapsible,
-    NavItem,
-    NavSubItem,
-} from "@/components/nav/nav-section";
+import { NavCollapsible, NavItem, NavSubItem } from "@/components/nav/nav-section";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -26,7 +22,7 @@ export async function MainApp_Sidebar_Menu({
     organization: OrganizationData;
     settings: OrganizationSettings;
 }) {
-    const t = await getTranslations("MainApp");
+    const t = await getTranslations();
 
     const { slug } = organization;
     const { modules } = settings;
@@ -44,19 +40,13 @@ export async function MainApp_Sidebar_Menu({
                     href={`/main/${slug}/admin`}
                     icon={<ModuleIcons.Admin />}
                 >
-                    <Protect
-                        permissions={{ d4hAccessToken: ["view"] }}
-                        orgId={organization.id}
-                    >
+                    <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                         <NavSubItem
                             label={t("AdminModule.d4hAccessTokens")}
                             href={`/main/${slug}/admin/d4h-access-tokens`}
                         />
                     </Protect>
-                    <Protect
-                        permissions={{ invitation: ["create"] }}
-                        orgId={organization.id}
-                    >
+                    <Protect permissions={{ invitation: ["create"] }} orgId={organization.id}>
                         <NavSubItem
                             label={t("AdminModule.invitations")}
                             href={`/main/${slug}/admin/invitations`}
@@ -70,23 +60,14 @@ export async function MainApp_Sidebar_Menu({
                         label={t("AdminModule.personnel")}
                         href={`/main/${slug}/admin/personnel`}
                     />
-                    <Protect
-                        permissions={{ organization: ["update"] }}
-                        orgId={organization.id}
-                    >
+                    <Protect permissions={{ organization: ["update"] }} orgId={organization.id}>
                         <NavSubItem
                             label={t("AdminModule.organizationSettings")}
                             href={`/main/${slug}/admin/organization/settings`}
                         />
                     </Protect>
-                    <NavSubItem
-                        label={t("AdminModule.teams")}
-                        href={`/main/${slug}/admin/teams`}
-                    />
-                    <Protect
-                        permissions={{ member: ["create"] }}
-                        orgId={organization.id}
-                    >
+                    <NavSubItem label={t("AdminModule.teams")} href={`/main/${slug}/admin/teams`} />
+                    <Protect permissions={{ member: ["create"] }} orgId={organization.id}>
                         <NavSubItem
                             label={t("AdminModule.users")}
                             href={`/main/${slug}/admin/users`}
@@ -115,10 +96,30 @@ export async function MainApp_Sidebar_Menu({
                         href={`/main/${slug}/i3`}
                         icon={<ModuleIcons.I3 />}
                     >
-                        <NavSubItem
-                            label={t("I3Module.templates")}
-                            href={`/main/${slug}/i3/templates`}
-                        />
+                        <Protect orgId={organization.id} permissions={{ i3Items: ["inspect"] }}>
+                            <NavSubItem
+                                label={t("I3Module.inspect")}
+                                href={`/main/${slug}/i3/inspect`}
+                            />
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ i3Items: ["issue"] }}>
+                            <NavSubItem
+                                label={t("I3Module.issue")}
+                                href={`/main/${slug}/i3/issue`}
+                            />
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ i3Items: ["return"] }}>
+                            <NavSubItem
+                                label={t("I3Module.return")}
+                                href={`/main/${slug}/i3/return`}
+                            />
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>
+                            <NavSubItem
+                                label={t("I3Module.templates")}
+                                href={`/main/${slug}/i3/templates`}
+                            />
+                        </Protect>
                     </NavCollapsible>
                 </Show>
 

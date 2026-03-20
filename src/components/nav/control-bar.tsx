@@ -3,17 +3,14 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { SubappId } from "@/lib/subapp";
-
 import { ModeToggle } from "./mode-toggle";
 import { UserMenu } from "./user-menu";
 
 interface ControlBarProps {
-    subappId: SubappId;
     slug: string;
 }
 
-export function ControlBar({ subappId, slug }: ControlBarProps) {
+export function ControlBar({ slug }: ControlBarProps) {
     return (
         <div
             data-slot="control-bar"
@@ -21,7 +18,7 @@ export function ControlBar({ subappId, slug }: ControlBarProps) {
         >
             {/* <NotificationsMenu /> */}
             <ModeToggle />
-            <UserMenu subappId={subappId} slug={slug} />
+            <UserMenu slug={slug} />
         </div>
     );
 }

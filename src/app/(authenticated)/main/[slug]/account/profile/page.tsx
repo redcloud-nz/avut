@@ -2,26 +2,26 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /i3/[slug]/personal/settings
+ * Path: /main/[slug]/account/profile
  */
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { UserD4HAccess_Card } from "@/components/cards/user-d4h-access";
-import { UserSettings_Card } from "@/components/cards/user-settings";
+import { UserProfileInfo_Card } from "@/components/cards/user-profile-info";
+import { UserLinkedAccounts_Card } from "@/components/cards/user-linked-accounts";
 
-export default function I3_Personal_Settings_Page() {
+export default function Account_Profile_Page() {
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Personal", "Settings"]} />
+            <Lexington.Header breadcrumbs={["Account", "Profile"]} />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
-                        <Hermes.Title>Settings</Hermes.Title>
+                        <Hermes.Title>Profile</Hermes.Title>
                     </Hermes.Header>
-                    <UserSettings_Card />
-                    <UserD4HAccess_Card />
+                    <UserProfileInfo_Card />
+                    <UserLinkedAccounts_Card />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

@@ -1,11 +1,30 @@
 {
+  "AdminModule": {
+    "title": "Admin",
+    "description": "Manage personnel, teams, and organization settings.",
+    "d4hAccessTokens": "D4H Access Tokens",
+    "invitations": "Invitations",
+    "organization": "Organization",
+    "personnel": "Personnel",
+    "organizationSettings": "Organization Settings",
+    "teams": "Teams",
+    "users": "Users"
+  },
+
+  "D4HViewsModule": {
+    "title": "D4H Views",
+    "description": "View and manage D4H data.",
+    "equipment": "Equipment",
+    "members": "Members"
+  },
+
   "HomePage": {
     "enterButton": "Go to Dashboard",
     "signInButton": "Sign In",
     "signUpButton": "Sign Up"
   },
 
-  "I3App": {
+  "I3Module": {
     "title": "I3",
     "description": "Individual Issue Items",
     "inspect": "Inspect Items",
@@ -13,62 +32,31 @@
     "issue": "Issue Items",
     "issueDescription": "Record items being issued to an individual.",
     "return": "Return Items",
-    "returnDescription": "Record items being returned from an individual."
+    "returnDescription": "Record items being returned from an individual.",
+    "templates": "Templates",
+    "templatesDescription": "Create and manage item templates."
   },
 
-  "I3Module": {
-    "Index_Page": {
-      "title": "I3"
-    }
+  "Index_Page": {
+    "title": "Dashboard"
   },
 
-  "MainApp": {
-    "AdminModule": {
-      "title": "Admin",
-      "description": "Manage personnel, teams, and organization settings.",
-      "d4hAccessTokens": "D4H Access Tokens",
-      "invitations": "Invitations",
-      "organization": "Organization",
-      "personnel": "Personnel",
-      "organizationSettings": "Organization Settings",
-      "teams": "Teams",
-      "users": "Users"
-    },
+  "NotesModule": {
+    "title": "Notes",
+    "description": "Create and manage organizational notes."
+  },
 
-    "D4HViewsModule": {
-      "title": "D4H Views",
-      "description": "View and manage D4H data.",
-      "equipment": "Equipment",
-      "members": "Members"
-    },
-
-    "I3Module": {
-      "title": "I3",
-      "description": "Admin controls for I3 - (Individual Issue Items).",
-      "templates": "Templates"
-    },
-
-    "Index_Page": {
-      "title": "Dashboard"
-    },
-
-    "NotesModule": {
-      "title": "Notes",
-      "description": "Create and manage organizational notes."
-    },
-
-    "SkillsModule": {
-      "title": "Skills",
-      "description": "Manage, assess, and report skills for your team.",
-      "catalogue": "Catalogue",
-      "checks": "Checks",
-      "sessions": "Sessions",
-      "reports": "Reports"
-    },
-    "SkillPackageBuilderModule": {
-      "title": "Skill Package Builder",
-      "description": "Create and manage skill packages for use in the Skills module."
-    }
+  "SkillsModule": {
+    "title": "Skills",
+    "description": "Manage, assess, and report skills for your team.",
+    "catalogue": "Catalogue",
+    "checks": "Checks",
+    "sessions": "Sessions",
+    "reports": "Reports"
+  },
+  "SkillPackageBuilderModule": {
+    "title": "Skill Package Builder",
+    "description": "Create and manage skill packages for use in the Skills module."
   },
 
   "UserMenu": {

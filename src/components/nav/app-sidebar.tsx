@@ -4,17 +4,8 @@
  */
 
 import Image from "next/image";
-import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Sidebar,
     SidebarContent,
@@ -23,20 +14,9 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 
-import { SubappId, Subapps } from "@/lib/subapp";
-
 import { NavSkeleton } from "./nav-skeleton";
-import { AppIcons } from "../icons";
 
-export function AppSidebar({
-    children,
-    slug,
-    subappId,
-}: {
-    children?: ReactNode;
-    slug?: string;
-    subappId?: SubappId;
-}) {
+export function AppSidebar({ children }: { children?: ReactNode }) {
     return (
         <Sidebar>
             <SidebarHeader className="flex flex-row items-center justify-evenly border-b h-(--header-height)">
@@ -52,28 +32,6 @@ export function AppSidebar({
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                {subappId && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="text-sm">
-                                {Subapps[subappId].name}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuLabel>Switch App</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link href={`/i3/${slug}`}>
-                                    <AppIcons.I3 /> I3
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href={`/main/${slug}`}>
-                                    <AppIcons.Main /> Main
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </SidebarContent>
             <SidebarFooter>

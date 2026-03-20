@@ -29,10 +29,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { authClient } from "@/client/auth-client";
-import { SubappId } from "@/lib/subapp";
 import { getUserInitials } from "@/lib/utils";
 
-export function UserMenu({ subappId, slug }: { subappId: SubappId; slug: string }) {
+export function UserMenu({ slug }: { slug: string }) {
     const router = useRouter();
     const t = useTranslations("UserMenu");
 
@@ -80,13 +79,13 @@ export function UserMenu({ subappId, slug }: { subappId: SubappId; slug: string 
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>{t("personalSection")}</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                        <Link href={`/${subappId}/${slug}/personal/profile`}>
+                        <Link href={`/main/${slug}/account/profile`}>
                             <PersonalProfileIcon />
                             <span>{t("profile")}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href={`/${subappId}/${slug}/personal/settings`}>
+                        <Link href={`/main/${slug}/account/settings`}>
                             <PersonalSettingsIcon />
                             <span>{t("settings")}</span>
                         </Link>
@@ -95,7 +94,7 @@ export function UserMenu({ subappId, slug }: { subappId: SubappId; slug: string 
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                        <Link href={`/${subappId}/--select-org`}>
+                        <Link href={`/main/--select-org`}>
                             <SwitchOrganizationIcon />
                             <span>{t("switchOrganization")}</span>
                         </Link>

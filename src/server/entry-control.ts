@@ -7,7 +7,7 @@
 import { headers as nextHeaders } from "next/headers";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationInvitationData } from "../lib/schemas/organization-invitation";
+import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 
 import { auth, AuthSession } from "@/server/auth";

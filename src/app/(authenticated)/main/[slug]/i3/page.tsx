@@ -6,10 +6,10 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
-import { Link } from "@/components/ui/link";
 
 import {
     Item,
@@ -21,11 +21,15 @@ import {
 } from "@/components/ui/items";
 
 import * as Paths from "@/paths";
+import { getTranslations } from "next-intl/server";
+import { Protect } from "@/components/protect";
+import { getOrganizationBySlug } from "@/server/organization";
 
-export default async function I3_Index_Page(
-    props: PageProps<`/main/[slug]/i3`>,
-) {
+export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>) {
     const { slug } = await props.params;
+
+    const organization = await getOrganizationBySlug(slug);
+    const t = await getTranslations("I3Module");
 
     return (
         <Lexington.Root>
@@ -38,18 +42,53 @@ export default async function I3_Index_Page(
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link to={Paths.main(slug).i3.templates}>
+                            <Link href={`/main/${slug}/i3/inspect`}>
                                 <ItemContent>
-                                    <ItemTitle>Templates</ItemTitle>
-                                    <ItemDescription>
-                                        Manage I3 item templates.
-                                    </ItemDescription>
+                                    <ItemTitle>{t("inspect")}</ItemTitle>
+                                    <ItemDescription>{t("inspectDescription")}</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
                                 </ItemActions>
                             </Link>
                         </Item>
+                        <Item asChild>
+                            <Link href={`/main/${slug}/i3/issue`}>
+                                <ItemContent>
+                                    <ItemTitle>{t("issue")}</ItemTitle>
+                                    <ItemDescription>{t("issueDescription")}</ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link href={`/main/${slug}/i3/return`}>
+                                <ItemContent>
+                                    <ItemTitle>{t("return")}</ItemTitle>
+                                    <ItemDescription>{t("returnDescription")}</ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>
+                            <Item asChild>
+                                <Link href={`/main/${slug}/i3/templates`}>
+                                    <ItemContent>
+                                        <ItemTitle>{t("templates")}</ItemTitle>
+                                        <ItemDescription>
+                                            {t("templatesDescription")}
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>

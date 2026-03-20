@@ -29,22 +29,16 @@ export default async function HomePage() {
                     {hasSession ? (
                         <>
                             <Button asChild>
-                                <Link href="/main/--select?auto">
-                                    {t("enterButton")}
-                                </Link>
+                                <Link href="/main/--select-org">{t("enterButton")}</Link>
                             </Button>
                         </>
                     ) : (
                         <>
                             <Button asChild>
-                                <Link href="/auth/sign-in">
-                                    {t("signInButton")}
-                                </Link>
+                                <Link href="/auth/sign-in">{t("signInButton")}</Link>
                             </Button>
                             <Button asChild>
-                                <Link href="/auth/sign-up">
-                                    {t("signUpButton")}
-                                </Link>
+                                <Link href="/auth/sign-up">{t("signUpButton")}</Link>
                             </Button>
                         </>
                     )}

@@ -10,8 +10,6 @@ import { ChevronRightIcon } from "lucide-react";
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
 import { Protect } from "@/components/protect";
-import { Link } from "@/components/ui/link";
-
 import {
     Item,
     ItemActions,
@@ -20,13 +18,12 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
+import { Link } from "@/components/ui/link";
 
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 
-export default async function AdminIndex_Page(
-    props: PageProps<`/main/[slug]/admin`>,
-) {
+export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/admin`>) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
@@ -40,35 +37,13 @@ export default async function AdminIndex_Page(
                         <div className="font-semibold">Admin Module</div>
                     </div>
                     <ItemGroup>
-                        <Protect
-                            permissions={{ d4hAccessToken: ["view"] }}
-                            orgId={organization.id}
-                        >
+                        <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                             <Item asChild>
                                 <Link to={Paths.main(slug).admin.invitations}>
                                     <ItemContent>
                                         <ItemTitle>D4H Access Tokens</ItemTitle>
                                         <ItemDescription>
-                                            Manage the shared D4H access tokens
-                                            for your organisation.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ invitation: ["view"] }}
-                        >
-                            <Item asChild>
-                                <Link to={Paths.main(slug).admin.invitations}>
-                                    <ItemContent>
-                                        <ItemTitle>Invitations</ItemTitle>
-                                        <ItemDescription>
-                                            Manage invitations to your
+                                            Manage the shared D4H access tokens for your
                                             organisation.
                                         </ItemDescription>
                                     </ItemContent>
@@ -78,11 +53,23 @@ export default async function AdminIndex_Page(
                                 </Link>
                             </Item>
                         </Protect>
+                        <Protect orgId={organization.id} permissions={{ invitation: ["view"] }}>
+                            <Item asChild>
+                                <Link to={Paths.main(slug).admin.invitations}>
+                                    <ItemContent>
+                                        <ItemTitle>Invitations</ItemTitle>
+                                        <ItemDescription>
+                                            Manage invitations to your organisation.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
 
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ organization: ["view"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ organization: ["view"] }}>
                             <Item asChild>
                                 <Link to={Paths.main(slug).admin.organization}>
                                     <ItemContent>
@@ -98,17 +85,13 @@ export default async function AdminIndex_Page(
                             </Item>
                         </Protect>
 
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ person: ["view"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ person: ["view"] }}>
                             <Item asChild>
                                 <Link to={Paths.main(slug).admin.personnel}>
                                     <ItemContent>
                                         <ItemTitle>Personnel</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's
-                                            personnel.
+                                            Manage your organisation's personnel.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -117,17 +100,9 @@ export default async function AdminIndex_Page(
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ organization: ["update"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ organization: ["update"] }}>
                             <Item asChild>
-                                <Link
-                                    to={
-                                        Paths.main(slug).admin.organization
-                                            .settings
-                                    }
-                                >
+                                <Link to={Paths.main(slug).admin.organization.settings}>
                                     <ItemContent>
                                         <ItemTitle>Settings</ItemTitle>
                                         <ItemDescription>
@@ -140,10 +115,7 @@ export default async function AdminIndex_Page(
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ team: ["view"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ team: ["view"] }}>
                             <Item asChild>
                                 <Link to={Paths.main(slug).admin.teams}>
                                     <ItemContent>
@@ -158,17 +130,13 @@ export default async function AdminIndex_Page(
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ member: ["view"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
                             <Item asChild>
                                 <Link to={Paths.main(slug).admin.users}>
                                     <ItemContent>
                                         <ItemTitle>Users</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's users and
-                                            their roles.
+                                            Manage your organisation's users and their roles.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { Route } from "next";
 import Link from "next/link";
 import { Building2Icon, ChevronRightIcon, SendIcon } from "lucide-react";
 
@@ -20,15 +19,8 @@ import {
 } from "@/components/ui/items";
 
 import { EntryControlSelect } from "@/server/entry-control";
-import { SubappId } from "@/lib/subapp";
 
-export function OrgSelector_Card({
-    subappId,
-    entryControl,
-}: {
-    subappId: SubappId;
-    entryControl: EntryControlSelect;
-}) {
+export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlSelect }) {
     const { session, memberships, invitations } = entryControl.data;
 
     return (
@@ -56,7 +48,7 @@ export function OrgSelector_Card({
                 >
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
-                            <Link href={`/${subappId}/${membership.organization.slug}` as Route}>
+                            <Link href={`/main/${membership.organization.slug}`}>
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
                                 </ItemMedia>
