@@ -13,27 +13,12 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-    InputOTP,
-    InputOTPGroup,
-    InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 export function ResetPassword_Card({ email }: { email: string }) {
     const router = useRouter();
@@ -42,16 +27,13 @@ export function ResetPassword_Card({ email }: { email: string }) {
         resolver: zodResolver(
             z.object({
                 code: z.string().length(6, "Invalid code"),
-                newPassword: z
-                    .string()
-                    .min(8, "Password must be at least 8 characters"),
+                newPassword: z.string().min(8, "Password must be at least 8 characters"),
             }),
         ),
     });
 
     const [state, setState] = useState<
-        | { status: "Ready" | "InProgress" }
-        | { status: "Error"; error: { message?: string } }
+        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
     >({ status: "Ready" });
 
     const handleSubmit = form.handleSubmit(async (formData) => {
@@ -83,8 +65,8 @@ export function ResetPassword_Card({ email }: { email: string }) {
             <CardHeader>
                 <CardTitle>Reset Password</CardTitle>
                 <CardDescription>
-                    We sent a 6-digit code to your email. Enter the code along
-                    with your new password to reset it.
+                    We sent a 6-digit code to your email. Enter the code along with your new
+                    password to reset it.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -117,9 +99,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                         </InputOTPGroup>
                                     </InputOTP>
                                     {fieldState.invalid && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
+                                        <FieldError errors={[fieldState.error]} />
                                     )}
                                 </Field>
                             )}
@@ -129,9 +109,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="new-password">
-                                        New Password
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="new-password">New Password</FieldLabel>
                                     <Input
                                         id="new-password"
                                         type="password"
@@ -140,9 +118,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                         {...field}
                                     />
                                     {fieldState.invalid && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
+                                        <FieldError errors={[fieldState.error]} />
                                     )}
                                 </Field>
                             )}
@@ -154,9 +130,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                     : "Update Password"}
                             </Button>
                         </Field>
-                        {state.status === "Error" && (
-                            <FieldError errors={[state.error]} />
-                        )}
+                        {state.status === "Error" && <FieldError errors={[state.error]} />}
                     </FieldGroup>
                 </form>
             </CardContent>

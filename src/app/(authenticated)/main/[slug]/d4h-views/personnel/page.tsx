@@ -7,7 +7,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4HTeamsWithMembers } from "@/lib/d4h-api/client";
+import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -23,16 +23,12 @@ export default async function D4HViewsModules_Personnel_Page(
     const settings = await getOrganizationSettings(organization.id);
 
     if (settings.modules["d4h-views"].enabled === false)
-        throw new Error(
-            "D4H Views module is not enabled for this organization.",
-        );
+        throw new Error("D4H Views module is not enabled for this organization.");
 
     const accessTokenId = settings.integrations.d4h.syncToken;
 
     if (!accessTokenId)
-        throw new Error(
-            "D4H Views module is not configured properly. No sync token found.",
-        );
+        throw new Error("D4H Views module is not configured properly. No sync token found.");
 
     const accessToken = await getD4HAccessToken({
         tokenId: accessTokenId,
@@ -45,24 +41,16 @@ export default async function D4HViewsModules_Personnel_Page(
 
     const teams = await getD4HTeamsWithMembers(accessToken);
 
-    const members = teams.flatMap((t) =>
-        t.members.map((m) => ({ ...m, team: t })),
-    );
+    const members = teams.flatMap((t) => t.members.map((m) => ({ ...m, team: t })));
 
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[
-                    Paths.main(slug).d4HViews.index,
-                    Paths.main(slug).d4HViews.personnel,
-                ]}
+                breadcrumbs={[Paths.main(slug).d4HViews.index, Paths.main(slug).d4HViews.personnel]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
-                    <D4HViewsModules_Personnel_List
-                        members={members}
-                        teams={teams}
-                    />
+                    <D4HViewsModules_Personnel_List members={members} teams={teams} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

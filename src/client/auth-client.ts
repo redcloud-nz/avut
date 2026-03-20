@@ -23,10 +23,6 @@ export const authClient = createAuthClient({
 
 export type AuthClientSession = typeof authClient.$Infer.Session;
 
-type Permissions = Parameters<
-    typeof authClient.organization.hasPermission
->[0]["permission"];
-
 export const sessionQueryOptions = {
     queryKey: ["auth", "session"] as const,
     queryFn: async () => {

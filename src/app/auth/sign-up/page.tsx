@@ -13,23 +13,12 @@ import { SignUp_Card } from "@/components/cards/sign-up";
 
 export const metadata = { title: "Sign Up" };
 
-export default async function Auth_SignUp_Page(
-    props: PageProps<"/auth/sign-up">,
-) {
-    const searchParams = await props.searchParams;
-
-    // Extract redirect parameter from the URL search parameters
-    let redirect = Array.isArray(searchParams.r)
-        ? searchParams.r[0]
-        : searchParams.r;
-
-    if (redirect) redirect = decodeURIComponent(redirect);
-
+export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <SignUp_Card redirect={redirect} />
+                <SignUp_Card />
                 <Argus.Footer>
                     By clicking continue, you agree to our{" "}
                     <Link to={Paths.marketing.termsOfService} target="_blank">

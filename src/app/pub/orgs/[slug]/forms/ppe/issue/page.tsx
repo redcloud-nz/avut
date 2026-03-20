@@ -9,13 +9,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import * as Paths from "@/paths";
 
 import { Pub_PPEIssue_Form } from "./ppe-issue-form";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import prisma from "@/server/prisma";
 import { getOrganizationBySlug } from "@/server/organization";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -62,9 +56,7 @@ export const metadata = {
     title: `PPE Issue Form`,
 };
 
-export default async function Pub_PPEIssue_Page(
-    props: PageProps<"/pub/main/[slug]/forms/ppe">,
-) {
+export default async function Pub_PPEIssue_Page(props: PageProps<"/pub/orgs/[slug]/forms/ppe">) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
@@ -91,8 +83,7 @@ export default async function Pub_PPEIssue_Page(
                     <Card>
                         <CardHeader>
                             <CardDescription>
-                                Use this form to record the issue of PPE to an
-                                individual.
+                                Use this form to record the issue of PPE to an individual.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

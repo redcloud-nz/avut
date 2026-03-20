@@ -20,12 +20,7 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 import {
@@ -37,7 +32,7 @@ import {
 } from "@/components/ui/select";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
@@ -66,12 +61,11 @@ export default function AdminModule_UpdateUser_Page(
 
     const mutation = useMutation({
         mutationFn: async (formData: { role: OrganizationRole }) => {
-            const { data, error } =
-                await authClient.organization.updateMemberRole({
-                    organizationId: organization.id,
-                    memberId: organizationMember.id,
-                    role: formData.role,
-                });
+            const { data, error } = await authClient.organization.updateMemberRole({
+                organizationId: organization.id,
+                memberId: organizationMember.id,
+                role: formData.role,
+            });
             if (error) toast.error("Failed to update user role.");
             else toast.success("User role updated successfully.");
         },
@@ -81,11 +75,7 @@ export default function AdminModule_UpdateUser_Page(
                     organizationId: organization.id,
                 }),
             );
-            router.push(
-                Paths.main(organization.slug).admin.user(
-                    organizationMember.userId,
-                ).href,
-            );
+            router.push(Paths.main(organization.slug).admin.user(organizationMember.userId).href);
         },
     });
 
@@ -110,9 +100,7 @@ export default function AdminModule_UpdateUser_Page(
                                 to={Paths.main(slug).admin.user(user_id)}
                                 tooltip="Back to user details"
                             />
-                            <Hermes.Title>
-                                {organizationMember.user.name || "User"}
-                            </Hermes.Title>
+                            <Hermes.Title>{organizationMember.user.name || "User"}</Hermes.Title>
                         </Hermes.Header>
                         <Card>
                             <CardHeader>
@@ -128,42 +116,29 @@ export default function AdminModule_UpdateUser_Page(
                                     <FieldGroup>
                                         <Field orientation="responsive">
                                             <FieldLabel>User ID</FieldLabel>
-                                            <FieldValue
-                                                value={organizationMember.id}
-                                                format="id"
-                                            />
+                                            <FieldValue value={organizationMember.id} format="id" />
                                         </Field>
                                         <Field orientation="responsive">
-                                            <FieldLabel>
-                                                Organisation Member ID
-                                            </FieldLabel>
+                                            <FieldLabel>Organisation Member ID</FieldLabel>
                                         </Field>
                                         <Controller
                                             name="role"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
                                                 <Field
-                                                    data-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    data-invalid={fieldState.invalid}
                                                     orientation="responsive"
                                                 >
-                                                    <FieldLabel htmlFor="role">
-                                                        Role
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor="role">Role</FieldLabel>
                                                     {field.value == "owner" ? (
                                                         <FieldValue value="Owner" />
                                                     ) : (
                                                         <Select
                                                             value={field.value}
-                                                            onValueChange={
-                                                                field.onChange
-                                                            }
+                                                            onValueChange={field.onChange}
                                                         >
                                                             <SelectTrigger
-                                                                aria-invalid={
-                                                                    fieldState.invalid
-                                                                }
+                                                                aria-invalid={fieldState.invalid}
                                                                 id="role"
                                                             >
                                                                 <SelectValue placeholder="Select a role" />
@@ -179,11 +154,7 @@ export default function AdminModule_UpdateUser_Page(
                                                         </Select>
                                                     )}
                                                     {fieldState.error && (
-                                                        <FieldError
-                                                            errors={[
-                                                                fieldState.error,
-                                                            ]}
-                                                        />
+                                                        <FieldError errors={[fieldState.error]} />
                                                     )}
                                                 </Field>
                                             )}
@@ -207,9 +178,7 @@ export default function AdminModule_UpdateUser_Page(
                                                 asChild
                                             >
                                                 <Link
-                                                    to={Paths.main(
-                                                        organization.slug,
-                                                    ).admin.user(
+                                                    to={Paths.main(organization.slug).admin.user(
                                                         organizationMember.id,
                                                     )}
                                                 >

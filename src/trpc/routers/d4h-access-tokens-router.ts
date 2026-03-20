@@ -8,8 +8,8 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { getD4HFetchClient, getD4HTokenMetadata } from "@/lib/d4h-api/client";
-import { D4HWhoami } from "@/lib/d4h-api/whoami";
+import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { diffObject } from "@/lib/diff";
 import {
     D4HAccessToken,
@@ -17,7 +17,7 @@ import {
     D4HAccessTokenId,
     D4HAccessTokenMetadata,
 } from "@/lib/schemas/d4h-access-token";
-import { D4HServerCode } from "@/lib/d4h-api/servers";
+import { D4HServerCode } from "@/lib/d4h-servers";
 
 import { encryptDBValue } from "@/server/encrypt";
 import { revalidateOrganizationSettings } from "@/server/organization-settings";

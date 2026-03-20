@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { betterAuth, BetterAuthOptions, InferUser } from "better-auth";
+import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP, organization } from "better-auth/plugins";
@@ -11,7 +11,7 @@ import { emailOTP, organization } from "better-auth/plugins";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
 
-import { NoReplyEmailAddress, sendEmail } from "@/lib/email";
+import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 
@@ -48,10 +48,7 @@ export const auth = betterAuth({
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
-                console.log(
-                    `Sending verification OTP (type: ${type}) to:`,
-                    email,
-                );
+                console.log(`Sending verification OTP (type: ${type}) to:`, email);
                 sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
@@ -92,12 +89,7 @@ export const auth = betterAuth({
                     modelName: "TeamUser",
                 },
             },
-            async sendInvitationEmail({
-                invitation,
-                email,
-                organization,
-                inviter,
-            }) {
+            async sendInvitationEmail({ invitation, email, organization, inviter }) {
                 console.log(
                     `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
                 );
@@ -165,8 +157,3 @@ export type AuthOrganizationMember = typeof auth.$Infer.Member;
  * Inferred session type from better-auth instance
  */
 export type AuthSession = typeof auth.$Infer.Session;
-
-/**
- * Inferred user type from better-auth instance
- */
-export type AuthUser = InferUser<typeof auth>;

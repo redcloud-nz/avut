@@ -7,11 +7,7 @@
 import { SendIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -32,7 +28,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { formatDate } from "@/lib/datetime";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
@@ -42,9 +38,7 @@ import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
 type AdminModule_InvitationsListProps = { organization: OrganizationData };
 
-export function AdminModule_InvitationsList({
-    organization,
-}: AdminModule_InvitationsListProps) {
+export function AdminModule_InvitationsList({ organization }: AdminModule_InvitationsListProps) {
     const queryClient = useQueryClient();
 
     const { data: invitations } = useSuspenseQuery(
@@ -67,9 +61,7 @@ export function AdminModule_InvitationsList({
             toast.error("Failed to resend invitation.");
         },
         onSuccess(_, invitation) {
-            toast.success(
-                `Invitation successfully resent to ${invitation.email}.`,
-            );
+            toast.success(`Invitation successfully resent to ${invitation.email}.`);
         },
     });
 
@@ -84,9 +76,7 @@ export function AdminModule_InvitationsList({
             toast.error("Failed to revoke invitation.");
         },
         onSuccess(_, invitation) {
-            toast.success(
-                `Invitation successfully revoked for ${invitation.email}.`,
-            );
+            toast.success(`Invitation successfully revoked for ${invitation.email}.`);
             queryClient.invalidateQueries(
                 trpc.organizations.listOrganizationInvitations.queryFilter({
                     organizationId: organization.id,
@@ -100,29 +90,21 @@ export function AdminModule_InvitationsList({
             Akagi.defineColumns<OrganizationInvitationData>((columnHelper) => [
                 columnHelper.accessor("email", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Email Address
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Email Address</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
                 }),
                 columnHelper.accessor("role", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Role
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Role</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() === "org:admin"
-                                ? "Admin"
-                                : "Member"}
+                            {ctx.getValue() === "org:admin" ? "Admin" : "Member"}
                         </Akagi.TableCell>
                     ),
                     enableColumnFilter: true,
@@ -131,9 +113,7 @@ export function AdminModule_InvitationsList({
                 }),
                 columnHelper.accessor("createdAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Sent
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Sent</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -147,20 +127,13 @@ export function AdminModule_InvitationsList({
                     header: (ctx) => (
                         <Akagi.TableHeadCell
                             header={ctx.header}
-                            filterOptions={[
-                                "pending",
-                                "accepted",
-                                "revoked",
-                                "expired",
-                            ]}
+                            filterOptions={["pending", "accepted", "revoked", "expired"]}
                         >
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.row.original.status}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.row.original.status}</Akagi.TableCell>
                     ),
                     enableColumnFilter: true,
                     enableSorting: false,
@@ -170,18 +143,12 @@ export function AdminModule_InvitationsList({
                 columnHelper.display({
                     id: "actions",
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-10"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} className="w-10">
                             Actions
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell
-                            cell={ctx.cell}
-                            className="text-center p-0"
-                        >
+                        <Akagi.TableCell cell={ctx.cell} className="text-center p-0">
                             {ctx.row.original.status == "pending" ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -191,14 +158,10 @@ export function AdminModule_InvitationsList({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuGroup>
-                                            <DropdownMenuLabel>
-                                                Actions
-                                            </DropdownMenuLabel>
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuItem
                                                 onSelect={() =>
-                                                    resendMutation.mutate(
-                                                        ctx.row.original,
-                                                    )
+                                                    resendMutation.mutate(ctx.row.original)
                                                 }
                                             >
                                                 <SendIcon />
@@ -206,9 +169,7 @@ export function AdminModule_InvitationsList({
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onSelect={() =>
-                                                    revokeMutation.mutate(
-                                                        ctx.row.original,
-                                                    )
+                                                    revokeMutation.mutate(ctx.row.original)
                                                 }
                                                 className="text-destructive"
                                             >
@@ -219,9 +180,7 @@ export function AdminModule_InvitationsList({
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             ) : (
-                                <span className="text-muted-foreground">
-                                    N/A
-                                </span>
+                                <span className="text-muted-foreground">N/A</span>
                             )}
                         </Akagi.TableCell>
                     ),
@@ -248,14 +207,8 @@ export function AdminModule_InvitationsList({
         <>
             <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-                <Protect
-                    orgId={organization.id}
-                    permissions={{ invitation: ["create"] }}
-                >
-                    <Button
-                        variant="outline"
-                        onClick={() => setCreateDialogOpen(true)}
-                    >
+                <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
+                    <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
                         <SendIcon /> Invite
                     </Button>
                 </Protect>

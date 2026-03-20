@@ -11,12 +11,12 @@ import { Eagle } from "@/components/blocks/eagle";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4HFetchClient } from "@/lib/d4h-api/client";
+import { getD4HFetchClient } from "@/server/d4h-api/client";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HWhoami } from "@/lib/d4h-api/whoami";
+import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 
 async function fetchWhoami(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
@@ -56,8 +56,7 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accesToken.id,
                     },
                     "Whoami",
@@ -66,16 +65,11 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            to={Paths.main(slug).admin.d4hAccessToken(token_id)}
-                        />
+                        <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessToken(token_id)} />
                         <Hermes.Title>Whoami</Hermes.Title>
                     </Hermes.Header>
                     <Eagle.Section>
-                        <Eagle.Content
-                            raw={whoami.raw}
-                            parsed={whoami.parsed}
-                        />
+                        <Eagle.Content raw={whoami.raw} parsed={whoami.parsed} />
                     </Eagle.Section>
                 </Lexington.Column>
             </Lexington.Page>

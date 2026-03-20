@@ -17,8 +17,8 @@ export const metadata = {
     title: `Create D4H Access Token`,
 };
 
-export default async function AdminModule_TeamCreate_Page(
-    props: PageProps<`/main/[slug]/admin/teams/--create`>,
+export default async function AdminModule_CreateD4hAccessToken_Page(
+    props: PageProps<`/main/[slug]/admin/d4h-access-tokens/--create`>,
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -36,11 +36,7 @@ export default async function AdminModule_TeamCreate_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.Header>
-                            <Hermes.BackButton
-                                to={Paths.main(slug).admin.d4hAccessTokens}
-                            >
-                                D4H Access Tokens
-                            </Hermes.BackButton>
+                            <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessTokens} />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>

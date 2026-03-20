@@ -12,23 +12,12 @@ import { toast } from "sonner";
 
 import { Lens, useLens } from "@hookform/lenses";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    useMutation,
-    useQuery,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
     Field,
@@ -50,7 +39,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { D4HServerList } from "@/lib/d4h-api/servers";
+import { D4HServerList } from "@/lib/d4h-servers";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { countDirtyFields } from "@/lib/utils";
@@ -125,24 +114,16 @@ export default function AdminModule_Settings_Page(
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
-                    <form
-                        id="organization-settings-form"
-                        className="pb-14"
-                        onSubmit={handleSubmit}
-                    >
+                    <form id="organization-settings-form" className="pb-14" onSubmit={handleSubmit}>
                         <Hermes.Section>
                             <Hermes.Header>
                                 <Hermes.BackButton
                                     to={Paths.main(slug).admin.organization}
                                     tooltip="Back to organization overview"
                                 />
-                                <Hermes.Title>
-                                    Organization Settings
-                                </Hermes.Title>
+                                <Hermes.Title>Organization Settings</Hermes.Title>
                             </Hermes.Header>
-                            <General_SettingsCard
-                                lens={lens.focus("general")}
-                            />
+                            <General_SettingsCard lens={lens.focus("general")} />
                         </Hermes.Section>
 
                         <Hermes.Section>
@@ -167,22 +148,12 @@ export default function AdminModule_Settings_Page(
                                 lens={lens.focus("modules.d4h-views")}
                                 organizationId={organization.id}
                             />
-                            <FormsModule_SettingsCard
-                                lens={lens.focus("modules.forms")}
-                            />
-                            <I3Module_SettingsCard
-                                lens={lens.focus("modules.i3")}
-                            />
-                            <NotesModule_SettingsCard
-                                lens={lens.focus("modules.notes")}
-                            />
-                            <SkillsModule_SettingsCard
-                                lens={lens.focus("modules.skills")}
-                            />
+                            <FormsModule_SettingsCard lens={lens.focus("modules.forms")} />
+                            <I3Module_SettingsCard lens={lens.focus("modules.i3")} />
+                            <NotesModule_SettingsCard lens={lens.focus("modules.notes")} />
+                            <SkillsModule_SettingsCard lens={lens.focus("modules.skills")} />
                             <SkillPackageBuilderModule_SettingsCard
-                                lens={lens.focus(
-                                    "modules.skill-package-builder",
-                                )}
+                                lens={lens.focus("modules.skill-package-builder")}
                             />
                         </Hermes.Section>
 
@@ -210,11 +181,7 @@ export default function AdminModule_Settings_Page(
     );
 }
 
-function General_SettingsCard({
-    lens,
-}: {
-    lens: Lens<Partial<OrganizationSettings["general"]>>;
-}) {
+function General_SettingsCard({ lens }: { lens: Lens<Partial<OrganizationSettings["general"]>> }) {
     return (
         <Card>
             <CardHeader>
@@ -225,18 +192,14 @@ function General_SettingsCard({
                     <Controller
                         {...lens.focus("publicDomain").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                 <FieldContent>
                                     <FieldLabel htmlFor="public-domain">
                                         Public Domain Name
                                     </FieldLabel>
                                     <FieldDescription>
-                                        Optional custom domain for this
-                                        organisations public resources. Must be
-                                        a valid domain format without protocol.
+                                        Optional custom domain for this organisations public
+                                        resources. Must be a valid domain format without protocol.
                                     </FieldDescription>
                                 </FieldContent>
 
@@ -255,11 +218,7 @@ function General_SettingsCard({
                                             }
                                         }}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </FieldContent>
                             </Field>
                         )}
@@ -307,13 +266,8 @@ function D4hIntegration_SettingsCard({
                     <Controller
                         {...lens.focus("defaultServer").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldLabel htmlFor="d4h-default-server">
-                                    Default Server
-                                </FieldLabel>
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="d4h-default-server">Default Server</FieldLabel>
                                 <Select
                                     value={field.value}
                                     onValueChange={field.onChange}
@@ -328,37 +282,28 @@ function D4hIntegration_SettingsCard({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {D4HServerList.map((server) => (
-                                            <SelectItem
-                                                key={server.code}
-                                                value={server.code}
-                                            >
+                                            <SelectItem key={server.code} value={server.code}>
                                                 {server.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
                     <Controller
                         {...lens.focus("syncToken").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                 <FieldContent>
                                     <FieldLabel htmlFor="d4h-sync-token">
                                         Synchronization Token
                                     </FieldLabel>
                                     <FieldDescription>
-                                        Already configured D4H Access Token to
-                                        use for synchronizing data between AVUT
-                                        and D4H. Select an existing token or
-                                        leave empty to disable synchronization.
+                                        Already configured D4H Access Token to use for synchronizing
+                                        data between AVUT and D4H. Select an existing token or leave
+                                        empty to disable synchronization.
                                     </FieldDescription>
                                 </FieldContent>
 
@@ -381,46 +326,31 @@ function D4hIntegration_SettingsCard({
                                         <SelectValue placeholder="Select a synchronization token" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="EMPTY">
-                                            None
-                                        </SelectItem>
+                                        <SelectItem value="EMPTY">None</SelectItem>
                                         <SelectSeparator />
                                         {d4hAccessTokens?.map((token) => (
-                                            <SelectItem
-                                                key={token.id}
-                                                value={token.id}
-                                            >
+                                            <SelectItem key={token.id} value={token.id}>
                                                 {token.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
                     <Controller
                         {...lens.focus("teamSync").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                 <FieldContent>
                                     <FieldLabel htmlFor="d4h-team-synchronization">
                                         Team Synchronization
                                     </FieldLabel>
                                     <FieldDescription>
-                                        How often team synchronization should
-                                        occur.
+                                        How often team synchronization should occur.
                                     </FieldDescription>
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </FieldContent>
                                 <Select
                                     value={field.value}
@@ -435,12 +365,8 @@ function D4hIntegration_SettingsCard({
                                         <SelectValue placeholder="Select synchronization frequency" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Never">
-                                            Never
-                                        </SelectItem>
-                                        <SelectItem value="Daily">
-                                            Daily
-                                        </SelectItem>
+                                        <SelectItem value="Never">Never</SelectItem>
+                                        <SelectItem value="Daily">Daily</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </Field>
@@ -449,23 +375,15 @@ function D4hIntegration_SettingsCard({
                     <Controller
                         {...lens.focus("teamMemberSync").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                 <FieldContent>
                                     <FieldLabel htmlFor="d4h-team-member-sync">
                                         Team Member Synchronization
                                     </FieldLabel>
                                     <FieldDescription>
-                                        How often team member synchronization
-                                        should occur.
+                                        How often team member synchronization should occur.
                                     </FieldDescription>
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </FieldContent>
                                 <Select
                                     value={field.value}
@@ -480,12 +398,8 @@ function D4hIntegration_SettingsCard({
                                         <SelectValue placeholder="Select sync frequency" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Never">
-                                            Never
-                                        </SelectItem>
-                                        <SelectItem value="Daily">
-                                            Daily
-                                        </SelectItem>
+                                        <SelectItem value="Never">Never</SelectItem>
+                                        <SelectItem value="Daily">Daily</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </Field>
@@ -571,13 +485,8 @@ function D4HViewsModule_SettingsCard({
                     <Controller
                         {...lens.focus("mode").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldLabel htmlFor="d4h-views-mode">
-                                    Write Mode
-                                </FieldLabel>
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="d4h-views-mode">Write Mode</FieldLabel>
 
                                 <Select
                                     value={field.value}
@@ -592,35 +501,25 @@ function D4HViewsModule_SettingsCard({
                                         <SelectValue placeholder="Select mode" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Read-only">
-                                            Read-only
-                                        </SelectItem>
-                                        <SelectItem value="Read-write">
-                                            Read-write
-                                        </SelectItem>
+                                        <SelectItem value="Read-only">Read-only</SelectItem>
+                                        <SelectItem value="Read-write">Read-write</SelectItem>
                                     </SelectContent>
                                 </Select>
 
                                 <FieldDescription>
-                                    In "Read-only" mode, the D4H Views module
-                                    will only read data from D4H and display it
-                                    in AVUT. In "Read-write" mode, the module
-                                    will also write data back to D4H when
-                                    changes are made in AVUT.
+                                    In "Read-only" mode, the D4H Views module will only read data
+                                    from D4H and display it in AVUT. In "Read-write" mode, the
+                                    module will also write data back to D4H when changes are made in
+                                    AVUT.
                                 </FieldDescription>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
                     <Controller
                         {...lens.focus("tokenPolicy").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                 <FieldLabel htmlFor="d4h-views-token-policy">
                                     Token Policy
                                 </FieldLabel>
@@ -638,40 +537,27 @@ function D4HViewsModule_SettingsCard({
                                         <SelectValue placeholder="Select token policy" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Shared">
-                                            Shared Token
-                                        </SelectItem>
-                                        <SelectItem value="Personal">
-                                            Personal Tokens
-                                        </SelectItem>
+                                        <SelectItem value="Shared">Shared Token</SelectItem>
+                                        <SelectItem value="Personal">Personal Tokens</SelectItem>
                                     </SelectContent>
                                 </Select>
 
                                 <FieldDescription>
-                                    If "Shared Token" is selected, the module
-                                    will use a single, shared D4H Access Token
-                                    for all users in the organization. If
-                                    "Personal Tokens" is selected, each user
-                                    will need to configure their own D4H Access
-                                    Token in their personal settings to use the
+                                    If "Shared Token" is selected, the module will use a single,
+                                    shared D4H Access Token for all users in the organization. If
+                                    "Personal Tokens" is selected, each user will need to configure
+                                    their own D4H Access Token in their personal settings to use the
                                     module.
                                 </FieldDescription>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
                     <Controller
                         {...lens.focus("token").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldLabel htmlFor="d4h-views-token">
-                                    Shared Token
-                                </FieldLabel>
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="d4h-views-token">Shared Token</FieldLabel>
 
                                 <Select
                                     value={field.value || ""}
@@ -682,9 +568,7 @@ function D4HViewsModule_SettingsCard({
                                             field.onChange(value);
                                         }
                                     }}
-                                    disabled={
-                                        tokenPolicy !== "Shared" || !enabled
-                                    }
+                                    disabled={tokenPolicy !== "Shared" || !enabled}
                                 >
                                     <SelectTrigger
                                         id="d4h-views-token"
@@ -693,29 +577,21 @@ function D4HViewsModule_SettingsCard({
                                         <SelectValue placeholder="Select a shared access token" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="EMPTY">
-                                            None
-                                        </SelectItem>
+                                        <SelectItem value="EMPTY">None</SelectItem>
                                         <SelectSeparator />
                                         {d4hAccessTokens?.map((token) => (
-                                            <SelectItem
-                                                key={token.id}
-                                                value={token.id}
-                                            >
+                                            <SelectItem key={token.id} value={token.id}>
                                                 {token.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                                 <FieldDescription>
-                                    D4H Access Token to use for the module when
-                                    "Shared Token" policy is selected. Make sure
-                                    to use a token with appropriate permissions
-                                    and keep it secure.
+                                    D4H Access Token to use for the module when "Shared Token"
+                                    policy is selected. Make sure to use a token with appropriate
+                                    permissions and keep it secure.
                                 </FieldDescription>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -785,13 +661,8 @@ function I3Module_SettingsCard({
                     <Controller
                         {...lens.focus("storage").interop()}
                         render={({ field, fieldState }) => (
-                            <Field
-                                orientation="responsive"
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldLabel htmlFor="i3-storage">
-                                    I3 Data Storage
-                                </FieldLabel>
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="i3-storage">I3 Data Storage</FieldLabel>
                                 <Select
                                     value={field.value}
                                     onValueChange={field.onChange}
@@ -811,15 +682,12 @@ function I3Module_SettingsCard({
                                     </SelectContent>
                                 </Select>
                                 <FieldDescription>
-                                    Where should I3 item-data be stored? If AVUT
-                                    is selected, I3 data will be stored in
-                                    AVUT's database. If D4H is selected, I3 data
-                                    will be stored in D4H and associated with
-                                    the corresponding teams and team members.
+                                    Where should I3 item-data be stored? If AVUT is selected, I3
+                                    data will be stored in AVUT's database. If D4H is selected, I3
+                                    data will be stored in D4H and associated with the corresponding
+                                    teams and team members.
                                 </FieldDescription>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -894,9 +762,7 @@ function SkillsModule_SettingsCard({
 function SkillPackageBuilderModule_SettingsCard({
     lens,
 }: {
-    lens: Lens<
-        Partial<OrganizationSettings["modules"]["skill-package-builder"]>
-    >;
+    lens: Lens<Partial<OrganizationSettings["modules"]["skill-package-builder"]>>;
 }) {
     const enabled = useWatch(lens.focus("enabled").interop());
 

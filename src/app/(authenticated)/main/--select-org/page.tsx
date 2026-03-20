@@ -8,12 +8,10 @@
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Argus } from "@/components/blocks/argus";
 import { OrgSelector_Card } from "@/components/cards/org-selector";
-import { getEntryControl } from "@/lib/entry-control";
+import { getEntryControl } from "@/server/entry-control";
 import { redirect } from "next/navigation";
 
-export default async function Main_SelectOrg_Page(
-    props: PageProps<"/main/--select-org">,
-) {
+export default async function Main_SelectOrg_Page(props: PageProps<"/main/--select-org">) {
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {

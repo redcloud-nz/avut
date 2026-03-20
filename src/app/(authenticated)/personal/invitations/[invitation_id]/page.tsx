@@ -10,11 +10,7 @@ import { useRouter } from "next/navigation";
 import { use } from "react";
 import { toast } from "sonner";
 
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
@@ -23,10 +19,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
-import { sessionQueryOptions } from "@/lib/auth-client";
+import { sessionQueryOptions } from "@/client/auth-client";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
+import { Route } from "next";
 
 export default function Auth_ViewInvitation_Page(
     props: PageProps<"/personal/invitations/[invitation_id]">,
@@ -47,11 +44,7 @@ export default function Auth_ViewInvitation_Page(
 
     if (!session) {
         // Not signed in, redirect to sign-in page with redirect back to this invite
-        router.replace(
-            Paths.auth.signIn({
-                redirect: Paths.personal.invitation(invitation_id).href,
-            }).href,
-        );
+        router.replace("/auth/sign-in");
     }
 
     const acceptMutation = useMutation(
@@ -67,9 +60,7 @@ export default function Auth_ViewInvitation_Page(
                     }),
                 );
 
-                router.push(
-                    Paths.main(invitation.organization.slug).index.href,
-                );
+                router.push(Paths.main(invitation.organization.slug).index.href as Route);
             },
         }),
     );
@@ -86,9 +77,7 @@ export default function Auth_ViewInvitation_Page(
                     }),
                 );
 
-                router.push(
-                    Paths.main(invitation.organization.slug).index.href,
-                );
+                router.push(Paths.main(invitation.organization.slug).index.href as Route);
             },
         }),
     );
@@ -137,11 +126,7 @@ export default function Auth_ViewInvitation_Page(
                                     <FieldLabel>Role</FieldLabel>
                                     <FieldValue className="min-w-1/2">
                                         {invitation.role
-                                            .map(
-                                                (role) =>
-                                                    OrganizationRole
-                                                        .displayNames[role],
-                                            )
+                                            .map((role) => OrganizationRole.displayNames[role])
                                             .join(", ")}
                                     </FieldValue>
                                 </Field>

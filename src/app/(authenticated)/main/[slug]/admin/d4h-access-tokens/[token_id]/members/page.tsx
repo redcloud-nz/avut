@@ -9,11 +9,8 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
-import {
-    getD4HFetchClient,
-    getD4HTeamsAccessibleWithToken,
-} from "@/lib/d4h-api/client";
-import { D4HMember } from "@/lib/d4h-api/member";
+import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { D4HMember } from "@/lib/schemas/d4h/member";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -41,20 +38,17 @@ export default async function Admin_D4hAccessToken_Members_Page(
     const members = (
         await Promise.all(
             teams.map(async (team) => {
-                const { data } = await fetchClient.GET(
-                    "/v3/{context}/{contextId}/members",
-                    {
-                        params: {
-                            path: {
-                                context: "team",
-                                contextId: team.id,
-                            },
-                            query: {
-                                status: ["OPERATIONAL", "NON_OPERATIONAL"],
-                            },
+                const { data } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
+                    params: {
+                        path: {
+                            context: "team",
+                            contextId: team.id,
+                        },
+                        query: {
+                            status: ["OPERATIONAL", "NON_OPERATIONAL"],
                         },
                     },
-                );
+                });
 
                 return (data as { results: any[] }).results.map((member) => ({
                     raw: member,
@@ -71,8 +65,7 @@ export default async function Admin_D4hAccessToken_Members_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accesToken.id,
                     },
                     "Teams",
@@ -83,9 +76,7 @@ export default async function Admin_D4hAccessToken_Members_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(slug).admin.d4hAccessToken(
-                                    token_id,
-                                )}
+                                to={Paths.main(slug).admin.d4hAccessToken(token_id)}
                             />
                             <Hermes.Title>Teams with Members</Hermes.Title>
                         </Hermes.Header>
@@ -102,17 +93,11 @@ export default async function Admin_D4hAccessToken_Members_Page(
                                 <div className="px-2 max-h-[50vh] overflow-y-auto">
                                     {member.parsed.success ? (
                                         <pre className="text-xs">
-                                            {JSON.stringify(
-                                                member.parsed.data,
-                                                null,
-                                                2,
-                                            )}
+                                            {JSON.stringify(member.parsed.data, null, 2)}
                                         </pre>
                                     ) : (
                                         <Alert>
-                                            <AlertTitle>
-                                                Failed to parse member data
-                                            </AlertTitle>
+                                            <AlertTitle>Failed to parse member data</AlertTitle>
                                             <AlertDescription>
                                                 {member.parsed.error.message}
                                             </AlertDescription>

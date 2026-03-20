@@ -5,6 +5,8 @@
 
 "use client";
 
+import { Route } from "next";
+import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -21,14 +23,9 @@ import {
     NotificationTitle,
     UnreadIndicator,
 } from "@/components/ui/notification";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { trpc } from "@/trpc/client";
-import Link from "next/link";
 
 export function NotificationsMenu() {
     const [open, setOpen] = useState(false);
@@ -61,9 +58,7 @@ export function NotificationsMenu() {
                 <Notifications className="max-h-[400px] overflow-y-auto">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
-                            <p className="text-sm text-muted-foreground">
-                                Loading...
-                            </p>
+                            <p className="text-sm text-muted-foreground">Loading...</p>
                         </div>
                     ) : notifications.length === 0 ? (
                         <NotificationsEmpty />
@@ -71,7 +66,7 @@ export function NotificationsMenu() {
                         notifications.map((notification) => (
                             <Link
                                 key={notification.id}
-                                href={notification.path}
+                                href={notification.path as Route}
                                 className="block hover:bg-accent transition-colors"
                                 onClick={handleNotificationClick}
                             >
@@ -89,11 +84,7 @@ export function NotificationsMenu() {
                                             <NotificationDescription>
                                                 {notification.description}
                                             </NotificationDescription>
-                                            <NotificationDate
-                                                date={
-                                                    new Date(notification.date)
-                                                }
-                                            />
+                                            <NotificationDate date={new Date(notification.date)} />
                                         </NotificationContent>
                                     </div>
                                 </Notification>

@@ -10,23 +10,13 @@ import { RefreshCwIcon } from "lucide-react";
 import { use } from "react";
 import { toast } from "sonner";
 
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import {
@@ -39,7 +29,7 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HServer } from "@/lib/d4h-api/servers";
+import { getD4HServer } from "@/lib/d4h-servers";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
@@ -62,12 +52,10 @@ export default function AdminModule_D4hAccessToken_Page(
         trpc.d4hAccessTokens.refreshToken.mutationOptions({
             onSettled() {
                 queryClient.invalidateQueries(
-                    trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter(
-                        {
-                            organizationId: organization.id,
-                            tokenId: token_id,
-                        },
-                    ),
+                    trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
+                        organizationId: organization.id,
+                        tokenId: token_id,
+                    }),
                 );
             },
         }),
@@ -82,8 +70,7 @@ export default function AdminModule_D4hAccessToken_Page(
             {
                 loading: "Refreshing token metadata...",
                 success: "Token metadata refreshed",
-                error: (error) =>
-                    "Failed to refresh token metadata: " + error.message,
+                error: (error) => "Failed to refresh token metadata: " + error.message,
             },
         );
     }
@@ -95,8 +82,7 @@ export default function AdminModule_D4hAccessToken_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accessToken.label,
                     },
                 ]}
@@ -109,8 +95,7 @@ export default function AdminModule_D4hAccessToken_Page(
                             tooltip="Back to access token list"
                         />
                         <Hermes.Title>
-                            {accessToken.label ||
-                                `Access Token: ${accessToken.id}`}
+                            {accessToken.label || `Access Token: ${accessToken.id}`}
                         </Hermes.Title>
 
                         <Protect
@@ -118,11 +103,7 @@ export default function AdminModule_D4hAccessToken_Page(
                             permissions={{ d4hAccessToken: ["update"] }}
                         >
                             <Hermes.Action>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleRefresh}
-                                >
+                                <Button variant="ghost" size="icon" onClick={handleRefresh}>
                                     <RefreshCwIcon />
                                 </Button>
                             </Hermes.Action>
@@ -136,18 +117,12 @@ export default function AdminModule_D4hAccessToken_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Token ID</FieldLabel>
-                                    <FieldValue
-                                        value={accessToken.id}
-                                        format="id"
-                                    />
+                                    <FieldValue value={accessToken.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Server</FieldLabel>
                                     <FieldValue
-                                        value={
-                                            getD4HServer(accessToken.serverCode)
-                                                ?.name!
-                                        }
+                                        value={getD4HServer(accessToken.serverCode)?.name!}
                                     />
                                 </Field>
                                 <Field orientation="responsive">
@@ -218,27 +193,17 @@ export default function AdminModule_D4hAccessToken_Page(
                                             D4H ID
                                         </TableHeadCell>
                                         <TableHeadCell>Name</TableHeadCell>
-                                        <TableHeadCell>
-                                            Organization
-                                        </TableHeadCell>
+                                        <TableHeadCell>Organization</TableHeadCell>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {accessToken.metadata.d4HTeams.map(
-                                        (team) => (
-                                            <TableRow key={team.id}>
-                                                <TableCell className="text-center">
-                                                    {team.id}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {team.title}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {team.owner?.title}
-                                                </TableCell>
-                                            </TableRow>
-                                        ),
-                                    )}
+                                    {accessToken.metadata.d4HTeams.map((team) => (
+                                        <TableRow key={team.id}>
+                                            <TableCell className="text-center">{team.id}</TableCell>
+                                            <TableCell>{team.title}</TableCell>
+                                            <TableCell>{team.owner?.title}</TableCell>
+                                        </TableRow>
+                                    ))}
                                 </TableBody>
                             </Table>
                         </CardContent>

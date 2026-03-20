@@ -5,12 +5,7 @@
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import * as Paths from "@/paths";
 
@@ -23,7 +18,7 @@ export const metadata = {
 };
 
 export default async function Pub_PPEReturn_Page(
-    props: PageProps<"/pub/main/[slug]/forms/ppe/return">,
+    props: PageProps<"/pub/orgs/[slug]/forms/ppe/return">,
 ) {
     const { slug } = await props.params;
 
@@ -40,9 +35,7 @@ export default async function Pub_PPEReturn_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.Header>
-                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe}>
-                                PPE Forms
-                            </Hermes.BackButton>
+                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe} />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>

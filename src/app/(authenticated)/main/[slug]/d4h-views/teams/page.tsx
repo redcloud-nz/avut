@@ -7,8 +7,8 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4HTeamsAccessibleWithToken } from "@/lib/d4h-api/client";
-import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
+import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -24,16 +24,12 @@ export default async function D4HViewsModule_Teams_Page(
     const settings = await getOrganizationSettings(organization.id);
 
     if (settings.modules["d4h-views"].enabled === false)
-        throw new Error(
-            "D4H Views module is not enabled for this organization.",
-        );
+        throw new Error("D4H Views module is not enabled for this organization.");
 
     const accessTokenId = settings.integrations.d4h.syncToken;
 
     if (!accessTokenId)
-        throw new Error(
-            "D4H Views module is not configured properly. No sync token found.",
-        );
+        throw new Error("D4H Views module is not configured properly. No sync token found.");
 
     const record = await prisma.d4hAccessToken.findUnique({
         where: {
@@ -46,17 +42,14 @@ export default async function D4HViewsModule_Teams_Page(
         throw new Error("Token not found");
     }
 
-    const token = D4HAccessToken.fromRecord(record);
+    const token = D4HAccessToken_ServerOnly.fromRecord(record);
 
     const teams = await getD4HTeamsAccessibleWithToken(token);
 
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[
-                    Paths.main(slug).d4HViews.index,
-                    Paths.main(slug).d4HViews.teams,
-                ]}
+                breadcrumbs={[Paths.main(slug).d4HViews.index, Paths.main(slug).d4HViews.teams]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

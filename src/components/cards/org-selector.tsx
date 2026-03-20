@@ -8,19 +8,8 @@ import Link from "next/link";
 import { Building2Icon, ChevronRightIcon, SendIcon } from "lucide-react";
 
 import { Show } from "@/components/show";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
     Item,
     ItemActions,
@@ -30,7 +19,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
-import { EntryControlSelect } from "@/lib/entry-control";
+import { EntryControlSelect } from "@/server/entry-control";
 import { SubappId } from "@/lib/subapp";
 
 export function OrgSelector_Card({
@@ -57,12 +46,9 @@ export function OrgSelector_Card({
                     fallback={
                         <Empty>
                             <EmptyHeader>
-                                <EmptyTitle>
-                                    No Organization Memberships
-                                </EmptyTitle>
+                                <EmptyTitle>No Organization Memberships</EmptyTitle>
                                 <EmptyDescription>
-                                    You do not have access to any organizations
-                                    yet.
+                                    You do not have access to any organizations yet.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -70,21 +56,13 @@ export function OrgSelector_Card({
                 >
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
-                            <Link
-                                href={
-                                    `/${subappId}/${membership.organization.slug}` as Route
-                                }
-                            >
+                            <Link href={`/${subappId}/${membership.organization.slug}` as Route}>
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
                                 </ItemMedia>
                                 <ItemContent>
-                                    <ItemTitle>
-                                        {membership.organization.name}
-                                    </ItemTitle>
-                                    <ItemDescription>
-                                        {membership.role.join(", ")}
-                                    </ItemDescription>
+                                    <ItemTitle>{membership.organization.name}</ItemTitle>
+                                    <ItemDescription>{membership.role.join(", ")}</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -98,19 +76,13 @@ export function OrgSelector_Card({
 
                     {invitations.map((invitation) => (
                         <Item key={invitation.id} asChild>
-                            <Link
-                                href={`/personal/invitations/${invitation.id}`}
-                            >
+                            <Link href={`/personal/invitations/${invitation.id}`}>
                                 <ItemMedia>
                                     <SendIcon className="size-5" />
                                 </ItemMedia>
                                 <ItemContent>
-                                    <ItemTitle>
-                                        {invitation.organization.name}
-                                    </ItemTitle>
-                                    <ItemDescription>
-                                        Invitation
-                                    </ItemDescription>
+                                    <ItemTitle>{invitation.organization.name}</ItemTitle>
+                                    <ItemDescription>Invitation</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />

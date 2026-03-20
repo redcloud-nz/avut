@@ -28,10 +28,7 @@ export const D4HWhoami = {
                         })
                         .optional(),
                 }),
-                permissions: z.record(
-                    z.string(),
-                    z.record(z.string(), z.boolean()),
-                ),
+                permissions: z.record(z.string(), z.record(z.string(), z.boolean())),
             }),
         ),
     }),

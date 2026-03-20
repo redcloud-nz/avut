@@ -11,23 +11,13 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { AlertIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -44,13 +34,7 @@ import {
     EmptyHeader,
     EmptyTitle,
 } from "@/components/ui/empty";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { ExternalLink } from "@/components/ui/link";
 import {
@@ -64,11 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
-import {
-    D4HServerCode,
-    D4HServerList,
-    getD4HServer,
-} from "@/lib/d4h-api/servers";
+import { D4HServerCode, D4HServerList, getD4HServer } from "@/lib/d4h-servers";
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { trpc } from "@/trpc/client";
 
@@ -102,9 +82,8 @@ export function UserD4HAccess_Card() {
                                 <AlertIcons.NotAllowed />
                                 <AlertTitle>Integration Not Enabled</AlertTitle>
                                 <AlertDescription>
-                                    The D4H integration is not enabled for this
-                                    organization. Please contact your
-                                    administrator to enable it.
+                                    The D4H integration is not enabled for this organization. Please
+                                    contact your administrator to enable it.
                                 </AlertDescription>
                             </Alert>
                         }
@@ -112,21 +91,14 @@ export function UserD4HAccess_Card() {
                         {accessToken == null ? (
                             <Empty>
                                 <EmptyHeader>
-                                    <EmptyTitle>
-                                        No Personal D4H Access
-                                    </EmptyTitle>
+                                    <EmptyTitle>No Personal D4H Access</EmptyTitle>
                                     <EmptyDescription>
-                                        You do not have a personal D4H access
-                                        token configured. Please add one to
-                                        access your D4H data in AVUT.
+                                        You do not have a personal D4H access token configured.
+                                        Please add one to access your D4H data in AVUT.
                                     </EmptyDescription>
                                 </EmptyHeader>
                                 <EmptyContent>
-                                    <Button
-                                        onClick={() =>
-                                            setCreateDialogOpen(true)
-                                        }
-                                    >
+                                    <Button onClick={() => setCreateDialogOpen(true)}>
                                         Add Access Token
                                     </Button>
                                 </EmptyContent>
@@ -135,18 +107,12 @@ export function UserD4HAccess_Card() {
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Token ID</FieldLabel>
-                                    <FieldValue
-                                        value={accessToken.id}
-                                        format="id"
-                                    />
+                                    <FieldValue value={accessToken.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Server</FieldLabel>
                                     <FieldValue
-                                        value={
-                                            getD4HServer(accessToken.serverCode)
-                                                ?.name!
-                                        }
+                                        value={getD4HServer(accessToken.serverCode)?.name!}
                                     />
                                 </Field>
                                 <Field orientation="responsive">
@@ -185,13 +151,8 @@ function PersonalD4HAccessToken_Remove_Button() {
     const mutation = useMutation(
         trpc.d4hAccessTokens.deletePersonalAccessToken.mutationOptions({
             onError(error) {
-                logger.error(
-                    "Failed to remove personal D4H access token",
-                    error,
-                );
-                toast.error(
-                    `Failed to remove personal D4H access token: ${error.message}`,
-                );
+                logger.error("Failed to remove personal D4H access token", error);
+                toast.error(`Failed to remove personal D4H access token: ${error.message}`);
             },
             onSuccess() {
                 queryClient.invalidateQueries(
@@ -247,9 +208,7 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
         trpc.d4hAccessTokens.createPersonalAccessToken.mutationOptions({
             onError(error) {
                 logger.error("Error creating D4H access token:", error);
-                toast.error(
-                    `Failed to create D4H access token: ${error.message}`,
-                );
+                toast.error(`Failed to create D4H access token: ${error.message}`);
             },
             async onSuccess({ created }) {
                 await queryClient.invalidateQueries(
@@ -305,17 +264,11 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                         name="serverCode"
                         control={form.control}
                         render={({ field, fieldState }) => (
-                            <Field
-                                data-invalid={fieldState.invalid}
-                                orientation="responsive"
-                            >
+                            <Field data-invalid={fieldState.invalid} orientation="responsive">
                                 <FieldLabel htmlFor="access-token-server-code">
                                     D4H Server
                                 </FieldLabel>
-                                <Select
-                                    {...field}
-                                    onValueChange={field.onChange}
-                                >
+                                <Select {...field} onValueChange={field.onChange}>
                                     <SelectTrigger
                                         id="access-token-server-code"
                                         aria-invalid={fieldState.invalid}
@@ -324,15 +277,10 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {D4HServerList.map((server) => (
-                                            <SelectItem
-                                                key={server.code}
-                                                value={server.code}
-                                            >
+                                            <SelectItem key={server.code} value={server.code}>
                                                 {server.name}
-                                                {organization.settings
-                                                    .integrations.d4h
-                                                    .defaultServer ==
-                                                    server.code && (
+                                                {organization.settings.integrations.d4h
+                                                    .defaultServer == server.code && (
                                                     <span className="pl-1 text-muted-foreground">
                                                         Default
                                                     </span>
@@ -341,9 +289,7 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -351,17 +297,12 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                         control={form.control}
                         names={["serverCode"]}
                         render={([serverCode]) => {
-                            const server = D4HServerList.find(
-                                (s) => s.code === serverCode,
-                            );
+                            const server = D4HServerList.find((s) => s.code === serverCode);
 
                             return server ? (
                                 <div className="text-xs/relaxed text-muted-foreground">
                                     Generate an D4H access token at:{" "}
-                                    <ExternalLink
-                                        className="text-xs pl-1"
-                                        href={server?.tokensUrl}
-                                    >
+                                    <ExternalLink className="text-xs pl-1" href={server?.tokensUrl}>
                                         {server?.tokensUrl}
                                     </ExternalLink>
                                 </div>
@@ -398,18 +339,14 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="access-token">
-                                    Token
-                                </FieldLabel>
+                                <FieldLabel htmlFor="access-token">Token</FieldLabel>
                                 <Textarea
                                     id="access-token"
                                     aria-invalid={fieldState.invalid}
                                     placeholder="Paste token here"
                                     {...field}
                                 />
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -426,11 +363,7 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                         }}
                         onClick={handleSubmit}
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleOpenChange(false)}
-                    >
+                    <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                         Cancel
                     </Button>
                 </DialogFooter>

@@ -9,7 +9,7 @@ import { createElement } from "react";
 
 import PPEIssueNotificationEmail from "@/emails/ppe-issue-notification";
 
-import { NoReplyEmailAddress, sendEmail } from "@/lib/email";
+import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { PPEIssueFormData } from "@/lib/schemas/ppe";
 
 export async function submitPPEIssueForm(data: PPEIssueFormData) {

@@ -27,18 +27,13 @@ export const metadata = {
     title: `PPE`,
 };
 
-export default async function Pub_PPEIndex_Page(
-    props: PageProps<"/pub/main/[slug]/forms/ppe">,
-) {
+export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slug]/forms/ppe">) {
     const { slug } = await props.params;
 
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[
-                    Paths.pub(slug).forms.index,
-                    Paths.pub(slug).forms.ppe,
-                ]}
+                breadcrumbs={[Paths.pub(slug).forms.index, Paths.pub(slug).forms.ppe]}
             />
             <Lexington.Page>
                 <Lexington.Column width="md">
@@ -53,8 +48,7 @@ export default async function Pub_PPEIndex_Page(
                                         <ItemContent>
                                             <ItemTitle>Borrow PPE</ItemTitle>
                                             <ItemDescription>
-                                                Record temporarily borrowing
-                                                PPE.
+                                                Record temporarily borrowing PPE.
                                             </ItemDescription>
                                         </ItemContent>
                                         <ItemActions>
@@ -63,15 +57,12 @@ export default async function Pub_PPEIndex_Page(
                                     </Link>
                                 </Item>
                                 <Item asChild>
-                                    <Link
-                                        to={Paths.pub(slug).forms.ppe.inspect}
-                                    >
+                                    <Link to={Paths.pub(slug).forms.ppe.inspect}>
                                         <ItemContent>
                                             <ItemTitle>Inspect PPE</ItemTitle>
                                             <ItemDescription>
-                                                Record an inspection of the PPE
-                                                items that have been issued to
-                                                an individual.
+                                                Record an inspection of the PPE items that have been
+                                                issued to an individual.
                                             </ItemDescription>
                                         </ItemContent>
                                         <ItemActions>
@@ -84,8 +75,7 @@ export default async function Pub_PPEIndex_Page(
                                         <ItemContent>
                                             <ItemTitle>Issue PPE</ItemTitle>
                                             <ItemDescription>
-                                                Record issuing PPE to an
-                                                individual.
+                                                Record issuing PPE to an individual.
                                             </ItemDescription>
                                         </ItemContent>
                                         <ItemActions>
@@ -98,8 +88,7 @@ export default async function Pub_PPEIndex_Page(
                                         <ItemContent>
                                             <ItemTitle>Return PPE</ItemTitle>
                                             <ItemDescription>
-                                                Record returning previously
-                                                issued PPE items.
+                                                Record returning previously issued PPE items.
                                             </ItemDescription>
                                         </ItemContent>
                                         <ItemActions>

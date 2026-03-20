@@ -10,17 +10,14 @@ import createFetchClient from "openapi-fetch";
 import { cache } from "react";
 import * as z from "zod";
 
-import {
-    D4HAccessToken_ServerOnly,
-    D4HAccessTokenMetadata,
-} from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken_ServerOnly, D4HAccessTokenMetadata } from "@/lib/schemas/d4h-access-token";
 
-import { D4HMember } from "./member";
-import { D4HOrganisation } from "./organisation";
+import { D4HMember } from "../../lib/schemas/d4h/member";
+import { D4HOrganisation } from "../../lib/schemas/d4h/organisation";
 import type { paths } from "./schema";
-import { getD4HServer } from "./servers";
-import { D4HTeamRef } from "./team";
-import { D4HWhoami } from "./whoami";
+import { getD4HServer } from "../../lib/d4h-servers";
+import { D4HTeamRef } from "../../lib/schemas/d4h/team";
+import { D4HWhoami } from "../../lib/schemas/d4h/whoami";
 
 export type D4HListResponse = {
     results: unknown[];
@@ -48,9 +45,7 @@ export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     return fetchClient;
 });
 
-export async function fetchD4HWhoamiCached(
-    token: D4HAccessToken_ServerOnly,
-): Promise<D4HWhoami> {
+export async function fetchD4HWhoamiCached(token: D4HAccessToken_ServerOnly): Promise<D4HWhoami> {
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${token.id}-whoami`);
@@ -58,9 +53,7 @@ export async function fetchD4HWhoamiCached(
     const fetchClient = getD4HFetchClient(token);
     const { data, response } = await fetchClient.GET("/v3/whoami");
     if (!response.ok) {
-        throw new Error(
-            `Failed to fetch D4H whoami: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch D4H whoami: ${response.status} ${response.statusText}`);
     }
     return D4HWhoami.schema.parse(data);
 }
@@ -95,9 +88,7 @@ export async function getD4HTokenMetadata(
 
         if (team.owner && team.owner.id) {
             // Try to find the organisation in the list of already fetched organisations.
-            organisation = d4HOrganisations.find(
-                (o) => o.id === team.owner?.id,
-            );
+            organisation = d4HOrganisations.find((o) => o.id === team.owner?.id);
 
             // Fetch the organization if it hasn't been fetched yet
             if (!organisation) {
@@ -151,20 +142,17 @@ export async function getD4HTeamMembers(
 
     const fetchClient = getD4HFetchClient(token);
 
-    const { data } = await fetchClient.GET(
-        "/v3/{context}/{contextId}/members",
-        {
-            params: {
-                path: {
-                    context: "team",
-                    contextId: d4hTeamId,
-                },
-                query: {
-                    status: ["OPERATIONAL", "NON_OPERATIONAL"],
-                },
+    const { data } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
+        params: {
+            path: {
+                context: "team",
+                contextId: d4hTeamId,
+            },
+            query: {
+                status: ["OPERATIONAL", "NON_OPERATIONAL"],
             },
         },
-    );
+    });
     return z.object({ results: D4HMember.schema.array() }).parse(data).results;
 }
 

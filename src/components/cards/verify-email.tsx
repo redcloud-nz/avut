@@ -10,27 +10,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
-import {
-    InputOTP,
-    InputOTPGroup,
-    InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 /**
  * Card for verifying user's email with OTP code.
@@ -42,8 +26,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
     const [code, setCode] = useState<string>("");
 
     const [state, setState] = useState<
-        | { status: "Ready" | "InProgress" }
-        | { status: "Error"; error: { message?: string } }
+        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
     >({ status: "Ready" });
 
     async function handleVerify() {
@@ -62,9 +45,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
             }
         } catch (error) {
             console.log("Email verification error", error);
-            toast.error(
-                "An error occured during email verification. Please try again.",
-            );
+            toast.error("An error occured during email verification. Please try again.");
             setState({ status: "Ready" });
         }
     }
@@ -81,9 +62,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
         <Card>
             <CardHeader>
                 <CardTitle>Enter verification code</CardTitle>
-                <CardDescription>
-                    We sent a 6-digit code to your email.
-                </CardDescription>
+                <CardDescription>We sent a 6-digit code to your email.</CardDescription>
             </CardHeader>
             <CardContent>
                 <FieldGroup>
@@ -113,21 +92,14 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                         <Button
                             type="submit"
                             onClick={handleVerify}
-                            disabled={
-                                code.length < 6 || state.status === "InProgress"
-                            }
+                            disabled={code.length < 6 || state.status === "InProgress"}
                         >
-                            {state.status === "InProgress"
-                                ? "Verifying..."
-                                : "Verify"}
+                            {state.status === "InProgress" ? "Verifying..." : "Verify"}
                         </Button>
                     </Field>
-                    {state.status === "Error" && (
-                        <FieldError errors={[state.error]} />
-                    )}
+                    {state.status === "Error" && <FieldError errors={[state.error]} />}
                     <FieldDescription className="text-center">
-                        Didn't receive the code?{" "}
-                        <a onClick={handleResend}>Resend</a>
+                        Didn't receive the code? <a onClick={handleResend}>Resend</a>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>

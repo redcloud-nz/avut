@@ -20,15 +20,10 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
 
@@ -39,10 +34,7 @@ interface AdminModule_UserMenuProps {
     user: UserData;
 }
 
-export function AdminModule_UserMenu({
-    organizationUser,
-    user,
-}: AdminModule_UserMenuProps) {
+export function AdminModule_UserMenu({ organizationUser, user }: AdminModule_UserMenuProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -71,12 +63,10 @@ export function AdminModule_UserMenu({
                             fallback={
                                 <Empty size="sm">
                                     <EmptyHeader>
-                                        <EmptyTitle>
-                                            No Actions Available
-                                        </EmptyTitle>
+                                        <EmptyTitle>No Actions Available</EmptyTitle>
                                         <EmptyDescription>
-                                            You do not have permission to
-                                            perform any actions on this user.
+                                            You do not have permission to perform any actions on
+                                            this user.
                                         </EmptyDescription>
                                     </EmptyHeader>
                                 </Empty>
@@ -84,9 +74,7 @@ export function AdminModule_UserMenu({
                         >
                             <DropdownMenuItem
                                 onClick={() => setDeleteDialogOpen(true)}
-                                disabled={
-                                    organizationUser.userId === session?.user.id
-                                }
+                                disabled={organizationUser.userId === session?.user.id}
                             >
                                 <ObjectIcons.Delete />
                                 Delete

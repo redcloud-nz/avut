@@ -7,7 +7,7 @@
 import { headers as nextHeaders } from "next/headers";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationInvitationData } from "./schemas/organization-invitation";
+import { OrganizationInvitationData } from "../lib/schemas/organization-invitation";
 import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 
 import { auth, AuthSession } from "@/server/auth";
@@ -74,15 +74,11 @@ export async function getEntryControl(): Promise<EntryControl> {
             session,
             memberships: memberships.map((membership) => ({
                 ...OrganizationMembershipData.fromRecord(membership),
-                organization: OrganizationData.fromRecord(
-                    membership.organization,
-                ),
+                organization: OrganizationData.fromRecord(membership.organization),
             })),
             invitations: invitations.map((invitation) => ({
                 ...OrganizationInvitationData.fromRecord(invitation),
-                organization: OrganizationData.fromRecord(
-                    invitation.organization,
-                ),
+                organization: OrganizationData.fromRecord(invitation.organization),
             })),
         },
     };

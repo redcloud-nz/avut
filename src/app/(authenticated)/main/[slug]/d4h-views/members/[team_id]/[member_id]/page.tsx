@@ -25,7 +25,7 @@ import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { D4HEquipmentItem } from "@/lib/d4h-api/equipment-item";
+import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,16 +62,14 @@ export default function D4HViewsModule_Member_Page(
             Akagi.defineColumns<D4HEquipmentItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Ref
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.equipment.item(ctx.row.original.id)}
+                                to={Paths.main(organization.slug).d4HViews.equipment.item(
+                                    ctx.row.original.id,
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -82,28 +80,20 @@ export default function D4HViewsModule_Member_Page(
                 }),
                 columnHelper.accessor("kind.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Kind
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("model.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Model
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() ?? ""}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -112,19 +102,13 @@ export default function D4HViewsModule_Member_Page(
                     header: (ctx) => (
                         <Akagi.TableHeadCell
                             header={ctx.header}
-                            filterOptions={[
-                                "OPERATIONAL",
-                                "UNSERVICEABLE",
-                                "RETIRED",
-                            ]}
+                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
                         >
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     filterFn: "arrIncludesSome",
                     enableColumnFilter: true,
@@ -143,9 +127,7 @@ export default function D4HViewsModule_Member_Page(
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] },
-            ],
+            columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
                 pageSize: Akagi.DEFAULT_PAGE_SIZE,
@@ -166,9 +148,7 @@ export default function D4HViewsModule_Member_Page(
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            to={Paths.main(organization.slug).d4HViews.members}
-                        />
+                        <Hermes.BackButton to={Paths.main(organization.slug).d4HViews.members} />
                         <Hermes.Title>{member.name}</Hermes.Title>
                     </Hermes.Header>
                     <Card>
@@ -214,14 +194,9 @@ export default function D4HViewsModule_Member_Page(
                     </Card>
 
                     <div className="flex items-center justify-between mt-4">
-                        <div className="text-lg font-semibold">
-                            Issued Equipment
-                        </div>
+                        <div className="text-lg font-semibold">Issued Equipment</div>
                     </div>
-                    <Show
-                        when={isSuccess}
-                        fallback={<Skeleton className="w-full h-10" />}
-                    >
+                    <Show when={isSuccess} fallback={<Skeleton className="w-full h-10" />}>
                         <Akagi.Table table={table} />
                     </Show>
                 </Lexington.Column>

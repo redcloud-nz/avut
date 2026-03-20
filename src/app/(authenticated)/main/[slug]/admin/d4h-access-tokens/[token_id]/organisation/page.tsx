@@ -15,8 +15,8 @@ import {
     getD4HFetchClient,
     fetchD4HWhoamiCached,
     getD4HTokenMetadata,
-} from "@/lib/d4h-api/client";
-import { D4HOrganisation } from "@/lib/d4h-api/organisation";
+} from "@/server/d4h-api/client";
+import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
@@ -41,9 +41,7 @@ async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
         },
     );
     if (!response.ok) {
-        throw new Error(
-            `Failed to fetch D4H whoami: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch D4H whoami: ${response.status} ${response.statusText}`);
     }
     return data;
 }
@@ -78,8 +76,7 @@ export default async function Admin_D4hAccessToken_Organisation_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accesToken.id,
                     },
                     "Organisation",
@@ -88,16 +85,11 @@ export default async function Admin_D4hAccessToken_Organisation_Page(
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            to={Paths.main(slug).admin.d4hAccessToken(token_id)}
-                        />
+                        <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessToken(token_id)} />
                         <Hermes.Title>Organisation</Hermes.Title>
                     </Hermes.Header>
                     <Eagle.Section>
-                        <Eagle.Content
-                            raw={organisation.raw}
-                            parsed={organisation.parsed}
-                        />
+                        <Eagle.Content raw={organisation.raw} parsed={organisation.parsed} />
                     </Eagle.Section>
                 </Lexington.Column>
             </Lexington.Page>

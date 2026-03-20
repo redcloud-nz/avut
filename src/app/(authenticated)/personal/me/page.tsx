@@ -5,7 +5,7 @@
 "use client";
 
 import { Lexington } from "@/components/blocks/lexington";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Personal_Me_Page() {

@@ -23,14 +23,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
-import { D4HEquipmentItem } from "@/lib/d4h-api/equipment-item";
+import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import * as Paths from "@/paths";
 
-export function D4HViewsModule_EquipmentKind_Items_List({
-    kindId,
-}: {
-    kindId: number;
-}) {
+export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: number }) {
     const organization = useOrganization();
 
     const { data: items = [], isReady: isItemsReady } = useLiveQuery(
@@ -48,16 +44,14 @@ export function D4HViewsModule_EquipmentKind_Items_List({
             Akagi.defineColumns<D4HEquipmentItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Ref
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.equipment.item(ctx.row.original.id)}
+                                to={Paths.main(organization.slug).d4HViews.equipment.item(
+                                    ctx.row.original.id,
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -68,28 +62,20 @@ export function D4HViewsModule_EquipmentKind_Items_List({
                 }),
                 columnHelper.accessor("kind.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Kind
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("model.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Model
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() ?? ""}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -98,19 +84,13 @@ export function D4HViewsModule_EquipmentKind_Items_List({
                     header: (ctx) => (
                         <Akagi.TableHeadCell
                             header={ctx.header}
-                            filterOptions={[
-                                "OPERATIONAL",
-                                "UNSERVICEABLE",
-                                "RETIRED",
-                            ]}
+                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
                         >
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     filterFn: "arrIncludesSome",
                     enableColumnFilter: true,
@@ -129,9 +109,7 @@ export function D4HViewsModule_EquipmentKind_Items_List({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] },
-            ],
+            columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
                 pageSize: Akagi.DEFAULT_PAGE_SIZE,
@@ -146,10 +124,7 @@ export function D4HViewsModule_EquipmentKind_Items_List({
                 <div className="text-lg font-semibold">Items in Kind</div>
                 <Akagi.TableSearch table={table} />
             </div>
-            <Show
-                when={isItemsReady}
-                fallback={<Skeleton className="w-full h-10" />}
-            >
+            <Show when={isItemsReady} fallback={<Skeleton className="w-full h-10" />}>
                 <Akagi.Table table={table} />
             </Show>
         </>

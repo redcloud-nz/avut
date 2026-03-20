@@ -17,28 +17,22 @@ import {
 
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
-import { D4HTeam } from "@/lib/d4h-api/team";
+import { D4HTeam } from "@/lib/schemas/d4h/team";
 
 interface D4HViewsModule_Teams_ListProps {
     teams: D4HTeam[];
 }
 
-export function D4HViewsModule_Teams_List({
-    teams,
-}: D4HViewsModule_Teams_ListProps) {
+export function D4HViewsModule_Teams_List({ teams }: D4HViewsModule_Teams_ListProps) {
     const columns = useMemo(
         () =>
             Akagi.defineColumns<D4HTeam>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,

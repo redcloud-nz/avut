@@ -12,22 +12,11 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 export function Auth_ForgotPassword_Card() {
     const router = useRouter();
@@ -41,8 +30,7 @@ export function Auth_ForgotPassword_Card() {
     });
 
     const [state, setState] = useState<
-        | { status: "Ready" | "InProgress" }
-        | { status: "Error"; error: { message?: string } }
+        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
     >({ status: "Ready" });
 
     const handleSubmit = form.handleSubmit(async (formData) => {
@@ -57,9 +45,7 @@ export function Auth_ForgotPassword_Card() {
                 setState({ status: "Error", error });
             } else {
                 console.log("Forgot password email sent", data);
-                router.push(
-                    `/auth/reset-password?email=${encodeURIComponent(formData.email)}`,
-                );
+                router.push(`/auth/reset-password?email=${encodeURIComponent(formData.email)}`);
             }
         } catch (error) {
             setState({
@@ -73,9 +59,7 @@ export function Auth_ForgotPassword_Card() {
         <Card>
             <CardHeader>
                 <CardTitle>Forgot Password</CardTitle>
-                <CardDescription>
-                    Enter your email to get a reset code sent to you.
-                </CardDescription>
+                <CardDescription>Enter your email to get a reset code sent to you.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form id="forgot-password-form" onSubmit={handleSubmit}>
@@ -85,9 +69,7 @@ export function Auth_ForgotPassword_Card() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="forgot-password-email">
-                                        Email
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="forgot-password-email">Email</FieldLabel>
                                     <Input
                                         id="forgot-password-email"
                                         type="email"
@@ -96,9 +78,7 @@ export function Auth_ForgotPassword_Card() {
                                         {...field}
                                     />
                                     {fieldState.invalid && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
+                                        <FieldError errors={[fieldState.error]} />
                                     )}
                                 </Field>
                             )}
@@ -112,9 +92,7 @@ export function Auth_ForgotPassword_Card() {
                                 Send reset link
                             </Button>
                         </Field>
-                        {state.status === "Error" && (
-                            <FieldError errors={[state.error]} />
-                        )}
+                        {state.status === "Error" && <FieldError errors={[state.error]} />}
                     </FieldGroup>
                 </form>
             </CardContent>

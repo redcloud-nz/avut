@@ -27,7 +27,7 @@ import { OrganizationData } from "@/lib/schemas/organization";
 
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { getD4HServer } from "@/lib/d4h-api/servers";
+import { getD4HServer } from "@/lib/d4h-servers";
 
 interface AdminModule_D4hAccessTokensListProps {
     organization: OrganizationData;
@@ -50,16 +50,14 @@ export function AdminModule_D4hAccessTokensList({
             Akagi.defineColumns<D4HAccessToken>((columnHelper) => [
                 columnHelper.accessor("id", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            ID
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>ID</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).admin.d4hAccessToken(ctx.getValue())}
+                                to={Paths.main(organization.slug).admin.d4hAccessToken(
+                                    ctx.getValue(),
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -68,21 +66,15 @@ export function AdminModule_D4hAccessTokensList({
                 }),
                 columnHelper.accessor("label", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Label
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Label</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                 }),
                 columnHelper.accessor("serverCode", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Server
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Server</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -92,9 +84,7 @@ export function AdminModule_D4hAccessTokensList({
                 }),
                 columnHelper.accessor("createdAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Created At
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Created At</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -118,17 +108,9 @@ export function AdminModule_D4hAccessTokensList({
         <>
             <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-                <Protect
-                    orgId={organization.id}
-                    permissions={{ d4hAccessToken: ["create"] }}
-                >
+                <Protect orgId={organization.id} permissions={{ d4hAccessToken: ["create"] }}>
                     <Button variant="outline" asChild>
-                        <Link
-                            to={
-                                Paths.main(organization.slug).admin
-                                    .d4hAccessTokens.create
-                            }
-                        >
+                        <Link to={Paths.main(organization.slug).admin.d4hAccessTokens.create}>
                             <CreateNewIcon /> New
                         </Link>
                     </Button>

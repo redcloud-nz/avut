@@ -8,17 +8,15 @@ import { notFound } from "next/navigation";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { getD4HFetchClient, getD4HTokenMetadata } from "@/lib/d4h-api/client";
-import { D4HEquipmentCategory } from "@/lib/d4h-api/equipment-category";
+import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { Eagle } from "@/components/blocks/eagle";
 
-async function fetchEquipmentCategories(
-    accessToken: D4HAccessToken_ServerOnly,
-) {
+async function fetchEquipmentCategories(accessToken: D4HAccessToken_ServerOnly) {
     "use cache";
 
     const fetchClient = getD4HFetchClient(accessToken);
@@ -80,8 +78,7 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accessToken.id,
                     },
                     "Equipment Categories",
@@ -90,9 +87,7 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
             <Lexington.Page>
                 <Lexington.Column width="full">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            to={Paths.main(slug).admin.d4hAccessToken(token_id)}
-                        />
+                        <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessToken(token_id)} />
                         <Hermes.Title>Equipment Categories</Hermes.Title>
                         <Hermes.Description>
                             Validated: {successCount} of {categories.length}
@@ -101,10 +96,7 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
                     {categories.map((item) => (
                         <Eagle.Section key={item.raw.id}>
                             <Eagle.Title>{item.raw.id}</Eagle.Title>
-                            <Eagle.Content
-                                raw={item.raw}
-                                parsed={item.parsed}
-                            />
+                            <Eagle.Content raw={item.raw} parsed={item.parsed} />
                         </Eagle.Section>
                     ))}
                 </Lexington.Column>

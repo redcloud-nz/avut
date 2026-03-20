@@ -33,13 +33,9 @@ export default function AdminModule_OrganizationUpdate_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={
-                                    Paths.main(organization.slug).admin
-                                        .organization
-                                }
-                            >
-                                {organization.name}
-                            </Hermes.BackButton>
+                                to={Paths.main(organization.slug).admin.organization}
+                                tooltip="Back to Organisation"
+                            />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>
@@ -47,7 +43,7 @@ export default function AdminModule_OrganizationUpdate_Page(
                             </CardHeader>
                             <CardContent>
                                 <AdminModule_UpdateOrganization_Form
-                                    organization={organization}
+                                    organizationId={organization.id}
                                 />
                             </CardContent>
                         </Card>

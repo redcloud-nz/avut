@@ -1608,10 +1608,7 @@ export interface paths {
                          * @description Handover information
                          * @enum {string}
                          */
-                        handover?:
-                            | "NO_FURTHER_ASSISTANCE"
-                            | "HOSPITAL"
-                            | "ONSITE_FACILITY";
+                        handover?: "NO_FURTHER_ASSISTANCE" | "HOSPITAL" | "ONSITE_FACILITY";
                         /** @description Incident's resource id */
                         incidentId: number;
                         /** @description Involvement notes */
@@ -1832,11 +1829,7 @@ export interface paths {
                          * @default UNDETERMINED
                          * @enum {string}
                          */
-                        spinalInjury?:
-                            | "SUSPECTED"
-                            | "CLEARED"
-                            | "NOT_INDICATED"
-                            | "UNDETERMINED";
+                        spinalInjury?: "SUSPECTED" | "CLEARED" | "NOT_INDICATED" | "UNDETERMINED";
                         /**
                          * @description How they were transferred to hospital
                          * @enum {string}
@@ -2342,13 +2335,9 @@ export interface paths {
                     /** @description The title of a resource */
                     title?: string;
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -2539,8 +2528,7 @@ export interface paths {
                     /** @description Return only resources ending after this datetime */
                     ends_after?: string;
                     /** @description Return only attendances from deleted activities */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     order?: "asc" | "desc";
                     sort?: "createdAt" | "updatedAt" | "id";
                 };
@@ -2631,9 +2619,7 @@ export interface paths {
                         customFieldId: number;
                         label: string;
                         /** @description Whether this option is available or not */
-                        archived?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        archived?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @default 255 */
                         ordering?: number;
                     };
@@ -2722,8 +2708,7 @@ export interface paths {
                     /** @description Filter returned custom fields by their archived status */
                     archived?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description A resource-bundle id. Use null to get un-bundled fields */
-                    resource_bundle_id?: null &
-                        ("null" | ("null" | null) | number);
+                    resource_bundle_id?: null & ("null" | ("null" | null) | number);
                     /**
                      * @description - `UNRESTRICTED`: No extra permissions required
                      *     - `RESTRICTED`: Extra permissions required
@@ -2738,13 +2723,9 @@ export interface paths {
                     sort?: "createdAt" | "updatedAt" | "id" | "ordering";
                     order?: "asc" | "desc";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path?: never;
@@ -2880,23 +2861,17 @@ export interface paths {
                          * @description Whether the field should be included in its parent's (targetResourceType) entity search index or not. Field must also be `UNRESTRICTED`.
                          * @default false
                          */
-                        searchable?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        searchable?: boolean | ("true" | "false" | "1" | "0" | "");
                         /**
                          * @description Whether this field will be required in order to create/approve the attached entity or not
                          * @default false
                          */
-                        mandatory?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        mandatory?: boolean | ("true" | "false" | "1" | "0" | "");
                         /**
                          * @description Whether this field is enabled or not for the target entities
                          * @default false
                          */
-                        archived?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        archived?: boolean | ("true" | "false" | "1" | "0" | "");
                         /**
                          * @description - `DATE`: A date with no time component
                          *     - `DATETIME`: A standard date-time
@@ -3078,8 +3053,7 @@ export interface paths {
                      */
                     restricted?: "UNRESTRICTED" | "RESTRICTED";
                     /** @description Whether return or exclude profile documents */
-                    profile?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    profile?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     target_resource_type: (
                         | "Animal"
                         | "AnimalGroup"
@@ -3116,9 +3090,7 @@ export interface paths {
                     /** @description The related resource id */
                     target_resource_id?: null & ((number | number[]) | "null");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     order?: "asc" | "desc";
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                 };
@@ -3254,8 +3226,7 @@ export interface paths {
                          * @description Whether this document is the profile image
                          * @default false
                          */
-                        profile?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        profile?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** Format: binary */
                         file?: string;
                     };
@@ -3346,12 +3317,7 @@ export interface paths {
                     /** @description One or more role identifiers */
                     role_id?: number[] & (number | number[]);
                     order?: "asc" | "desc";
-                    sort?:
-                        | "createdAt"
-                        | "updatedAt"
-                        | "id"
-                        | "startsAt"
-                        | "endsAt";
+                    sort?: "createdAt" | "updatedAt" | "id" | "startsAt" | "endsAt";
                 };
                 header?: never;
                 path: {
@@ -3614,13 +3580,9 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                     order?: "asc" | "desc";
                 };
@@ -3745,13 +3707,9 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                     order?: "asc" | "desc";
                 };
@@ -3876,9 +3834,7 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                     order?: "asc" | "desc";
                 };
@@ -4009,8 +3965,7 @@ export interface paths {
                     /** @description A list of numeric identifiers representing resources */
                     id?: number[] & (number | number[]);
                     /** @description Whether the inspection result is completed */
-                    completed?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    completed?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description The barcode of the equipment being inspected */
                     barcode?: string;
                     /** @description A text to filter equipment being inspected based on kind title or ref */
@@ -4023,12 +3978,7 @@ export interface paths {
                     location_id?: number;
                     /** @description A team identifier */
                     team_id?: number;
-                    sort?:
-                        | "createdAt"
-                        | "updatedAt"
-                        | "id"
-                        | "dateDue"
-                        | "text";
+                    sort?: "createdAt" | "updatedAt" | "id" | "dateDue" | "text";
                     order?: "asc" | "desc";
                 };
                 header?: never;
@@ -4400,8 +4350,7 @@ export interface paths {
                     /** @description A list of numeric identifiers representing resources */
                     id?: number[] & (number | number[]);
                     /** @description Whether the inspection is active or archived */
-                    is_active?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    is_active?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description The id or array of ids of the equipment item the inspection is attached to */
                     equipment_id?: number[] & (number | number[]);
                     /** @description The identifier of the location to filter on. This will filter based on the location of the equipment - not the Inspection itself */
@@ -4413,13 +4362,9 @@ export interface paths {
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -4517,13 +4462,9 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description An equipment kind location id */
                     location_id?: number;
                     /** @description An equipment category id */
@@ -4708,8 +4649,7 @@ export interface paths {
                     /** @description The title of a resource */
                     title?: string;
                     /** @description Return only archived locations */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -4803,13 +4743,9 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description An equipment brand id */
                     brand_id?: number;
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
@@ -4944,9 +4880,7 @@ export interface paths {
                     /** @description A list of ids */
                     id?: number | number[];
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                     order?: "asc" | "desc";
                 };
@@ -5071,13 +5005,9 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description One or more team identifiers */
                     team_id?: number[] & (number | number[]);
                     /** @description An equipment supplier reference id */
@@ -5218,13 +5148,9 @@ export interface paths {
                     /** @description One or more team identifiers */
                     team_id?: number[] & (number | number[]);
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                     order?: "asc" | "desc";
                 };
@@ -5952,11 +5878,9 @@ export interface paths {
                     /** @description Equipment item in which this item is stored */
                     parent_id?: "null" | ("null" | null) | number;
                     /** @description Items flagged as critical */
-                    is_critical?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    is_critical?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Items flagged as expired */
-                    is_expired?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    is_expired?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description The status of the equipment or a list of equipment statuses */
                     status?: string[] &
                         (
@@ -5986,11 +5910,9 @@ export interface paths {
                      */
                     type?: "VEHICLE" | "SUPPLY" | "EQUIPMENT";
                     /** @description Only include items that are operational/non-operational */
-                    only_current?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    only_current?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Only include lost, inactive, retired and other items */
-                    exclude_current?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    exclude_current?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description An equipment location, represented by either an id or enum. Mutually exclusive with member_id */
                     location_id?: (number[] & (number | number[])) | string;
                     sort?:
@@ -6308,11 +6230,7 @@ export interface paths {
                                    * @description A valid resource type that can contain equipment
                                    * @enum {string}
                                    */
-                                  type:
-                                      | "Equipment"
-                                      | "Member"
-                                      | "EquipmentLocation"
-                                      | "Team";
+                                  type: "Equipment" | "Member" | "EquipmentLocation" | "Team";
                                   /** @description The numeric identifier for a resource */
                                   id: number;
                               };
@@ -6360,14 +6278,12 @@ export interface paths {
                          * @description Whether the item is critical
                          * @default false
                          */
-                        isCritical?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        isCritical?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /**
                          * @description Whether the item is a monitor
                          * @default false
                          */
-                        isMonitor?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        isMonitor?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Days before expiry to warn */
                         expireWarningDays?: number;
                         /** @description Use count before expiry warning */
@@ -6665,11 +6581,9 @@ export interface paths {
                     /** @description Return only activities starting after this datetime */
                     starts_after?: string;
                     /** @description Return only deleted activities */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Return only published activities */
-                    published?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    published?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     sort?:
                         | "createdAt"
                         | "updatedAt"
@@ -6846,11 +6760,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -7058,11 +6970,9 @@ export interface paths {
                     /** @description Return only activities starting after this datetime */
                     starts_after?: string;
                     /** @description Return only deleted activities */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Return only published activities */
-                    published?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    published?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     sort?:
                         | "createdAt"
                         | "updatedAt"
@@ -7239,11 +7149,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -7652,13 +7560,9 @@ export interface paths {
                     /** @description The title of a resource */
                     title?: string;
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -7739,13 +7643,9 @@ export interface paths {
                     /** @description A list of ids */
                     id?: number | number[];
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     order?: "asc" | "desc";
                     sort?: "createdAt" | "updatedAt" | "id" | "title";
                 };
@@ -8004,13 +7904,9 @@ export interface paths {
                     /** @description A list of ids */
                     id?: number | number[];
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     order?: "asc" | "desc";
                     sort?: "createdAt" | "updatedAt" | "id" | "score" | "title";
                 };
@@ -8507,11 +8403,9 @@ export interface paths {
                     /** @description Return only activities starting after this datetime */
                     starts_after?: string;
                     /** @description Return only deleted activities */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Return only published activities */
-                    published?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    published?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     sort?:
                         | "createdAt"
                         | "updatedAt"
@@ -8688,11 +8582,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -8884,13 +8776,9 @@ export interface paths {
                     /** @description A list of numeric identifiers representing resources */
                     id?: number[] & (number | number[]);
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -9063,13 +8951,7 @@ export interface paths {
                     /** @description One or more member identifiers */
                     member_id?: number[] & (number | number[]);
                     member_status?:
-                        | (
-                              | "OPERATIONAL"
-                              | "NON_OPERATIONAL"
-                              | "OBSERVER"
-                              | "RETIRED"
-                              | "DELETED"
-                          )
+                        | ("OPERATIONAL" | "NON_OPERATIONAL" | "OBSERVER" | "RETIRED" | "DELETED")
                         | (
                               | "OPERATIONAL"
                               | "NON_OPERATIONAL"
@@ -9291,13 +9173,9 @@ export interface paths {
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -9448,13 +9326,9 @@ export interface paths {
                     /** @description The title of a resource */
                     title?: string;
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -9535,13 +9409,9 @@ export interface paths {
                     /** @description A list of member retire reason identifiers */
                     id?: number | number[];
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                 };
@@ -9618,11 +9488,7 @@ export interface paths {
                     /** @description The numeric identifier for a resource */
                     team_id?: number;
                     status_label_id?: null &
-                        (
-                            | "null"
-                            | ("null" | null)
-                            | (number[] & (number | number[]))
-                        );
+                        ("null" | ("null" | null) | (number[] & (number | number[])));
                     /** @description If true or omitted, exclude custom status labels when querying by status. */
                     status_excludes_label_ids?: boolean &
                         (boolean | ("true" | "false" | "1" | "0" | ""));
@@ -9630,21 +9496,10 @@ export interface paths {
                     id_tag?: string;
                     /** @description One or more member statuses. Some statuses require extra permissions. */
                     status?:
-                        | (
-                              | "OPERATIONAL"
-                              | "NON_OPERATIONAL"
-                              | "OBSERVER"
-                              | "RETIRED"
-                          )
-                        | (
-                              | "OPERATIONAL"
-                              | "NON_OPERATIONAL"
-                              | "OBSERVER"
-                              | "RETIRED"
-                          )[];
+                        | ("OPERATIONAL" | "NON_OPERATIONAL" | "OBSERVER" | "RETIRED")
+                        | ("OPERATIONAL" | "NON_OPERATIONAL" | "OBSERVER" | "RETIRED")[];
                     /** @description Return only deleted members */
-                    deleted?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    deleted?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     /** @description Text compared with the member's name */
                     name?: string;
                     /** @description Text compared with the member's name and email */
@@ -10699,8 +10554,7 @@ export interface paths {
                     /** @description A simple text search term, compared against the title */
                     title?: string;
                     /** @description If true `title` will return partial matches rather than exact. Match is case-insensitive either way. */
-                    partial_match_title?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    partial_match_title?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                     resource_type?: "CustomField";
                     /** @description A resource type that supports custom fields */
                     sub_resource_type?:
@@ -10716,13 +10570,9 @@ export interface paths {
                     sort?: "createdAt" | "updatedAt" | "id";
                     order?: "asc" | "desc";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -11099,13 +10949,9 @@ export interface paths {
                     sort?: "title" | "relevance";
                     order?: "asc" | "desc";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -11184,13 +11030,9 @@ export interface paths {
                     order?: "asc" | "desc";
                     sort?: "createdAt" | "id" | "updatedAt" | "title";
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -11457,20 +11299,11 @@ export interface paths {
                     /** @description A datetime which a note's archivedAt is after */
                     archived_at_after?: string;
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     order?: "asc" | "desc";
-                    sort?:
-                        | "createdAt"
-                        | "updatedAt"
-                        | "archivedAt"
-                        | "id"
-                        | "text";
+                    sort?: "createdAt" | "updatedAt" | "archivedAt" | "id" | "text";
                 };
                 header?: never;
                 path: {
@@ -11551,9 +11384,7 @@ export interface paths {
                          * @description Set to true to mark the note as important
                          * @default false
                          */
-                        important?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        important?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description The contents of the note. Supports plain text or HTML. */
                         text: string;
                         /**
@@ -13045,8 +12876,7 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description If true, all repetitions of the duty later than the target will also be deleted */
-                    all_following?: boolean &
-                        (boolean | ("true" | "false" | "1" | "0" | ""));
+                    all_following?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                 };
                 header?: never;
                 path: {
@@ -13646,10 +13476,7 @@ export interface paths {
                          * @description Handover information
                          * @enum {string}
                          */
-                        handover?:
-                            | "NO_FURTHER_ASSISTANCE"
-                            | "HOSPITAL"
-                            | "ONSITE_FACILITY";
+                        handover?: "NO_FURTHER_ASSISTANCE" | "HOSPITAL" | "ONSITE_FACILITY";
                         /** @description Involvement notes */
                         involvementNotes?: string;
                         /** @description Person involved involvement type id. Some involvement types also require an outcomeId. See enum endpoint for details. */
@@ -13867,11 +13694,7 @@ export interface paths {
                          * @description Spinal injury status
                          * @enum {string}
                          */
-                        spinalInjury?:
-                            | "SUSPECTED"
-                            | "CLEARED"
-                            | "NOT_INDICATED"
-                            | "UNDETERMINED";
+                        spinalInjury?: "SUSPECTED" | "CLEARED" | "NOT_INDICATED" | "UNDETERMINED";
                         /**
                          * @description How they were transferred to hospital
                          * @enum {string}
@@ -14285,13 +14108,9 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -14515,9 +14334,7 @@ export interface paths {
                     "application/json": {
                         label?: string;
                         /** @description Whether this option is available or not */
-                        archived?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        archived?: boolean | ("true" | "false" | "1" | "0" | "");
                         ordering?: number;
                     };
                 };
@@ -14716,17 +14533,11 @@ export interface paths {
                         /** @description A resource bundle id */
                         resourceBundleId?: number | null;
                         /** @description Whether the field should be included in its parent's (targetResourceType) entity search index or not. Field must also be `UNRESTRICTED`. */
-                        searchable?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        searchable?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description Whether this field will be required in order to create/approve the attached entity or not */
-                        mandatory?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        mandatory?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description Whether this field is enabled or not for the target entities */
-                        archived?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        archived?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description Text description of what a numerical value represents. Can only be used with type `NUMBER` */
                         valueUnits?: string;
                     };
@@ -18164,20 +17975,11 @@ export interface paths {
                          * @description The status of the equipment
                          * @enum {string}
                          */
-                        status?:
-                            | "OPERATIONAL"
-                            | "UNSERVICEABLE"
-                            | "LOST"
-                            | "WISHLIST"
-                            | "INACTIVE";
+                        status?: "OPERATIONAL" | "UNSERVICEABLE" | "LOST" | "WISHLIST" | "INACTIVE";
                         /** @description Items flagged as critical */
-                        isCritical?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        isCritical?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description Items flagged as to be monitored */
-                        isMonitor?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        isMonitor?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description This item's barcode */
                         barcode?: string;
                         /** @description Notes about the change */
@@ -18607,11 +18409,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -18957,11 +18757,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -19361,13 +19159,9 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -20234,11 +20028,9 @@ export interface paths {
                         /** @description The activity's tracking number */
                         trackingNumber?: string | null;
                         /** @description Whether the activity is shared across the organisation */
-                        shared?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        shared?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         /** @description Whether the activity requires the attendance of the full team or is selective. If set true on activity creation, the attendance records will automatically be created for appropriate team members. */
-                        fullTeam?: boolean &
-                            (boolean | ("true" | "false" | "1" | "0" | ""));
+                        fullTeam?: boolean & (boolean | ("true" | "false" | "1" | "0" | ""));
                         address?: {
                             /** @description Country */
                             country?: string;
@@ -20708,13 +20500,9 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description *Organisation context*: Exclude entities belonging to accessible teams */
-                    exclude_teams_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_teams_data?: boolean | ("true" | "false" | "1" | "0" | "");
                     /** @description *Team context*: Exclude entities inherited from the team's org */
-                    exclude_org_data?:
-                        | boolean
-                        | ("true" | "false" | "1" | "0" | "");
+                    exclude_org_data?: boolean | ("true" | "false" | "1" | "0" | "");
                 };
                 header?: never;
                 path: {
@@ -21656,8 +21444,7 @@ export interface paths {
                         dueAt?: string | null;
                         /** @description The description of a resource */
                         description?: string;
-                        assignedMemberId?: null &
-                            ("null" | ("null" | null) | number);
+                        assignedMemberId?: null & ("null" | ("null" | null) | number);
                         /** @description Repair cost in the lowest denomination */
                         cost?: number;
                         /**
@@ -22425,9 +22212,7 @@ export interface paths {
                          * @description Set to true to mark the note as important
                          * @default false
                          */
-                        important?:
-                            | boolean
-                            | ("true" | "false" | "1" | "0" | "");
+                        important?: boolean | ("true" | "false" | "1" | "0" | "");
                         /** @description The contents of the note. Supports plain text or HTML. */
                         text?: string;
                         /**

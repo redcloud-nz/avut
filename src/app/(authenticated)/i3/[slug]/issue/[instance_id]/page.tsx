@@ -6,3 +6,12 @@
  */
 
 "use client";
+
+export default function I3IssuePage() {
+    return (
+        <div>
+            <h1 className="text-2xl font-bold">I3 Issue Page</h1>
+            <p>This is the I3 issue page for a specific submission.</p>
+        </div>
+    );
+}

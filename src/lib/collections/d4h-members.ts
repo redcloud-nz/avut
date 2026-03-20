@@ -7,8 +7,8 @@
 import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
-import { D4HMember } from "@/lib/d4h-api/member";
-import { D4HTeamRef } from "@/lib/d4h-api/team";
+import { D4HMember } from "@/lib/schemas/d4h/member";
+import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { perOrganization } from "@/lib/utils";
 import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
 

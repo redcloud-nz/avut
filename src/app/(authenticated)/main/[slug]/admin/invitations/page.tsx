@@ -26,7 +26,7 @@ export default async function AdminModule_InvitationsList_Page(
         headers: await nextHeaders(),
     });
     if (!session || !session.user) {
-        redirect(Paths.auth.signIn().href);
+        redirect("/auth/sign-in");
     }
 
     // TODO  Check if the user has admin permissions for the organization
@@ -34,10 +34,7 @@ export default async function AdminModule_InvitationsList_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.invitations,
-                ]}
+                breadcrumbs={[Paths.main(slug).admin.index, Paths.main(slug).admin.invitations]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

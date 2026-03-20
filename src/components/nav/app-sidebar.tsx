@@ -34,7 +34,7 @@ export function AppSidebar({
     subappId,
 }: {
     children?: ReactNode;
-    slug: string;
+    slug?: string;
     subappId?: SubappId;
 }) {
     return (

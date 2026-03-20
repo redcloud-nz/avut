@@ -26,16 +26,13 @@ export default async function AdminModule_UsersList_Page(
         headers: await nextHeaders(),
     });
     if (!session || !session.user) {
-        redirect(Paths.auth.signIn().href);
+        redirect("/auth/sign-in");
     }
 
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.users,
-                ]}
+                breadcrumbs={[Paths.main(slug).admin.index, Paths.main(slug).admin.users]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

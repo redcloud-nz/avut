@@ -2,17 +2,12 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /pub/main/[slug]/forms/ppe/inspect
+ * Paths: /pub/orgs/[slug]/forms/ppe/inspect
  */
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import * as Paths from "@/paths";
 
@@ -21,11 +16,11 @@ export async function generateStaticParams() {
 }
 
 export const metadata = {
-    title: `PPE Return Form`,
+    title: `PPE Inspect Form`,
 };
 
 export default async function Pub_PPEInspect_Page(
-    props: PageProps<"/pub/main/[slug]/forms/ppe/inspect">,
+    props: PageProps<"/pub/orgs/[slug]/forms/ppe/inspect">,
 ) {
     const { slug } = await props.params;
 
@@ -42,16 +37,14 @@ export default async function Pub_PPEInspect_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.Header>
-                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe}>
-                                PPE Forms
-                            </Hermes.BackButton>
+                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe} />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>
                                 <CardTitle>PPE Return Form</CardTitle>
                                 <CardDescription>
-                                    Use this form to record an inspection of the
-                                    PPE items issued to an individual.
+                                    Use this form to record an inspection of the PPE items issued to
+                                    an individual.
                                 </CardDescription>
                             </CardHeader>
                         </Card>

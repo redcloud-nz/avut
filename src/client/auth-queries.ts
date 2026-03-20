@@ -4,7 +4,7 @@
  *
  */
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 export const authQueries = {
     session: {

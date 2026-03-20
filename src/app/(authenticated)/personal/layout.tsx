@@ -12,10 +12,10 @@ import { NavPersonalMenu } from "@/components/nav/nav-personal-menu";
 export default async function Personal_Layout(props: LayoutProps<"/personal">) {
     return (
         <>
-            <AppSidebar name="Personal">
+            <AppSidebar>
                 <NavPersonalMenu />
             </AppSidebar>
-            <ControlBar />
+            <ControlBar subappId="main" slug="default" />
             {props.children}
         </>
     );

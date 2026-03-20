@@ -15,30 +15,15 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "../ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import * as Paths from "@/paths";
+import { Route } from "next";
 
 /**
  * Card for creating a new organization.
@@ -78,9 +63,7 @@ export function CreateOrganization_Card() {
             });
 
             if (error) {
-                toast.error(
-                    "Failed to check slug availability. " + error.message,
-                );
+                toast.error("Failed to check slug availability. " + error.message);
                 setSlugCheckStatus("Ready");
             } else {
                 setSlugCheckStatus(data.status ? "Available" : "Unavailable");
@@ -111,7 +94,7 @@ export function CreateOrganization_Card() {
             } else {
                 console.log("Organization created", data);
                 toast.success("Organization created successfully.");
-                router.push(Paths.main(data.slug).index.href);
+                router.push(Paths.main(data.slug).index.href as Route);
             }
         } catch (error) {
             console.error("Organization creation error:", error);
@@ -123,9 +106,7 @@ export function CreateOrganization_Card() {
         <Card>
             <CardHeader>
                 <CardTitle>Create Organization</CardTitle>
-                <CardDescription>
-                    Use this form to create a new organization.
-                </CardDescription>
+                <CardDescription>Use this form to create a new organization.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form id="create-organization-form" onSubmit={handleSubmit}>
@@ -135,15 +116,9 @@ export function CreateOrganization_Card() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="name">
-                                        Organization Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="name">Organization Name</FieldLabel>
                                     <Input id={"name"} {...field} />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -161,55 +136,32 @@ export function CreateOrganization_Card() {
                                                 const value = ev.target.value
                                                     .toLowerCase()
                                                     .replace(/\s+/g, "-")
-                                                    .replace(
-                                                        /[^a-z0-9\-]/g,
-                                                        "",
-                                                    );
+                                                    .replace(/[^a-z0-9\-]/g, "");
                                                 field.onChange(value);
                                                 setSlugCheckStatus("Ready");
                                             }}
-                                            onBlur={() =>
-                                                handleCheckSlugAvailability(
-                                                    field.value,
-                                                )
-                                            }
+                                            onBlur={() => handleCheckSlugAvailability(field.value)}
                                         />
                                         <InputGroupAddon align="inline-end">
-                                            {slugCheckStatus === "Checking" && (
-                                                <Spinner />
+                                            {slugCheckStatus === "Checking" && <Spinner />}
+                                            {slugCheckStatus === "Available" && (
+                                                <span className="text-green-600">Available</span>
                                             )}
-                                            {slugCheckStatus ===
-                                                "Available" && (
-                                                <span className="text-green-600">
-                                                    Available
-                                                </span>
-                                            )}
-                                            {slugCheckStatus ===
-                                                "Unavailable" && (
-                                                <span className="text-red-600">
-                                                    Unavailable
-                                                </span>
+                                            {slugCheckStatus === "Unavailable" && (
+                                                <span className="text-red-600">Unavailable</span>
                                             )}
                                         </InputGroupAddon>
                                     </InputGroup>
                                     <FieldDescription>
-                                        The uniquer identifier for your
-                                        organization for use in URLs. Lowercase
-                                        letters, numbers, and hyphens only.
+                                        The uniquer identifier for your organization for use in
+                                        URLs. Lowercase letters, numbers, and hyphens only.
                                     </FieldDescription>
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
                         <Field>
-                            <Button
-                                type="submit"
-                                form="create-organization-form"
-                            >
+                            <Button type="submit" form="create-organization-form">
                                 Create Organization
                             </Button>
                         </Field>

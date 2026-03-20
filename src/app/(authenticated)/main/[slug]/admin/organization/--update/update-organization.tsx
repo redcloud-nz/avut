@@ -10,15 +10,10 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
@@ -26,39 +21,45 @@ import { Link } from "@/components/ui/link";
 import {
     ModifiableOrganizationData,
     OrganizationData,
+    OrganizationId,
 } from "@/lib/schemas/organization";
 
 import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateOrganization_Form({
-    organization,
+    organizationId,
 }: {
-    organization: OrganizationData;
+    organizationId: OrganizationId;
 }) {
     const queryClient = useQueryClient();
     const router = useRouter();
 
+    const { data: organization } = useSuspenseQuery(
+        trpc.organizations.getOrganization.queryOptions({
+            organizationId,
+        }),
+    );
+
     const form = useForm({
         resolver: zodResolver(OrganizationData.modifiableSchema),
-        defaultValues: organization,
+        defaultValues: {
+            name: organization.name,
+            slug: organization.slug,
+        },
     });
 
     const mutation = useMutation(
         trpc.organizations.updateOrganization.mutationOptions({
             async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause
-                            .message as keyof ModifiableOrganizationData,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableOrganizationData, {
+                        message: error.message,
+                    });
                 }
             },
             async onSuccess() {
-                router.push(
-                    Paths.main(organization.slug).admin.organization.href,
-                );
+                router.push(Paths.main(organization.slug).admin.organization.href);
                 queryClient.invalidateQueries(
                     trpc.organizations.getOrganization.queryFilter({
                         organizationId: organization.id,
@@ -73,7 +74,7 @@ export function AdminModule_UpdateOrganization_Form({
             async () => {
                 await mutation.mutateAsync({
                     organizationId: organization.id,
-                    ...formData,
+                    update: formData,
                 });
             },
             {
@@ -97,22 +98,15 @@ export function AdminModule_UpdateOrganization_Form({
                     name="name"
                     control={form.control}
                     render={({ field, fieldState }) => (
-                        <Field
-                            data-invalid={fieldState.invalid}
-                            orientation="responsive"
-                        >
-                            <FieldLabel htmlFor="organization-name">
-                                Name
-                            </FieldLabel>
+                        <Field data-invalid={fieldState.invalid} orientation="responsive">
+                            <FieldLabel htmlFor="organization-name">Name</FieldLabel>
                             <Input
                                 id="organization-name"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
                             />
-                            {fieldState.error && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.error && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -120,22 +114,15 @@ export function AdminModule_UpdateOrganization_Form({
                     name="slug"
                     control={form.control}
                     render={({ field, fieldState }) => (
-                        <Field
-                            data-invalid={fieldState.invalid}
-                            orientation="responsive"
-                        >
-                            <FieldLabel htmlFor="organization-slug">
-                                Slug
-                            </FieldLabel>
+                        <Field data-invalid={fieldState.invalid} orientation="responsive">
+                            <FieldLabel htmlFor="organization-slug">Slug</FieldLabel>
                             <Input
                                 id="organization-slug"
                                 aria-invalid={fieldState.invalid}
                                 className="min-w-1/2"
                                 {...field}
                             />
-                            {fieldState.error && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.error && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -147,19 +134,8 @@ export function AdminModule_UpdateOrganization_Form({
                     >
                         Update
                     </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => form.reset()}
-                        asChild
-                    >
-                        <Link
-                            to={
-                                Paths.main(organization.slug).admin.organization
-                            }
-                        >
-                            Cancel
-                        </Link>
+                    <Button type="button" variant="outline" onClick={() => form.reset()} asChild>
+                        <Link to={Paths.main(organization.slug).admin.organization}>Cancel</Link>
                     </Button>
                 </Field>
             </FieldGroup>

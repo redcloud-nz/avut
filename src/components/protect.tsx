@@ -9,7 +9,7 @@ import { entries } from "remeda";
 
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { Permissions } from "@/lib/permissions";
 import { trpc } from "@/trpc/client";
 
@@ -20,12 +20,7 @@ interface ProtectProps {
     fallback?: ReactNode;
 }
 
-export function Protect({
-    children,
-    orgId,
-    permissions,
-    fallback = null,
-}: ProtectProps) {
+export function Protect({ children, orgId, permissions, fallback = null }: ProtectProps) {
     // Flatten permissions for query key
     const flatPermissions = entries(permissions).flatMap(([key, value]) => {
         if (Array.isArray(value)) {
@@ -54,19 +49,19 @@ export function Protect({
     return hasPermission ? <>{children}</> : fallback;
 }
 
-function Protect2({ children, orgId, permissions }: ProtectProps) {
-    const { data: organizationUser } = useSuspenseQuery(
-        trpc.organizations.getOrganizationUserSelf.queryOptions({
-            organizationId: orgId,
-        }),
-    );
+// function Protect2({ children, orgId, permissions }: ProtectProps) {
+//     const { data: organizationUser } = useSuspenseQuery(
+//         trpc.organizations.getOrganizationUserSelf.queryOptions({
+//             organizationId: orgId,
+//         }),
+//     );
 
-    const hasPermission = useMemo(() => {
-        // Check if any of the user's roles grant the required permissions
-        return organizationUser.role.some((role) =>
-            authClient.organization.checkRolePermission({ role, permissions }),
-        );
-    }, [organizationUser, permissions]);
+//     const hasPermission = useMemo(() => {
+//         // Check if any of the user's roles grant the required permissions
+//         return organizationUser.role.some((role) =>
+//             authClient.organization.checkRolePermission({ role, permissions }),
+//         );
+//     }, [organizationUser, permissions]);
 
-    return hasPermission ? <>{children}</> : null;
-}
+//     return hasPermission ? <>{children}</> : null;
+// }

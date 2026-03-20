@@ -5,8 +5,6 @@
 
 import * as z from "zod";
 
-import { D4HResource } from "./resource";
-
 // export interface D4HMember {
 //     id: number;
 //     resourceType: "Member";
@@ -139,12 +137,7 @@ export const D4HMember = {
             id: z.number().nullable(),
             resourceType: z.literal("Role"),
         }),
-        status: z.enum([
-            "OPERATIONAL",
-            "NON_OPERATIONAL",
-            "OBSERVER",
-            "RETIRED",
-        ] as const),
+        status: z.enum(["OPERATIONAL", "NON_OPERATIONAL", "OBSERVER", "RETIRED"] as const),
     }),
 } as const;
 

@@ -7,15 +7,12 @@ import * as R from "remeda";
 import * as z from "zod";
 
 import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
-import { D4HServerCode } from "@/lib/d4h-api/servers";
+import { D4HServerCode } from "@/lib/d4h-servers";
 import { read } from "fs";
 
 const organizationSettingsSchema = z.object({
     general: z.object({
-        publicDomain: z
-            .string()
-            .regex(z.regexes.domain, "Invalid domain format")
-            .optional(),
+        publicDomain: z.string().regex(z.regexes.domain, "Invalid domain format").optional(),
     }),
 
     integrations: z.object({
@@ -24,9 +21,7 @@ const organizationSettingsSchema = z.object({
             defaultServer: D4HServerCode.schema.default("ap"),
             syncToken: z.string().nullable().default(null),
             teamSync: z.enum(["Never", "Daily", "Weekly"]).default("Never"),
-            teamMemberSync: z
-                .enum(["Never", "Daily", "Weekly"])
-                .default("Never"),
+            teamMemberSync: z.enum(["Never", "Daily", "Weekly"]).default("Never"),
         }),
         email: z.object({
             enabled: z.boolean().default(true),
@@ -62,14 +57,7 @@ export const OrganizationSettings = {
     schema: organizationSettingsSchema,
 
     integrationKeys: ["d4h", "email"],
-    moduleKeys: [
-        "d4h-views",
-        "forms",
-        "i3",
-        "notes",
-        "skills",
-        "skill-package-builder",
-    ],
+    moduleKeys: ["d4h-views", "forms", "i3", "notes", "skills", "skill-package-builder"],
 
     default(): OrganizationSettings {
         return organizationSettingsSchema.parse({
@@ -96,11 +84,7 @@ export const OrganizationSettings = {
             for (const key in obj) {
                 const value = obj[key];
                 const newKey = prefix ? `${prefix}.${key}` : key;
-                if (
-                    value &&
-                    typeof value === "object" &&
-                    !Array.isArray(value)
-                ) {
+                if (value && typeof value === "object" && !Array.isArray(value)) {
                     recurse(value, newKey);
                 } else {
                     result[newKey] = value;
@@ -118,9 +102,7 @@ export const OrganizationSettings = {
             integrations: R.fromEntries(
                 OrganizationSettings.integrationKeys.map((key) => [key, {}]),
             ),
-            modules: R.fromEntries(
-                OrganizationSettings.moduleKeys.map((key) => [key, {}]),
-            ),
+            modules: R.fromEntries(OrganizationSettings.moduleKeys.map((key) => [key, {}])),
         } as any;
 
         for (const record of records) {

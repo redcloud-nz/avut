@@ -28,17 +28,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 import { SubappId } from "@/lib/subapp";
 import { getUserInitials } from "@/lib/utils";
 
-export function UserMenu({
-    subappId,
-    slug,
-}: {
-    subappId: SubappId;
-    slug: string;
-}) {
+export function UserMenu({ subappId, slug }: { subappId: SubappId; slug: string }) {
     const router = useRouter();
     const t = useTranslations("UserMenu");
 
@@ -65,9 +59,7 @@ export function UserMenu({
                 <Button variant="ghost" size="icon" className="size-8">
                     <Avatar className="size-6 rounded-full">
                         <AvatarImage src={user.image ?? ""} alt={user.name} />
-                        <AvatarFallback className="rounded-full">
-                            {initials}
-                        </AvatarFallback>
+                        <AvatarFallback className="rounded-full">{initials}</AvatarFallback>
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>
@@ -75,29 +67,18 @@ export function UserMenu({
                 <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                         <Avatar className="h-8 w-8 rounded-full">
-                            <AvatarImage
-                                src={user.image ?? ""}
-                                alt={user.name}
-                            />
-                            <AvatarFallback className="rounded-lg">
-                                {initials}
-                            </AvatarFallback>
+                            <AvatarImage src={user.image ?? ""} alt={user.name} />
+                            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                         </Avatar>
                         <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-semibold">
-                                {user.name}
-                            </span>
-                            <span className="truncate text-xs">
-                                {user.email}
-                            </span>
+                            <span className="truncate font-semibold">{user.name}</span>
+                            <span className="truncate text-xs">{user.email}</span>
                         </div>
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuLabel>
-                        {t("personalSection")}
-                    </DropdownMenuLabel>
+                    <DropdownMenuLabel>{t("personalSection")}</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                         <Link href={`/${subappId}/${slug}/personal/profile`}>
                             <PersonalProfileIcon />

@@ -9,11 +9,8 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
-import {
-    getD4HFetchClient,
-    getD4HTeamsAccessibleWithToken,
-} from "@/lib/d4h-api/client";
-import { D4HEquipmentLocation } from "@/lib/d4h-api/equipment-location";
+import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
@@ -81,8 +78,7 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
                     Paths.main(slug).admin.index,
                     Paths.main(slug).admin.d4hAccessTokens,
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id)
-                            .href,
+                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
                         label: accessToken.id,
                     },
                     "Equipment Locations",
@@ -93,13 +89,10 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(slug).admin.d4hAccessToken(
-                                    token_id,
-                                )}
+                                to={Paths.main(slug).admin.d4hAccessToken(token_id)}
                             />
                             <Hermes.Title>
-                                Equipment Locations ({successCount} of{" "}
-                                {locations.length})
+                                Equipment Locations ({successCount} of {locations.length})
                             </Hermes.Title>
                         </Hermes.Header>
                         {locations.map((item) => (
@@ -115,17 +108,12 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
                                 <div className="px-2 max-h-[50vh] overflow-y-auto">
                                     {item.parsed.success ? (
                                         <pre className="text-xs">
-                                            {JSON.stringify(
-                                                item.parsed.data,
-                                                null,
-                                                2,
-                                            )}
+                                            {JSON.stringify(item.parsed.data, null, 2)}
                                         </pre>
                                     ) : (
                                         <Alert>
                                             <AlertTitle>
-                                                Failed to parse equipment
-                                                category data
+                                                Failed to parse equipment category data
                                             </AlertTitle>
                                             <AlertDescription>
                                                 {item.parsed.error.message}

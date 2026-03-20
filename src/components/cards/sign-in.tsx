@@ -15,13 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Field,
@@ -33,7 +27,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 /**
  * Card for a user to sign in to the application.
@@ -45,9 +39,7 @@ export function SignIn_Card() {
         <Card>
             <CardHeader>
                 <CardTitle>Login to your account</CardTitle>
-                <CardDescription>
-                    Enter your email below to login to your account
-                </CardDescription>
+                <CardDescription>Enter your email below to login to your account</CardDescription>
             </CardHeader>
             <CardContent>
                 <FieldGroup>
@@ -57,8 +49,7 @@ export function SignIn_Card() {
                     </FieldSeparator>
                     <SocialSignInButtons_Field />
                     <FieldDescription className="text-center">
-                        Don't have an account?{" "}
-                        <Link href="/auth/sign-up">Sign Up</Link>
+                        Don't have an account? <Link href="/auth/sign-up">Sign Up</Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -90,8 +81,7 @@ function EmailPasswordSignIn_Form() {
     });
 
     const [state, setState] = useState<
-        | { status: "Ready" | "InProgress" }
-        | { status: "Error"; error: { message?: string } }
+        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
     >({ status: "Ready" });
 
     // Handler for the sign-in form submission.
@@ -113,9 +103,7 @@ function EmailPasswordSignIn_Form() {
                     form.reset();
                     setState({ status: "Ready" });
 
-                    router.push(
-                        `/auth/verify-email?email=${encodeURIComponent(formData.email)}`,
-                    );
+                    router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
                 }
             }
         } catch (error) {
@@ -133,9 +121,7 @@ function EmailPasswordSignIn_Form() {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-in-email">
-                                Email Address
-                            </FieldLabel>
+                            <FieldLabel htmlFor="sign-in-email">Email Address</FieldLabel>
                             <Input
                                 id="sign-in-email"
                                 type="email"
@@ -143,9 +129,7 @@ function EmailPasswordSignIn_Form() {
                                 aria-invalid={fieldState.invalid}
                                 {...field}
                             />
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -155,9 +139,7 @@ function EmailPasswordSignIn_Form() {
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                             <div className="flex items-center">
-                                <FieldLabel htmlFor="sign-in-password">
-                                    Password
-                                </FieldLabel>
+                                <FieldLabel htmlFor="sign-in-password">Password</FieldLabel>
                                 <Link
                                     href="/auth/forgot-password"
                                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -173,9 +155,7 @@ function EmailPasswordSignIn_Form() {
                                 aria-invalid={fieldState.invalid}
                                 {...field}
                             />
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -183,22 +163,15 @@ function EmailPasswordSignIn_Form() {
                     name="rememberMe"
                     control={form.control}
                     render={({ field, fieldState }) => (
-                        <Field
-                            data-invalid={fieldState.invalid}
-                            orientation="horizontal"
-                        >
+                        <Field data-invalid={fieldState.invalid} orientation="horizontal">
                             <Checkbox
                                 id="sign-in-rememberMe"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                                 aria-invalid={fieldState.invalid}
                             />
-                            <FieldLabel htmlFor="sign-in-rememberMe">
-                                Remember me
-                            </FieldLabel>
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            <FieldLabel htmlFor="sign-in-rememberMe">Remember me</FieldLabel>
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -208,14 +181,10 @@ function EmailPasswordSignIn_Form() {
                         form="sign-in-form"
                         disabled={state.status == "InProgress"}
                     >
-                        {state.status == "InProgress"
-                            ? "Signing in..."
-                            : "Login"}
+                        {state.status == "InProgress" ? "Signing in..." : "Login"}
                     </Button>
                 </Field>
-                {state.status == "Error" && (
-                    <FieldError errors={[state.error]} />
-                )}
+                {state.status == "Error" && <FieldError errors={[state.error]} />}
             </FieldGroup>
         </form>
     );
@@ -238,9 +207,7 @@ export function SocialSignInButtons_Field() {
             }
         } catch (error) {
             console.log("Social sign-in error", error);
-            toast.error(
-                "An error occured during social sign-in. Please try again.",
-            );
+            toast.error("An error occured during social sign-in. Please try again.");
         }
     }
 
@@ -255,19 +222,11 @@ export function SocialSignInButtons_Field() {
                 <SiApple />
                 <span className="sr-only">Sign in with Apple</span>
             </Button> */}
-            <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleSignIn("google")}
-            >
+            <Button variant="outline" type="button" onClick={() => handleSignIn("google")}>
                 <SiGoogle />
                 <span className="sr-only">Sign in with Google</span>
             </Button>
-            <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleSignIn("github")}
-            >
+            <Button variant="outline" type="button" onClick={() => handleSignIn("github")}>
                 <SiGithub />
                 <span className="sr-only">Sign in with GitHub</span>
             </Button>

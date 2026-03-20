@@ -7,15 +7,13 @@ import * as z from "zod";
 
 import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/client";
 
-import { D4HServerCode } from "@/lib/d4h-api/servers";
+import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
 import { decryptDBValue } from "@/server/encrypt";
 
 export const D4HAccessTokenId = {
-    schema: zodNanoId16(
-        "D4HAccessTokenId expected",
-    ).brand<"D4HAccessTokenId">(),
+    schema: zodNanoId16("D4HAccessTokenId expected").brand<"D4HAccessTokenId">(),
 
     create: () => D4HAccessTokenId.schema.parse(nanoId16()),
 } as const;
@@ -35,10 +33,7 @@ const metadataSchema = z.object({
                     title: z.string(),
                 })
                 .optional(),
-            permissions: z.record(
-                z.string(),
-                z.record(z.string(), z.boolean()),
-            ),
+            permissions: z.record(z.string(), z.record(z.string(), z.boolean())),
         }),
     ),
     d4HOrganisations: z.array(
@@ -59,9 +54,7 @@ export const D4HAccessTokenMetadata = {
     }),
 };
 
-export type D4HAccessTokenMetadata = z.infer<
-    typeof D4HAccessTokenMetadata.schema
->;
+export type D4HAccessTokenMetadata = z.infer<typeof D4HAccessTokenMetadata.schema>;
 
 export const D4HAccessToken = {
     schema: z.object({
@@ -104,6 +97,4 @@ export const D4HAccessToken_ServerOnly = {
         }),
 };
 
-export type D4HAccessToken_ServerOnly = z.infer<
-    typeof D4HAccessToken_ServerOnly.schema
->;
+export type D4HAccessToken_ServerOnly = z.infer<typeof D4HAccessToken_ServerOnly.schema>;

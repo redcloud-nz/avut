@@ -14,13 +14,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Field,
     FieldDescription,
@@ -31,7 +25,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/client/auth-client";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
@@ -40,9 +34,7 @@ export function SignUp_Card() {
         <Card>
             <CardHeader>
                 <CardTitle>Create an account</CardTitle>
-                <CardDescription>
-                    Enter your details to sign up.
-                </CardDescription>
+                <CardDescription>Enter your details to sign up.</CardDescription>
             </CardHeader>
             <CardContent>
                 <FieldGroup>
@@ -55,8 +47,7 @@ export function SignUp_Card() {
                     <SocialSignInButtons_Field />
 
                     <FieldDescription className="text-center">
-                        Already have an account?{" "}
-                        <Link href="/auth/sign-in">Sign in</Link>
+                        Already have an account? <Link href="/auth/sign-in">Sign in</Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -75,9 +66,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
             z.object({
                 name: z.string().min(2, "Name is required."),
                 email: z.email("Invalid email address"),
-                password: z
-                    .string()
-                    .min(8, "Password must be at least 8 characters long"),
+                password: z.string().min(8, "Password must be at least 8 characters long"),
             }),
         ),
         defaultValues: {
@@ -88,9 +77,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
     });
 
     const [inProgress, setInProgress] = useState<boolean>(false);
-    const [submitError, setSubmitError] = useState<{ message?: string } | null>(
-        null,
-    );
+    const [submitError, setSubmitError] = useState<{ message?: string } | null>(null);
 
     const handleSignUp = form.handleSubmit(async (formData) => {
         setSubmitError(null);
@@ -106,9 +93,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
             } else {
                 // Successful signup. BetterAuth automatically sends a verification email.
                 console.log("Sign up successful", data);
-                router.push(
-                    `/auth/verify-email?email=${encodeURIComponent(formData.email)}`,
-                );
+                router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
             }
         } catch (error) {
             // We're assuming this is an unexpected error
@@ -135,9 +120,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                                 disabled={inProgress}
                                 {...field}
                             />
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -146,9 +129,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="email">
-                                Email Address
-                            </FieldLabel>
+                            <FieldLabel htmlFor="email">Email Address</FieldLabel>
                             <Input
                                 id="email"
                                 type="email"
@@ -157,9 +138,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                                 disabled={inProgress}
                                 {...field}
                             />
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
@@ -168,9 +147,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-up-password">
-                                Password
-                            </FieldLabel>
+                            <FieldLabel htmlFor="sign-up-password">Password</FieldLabel>
                             <Input
                                 id="sign-up-password"
                                 type="password"
@@ -179,21 +156,13 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
                                 disabled={inProgress}
                                 {...field}
                             />
-                            <FieldDescription>
-                                Must be at least 8 characters long.
-                            </FieldDescription>
-                            {fieldState.invalid && (
-                                <FieldError errors={[fieldState.error]} />
-                            )}
+                            <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
                 />
                 <Field>
-                    <Button
-                        type="submit"
-                        form="sign-up-form"
-                        disabled={inProgress}
-                    >
+                    <Button type="submit" form="sign-up-form" disabled={inProgress}>
                         {inProgress ? "Creating account..." : "Sign Up"}
                     </Button>
                     {submitError && <FieldError errors={[submitError]} />}

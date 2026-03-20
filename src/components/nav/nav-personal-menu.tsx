@@ -14,14 +14,14 @@ export function NavPersonalMenu({}) {
     return (
         <SidebarGroup>
             <SidebarMenu>
-                <NavItem
+                {/* <NavItem
                     path={Paths.personal.dashboard}
                     icon={<PersonalDashboardIcon />}
                 />
                 <NavSubItem
                     path={Paths.personal.invitations}
                     icon={<InvitationsIcon />}
-                />
+                /> */}
             </SidebarMenu>
         </SidebarGroup>
     );

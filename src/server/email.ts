@@ -7,8 +7,7 @@ import { CreateEmailOptions, Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-export const NoReplyEmailAddress =
-    process.env.NOREPLY_EMAIL || "no-reply@mx.avut.nz";
+export const NoReplyEmailAddress = process.env.NOREPLY_EMAIL || "no-reply@mx.avut.nz";
 
 export async function sendEmail(payload: CreateEmailOptions): Promise<void> {
     try {
