@@ -22,10 +22,10 @@ export const getFormInstancesCollection = perOrganization((organizationId) =>
 
                 params.filters.forEach((filter) => {
                     const field = filter.field.join(".");
-                    if (field === "formKey" && filter.operator === "equals") {
+                    if (field === "formKey" && filter.operator === "eq") {
                         queryParams.formKey = filter.value;
                     }
-                    if (field === "formStatus" && filter.operator === "equals") {
+                    if (field === "formStatus" && filter.operator === "eq") {
                         queryParams.formStatus = filter.value;
                     }
                 });
@@ -95,7 +95,7 @@ export const getFormInstanceItemsCollection = perOrganization((organizationId) =
 
                 params.filters.forEach((filter) => {
                     const field = filter.field.join(".");
-                    if (field === "formInstanceId" && filter.operator === "equals") {
+                    if (field === "formInstanceId" && filter.operator === "eq") {
                         queryParams.formInstanceId = filter.value;
                     }
                 });

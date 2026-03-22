@@ -15,7 +15,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
@@ -40,9 +40,7 @@ import { trpc } from "@/trpc/client";
 
 import { I3Module_CreateTemplate_D4H_Dialog } from "./create-template-d4h";
 
-export default function I3Module_Templates_Page(
-    props: PageProps<"/main/[slug]/i3/templates">,
-) {
+export default function I3Module_Templates_Page(props: PageProps<"/main/[slug]/i3/templates">) {
     const { slug } = use(props.params);
     const organization = useOrganization();
 
@@ -61,17 +59,11 @@ export default function I3Module_Templates_Page(
             Akagi.defineColumns<RowData>((col) => [
                 col.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                to={Paths.main(slug).i3.template(
-                                    ctx.row.original.id,
-                                )}
-                            >
+                            <Link to={Paths.main(slug).i3.template(ctx.row.original.id)}>
                                 {ctx.getValue()}
                             </Link>
                         </Akagi.TableCell>
@@ -79,28 +71,20 @@ export default function I3Module_Templates_Page(
                 }),
                 col.accessor("d4h.categoryTitle", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            D4H Category
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>D4H Category</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: false,
                     enableGlobalFilter: false,
                 }),
                 col.accessor("d4h.kindTitle", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            D4H Kind
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>D4H Kind</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: false,
                     enableGlobalFilter: false,
@@ -108,17 +92,12 @@ export default function I3Module_Templates_Page(
 
                 col.accessor("status", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-24"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} className="w-24">
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: false,
                     enableGlobalFilter: false,
@@ -144,10 +123,7 @@ export default function I3Module_Templates_Page(
         <>
             <Lexington.Root>
                 <Lexington.Header
-                    breadcrumbs={[
-                        Paths.main(slug).i3.index,
-                        Paths.main(slug).i3.templates,
-                    ]}
+                    breadcrumbs={[Paths.main(slug).i3.index, Paths.main(slug).i3.templates]}
                 />
                 <Lexington.Page>
                     <Lexington.Column width="xl">
@@ -164,9 +140,7 @@ export default function I3Module_Templates_Page(
                                 >
                                     <Button
                                         variant="outline"
-                                        onClick={() =>
-                                            setCreateDialogOpen(true)
-                                        }
+                                        onClick={() => setCreateDialogOpen(true)}
                                     >
                                         <CreateNewIcon /> New
                                     </Button>
@@ -178,12 +152,10 @@ export default function I3Module_Templates_Page(
                             fallback={
                                 <Empty>
                                     <EmptyHeader>
-                                        <EmptyTitle>
-                                            No templates yet.
-                                        </EmptyTitle>
+                                        <EmptyTitle>No templates yet.</EmptyTitle>
                                         <EmptyDescription>
-                                            Create a PPE template to define
-                                            equipment that can be issued.
+                                            Create a PPE template to define equipment that can be
+                                            issued.
                                         </EmptyDescription>
                                     </EmptyHeader>
                                     <EmptyContent>
@@ -193,11 +165,7 @@ export default function I3Module_Templates_Page(
                                                 i3Template: ["create"],
                                             }}
                                         >
-                                            <Button
-                                                onClick={() =>
-                                                    setCreateDialogOpen(true)
-                                                }
-                                            >
+                                            <Button onClick={() => setCreateDialogOpen(true)}>
                                                 Create Template
                                             </Button>
                                         </Protect>

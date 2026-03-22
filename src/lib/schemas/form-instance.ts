@@ -36,6 +36,26 @@ export const FormInstance = {
         updatedAt: z.iso.datetime(),
     }),
 
+    create: ({
+        formData,
+        formKey,
+        organizationId,
+    }: {
+        formData: object;
+        formKey: string;
+        organizationId: OrganizationId;
+    }) =>
+        FormInstance.schema.parse({
+            id: FormInstanceId.create(),
+            formKey,
+            organizationId,
+            userId: null,
+            formData,
+            formStatus: "Draft",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        }),
+
     fromRecord: (record: FormInstanceRecord) => {
         return FormInstance.schema.parse({
             ...record,

@@ -6,6 +6,7 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import { Route } from "next";
 import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
@@ -41,8 +42,8 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                         <div className="font-semibold">I3 Module</div>
                     </div>
                     <ItemGroup>
-                        <Item asChild>
-                            <Link href={`/main/${slug}/i3/inspect`}>
+                        {/* <Item asChild>
+                            <Link href={`/main/${slug}/i3/forms/inspect` as Route}>
                                 <ItemContent>
                                     <ItemTitle>{t("inspect")}</ItemTitle>
                                     <ItemDescription>{t("inspectDescription")}</ItemDescription>
@@ -51,9 +52,9 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                                     <ChevronRightIcon className="size-4" />
                                 </ItemActions>
                             </Link>
-                        </Item>
+                        </Item> */}
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/issue`}>
+                            <Link href={`/main/${slug}/i3/forms/issue-items` as Route}>
                                 <ItemContent>
                                     <ItemTitle>{t("issue")}</ItemTitle>
                                     <ItemDescription>{t("issueDescription")}</ItemDescription>
@@ -64,7 +65,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/return`}>
+                            <Link href={`/main/${slug}/i3/forms/return` as Route}>
                                 <ItemContent>
                                     <ItemTitle>{t("return")}</ItemTitle>
                                     <ItemDescription>{t("returnDescription")}</ItemDescription>

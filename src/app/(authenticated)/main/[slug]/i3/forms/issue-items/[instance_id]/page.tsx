@@ -2,26 +2,37 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /i3/[slug]/issue
+ * Path: /main/[slug]/i3/forms/issue-items/[instance_id]
  */
 
 "use client";
 
-import { PencilIcon, XIcon } from "lucide-react";
+import { CheckIcon, CircleXIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ComponentProps, Fragment, use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+import { match } from "ts-pattern";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useSuspenseQueries } from "@tanstack/react-query";
+import { useDebouncer } from "@tanstack/react-pacer";
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+    useSuspenseQueries,
+    useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import { authQueries } from "@/client/auth-queries";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { AlertIcons } from "@/components/icons";
+import { AlertIcons, ObjectIcons } from "@/components/icons";
 import { Alert, AlertTitle } from "@/components/ui/alert2";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -61,26 +72,151 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
 
+import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { IssuedItem, IssueItemsFormData, IssueItemsFormInputData } from "@/lib/schemas/i3-forms";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
+import { Route } from "next";
 
-export default function I3_Issue_Page(props: PageProps<"/main/[slug]/i3/issue">) {
-    const { slug } = use(props.params);
+export default function I3Module_Issue_FormInstance_Page(
+    props: PageProps<"/main/[slug]/i3/forms/issue-items/[instance_id]">,
+) {
+    const { slug, instance_id } = use(props.params);
+    const instanceId = FormInstanceId.schema.parse(instance_id);
+
+    const logger = useLogger("I3Module", "Issue_FormInstance_Page");
     const organization = useOrganization();
+    const queryClient = useQueryClient();
+    const router = useRouter();
+
+    const queryFilter = trpc.forms.listFormInstances.queryFilter({
+        organizationId: organization.id,
+        formKey: "i3-issue",
+        formStatus: "Draft",
+    });
+    const queryKey = trpc.forms.listFormInstances.queryKey({
+        organizationId: organization.id,
+        formKey: "i3-issue",
+        formStatus: "Draft",
+    });
+
+    const { data: instances } = useSuspenseQuery(
+        trpc.forms.listFormInstances.queryOptions({
+            organizationId: organization.id,
+            formKey: "i3-issue",
+            formStatus: "Draft",
+        }),
+    );
+
+    const instance = instances.find((inst) => inst.id === instanceId);
+    if (!instance) throw new Error(`FormInstance(${instanceId}) not found`);
 
     const form = useForm({
         resolver: zodResolver(IssueItemsFormData.schema),
-        defaultValues: {
-            recipient: { id: 0, name: "" },
-            comments: "",
-            items: [],
-        },
+        values: instance.formData as IssueItemsFormData,
     });
+
+    const saveMutation = useMutation(
+        trpc.forms.saveFormInstanceData.mutationOptions({
+            async onMutate(data) {
+                // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+                queryClient.cancelQueries(queryFilter);
+
+                // Snapshot the previous value
+                const previous = queryClient.getQueryData(queryKey);
+
+                // Optimistically update to the new value
+                queryClient.setQueryData(queryKey, (old = []) =>
+                    old.map((inst) => {
+                        if (inst.id === instanceId) {
+                            return {
+                                ...inst,
+                                formData: data.formData,
+                                updatedAt: new Date().toISOString(),
+                            };
+                        }
+                        return inst;
+                    }),
+                );
+
+                // Return a context object with the snapshotted value
+                return { previous };
+            },
+            onError(error, _variables, context) {
+                if (context?.previous) {
+                    queryClient.setQueryData(queryKey, context.previous);
+                }
+
+                logger.error("Failed to save form data: ", error);
+                toast.error(`Failed to save form data: ${error.message}`);
+            },
+        }),
+    );
+
+    const deleteMutation = useMutation(
+        trpc.forms.deleteFormInstance.mutationOptions({
+            async onMutate() {
+                // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+                await queryClient.cancelQueries(queryFilter);
+
+                // Snapshot the previous value
+                const previous = queryClient.getQueryData(queryKey);
+
+                // Optimistically update to the new value
+                queryClient.setQueryData(queryKey, (old = []) =>
+                    old.filter((inst) => inst.id !== instanceId),
+                );
+
+                router.push(`/main/${slug}/i3/forms/issue-items` as Route);
+
+                // Return a context object with the snapshotted value
+                return { previous };
+            },
+            onError(error, _variables, context) {
+                if (context?.previous) {
+                    queryClient.setQueryData(queryKey, context.previous);
+                }
+
+                logger.error("Failed to delete form instance: ", error);
+                toast.error(`Failed to delete form instance: ${error.message}`);
+            },
+            async onSettled() {
+                await queryClient.invalidateQueries(queryFilter);
+            },
+        }),
+    );
+
+    const debouncer = useDebouncer(
+        (formData: IssueItemsFormInputData) => {
+            saveMutation.mutate({
+                formInstanceId: instanceId,
+                organizationId: organization.id,
+                formKey: "i3-issue",
+                formData,
+            });
+        },
+        { wait: 2000 },
+    );
+
+    function handleDelete() {
+        deleteMutation.mutate({ formInstanceId: instanceId, organizationId: organization.id });
+    }
+
+    function handleChange() {
+        // Reset the mutation state
+        if (saveMutation.status == "success") {
+            saveMutation.reset();
+        }
+
+        // Trigger the debounced mutation to save form data
+        debouncer.maybeExecute(form.getValues());
+    }
 
     const handleSubmit = form.handleSubmit(() => {});
 
@@ -89,26 +225,58 @@ export default function I3_Issue_Page(props: PageProps<"/main/[slug]/i3/issue">)
             <Lexington.Header
                 breadcrumbs={[
                     { label: "I3", href: `/main/${slug}/i3` },
-                    { label: "Issue", href: `/main/${slug}/i3/issue` },
+                    { label: "Issue Items", href: `/main/${slug}/i3/forms/issue-items` },
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={{ href: `/main/${slug}/i3` }}
-                            tooltip="Back to I3 Index"
+                            to={{ href: `/main/${slug}/i3/forms/issue-items` }}
+                            tooltip="Back to Form List"
                         />
                         <Hermes.Title>Issue Items</Hermes.Title>
+                        <Hermes.Action>
+                            <Button variant="ghost" size="icon" onClick={handleDelete}>
+                                <ObjectIcons.Delete />
+                            </Button>
+                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
                             <CardDescription>
                                 Use this form to record items being issued to an individual.
                             </CardDescription>
+                            <CardAction>
+                                {match(saveMutation.status)
+                                    .with("idle", () => null)
+                                    .with("pending", () => (
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-semibold">Saving</div>
+                                            <Spinner />
+                                        </div>
+                                    ))
+                                    .with("success", () => (
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-semibold">Saved</div>
+                                            <CheckIcon className="size-5 text-green-500" />
+                                        </div>
+                                    ))
+                                    .with("error", () => (
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-semibold">Error</div>
+                                            <CircleXIcon className="size-5 text-red-500" />
+                                        </div>
+                                    ))
+                                    .exhaustive()}
+                            </CardAction>
                         </CardHeader>
                         <CardContent>
-                            <form id="item-issue-form" onSubmit={handleSubmit}>
+                            <form
+                                id="item-issue-form"
+                                onSubmit={handleSubmit}
+                                onChange={handleChange}
+                            >
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Issuer</FieldLabel>
@@ -147,6 +315,7 @@ export default function I3_Issue_Page(props: PageProps<"/main/[slug]/i3/issue">)
                                     <I3_Issue_ItemsSection
                                         form={form}
                                         organizationId={organization.id}
+                                        onChange={handleChange}
                                     />
 
                                     <FieldSeparator />
@@ -282,9 +451,11 @@ function TeamMemberSelect({
 function I3_Issue_ItemsSection({
     form,
     organizationId,
+    onChange,
 }: {
     form: UseFormReturn<IssueItemsFormInputData>;
     organizationId: OrganizationId;
+    onChange: () => void;
 }) {
     const [{ data: templates }, { data: variants }] = useSuspenseQueries({
         queries: [
@@ -293,7 +464,7 @@ function I3_Issue_ItemsSection({
         ],
     });
 
-    const [addItemDialogOpen, setAddItemDialogOpen] = useState<boolean>(false);
+    const [targetIndex, setTargetIndex] = useState<number | "new" | null>(null);
 
     const {
         fields: items,
@@ -307,7 +478,17 @@ function I3_Issue_ItemsSection({
 
     return (
         <div className="flex flex-col gap-2">
-            <FieldLegend>Issued Items</FieldLegend>
+            <div className="flex items-center justify-between">
+                <FieldLegend>Issued Items</FieldLegend>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTargetIndex("new")}
+                >
+                    Add Item
+                </Button>
+            </div>
 
             <ItemGroup>
                 {items.map((item, index) => {
@@ -317,7 +498,7 @@ function I3_Issue_ItemsSection({
                         : null;
 
                     return (
-                        <Item variant="outline" size="sm" key={item.id}>
+                        <Item size="sm" key={item.id} className="pr-0">
                             <ItemContent>
                                 <ItemTitle>{template?.name}</ItemTitle>
                                 <ItemDescription>
@@ -330,32 +511,56 @@ function I3_Issue_ItemsSection({
                                 </ItemDescription>
                             </ItemContent>
                             <ItemActions>
-                                <Button type="button" variant="ghost" size="icon">
-                                    <PencilIcon />
-                                </Button>
+                                <ButtonGroup>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setTargetIndex(index)}
+                                    >
+                                        <ObjectIcons.Edit />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                            removeItem(index);
+                                            onChange();
+                                        }}
+                                    >
+                                        <ObjectIcons.Delete />
+                                    </Button>
+                                </ButtonGroup>
                             </ItemActions>
                         </Item>
                     );
                 })}
             </ItemGroup>
 
-            <div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAddItemDialogOpen(true)}
-                >
-                    Add Item
-                </Button>
-            </div>
             <AddItemDialog
-                open={addItemDialogOpen}
-                onOpenChange={setAddItemDialogOpen}
+                open={targetIndex === "new"}
+                onOpenChange={(open) => setTargetIndex(open ? "new" : null)}
                 templates={templates}
                 variants={variants}
-                onAdd={appendItem}
+                onAdd={(item) => {
+                    appendItem(item);
+                    onChange();
+                }}
             />
+            {typeof targetIndex === "number" && (
+                <EditItemDialog
+                    open={true}
+                    onOpenChange={(open) => setTargetIndex(open ? targetIndex : null)}
+                    templates={templates}
+                    variants={variants}
+                    item={items[targetIndex as number]}
+                    onUpdate={(item) => {
+                        updateItem(targetIndex as number, item);
+                        onChange();
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -521,6 +726,168 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                 <DialogFooter>
                     <Button type="button" onClick={handleSubmit}>
                         Add
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface EditItemDialogProps extends DialogProps {
+    templates: I3Template[];
+    variants: I3TemplateVariant[];
+    item: IssueItemsFormInputData["items"][number];
+    onUpdate: (updatedItem: IssueItemsFormInputData["items"][number]) => void;
+}
+
+function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditItemDialogProps) {
+    const form = useForm({
+        resolver: zodResolver(IssuedItem.schema),
+        defaultValues: item,
+    });
+
+    function handleOpenChange(open: boolean) {
+        props?.onOpenChange?.(open);
+        if (!open) {
+            form.reset();
+        }
+    }
+
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            console.log("Updating item with data:", formData);
+            onUpdate(formData);
+            handleOpenChange(false);
+        },
+        (error) => {
+            console.error("Unable to update item: ", error);
+        },
+    );
+
+    const currentTemplateId = useWatch({ control: form.control, name: "template.id" });
+    const currentTemplate = templates.find((template) => template.id === currentTemplateId);
+
+    return (
+        <Dialog {...props} onOpenChange={handleOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Issued Item</DialogTitle>
+                    <DialogDescription>Update the details of the issued item.</DialogDescription>
+                </DialogHeader>
+                <FieldGroup>
+                    <Controller
+                        control={form.control}
+                        name="template"
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="template">Template</FieldLabel>
+                                <Select
+                                    value={field.value.id ?? ""}
+                                    onValueChange={(value) => {
+                                        const selectedTemplate = templates.find(
+                                            (template) => template.id === value,
+                                        );
+                                        field.onChange(
+                                            selectedTemplate
+                                                ? {
+                                                      id: selectedTemplate.id,
+                                                      name: selectedTemplate.name,
+                                                  }
+                                                : { id: "", name: "" },
+                                        );
+                                    }}
+                                >
+                                    <SelectTrigger id="template" aria-invalid={fieldState.invalid}>
+                                        <SelectValue placeholder="Select a template" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {templates.map((template) => (
+                                            <SelectItem key={template.id} value={template.id}>
+                                                {template.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        control={form.control}
+                        name="variant"
+                        render={({ field, fieldState }) => {
+                            const applicableVariants = currentTemplate
+                                ? variants.filter(
+                                      (variant) => variant.templateId === currentTemplate.id,
+                                  )
+                                : [];
+
+                            return (
+                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="variant">Variant</FieldLabel>
+
+                                    <Select
+                                        value={field.value?.id ?? ""}
+                                        onValueChange={(value) => {
+                                            const selectedVariant = variants.find(
+                                                (variant) => variant.id === value,
+                                            );
+                                            field.onChange(
+                                                selectedVariant
+                                                    ? {
+                                                          id: selectedVariant.id,
+                                                          name: selectedVariant.name,
+                                                      }
+                                                    : null,
+                                            );
+                                        }}
+                                        disabled={!currentTemplate}
+                                    >
+                                        <SelectTrigger
+                                            id="variant"
+                                            aria-invalid={fieldState.invalid}
+                                        >
+                                            <SelectValue placeholder="Select a variant" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {applicableVariants.map((variant) => (
+                                                <SelectItem key={variant.id} value={variant.id}>
+                                                    {variant.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            );
+                        }}
+                    />
+                    <Controller
+                        control={form.control}
+                        name="serialNumber"
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+
+                                <Input
+                                    id="serialNumber"
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
+                                    aria-invalid={fieldState.invalid}
+                                    disabled={!(currentTemplate?.d4h?.requireSN ?? false)}
+                                    placeholder={
+                                        currentTemplate?.d4h?.requireSN ? "Enter S/N" : "N/A"
+                                    }
+                                />
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                </FieldGroup>
+                <DialogFooter>
+                    <Button type="button" onClick={handleSubmit}>
+                        Update
                     </Button>
                 </DialogFooter>
             </DialogContent>

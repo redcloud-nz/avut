@@ -34,7 +34,15 @@
     "return": "Return Items",
     "returnDescription": "Record items being returned from an individual.",
     "templates": "Templates",
-    "templatesDescription": "Create and manage item templates."
+    "templatesDescription": "Create and manage item templates.",
+
+    "IssueList": {
+      "title": "Issue Items",
+      "id": "ID",
+      "recipient": "Recipient",
+      "status": "Status",
+      "updatedAt": "Updated"
+    }
   },
 
   "Index_Page": {

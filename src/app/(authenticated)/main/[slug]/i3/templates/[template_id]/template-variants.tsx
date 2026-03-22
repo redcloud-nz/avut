@@ -10,24 +10,13 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    useMutation,
-    useQueries,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -37,12 +26,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -66,17 +50,10 @@ import { ObjectName } from "@/components/ui/typography";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
-import {
-    I3TemplateVariant,
-    I3TemplateVariantId,
-} from "@/lib/schemas/i3-template-variant";
+import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { trpc } from "@/trpc/client";
 
-export function I3Module_Template_Variants_List({
-    template,
-}: {
-    template: I3Template;
-}) {
+export function I3Module_Template_Variants_List({ template }: { template: I3Template }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -93,9 +70,7 @@ export function I3Module_Template_Variants_List({
         trpc.i3.deleteTemplateVariant.mutationOptions({
             onError(error) {
                 console.error("Failed to delete template variant:", error);
-                toast.error(
-                    `Failed to delete template variant: ${error.message}`,
-                );
+                toast.error(`Failed to delete template variant: ${error.message}`);
             },
             async onSuccess(data) {
                 await queryClient.invalidateQueries(
@@ -104,9 +79,7 @@ export function I3Module_Template_Variants_List({
                         templateId: template.id,
                     }),
                 );
-                toast.success(
-                    `Template variant "${data.deleted.name}" deleted.`,
-                );
+                toast.success(`Template variant "${data.deleted.name}" deleted.`);
             },
         }),
     );
@@ -116,10 +89,7 @@ export function I3Module_Template_Variants_List({
             <CardHeader>
                 <CardTitle>Variants</CardTitle>
                 <CardAction>
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ i3Template: ["update"] }}
-                    >
+                    <Protect orgId={organization.id} permissions={{ i3Template: ["update"] }}>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -139,8 +109,7 @@ export function I3Module_Template_Variants_List({
                             <EmptyHeader>
                                 <EmptyTitle>No variants yet</EmptyTitle>
                                 <EmptyDescription>
-                                    You have not added any variants to this
-                                    template yet. Click the
+                                    You have not added any variants to this template yet. Click the
                                     <ObjectIcons.Create className="inline-block mx-1 size-4" />
                                     button to add a variant.
                                 </EmptyDescription>
@@ -175,13 +144,10 @@ export function I3Module_Template_Variants_List({
                                                 variant="ghost"
                                                 size="icon"
                                                 tooltip="Delete variant"
-                                                disabled={
-                                                    deleteMutation.isPending
-                                                }
+                                                disabled={deleteMutation.isPending}
                                                 onClick={() =>
                                                     deleteMutation.mutate({
-                                                        organizationId:
-                                                            organization.id,
+                                                        organizationId: organization.id,
                                                         templateId: template.id,
                                                         variantId: variant.id,
                                                     })
@@ -252,9 +218,7 @@ function I3Module_Template_AddVariant_Dialog({
         trpc.i3.createTemplateVariant.mutationOptions({
             onError(error) {
                 logger.error("Failed to create template variant", error);
-                toast.error(
-                    `Failed to create template variant: ${error.message}`,
-                );
+                toast.error(`Failed to create template variant: ${error.message}`);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
@@ -279,10 +243,7 @@ function I3Module_Template_AddVariant_Dialog({
         (formData) => {
             const variantId = I3TemplateVariantId.create();
 
-            logger.log(
-                `Creating I3TemplateVariant(${variantId}) with data:`,
-                formData,
-            );
+            logger.log(`Creating I3TemplateVariant(${variantId}) with data:`, formData);
             mutation.mutate({
                 organizationId: organization.id,
                 templateId: template.id,
@@ -296,9 +257,7 @@ function I3Module_Template_AddVariant_Dialog({
     );
 
     const selectedBrandId = form.watch("d4h.brandId");
-    const filteredModels = models.filter(
-        (model) => model.brand.id === selectedBrandId,
-    );
+    const filteredModels = models.filter((model) => model.brand.id === selectedBrandId);
 
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
@@ -306,8 +265,7 @@ function I3Module_Template_AddVariant_Dialog({
                 <DialogHeader>
                     <DialogTitle>Add Variant to Template</DialogTitle>
                     <DialogDescription>
-                        Add a new variant to template{" "}
-                        <ObjectName>{template.name}</ObjectName>.
+                        Add a new variant to template <ObjectName>{template.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
                 <FieldGroup>
@@ -316,9 +274,7 @@ function I3Module_Template_AddVariant_Dialog({
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="variant-name">
-                                    Name
-                                </FieldLabel>
+                                <FieldLabel htmlFor="variant-name">Name</FieldLabel>
                                 <Input
                                     id="variant-name"
                                     autoFocus
@@ -334,31 +290,19 @@ function I3Module_Template_AddVariant_Dialog({
                         name="d4h.brandId"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="variant-brand">
-                                    Brand
-                                </FieldLabel>
+                                <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
                                 <Show
                                     when={brandsLoaded}
-                                    fallback={
-                                        <Skeleton className="w-full h-8" />
-                                    }
+                                    fallback={<Skeleton className="w-full h-8" />}
                                 >
                                     <Select
                                         value={(field.value || "") + ""}
                                         onValueChange={(newValue) => {
-                                            const newBrandId = parseInt(
-                                                newValue,
-                                                10,
-                                            );
-                                            const brand = brands?.find(
-                                                (b) => b.id === newBrandId,
-                                            );
+                                            const newBrandId = parseInt(newValue, 10);
+                                            const brand = brands?.find((b) => b.id === newBrandId);
 
                                             field.onChange(newBrandId);
-                                            form.setValue(
-                                                "d4h.brandTitle",
-                                                brand?.title ?? "",
-                                            );
+                                            form.setValue("d4h.brandTitle", brand?.title ?? "");
                                             form.setValue("d4h.modelId", 0);
                                         }}
                                     >
@@ -385,31 +329,19 @@ function I3Module_Template_AddVariant_Dialog({
                         name="d4h.modelId"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="variant-model">
-                                    Model
-                                </FieldLabel>
+                                <FieldLabel htmlFor="variant-model">Model</FieldLabel>
                                 <Show
                                     when={modelsLoaded}
-                                    fallback={
-                                        <Skeleton className="w-full h-8" />
-                                    }
+                                    fallback={<Skeleton className="w-full h-8" />}
                                 >
                                     <Select
                                         value={(field.value || "") + ""}
                                         onValueChange={(newValue) => {
-                                            const newModelId = parseInt(
-                                                newValue,
-                                                10,
-                                            );
-                                            const model = models?.find(
-                                                (m) => m.id === newModelId,
-                                            );
+                                            const newModelId = parseInt(newValue, 10);
+                                            const model = models?.find((m) => m.id === newModelId);
 
                                             field.onChange(newModelId);
-                                            form.setValue(
-                                                "d4h.modelTitle",
-                                                model?.title ?? "",
-                                            );
+                                            form.setValue("d4h.modelTitle", model?.title ?? "");
                                         }}
                                         disabled={!selectedBrandId}
                                     >
@@ -444,11 +376,7 @@ function I3Module_Template_AddVariant_Dialog({
                         onClick={handleSubmit}
                     />
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleOpenChange(false)}
-                    >
+                    <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                         Cancel
                     </Button>
                 </DialogFooter>
