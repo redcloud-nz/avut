@@ -8,7 +8,7 @@ import * as z from "zod";
 import { I3TemplateId } from "./i3-template";
 import { I3TemplateVariantId } from "./i3-template-variant";
 
-export const IssuedItem = {
+export const I3IssuedItem = {
     schema: z.object({
         template: z.object(
             {
@@ -27,19 +27,23 @@ export const IssuedItem = {
     }),
 } as const;
 
-export type IssuedItem = z.infer<typeof IssuedItem.schema>;
+export type I3IssuedItem = z.infer<typeof I3IssuedItem.schema>;
 
-export const IssueItemsFormData = {
+export type I3IssuedItemInput = z.input<typeof I3IssuedItem.schema>;
+
+export const I3IssueItemsFormData = {
     schema: z.object({
-        recipient: z.object({
-            id: z.number(),
-            name: z.string(),
-        }),
-        items: z.array(IssuedItem.schema),
+        recipient: z
+            .object({
+                id: z.number(),
+                name: z.string(),
+            })
+            .refine((recipient) => recipient.id > 0, "Recipient is required"),
+        items: z.array(I3IssuedItem.schema).nonempty("At least one item must be issued"),
         comments: z.string(),
     }),
 } as const;
 
-export type IssueItemsFormData = z.infer<typeof IssueItemsFormData.schema>;
+export type I3IssueItemsFormData = z.infer<typeof I3IssueItemsFormData.schema>;
 
-export type IssueItemsFormInputData = z.input<typeof IssueItemsFormData.schema>;
+export type I3IssueItemsFormInputData = z.input<typeof I3IssueItemsFormData.schema>;

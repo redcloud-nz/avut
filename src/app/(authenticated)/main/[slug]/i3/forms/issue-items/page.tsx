@@ -8,12 +8,14 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
+import { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { newFormInstanceMutation } from "@/client/form-queries";
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
@@ -36,12 +38,11 @@ import {
 } from "@/components/ui/items";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getFormInstancesCollection } from "@/lib/collections/form-instances";
-import { FormInstance } from "@/lib/schemas/form-instance";
-import { IssueItemsFormData } from "@/lib/schemas/i3-forms";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
+import { I3IssueItemsFormData } from "@/lib/schemas/i3-forms";
 
+import { I3IssueItemsForm } from "@/lib/forms";
 import { trpc } from "@/trpc/client";
-import { Route } from "next";
 
 export default function I3Module_Issue_FormInstanceList_Page() {
     const organization = useOrganization();
@@ -49,27 +50,38 @@ export default function I3Module_Issue_FormInstanceList_Page() {
     const t = useTranslations("I3Module");
 
     const { data: instances } = useSuspenseQuery(
-        trpc.forms.listFormInstances.queryOptions({
+        trpc.forms.listDraftFormInstances.queryOptions({
             organizationId: organization.id,
-            formKey: "i3-issue",
-            formStatus: "Draft",
+            formKey: I3IssueItemsForm.formKey,
+        }),
+    );
+
+    const sortedInstances = [...instances]
+        .filter((inst) => !inst.deleted)
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    const newFormMutation = useMutation(
+        newFormInstanceMutation({
+            onMutate(data) {
+                router.push(
+                    `/main/${organization.slug}/i3/forms/issue-items/${data.formInstanceId}` as Route,
+                );
+            },
         }),
     );
 
     function handleNewForm() {
-        const newInstance = FormInstance.create({
-            formKey: "i3-issue",
+        const formInstanceId = FormInstanceId.create();
+        newFormMutation.mutateAsync({
+            formInstanceId,
+            formKey: I3IssueItemsForm.formKey,
+            organizationId: organization.id,
             formData: {
                 recipient: { id: 0, name: "" },
                 items: [],
                 comments: "",
             },
-            organizationId: organization.id,
         });
-        const collection = getFormInstancesCollection(organization.id);
-        collection.insert(newInstance);
-
-        router.push(`/main/${organization.slug}/i3/forms/issue-items/${newInstance.id}` as Route);
     }
 
     return (
@@ -83,35 +95,34 @@ export default function I3Module_Issue_FormInstanceList_Page() {
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
-                        <Hermes.BackButton to={{ href: `/main/${organization.slug}/i3` }} />
                         <Hermes.Title>{t("IssueList.title")}</Hermes.Title>
                         <Hermes.Action>
-                            <Button onClick={handleNewForm} variant="ghost" size="icon">
-                                <ObjectIcons.Create />
+                            <Button onClick={handleNewForm} variant="outline">
+                                <ObjectIcons.Create /> {t("IssueList.newFormButton")}
                             </Button>
                         </Hermes.Action>
-                        <Hermes.Description>
-                            Your current draft "Issue Items" forms.
-                        </Hermes.Description>
+                        <Hermes.Description>{t("IssueList.description")}</Hermes.Description>
                     </Hermes.Header>
                     <Show
-                        when={instances.length > 0}
+                        when={sortedInstances.length > 0}
                         fallback={
                             <Empty>
                                 <EmptyHeader>
-                                    <EmptyTitle>No Draft Forms</EmptyTitle>
+                                    <EmptyTitle>{t("IssueList.emptyTitle")}</EmptyTitle>
                                     <EmptyDescription>
-                                        You have not started an "Issue Items" form yet.
+                                        {t("IssueList.emptyDescription")}
                                     </EmptyDescription>
                                 </EmptyHeader>
                                 <EmptyContent>
-                                    <Button onClick={handleNewForm}>Start New Form</Button>
+                                    <Button onClick={handleNewForm}>
+                                        {t("IssueList.newFormButton")}
+                                    </Button>
                                 </EmptyContent>
                             </Empty>
                         }
                     >
                         <ItemGroup>
-                            {instances.map((instance) => (
+                            {sortedInstances.map((instance) => (
                                 <Item key={instance.id} variant="outline" asChild>
                                     <Link
                                         href={
@@ -120,17 +131,21 @@ export default function I3Module_Issue_FormInstanceList_Page() {
                                     >
                                         <ItemContent>
                                             <ItemTitle>
-                                                {(instance.formData as IssueItemsFormData).recipient
-                                                    ?.name || "No Recipient"}
+                                                {(instance.formData as I3IssueItemsFormData)
+                                                    .recipient?.name ||
+                                                    t("IssueList.itemTitle_noRecipient")}
                                             </ItemTitle>
                                             <ItemDescription>
-                                                {
-                                                    (instance.formData as IssueItemsFormData).items
-                                                        .length
-                                                }{" "}
-                                                items - Updated{" "}
-                                                {formatDistanceToNow(new Date(instance.updatedAt), {
-                                                    addSuffix: true,
+                                                {t("IssueList.itemDescription", {
+                                                    count: (
+                                                        instance.formData as I3IssueItemsFormData
+                                                    ).items.length,
+                                                    updatedAt: formatDistanceToNow(
+                                                        new Date(instance.updatedAt),
+                                                        {
+                                                            addSuffix: true,
+                                                        },
+                                                    ),
                                                 })}
                                             </ItemDescription>
                                         </ItemContent>

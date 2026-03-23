@@ -8,29 +8,28 @@
 "use client";
 
 import { CheckIcon, CircleXIcon } from "lucide-react";
+import { Route } from "next";
 import { useRouter } from "next/navigation";
-import { ComponentProps, Fragment, use, useState } from "react";
+import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
-import { toast } from "sonner";
 import { match } from "ts-pattern";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDebouncer } from "@tanstack/react-pacer";
-import {
-    useMutation,
-    useQuery,
-    useQueryClient,
-    useSuspenseQueries,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
 import { authQueries } from "@/client/auth-queries";
+import {
+    deleteDraftFormInstanceMutation,
+    saveDraftFormInstanceMutation,
+} from "@/client/form-queries";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
+import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { AlertIcons, ObjectIcons } from "@/components/icons";
 import { Alert, AlertTitle } from "@/components/ui/alert2";
-import { Button } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
@@ -63,10 +62,7 @@ import {
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
-    SelectSeparator,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -76,13 +72,18 @@ import { Spinner } from "@/components/ui/spinner";
 
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
+import { I3IssueItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
-import { IssuedItem, IssueItemsFormData, IssueItemsFormInputData } from "@/lib/schemas/i3-forms";
+import {
+    I3IssuedItem,
+    I3IssuedItemInput,
+    I3IssueItemsFormData,
+    I3IssueItemsFormInputData,
+} from "@/lib/schemas/i3-forms";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
-import { Route } from "next";
 
 export default function I3Module_Issue_FormInstance_Page(
     props: PageProps<"/main/[slug]/i3/forms/issue-items/[instance_id]">,
@@ -92,25 +93,12 @@ export default function I3Module_Issue_FormInstance_Page(
 
     const logger = useLogger("I3Module", "Issue_FormInstance_Page");
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
-    const queryFilter = trpc.forms.listFormInstances.queryFilter({
-        organizationId: organization.id,
-        formKey: "i3-issue",
-        formStatus: "Draft",
-    });
-    const queryKey = trpc.forms.listFormInstances.queryKey({
-        organizationId: organization.id,
-        formKey: "i3-issue",
-        formStatus: "Draft",
-    });
-
     const { data: instances } = useSuspenseQuery(
-        trpc.forms.listFormInstances.queryOptions({
+        trpc.forms.listDraftFormInstances.queryOptions({
             organizationId: organization.id,
             formKey: "i3-issue",
-            formStatus: "Draft",
         }),
     );
 
@@ -118,82 +106,17 @@ export default function I3Module_Issue_FormInstance_Page(
     if (!instance) throw new Error(`FormInstance(${instanceId}) not found`);
 
     const form = useForm({
-        resolver: zodResolver(IssueItemsFormData.schema),
-        values: instance.formData as IssueItemsFormData,
+        resolver: zodResolver(I3IssueItemsFormData.schema),
+        values: instance.formData as I3IssueItemsFormData,
     });
 
-    const saveMutation = useMutation(
-        trpc.forms.saveFormInstanceData.mutationOptions({
-            async onMutate(data) {
-                // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-                queryClient.cancelQueries(queryFilter);
+    const saveMutation = useMutation(saveDraftFormInstanceMutation());
+    const deleteMutation = useMutation(deleteDraftFormInstanceMutation());
 
-                // Snapshot the previous value
-                const previous = queryClient.getQueryData(queryKey);
-
-                // Optimistically update to the new value
-                queryClient.setQueryData(queryKey, (old = []) =>
-                    old.map((inst) => {
-                        if (inst.id === instanceId) {
-                            return {
-                                ...inst,
-                                formData: data.formData,
-                                updatedAt: new Date().toISOString(),
-                            };
-                        }
-                        return inst;
-                    }),
-                );
-
-                // Return a context object with the snapshotted value
-                return { previous };
-            },
-            onError(error, _variables, context) {
-                if (context?.previous) {
-                    queryClient.setQueryData(queryKey, context.previous);
-                }
-
-                logger.error("Failed to save form data: ", error);
-                toast.error(`Failed to save form data: ${error.message}`);
-            },
-        }),
-    );
-
-    const deleteMutation = useMutation(
-        trpc.forms.deleteFormInstance.mutationOptions({
-            async onMutate() {
-                // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-                await queryClient.cancelQueries(queryFilter);
-
-                // Snapshot the previous value
-                const previous = queryClient.getQueryData(queryKey);
-
-                // Optimistically update to the new value
-                queryClient.setQueryData(queryKey, (old = []) =>
-                    old.filter((inst) => inst.id !== instanceId),
-                );
-
-                router.push(`/main/${slug}/i3/forms/issue-items` as Route);
-
-                // Return a context object with the snapshotted value
-                return { previous };
-            },
-            onError(error, _variables, context) {
-                if (context?.previous) {
-                    queryClient.setQueryData(queryKey, context.previous);
-                }
-
-                logger.error("Failed to delete form instance: ", error);
-                toast.error(`Failed to delete form instance: ${error.message}`);
-            },
-            async onSettled() {
-                await queryClient.invalidateQueries(queryFilter);
-            },
-        }),
-    );
+    const submitMutation = useMutation(trpc.i3.submitIssueItemsForm.mutationOptions());
 
     const debouncer = useDebouncer(
-        (formData: IssueItemsFormInputData) => {
+        (formData: I3IssueItemsFormInputData) => {
             saveMutation.mutate({
                 formInstanceId: instanceId,
                 organizationId: organization.id,
@@ -205,7 +128,12 @@ export default function I3Module_Issue_FormInstance_Page(
     );
 
     function handleDelete() {
-        deleteMutation.mutate({ formInstanceId: instanceId, organizationId: organization.id });
+        router.push(`/main/${slug}/i3/forms/issue-items` as Route);
+        deleteMutation.mutate({
+            formInstanceId: instanceId,
+            organizationId: organization.id,
+            formKey: I3IssueItemsForm.formKey,
+        });
     }
 
     function handleChange() {
@@ -218,7 +146,18 @@ export default function I3Module_Issue_FormInstance_Page(
         debouncer.maybeExecute(form.getValues());
     }
 
-    const handleSubmit = form.handleSubmit(() => {});
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            submitMutation.mutate({
+                formInstanceId: instanceId,
+                organizationId: organization.id,
+                formData,
+            });
+        },
+        (error) => {
+            logger.warn("Form validation failed", error);
+        },
+    );
 
     return (
         <Lexington.Root>
@@ -293,7 +232,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                                 <FieldLabel htmlFor="recipient">
                                                     Recipient
                                                 </FieldLabel>
-                                                <TeamMemberSelect
+                                                <D4HTeamMemberSelect
                                                     {...field}
                                                     organizationId={organization.id}
                                                     slotProps={{
@@ -306,6 +245,9 @@ export default function I3Module_Issue_FormInstance_Page(
                                                         },
                                                     }}
                                                 />
+                                                {fieldState.error && (
+                                                    <FieldError errors={[fieldState.error]} />
+                                                )}
                                             </Field>
                                         )}
                                     />
@@ -341,7 +283,15 @@ export default function I3Module_Issue_FormInstance_Page(
                                         )}
                                     />
                                     <Field orientation="horizontal">
-                                        <Button type="submit">Submit</Button>
+                                        <MutationButton
+                                            type="submit"
+                                            status={submitMutation.status}
+                                            text={{
+                                                idle: "Submit",
+                                                pending: "Submitting",
+                                                success: "Submitted",
+                                            }}
+                                        />
                                     </Field>
                                 </FieldGroup>
                             </form>
@@ -370,81 +320,6 @@ function UserNameFieldValue() {
     }
 }
 
-interface TeamMemberSelectProps {
-    value: IssueItemsFormInputData["recipient"];
-    onChange: (value: IssueItemsFormInputData["recipient"]) => void;
-    organizationId: OrganizationId;
-    slotProps?: {
-        content?: ComponentProps<typeof SelectContent>;
-        trigger?: ComponentProps<typeof SelectTrigger>;
-        value?: ComponentProps<typeof SelectValue>;
-    };
-}
-
-function TeamMemberSelect({
-    value,
-    onChange,
-    organizationId,
-    slotProps = {},
-}: TeamMemberSelectProps) {
-    const [{ data: teams }, { data: members }] = useSuspenseQueries({
-        queries: [
-            trpc.d4hApi.listTeams.queryOptions({
-                organizationId: organizationId,
-            }),
-            trpc.d4hApi.listMembers.queryOptions({
-                organizationId: organizationId,
-            }),
-        ],
-    });
-
-    function handleChange(newValue: string) {
-        if (newValue === "") {
-            onChange({ id: 0, name: "" });
-        } else {
-            const memberId = parseInt(newValue, 10);
-            const selectedMember = members.find((member) => member.id === memberId);
-            if (selectedMember) {
-                onChange({ id: selectedMember.id, name: selectedMember.name });
-            }
-        }
-    }
-
-    return (
-        <Select value={value.id == 0 ? "" : value.id + ""} onValueChange={handleChange}>
-            <SelectTrigger {...slotProps.trigger}>
-                <SelectValue {...slotProps.value} placeholder="Select a recipient" />
-            </SelectTrigger>
-            <SelectContent {...slotProps.content}>
-                {teams
-                    .sort((a, b) => a.title.localeCompare(b.title))
-                    .map((team, teamIndex) => {
-                        const teamMembers = members.filter((member) => member.team.id === team.id);
-                        if (teamMembers.length === 0) {
-                            return null;
-                        }
-
-                        return (
-                            <Fragment key={team.id}>
-                                <SelectGroup>
-                                    <SelectLabel>{team.title}</SelectLabel>
-                                    {teamMembers
-                                        .sort((a, b) => a.name.localeCompare(b.name))
-                                        .map((member) => (
-                                            <SelectItem key={member.id} value={member.id + ""}>
-                                                {member.name}
-                                            </SelectItem>
-                                        ))}
-                                </SelectGroup>
-                                {teamIndex < teams.length - 1 && <SelectSeparator />}
-                            </Fragment>
-                        );
-                    })}
-            </SelectContent>
-        </Select>
-    );
-}
-
 /**
  * Section for managing the list of items being issued, including the "Add Item" dialog.
  */
@@ -453,7 +328,7 @@ function I3_Issue_ItemsSection({
     organizationId,
     onChange,
 }: {
-    form: UseFormReturn<IssueItemsFormInputData>;
+    form: UseFormReturn<I3IssueItemsFormInputData>;
     organizationId: OrganizationId;
     onChange: () => void;
 }) {
@@ -475,6 +350,8 @@ function I3_Issue_ItemsSection({
         control: form.control,
         name: "items",
     });
+
+    const error = form.formState.errors.items;
 
     return (
         <div className="flex flex-col gap-2">
@@ -537,6 +414,7 @@ function I3_Issue_ItemsSection({
                     );
                 })}
             </ItemGroup>
+            {error && <FieldError errors={[error]} />}
 
             <AddItemDialog
                 open={targetIndex === "new"}
@@ -568,7 +446,7 @@ function I3_Issue_ItemsSection({
 interface AddItemDialogProps extends DialogProps {
     templates: I3Template[];
     variants: I3TemplateVariant[];
-    onAdd: (item: IssueItemsFormInputData["items"][number]) => void;
+    onAdd: (item: I3IssuedItemInput) => void;
 }
 
 /**
@@ -576,7 +454,7 @@ interface AddItemDialogProps extends DialogProps {
  */
 function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogProps) {
     const form = useForm({
-        resolver: zodResolver(IssuedItem.schema),
+        resolver: zodResolver(I3IssuedItem.schema),
         defaultValues: {
             template: { id: "", name: "" },
             variant: null,
@@ -736,13 +614,13 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
 interface EditItemDialogProps extends DialogProps {
     templates: I3Template[];
     variants: I3TemplateVariant[];
-    item: IssueItemsFormInputData["items"][number];
-    onUpdate: (updatedItem: IssueItemsFormInputData["items"][number]) => void;
+    item: I3IssuedItemInput;
+    onUpdate: (updatedItem: I3IssuedItemInput) => void;
 }
 
 function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditItemDialogProps) {
     const form = useForm({
-        resolver: zodResolver(IssuedItem.schema),
+        resolver: zodResolver(I3IssuedItem.schema),
         defaultValues: item,
     });
 

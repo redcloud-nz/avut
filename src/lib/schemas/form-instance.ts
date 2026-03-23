@@ -34,33 +34,15 @@ export const FormInstance = {
         formStatus: z.enum(["Draft", "Submitted"]),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
+        deleted: z.boolean().default(false),
     }),
-
-    create: ({
-        formData,
-        formKey,
-        organizationId,
-    }: {
-        formData: object;
-        formKey: string;
-        organizationId: OrganizationId;
-    }) =>
-        FormInstance.schema.parse({
-            id: FormInstanceId.create(),
-            formKey,
-            organizationId,
-            userId: null,
-            formData,
-            formStatus: "Draft",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        }),
 
     fromRecord: (record: FormInstanceRecord) => {
         return FormInstance.schema.parse({
             ...record,
             createdAt: record?.createdAt?.toISOString(),
             updatedAt: record?.updatedAt?.toISOString(),
+            deleted: false,
         });
     },
 } as const;

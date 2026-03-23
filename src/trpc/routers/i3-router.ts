@@ -7,8 +7,11 @@ import * as z from "zod";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { diffObject } from "@/lib/diff";
-import { TRPCError } from "@trpc/server";
+import { I3IssueItemsFormData } from "@/lib/schemas/i3-forms";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { TRPCError } from "@trpc/server";
+
 import { Messages } from "../messages";
 
 export const i3Router = createTrpcRouter({
@@ -203,6 +206,12 @@ export const i3Router = createTrpcRouter({
             }));
         }),
 
+    /**
+     * List configured variants optionally filtered by template.
+     *
+     * @param templateId Optional template ID to filter variants by. If not provided, all variants for the organization will be returned.
+     * @returns List of template variants matching the filter criteria.
+     */
     listTemplateVariants: organizationProcedure({ i3Template: ["view"] })
         .input(
             z.object({
@@ -222,6 +231,29 @@ export const i3Router = createTrpcRouter({
             });
 
             return variants.map(I3TemplateVariant.fromRecord);
+        }),
+
+    submitIssueItemsForm: organizationProcedure({ i3Items: ["issue"] })
+        .input(
+            z.object({
+                formInstanceId: FormInstanceId.schema,
+                formData: I3IssueItemsFormData.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
+            const formInstance = await ctx.prisma.formInstance.findUnique({
+                where: {
+                    id: formInstanceId,
+                    organizationId: ctx.organizationId,
+                },
+            });
+
+            if (!formInstance) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.formInstanceNotFound(formInstanceId),
+                });
+            }
         }),
 
     /**
@@ -273,6 +305,12 @@ export const i3Router = createTrpcRouter({
         }),
 });
 
+/**
+ * Utility function to fetch an I3 Template by ID and ensure it belongs to the organization. Throws a TRPCError if the template is not found or does not belong to the organization.
+ * @param ctx The authenticated organization context.
+ * @param templateId The ID of the I3 Template to fetch.
+ * @returns The I3 Template record.
+ */
 async function getI3TemplateOrThrow(
     ctx: AuthenticatedOrganizationContext,
     templateId: I3TemplateId,

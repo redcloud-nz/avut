@@ -14,7 +14,7 @@ import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
 export const getFormInstancesCollection = perOrganization((organizationId) =>
     createCollection(
         queryCollectionOptions({
-            queryKey: trpc.forms.listFormInstances.queryKey({ organizationId }),
+            queryKey: trpc.forms.listDraftFormInstances.queryKey({ organizationId }),
             queryFn: async (ctx) => {
                 const params = parseLoadSubsetOptions(ctx.meta?.loadSubsetOptions);
 
@@ -34,7 +34,7 @@ export const getFormInstancesCollection = perOrganization((organizationId) =>
                     throw new Error("formKey filter is required to load form instances.");
                 }
 
-                return await trpcClient.forms.listFormInstances.query({
+                return await trpcClient.forms.listDraftFormInstances.query({
                     organizationId,
                     ...queryParams,
                 });

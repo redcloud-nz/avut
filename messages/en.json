@@ -38,10 +38,12 @@
 
     "IssueList": {
       "title": "Issue Items",
-      "id": "ID",
-      "recipient": "Recipient",
-      "status": "Status",
-      "updatedAt": "Updated"
+      "description": "Your current draft \"Issue Items\" forms.",
+      "emptyTitle": "No Draft Forms",
+      "emptyDescription": "You don't have any draft \"Issue Items\" forms. Click the button below to create one.",
+      "newFormButton": "New",
+      "itemDescription": "{count} items - Updated {updatedAt}",
+      "itemTitle_noRecipient": "Issue Form - No Recipient"
     }
   },
 
