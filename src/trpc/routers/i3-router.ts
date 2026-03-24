@@ -13,6 +13,10 @@ import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-templat
 import { TRPCError } from "@trpc/server";
 
 import { Messages } from "../messages";
+import { saveFormInstance } from "./forms-router";
+import { I3IssueItemsForm } from "@/lib/forms";
+import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import { fetchD4HWhoamiCached } from "@/server/d4h-api/client";
 
 export const i3Router = createTrpcRouter({
     /**
@@ -241,19 +245,32 @@ export const i3Router = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
-            const formInstance = await ctx.prisma.formInstance.findUnique({
-                where: {
-                    id: formInstanceId,
-                    organizationId: ctx.organizationId,
-                },
+            const formInstance = await saveFormInstance(ctx, {
+                formInstanceId,
+                formKey: I3IssueItemsForm.formKey,
+                formData,
             });
 
-            if (!formInstance) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.formInstanceNotFound(formInstanceId),
-                });
-            }
+            const personalToken = await getPersonalD4HAccessTokenForUser(
+                ctx.organizationId,
+                ctx.userId,
+            );
+
+            if (!personalToken)
+                throw new Error("User does not have a D4H access token, cannot submit form");
+
+            try {
+                const whoami = await fetchD4HWhoamiCached(personalToken);
+
+                // Check the user's D4H permissions permit recording the items.
+
+                const userMembershipInRecipientTeam = whoami.members.find(
+                    (m) => m.owner.id === formData.recipient.teamId,
+                );
+
+                const canCreateEquipment =
+                    userMembershipInRecipientTeam?.permissions?.Equipment?.CREATE;
+            } catch (error) {}
         }),
 
     /**

@@ -12,7 +12,7 @@ import {
     FormInstanceItemId,
 } from "@/lib/schemas/form-instance";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { TRPCError } from "@trpc/server";
 
 export const formsRouter = createTrpcRouter({
@@ -166,45 +166,7 @@ export const formsRouter = createTrpcRouter({
         )
         .output(FormInstance.schema)
         .mutation(async ({ ctx, input: { formInstanceId, formKey, formData } }) => {
-            const existing = await ctx.prisma.formInstance.findUnique({
-                where: {
-                    id: formInstanceId,
-                },
-            });
-            if (
-                existing &&
-                (existing.organizationId !== ctx.organizationId || existing.userId !== ctx.userId)
-            ) {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message: `FormInstance(${formInstanceId}) belongs to a different user or organization`,
-                });
-            }
-            if (existing && existing.formKey !== formKey) {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message: `FormInstance(${formInstanceId}) formKey mismatch: expected ${existing.formKey}, got ${formKey}`,
-                });
-            }
-
-            const updatedFormInstance = await ctx.prisma.formInstance.upsert({
-                where: { id: formInstanceId },
-                update: {
-                    formData: formData as object,
-                    formStatus: "Draft",
-                    updatedAt: new Date(),
-                },
-                create: {
-                    id: formInstanceId,
-                    formKey,
-                    organizationId: ctx.organizationId,
-                    userId: ctx.userId,
-                    formData: formData as object,
-                    formStatus: "Draft",
-                },
-            });
-
-            return FormInstance.fromRecord(updatedFormInstance);
+            return saveFormInstance(ctx, { formInstanceId, formKey, formData });
         }),
 
     /**
@@ -273,3 +235,52 @@ export const formsRouter = createTrpcRouter({
             },
         ),
 });
+
+export async function saveFormInstance(
+    ctx: AuthenticatedOrganizationContext,
+    {
+        formInstanceId,
+        formKey,
+        formData,
+    }: { formInstanceId: FormInstanceId; formKey: string; formData: Record<string, unknown> },
+) {
+    const existing = await ctx.prisma.formInstance.findUnique({
+        where: {
+            id: formInstanceId,
+        },
+    });
+    if (
+        existing &&
+        (existing.organizationId !== ctx.organizationId || existing.userId !== ctx.userId)
+    ) {
+        throw new TRPCError({
+            code: "CONFLICT",
+            message: `FormInstance(${formInstanceId}) belongs to a different user or organization`,
+        });
+    }
+    if (existing && existing.formKey !== formKey) {
+        throw new TRPCError({
+            code: "CONFLICT",
+            message: `FormInstance(${formInstanceId}) formKey mismatch: expected ${existing.formKey}, got ${formKey}`,
+        });
+    }
+
+    const updatedFormInstance = await ctx.prisma.formInstance.upsert({
+        where: { id: formInstanceId },
+        update: {
+            formData: formData as object,
+            formStatus: "Draft",
+            updatedAt: new Date(),
+        },
+        create: {
+            id: formInstanceId,
+            formKey,
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            formData: formData as object,
+            formStatus: "Draft",
+        },
+    });
+
+    return FormInstance.fromRecord(updatedFormInstance);
+}

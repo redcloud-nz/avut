@@ -36,6 +36,7 @@ export const I3IssueItemsFormData = {
         recipient: z
             .object({
                 id: z.number(),
+                teamId: z.number(),
                 name: z.string(),
             })
             .refine((recipient) => recipient.id > 0, "Recipient is required"),

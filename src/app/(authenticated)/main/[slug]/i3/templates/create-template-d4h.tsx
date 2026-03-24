@@ -56,12 +56,14 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
             organizationId: organization.id,
+            module: "i3",
         }),
     );
 
     const { data: kinds } = useQuery(
         trpc.d4hApi.listEquipmentKinds.queryOptions({
             organizationId: organization.id,
+            module: "i3",
         }),
     );
 
@@ -76,8 +78,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                 kindId: 0,
                 kindTitle: "",
                 requireSN: false,
-                outputRefFormat:
-                    "{{team.prefix}} {{kind.title}} {{member.ref}}",
+                outputRefFormat: "{{team.prefix}} {{kind.title}} {{member.ref}}",
             },
         },
     });
@@ -100,9 +101,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                     }),
                 );
                 handleOpenChange(false);
-                router.push(
-                    Paths.main(organization.slug).i3.template(created.id).href,
-                );
+                router.push(Paths.main(organization.slug).i3.template(created.id).href);
                 mutation.reset();
             },
         }),
@@ -126,18 +125,14 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
         control: form.control,
         name: "d4h.categoryId",
     });
-    const filteredKinds = kinds?.filter(
-        (k) => k.category.id === selectedCategoryId,
-    );
+    const filteredKinds = kinds?.filter((k) => k.category.id === selectedCategoryId);
 
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>New I3 Template</DialogTitle>
-                    <DialogDescription>
-                        Create a new I3 item template.
-                    </DialogDescription>
+                    <DialogDescription>Create a new I3 item template.</DialogDescription>
                 </DialogHeader>
 
                 <FieldGroup>
@@ -146,9 +141,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template-name">
-                                    Name
-                                </FieldLabel>
+                                <FieldLabel htmlFor="template-name">Name</FieldLabel>
                                 <Input
                                     id="template-name"
                                     autoFocus
@@ -156,9 +149,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                     aria-invalid={fieldState.invalid}
                                     {...field}
                                 />
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -167,17 +158,13 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template-description">
-                                    Description
-                                </FieldLabel>
+                                <FieldLabel htmlFor="template-description">Description</FieldLabel>
                                 <Textarea
                                     id="template-description"
                                     aria-invalid={fieldState.invalid}
                                     {...field}
                                 />
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -187,24 +174,16 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template-category">
-                                    D4H Category
-                                </FieldLabel>
+                                <FieldLabel htmlFor="template-category">D4H Category</FieldLabel>
                                 <Select
-                                    value={
-                                        field.value
-                                            ? field.value.toString()
-                                            : ""
-                                    }
+                                    value={field.value ? field.value.toString() : ""}
                                     onValueChange={(v) => {
                                         const newCategoryId = parseInt(v, 10);
                                         field.onChange(newCategoryId);
                                         form.setValue(
                                             "d4h.categoryTitle",
-                                            categories?.find(
-                                                (cat) =>
-                                                    cat.id === newCategoryId,
-                                            )?.title || "",
+                                            categories?.find((cat) => cat.id === newCategoryId)
+                                                ?.title || "",
                                         );
                                         form.setValue("d4h.kindId", 0);
                                         form.setValue("d4h.kindTitle", "");
@@ -218,18 +197,13 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {categories?.map((cat) => (
-                                            <SelectItem
-                                                key={cat.id}
-                                                value={cat.id.toString()}
-                                            >
+                                            <SelectItem key={cat.id} value={cat.id.toString()}>
                                                 {cat.title}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -238,23 +212,16 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template-kind">
-                                    D4H Kind
-                                </FieldLabel>
+                                <FieldLabel htmlFor="template-kind">D4H Kind</FieldLabel>
                                 <Select
-                                    value={
-                                        field.value
-                                            ? field.value.toString()
-                                            : ""
-                                    }
+                                    value={field.value ? field.value.toString() : ""}
                                     onValueChange={(v) => {
                                         const newKindId = parseInt(v, 10);
                                         field.onChange(newKindId);
                                         form.setValue(
                                             "d4h.kindTitle",
-                                            filteredKinds?.find(
-                                                (k) => k.id === newKindId,
-                                            )?.title || "",
+                                            filteredKinds?.find((k) => k.id === newKindId)?.title ||
+                                                "",
                                         );
                                     }}
                                     disabled={!selectedCategoryId}
@@ -267,18 +234,13 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredKinds?.map((kind) => (
-                                            <SelectItem
-                                                key={kind.id}
-                                                value={kind.id.toString()}
-                                            >
+                                            <SelectItem key={kind.id} value={kind.id.toString()}>
                                                 {kind.title}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {fieldState.error && (
-                                    <FieldError errors={[fieldState.error]} />
-                                )}
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
                     />
@@ -292,9 +254,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                 </FieldLabel>
                                 <Select
                                     value={field.value ? "yes" : "no"}
-                                    onValueChange={(v) =>
-                                        field.onChange(v === "yes")
-                                    }
+                                    onValueChange={(v) => field.onChange(v === "yes")}
                                 >
                                     <SelectTrigger
                                         id="template-require-sn"
@@ -314,8 +274,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                     <FieldSet>
                         <FieldLegend>Output Format</FieldLegend>
                         <FieldDescription>
-                            The field format on items created from this
-                            template.
+                            The field format on items created from this template.
                         </FieldDescription>
                         <FieldGroup>
                             <Controller
@@ -332,9 +291,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                             {...field}
                                         />
                                         {fieldState.error && (
-                                            <FieldError
-                                                errors={[fieldState.error]}
-                                            />
+                                            <FieldError errors={[fieldState.error]} />
                                         )}
                                     </Field>
                                 )}

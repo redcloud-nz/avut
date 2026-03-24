@@ -21,6 +21,7 @@ export const getD4HEquipmentBrandsCollection = perOrganization((organizationId) 
             queryFn: async () => {
                 return trpcClient.d4hApi.listEquipmentBrands.query({
                     organizationId,
+                    module: "d4h-views",
                 });
             },
             getKey: (item) => item.id,

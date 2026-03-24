@@ -26,6 +26,7 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
+    FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,7 +47,7 @@ import { countDirtyFields } from "@/lib/utils";
 import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
-import { Show } from "@/components/show";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function AdminModule_Settings_Page(
     props: PageProps<`/main/[slug]/admin/organization/settings`>,
@@ -149,7 +150,10 @@ export default function AdminModule_Settings_Page(
                                 organizationId={organization.id}
                             />
                             <FormsModule_SettingsCard lens={lens.focus("modules.forms")} />
-                            <I3Module_SettingsCard lens={lens.focus("modules.i3")} />
+                            <I3Module_SettingsCard
+                                lens={lens.focus("modules.i3")}
+                                organizationId={organization.id}
+                            />
                             <NotesModule_SettingsCard lens={lens.focus("modules.notes")} />
                             <SkillsModule_SettingsCard lens={lens.focus("modules.skills")} />
                             <SkillPackageBuilderModule_SettingsCard
@@ -461,7 +465,6 @@ function D4HViewsModule_SettingsCard({
     );
 
     const enabled = useWatch(lens.focus("enabled").interop());
-    const tokenPolicy = useWatch(lens.focus("tokenPolicy").interop());
 
     return (
         <Card>
@@ -483,81 +486,12 @@ function D4HViewsModule_SettingsCard({
             <CardContent>
                 <FieldGroup>
                     <Controller
-                        {...lens.focus("mode").interop()}
+                        {...lens.focus("d4hSharedTokenId").interop()}
                         render={({ field, fieldState }) => (
                             <Field orientation="responsive" data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="d4h-views-mode">Write Mode</FieldLabel>
-
-                                <Select
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    disabled={!enabled}
-                                >
-                                    <SelectTrigger
-                                        id="d4h-views-mode"
-                                        aria-invalid={fieldState.invalid}
-                                        className="min-w-1/2"
-                                    >
-                                        <SelectValue placeholder="Select mode" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Read-only">Read-only</SelectItem>
-                                        <SelectItem value="Read-write">Read-write</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <FieldDescription>
-                                    In "Read-only" mode, the D4H Views module will only read data
-                                    from D4H and display it in AVUT. In "Read-write" mode, the
-                                    module will also write data back to D4H when changes are made in
-                                    AVUT.
-                                </FieldDescription>
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        {...lens.focus("tokenPolicy").interop()}
-                        render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="d4h-views-token-policy">
-                                    Token Policy
+                                <FieldLabel htmlFor="d4h-views-token">
+                                    Shared D4H Access Token
                                 </FieldLabel>
-
-                                <Select
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    disabled={!enabled}
-                                >
-                                    <SelectTrigger
-                                        id="d4h-views-token-policy"
-                                        aria-invalid={fieldState.invalid}
-                                        className="min-w-1/2"
-                                    >
-                                        <SelectValue placeholder="Select token policy" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Shared">Shared Token</SelectItem>
-                                        <SelectItem value="Personal">Personal Tokens</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <FieldDescription>
-                                    If "Shared Token" is selected, the module will use a single,
-                                    shared D4H Access Token for all users in the organization. If
-                                    "Personal Tokens" is selected, each user will need to configure
-                                    their own D4H Access Token in their personal settings to use the
-                                    module.
-                                </FieldDescription>
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        {...lens.focus("token").interop()}
-                        render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="d4h-views-token">Shared Token</FieldLabel>
 
                                 <Select
                                     value={field.value || ""}
@@ -568,7 +502,6 @@ function D4HViewsModule_SettingsCard({
                                             field.onChange(value);
                                         }
                                     }}
-                                    disabled={tokenPolicy !== "Shared" || !enabled}
                                 >
                                     <SelectTrigger
                                         id="d4h-views-token"
@@ -587,9 +520,80 @@ function D4HViewsModule_SettingsCard({
                                     </SelectContent>
                                 </Select>
                                 <FieldDescription>
-                                    D4H Access Token to use for the module when "Shared Token"
-                                    policy is selected. Make sure to use a token with appropriate
-                                    permissions and keep it secure.
+                                    An already configured D4H Access Token for use with the
+                                    "SharedToken" strategy.
+                                </FieldDescription>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("d4hReadStrategy").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="d4h-views-read-strategy">
+                                    D4H Read Strategy
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="d4h-views-read-strategy"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select token policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="SharedToken">Shared Token</SelectItem>
+                                        <SelectItem value="PersonalToken">
+                                            Personal Token
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    Strategy to use for reading data from D4H within the D4H Views
+                                    module.
+                                </FieldDescription>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("d4hWriteStrategy").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="d4h-views-write-strategy">
+                                    D4H Write Strategy
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="d4h-views-write-strategy"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select token policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="SharedToken">Shared Token</SelectItem>
+                                        <SelectItem value="PersonalToken">
+                                            Personal Token
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    Strategy to use for writing data to D4H within the D4H Views
+                                    module.
                                 </FieldDescription>
                                 {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
@@ -634,9 +638,17 @@ function FormsModule_SettingsCard({
 
 function I3Module_SettingsCard({
     lens,
+    organizationId,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["i3"]>>;
+    organizationId: OrganizationId;
 }) {
+    const { data: d4hAccessTokens } = useQuery(
+        trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
+            organizationId,
+        }),
+    );
+
     const enabled = useWatch(lens.focus("enabled").interop());
 
     return (
@@ -686,6 +698,118 @@ function I3Module_SettingsCard({
                                     data will be stored in AVUT's database. If D4H is selected, I3
                                     data will be stored in D4H and associated with the corresponding
                                     teams and team members.
+                                </FieldDescription>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("d4hSharedTokenId").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="i3-d4h-shared-token">
+                                    Shared D4H Access Token
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value || ""}
+                                    onValueChange={(value) => {
+                                        if (value === "EMPTY") {
+                                            field.onChange(null);
+                                        } else {
+                                            field.onChange(value);
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger
+                                        id="i3-d4h-shared-token"
+                                        aria-invalid={fieldState.invalid}
+                                    >
+                                        <SelectValue placeholder="Select a shared access token" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="EMPTY">None</SelectItem>
+                                        <SelectSeparator />
+                                        {d4hAccessTokens?.map((token) => (
+                                            <SelectItem key={token.id} value={token.id}>
+                                                {token.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FieldDescription>
+                                    An already configured D4H Access Token for use with the
+                                    "SharedToken" strategy.
+                                </FieldDescription>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("d4hReadStrategy").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="i3-d4h-read-strategy">
+                                    D4H Read Strategy
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="i3-d4h-read-strategy"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select token policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="SharedToken">Shared Token</SelectItem>
+                                        <SelectItem value="PersonalToken">
+                                            Personal Token
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    Strategy to use for reading data from D4H within the I3 module.
+                                </FieldDescription>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+                    <Controller
+                        {...lens.focus("d4hWriteStrategy").interop()}
+                        render={({ field, fieldState }) => (
+                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor="i3-d4h-write-strategy">
+                                    D4H Write Strategy
+                                </FieldLabel>
+
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!enabled}
+                                >
+                                    <SelectTrigger
+                                        id="i3-d4h-write-strategy"
+                                        aria-invalid={fieldState.invalid}
+                                        className="min-w-1/2"
+                                    >
+                                        <SelectValue placeholder="Select token policy" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="SharedToken">Shared Token</SelectItem>
+                                        <SelectItem value="PersonalToken">
+                                            Personal Token
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <FieldDescription>
+                                    Strategy to use for writing data to D4H within the I3 module.
                                 </FieldDescription>
                                 {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>

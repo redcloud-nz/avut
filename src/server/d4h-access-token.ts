@@ -23,9 +23,7 @@ type GetD4HAccessTokenArguments = { tokenId: string } & (
     | { organizationId?: never; userId: UserId }
 );
 
-async function fetchD4HAccessToken(
-    tokenId: string,
-): Promise<D4hAccessTokenRecord | null> {
+async function fetchD4HAccessToken(tokenId: string): Promise<D4hAccessTokenRecord | null> {
     "use cache";
     cacheTag(`d4h-access-token-${tokenId}`);
 
@@ -95,31 +93,35 @@ export function revalidatePersonalD4HAccessTokenForUser(
 }
 
 /**
- * Geth the D4H Access Token configured for the D4H Views module for the given organization.
+ * Get the D4H Access Token configured.
  * @throws If the token is not found or if the module is not enabled.
  */
-export async function getConfiguredD4HViewsAccessToken(
+export async function getConfiguredD4HAccessToken(
     organizationId: OrganizationId,
     userId: UserId,
+    options: {
+        module: "d4h-views" | "i3";
+        action: "read" | "write";
+    },
 ): Promise<D4HAccessToken_ServerOnly> {
     const settings = await getOrganizationSettings(organizationId);
 
     if (settings.integrations.d4h.enabled === false) {
-        throw new NotConfiguredError(
-            "D4H integration is not enabled for this organization.",
-        );
+        throw new NotConfiguredError("D4H integration is not enabled for this organization.");
     }
 
-    if (settings.modules["d4h-views"].enabled === false)
+    const moduleSettings = settings.modules[options.module];
+
+    if (moduleSettings.enabled === false)
         throw new NotConfiguredError(
-            "D4H Views module is not enabled for this organization.",
+            `${options.module} module is not enabled for this organization.`,
         );
 
-    if (settings.modules["d4h-views"].tokenPolicy === "Personal") {
-        const personalToken = await getPersonalD4HAccessTokenForUser(
-            organizationId,
-            userId,
-        );
+    if (
+        (options.action == "read" && moduleSettings.d4hReadStrategy === "PersonalToken") ||
+        (options.action == "write" && moduleSettings.d4hWriteStrategy === "PersonalToken")
+    ) {
+        const personalToken = await getPersonalD4HAccessTokenForUser(organizationId, userId);
 
         if (!personalToken) {
             throw new NotConfiguredError(
@@ -131,11 +133,11 @@ export async function getConfiguredD4HViewsAccessToken(
     } else {
         // Shared token policy
 
-        const tokenId = settings.modules["d4h-views"].token;
+        const tokenId = moduleSettings.d4hSharedTokenId;
 
         if (!tokenId) {
             throw new NotConfiguredError(
-                "No shared D4H Access Token configured for D4H Views module. Please configure one in the organization settings.",
+                `No shared D4H Access Token configured for ${module} module. Please configure one in the organization settings.`,
             );
         }
 
@@ -146,7 +148,7 @@ export async function getConfiguredD4HViewsAccessToken(
 
         if (!accessToken) {
             throw new NotConfiguredError(
-                "The configured D4H Access Token for D4H Views module was not found. It may have been deleted. Please check the organization settings.",
+                `The configured D4H Access Token for ${module} module was not found. It may have been deleted. Please check the organization settings.`,
             );
         }
 

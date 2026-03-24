@@ -235,6 +235,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                                 <D4HTeamMemberSelect
                                                     {...field}
                                                     organizationId={organization.id}
+                                                    module="i3"
                                                     slotProps={{
                                                         trigger: {
                                                             id: "recipient",

@@ -23,9 +23,10 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
 interface D4HTeamMemberSelectProps {
-    value: { id: number; name: string };
-    onChange: (value: { id: number; name: string }) => void;
+    value: { id: number; teamId: number; name: string };
+    onChange: (value: { id: number; teamId: number; name: string }) => void;
     organizationId: OrganizationId;
+    module: "d4h-views" | "i3";
     slotProps?: {
         content?: ComponentProps<typeof SelectContent>;
         trigger?: ComponentProps<typeof SelectTrigger>;
@@ -47,27 +48,34 @@ export function D4HTeamMemberSelect({
     value,
     onChange,
     organizationId,
+    module,
     slotProps = {},
 }: D4HTeamMemberSelectProps) {
     const [{ data: teams }, { data: members }] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listTeams.queryOptions({
-                organizationId: organizationId,
+                organizationId,
+                module,
             }),
             trpc.d4hApi.listMembers.queryOptions({
-                organizationId: organizationId,
+                organizationId,
+                module,
             }),
         ],
     });
 
     function handleChange(newValue: string) {
         if (newValue === "") {
-            onChange({ id: 0, name: "" });
+            onChange({ id: 0, teamId: 0, name: "" });
         } else {
             const memberId = parseInt(newValue, 10);
             const selectedMember = members.find((member) => member.id === memberId);
             if (selectedMember) {
-                onChange({ id: selectedMember.id, name: selectedMember.name });
+                onChange({
+                    id: selectedMember.id,
+                    teamId: selectedMember.team.id,
+                    name: selectedMember.name,
+                });
             }
         }
     }

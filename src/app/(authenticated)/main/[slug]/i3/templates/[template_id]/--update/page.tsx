@@ -20,12 +20,7 @@ import { TmplExprInput } from "@/components/controls/tmpl-expr-input";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import {
@@ -56,12 +51,14 @@ export default function I3Module_UpdateTemplate_Page(
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
             organizationId: organization.id,
+            module: "i3",
         }),
     );
 
     const { data: kinds } = useQuery(
         trpc.d4hApi.listEquipmentKinds.queryOptions({
             organizationId: organization.id,
+            module: "i3",
         }),
     );
 
@@ -131,10 +128,7 @@ export default function I3Module_UpdateTemplate_Page(
                             <CardTitle>Template Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form
-                                id="update-ppe-template-form"
-                                onSubmit={handleSubmit}
-                            >
+                            <form id="update-ppe-template-form" onSubmit={handleSubmit}>
                                 <FieldGroup>
                                     <Controller
                                         name="name"
@@ -142,26 +136,18 @@ export default function I3Module_UpdateTemplate_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldLabel htmlFor="template-name">
                                                     Name
                                                 </FieldLabel>
                                                 <Input
                                                     id="template-name"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -172,26 +158,18 @@ export default function I3Module_UpdateTemplate_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldLabel htmlFor="template-description">
                                                     Description
                                                 </FieldLabel>
                                                 <Textarea
                                                     id="template-description"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -202,70 +180,47 @@ export default function I3Module_UpdateTemplate_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldLabel htmlFor="template-category">
                                                     D4H Category
                                                 </FieldLabel>
                                                 <Select
                                                     value={
-                                                        field.value
-                                                            ? field.value.toString()
-                                                            : ""
+                                                        field.value ? field.value.toString() : ""
                                                     }
                                                     onValueChange={(v) => {
-                                                        const newCategoryId =
-                                                            parseInt(v, 10);
-                                                        field.onChange(
-                                                            newCategoryId,
-                                                        );
+                                                        const newCategoryId = parseInt(v, 10);
+                                                        field.onChange(newCategoryId);
                                                         form.setValue(
                                                             "d4h.categoryTitle",
                                                             categories?.find(
-                                                                (cat) =>
-                                                                    cat.id ===
-                                                                    newCategoryId,
+                                                                (cat) => cat.id === newCategoryId,
                                                             )?.title || "",
                                                         );
-                                                        form.setValue(
-                                                            "d4h.kindId",
-                                                            0,
-                                                        );
-                                                        form.setValue(
-                                                            "d4h.kindTitle",
-                                                            "",
-                                                        );
+                                                        form.setValue("d4h.kindId", 0);
+                                                        form.setValue("d4h.kindTitle", "");
                                                     }}
                                                 >
                                                     <SelectTrigger
                                                         id="template-category"
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
+                                                        aria-invalid={fieldState.invalid}
                                                     >
                                                         <SelectValue placeholder="Select a category" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {categories?.map(
-                                                            (cat) => (
-                                                                <SelectItem
-                                                                    key={cat.id}
-                                                                    value={cat.id.toString()}
-                                                                >
-                                                                    {cat.title}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
+                                                        {categories?.map((cat) => (
+                                                            <SelectItem
+                                                                key={cat.id}
+                                                                value={cat.id.toString()}
+                                                            >
+                                                                {cat.title}
+                                                            </SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -276,67 +231,46 @@ export default function I3Module_UpdateTemplate_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldLabel htmlFor="template-kind">
                                                     D4H Kind
                                                 </FieldLabel>
                                                 <Select
                                                     value={
-                                                        field.value
-                                                            ? field.value.toString()
-                                                            : ""
+                                                        field.value ? field.value.toString() : ""
                                                     }
                                                     onValueChange={(v) => {
-                                                        const newKindId =
-                                                            parseInt(v, 10);
-                                                        field.onChange(
-                                                            newKindId,
-                                                        );
+                                                        const newKindId = parseInt(v, 10);
+                                                        field.onChange(newKindId);
                                                         form.setValue(
                                                             "d4h.kindTitle",
                                                             filteredKinds?.find(
-                                                                (k) =>
-                                                                    k.id ===
-                                                                    newKindId,
+                                                                (k) => k.id === newKindId,
                                                             )?.title || "",
                                                         );
                                                     }}
-                                                    disabled={
-                                                        !selectedCategoryId
-                                                    }
+                                                    disabled={!selectedCategoryId}
                                                 >
                                                     <SelectTrigger
                                                         id="template-kind"
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
+                                                        aria-invalid={fieldState.invalid}
                                                     >
                                                         <SelectValue placeholder="Select a kind" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {filteredKinds?.map(
-                                                            (kind) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        kind.id
-                                                                    }
-                                                                    value={kind.id.toString()}
-                                                                >
-                                                                    {kind.title}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
+                                                        {filteredKinds?.map((kind) => (
+                                                            <SelectItem
+                                                                key={kind.id}
+                                                                value={kind.id.toString()}
+                                                            >
+                                                                {kind.title}
+                                                            </SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -345,41 +279,25 @@ export default function I3Module_UpdateTemplate_Page(
                                         name="d4h.requireSN"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
-                                            <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
-                                            >
+                                            <Field data-invalid={fieldState.invalid}>
                                                 <FieldLabel htmlFor="template-require-sn">
                                                     Require Serial Number
                                                 </FieldLabel>
                                                 <Select
-                                                    value={
-                                                        field.value
-                                                            ? "yes"
-                                                            : "no"
-                                                    }
+                                                    value={field.value ? "yes" : "no"}
                                                     onValueChange={(v) =>
-                                                        field.onChange(
-                                                            v === "yes",
-                                                        )
+                                                        field.onChange(v === "yes")
                                                     }
                                                 >
                                                     <SelectTrigger
                                                         id="template-require-sn"
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
+                                                        aria-invalid={fieldState.invalid}
                                                     >
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="yes">
-                                                            Yes
-                                                        </SelectItem>
-                                                        <SelectItem value="no">
-                                                            No
-                                                        </SelectItem>
+                                                        <SelectItem value="yes">Yes</SelectItem>
+                                                        <SelectItem value="no">No</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </Field>
@@ -391,26 +309,18 @@ export default function I3Module_UpdateTemplate_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldLabel htmlFor="template-output-ref-format">
                                                     D4H Output Ref Format
                                                 </FieldLabel>
                                                 <TmplExprInput
                                                     id="template-output-ref-format"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -432,11 +342,8 @@ export default function I3Module_UpdateTemplate_Page(
                                                 variant="outline"
                                                 onClick={() =>
                                                     router.push(
-                                                        Paths.main(
-                                                            slug,
-                                                        ).i3.template(
-                                                            template.id,
-                                                        ).href,
+                                                        Paths.main(slug).i3.template(template.id)
+                                                            .href,
                                                     )
                                                 }
                                             >

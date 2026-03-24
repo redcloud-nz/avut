@@ -22,6 +22,7 @@ export const getD4HMembersCollection = perOrganization((organizationId) =>
             queryFn: async () => {
                 return trpcClient.d4hApi.listMembers.query({
                     organizationId,
+                    module: "d4h-views",
                 });
             },
             getKey: (item) => item.id,

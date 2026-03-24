@@ -30,15 +30,18 @@ const organizationSettingsSchema = z.object({
     modules: z.object({
         "d4h-views": z.object({
             enabled: z.boolean().default(false),
-            mode: z.enum(["Read-only", "Read-write"]).default("Read-only"),
-            tokenPolicy: z.enum(["Shared", "Personal"]).default("Shared"),
-            token: z.string().nullable().default(null),
+            d4hReadStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
+            d4hWriteStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
+            d4hSharedTokenId: z.string().nullable().default(null),
         }),
         forms: z.object({
             enabled: z.boolean().default(false),
         }),
         i3: z.object({
             enabled: z.boolean().default(false),
+            d4hReadStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
+            d4hWriteStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
+            d4hSharedTokenId: z.string().nullable().default(null),
             storage: z.enum(["AVUT", "D4H"]).default("D4H"),
         }),
         notes: z.object({
