@@ -12,6 +12,7 @@ import { Route } from "next";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { match } from "ts-pattern";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -70,16 +71,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 
-import { useLogger } from "@/hooks/use-logger";
-import { useOrganization } from "@/hooks/use-organization";
-import { I3IssueItemsForm } from "@/lib/forms";
-import { FormInstanceId } from "@/lib/schemas/form-instance";
 import {
     I3IssuedItem,
     I3IssuedItemInput,
     I3IssueItemsFormData,
     I3IssueItemsFormInputData,
-} from "@/lib/schemas/i3-forms";
+} from "@/forms/i3-issue-items/schema";
+import { useLogger } from "@/hooks/use-logger";
+import { useOrganization } from "@/hooks/use-organization";
+import { I3IssueItemsForm } from "@/lib/forms";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -113,7 +114,25 @@ export default function I3Module_Issue_FormInstance_Page(
     const saveMutation = useMutation(saveDraftFormInstanceMutation());
     const deleteMutation = useMutation(deleteDraftFormInstanceMutation());
 
-    const submitMutation = useMutation(trpc.i3.submitIssueItemsForm.mutationOptions());
+    const submitMutation = useMutation(
+        trpc.i3.submitIssueItemsForm.mutationOptions({
+            onError(error) {
+                toast.error(`Form processing failed: ${error.message}`);
+            },
+            onSuccess(_data, _variables, _result, context) {
+                toast.success("Form processed successfully.");
+
+                router.push(`/main/${slug}/i3/forms/issue-items` as Route);
+
+                context.client.invalidateQueries(
+                    trpc.forms.listDraftFormInstances.queryOptions({
+                        organizationId: organization.id,
+                        formKey: "i3-issue",
+                    }),
+                );
+            },
+        }),
+    );
 
     const debouncer = useDebouncer(
         (formData: I3IssueItemsFormInputData) => {

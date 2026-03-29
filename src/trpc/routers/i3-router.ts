@@ -7,16 +7,17 @@ import * as z from "zod";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { diffObject } from "@/lib/diff";
-import { I3IssueItemsFormData } from "@/lib/schemas/i3-forms";
+import { I3IssueItemsForm } from "@/lib/forms";
+import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+
 import { TRPCError } from "@trpc/server";
 
 import { Messages } from "../messages";
 import { saveFormInstance } from "./forms-router";
-import { I3IssueItemsForm } from "@/lib/forms";
-import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
-import { fetchD4HWhoamiCached } from "@/server/d4h-api/client";
+import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
+import { FormProcessingPipelineStageResult } from "@/server/form-processor";
 
 export const i3Router = createTrpcRouter({
     /**
@@ -237,6 +238,9 @@ export const i3Router = createTrpcRouter({
             return variants.map(I3TemplateVariant.fromRecord);
         }),
 
+    /**
+     * Submit an I3 Issue Items form.
+     */
     submitIssueItemsForm: organizationProcedure({ i3Items: ["issue"] })
         .input(
             z.object({
@@ -245,32 +249,26 @@ export const i3Router = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
-            const formInstance = await saveFormInstance(ctx, {
+            await saveFormInstance(ctx, {
                 formInstanceId,
                 formKey: I3IssueItemsForm.formKey,
                 formData,
             });
 
-            const personalToken = await getPersonalD4HAccessTokenForUser(
-                ctx.organizationId,
-                ctx.userId,
+            const stageResults = await I3IssueItemsFormProcessor.execute(
+                formInstanceId,
+                formData,
+                ctx,
             );
+            const errors = stageResults.flatMap((r) => (r.status === "error" ? [r.error] : []));
 
-            if (!personalToken)
-                throw new Error("User does not have a D4H access token, cannot submit form");
-
-            try {
-                const whoami = await fetchD4HWhoamiCached(personalToken);
-
-                // Check the user's D4H permissions permit recording the items.
-
-                const userMembershipInRecipientTeam = whoami.members.find(
-                    (m) => m.owner.id === formData.recipient.teamId,
-                );
-
-                const canCreateEquipment =
-                    userMembershipInRecipientTeam?.permissions?.Equipment?.CREATE;
-            } catch (error) {}
+            if (errors.length > 0) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: errors[0].message,
+                    cause: errors[0],
+                });
+            }
         }),
 
     /**

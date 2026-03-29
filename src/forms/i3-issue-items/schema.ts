@@ -5,8 +5,8 @@
 
 import * as z from "zod";
 
-import { I3TemplateId } from "./i3-template";
-import { I3TemplateVariantId } from "./i3-template-variant";
+import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 
 export const I3IssuedItem = {
     schema: z.object({

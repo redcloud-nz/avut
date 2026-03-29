@@ -2,25 +2,40 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-"use client";
 
-export class Logger {
-    private component: string;
+export interface AVUTLogger {
+    log(message: string, ...data: any[]): void;
+    debug(message: string, ...data: any[]): void;
+    error(message: string, ...optionalParams: any[]): void;
+    warn(message: string, ...optionalParams: any[]): void;
+}
 
-    constructor(component: string) {
-        this.component = component;
+export const AVUTLogger = {
+    getConsoleLogger(name: string): AVUTLogger {
+        return new AVUTConsoleLogger(name);
+    },
+} as const;
+
+export class AVUTConsoleLogger implements AVUTLogger {
+    private name: string;
+
+    constructor(name: string) {
+        this.name = name;
     }
 
-    log(message: string) {
-        console.log(`[${this.component}] ${message}`);
+    log(message: string, ...data: any[]) {
+        console.log(`[${this.name}] ${message}`, ...data);
     }
 
-    error(message: string, error?: Error) {
-        if (error) console.error(`[${this.component}] ${message}`, error);
-        else console.error(`[${this.component}] ${message}`);
+    debug(message: string, ...data: any[]) {
+        console.debug(`[${this.name}] ${message}`, ...data);
     }
 
-    warn(message: string) {
-        console.warn(`[${this.component}] ${message}`);
+    error(message: string, ...optionalParams: any[]) {
+        console.error(`[${this.name}] ${message}`, ...optionalParams);
+    }
+
+    warn(message: string, ...optionalParams: any[]) {
+        console.warn(`[${this.name}] ${message}`, ...optionalParams);
     }
 }

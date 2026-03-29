@@ -10,11 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ComponentProps, ReactNode, useState } from "react";
 
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -136,12 +132,7 @@ interface NavSubItemProps<T extends string> extends Omit<
     href: Route<T>;
 }
 
-export function NavSubItem<T extends string>({
-    href,
-    icon,
-    label,
-    ...props
-}: NavSubItemProps<T>) {
+export function NavSubItem<T extends string>({ href, icon, label, ...props }: NavSubItemProps<T>) {
     const pathname = usePathname();
 
     return (

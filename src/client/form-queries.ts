@@ -47,16 +47,16 @@ export function newFormInstanceMutation(
                 : context;
 
             // Return a context object with the snapshotted value and any extra context from the original onMutate
-            return { client: context.client, previous, innerResult: innerResult };
+            return { previous, innerResult: innerResult };
         },
-        onError(error, data, res, context) {
-            if (res?.previous) {
+        onError(error, data, result, context) {
+            if (result?.previous) {
                 context.client.setQueryData(
                     trpc.forms.listDraftFormInstances.queryKey({
                         organizationId: data.organizationId,
                         formKey: data.formKey,
                     }),
-                    res.previous,
+                    result.previous,
                 );
             }
 
@@ -64,7 +64,7 @@ export function newFormInstanceMutation(
             toast.error(`Failed to create form instance: ${error.message}`);
 
             if (mutationOptions.onError)
-                mutationOptions.onError(error, data, res?.innerResult, context);
+                mutationOptions.onError(error, data, result?.innerResult, context);
         },
     });
 }

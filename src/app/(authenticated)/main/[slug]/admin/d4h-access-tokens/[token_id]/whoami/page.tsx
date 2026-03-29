@@ -13,7 +13,7 @@ import { Lexington } from "@/components/blocks/lexington";
 
 import { getD4HFetchClient } from "@/server/d4h-api/client";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
@@ -35,7 +35,7 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accesToken = await getD4HAccessToken({
+    const accesToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });

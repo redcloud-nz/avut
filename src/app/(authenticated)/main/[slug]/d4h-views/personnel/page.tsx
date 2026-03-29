@@ -9,7 +9,7 @@ import { Lexington } from "@/components/blocks/lexington";
 
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 
@@ -30,7 +30,7 @@ export default async function D4HViewsModules_Personnel_Page(
     if (!accessTokenId)
         throw new Error("D4H Views module is not configured properly. No sync token found.");
 
-    const accessToken = await getD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: accessTokenId,
         organizationId: organization.id,
     });

@@ -14,7 +14,7 @@ import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { omit } from "remeda";
 
@@ -60,7 +60,7 @@ export default async function Admin_D4hAccessToken_EquipmentItems_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accessToken = await getD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });

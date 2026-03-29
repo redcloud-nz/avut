@@ -18,11 +18,6 @@ import { decryptDBValue } from "./encrypt";
 import prisma from "./prisma";
 import { getOrganizationSettings } from "./organization-settings";
 
-type GetD4HAccessTokenArguments = { tokenId: string } & (
-    | { organizationId: OrganizationId; userId?: never }
-    | { organizationId?: never; userId: UserId }
-);
-
 async function fetchD4HAccessToken(tokenId: string): Promise<D4hAccessTokenRecord | null> {
     "use cache";
     cacheTag(`d4h-access-token-${tokenId}`);
@@ -38,20 +33,21 @@ export function revalidateD4HAccessToken(tokenId: string) {
     revalidateTag(`d4h-access-token-${tokenId}`, { expire: 0 });
 }
 
-export async function getD4HAccessToken(
-    args: GetD4HAccessTokenArguments,
-): Promise<D4HAccessToken_ServerOnly | null> {
-    const record = await fetchD4HAccessToken(args.tokenId);
+export async function getOrganizationD4HAccessToken({
+    organizationId,
+    tokenId,
+}: {
+    organizationId: OrganizationId;
+    tokenId: string;
+}): Promise<D4HAccessToken_ServerOnly | null> {
+    const record = await fetchD4HAccessToken(tokenId);
 
     if (!record) return null;
 
-    if (args.organizationId && record.organizationId !== args.organizationId) {
+    if (organizationId && record.organizationId !== organizationId) {
         return null;
     }
-
-    if (args.userId && record.userId !== args.userId) {
-        return null;
-    }
+    if (record.userId) throw new Error("Not an organization token");
 
     return D4HAccessToken_ServerOnly.fromRecord(record);
 }
@@ -77,10 +73,7 @@ export async function getPersonalD4HAccessTokenForUser(
 
     if (!record) return null;
 
-    return D4HAccessToken_ServerOnly.fromRecord({
-        ...record,
-        token: decryptDBValue(record.token),
-    });
+    return D4HAccessToken_ServerOnly.fromRecord(record);
 }
 
 export function revalidatePersonalD4HAccessTokenForUser(
@@ -141,10 +134,7 @@ export async function getConfiguredD4HAccessToken(
             );
         }
 
-        const accessToken = await getD4HAccessToken({
-            tokenId,
-            organizationId,
-        });
+        const accessToken = await getOrganizationD4HAccessToken({ organizationId, tokenId });
 
         if (!accessToken) {
             throw new NotConfiguredError(

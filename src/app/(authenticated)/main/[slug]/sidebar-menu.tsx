@@ -14,6 +14,7 @@ import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 import { OrganizationData } from "@/lib/schemas/organization";
 
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { Route } from "next";
 
 export async function MainApp_Sidebar_Menu({
     organization,
@@ -99,19 +100,19 @@ export async function MainApp_Sidebar_Menu({
                         <Protect orgId={organization.id} permissions={{ i3Items: ["inspect"] }}>
                             <NavSubItem
                                 label={t("I3Module.inspect")}
-                                href={`/main/${slug}/i3/inspect`}
+                                href={`/main/${slug}/i3/forms/inspect-items` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Items: ["issue"] }}>
                             <NavSubItem
                                 label={t("I3Module.issue")}
-                                href={`/main/${slug}/i3/issue`}
+                                href={`/main/${slug}/i3/forms/issue-items` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Items: ["return"] }}>
                             <NavSubItem
                                 label={t("I3Module.return")}
-                                href={`/main/${slug}/i3/return`}
+                                href={`/main/${slug}/i3/forms/return-items` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>

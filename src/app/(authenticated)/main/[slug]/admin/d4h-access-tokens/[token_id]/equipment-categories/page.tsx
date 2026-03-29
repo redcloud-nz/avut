@@ -12,7 +12,7 @@ import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client"
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { Eagle } from "@/components/blocks/eagle";
 
@@ -55,7 +55,7 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accessToken = await getD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });

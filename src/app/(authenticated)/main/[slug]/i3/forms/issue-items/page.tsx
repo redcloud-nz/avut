@@ -39,7 +39,7 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
-import { I3IssueItemsFormData } from "@/lib/schemas/i3-forms";
+import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 
 import { I3IssueItemsForm } from "@/lib/forms";
 import { trpc } from "@/trpc/client";

@@ -19,11 +19,12 @@ import {
 } from "@/lib/schemas/d4h-access-token";
 import { D4HServerCode } from "@/lib/d4h-servers";
 
-import { encryptDBValue } from "@/server/encrypt";
+import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+import { revalidatePersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -106,7 +107,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 ...create,
                 id: tokenId,
                 organizationId: ctx.organizationId,
-                userId: ctx.auth.user.id,
+                userId: ctx.userId,
                 label: `Personal token for ${ctx.auth.user.name}`,
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
@@ -140,6 +141,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     changes,
                 }),
             ]);
+
+            revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
 
             return { created: D4HAccessToken.fromRecord(created) };
         }),
@@ -219,6 +222,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 objectId: existing.id,
             }),
         ]);
+
+        revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
     }),
 
     /**
@@ -238,6 +243,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 where: {
                     id: input.tokenId,
                     organizationId: ctx.organizationId,
+                    userId: null,
                 },
             });
 
@@ -263,7 +269,19 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 },
             });
 
-            return record ? D4HAccessToken.fromRecord(record) : null;
+            let status = record?.status;
+            if (record) {
+                try {
+                    // Try to decrypt the token to determine if we can use it
+                    decryptDBValue(record.token);
+                } catch (error) {
+                    status = "Decrypt Error";
+                }
+            }
+
+            return record
+                ? D4HAccessToken.fromRecord({ ...record, status: status ?? record.status })
+                : null;
         }),
 
     /**

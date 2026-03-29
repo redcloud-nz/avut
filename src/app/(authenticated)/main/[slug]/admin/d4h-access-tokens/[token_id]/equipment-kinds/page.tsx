@@ -14,7 +14,7 @@ import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
@@ -59,7 +59,7 @@ export default async function Admin_D4hAccessToken_EquipmentKinds_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accessToken = await getD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });

@@ -13,7 +13,7 @@ import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-
 import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import * as Paths from "@/paths";
-import { getD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipmentLocations(accessToken: D4HAccessToken_ServerOnly) {
@@ -55,7 +55,7 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accessToken = await getD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });
