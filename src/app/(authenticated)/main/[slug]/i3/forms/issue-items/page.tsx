@@ -86,12 +86,7 @@ export default function I3Module_Issue_FormInstanceList_Page() {
 
     return (
         <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[
-                    { label: t("title"), href: `/main/${organization.slug}/i3` },
-                    { label: t("issue") },
-                ]}
-            />
+            <Lexington.Header />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>

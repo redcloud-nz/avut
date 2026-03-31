@@ -6,19 +6,48 @@
 import * as R from "remeda";
 import * as z from "zod";
 
-import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
-import { D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
+
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 
 export const d4hApiRouter = createTrpcRouter({
+    /**
+     * List the teams that the current user has access to in the D4H system for the organization. This is used to populate the team selector in the UI.
+     */
+    listAccessibleTeams: organizationProcedure({})
+        .input(
+            z.object({
+                module: z.enum(["d4h-views", "i3"]),
+                action: z.enum(["read", "write"]),
+            }),
+        )
+        .output(
+            z.array(
+                D4HTeam.schema.extend({
+                    permissions: D4HTeamPermissions.schema,
+                }),
+            ),
+        )
+        .query(async ({ ctx, input: { action, module } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
+                module,
+                action,
+            });
+
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            return d4HTeams;
+        }),
+
     /**
      * Lists all equipment brands in the D4H system that are accessible to the organization.
      */

@@ -27,14 +27,19 @@
   "I3Module": {
     "title": "I3",
     "description": "Individual Issue Items",
-    "inspect": "Inspect Items",
-    "inspectDescription": "Record an inspection of the items that have been issued to an individual.",
-    "issue": "Issue Items",
-    "issueDescription": "Record items being issued to an individual.",
-    "return": "Return Items",
-    "returnDescription": "Record items being returned from an individual.",
-    "templates": "Templates",
-    "templatesDescription": "Create and manage item templates.",
+
+    "IndexPage": {
+      "inspect": "Inspect Items",
+      "inspectDescription": "Record an inspection of the items that have been issued to an individual.",
+      "issue": "Issue Items",
+      "issueDescription": "Record items being issued to an individual.",
+      "members": "Members",
+      "return": "Return Items",
+      "returnDescription": "Record items being returned from an individual.",
+      "title": "I3 Module",
+      "templates": "Templates",
+      "templatesDescription": "Create and manage item templates."
+    },
 
     "IssueList": {
       "title": "Issue Items",
@@ -44,6 +49,19 @@
       "newFormButton": "New",
       "itemDescription": "{count} items - Updated {updatedAt}",
       "itemTitle_noRecipient": "Issue Form - No Recipient"
+    },
+
+    "SelectTeam": {
+      "title": "Select a Team",
+      "description": "You have multiple teams available to view. Please select the team to use."
+    },
+
+    "TeamMembersList": {
+      "backButton": "Back to Teams List",
+
+      "description": "Select a team member to view their issued items.",
+      "itemCount": "{count, plural, =0 {No items} =1 {# item} other {# items}}",
+      "title": "Members of {teamName}"
     }
   },
 
@@ -54,6 +72,46 @@
   "NotesModule": {
     "title": "Notes",
     "description": "Create and manage organizational notes."
+  },
+
+  "SidebarMenu": {
+    "dashboard": "Dashboard",
+    "admin": {
+      "sectionTitle": "Admin",
+      "d4hAccessTokens": "D4H Access Tokens",
+      "invitations": "Invitations",
+      "organization": "Organization",
+      "personnel": "Personnel",
+      "organizationSettings": "Organization Settings",
+      "teams": "Teams",
+      "users": "Users"
+    },
+    "d4hViews": {
+      "sectionTitle": "D4H Views",
+      "equipment": "Equipment",
+      "members": "Members"
+    },
+    "i3": {
+      "sectionTitle": "I3",
+      "inspect": "Inspect Items",
+      "issue": "Issue Items",
+      "members": "Members",
+      "return": "Return Items",
+      "templates": "Templates"
+    },
+    "notes": {
+      "sectionTitle": "Notes"
+    },
+    "skillPackageBuilder": {
+      "sectionTitle": "Skill Package Builder"
+    },
+    "skills": {
+      "sectionTitle": "Skills",
+      "catalogue": "Catalogue",
+      "checks": "Checks",
+      "sessions": "Sessions",
+      "reports": "Reports"
+    }
   },
 
   "SkillsModule": {
@@ -67,6 +125,11 @@
   "SkillPackageBuilderModule": {
     "title": "Skill Package Builder",
     "description": "Create and manage skill packages for use in the Skills module."
+  },
+
+  "UnderConstruction": {
+    "title": "Under Construction",
+    "description": "This feature is currently in development."
   },
 
   "UserMenu": {

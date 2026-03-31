@@ -20,6 +20,12 @@ export const D4HAccessTokenId = {
 
 export type D4HAccessTokenId = z.infer<typeof D4HAccessTokenId.schema>;
 
+export const D4HTeamPermissions = {
+    schema: z.record(z.string(), z.record(z.string(), z.boolean())),
+} as const;
+
+export type D4HTeamPermissions = z.infer<typeof D4HTeamPermissions.schema>;
+
 const metadataSchema = z.object({
     d4HTeams: z.array(
         z.object({
@@ -33,7 +39,7 @@ const metadataSchema = z.object({
                     title: z.string(),
                 })
                 .optional(),
-            permissions: z.record(z.string(), z.record(z.string(), z.boolean())),
+            permissions: D4HTeamPermissions.schema,
         }),
     ),
     d4HOrganisations: z.array(

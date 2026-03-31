@@ -14,9 +14,8 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 
-import { decryptDBValue } from "./encrypt";
-import prisma from "./prisma";
 import { getOrganizationSettings } from "./organization-settings";
+import prisma from "./prisma";
 
 async function fetchD4HAccessToken(tokenId: string): Promise<D4hAccessTokenRecord | null> {
     "use cache";

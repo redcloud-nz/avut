@@ -45,6 +45,12 @@ export const D4HEquipmentItem = {
                 ref: z.string(),
             }),
         ),
+        dateExpires: z.string().nullable(),
+        dateFirstUse: z.string().nullable(),
+        dateManufactured: z.string().nullable(),
+        datePurchased: z.string().nullable(),
+        dateRetired: z.string().nullable(),
+        dateWarranty: z.string().nullable(),
     }),
 } as const;
 

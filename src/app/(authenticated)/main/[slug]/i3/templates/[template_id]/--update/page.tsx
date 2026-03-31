@@ -303,7 +303,7 @@ export default function I3Module_UpdateTemplate_Page(
                                             </Field>
                                         )}
                                     />
-                                    <Controller
+                                    {/* <Controller
                                         name="d4h.outputRefFormat"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
@@ -324,7 +324,7 @@ export default function I3Module_UpdateTemplate_Page(
                                                 )}
                                             </Field>
                                         )}
-                                    />
+                                    /> */}
                                     <Field orientation="horizontal">
                                         <MutationButton
                                             type="submit"

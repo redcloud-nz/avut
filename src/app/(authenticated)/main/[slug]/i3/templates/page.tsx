@@ -173,9 +173,6 @@ export default function I3Module_Templates_Page(props: PageProps<"/main/[slug]/i
                                 </Empty>
                             }
                         >
-                            <div className="flex items-center justify-between">
-                                <Akagi.TableSearch table={table} />
-                            </div>
                             <Akagi.Table table={table} />
                         </Show>
                     </Lexington.Column>

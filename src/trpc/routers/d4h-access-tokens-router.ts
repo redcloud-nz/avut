@@ -293,7 +293,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         .output(z.array(D4HAccessToken.schema))
         .query(async ({ ctx }) => {
             const records = await ctx.prisma.d4hAccessToken.findMany({
-                where: { organizationId: ctx.organizationId },
+                where: { organizationId: ctx.organizationId, userId: null },
             });
 
             return records.map(D4HAccessToken.fromRecord);

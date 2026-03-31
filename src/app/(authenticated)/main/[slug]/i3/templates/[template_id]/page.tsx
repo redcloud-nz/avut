@@ -13,19 +13,8 @@ import { Lexington } from "@/components/blocks/lexington";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
@@ -78,13 +67,7 @@ export default function I3Module_Template_Page(
                                         tooltip="Edit template"
                                         asChild
                                     >
-                                        <Link
-                                            to={
-                                                Paths.main(slug).i3.template(
-                                                    template.id,
-                                                ).update
-                                            }
-                                        >
+                                        <Link to={Paths.main(slug).i3.template(template.id).update}>
                                             <ObjectIcons.Edit />
                                         </Link>
                                     </Button>
@@ -100,40 +83,24 @@ export default function I3Module_Template_Page(
                                 {template.description && (
                                     <Field orientation="responsive">
                                         <FieldLabel>Description</FieldLabel>
-                                        <FieldValue
-                                            value={template.description}
-                                        />
+                                        <FieldValue value={template.description} />
                                     </Field>
                                 )}
 
                                 <Field orientation="responsive">
                                     <FieldLabel>D4H Category</FieldLabel>
-                                    <FieldValue
-                                        value={
-                                            template.d4h?.categoryTitle ?? ""
-                                        }
-                                    />
+                                    <FieldValue value={template.d4h?.categoryTitle ?? ""} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>D4H Kind</FieldLabel>
-                                    <FieldValue
-                                        value={template.d4h?.kindTitle ?? ""}
-                                    />
+                                    <FieldValue value={template.d4h?.kindTitle ?? ""} />
                                 </Field>
                                 <Field orientation="responsive">
-                                    <FieldLabel>
-                                        Require Serial Number
-                                    </FieldLabel>
-                                    <FieldValue
-                                        value={
-                                            template.d4h?.requireSN
-                                                ? "Yes"
-                                                : "No"
-                                        }
-                                    />
+                                    <FieldLabel>Require Serial Number</FieldLabel>
+                                    <FieldValue value={template.d4h?.requireSN ? "Yes" : "No"} />
                                 </Field>
 
-                                <Field>
+                                {/* <Field>
                                     <FieldLabel>
                                         D4H Output Format Ref
                                     </FieldLabel>
@@ -143,7 +110,7 @@ export default function I3Module_Template_Page(
                                         }
                                         format="tmplExpr"
                                     />
-                                </Field>
+                                </Field> */}
                                 <FieldSeparator />
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>

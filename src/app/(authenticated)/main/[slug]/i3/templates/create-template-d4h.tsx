@@ -270,7 +270,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                             </Field>
                         )}
                     />
-                    <FieldSeparator />
+                    {/* <FieldSeparator />
                     <FieldSet>
                         <FieldLegend>Output Format</FieldLegend>
                         <FieldDescription>
@@ -297,7 +297,7 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                                 )}
                             />
                         </FieldGroup>
-                    </FieldSet>
+                    </FieldSet> */}
 
                     <DialogFooter>
                         <MutationButton

@@ -30,7 +30,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
     const { slug } = await props.params;
 
     const organization = await getOrganizationBySlug(slug);
-    const t = await getTranslations("I3Module");
+    const t = await getTranslations("I3Module.IndexPage");
 
     return (
         <Lexington.Root>
@@ -39,7 +39,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
-                        <div className="font-semibold">I3 Module</div>
+                        <div className="font-semibold">{t("title")}</div>
                     </div>
                     <ItemGroup>
                         {/* <Item asChild>

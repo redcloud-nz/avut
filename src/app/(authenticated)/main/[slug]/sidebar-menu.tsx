@@ -23,7 +23,7 @@ export async function MainApp_Sidebar_Menu({
     organization: OrganizationData;
     settings: OrganizationSettings;
 }) {
-    const t = await getTranslations();
+    const t = await getTranslations("SidebarMenu");
 
     const { slug } = organization;
     const { modules } = settings;
@@ -32,92 +32,95 @@ export async function MainApp_Sidebar_Menu({
         <SidebarGroup>
             <SidebarMenu>
                 <NavItem
-                    label={t("Index_Page.title")}
+                    label={t("dashboard")}
                     href={`/main/${slug}`}
                     icon={<OrgDashboardIcon />}
                 />
                 <NavCollapsible
-                    label={t("AdminModule.title")}
+                    label={t("admin.sectionTitle")}
                     href={`/main/${slug}/admin`}
                     icon={<ModuleIcons.Admin />}
                 >
                     <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                         <NavSubItem
-                            label={t("AdminModule.d4hAccessTokens")}
+                            label={t("admin.d4hAccessTokens")}
                             href={`/main/${slug}/admin/d4h-access-tokens`}
                         />
                     </Protect>
                     <Protect permissions={{ invitation: ["create"] }} orgId={organization.id}>
                         <NavSubItem
-                            label={t("AdminModule.invitations")}
+                            label={t("admin.invitations")}
                             href={`/main/${slug}/admin/invitations`}
                         />
                     </Protect>
                     <NavSubItem
-                        label={t("AdminModule.organization")}
+                        label={t("admin.organization")}
                         href={`/main/${slug}/admin/organization`}
                     />
                     <NavSubItem
-                        label={t("AdminModule.personnel")}
+                        label={t("admin.personnel")}
                         href={`/main/${slug}/admin/personnel`}
                     />
                     <Protect permissions={{ organization: ["update"] }} orgId={organization.id}>
                         <NavSubItem
-                            label={t("AdminModule.organizationSettings")}
+                            label={t("admin.organizationSettings")}
                             href={`/main/${slug}/admin/organization/settings`}
                         />
                     </Protect>
-                    <NavSubItem label={t("AdminModule.teams")} href={`/main/${slug}/admin/teams`} />
+                    <NavSubItem label={t("admin.teams")} href={`/main/${slug}/admin/teams`} />
                     <Protect permissions={{ member: ["create"] }} orgId={organization.id}>
-                        <NavSubItem
-                            label={t("AdminModule.users")}
-                            href={`/main/${slug}/admin/users`}
-                        />
+                        <NavSubItem label={t("admin.users")} href={`/main/${slug}/admin/users`} />
                     </Protect>
                 </NavCollapsible>
                 <Show when={modules["d4h-views"].enabled}>
                     <NavCollapsible
-                        label={t("D4HViewsModule.title")}
+                        label={t("d4hViews.sectionTitle")}
                         href={`/main/${slug}/d4h-views`}
                         icon={<ModuleIcons.D4HViews />}
                     >
                         <NavSubItem
-                            label={t("D4HViewsModule.equipment")}
+                            label={t("d4hViews.equipment")}
                             href={`/main/${slug}/d4h-views/equipment`}
                         />
                         <NavSubItem
-                            label={t("D4HViewsModule.members")}
+                            label={t("d4hViews.members")}
                             href={`/main/${slug}/d4h-views/members`}
                         />
                     </NavCollapsible>
                 </Show>
                 <Show when={modules["i3"].enabled}>
                     <NavCollapsible
-                        label={t("I3Module.title")}
+                        label={t("i3.sectionTitle")}
                         href={`/main/${slug}/i3`}
                         icon={<ModuleIcons.I3 />}
                     >
                         <Protect orgId={organization.id} permissions={{ i3Items: ["inspect"] }}>
                             <NavSubItem
-                                label={t("I3Module.inspect")}
+                                label={t("i3.inspect")}
                                 href={`/main/${slug}/i3/forms/inspect-items` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Items: ["issue"] }}>
                             <NavSubItem
-                                label={t("I3Module.issue")}
+                                label={t("i3.issue")}
                                 href={`/main/${slug}/i3/forms/issue-items` as Route}
+                            />
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ i3Items: ["view"] }}>
+                            <NavSubItem
+                                label={t("i3.members")}
+                                href={`/main/${slug}/i3/members` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Items: ["return"] }}>
                             <NavSubItem
-                                label={t("I3Module.return")}
+                                label={t("i3.return")}
                                 href={`/main/${slug}/i3/forms/return-items` as Route}
                             />
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>
                             <NavSubItem
-                                label={t("I3Module.templates")}
+                                label={t("i3.templates")}
                                 href={`/main/${slug}/i3/templates`}
                             />
                         </Protect>
@@ -126,38 +129,38 @@ export async function MainApp_Sidebar_Menu({
 
                 <Show when={modules.notes.enabled}>
                     <NavItem
-                        label={t("NotesModule.title")}
+                        label={t("notes.sectionTitle")}
                         href={`/main/${slug}/notes`}
                         icon={<ModuleIcons.Notes />}
                     />
                 </Show>
                 <Show when={modules["skill-package-builder"].enabled}>
                     <NavItem
-                        label={t("SkillPackageBuilderModule.title")}
+                        label={t("skillPackageBuilder.sectionTitle")}
                         href={`/main/${slug}/skill-package-builder`}
                         icon={<ModuleIcons.SkillPackageBuilder />}
                     />
                 </Show>
                 <Show when={modules.skills.enabled}>
                     <NavCollapsible
-                        label={t("SkillsModule.title")}
+                        label={t("skills.sectionTitle")}
                         href={`/main/${slug}/skills`}
                         icon={<ModuleIcons.Skills />}
                     >
                         <NavSubItem
-                            label={t("SkillsModule.catalogue")}
+                            label={t("skills.catalogue")}
                             href={`/main/${slug}/skills/catalogue`}
                         />
                         <NavSubItem
-                            label={t("SkillsModule.checks")}
+                            label={t("skills.checks")}
                             href={`/main/${slug}/skills/checks`}
                         />
                         <NavSubItem
-                            label={t("SkillsModule.sessions")}
+                            label={t("skills.sessions")}
                             href={`/main/${slug}/skills/sessions`}
                         />
                         <NavSubItem
-                            label={t("SkillsModule.reports")}
+                            label={t("skills.reports")}
                             href={`/main/${slug}/skills/reports`}
                         />
                     </NavCollapsible>
