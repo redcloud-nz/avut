@@ -6,12 +6,12 @@
  */
 "use client";
 
-import { useTranslations } from "next-intl";
+import { Route } from "next";
+import Link from "next/link";
 import { Fragment, use, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { trpc } from "@/trpc/client";
+import { ArrowLeftIcon } from "lucide-react";
 
 export default function I3Module_Member_Page(
     props: PageProps<"/main/[slug]/i3/teams/[team_id]/members/[member_id]">,
@@ -45,10 +46,8 @@ export default function I3Module_Member_Page(
 
     const organization = useOrganization();
 
-    const t = useTranslations("I3Module");
-
-    const [{ data: categories }, { data: members }, { data: memberEquipment }] = useSuspenseQueries(
-        {
+    const [{ data: categories }, { data: members }, { data: memberEquipment }, { data: teams }] =
+        useSuspenseQueries({
             queries: [
                 trpc.d4hApi.listEquipmentCategories.queryOptions({
                     organizationId: organization.id,
@@ -64,9 +63,16 @@ export default function I3Module_Member_Page(
                     memberId,
                     teamId,
                 }),
+                trpc.d4hApi.listAccessibleTeams.queryOptions({
+                    organizationId: organization.id,
+                    module: "i3",
+                    action: "read",
+                }),
             ],
-        },
-    );
+        });
+
+    const team = teams.find((t) => t.id === teamId);
+    if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
     const member = members.find((m) => m.id === memberId);
     if (!member) throw new Error(`Member with id ${memberId} not found`);
@@ -92,95 +98,80 @@ export default function I3Module_Member_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[
-                    { label: t("title"), href: `/main/${organization.slug}/i3` },
-                    { label: t("members"), href: `/main/${organization.slug}/i3/members` },
-                    {
-                        label: member.name,
-                        href: `/main/${organization.slug}/i3/members/${member.id}`,
-                    },
-                ]}
-            />
+            <Lexington.Header>
+                <Lexington.Title>{`Issued to ${member.name}`}</Lexington.Title>
+                <Lexington.Actions>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <DropdownMenuTriggerIcon />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
+                                <DropdownMenuCheckboxItem
+                                    checked={showColumns.brand}
+                                    onCheckedChange={(checked) =>
+                                        setShowColumns((prev) => ({
+                                            ...prev,
+                                            brand: checked,
+                                        }))
+                                    }
+                                >
+                                    Brand
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showColumns.expiry}
+                                    onCheckedChange={(checked) =>
+                                        setShowColumns((prev) => ({
+                                            ...prev,
+                                            expiry: checked,
+                                        }))
+                                    }
+                                >
+                                    Expiry Date
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showColumns.model}
+                                    onCheckedChange={(checked) =>
+                                        setShowColumns((prev) => ({
+                                            ...prev,
+                                            model: checked,
+                                        }))
+                                    }
+                                >
+                                    Model
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showColumns.serial}
+                                    onCheckedChange={(checked) =>
+                                        setShowColumns((prev) => ({
+                                            ...prev,
+                                            serial: checked,
+                                        }))
+                                    }
+                                >
+                                    Serial Number
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showColumns.status}
+                                    onCheckedChange={(checked) =>
+                                        setShowColumns((prev) => ({
+                                            ...prev,
+                                            status: checked,
+                                        }))
+                                    }
+                                >
+                                    Status
+                                </DropdownMenuCheckboxItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </Lexington.Actions>
+            </Lexington.Header>
             <Lexington.Page>
                 <Lexington.Column width="full">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            to={{ href: `/main/${organization.slug}/i3/members` }}
-                            tooltip="Back to members list"
-                        />
-                        <Hermes.Title>Issued to: {member.name}</Hermes.Title>
-                        <Hermes.Action>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showColumns.brand}
-                                            onCheckedChange={(checked) =>
-                                                setShowColumns((prev) => ({
-                                                    ...prev,
-                                                    brand: checked,
-                                                }))
-                                            }
-                                        >
-                                            Brand
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showColumns.expiry}
-                                            onCheckedChange={(checked) =>
-                                                setShowColumns((prev) => ({
-                                                    ...prev,
-                                                    expiry: checked,
-                                                }))
-                                            }
-                                        >
-                                            Expiry
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showColumns.model}
-                                            onCheckedChange={(checked) =>
-                                                setShowColumns((prev) => ({
-                                                    ...prev,
-                                                    model: checked,
-                                                }))
-                                            }
-                                        >
-                                            Model
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showColumns.serial}
-                                            onCheckedChange={(checked) =>
-                                                setShowColumns((prev) => ({
-                                                    ...prev,
-                                                    serial: checked,
-                                                }))
-                                            }
-                                        >
-                                            Serial
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showColumns.status}
-                                            onCheckedChange={(checked) =>
-                                                setShowColumns((prev) => ({
-                                                    ...prev,
-                                                    status: checked,
-                                                }))
-                                            }
-                                        >
-                                            Status
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Hermes.Action>
-                    </Hermes.Header>
-                    <div className="hidden lg:flex items-center"></div>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -199,12 +190,12 @@ export default function I3Module_Member_Page(
                                 )}
                                 {showColumns.serial && (
                                     <TableHeadCell className="hidden lg:table-cell">
-                                        Serial
+                                        Serial Number
                                     </TableHeadCell>
                                 )}
                                 {showColumns.expiry && (
                                     <TableHeadCell className="hidden lg:table-cell">
-                                        Expiry
+                                        Expiry Date
                                     </TableHeadCell>
                                 )}
                                 {showColumns.status && (

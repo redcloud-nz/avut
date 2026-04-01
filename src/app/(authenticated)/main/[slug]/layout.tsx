@@ -9,7 +9,6 @@ import { Metadata } from "next";
 import { headers as nextHeaders } from "next/headers";
 
 import { AppSidebar } from "@/components/nav/app-sidebar";
-import { ControlBar } from "@/components/nav/control-bar";
 
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { TITLE_SEPARATOR } from "@/lib/constants";
@@ -51,10 +50,9 @@ export default async function MainApp_Layout(props: LayoutProps<"/main/[slug]">)
 
     return (
         <OrganizationProvider organization={organization} settings={organizationSettings}>
-            <AppSidebar>
+            <AppSidebar slug={slug}>
                 <MainApp_Sidebar_Menu organization={organization} settings={organizationSettings} />
             </AppSidebar>
-            <ControlBar slug={slug} />
             {props.children}
         </OrganizationProvider>
     );

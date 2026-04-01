@@ -47,7 +47,8 @@ import { trpc } from "@/trpc/client";
 export default function I3Module_Issue_FormInstanceList_Page() {
     const organization = useOrganization();
     const router = useRouter();
-    const t = useTranslations("I3Module");
+    const t_i3 = useTranslations("I3Module");
+    const t = useTranslations("I3Module.IssueFormsList");
 
     const { data: instances } = useSuspenseQuery(
         trpc.forms.listDraftFormInstances.queryOptions({
@@ -86,70 +87,82 @@ export default function I3Module_Issue_FormInstanceList_Page() {
 
     return (
         <Lexington.Root>
-            <Lexington.Header />
+            <Lexington.Header
+                breadcrumbs={[
+                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "Forms" },
+                    { label: "Issue Items" },
+                ]}
+            />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
-                        <Hermes.Title>{t("IssueList.title")}</Hermes.Title>
+                        <Hermes.Title>Issue Items</Hermes.Title>
                         <Hermes.Action>
                             <Button onClick={handleNewForm} variant="outline">
-                                <ObjectIcons.Create /> {t("IssueList.newFormButton")}
+                                <ObjectIcons.Create /> New
                             </Button>
                         </Hermes.Action>
-                        <Hermes.Description>{t("IssueList.description")}</Hermes.Description>
+                        <Hermes.Description className="text-xs text-muted-foreground mb-4">
+                            Your current draft forms are listed below. Click on a form to continue
+                            editing, or create a new form to issue items.
+                        </Hermes.Description>
                     </Hermes.Header>
                     <Show
                         when={sortedInstances.length > 0}
                         fallback={
                             <Empty>
                                 <EmptyHeader>
-                                    <EmptyTitle>{t("IssueList.emptyTitle")}</EmptyTitle>
+                                    <EmptyTitle>No Draft Forms</EmptyTitle>
                                     <EmptyDescription>
-                                        {t("IssueList.emptyDescription")}
+                                        You currently have no draft forms. Click the button below to
+                                        create a new form.
                                     </EmptyDescription>
                                 </EmptyHeader>
                                 <EmptyContent>
-                                    <Button onClick={handleNewForm}>
-                                        {t("IssueList.newFormButton")}
-                                    </Button>
+                                    <Button onClick={handleNewForm}>New Form</Button>
                                 </EmptyContent>
                             </Empty>
                         }
                     >
                         <ItemGroup>
-                            {sortedInstances.map((instance) => (
-                                <Item key={instance.id} variant="outline" asChild>
-                                    <Link
-                                        href={
-                                            `/main/${organization.slug}/i3/forms/issue-items/${instance.id}` as Route
-                                        }
-                                    >
-                                        <ItemContent>
-                                            <ItemTitle>
-                                                {(instance.formData as I3IssueItemsFormData)
-                                                    .recipient?.name ||
-                                                    t("IssueList.itemTitle_noRecipient")}
-                                            </ItemTitle>
-                                            <ItemDescription>
-                                                {t("IssueList.itemDescription", {
-                                                    count: (
-                                                        instance.formData as I3IssueItemsFormData
-                                                    ).items.length,
-                                                    updatedAt: formatDistanceToNow(
+                            {sortedInstances.map((instance) => {
+                                const itemCount = (instance.formData as I3IssueItemsFormData).items
+                                    .length;
+                                return (
+                                    <Item key={instance.id} variant="outline" asChild>
+                                        <Link
+                                            href={
+                                                `/main/${organization.slug}/i3/forms/issue-items/${instance.id}` as Route
+                                            }
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>
+                                                    {(instance.formData as I3IssueItemsFormData)
+                                                        .recipient?.name || "No Recipient"}
+                                                </ItemTitle>
+                                                <ItemDescription>
+                                                    {itemCount == 0
+                                                        ? "No items"
+                                                        : itemCount === 1
+                                                          ? "1 item"
+                                                          : `${itemCount} items`}
+                                                    {", updated "}
+                                                    {formatDistanceToNow(
                                                         new Date(instance.updatedAt),
                                                         {
                                                             addSuffix: true,
                                                         },
-                                                    ),
-                                                })}
-                                            </ItemDescription>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ItemLinkActionIcon />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            ))}
+                                                    )}
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ItemLinkActionIcon />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                );
+                            })}
                         </ItemGroup>
                     </Show>
                 </Lexington.Column>

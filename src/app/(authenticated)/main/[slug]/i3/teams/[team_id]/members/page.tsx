@@ -8,7 +8,6 @@
 
 import { Route } from "next";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { use } from "react";
 
 import { useQueries, useSuspenseQueries } from "@tanstack/react-query";
@@ -34,8 +33,6 @@ export default function I3Module_MembersList_Page(
     const teamId = parseInt(team_id);
 
     const organization = useOrganization();
-
-    const t = useTranslations("I3Module");
 
     const [{ data: teams }, { data: members }] = useSuspenseQueries({
         queries: [
@@ -73,35 +70,25 @@ export default function I3Module_MembersList_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    {
-                        label: t("title"),
-                        href: `/main/${organization.slug}/i3`,
-                    },
-                    {
-                        label: "Teams",
-                    },
-                    {
-                        label: team.title,
-                    },
-                    {
-                        label: t("members"),
-                        href: `/main/${organization.slug}/i3/by-member`,
-                    },
+                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "Teams" },
+                    { label: team.title },
+                    { label: "Members" },
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="md">
                     <Hermes.Header>
-                        <Hermes.Title>
-                            {t("TeamMembersList.title", { teamName: team.title })}
-                        </Hermes.Title>
-                        <Hermes.Description>{t("TeamMembersList.description")}</Hermes.Description>
+                        <Hermes.Title>Members of {team.title}</Hermes.Title>
+                        <Hermes.Description>
+                            Select a team member to view their issued items.
+                        </Hermes.Description>
                     </Hermes.Header>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHeadCell>Name</TableHeadCell>
-                                <TableHeadCell className="text-center">Items Issued</TableHeadCell>
+                                <TableHeadCell className="text-center">Issued Items</TableHeadCell>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

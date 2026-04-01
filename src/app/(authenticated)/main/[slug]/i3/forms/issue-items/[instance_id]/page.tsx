@@ -7,9 +7,9 @@
 
 "use client";
 
-import { CheckIcon, CircleXIcon } from "lucide-react";
 import { Route } from "next";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -182,8 +182,13 @@ export default function I3Module_Issue_FormInstance_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${slug}/i3` },
-                    { label: "Issue Items", href: `/main/${slug}/i3/forms/issue-items` },
+                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "Forms" },
+                    {
+                        label: "Issue Items",
+                        href: `/main/${organization.slug}/i3/forms/issue-items`,
+                    },
+                    { label: form.getValues().recipient.name || "No Recipient" },
                 ]}
             />
             <Lexington.Page>
@@ -194,11 +199,6 @@ export default function I3Module_Issue_FormInstance_Page(
                             tooltip="Back to Form List"
                         />
                         <Hermes.Title>Issue Items</Hermes.Title>
-                        <Hermes.Action>
-                            <Button variant="ghost" size="icon" onClick={handleDelete}>
-                                <ObjectIcons.Delete />
-                            </Button>
-                        </Hermes.Action>
                     </Hermes.Header>
                     <Card>
                         <CardHeader>
@@ -206,27 +206,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                 Use this form to record items being issued to an individual.
                             </CardDescription>
                             <CardAction>
-                                {match(saveMutation.status)
-                                    .with("idle", () => null)
-                                    .with("pending", () => (
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-semibold">Saving</div>
-                                            <Spinner />
-                                        </div>
-                                    ))
-                                    .with("success", () => (
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-semibold">Saved</div>
-                                            <CheckIcon className="size-5 text-green-500" />
-                                        </div>
-                                    ))
-                                    .with("error", () => (
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-semibold">Error</div>
-                                            <CircleXIcon className="size-5 text-red-500" />
-                                        </div>
-                                    ))
-                                    .exhaustive()}
+                                <SaveStatusIndicator status={saveMutation.status} />
                             </CardAction>
                         </CardHeader>
                         <CardContent>
@@ -302,7 +282,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                             </Field>
                                         )}
                                     />
-                                    <Field orientation="horizontal">
+                                    <Field orientation="horizontal" className="justify-between">
                                         <MutationButton
                                             type="submit"
                                             status={submitMutation.status}
@@ -312,6 +292,13 @@ export default function I3Module_Issue_FormInstance_Page(
                                                 success: "Submitted",
                                             }}
                                         />
+                                        <Button
+                                            variant="ghost"
+                                            onClick={handleDelete}
+                                            className="text-destructive"
+                                        >
+                                            <ObjectIcons.Delete />
+                                        </Button>
                                     </Field>
                                 </FieldGroup>
                             </form>
@@ -320,6 +307,32 @@ export default function I3Module_Issue_FormInstance_Page(
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>
+    );
+}
+
+function SaveStatusIndicator({ status }: { status: ReturnType<typeof useMutation>["status"] }) {
+    return (
+        <div className="relative w-12 h-4">
+            {match(status)
+                .with("idle", () => null)
+                .with("pending", () => (
+                    <>
+                        <div className="font-semibold text-center">Saving</div>
+                        <Spinner className="absolute size-8 transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 opacity-25" />
+                    </>
+                ))
+                .with("success", () => (
+                    <>
+                        <div className="font-semibold text-center">Saved</div>
+                    </>
+                ))
+                .with("error", () => (
+                    <>
+                        <div className="font-semibold text-center">Error</div>
+                    </>
+                ))
+                .exhaustive()}
+        </div>
     );
 }
 

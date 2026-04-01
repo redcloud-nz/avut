@@ -45,7 +45,7 @@ export function NotificationsMenu() {
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative size-8">
-                    <NotificationsIcon className="size-5" />
+                    <NotificationsIcon className="size-4" />
                     {unreadCount > 0 && (
                         <span className="absolute top-1 right-1 size-2 rounded-full bg-primary" />
                     )}

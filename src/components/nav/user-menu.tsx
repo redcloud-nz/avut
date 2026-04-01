@@ -5,10 +5,10 @@
 
 "use client";
 
-import { LogOutIcon } from "lucide-react";
+import { ChevronsUpDown, LogOutIcon } from "lucide-react";
+import { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -17,7 +17,6 @@ import {
     SwitchOrganizationIcon,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,13 +26,20 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from "@/components/ui/sidebar";
 
 import { authClient } from "@/client/auth-client";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu({ slug }: { slug: string }) {
     const router = useRouter();
-    const t = useTranslations("UserMenu");
+
+    const { isMobile } = useSidebar();
 
     const { data: session } = authClient.useSession();
     if (!session) return null;
@@ -53,58 +59,77 @@ export function UserMenu({ slug }: { slug: string }) {
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8">
-                    <Avatar className="size-6 rounded-full">
-                        <AvatarImage src={user.image ?? ""} alt={user.name} />
-                        <AvatarFallback className="rounded-full">{initials}</AvatarFallback>
-                    </Avatar>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-50">
-                <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                        <Avatar className="h-8 w-8 rounded-full">
-                            <AvatarImage src={user.image ?? ""} alt={user.name} />
-                            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-                        </Avatar>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-semibold">{user.name}</span>
-                            <span className="truncate text-xs">{user.email}</span>
-                        </div>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                    <DropdownMenuLabel>{t("personalSection")}</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                        <Link href={`/main/${slug}/account/profile`}>
-                            <PersonalProfileIcon />
-                            <span>{t("profile")}</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href={`/main/${slug}/account/settings`}>
-                            <PersonalSettingsIcon />
-                            <span>{t("settings")}</span>
-                        </Link>
-                    </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                        <Link href={`/main/--select-org`}>
-                            <SwitchOrganizationIcon />
-                            <span>{t("switchOrganization")}</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSignOut}>
-                        <LogOutIcon />
-                        <span>{t("signOut")}</span>
-                    </DropdownMenuItem>
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                        >
+                            <Avatar className="size-6 rounded-full">
+                                <AvatarImage src={user.image ?? ""} alt={user.name} />
+                                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                                <span className="truncate font-semibold">{user.name}</span>
+                                <span className="truncate text-xs">{user.email}</span>
+                            </div>
+                            <ChevronsUpDown className="ml-auto size-4" />
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                        side={isMobile ? "bottom" : "right"}
+                        align="end"
+                        sideOffset={4}
+                    >
+                        <DropdownMenuLabel className="p-0 font-normal">
+                            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                                <Avatar className="h-8 w-8 rounded-full">
+                                    <AvatarImage src={user.image ?? ""} alt={user.name} />
+                                    <AvatarFallback className="rounded-lg">
+                                        {initials}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="grid flex-1 text-left text-sm leading-tight">
+                                    <span className="truncate font-semibold">{user.name}</span>
+                                    <span className="truncate text-xs">{user.email}</span>
+                                </div>
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Personal</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/main/${slug}/account/profile` as Route}>
+                                    <PersonalProfileIcon />
+                                    <span>Profile</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/main/${slug}/account/settings` as Route}>
+                                    <PersonalSettingsIcon />
+                                    <span>Settings</span>
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/main/--select-org`}>
+                                    <SwitchOrganizationIcon />
+                                    <span>Switch Organization</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleSignOut}>
+                                <LogOutIcon />
+                                <span>Sign Out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </SidebarMenuItem>
+        </SidebarMenu>
     );
 }

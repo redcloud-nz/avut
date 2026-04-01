@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
 
 interface PackageData {
     name: string;
@@ -39,6 +38,4 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
 };
 
-const withNextIntl = createNextIntlPlugin();
-
-export default withNextIntl(nextConfig);
+export default nextConfig;

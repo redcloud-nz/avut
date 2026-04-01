@@ -7,7 +7,6 @@
 
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
@@ -31,11 +30,10 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
 
     const organization = await getOrganizationBySlug(slug);
     const { modules } = await getOrganizationSettings(organization.id);
-    const t = await getTranslations();
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[t("Index_Page.title")]} />
+            <Lexington.Header breadcrumbs={["Dashboard"]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4">
@@ -45,9 +43,9 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         <Item asChild>
                             <Link href={`/main/${slug}/admin`}>
                                 <ItemContent>
-                                    <ItemTitle>{t("AdminModule.title")}</ItemTitle>
+                                    <ItemTitle>Admin Module</ItemTitle>
                                     <ItemDescription>
-                                        {t("AdminModule.description")}
+                                        Manage administrative tasks and settings
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
@@ -58,10 +56,8 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         <Item asChild>
                             <Link href={`/main/${slug}/d4h-views`}>
                                 <ItemContent>
-                                    <ItemTitle>{t("D4HViewsModule.title")}</ItemTitle>
-                                    <ItemDescription>
-                                        {t("D4HViewsModule.description")}
-                                    </ItemDescription>
+                                    <ItemTitle>D4H Views Module</ItemTitle>
+                                    <ItemDescription>View and manage D4H data</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -71,8 +67,10 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         <Item asChild>
                             <Link href={`/main/${slug}/i3`}>
                                 <ItemContent>
-                                    <ItemTitle>{t("I3Module.title")}</ItemTitle>
-                                    <ItemDescription>{t("I3Module.description")}</ItemDescription>
+                                    <ItemTitle>I3</ItemTitle>
+                                    <ItemDescription>
+                                        Manange individually issued items.
+                                    </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -83,9 +81,9 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                             <Item asChild>
                                 <Link href={`/main/${slug}/notes`}>
                                     <ItemContent>
-                                        <ItemTitle>{t("NotesModule.title")}</ItemTitle>
+                                        <ItemTitle>Notes</ItemTitle>
                                         <ItemDescription>
-                                            {t("NotesModule.description")}
+                                            Manage notes and related tasks.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -98,11 +96,9 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                             <Item asChild>
                                 <Link href={`/main/${slug}/skill-package-builder`}>
                                     <ItemContent>
-                                        <ItemTitle>
-                                            {t("SkillPackageBuilderModule.title")}
-                                        </ItemTitle>
+                                        <ItemTitle>Skill Package Builder</ItemTitle>
                                         <ItemDescription>
-                                            {t("SkillPackageBuilderModule.description")}
+                                            Manage skill packages and related tasks.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -115,9 +111,9 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                             <Item asChild>
                                 <Link href={`/main/${slug}/skills`}>
                                     <ItemContent>
-                                        <ItemTitle>{t("SkillsModule.title")}</ItemTitle>
+                                        <ItemTitle>Skills</ItemTitle>
                                         <ItemDescription>
-                                            {t("SkillsModule.description")}
+                                            Manage skills and record skill-checks.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

@@ -9,20 +9,19 @@ import { Route } from "next";
 import Link from "next/link";
 import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/items";
 
+import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 import { auth } from "@/server/auth";
-import { UserId } from "@/lib/schemas/user";
 
-export default async function I3Module_MembersList_TeamSelect_Page(
+export default async function I3Module_MembersList_SelectTeam_Page(
     props: PageProps<"/main/[slug]/i3/members">,
 ) {
     const { slug } = await props.params;
@@ -31,7 +30,6 @@ export default async function I3Module_MembersList_TeamSelect_Page(
     const session = await auth.api.getSession({ headers });
 
     const organization = await getOrganizationBySlug(slug);
-    const t = await getTranslations("I3Module");
 
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
@@ -55,17 +53,15 @@ export default async function I3Module_MembersList_TeamSelect_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[
-                    { label: t("title"), href: `/main/${organization.slug}/i3` },
-                    { label: t("members"), href: `/main/${organization.slug}/i3/by-member` },
-                ]}
-            />
+            <Lexington.Header />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <Hermes.Header>
-                        <Hermes.Title>{t("SelectTeam.title")}</Hermes.Title>
-                        <Hermes.Description>{t("SelectTeam.description")}</Hermes.Description>
+                        <Hermes.Title>Select Team</Hermes.Title>
+                        <Hermes.Description>
+                            You have multiple teams available. Please select a team to view its
+                            members.
+                        </Hermes.Description>
                     </Hermes.Header>
                     <ItemGroup>
                         {d4HTeams

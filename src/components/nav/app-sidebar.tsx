@@ -14,13 +14,16 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 
+import { ModeToggle } from "./mode-toggle";
 import { NavSkeleton } from "./nav-skeleton";
+import { NotificationsMenu } from "./notifications-menu";
+import { UserMenu } from "./user-menu";
 
-export function AppSidebar({ children }: { children?: ReactNode }) {
+export function AppSidebar({ children, slug }: { children?: ReactNode; slug: string }) {
     return (
         <Sidebar>
-            <SidebarHeader className="flex flex-row items-center justify-evenly border-b h-(--header-height)">
-                <div className="w-[100px] self-center">
+            <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
+                <div className="w-[100px]">
                     <Image
                         src="/avut-logo.svg"
                         alt="A.V.U.T. Logo"
@@ -30,12 +33,18 @@ export function AppSidebar({ children }: { children?: ReactNode }) {
                         className="dark:invert"
                     />
                 </div>
+                <div>
+                    <NotificationsMenu />
+                    <ModeToggle />
+                </div>
             </SidebarHeader>
             <SidebarContent>
+                <div className="flex items-center justify-end gap-2 px-2 py-1"></div>
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </SidebarContent>
             <SidebarFooter>
                 <AppVersion />
+                <UserMenu slug={slug} />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

@@ -11,7 +11,7 @@ import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
-
+import { Protect } from "@/components/protect";
 import {
     Item,
     ItemActions,
@@ -22,15 +22,12 @@ import {
 } from "@/components/ui/items";
 
 import * as Paths from "@/paths";
-import { getTranslations } from "next-intl/server";
-import { Protect } from "@/components/protect";
 import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>) {
     const { slug } = await props.params;
 
     const organization = await getOrganizationBySlug(slug);
-    const t = await getTranslations("I3Module.IndexPage");
 
     return (
         <Lexington.Root>
@@ -39,25 +36,16 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
-                        <div className="font-semibold">{t("title")}</div>
+                        <div className="font-semibold">I3 Module</div>
                     </div>
                     <ItemGroup>
-                        {/* <Item asChild>
-                            <Link href={`/main/${slug}/i3/forms/inspect` as Route}>
-                                <ItemContent>
-                                    <ItemTitle>{t("inspect")}</ItemTitle>
-                                    <ItemDescription>{t("inspectDescription")}</ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item> */}
                         <Item asChild>
                             <Link href={`/main/${slug}/i3/forms/issue-items` as Route}>
                                 <ItemContent>
-                                    <ItemTitle>{t("issue")}</ItemTitle>
-                                    <ItemDescription>{t("issueDescription")}</ItemDescription>
+                                    <ItemTitle>Issue Items</ItemTitle>
+                                    <ItemDescription>
+                                        Record items being issued to members
+                                    </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -65,10 +53,12 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/forms/return` as Route}>
+                            <Link href={`/main/${slug}/i3/forms/return-items` as Route}>
                                 <ItemContent>
-                                    <ItemTitle>{t("return")}</ItemTitle>
-                                    <ItemDescription>{t("returnDescription")}</ItemDescription>
+                                    <ItemTitle>Return Items</ItemTitle>
+                                    <ItemDescription>
+                                        Record items being returned by members
+                                    </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -79,9 +69,9 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             <Item asChild>
                                 <Link href={`/main/${slug}/i3/templates`}>
                                     <ItemContent>
-                                        <ItemTitle>{t("templates")}</ItemTitle>
+                                        <ItemTitle>Templates</ItemTitle>
                                         <ItemDescription>
-                                            {t("templatesDescription")}
+                                            View and manage I3 templates
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

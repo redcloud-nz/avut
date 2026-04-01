@@ -58,9 +58,7 @@ type BreadcrumbItem = {
     href?: string;
 };
 
-function normalizeBreadcrumbs(
-    breadcrumbs: (BreadcrumbItem | string)[],
-): BreadcrumbItem[] {
+function normalizeBreadcrumbs(breadcrumbs: (BreadcrumbItem | string)[]): BreadcrumbItem[] {
     return breadcrumbs.map((breadcrumb) =>
         typeof breadcrumb === "string" ? { label: breadcrumb } : breadcrumb,
     );
@@ -81,14 +79,10 @@ function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
                         <BreadcrumbItem className="hidden md:block">
                             {breadcrumb.href ? (
                                 <BreadcrumbLink asChild>
-                                    <Link href={breadcrumb.href as Route}>
-                                        {breadcrumb.label}
-                                    </Link>
+                                    <Link href={breadcrumb.href as Route}>{breadcrumb.label}</Link>
                                 </BreadcrumbLink>
                             ) : (
-                                <span className="text-muted-foreground">
-                                    {breadcrumb.label}
-                                </span>
+                                <span className="text-muted-foreground">{breadcrumb.label}</span>
                             )}
                         </BreadcrumbItem>
                         <BreadcrumbSeparator className="hidden md:block" />
@@ -96,11 +90,7 @@ function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
                 ))}
                 <BreadcrumbItem>
                     <BreadcrumbPage>
-                        {
-                            normalizedBreadcrumbs[
-                                normalizedBreadcrumbs.length - 1
-                            ].label
-                        }
+                        {normalizedBreadcrumbs[normalizedBreadcrumbs.length - 1].label}
                     </BreadcrumbPage>
                 </BreadcrumbItem>
             </BreadcrumbList>
@@ -108,13 +98,19 @@ function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
     );
 }
 
-interface LexingtonHeaderProps {
-    breadcrumbs?: (BreadcrumbItem | string)[];
+type LexingtonHeaderProps = {
     sidebarTrigger?: boolean;
-}
+} & (
+    | {
+          breadcrumbs?: (BreadcrumbItem | string)[];
+          children?: never;
+      }
+    | { children?: ReactNode; breadcrumbs?: never }
+);
 
 export function LexingtonHeader({
     breadcrumbs,
+    children,
     sidebarTrigger = true,
 }: LexingtonHeaderProps) {
     return (
@@ -126,7 +122,27 @@ export function LexingtonHeader({
                 </>
             )}
             {breadcrumbs && <LexingtonBreadcrumbs breadcrumbs={breadcrumbs} />}
+            {children}
         </header>
+    );
+}
+
+export function LexingtonTitle({ children }: { children: ReactNode }) {
+    return (
+        <h1
+            data-slot="page-title"
+            className="px-2 text-xs font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
+        >
+            {children}
+        </h1>
+    );
+}
+
+export function LexingtonActions({ children }: { children: ReactNode }) {
+    return (
+        <div data-slot="page-action" className="ml-auto flex items-center gap-2">
+            {children}
+        </div>
     );
 }
 
@@ -136,8 +152,7 @@ function LexingtonPage({
     className,
     scrollable = true,
     ...props
-}: ComponentProps<"main"> &
-    VariantProps<typeof lexingtonPageVariants> & { asChild?: boolean }) {
+}: ComponentProps<"main"> & VariantProps<typeof lexingtonPageVariants> & { asChild?: boolean }) {
     const Comp = asChild ? Slot.Root : "main";
 
     return (
@@ -158,11 +173,7 @@ interface LexingtonPageEmptyProps {
     children?: ReactNode;
 }
 
-function LexingtonEmpty({
-    title,
-    description,
-    children,
-}: LexingtonPageEmptyProps) {
+function LexingtonEmpty({ title, description, children }: LexingtonPageEmptyProps) {
     return (
         <Empty data-component="LexingtonPageEmpty">
             <EmptyHeader>
@@ -199,8 +210,7 @@ function LexingtonColumn({
     className,
     width = "full",
     ...props
-}: ComponentProps<"div"> &
-    VariantProps<typeof lexingtonColumnVariants> & { asChild?: boolean }) {
+}: ComponentProps<"div"> & VariantProps<typeof lexingtonColumnVariants> & { asChild?: boolean }) {
     const Comp = asChild ? Slot.Root : "div";
 
     return (
@@ -216,6 +226,8 @@ function LexingtonColumn({
 export const Lexington = {
     Root: LexingtonRoot,
     Header: LexingtonHeader,
+    Title: LexingtonTitle,
+    Actions: LexingtonActions,
     Page: LexingtonPage,
     Empty: LexingtonEmpty,
     Column: LexingtonColumn,

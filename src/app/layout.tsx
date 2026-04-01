@@ -8,7 +8,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Jersey_10 } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
 
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -45,10 +44,8 @@ export default async function Root_Layout(props: LayoutProps<"/">) {
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
-                <NextIntlClientProvider>
-                    {props.children}
-                    <Toaster richColors />
-                </NextIntlClientProvider>
+                {props.children}
+                <Toaster richColors />
             </body>
         </html>
     );

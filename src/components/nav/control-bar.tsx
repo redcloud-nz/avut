@@ -4,21 +4,16 @@
  */
 
 import { ModeToggle } from "./mode-toggle";
-import { UserMenu } from "./user-menu";
+import { NotificationsMenu } from "./notifications-menu";
 
-interface ControlBarProps {
-    slug: string;
-}
-
-export function ControlBar({ slug }: ControlBarProps) {
+export function ControlBar() {
     return (
         <div
             data-slot="control-bar"
             className="fixed top-0 right-0 z-10 h-[calc(var(--header-height)-1px)] flex items-center gap-2 px-2"
         >
-            {/* <NotificationsMenu /> */}
+            <NotificationsMenu />
             <ModeToggle />
-            <UserMenu slug={slug} />
         </div>
     );
 }
