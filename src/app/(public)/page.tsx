@@ -7,7 +7,6 @@
 
 import { getSessionCookie } from "better-auth/cookies";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
 
 import { headers as nextHeaders } from "next/headers";
 
@@ -19,8 +18,6 @@ export default async function HomePage() {
     const headers = await nextHeaders();
     const hasSession = getSessionCookie(headers) != null;
 
-    const t = await getTranslations("HomePage");
-
     return (
         <Argus.Root>
             <Argus.Column className="gap-8">
@@ -29,16 +26,16 @@ export default async function HomePage() {
                     {hasSession ? (
                         <>
                             <Button asChild>
-                                <Link href="/main/--select-org">{t("enterButton")}</Link>
+                                <Link href="/main/--select-org">Enter</Link>
                             </Button>
                         </>
                     ) : (
                         <>
                             <Button asChild>
-                                <Link href="/auth/sign-in">{t("signInButton")}</Link>
+                                <Link href="/auth/sign-in">Sign In</Link>
                             </Button>
                             <Button asChild>
-                                <Link href="/auth/sign-up">{t("signUpButton")}</Link>
+                                <Link href="/auth/sign-up">Sign Up</Link>
                             </Button>
                         </>
                     )}

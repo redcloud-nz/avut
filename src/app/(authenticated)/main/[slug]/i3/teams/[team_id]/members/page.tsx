@@ -25,6 +25,7 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { trpc } from "@/trpc/client";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function I3Module_MembersList_Page(
     props: PageProps<"/main/[slug]/i3/teams/[team_id]/members">,
@@ -72,8 +73,11 @@ export default function I3Module_MembersList_Page(
                 breadcrumbs={[
                     { label: "I3", href: `/main/${organization.slug}/i3` },
                     { label: "Teams" },
-                    { label: team.title },
-                    { label: "Members" },
+                    { label: team.title, href: `/main/${organization.slug}/i3/teams/${teamId}` },
+                    {
+                        label: "Members",
+                        href: `/main/${organization.slug}/i3/teams/${teamId}/members`,
+                    },
                 ]}
             />
             <Lexington.Page>
@@ -104,7 +108,9 @@ export default function I3Module_MembersList_Page(
                                         </Link>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        {memberEquipmentQueries[index].data?.length ?? 0}
+                                        {memberEquipmentQueries[index].data?.length ?? (
+                                            <Spinner className="size-3 inline-block" />
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

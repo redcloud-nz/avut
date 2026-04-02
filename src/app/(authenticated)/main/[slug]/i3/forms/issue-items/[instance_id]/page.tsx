@@ -9,7 +9,6 @@
 
 import { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { toast } from "sonner";

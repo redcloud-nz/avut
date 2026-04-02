@@ -2,17 +2,18 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /main/[slug]/i3/teams/[team_id]/members/[member_id]
+ * Path: /main/[slug]/i3/teams/[team_id]/equipment-kinds/[kind_id]
  */
 "use client";
 
-import { Fragment, use, useState } from "react";
+import { use, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { Lexington } from "@/components/blocks/lexington";
+
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -35,31 +36,21 @@ import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { trpc } from "@/trpc/client";
 
-export default function I3Module_Team_MemberItems_Page(
-    props: PageProps<"/main/[slug]/i3/teams/[team_id]/members/[member_id]">,
+export default function I3Module_Team_EquipmentKindItems_Page(
+    props: PageProps<"/main/[slug]/i3/teams/[team_id]/equipment-kinds/[kind_id]">,
 ) {
-    const { member_id, team_id } = use(props.params);
-    const memberId = parseInt(member_id);
+    const { team_id, kind_id } = use(props.params);
+    const kindId = parseInt(kind_id);
     const teamId = parseInt(team_id);
 
     const organization = useOrganization();
 
-    const [
-        { data: teams },
-        { data: categories },
-        { data: kinds },
-        { data: members },
-        { data: memberEquipment },
-    ] = useSuspenseQueries({
+    const [{ data: teams }, { data: kinds }, { data: members }] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listAccessibleTeams.queryOptions({
                 organizationId: organization.id,
                 module: "i3",
                 action: "read",
-            }),
-            trpc.d4hApi.listEquipmentCategories.queryOptions({
-                organizationId: organization.id,
-                module: "i3",
             }),
             trpc.d4hApi.listEquipmentKinds.queryOptions({
                 organizationId: organization.id,
@@ -69,40 +60,32 @@ export default function I3Module_Team_MemberItems_Page(
                 organizationId: organization.id,
                 module: "i3",
             }),
+        ],
+    });
+
+    const memberEquipment = useSuspenseQueries({
+        queries: members.map((member) =>
             trpc.d4hApi.listMemberEquipment.queryOptions({
                 organizationId: organization.id,
                 module: "i3",
-                memberId,
                 teamId,
+                memberId: member.id,
             }),
-        ],
+        ),
+        combine: (results) =>
+            results
+                .map((q, index) => ({
+                    member: members[index],
+                    items: (q.data ?? []).filter((item) => item.kind.id === kindId),
+                }))
+                .sort((a, b) => a.member.name.localeCompare(b.member.name)),
     });
 
     const team = teams.find((t) => t.id === teamId);
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
-    const member = members.find((m) => m.id === memberId);
-    if (!member) throw new Error(`Member with id ${memberId} not found`);
-
-    const kindsWithItems = kinds
-        .map((kind) => {
-            return {
-                kind,
-                items: memberEquipment
-                    .filter((item) => item.kind.id === kind.id)
-                    .sort((a, b) => a.ref.localeCompare(b.ref)),
-            };
-        })
-        .filter(({ items }) => items.length > 0);
-
-    const categoriesWithKindsAndItems = categories
-        .map((category) => {
-            return {
-                category,
-                kinds: kindsWithItems.filter(({ kind }) => kind.category.id === category.id),
-            };
-        })
-        .filter(({ kinds }) => kinds.length > 0);
+    const kind = kinds.find((k) => k.id === kindId);
+    if (!kind) throw new Error(`D4HEquipmentKind(${kindId}) not found`);
 
     const [showColumns, setShowColumns] = useState({
         brand: true,
@@ -121,16 +104,16 @@ export default function I3Module_Team_MemberItems_Page(
                     { label: "Teams" },
                     { label: team.title, href: `/main/${organization.slug}/i3/teams/${teamId}` },
                     {
-                        label: "Members",
-                        href: `/main/${organization.slug}/i3/teams/${teamId}/members`,
+                        label: "Equipment Types",
+                        href: `/main/${organization.slug}/i3/teams/${teamId}/equipment-kinds`,
                     },
-                    { label: member.name },
+                    { label: kind.title },
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="full">
                     <Hermes.Header>
-                        <Hermes.Title>Items issued to {member.name}</Hermes.Title>
+                        <Hermes.Title>{kind.title}</Hermes.Title>
                         <Hermes.Action>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -215,8 +198,7 @@ export default function I3Module_Team_MemberItems_Page(
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHeadCell></TableHeadCell>
-                                <TableHeadCell>Kind</TableHeadCell>
+                                <TableHeadCell>Member</TableHeadCell>
                                 <TableHeadCell>Ref</TableHeadCell>
                                 {showColumns.brand && (
                                     <TableHeadCell className="hidden lg:table-cell">
@@ -251,66 +233,50 @@ export default function I3Module_Team_MemberItems_Page(
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {categoriesWithKindsAndItems.map(({ category, kinds }) => (
-                                <Fragment key={category.id}>
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="font-semibold">
-                                            {category.title}
-                                        </TableCell>
+                            {memberEquipment.map(({ member, items }) =>
+                                items.map((item, index) => (
+                                    <TableRow key={item.id}>
+                                        {index === 0 && (
+                                            <TableCell rowSpan={items.length}>
+                                                {member.name}
+                                            </TableCell>
+                                        )}
+                                        <TableCell>{item.ref}</TableCell>
+                                        {showColumns.brand && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.brand?.title}
+                                            </TableCell>
+                                        )}
+                                        {showColumns.model && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.model?.title}
+                                            </TableCell>
+                                        )}
+                                        {showColumns.notes && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.notes}
+                                            </TableCell>
+                                        )}
+                                        {showColumns.serial && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.serial}
+                                            </TableCell>
+                                        )}
+                                        {showColumns.expiry && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.dateExpires
+                                                    ? formatDate(item.dateExpires)
+                                                    : ""}
+                                            </TableCell>
+                                        )}
+                                        {showColumns.status && (
+                                            <TableCell className="hidden lg:table-cell">
+                                                {item.status}
+                                            </TableCell>
+                                        )}
                                     </TableRow>
-                                    {kinds.map(({ kind, items }) => (
-                                        <Fragment key={kind.id}>
-                                            {items.map((item, itemIndex) => (
-                                                <TableRow key={item.id}>
-                                                    {itemIndex == 0 ? (
-                                                        <>
-                                                            <TableCell
-                                                                rowSpan={items.length}
-                                                            ></TableCell>
-                                                            <TableCell rowSpan={items.length}>
-                                                                {item.kind.title}
-                                                            </TableCell>
-                                                        </>
-                                                    ) : null}
-                                                    <TableCell>#{item.ref}</TableCell>
-                                                    {showColumns.brand && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.brand?.title}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.model && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.model?.title}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.notes && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.notes}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.serial && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.serial}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.expiry && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.dateExpires
-                                                                ? formatDate(item.dateExpires)
-                                                                : ""}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.status && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.status}
-                                                        </TableCell>
-                                                    )}
-                                                </TableRow>
-                                            ))}
-                                        </Fragment>
-                                    ))}
-                                </Fragment>
-                            ))}
+                                )),
+                            )}
                         </TableBody>
                     </Table>
                 </Lexington.Column>

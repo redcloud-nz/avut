@@ -39,6 +39,7 @@ export const D4HEquipmentItem = {
                 title: z.string().optional(),
             })
             .nullable(),
+        notes: z.string(),
         parents: z.array(
             z.object({
                 id: z.number(),

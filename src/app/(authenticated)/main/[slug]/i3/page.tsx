@@ -21,7 +21,6 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
-import * as Paths from "@/paths";
 import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>) {
@@ -31,7 +30,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.main(slug).i3.index]} />
+            <Lexington.Header breadcrumbs={[{ href: `/main/${slug}/i3`, label: "I3" }]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
@@ -39,6 +38,32 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                         <div className="font-semibold">I3 Module</div>
                     </div>
                     <ItemGroup>
+                        <Item asChild>
+                            <Link href={`/main/${slug}/i3/equipment-kinds` as Route}>
+                                <ItemContent>
+                                    <ItemTitle>By Equipment Type</ItemTitle>
+                                    <ItemDescription>
+                                        View and edit items by their equipment type.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link href={`/main/${slug}/i3/members` as Route}>
+                                <ItemContent>
+                                    <ItemTitle>By Member</ItemTitle>
+                                    <ItemDescription>
+                                        View and edit items by their assigned member.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                         <Item asChild>
                             <Link href={`/main/${slug}/i3/forms/issue-items` as Route}>
                                 <ItemContent>

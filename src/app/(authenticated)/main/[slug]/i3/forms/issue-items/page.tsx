@@ -11,7 +11,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -47,8 +46,6 @@ import { trpc } from "@/trpc/client";
 export default function I3Module_Issue_FormInstanceList_Page() {
     const organization = useOrganization();
     const router = useRouter();
-    const t_i3 = useTranslations("I3Module");
-    const t = useTranslations("I3Module.IssueFormsList");
 
     const { data: instances } = useSuspenseQuery(
         trpc.forms.listDraftFormInstances.queryOptions({
