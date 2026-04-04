@@ -29,16 +29,14 @@ import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateInvitation_Dialog } from "../invitations/create-invitation";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 type AdminModule_UsersListProps = {
     organization: OrganizationData;
     currentUserId: string;
 };
 
-export function AdminModule_UsersList({
-    organization,
-    currentUserId,
-}: AdminModule_UsersListProps) {
+export function AdminModule_UsersList({ organization, currentUserId }: AdminModule_UsersListProps) {
     const { data: members } = useSuspenseQuery(
         trpc.organizations.listOrganizationMembers.queryOptions({
             organizationId: organization.id,
@@ -55,15 +53,11 @@ export function AdminModule_UsersList({
                 columnHelper.accessor("user.name", {
                     id: "name",
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            User
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>User</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                to={adminModule.user(ctx.row.original.userId)}
-                            >
+                            <Link to={adminModule.user(ctx.row.original.userId)}>
                                 {ctx.getValue()}
                                 {ctx.row.original.userId === currentUserId ? (
                                     <span className="bg-neutral-200 border border-neutral-300 text-xs ml-1 px-1.5 rounded-sm">
@@ -79,23 +73,17 @@ export function AdminModule_UsersList({
                 columnHelper.accessor("user.email", {
                     id: "email",
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Email
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Email</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
                 }),
                 columnHelper.accessor("createdAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Joined
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Joined</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
@@ -107,13 +95,13 @@ export function AdminModule_UsersList({
                 }),
                 columnHelper.accessor("role", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Role
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Role</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
+                            {ctx.row.original.role
+                                .map((role) => OrganizationRole.displayNames[role])
+                                .join(", ")}
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,
@@ -141,14 +129,8 @@ export function AdminModule_UsersList({
         <>
             <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-                <Protect
-                    orgId={organization.id}
-                    permissions={{ invitation: ["create"] }}
-                >
-                    <Button
-                        variant="outline"
-                        onClick={() => setCreateDialogOpen(true)}
-                    >
+                <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
+                    <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
                         <SendIcon /> Invite
                     </Button>
                 </Protect>

@@ -6,12 +6,13 @@
 import * as z from "zod";
 
 import type { OrganizationInvitation as InvitationRecord } from "@/generated/prisma/client";
-import { nanoId16 } from "../id";
+import { nanoId16 } from "@/lib/id";
+import { zodNanoId16 } from "@/lib/validation";
+import { type AuthInvitation } from "@/server/auth";
+
 import { OrganizationId } from "./organization";
 import { OrganizationRole } from "./organization-role";
 import { UserId } from "./user";
-import { zodNanoId16 } from "../validation";
-import { AuthInvitation } from "@/server/auth";
 
 export const InvitationId = {
     schema: zodNanoId16("InvitationId expected").brand<"InvitationId">(),
@@ -57,6 +58,4 @@ export const OrganizationInvitationData = {
         }),
 };
 
-export type OrganizationInvitationData = z.infer<
-    typeof OrganizationInvitationData.schema
->;
+export type OrganizationInvitationData = z.infer<typeof OrganizationInvitationData.schema>;

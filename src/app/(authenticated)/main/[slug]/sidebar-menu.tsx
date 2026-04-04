@@ -68,32 +68,32 @@ export async function MainApp_Sidebar_Menu({
                 </Show>
                 <Show when={modules["i3"].enabled}>
                     <NavCollapsible label="I3" href={`/main/${slug}/i3`} icon={<ModuleIcons.I3 />}>
-                        <Protect orgId={organization.id} permissions={{ i3Items: ["view"] }}>
+                        <Protect orgId={organization.id} permissions={{ i3Item: ["view"] }}>
                             <NavSubItem
                                 label="By Equipment Kind"
                                 href={`/main/${slug}/i3/kinds` as Route}
                             />
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ i3Items: ["view"] }}>
+                        <Protect orgId={organization.id} permissions={{ i3Item: ["view"] }}>
                             <NavSubItem
                                 label="By Member"
                                 href={`/main/${slug}/i3/members` as Route}
                             />
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ i3Items: ["inspect"] }}>
+                        <Protect orgId={organization.id} permissions={{ i3Item: ["inspect"] }}>
                             <NavSubItem
                                 label="Inspect"
                                 href={`/main/${slug}/i3/forms/inspect-items` as Route}
                             />
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ i3Items: ["issue"] }}>
+                        <Protect orgId={organization.id} permissions={{ i3Item: ["issue"] }}>
                             <NavSubItem
                                 label="Issue"
                                 href={`/main/${slug}/i3/forms/issue-items` as Route}
                             />
                         </Protect>
 
-                        <Protect orgId={organization.id} permissions={{ i3Items: ["return"] }}>
+                        <Protect orgId={organization.id} permissions={{ i3Item: ["return"] }}>
                             <NavSubItem
                                 label="Return"
                                 href={`/main/${slug}/i3/forms/return-items` as Route}

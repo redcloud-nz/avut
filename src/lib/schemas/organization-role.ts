@@ -5,7 +5,16 @@
 
 import * as z from "zod";
 
-const organizationRoleSchema = z.enum(["owner", "admin", "member"]);
+const organizationRoleSchema = z.enum([
+    "owner",
+    "admin",
+    "member",
+    "i3-admin",
+    "i3-user",
+    "skills-admin",
+    "skills-assessor",
+    "skill-package-author",
+]);
 
 export const OrganizationRole = {
     schema: organizationRoleSchema,
@@ -14,6 +23,11 @@ export const OrganizationRole = {
         owner: "Owner",
         admin: "Admin",
         member: "Member",
+        "i3-admin": "I3 Admin",
+        "i3-user": "I3 User",
+        "skills-admin": "Skills Admin",
+        "skills-assessor": "Skills Assessor",
+        "skill-package-author": "Skill Package Author",
     } satisfies Record<OrganizationRole, string>,
 
     options: [

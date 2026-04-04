@@ -7,20 +7,15 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import { roles } from "@/lib/permissions";
 import { OrganizationData } from "@/lib/schemas/organization";
-import {
-    InvitationId,
-    OrganizationInvitationData,
-} from "@/lib/schemas/organization-invitation";
+import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { UserData } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
 
 import { FieldConflictError } from "../errors";
-import {
-    authenticatedProcedure,
-    createTrpcRouter,
-    organizationProcedure,
-} from "../init";
+import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 /**
  * Router for handling a users invitations.
@@ -41,14 +36,13 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const invitation =
-                await ctx.prisma.organizationInvitation.findUnique({
-                    where: {
-                        id: input.invitationId,
-                        status: "pending",
-                        email: ctx.auth.user.email,
-                    },
-                });
+            const invitation = await ctx.prisma.organizationInvitation.findUnique({
+                where: {
+                    id: input.invitationId,
+                    status: "pending",
+                    email: ctx.auth.user.email,
+                },
+            });
 
             if (!invitation)
                 throw new TRPCError({
@@ -85,20 +79,19 @@ export const invitationsRouter = createTrpcRouter({
         .input(
             z.object({
                 email: z.email(),
-                role: z.enum(["admin", "member"]),
+                roles: z.array(OrganizationRole.schema),
             }),
         )
         .output(z.object({ created: OrganizationInvitationData.schema }))
         .mutation(async ({ ctx, input }) => {
             // Check for an existing pending invitation
-            const existingInvitation =
-                await ctx.prisma.organizationInvitation.findFirst({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        email: input.email,
-                        status: "pending",
-                    },
-                });
+            const existingInvitation = await ctx.prisma.organizationInvitation.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    email: input.email,
+                    status: "pending",
+                },
+            });
 
             if (existingInvitation)
                 throw new TRPCError({
@@ -132,7 +125,7 @@ export const invitationsRouter = createTrpcRouter({
                 body: {
                     organizationId: ctx.organizationId,
                     email: input.email,
-                    role: input.role,
+                    role: input.roles,
                 },
                 headers: ctx.headers,
             });
@@ -171,15 +164,14 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .query(async ({ ctx, input }) => {
-            const invitation =
-                await ctx.prisma.organizationInvitation.findUnique({
-                    where: {
-                        id: input.invitationId,
-                        status: "pending",
-                        email: ctx.auth.user.email,
-                    },
-                    include: { organization: true, user: true },
-                });
+            const invitation = await ctx.prisma.organizationInvitation.findUnique({
+                where: {
+                    id: input.invitationId,
+                    status: "pending",
+                    email: ctx.auth.user.email,
+                },
+                include: { organization: true, user: true },
+            });
 
             if (!invitation)
                 throw new TRPCError({
@@ -216,13 +208,12 @@ export const invitationsRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const invitations =
-                await ctx.prisma.organizationInvitation.findMany({
-                    where: {
-                        email: ctx.auth.user.email,
-                    },
-                    include: { organization: true, user: true },
-                });
+            const invitations = await ctx.prisma.organizationInvitation.findMany({
+                where: {
+                    email: ctx.auth.user.email,
+                },
+                include: { organization: true, user: true },
+            });
 
             return invitations.map((invitation) => ({
                 ...OrganizationInvitationData.fromRecord(invitation),
@@ -250,14 +241,13 @@ export const invitationsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const invitation =
-                await ctx.prisma.organizationInvitation.findUnique({
-                    where: {
-                        id: input.invitationId,
-                        status: "pending",
-                        email: ctx.auth.user.email,
-                    },
-                });
+            const invitation = await ctx.prisma.organizationInvitation.findUnique({
+                where: {
+                    id: input.invitationId,
+                    status: "pending",
+                    email: ctx.auth.user.email,
+                },
+            });
 
             if (!invitation)
                 throw new TRPCError({

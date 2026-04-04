@@ -15,7 +15,7 @@ const statement = {
     ...defaultStatements,
     d4hAccessToken: ["view", "create", "update", "delete"],
     d4hEquipment: ["view"],
-    i3Items: ["view", "issue", "inspect", "return"],
+    i3Item: ["view", "issue", "inspect", "return"],
     i3Template: ["view", "create", "update", "delete"],
     invitation: ["view", "create", "cancel"],
     member: ["view", "create", "update", "delete"],
@@ -33,7 +33,7 @@ export const Roles = {
         ...ownerAc.statements,
         d4hAccessToken: ["view", "create", "update", "delete"],
         d4hEquipment: ["view"],
-        i3Items: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "cancel"],
         member: ["view", "create", "update", "delete"],
@@ -47,7 +47,7 @@ export const Roles = {
         ...adminAc.statements,
         d4hAccessToken: ["view", "create", "update", "delete"],
         d4hEquipment: ["view"],
-        i3Items: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "cancel"],
         member: ["view", "create", "update", "delete"],
@@ -61,20 +61,22 @@ export const Roles = {
         ...memberAc.statements,
         d4hEquipment: ["view"],
         organization: ["view"],
+        member: ["view"],
         person: ["view"],
         skills: ["view"],
         team: ["view"],
     }),
     "i3-admin": ac.newRole({
         d4hEquipment: ["view"],
-        i3Items: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         organization: ["view"],
         person: ["view"],
     }),
     "i3-user": ac.newRole({
         d4hEquipment: ["view"],
-        i3Items: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return"],
+        i3Template: ["view"],
         organization: ["view"],
         person: ["view"],
     }),
@@ -85,8 +87,9 @@ export const Roles = {
     }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
+        skills: ["view", "assess"],
     }),
-    "skills-author": ac.newRole({
+    "skill-package-author": ac.newRole({
         skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
     }),
 } as const;
@@ -94,3 +97,7 @@ export const Roles = {
 export type Permissions = {
     [K in keyof typeof statement]?: (typeof statement)[K][number][];
 };
+
+export type Role = keyof typeof Roles;
+
+export const roles = Object.keys(Roles) as Role[];

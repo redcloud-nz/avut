@@ -26,9 +26,7 @@ export function useOrganizationMembership(
     const membership = memberships.find((m) => m.userId === userId);
 
     if (!membership) {
-        throw new Error(
-            `Organization membership for User(${userId}) not found`,
-        );
+        throw new Error(`Organization membership for User(${userId}) not found`);
     }
 
     return membership;

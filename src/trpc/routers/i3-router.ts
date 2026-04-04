@@ -241,7 +241,7 @@ export const i3Router = createTrpcRouter({
     /**
      * Submit an I3 Issue Items form.
      */
-    submitIssueItemsForm: organizationProcedure({ i3Items: ["issue"] })
+    submitIssueItemsForm: organizationProcedure({ i3Item: ["issue"] })
         .input(
             z.object({
                 formInstanceId: FormInstanceId.schema,
