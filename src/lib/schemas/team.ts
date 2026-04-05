@@ -22,6 +22,7 @@ const teamSchema = z.object({
     id: TeamId.schema,
     name: z.string().min(3).max(100),
     description: z.string().max(500),
+    type: z.enum(["General", "D4HDefined"]),
     tags: tagsSchema,
     properties: propertiesSchema,
     organizationId: z.string(),
@@ -50,3 +51,12 @@ export const TeamData = {
 export type TeamData = z.infer<typeof teamSchema>;
 
 export type ModifiableTeamData = z.infer<typeof TeamData.modifiableSchema>;
+
+export const TeamRef = {
+    schema: z.object({
+        id: TeamId.schema,
+        name: z.string(),
+    }),
+} as const;
+
+export type TeamRef = z.infer<typeof TeamRef.schema>;

@@ -9,17 +9,20 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { PersonId } from "@/lib/schemas/person";
-import { TeamData, TeamId } from "@/lib/schemas/team";
-import {
-    TeamMembershipData,
-    TeamMembershipId,
-} from "@/lib/schemas/team-membership";
+import { D4HMember } from "@/lib/schemas/d4h/member";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
+import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
+import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { auth } from "@/server/auth";
+import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { revalidateTeam } from "@/server/team";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+
+import { createPerson, getPersonByEmail } from "./personnel-router";
 
 export const teamsRouter = createTrpcRouter({
     /**
@@ -79,7 +82,14 @@ export const teamsRouter = createTrpcRouter({
                 create: TeamMembershipData.modifiableSchema,
             }),
         )
-        .output(z.object({ created: TeamMembershipData.schema }))
+        .output(
+            z.object({
+                created: TeamMembershipData.schema.extend({
+                    person: PersonRef.schema,
+                    team: TeamRef.schema,
+                }),
+            }),
+        )
         .mutation(async ({ ctx, input: { teamId, personId, create } }) => {
             const [team, person, existing] = await Promise.all([
                 ctx.prisma.team.findUnique({
@@ -108,6 +118,11 @@ export const teamsRouter = createTrpcRouter({
                     message: Messages.teamNotFound(teamId),
                 });
             }
+            if (team.type == "D4HDefined")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Cannot manually add members to a team that is D4HDefined.",
+                });
 
             if (!person) {
                 throw new TRPCError({
@@ -135,6 +150,20 @@ export const teamsRouter = createTrpcRouter({
                         tags: create.tags,
                         properties: create.properties,
                     },
+                    include: {
+                        person: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                        team: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
                 }),
                 ctx.logEvent({
                     action: "Create",
@@ -144,7 +173,13 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return { created: TeamMembershipData.fromRecord(created) };
+            return {
+                created: {
+                    ...TeamMembershipData.fromRecord(created),
+                    person: PersonRef.schema.parse(created.person),
+                    team: TeamRef.schema.parse(created.team),
+                },
+            };
         }),
 
     /**
@@ -187,16 +222,38 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId, teamId } }) => {
-            const existing = await ctx.prisma.teamMembership.findUnique({
-                where: {
-                    organizationId: ctx.organizationId,
-                    teamId_personId: {
-                        teamId,
-                        personId,
+            const [team, existing] = await Promise.all([
+                ctx.prisma.team.findUnique({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        id: teamId,
                     },
-                },
-                select: { id: true },
-            });
+                    select: { id: true, type: true },
+                }),
+                ctx.prisma.teamMembership.findUnique({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        teamId_personId: {
+                            teamId,
+                            personId,
+                        },
+                    },
+                    select: { id: true },
+                }),
+            ]);
+
+            if (!team) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
+                });
+            }
+
+            if (team.type == "D4HDefined")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Cannot manually remove members from a team that is D4HDefined.",
+                });
 
             if (!existing) {
                 throw new TRPCError({
@@ -224,6 +281,118 @@ export const teamsRouter = createTrpcRouter({
                     objectId: `${teamId}_${personId}`,
                 }),
             ]);
+        }),
+
+    /**
+     * Import a team from D4H, creating a new team in the organization that is linked to an existing team in D4H.
+     */
+    importTeamFromD4H: organizationProcedure({ team: ["create"] })
+        .input(
+            z.object({
+                create: TeamData.modifiableSchema,
+                d4hTeamId: z.number(),
+            }),
+        )
+        .output(z.object({ created: TeamData.schema }))
+        .mutation(async ({ ctx, input: { create, d4hTeamId } }) => {
+            const accessToken = await getPersonalD4HAccessTokenForUser(
+                ctx.organizationId,
+                ctx.userId,
+            );
+            if (!accessToken)
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "No personal D4H Access Token found for user",
+                });
+
+            const d4hTeam = await getD4HTeam(accessToken, d4hTeamId);
+
+            const data = await auth.api.createTeam({
+                body: {
+                    name: create.name,
+                    organizationId: ctx.organizationId,
+                },
+            });
+
+            const changes = diffObject(
+                {},
+                { ...create, type: "D4HDefined", properties: { d4hTeamId } },
+            );
+
+            const [createdTeam] = await Promise.all([
+                // Update additional fields
+                ctx.prisma.team.update({
+                    where: { organizationId: ctx.organizationId, id: data.id },
+                    data: {
+                        description: create.description,
+                        tags: create.tags,
+                        type: "D4HDefined",
+                        properties: {
+                            d4hTeamId,
+                            d4hTeamName: d4hTeam.title,
+                            d4hServer: accessToken.serverCode,
+                            d4hLastSync: new Date().toISOString(),
+                            ...create.properties,
+                        },
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "Team",
+                    objectId: data.id,
+                    changes,
+                }),
+            ]);
+
+            const personnel = await Promise.all(
+                d4hTeam.members.map(async (member) => {
+                    const existingPerson = await getPersonByEmail(ctx, member.email.value);
+                    if (existingPerson) return { member, person: existingPerson };
+
+                    const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
+                        name: member.name,
+                        email: member.email.value,
+                        tags: [],
+                        properties: {
+                            d4hId: member.id,
+                        },
+                    });
+                    return { member, person: newPerson };
+                }),
+            );
+
+            await Promise.all(
+                personnel.flatMap(({ member, person }) => {
+                    const teamMembershipId = TeamMembershipId.create();
+
+                    const memberCreate = {
+                        teamId: createdTeam.id,
+                        personId: person.id,
+                        tags: [],
+                        properties: {
+                            d4hMemberId: member.id,
+                        },
+                    };
+
+                    return [
+                        ctx.prisma.teamMembership.create({
+                            data: {
+                                id: teamMembershipId,
+                                organizationId: ctx.organizationId,
+                                ...memberCreate,
+                            },
+                        }),
+                        ctx.logEvent({
+                            action: "Create",
+                            objectType: "TeamMembership",
+                            objectId: teamMembershipId,
+                            changes: diffObject({}, memberCreate),
+                        }),
+                    ];
+                }),
+            );
+
+            return { created: TeamData.fromRecord(createdTeam) };
         }),
 
     /**
@@ -255,18 +424,160 @@ export const teamsRouter = createTrpcRouter({
                 teamId: TeamId.schema.optional(),
             }),
         )
-        .output(z.array(TeamMembershipData.schema))
+        .output(
+            z.array(
+                TeamMembershipData.schema.extend({
+                    team: TeamData.schema.pick({ id: true, name: true }),
+                    person: PersonData.schema.pick({ id: true, name: true }),
+                }),
+            ),
+        )
         .query(async ({ ctx, input: { organizationId, personId, teamId } }) => {
-            const teamMembershipRecords =
-                await ctx.prisma.teamMembership.findMany({
-                    where: {
-                        organizationId,
-                        personId,
-                        teamId,
+            const teamMembershipRecords = await ctx.prisma.teamMembership.findMany({
+                where: {
+                    organizationId,
+                    personId,
+                    teamId,
+                },
+                include: {
+                    team: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
                     },
+                    person: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+            });
+
+            return teamMembershipRecords.map((record) => ({
+                ...TeamMembershipData.fromRecord(record),
+                team: record.team,
+                person: record.person,
+            }));
+        }),
+
+    syncronizeD4HTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            const team = await getTeam(ctx, teamId);
+
+            if (!team)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
                 });
 
-            return teamMembershipRecords.map(TeamMembershipData.fromRecord);
+            if (team.type !== "D4HDefined")
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is not linked to D4H",
+                });
+
+            const members = (
+                await ctx.prisma.teamMembership.findMany({
+                    where: {
+                        teamId,
+                        organizationId: ctx.organizationId,
+                    },
+                })
+            ).map(TeamMembershipData.fromRecord);
+
+            const accessToken = await getPersonalD4HAccessTokenForUser(
+                ctx.organizationId,
+                ctx.userId,
+            );
+            if (!accessToken)
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "No personal D4H Access Token found for user",
+                });
+
+            const d4hTeam = await getD4HTeam(accessToken, team.properties.d4hTeamId);
+
+            // Find members that are in our system but have been removed.
+            for (const member of members) {
+                const d4hMember = d4hTeam.members.find(
+                    (m) => m.id === member.properties.d4hMemberId,
+                );
+                if (!d4hMember) {
+                    await ctx.prisma.teamMembership.delete({
+                        where: {
+                            teamId_personId: {
+                                teamId,
+                                personId: member.personId,
+                            },
+                        },
+                    });
+                    await ctx.logEvent({
+                        action: "Delete",
+                        objectType: "TeamMembership",
+                        objectId: `${teamId}_${member.personId}`,
+                        description: `Member ${member.personId} removed from team as they are no longer in the linked D4H team.`,
+                    });
+                }
+            }
+
+            for (const d4hMember of d4hTeam.members) {
+                const member = members.find((m) => m.properties.d4hMemberId === d4hMember.id);
+                if (!member) {
+                    // This member is in D4H but not in our system, add them.
+                    let person = await getPersonByEmail(ctx, d4hMember.email.value);
+                    if (!person) {
+                        const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
+                            name: d4hMember.name,
+                            email: d4hMember.email.value,
+                            tags: [],
+                            properties: {
+                                d4hId: d4hMember.id,
+                            },
+                        });
+                        person = newPerson;
+                    }
+
+                    const teamMembershipId = TeamMembershipId.create();
+
+                    const memberCreate = {
+                        teamId,
+                        personId: person.id,
+                        tags: [],
+                        properties: {
+                            d4hMemberId: d4hMember.id,
+                        },
+                    };
+
+                    await ctx.prisma.teamMembership.create({
+                        data: {
+                            id: teamMembershipId,
+                            organizationId: ctx.organizationId,
+                            ...memberCreate,
+                        },
+                    });
+                    await ctx.logEvent({
+                        action: "Create",
+                        objectType: "TeamMembership",
+                        objectId: teamMembershipId,
+                        description: `Member ${person.id} added to team as they are in the linked D4H team but not in our system.`,
+                        changes: diffObject({}, memberCreate),
+                    });
+                }
+            }
+
+            // Update the last sync time
+            await ctx.prisma.team.update({
+                where: { organizationId: ctx.organizationId, id: teamId },
+                data: {
+                    properties: {
+                        ...team.properties,
+                        d4hLastSync: new Date().toISOString(),
+                    },
+                },
+            });
         }),
 
     /**
@@ -289,12 +600,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, update } }) => {
-            const existingTeam = await ctx.prisma.team.findUnique({
-                where: {
-                    id: teamId,
-                    organizationId: ctx.organizationId,
-                },
-            });
+            const existingTeam = await getTeam(ctx, teamId);
 
             if (!existingTeam)
                 throw new TRPCError({
@@ -302,13 +608,9 @@ export const teamsRouter = createTrpcRouter({
                     message: Messages.teamNotFound(teamId),
                 });
 
-            const diff = diffObject(
-                TeamData.modifiableSchema.parse(existingTeam),
-                update,
-            );
+            const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
 
-            if (diff.length == 0)
-                return { updated: TeamData.fromRecord(existingTeam) }; // No changes
+            if (diff.length == 0) return { updated: existingTeam }; // No changes
 
             const [updated] = await Promise.all([
                 // Apply the changes
@@ -375,13 +677,9 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const diff = diffObject(
-                TeamMembershipData.schema.parse(existing),
-                update,
-            );
+            const diff = diffObject(TeamMembershipData.schema.parse(existing), update);
 
-            if (diff.length == 0)
-                return { updated: TeamMembershipData.fromRecord(existing) };
+            if (diff.length == 0) return { updated: TeamMembershipData.fromRecord(existing) };
 
             const [updated] = await Promise.all([
                 // Apply the changes
@@ -406,3 +704,70 @@ export const teamsRouter = createTrpcRouter({
             return { updated: TeamMembershipData.fromRecord(updated) };
         }),
 });
+
+/**
+ * Utility function to fetch a D4H team and its members using a user's access token, ensuring the team is accessible with the token.
+ * @param accessToken The user's D4H access token.
+ * @param d4hTeamId The ID of the D4H team to fetch.
+ * @returns The D4H team and its members.
+ * @throws TRPCError(Not_FOUND) If the D4H team is not found or not accessible with the user's token.
+ * @throws TRPCError(INTERNAL_SERVER_ERROR) If there is an error fetching the team members.
+ */
+async function getD4HTeam(accessToken: D4HAccessToken_ServerOnly, d4hTeamId: number) {
+    const fetchClient = getD4HFetchClient(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+
+    const d4hTeam = d4HTeams.find((team) => team.id === d4hTeamId);
+    if (!d4hTeam)
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `D4H Team with ID ${d4hTeamId} not found or not accessible with the user's token.`,
+        });
+
+    const { data: membersData, error } = await fetchClient.GET(
+        `/v3/{context}/{contextId}/members`,
+        {
+            params: {
+                path: {
+                    context: "team",
+                    contextId: d4hTeamId,
+                },
+                query: {
+                    status: ["OPERATIONAL", "NON_OPERATIONAL"],
+                },
+            },
+        },
+    );
+    if (error) {
+        throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            cause: error,
+            message: `Failed to fetch members of D4H Team with ID ${d4hTeamId}`,
+        });
+    }
+    const members = (membersData as D4HListResponse).results.map((raw) =>
+        D4HMember.schema.parse(raw),
+    );
+
+    return { ...d4hTeam, members };
+}
+
+/**
+ * Utility function to fetch a Team by ID.
+ * @param ctx
+ * @param teamId
+ * @returns
+ */
+async function getTeam(
+    ctx: AuthenticatedOrganizationContext,
+    teamId: TeamId,
+): Promise<TeamData | null> {
+    const team = await ctx.prisma.team.findUnique({
+        where: {
+            id: teamId,
+            organizationId: ctx.organizationId,
+        },
+    });
+
+    return team ? TeamData.fromRecord(team) : null;
+}

@@ -13,11 +13,7 @@ import { PersonData, PersonId } from "@/lib/schemas/person";
 import { revalidatePerson } from "@/server/person";
 
 import { FieldConflictError } from "../errors";
-import {
-    AuthenticatedOrganizationContext,
-    createTrpcRouter,
-    organizationProcedure,
-} from "../init";
+import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
@@ -306,10 +302,7 @@ export const personnelRouter = createTrpcRouter({
             }
 
             // Calculate changes from existing record
-            const changes = diffObject(
-                PersonData.modifiableSchema.parse(existing),
-                update,
-            );
+            const changes = diffObject(PersonData.modifiableSchema.parse(existing), update);
 
             if (changes.length == 0) return { updated: existing }; // No changes
 
@@ -331,6 +324,53 @@ export const personnelRouter = createTrpcRouter({
             return { updated: PersonData.fromRecord(updated) };
         }),
 });
+
+export async function createPerson(
+    ctx: AuthenticatedOrganizationContext,
+    personId: PersonId,
+    create: z.infer<typeof PersonData.modifiableSchema>,
+) {
+    const created = await ctx.prisma.person.create({
+        data: {
+            id: personId,
+            organizationId: ctx.organizationId,
+            name: create.name,
+            email: create.email,
+            tags: create.tags,
+            properties: create.properties,
+            status: "Active",
+        },
+    });
+
+    // Calculate changes from empty record
+    const changes = diffObject({}, create);
+
+    await ctx.logEvent({
+        action: "Create",
+        objectType: "Person",
+        objectId: created.id,
+        changes: changes,
+    });
+
+    return { created: PersonData.fromRecord(created) };
+}
+
+/**
+ * Utility function to fetch a person by email.
+ * @param ctx The authenticated context containing the organization ID and Prisma client.
+ * @param email The email address of the person to fetch.
+ * @returns The person data if found, or null if not found.
+ */
+export async function getPersonByEmail(
+    ctx: AuthenticatedOrganizationContext,
+    email: string,
+): Promise<PersonData | null> {
+    const person = await ctx.prisma.person.findFirst({
+        where: { organizationId: ctx.organizationId, email },
+    });
+
+    return person ? PersonData.fromRecord(person) : null;
+}
 
 /**
  * Utility function to fetch a person by ID and throw a TRPCError if not found.

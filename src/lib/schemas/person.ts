@@ -8,12 +8,7 @@ import * as z from "zod";
 import { Person as PersonRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
-import {
-    propertiesSchema,
-    recordStatusSchema,
-    tagsSchema,
-    zodNanoId16,
-} from "../validation";
+import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 
 export const PersonId = {
     schema: zodNanoId16("PersonId expected").brand<"PersonId">(),
@@ -56,3 +51,12 @@ export const PersonData = {
 export type PersonData = z.infer<typeof personSchema>;
 
 export type ModifiablePersonData = z.infer<typeof PersonData.modifiableSchema>;
+
+export const PersonRef = {
+    schema: z.object({
+        id: PersonId.schema,
+        name: z.string(),
+    }),
+} as const;
+
+export type PersonRef = z.infer<typeof PersonRef.schema>;

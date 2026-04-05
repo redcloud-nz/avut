@@ -15,10 +15,14 @@ import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
 
-import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import {
+    getConfiguredD4HAccessToken,
+    getPersonalD4HAccessTokenForUser,
+} from "@/server/d4h-access-token";
 import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
+import { TRPCError } from "@trpc/server";
 
 export const d4hApiRouter = createTrpcRouter({
     /**
@@ -43,6 +47,26 @@ export const d4hApiRouter = createTrpcRouter({
                 module,
                 action,
             });
+
+            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            return d4HTeams;
+        }),
+
+    /**
+     * List the D4H teams that are accessible to the user through their personal access token.
+     */
+    listTeamsAccessibleToUser: organizationProcedure({ organization: ["view"] })
+        .output(z.array(D4HTeamRef.schema.extend({ permissions: D4HTeamPermissions.schema })))
+        .query(async ({ ctx }) => {
+            const accessToken = await getPersonalD4HAccessTokenForUser(
+                ctx.organizationId,
+                ctx.userId,
+            );
+            if (!accessToken)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "No personal D4H Access Token found for user",
+                });
 
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
             return d4HTeams;

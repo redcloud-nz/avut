@@ -2939,6 +2939,7 @@ export const TeamScalarFieldEnum = {
     id: "id",
     name: "name",
     description: "description",
+    type: "type",
     tags: "tags",
     properties: "properties",
     organizationId: "organizationId",
@@ -3342,6 +3343,19 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "QueryMode">;
+
+/**
+ * Reference to a field of type 'TeamType'
+ */
+export type EnumTeamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "TeamType">;
+
+/**
+ * Reference to a field of type 'TeamType[]'
+ */
+export type ListEnumTeamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    "TeamType[]"
+>;
 
 /**
  * Reference to a field of type 'RecordStatus'

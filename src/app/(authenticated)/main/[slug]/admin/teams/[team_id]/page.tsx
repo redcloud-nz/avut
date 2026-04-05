@@ -13,19 +13,8 @@ import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Link } from "@/components/ui/link";
 
@@ -35,6 +24,7 @@ import * as Paths from "@/paths";
 
 import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
 import { AdminModule_TeamMenu } from "./team-menu";
+import { getD4HServer } from "@/lib/d4h-servers";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/main/[slug]/admin/teams/[team_id]`>,
@@ -62,10 +52,7 @@ export default function AdminModule_Team_Page(
                         />
                         <Hermes.Title>{team.name}</Hermes.Title>
                         <Hermes.Action>
-                            <AdminModule_TeamMenu
-                                organization={organization}
-                                team={team}
-                            />
+                            <AdminModule_TeamMenu organization={organization} team={team} />
                         </Hermes.Action>
                     </Hermes.Header>
 
@@ -73,18 +60,9 @@ export default function AdminModule_Team_Page(
                         <CardHeader>
                             <CardTitle>{team.name}</CardTitle>
                             <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ team: ["update"] }}
-                                >
+                                <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
                                     <Button variant="ghost" asChild>
-                                        <Link
-                                            to={
-                                                Paths.main(slug).admin.team(
-                                                    team_id,
-                                                ).update
-                                            }
-                                        >
+                                        <Link to={Paths.main(slug).admin.team(team_id).update}>
                                             <ObjectIcons.Edit />
                                         </Link>
                                     </Button>
@@ -105,6 +83,50 @@ export default function AdminModule_Team_Page(
                                     <FieldLabel>Description</FieldLabel>
                                     <FieldValue value={team.description} />
                                 </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Type</FieldLabel>
+                                    <FieldValue value={team.type} />
+                                </Field>
+
+                                {team.type === "D4HDefined" && (
+                                    <>
+                                        <FieldSeparator />
+                                        <FieldLegend>D4H Integration</FieldLegend>
+                                        <Field orientation="responsive">
+                                            <FieldLabel>D4H Team ID</FieldLabel>
+                                            <FieldValue
+                                                value={team.properties.d4hTeamId}
+                                                format="id"
+                                            />
+                                        </Field>
+                                        <Field orientation="responsive">
+                                            <FieldLabel>D4H Team Name</FieldLabel>
+                                            <FieldValue value={team.properties.d4hTeamName} />
+                                        </Field>
+                                        <Field orientation="responsive">
+                                            <FieldLabel>D4H Server</FieldLabel>
+                                            <FieldValue
+                                                value={
+                                                    team.properties.d4hServer
+                                                        ? getD4HServer(team.properties.d4hServer)
+                                                              .name
+                                                        : ""
+                                                }
+                                            />
+                                        </Field>
+                                        <Field orientation="responsive">
+                                            <FieldLabel>D4H Lasy Sync</FieldLabel>
+                                            <FieldValue
+                                                value={
+                                                    team.properties.d4hLastSync
+                                                        ? new Date(team.properties.d4hLastSync)
+                                                        : "Never"
+                                                }
+                                                format="dateTimeWithDistance"
+                                            />
+                                        </Field>
+                                    </>
+                                )}
 
                                 <FieldSeparator />
 
@@ -124,22 +146,6 @@ export default function AdminModule_Team_Page(
                                 </Field>
                             </FieldGroup>
                         </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>D4h Integration</CardTitle>
-                            <FieldGroup className="px-4">
-                                <Field orientation="responsive">
-                                    <FieldLabel>D4H Team ID</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={
-                                            team.properties?.d4hTeamId ?? "N/A"
-                                        }
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardHeader>
                     </Card>
 
                     <AdminModule_TeamPersonnel_Section team={team} />

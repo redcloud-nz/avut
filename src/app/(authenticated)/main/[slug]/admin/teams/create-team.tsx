@@ -19,17 +19,11 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -57,10 +51,9 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
         trpc.teams.createTeam.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiableTeamData,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
+                        message: error.message,
+                    });
                 } else {
                     toast.error(`Failed to create team: ${error.message}`);
                     console.error("Failed to create team:", error);
@@ -75,10 +68,7 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
 
                 props.onOpenChange?.(false);
 
-                router.push(
-                    Paths.main(organization.slug).admin.team(created.id).index
-                        .href,
-                );
+                router.push(Paths.main(organization.slug).admin.team(created.id).index.href);
             },
         }),
     );
@@ -100,22 +90,18 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
     return (
         <Dialog {...props}>
             <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>New Team</DialogTitle>
+                    <DialogDescription>Create a new team.</DialogDescription>
+                </DialogHeader>
                 <form id="create-team-form" onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>New Team</DialogTitle>
-                        <DialogDescription>
-                            Create a new team.
-                        </DialogDescription>
-                    </DialogHeader>
                     <FieldGroup>
                         <Controller
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="team-name">
-                                        Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="team-name">Name</FieldLabel>
                                     <Input
                                         id="team-name"
                                         autoFocus
@@ -123,11 +109,7 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -136,39 +118,31 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="team-description">
-                                        Description
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="team-description">Description</FieldLabel>
                                     <Textarea
                                         id="team-description"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
+                        <Field orientation="horizontal">
+                            <MutationButton
+                                type="submit"
+                                form="create-team-form"
+                                status={mutation.status}
+                                text={{
+                                    idle: "Create",
+                                    pending: "Creating",
+                                    success: "Created",
+                                }}
+                            />
+                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                        </Field>
                     </FieldGroup>
                 </form>
-                <DialogFooter>
-                    <MutationButton
-                        type="submit"
-                        form="create-team-form"
-                        status={mutation.status}
-                        text={{
-                            idle: "Create",
-                            pending: "Creating",
-                            success: "Created",
-                        }}
-                    />
-                    <DialogCloseButton variant="outline">
-                        Cancel
-                    </DialogCloseButton>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

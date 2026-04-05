@@ -134,6 +134,7 @@ model Team {
   id          String   @id
   name        String
   description String   @default("")
+  type        TeamType @default(General)
   tags        String[] @default([])
   properties  Json     @default("{}")
 
@@ -147,6 +148,11 @@ model Team {
 
   @@index([organizationId])
   @@map("teams")
+}
+
+enum TeamType {
+  General
+  D4HDefined
 }
 
 model TeamConfig {
