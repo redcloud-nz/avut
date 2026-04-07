@@ -26,18 +26,20 @@ export const Messages = {
 
     personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
 
-    sessionNotFound: (sessionId: string) => `SkillCheckSession(${sessionId}) not found.`,
+    skillCheckSessionNotFound: (sessionId: string) =>
+        `SkillCheckSession(id=${sessionId}) not found.`,
 
-    skillPackageNotFound: (skillPackageId: string) => `SkillPackage(${skillPackageId}) not found.`,
+    skillPackageNotFound: (skillPackageId: string) =>
+        `SkillPackage(id=${skillPackageId}) not found.`,
 
     skillPackageSubscriptionNotFound: (subscriptionId: string) =>
         `Subscription for SkillPackage(id=${subscriptionId}) not found.`,
 
-    skillGroupNotFound: (skillGroupId: string) => `SkillGroup(${skillGroupId}) not found.`,
+    skillGroupNotFound: (skillGroupId: string) => `SkillGroup(id=${skillGroupId}) not found.`,
 
     skillNotFound: (skillId: string) => `Skill(id=${skillId}) not found.`,
 
-    teamForbidden: (teamId: string) => `You do not have access to team(${teamId}).`,
+    teamForbidden: (teamId: string) => `You do not have access to Team(id=${teamId}).`,
 
     teamNotFound: (teamId: string) => `Team(id=${teamId}) not found.`,
 

@@ -10,8 +10,6 @@ import { Organization as OrganizationRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
-import { OrganizationSettings } from "./organization-settings";
-
 export const OrganizationId = {
     schema: zodNanoId16("OrganizationId expected").brand<"OrganizationId">(),
 
@@ -48,10 +46,13 @@ export const OrganizationData = {
 
 export type OrganizationData = z.infer<typeof OrganizationData.schema>;
 
-export type OrganizationWithSettings = OrganizationData & {
-    settings: OrganizationSettings;
+export type ModifiableOrganizationData = z.infer<typeof OrganizationData.modifiableSchema>;
+
+export const OrganizationRef = {
+    schema: z.object({
+        id: OrganizationId.schema,
+        name: z.string().min(5).max(100),
+    }),
 };
 
-export type ModifiableOrganizationData = z.infer<
-    typeof OrganizationData.modifiableSchema
->;
+export type OrganizationRef = z.infer<typeof OrganizationRef.schema>;

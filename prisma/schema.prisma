@@ -403,8 +403,9 @@ model SkillCheckSession {
   assessees      Person[]         @relation("skill_check_session_assessees")
   assessors      Person[]         @relation("skill_check_session_assessors")
   skills         Skill[]          @relation("skill_check_session_skills")
-  startedAt      DateTime?
-  endedAt        DateTime?
+  name           String
+  startsAt       DateTime?
+  endsAt         DateTime?
   notes          String?
   status         SkillCheckStatus @default(Draft)
   createdAt      DateTime         @default(now())

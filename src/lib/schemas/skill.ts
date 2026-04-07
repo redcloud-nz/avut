@@ -7,12 +7,7 @@ import * as z from "zod";
 
 import { Skill as SkillRecord } from "@prisma/client";
 
-import {
-    propertiesSchema,
-    recordStatusSchema,
-    tagsSchema,
-    zodNanoId16,
-} from "../validation";
+import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 import { nanoId16 } from "../id";
 
 import { SkillPackageId } from "./skill-package";
@@ -65,3 +60,12 @@ export const Skill = {
 export type Skill = z.infer<typeof skillSchema>;
 
 export type ModifiableSkill = z.infer<typeof Skill.modifiableSchema>;
+
+export const SkillRef = {
+    schema: z.object({
+        id: SkillId.schema,
+        name: z.string().min(1).max(100),
+    }),
+} as const;
+
+export type SkillRef = z.infer<typeof SkillRef.schema>;

@@ -11,28 +11,17 @@ import { Select as SelectPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-export function Select({
-    ...props
-}: ComponentProps<typeof SelectPrimitive.Root>) {
+export function Select({ ...props }: ComponentProps<typeof SelectPrimitive.Root>) {
     return <SelectPrimitive.Root data-slot="select" {...props} />;
 }
 
-export function SelectGroup({
-    className,
-    ...props
-}: ComponentProps<typeof SelectPrimitive.Group>) {
+export function SelectGroup({ className, ...props }: ComponentProps<typeof SelectPrimitive.Group>) {
     return (
-        <SelectPrimitive.Group
-            data-slot="select-group"
-            className={cn("scroll-my-1")}
-            {...props}
-        />
+        <SelectPrimitive.Group data-slot="select-group" className={cn("scroll-my-1")} {...props} />
     );
 }
 
-export function SelectValue({
-    ...props
-}: ComponentProps<typeof SelectPrimitive.Value>) {
+export function SelectValue({ ...props }: ComponentProps<typeof SelectPrimitive.Value>) {
     return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
@@ -49,7 +38,15 @@ export function SelectTrigger({
             data-slot="select-trigger"
             data-size={size}
             className={cn(
-                "border-input data-placeholder:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 flex w-fit items-center justify-between gap-1.5 rounded-none border bg-transparent py-2 pr-2 pl-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-1 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-none *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+                "border-input data-placeholder:text-muted-foreground",
+                "dark:bg-input/30 dark:hover:bg-input/50",
+                "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1",
+                "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 aria-invalid:ring-1",
+                "flex w-fit items-center justify-between gap-1.5 rounded-none border bg-transparent py-2 pr-2 pl-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+                "data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-none",
+                "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5",
+                "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
                 className,
             )}
             {...props}
@@ -100,10 +97,7 @@ export function SelectContent({
     );
 }
 
-export function SelectLabel({
-    className,
-    ...props
-}: ComponentProps<typeof SelectPrimitive.Label>) {
+export function SelectLabel({ className, ...props }: ComponentProps<typeof SelectPrimitive.Label>) {
     return (
         <SelectPrimitive.Label
             data-slot="select-label"
@@ -144,10 +138,7 @@ export function SelectSeparator({
     return (
         <SelectPrimitive.Separator
             data-slot="select-separator"
-            className={cn(
-                "bg-border pointer-events-none -mx-1 h-px",
-                className,
-            )}
+            className={cn("bg-border pointer-events-none -mx-1 h-px", className)}
             {...props}
         />
     );

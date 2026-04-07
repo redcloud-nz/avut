@@ -27,8 +27,9 @@ export type AggregateSkillCheckSession = {
 export type SkillCheckSessionMinAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
+    name: string | null;
+    startsAt: Date | null;
+    endsAt: Date | null;
     notes: string | null;
     status: $Enums.SkillCheckStatus | null;
     createdAt: Date | null;
@@ -38,8 +39,9 @@ export type SkillCheckSessionMinAggregateOutputType = {
 export type SkillCheckSessionMaxAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
-    startedAt: Date | null;
-    endedAt: Date | null;
+    name: string | null;
+    startsAt: Date | null;
+    endsAt: Date | null;
     notes: string | null;
     status: $Enums.SkillCheckStatus | null;
     createdAt: Date | null;
@@ -49,8 +51,9 @@ export type SkillCheckSessionMaxAggregateOutputType = {
 export type SkillCheckSessionCountAggregateOutputType = {
     id: number;
     organizationId: number;
-    startedAt: number;
-    endedAt: number;
+    name: number;
+    startsAt: number;
+    endsAt: number;
     notes: number;
     status: number;
     createdAt: number;
@@ -61,8 +64,9 @@ export type SkillCheckSessionCountAggregateOutputType = {
 export type SkillCheckSessionMinAggregateInputType = {
     id?: true;
     organizationId?: true;
-    startedAt?: true;
-    endedAt?: true;
+    name?: true;
+    startsAt?: true;
+    endsAt?: true;
     notes?: true;
     status?: true;
     createdAt?: true;
@@ -72,8 +76,9 @@ export type SkillCheckSessionMinAggregateInputType = {
 export type SkillCheckSessionMaxAggregateInputType = {
     id?: true;
     organizationId?: true;
-    startedAt?: true;
-    endedAt?: true;
+    name?: true;
+    startsAt?: true;
+    endsAt?: true;
     notes?: true;
     status?: true;
     createdAt?: true;
@@ -83,8 +88,9 @@ export type SkillCheckSessionMaxAggregateInputType = {
 export type SkillCheckSessionCountAggregateInputType = {
     id?: true;
     organizationId?: true;
-    startedAt?: true;
-    endedAt?: true;
+    name?: true;
+    startsAt?: true;
+    endsAt?: true;
     notes?: true;
     status?: true;
     createdAt?: true;
@@ -172,8 +178,9 @@ export type SkillCheckSessionGroupByArgs<
 export type SkillCheckSessionGroupByOutputType = {
     id: string;
     organizationId: string;
-    startedAt: Date | null;
-    endedAt: Date | null;
+    name: string;
+    startsAt: Date | null;
+    endsAt: Date | null;
     notes: string | null;
     status: $Enums.SkillCheckStatus;
     createdAt: Date;
@@ -202,8 +209,9 @@ export type SkillCheckSessionWhereInput = {
     NOT?: Prisma.SkillCheckSessionWhereInput | Prisma.SkillCheckSessionWhereInput[];
     id?: Prisma.StringFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
-    startedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
-    endedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+    name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+    startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+    endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
     status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheckSession"> | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillCheckSession"> | Date | string;
@@ -220,8 +228,9 @@ export type SkillCheckSessionWhereInput = {
 export type SkillCheckSessionOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    startedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
-    endedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    startsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    endsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -239,8 +248,9 @@ export type SkillCheckSessionWhereUniqueInput = Prisma.AtLeast<
         OR?: Prisma.SkillCheckSessionWhereInput[];
         NOT?: Prisma.SkillCheckSessionWhereInput | Prisma.SkillCheckSessionWhereInput[];
         organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
-        startedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
-        endedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+        name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+        startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+        endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
         notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
         status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheckSession"> | $Enums.SkillCheckStatus;
         createdAt?: Prisma.DateTimeFilter<"SkillCheckSession"> | Date | string;
@@ -259,8 +269,9 @@ export type SkillCheckSessionWhereUniqueInput = Prisma.AtLeast<
 export type SkillCheckSessionOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    startedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
-    endedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    startsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    endsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -280,12 +291,13 @@ export type SkillCheckSessionScalarWhereWithAggregatesInput = {
         | Prisma.SkillCheckSessionScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
-    startedAt?:
+    name?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
+    startsAt?:
         | Prisma.DateTimeNullableWithAggregatesFilter<"SkillCheckSession">
         | Date
         | string
         | null;
-    endedAt?:
+    endsAt?:
         | Prisma.DateTimeNullableWithAggregatesFilter<"SkillCheckSession">
         | Date
         | string
@@ -300,8 +312,9 @@ export type SkillCheckSessionScalarWhereWithAggregatesInput = {
 
 export type SkillCheckSessionCreateInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -315,8 +328,9 @@ export type SkillCheckSessionCreateInput = {
 export type SkillCheckSessionUncheckedCreateInput = {
     id: string;
     organizationId: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -328,8 +342,9 @@ export type SkillCheckSessionUncheckedCreateInput = {
 
 export type SkillCheckSessionUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -343,8 +358,9 @@ export type SkillCheckSessionUpdateInput = {
 export type SkillCheckSessionUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -357,8 +373,9 @@ export type SkillCheckSessionUncheckedUpdateInput = {
 export type SkillCheckSessionCreateManyInput = {
     id: string;
     organizationId: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -367,8 +384,9 @@ export type SkillCheckSessionCreateManyInput = {
 
 export type SkillCheckSessionUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -378,8 +396,9 @@ export type SkillCheckSessionUpdateManyMutationInput = {
 export type SkillCheckSessionUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -399,8 +418,9 @@ export type SkillCheckSessionOrderByRelationAggregateInput = {
 export type SkillCheckSessionCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    startedAt?: Prisma.SortOrder;
-    endedAt?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    startsAt?: Prisma.SortOrder;
+    endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -410,8 +430,9 @@ export type SkillCheckSessionCountOrderByAggregateInput = {
 export type SkillCheckSessionMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    startedAt?: Prisma.SortOrder;
-    endedAt?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    startsAt?: Prisma.SortOrder;
+    endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -421,8 +442,9 @@ export type SkillCheckSessionMaxOrderByAggregateInput = {
 export type SkillCheckSessionMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    startedAt?: Prisma.SortOrder;
-    endedAt?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    startsAt?: Prisma.SortOrder;
+    endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -799,8 +821,9 @@ export type EnumSkillCheckStatusFieldUpdateOperationsInput = {
 
 export type SkillCheckSessionCreateWithoutOrganizationInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -812,8 +835,9 @@ export type SkillCheckSessionCreateWithoutOrganizationInput = {
 
 export type SkillCheckSessionUncheckedCreateWithoutOrganizationInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -872,8 +896,9 @@ export type SkillCheckSessionScalarWhereInput = {
     NOT?: Prisma.SkillCheckSessionScalarWhereInput | Prisma.SkillCheckSessionScalarWhereInput[];
     id?: Prisma.StringFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
-    startedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
-    endedAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+    name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+    startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
+    endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
     status?: Prisma.EnumSkillCheckStatusFilter<"SkillCheckSession"> | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillCheckSession"> | Date | string;
@@ -882,8 +907,9 @@ export type SkillCheckSessionScalarWhereInput = {
 
 export type SkillCheckSessionCreateWithoutAssesseesInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -896,8 +922,9 @@ export type SkillCheckSessionCreateWithoutAssesseesInput = {
 export type SkillCheckSessionUncheckedCreateWithoutAssesseesInput = {
     id: string;
     organizationId: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -916,8 +943,9 @@ export type SkillCheckSessionCreateOrConnectWithoutAssesseesInput = {
 
 export type SkillCheckSessionCreateWithoutAssessorsInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -930,8 +958,9 @@ export type SkillCheckSessionCreateWithoutAssessorsInput = {
 export type SkillCheckSessionUncheckedCreateWithoutAssessorsInput = {
     id: string;
     organizationId: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -1006,8 +1035,9 @@ export type SkillCheckSessionUpdateManyWithWhereWithoutAssessorsInput = {
 
 export type SkillCheckSessionCreateWithoutSkillsInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -1020,8 +1050,9 @@ export type SkillCheckSessionCreateWithoutSkillsInput = {
 export type SkillCheckSessionUncheckedCreateWithoutSkillsInput = {
     id: string;
     organizationId: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -1068,8 +1099,9 @@ export type SkillCheckSessionUpdateManyWithWhereWithoutSkillsInput = {
 
 export type SkillCheckSessionCreateManyOrganizationInput = {
     id: string;
-    startedAt?: Date | string | null;
-    endedAt?: Date | string | null;
+    name: string;
+    startsAt?: Date | string | null;
+    endsAt?: Date | string | null;
     notes?: string | null;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
@@ -1078,8 +1110,9 @@ export type SkillCheckSessionCreateManyOrganizationInput = {
 
 export type SkillCheckSessionUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1091,8 +1124,9 @@ export type SkillCheckSessionUpdateWithoutOrganizationInput = {
 
 export type SkillCheckSessionUncheckedUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1104,8 +1138,9 @@ export type SkillCheckSessionUncheckedUpdateWithoutOrganizationInput = {
 
 export type SkillCheckSessionUncheckedUpdateManyWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1114,8 +1149,9 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutOrganizationInput = {
 
 export type SkillCheckSessionUpdateWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1128,8 +1164,9 @@ export type SkillCheckSessionUpdateWithoutAssesseesInput = {
 export type SkillCheckSessionUncheckedUpdateWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1141,8 +1178,9 @@ export type SkillCheckSessionUncheckedUpdateWithoutAssesseesInput = {
 export type SkillCheckSessionUncheckedUpdateManyWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1151,8 +1189,9 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssesseesInput = {
 
 export type SkillCheckSessionUpdateWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1165,8 +1204,9 @@ export type SkillCheckSessionUpdateWithoutAssessorsInput = {
 export type SkillCheckSessionUncheckedUpdateWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1178,8 +1218,9 @@ export type SkillCheckSessionUncheckedUpdateWithoutAssessorsInput = {
 export type SkillCheckSessionUncheckedUpdateManyWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1188,8 +1229,9 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssessorsInput = {
 
 export type SkillCheckSessionUpdateWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1202,8 +1244,9 @@ export type SkillCheckSessionUpdateWithoutSkillsInput = {
 export type SkillCheckSessionUncheckedUpdateWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1215,8 +1258,9 @@ export type SkillCheckSessionUncheckedUpdateWithoutSkillsInput = {
 export type SkillCheckSessionUncheckedUpdateManyWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1286,8 +1330,9 @@ export type SkillCheckSessionSelect<
     {
         id?: boolean;
         organizationId?: boolean;
-        startedAt?: boolean;
-        endedAt?: boolean;
+        name?: boolean;
+        startsAt?: boolean;
+        endsAt?: boolean;
         notes?: boolean;
         status?: boolean;
         createdAt?: boolean;
@@ -1307,8 +1352,9 @@ export type SkillCheckSessionSelectCreateManyAndReturn<
     {
         id?: boolean;
         organizationId?: boolean;
-        startedAt?: boolean;
-        endedAt?: boolean;
+        name?: boolean;
+        startsAt?: boolean;
+        endsAt?: boolean;
         notes?: boolean;
         status?: boolean;
         createdAt?: boolean;
@@ -1324,8 +1370,9 @@ export type SkillCheckSessionSelectUpdateManyAndReturn<
     {
         id?: boolean;
         organizationId?: boolean;
-        startedAt?: boolean;
-        endedAt?: boolean;
+        name?: boolean;
+        startsAt?: boolean;
+        endsAt?: boolean;
         notes?: boolean;
         status?: boolean;
         createdAt?: boolean;
@@ -1338,8 +1385,9 @@ export type SkillCheckSessionSelectUpdateManyAndReturn<
 export type SkillCheckSessionSelectScalar = {
     id?: boolean;
     organizationId?: boolean;
-    startedAt?: boolean;
-    endedAt?: boolean;
+    name?: boolean;
+    startsAt?: boolean;
+    endsAt?: boolean;
     notes?: boolean;
     status?: boolean;
     createdAt?: boolean;
@@ -1351,8 +1399,9 @@ export type SkillCheckSessionOmit<
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
-    | "startedAt"
-    | "endedAt"
+    | "name"
+    | "startsAt"
+    | "endsAt"
     | "notes"
     | "status"
     | "createdAt"
@@ -1393,8 +1442,9 @@ export type $SkillCheckSessionPayload<
         {
             id: string;
             organizationId: string;
-            startedAt: Date | null;
-            endedAt: Date | null;
+            name: string;
+            startsAt: Date | null;
+            endsAt: Date | null;
             notes: string | null;
             status: $Enums.SkillCheckStatus;
             createdAt: Date;
@@ -2020,8 +2070,9 @@ export interface Prisma__SkillCheckSessionClient<
 export interface SkillCheckSessionFieldRefs {
     readonly id: Prisma.FieldRef<"SkillCheckSession", "String">;
     readonly organizationId: Prisma.FieldRef<"SkillCheckSession", "String">;
-    readonly startedAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
-    readonly endedAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
+    readonly name: Prisma.FieldRef<"SkillCheckSession", "String">;
+    readonly startsAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
+    readonly endsAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
     readonly notes: Prisma.FieldRef<"SkillCheckSession", "String">;
     readonly status: Prisma.FieldRef<"SkillCheckSession", "SkillCheckStatus">;
     readonly createdAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;

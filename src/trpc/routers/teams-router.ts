@@ -405,6 +405,9 @@ export const teamsRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                 },
+                orderBy: {
+                    name: "asc",
+                },
             });
 
             return teamRecords.map(TeamData.fromRecord);

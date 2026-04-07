@@ -3124,8 +3124,9 @@ export type SkillScalarFieldEnum = (typeof SkillScalarFieldEnum)[keyof typeof Sk
 export const SkillCheckSessionScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
-    startedAt: "startedAt",
-    endedAt: "endedAt",
+    name: "name",
+    startsAt: "startsAt",
+    endsAt: "endsAt",
     notes: "notes",
     status: "status",
     createdAt: "createdAt",

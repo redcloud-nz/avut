@@ -6,18 +6,15 @@
 "use client";
 
 import { formatISO, parseISO } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, XIcon } from "lucide-react";
 import { ComponentProps } from "react";
 
 import { formatDate } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
 import { Calendar } from "@/components/ui/calendar";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "../ui/button";
 
 export interface DatePickerProps {
     className?: string;
@@ -32,18 +29,12 @@ export interface DatePickerProps {
             "captionLayout" | "mode" | "onSelect" | "selected"
         >;
         popover?: Omit<ComponentProps<typeof Popover>, "children">;
-        popoverContent?: Omit<
-            ComponentProps<typeof PopoverContent>,
-            "children"
-        >;
-        popoverTrigger?: Omit<
-            ComponentProps<typeof PopoverTrigger>,
-            "children"
-        >;
+        popoverContent?: Omit<ComponentProps<typeof PopoverContent>, "children">;
+        popoverTrigger?: Omit<ComponentProps<typeof PopoverTrigger>, "children">;
     };
 }
 
-export function S2_DatePicker({
+export function DatePicker({
     className,
     id,
     onValueChange = () => {},
@@ -53,9 +44,7 @@ export function S2_DatePicker({
     value,
 }: DatePickerProps) {
     function handleSelect(selected: Date | undefined) {
-        const str = selected
-            ? formatISO(selected, { representation: "date" })
-            : undefined;
+        const str = selected ? formatISO(selected) : undefined;
 
         onValueChange(str);
     }
@@ -65,14 +54,8 @@ export function S2_DatePicker({
     const {
         calendar: calendarProps = {},
         popover: popoverProps = {},
-        popoverContent: {
-            className: popoverContentClassName,
-            ...popoverContentProps
-        } = {},
-        popoverTrigger: {
-            className: popoverTriggerClassName,
-            ...popoverTriggerProps
-        } = {},
+        popoverContent: { className: popoverContentClassName, ...popoverContentProps } = {},
+        popoverTrigger: { className: popoverTriggerClassName, ...popoverTriggerProps } = {},
     } = slotProps;
 
     return (
@@ -81,8 +64,8 @@ export function S2_DatePicker({
                 id={id}
                 data-size={size}
                 className={cn(
-                    "border-input flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color-box-shadow] outline-none",
-                    "data-[size=default]:h-9 data-[size=sm]:h-8",
+                    "border-input flex w-fit items-center justify-between gap-2 border bg-transparent pr-2 pl-2.5 py-2 text-xs whitespace-nowrap transition-colors outline-none",
+                    "data-[size=default]:h-8 data-[size=sm]:h-7",
                     "disabled:cursor-not-allowed disabled:opacity-50", // disabled styles
                     "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", // focus styles
                     "aria-invalid:ring-destructive/20 aria-invalid:border-destructive", // aria-invalid styles
@@ -99,10 +82,7 @@ export function S2_DatePicker({
                 <CalendarIcon className="size-4 opacity-50" />
             </PopoverTrigger>
             <PopoverContent
-                className={cn(
-                    "w-auto overflow-hidden p-0",
-                    popoverContentClassName,
-                )}
+                className={cn("w-auto overflow-hidden p-0", popoverContentClassName)}
                 {...popoverContentProps}
             >
                 <Calendar
