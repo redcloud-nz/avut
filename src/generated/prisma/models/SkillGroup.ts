@@ -39,7 +39,7 @@ export type SkillGroupMinAggregateOutputType = {
     name: string | null;
     description: string | null;
     sequence: number | null;
-    defaultIncluded: boolean | null;
+    defaultInclude: boolean | null;
     status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -51,7 +51,7 @@ export type SkillGroupMaxAggregateOutputType = {
     name: string | null;
     description: string | null;
     sequence: number | null;
-    defaultIncluded: boolean | null;
+    defaultInclude: boolean | null;
     status: $Enums.RecordStatus | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -65,7 +65,7 @@ export type SkillGroupCountAggregateOutputType = {
     tags: number;
     properties: number;
     sequence: number;
-    defaultIncluded: number;
+    defaultInclude: number;
     status: number;
     createdAt: number;
     updatedAt: number;
@@ -86,7 +86,7 @@ export type SkillGroupMinAggregateInputType = {
     name?: true;
     description?: true;
     sequence?: true;
-    defaultIncluded?: true;
+    defaultInclude?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -98,7 +98,7 @@ export type SkillGroupMaxAggregateInputType = {
     name?: true;
     description?: true;
     sequence?: true;
-    defaultIncluded?: true;
+    defaultInclude?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -112,7 +112,7 @@ export type SkillGroupCountAggregateInputType = {
     tags?: true;
     properties?: true;
     sequence?: true;
-    defaultIncluded?: true;
+    defaultInclude?: true;
     status?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -218,7 +218,7 @@ export type SkillGroupGroupByOutputType = {
     tags: string[];
     properties: runtime.JsonValue;
     sequence: number;
-    defaultIncluded: boolean;
+    defaultInclude: boolean;
     status: $Enums.RecordStatus;
     createdAt: Date;
     updatedAt: Date;
@@ -252,7 +252,7 @@ export type SkillGroupWhereInput = {
     tags?: Prisma.StringNullableListFilter<"SkillGroup">;
     properties?: Prisma.JsonFilter<"SkillGroup">;
     sequence?: Prisma.IntFilter<"SkillGroup"> | number;
-    defaultIncluded?: Prisma.BoolFilter<"SkillGroup"> | boolean;
+    defaultInclude?: Prisma.BoolFilter<"SkillGroup"> | boolean;
     status?: Prisma.EnumRecordStatusFilter<"SkillGroup"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
@@ -272,7 +272,7 @@ export type SkillGroupOrderByWithRelationInput = {
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
     sequence?: Prisma.SortOrder;
-    defaultIncluded?: Prisma.SortOrder;
+    defaultInclude?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -293,7 +293,7 @@ export type SkillGroupWhereUniqueInput = Prisma.AtLeast<
         tags?: Prisma.StringNullableListFilter<"SkillGroup">;
         properties?: Prisma.JsonFilter<"SkillGroup">;
         sequence?: Prisma.IntFilter<"SkillGroup"> | number;
-        defaultIncluded?: Prisma.BoolFilter<"SkillGroup"> | boolean;
+        defaultInclude?: Prisma.BoolFilter<"SkillGroup"> | boolean;
         status?: Prisma.EnumRecordStatusFilter<"SkillGroup"> | $Enums.RecordStatus;
         createdAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
         updatedAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
@@ -315,7 +315,7 @@ export type SkillGroupOrderByWithAggregationInput = {
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
     sequence?: Prisma.SortOrder;
-    defaultIncluded?: Prisma.SortOrder;
+    defaultInclude?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -341,7 +341,7 @@ export type SkillGroupScalarWhereWithAggregatesInput = {
     tags?: Prisma.StringNullableListFilter<"SkillGroup">;
     properties?: Prisma.JsonWithAggregatesFilter<"SkillGroup">;
     sequence?: Prisma.IntWithAggregatesFilter<"SkillGroup"> | number;
-    defaultIncluded?: Prisma.BoolWithAggregatesFilter<"SkillGroup"> | boolean;
+    defaultInclude?: Prisma.BoolWithAggregatesFilter<"SkillGroup"> | boolean;
     status?: Prisma.EnumRecordStatusWithAggregatesFilter<"SkillGroup"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"SkillGroup"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SkillGroup"> | Date | string;
@@ -354,7 +354,7 @@ export type SkillGroupCreateInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -371,7 +371,7 @@ export type SkillGroupUncheckedCreateInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -386,7 +386,7 @@ export type SkillGroupUpdateInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -403,7 +403,7 @@ export type SkillGroupUncheckedUpdateInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -419,7 +419,7 @@ export type SkillGroupCreateManyInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -432,7 +432,7 @@ export type SkillGroupUpdateManyMutationInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -446,7 +446,7 @@ export type SkillGroupUncheckedUpdateManyInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -470,7 +470,7 @@ export type SkillGroupCountOrderByAggregateInput = {
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
     sequence?: Prisma.SortOrder;
-    defaultIncluded?: Prisma.SortOrder;
+    defaultInclude?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -486,7 +486,7 @@ export type SkillGroupMaxOrderByAggregateInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     sequence?: Prisma.SortOrder;
-    defaultIncluded?: Prisma.SortOrder;
+    defaultInclude?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -498,7 +498,7 @@ export type SkillGroupMinOrderByAggregateInput = {
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     sequence?: Prisma.SortOrder;
-    defaultIncluded?: Prisma.SortOrder;
+    defaultInclude?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -675,7 +675,7 @@ export type SkillGroupCreateWithoutSkillPackageInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -690,7 +690,7 @@ export type SkillGroupUncheckedCreateWithoutSkillPackageInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -752,7 +752,7 @@ export type SkillGroupScalarWhereInput = {
     tags?: Prisma.StringNullableListFilter<"SkillGroup">;
     properties?: Prisma.JsonFilter<"SkillGroup">;
     sequence?: Prisma.IntFilter<"SkillGroup"> | number;
-    defaultIncluded?: Prisma.BoolFilter<"SkillGroup"> | boolean;
+    defaultInclude?: Prisma.BoolFilter<"SkillGroup"> | boolean;
     status?: Prisma.EnumRecordStatusFilter<"SkillGroup"> | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"SkillGroup"> | Date | string;
@@ -765,7 +765,7 @@ export type SkillGroupCreateWithoutSkillsInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -781,7 +781,7 @@ export type SkillGroupUncheckedCreateWithoutSkillsInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -823,7 +823,7 @@ export type SkillGroupUpdateWithoutSkillsInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -839,7 +839,7 @@ export type SkillGroupUncheckedUpdateWithoutSkillsInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -853,7 +853,7 @@ export type SkillGroupCreateWithoutSubscriptionOverridesInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -869,7 +869,7 @@ export type SkillGroupUncheckedCreateWithoutSubscriptionOverridesInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -911,7 +911,7 @@ export type SkillGroupUpdateWithoutSubscriptionOverridesInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -927,7 +927,7 @@ export type SkillGroupUncheckedUpdateWithoutSubscriptionOverridesInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -941,7 +941,7 @@ export type SkillGroupCreateManySkillPackageInput = {
     tags?: Prisma.SkillGroupCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: number;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: $Enums.RecordStatus;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -954,7 +954,7 @@ export type SkillGroupUpdateWithoutSkillPackageInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -969,7 +969,7 @@ export type SkillGroupUncheckedUpdateWithoutSkillPackageInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -984,7 +984,7 @@ export type SkillGroupUncheckedUpdateManyWithoutSkillPackageInput = {
     tags?: Prisma.SkillGroupUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     sequence?: Prisma.IntFieldUpdateOperationsInput | number;
-    defaultIncluded?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    defaultInclude?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1047,7 +1047,7 @@ export type SkillGroupSelect<
         tags?: boolean;
         properties?: boolean;
         sequence?: boolean;
-        defaultIncluded?: boolean;
+        defaultInclude?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1070,7 +1070,7 @@ export type SkillGroupSelectCreateManyAndReturn<
         tags?: boolean;
         properties?: boolean;
         sequence?: boolean;
-        defaultIncluded?: boolean;
+        defaultInclude?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1090,7 +1090,7 @@ export type SkillGroupSelectUpdateManyAndReturn<
         tags?: boolean;
         properties?: boolean;
         sequence?: boolean;
-        defaultIncluded?: boolean;
+        defaultInclude?: boolean;
         status?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1107,7 +1107,7 @@ export type SkillGroupSelectScalar = {
     tags?: boolean;
     properties?: boolean;
     sequence?: boolean;
-    defaultIncluded?: boolean;
+    defaultInclude?: boolean;
     status?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1123,7 +1123,7 @@ export type SkillGroupOmit<
     | "tags"
     | "properties"
     | "sequence"
-    | "defaultIncluded"
+    | "defaultInclude"
     | "status"
     | "createdAt"
     | "updatedAt",
@@ -1166,7 +1166,7 @@ export type $SkillGroupPayload<
             tags: string[];
             properties: runtime.JsonValue;
             sequence: number;
-            defaultIncluded: boolean;
+            defaultInclude: boolean;
             status: $Enums.RecordStatus;
             createdAt: Date;
             updatedAt: Date;
@@ -1782,7 +1782,7 @@ export interface SkillGroupFieldRefs {
     readonly tags: Prisma.FieldRef<"SkillGroup", "String[]">;
     readonly properties: Prisma.FieldRef<"SkillGroup", "Json">;
     readonly sequence: Prisma.FieldRef<"SkillGroup", "Int">;
-    readonly defaultIncluded: Prisma.FieldRef<"SkillGroup", "Boolean">;
+    readonly defaultInclude: Prisma.FieldRef<"SkillGroup", "Boolean">;
     readonly status: Prisma.FieldRef<"SkillGroup", "RecordStatus">;
     readonly createdAt: Prisma.FieldRef<"SkillGroup", "DateTime">;
     readonly updatedAt: Prisma.FieldRef<"SkillGroup", "DateTime">;

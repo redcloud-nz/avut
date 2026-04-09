@@ -352,7 +352,7 @@ model SkillGroup {
   tags            String[]     @default([])
   properties      Json         @default("{}")
   sequence        Int          @default(0)
-  defaultIncluded Boolean      @default(true)
+  defaultInclude  Boolean      @default(true)
   status          RecordStatus @default(Active)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

@@ -7,12 +7,7 @@ import * as z from "zod";
 
 import { SkillGroup as SkillGroupRecord } from "@prisma/client";
 
-import {
-    propertiesSchema,
-    recordStatusSchema,
-    tagsSchema,
-    zodNanoId16,
-} from "../validation";
+import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 import { nanoId16 } from "../id";
 
 import { SkillPackageId } from "./skill-package";
@@ -33,6 +28,7 @@ const skillGroupSchema = z.object({
     tags: tagsSchema,
     properties: propertiesSchema,
     sequence: z.number().int().nonnegative(),
+    defaultInclude: z.boolean().default(true),
     status: recordStatusSchema.default("Active"),
     createdAt: z.iso.datetime().default(() => new Date().toISOString()),
     updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
@@ -46,6 +42,7 @@ export const SkillGroup = {
         description: true,
         tags: true,
         properties: true,
+        defaultInclude: true,
     }),
 
     fromRecord: (record: SkillGroupRecord) =>

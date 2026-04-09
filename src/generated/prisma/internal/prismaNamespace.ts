@@ -3093,7 +3093,7 @@ export const SkillGroupScalarFieldEnum = {
     tags: "tags",
     properties: "properties",
     sequence: "sequence",
-    defaultIncluded: "defaultIncluded",
+    defaultInclude: "defaultInclude",
     status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
