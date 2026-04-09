@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,17 +22,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
-import { Link } from "@/components/ui/link";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
@@ -40,9 +35,7 @@ interface AdminModule_PersonMenuProps {
     person: PersonData;
 }
 
-export function AdminModule_PersonMenu({
-    person,
-}: AdminModule_PersonMenuProps) {
+export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -120,11 +113,10 @@ export function AdminModule_PersonMenu({
                     <DropdownMenuGroup>
                         <DropdownMenuItem disabled asChild>
                             <Link
-                                to={
-                                    Paths.main(organization.slug).admin.person(
-                                        person.id,
-                                    ).history
-                                }
+                                href={route("/main/[slug]/admin/personnel/[person_id]/history", {
+                                    slug: organization.slug,
+                                    person_id: person.id,
+                                })}
                             >
                                 <ObjectIcons.History /> History
                             </Link>
@@ -141,13 +133,10 @@ export function AdminModule_PersonMenu({
                             fallback={
                                 <Empty size="sm">
                                     <EmptyHeader>
-                                        <EmptyTitle>
-                                            No Actions Available
-                                        </EmptyTitle>
+                                        <EmptyTitle>No Actions Available</EmptyTitle>
                                         <EmptyDescription>
-                                            You do not have permission to
-                                            perform any actions on this person
-                                            record.
+                                            You do not have permission to perform any actions on
+                                            this person record.
                                         </EmptyDescription>
                                     </EmptyHeader>
                                 </Empty>

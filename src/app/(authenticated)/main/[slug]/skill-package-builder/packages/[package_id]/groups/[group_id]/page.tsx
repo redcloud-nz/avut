@@ -13,20 +13,14 @@ import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkillGroup } from "@/hooks/use-skill-group";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Group_Menu } from "./group-menu";
 import { SkillPackageBuilder_Group_Contents_List } from "./group-contents";
@@ -46,12 +40,16 @@ export default function SkillPackageBuilder_Group_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
                     {
-                        ...Paths.main(slug).skillPackageBuilder.skillPackage(
-                            package_id,
-                        ).index,
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
                         label: skillGroup.skillPackage!.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id,
+                        }),
                     },
                     "Groups",
                     skillGroup.name,
@@ -61,19 +59,15 @@ export default function SkillPackageBuilder_Group_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(
-                                    slug,
-                                ).skillPackageBuilder.skillPackage(package_id)
-                                    .index
-                            }
+                            href={route(
+                                "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                { slug, package_id },
+                            )}
                             tooltip={`Back to package: ${skillGroup.skillPackage.name}`}
                         />
                         <Hermes.Title>{skillGroup.name}</Hermes.Title>
                         <Hermes.Action>
-                            <SkillPackageBuilder_Group_Menu
-                                skillGroup={skillGroup}
-                            />
+                            <SkillPackageBuilder_Group_Menu skillGroup={skillGroup} />
                         </Hermes.Action>
                     </Hermes.Header>
                     <Card>
@@ -92,13 +86,10 @@ export default function SkillPackageBuilder_Group_Page(
                                         asChild
                                     >
                                         <Link
-                                            to={
-                                                Paths.main(slug)
-                                                    .skillPackageBuilder.skillPackage(
-                                                        package_id,
-                                                    )
-                                                    .group(group_id).update
-                                            }
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
+                                                { slug, package_id, group_id },
+                                            )}
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>
@@ -120,13 +111,10 @@ export default function SkillPackageBuilder_Group_Page(
                                     <FieldLabel>Package</FieldLabel>
                                     <FieldValue className="min-w-1/2">
                                         <Link
-                                            to={
-                                                Paths.main(
-                                                    slug,
-                                                ).skillPackageBuilder.skillPackage(
-                                                    package_id,
-                                                ).index
-                                            }
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                                { slug, package_id },
+                                            )}
                                         >
                                             {skillGroup.skillPackage.name}
                                         </Link>
@@ -134,10 +122,7 @@ export default function SkillPackageBuilder_Group_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillGroup.name}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skillGroup.name} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Description</FieldLabel>
@@ -164,10 +149,7 @@ export default function SkillPackageBuilder_Group_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillGroup.status}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skillGroup.status} />
                                 </Field>
                             </FieldGroup>
                         </CardContent>

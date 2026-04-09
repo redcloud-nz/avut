@@ -79,6 +79,7 @@ import {
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3IssueItemsForm } from "@/lib/forms";
+import { route } from "@/lib/routes";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
@@ -194,7 +195,7 @@ export default function I3Module_Issue_FormInstance_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={{ href: `/main/${slug}/i3/forms/issue-items` }}
+                            href={route("/main/[slug]/i3/forms/issue-items", { slug })}
                             tooltip="Back to Form List"
                         />
                         <Hermes.Title>Issue Items</Hermes.Title>

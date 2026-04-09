@@ -47,7 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkill } from "@/hooks/use-skill";
 import { ModifiableSkill, Skill } from "@/lib/schemas/skill";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export default function SkillPackageBuilder_UpdateSkill_Page(
@@ -73,10 +73,9 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
         trpc.skillPackageBuilder.updateSkill.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiableSkill,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableSkill, {
+                        message: error.message,
+                    });
                 } else {
                     toast.error(`Failed to update skill: ${error.message}`);
                     console.error("Failed to update skill:", error);
@@ -91,9 +90,14 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                 );
 
                 router.push(
-                    Paths.main(organization.slug)
-                        .skillPackageBuilder.skillPackage(skill.skillPackageId)
-                        .skill(skill.id).href,
+                    route(
+                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: skill.skillPackageId,
+                            skill_id: skill.id,
+                        },
+                    ),
                 );
             },
         }),
@@ -107,18 +111,29 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
         });
     });
 
-    const packagePath = Paths.main(slug).skillPackageBuilder.skillPackage(
-        skill.skillPackage,
-    );
-
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
-                    packagePath.index,
+                    {
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
+                        label: skill.skillPackage.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id: skill.skillPackageId,
+                        }),
+                    },
                     "Skills",
-                    packagePath.skill(skill),
+                    {
+                        label: skill.name,
+                        href: route(
+                            "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                            { slug, package_id: skill.skillPackageId, skill_id: skill.id },
+                        ),
+                    },
                     "Update",
                 ]}
             />
@@ -126,7 +141,10 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={packagePath.skill(skill)}
+                            href={route(
+                                "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                                { slug, package_id: skill.skillPackageId, skill_id: skill.id },
+                            )}
                             tooltip={`Back to skill: ${skill.name}`}
                         />
                         <Hermes.Title>{skill.name}</Hermes.Title>
@@ -137,30 +155,20 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                             <CardTitle>Update Skill</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form
-                                id="update-skill-form"
-                                onSubmit={handleSubmit}
-                            >
+                            <form id="update-skill-form" onSubmit={handleSubmit}>
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Skill ID</FieldLabel>
-                                        <FieldValue
-                                            value={skill.id}
-                                            format="id"
-                                        />
+                                        <FieldValue value={skill.id} format="id" />
                                     </Field>
                                     <Field orientation="responsive">
                                         <FieldLabel>Package</FieldLabel>
-                                        <FieldValue
-                                            value={skill.skillPackage.name}
-                                        />
+                                        <FieldValue value={skill.skillPackage.name} />
                                     </Field>
 
                                     <Field orientation="responsive">
                                         <FieldLabel>Group</FieldLabel>
-                                        <FieldValue
-                                            value={skill.skillGroup.name}
-                                        />
+                                        <FieldValue value={skill.skillGroup.name} />
                                     </Field>
 
                                     <Controller
@@ -168,30 +176,20 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
-                                                <FieldLabel htmlFor="skill-name">
-                                                    Name
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor="skill-name">Name</FieldLabel>
                                                 <Input
                                                     id="skill-name"
                                                     autoFocus
                                                     placeholder="Skill Name"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
 
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -201,9 +199,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
                                                 <FieldLabel htmlFor="skill-description">
@@ -211,17 +207,11 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                                 </FieldLabel>
                                                 <Textarea
                                                     id="skill-description"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -232,54 +222,35 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation="responsive"
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                             >
                                                 <FieldContent>
                                                     <FieldLabel htmlFor="default-required">
                                                         Required
                                                     </FieldLabel>
                                                     <FieldDescription>
-                                                        Whether this skill is
-                                                        required by default.
+                                                        Whether this skill is required by default.
                                                     </FieldDescription>
                                                 </FieldContent>
                                                 <Select
-                                                    value={
-                                                        field.value
-                                                            ? "true"
-                                                            : "false"
-                                                    }
+                                                    value={field.value ? "true" : "false"}
                                                     onValueChange={(value) =>
-                                                        field.onChange(
-                                                            value === "true",
-                                                        )
+                                                        field.onChange(value === "true")
                                                     }
                                                 >
                                                     <SelectTrigger
                                                         id="default-required"
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
+                                                        aria-invalid={fieldState.invalid}
                                                     >
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="true">
-                                                            Yes
-                                                        </SelectItem>
-                                                        <SelectItem value="false">
-                                                            No
-                                                        </SelectItem>
+                                                        <SelectItem value="true">Yes</SelectItem>
+                                                        <SelectItem value="false">No</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -289,9 +260,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
                                                 <FieldContent>
@@ -299,16 +268,11 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                                         Revalidation Frequency
                                                     </FieldLabel>
                                                     <FieldDescription>
-                                                        How often this skill
-                                                        should be revalidated.
+                                                        How often this skill should be revalidated.
                                                     </FieldDescription>
                                                 </FieldContent>
 
-                                                <InputGroup
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
-                                                >
+                                                <InputGroup aria-invalid={fieldState.invalid}>
                                                     <InputGroupInput
                                                         id="frequency"
                                                         type="number"
@@ -317,26 +281,16 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                                         value={field.value}
                                                         onChange={(ev) =>
                                                             field.onChange(
-                                                                parseInt(
-                                                                    ev
-                                                                        .currentTarget
-                                                                        .value,
-                                                                ),
+                                                                parseInt(ev.currentTarget.value),
                                                             )
                                                         }
                                                     />
                                                     <InputGroupAddon align="inline-end">
-                                                        <InputGroupText>
-                                                            months
-                                                        </InputGroupText>
+                                                        <InputGroupText>months</InputGroupText>
                                                     </InputGroupAddon>
                                                 </InputGroup>
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}

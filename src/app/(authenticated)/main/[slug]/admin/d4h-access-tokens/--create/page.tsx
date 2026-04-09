@@ -9,8 +9,9 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
+
 import { AdminModule_CreateD4hAccessToken_Form } from "./create-d4h-access-token";
 
 export const metadata = {
@@ -27,16 +28,23 @@ export default async function AdminModule_CreateD4hAccessToken_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
-                    Paths.main(slug).admin.d4hAccessTokens.create,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    {
+                        label: "D4H Access Tokens",
+                        href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
+                    },
+                    {
+                        label: "Create",
+                    },
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.Header>
-                            <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessTokens} />
+                            <Hermes.BackButton
+                                href={route("/main/[slug]/admin/d4h-access-tokens", { slug })}
+                            />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>

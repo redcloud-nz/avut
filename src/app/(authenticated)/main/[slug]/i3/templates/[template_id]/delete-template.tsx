@@ -23,8 +23,8 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { I3Template } from "@/lib/schemas/i3-template";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface I3Module_DeleteTemplate_DialogProps extends AlertDialogProps {
@@ -36,7 +36,6 @@ export function I3Module_DeleteTemplate_Dialog({
     ...props
 }: I3Module_DeleteTemplate_DialogProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
@@ -44,37 +43,40 @@ export function I3Module_DeleteTemplate_Dialog({
             onError(error) {
                 toast.error(`Failed to delete template: ${error.message}`);
             },
-            async onSuccess() {
+            async onSuccess(_result, _data, _onMutateResult, context) {
                 toast.success(
                     <>
-                        Template <ObjectName>{template.name}</ObjectName>{" "}
-                        deleted.
+                        Template <ObjectName>{template.name}</ObjectName> deleted.
                     </>,
                 );
-                props.onOpenChange?.(false);
+                handleOpenChange(false);
 
-                router.push(Paths.main(organization.slug).i3.templates.href);
+                router.push(route("/main/[slug]/i3/templates", { slug: organization.slug }));
 
-                await queryClient.invalidateQueries(
+                await context.client.invalidateQueries(
                     trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
-
-                mutation.reset();
             },
         }),
     );
 
+    function handleOpenChange(open: boolean) {
+        if (!open) {
+            mutation.reset();
+        }
+        props.onOpenChange?.(open);
+    }
+
     return (
-        <AlertDialog {...props}>
+        <AlertDialog {...props} onOpenChange={handleOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete I3 Template</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of template{" "}
-                        <ObjectName>{template.name}</ObjectName>. This action
-                        cannot be undone.
+                        Confirm deletion of template <ObjectName>{template.name}</ObjectName>. This
+                        action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

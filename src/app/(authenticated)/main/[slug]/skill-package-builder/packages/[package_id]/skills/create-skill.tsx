@@ -22,12 +22,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -35,7 +30,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkill, Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_CreateSkill_Dialog({
@@ -62,10 +57,9 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
         trpc.skillPackageBuilder.createSkill.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiableSkill,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableSkill, {
+                        message: error.message,
+                    });
                 } else {
                     toast.error(`Failed to create skill: ${error.message}`);
                     console.error("Failed to create skill:", error);
@@ -83,11 +77,14 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                 form.reset();
 
                 router.push(
-                    Paths.main(organization.slug)
-                        .skillPackageBuilder.skillPackage(
-                            skillGroup.skillPackageId,
-                        )
-                        .skill(created.id).href,
+                    route(
+                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: skillGroup.skillPackageId,
+                            skill_id: created.id,
+                        },
+                    ),
                 );
 
                 mutation.reset();
@@ -127,20 +124,14 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="skill-name">
-                                        Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="skill-name">Name</FieldLabel>
                                     <Input
                                         id="skill-name"
                                         autoFocus
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -149,19 +140,13 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="skill-description">
-                                        Description
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="skill-description">Description</FieldLabel>
                                     <Textarea
                                         id="skill-description"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -177,11 +162,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 }}
                             />
                             <Show when={mutation.isIdle}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
+                                <Button type="button" variant="outline" onClick={handleCancel}>
                                     Cancel
                                 </Button>
                             </Show>

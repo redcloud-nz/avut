@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -16,7 +17,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { TmplExprInput } from "@/components/controls/tmpl-expr-input";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,8 +34,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useI3Template } from "@/hooks/use-i3-template";
+import { route } from "@/lib/routes";
 import { I3Template } from "@/lib/schemas/i3-template";
-import * as Paths from "@/paths";
+
 import { trpc } from "@/trpc/client";
 
 export default function I3Module_UpdateTemplate_Page(
@@ -78,7 +79,12 @@ export default function I3Module_UpdateTemplate_Page(
                         organizationId: organization.id,
                     }),
                 );
-                router.push(Paths.main(slug).i3.template(template.id).href);
+                router.push(
+                    route("/main/[slug]/i3/templates/[template_id]", {
+                        slug,
+                        template_id: template.id,
+                    }),
+                );
                 mutation.reset();
             },
         }),
@@ -105,11 +111,20 @@ export default function I3Module_UpdateTemplate_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).i3.index,
-                    Paths.main(slug).i3.templates,
+                    {
+                        label: "I3",
+                        href: route("/main/[slug]/i3", { slug }),
+                    },
+                    {
+                        label: "Templates",
+                        href: route("/main/[slug]/i3/templates", { slug }),
+                    },
                     {
                         label: template.name,
-                        href: Paths.main(slug).i3.template(template.id).href,
+                        href: route("/main/[slug]/i3/templates/[template_id]", {
+                            slug,
+                            template_id: template.id,
+                        }),
                     },
                     "Update",
                 ]}
@@ -118,7 +133,10 @@ export default function I3Module_UpdateTemplate_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).i3.template(template.id)}
+                            href={route("/main/[slug]/i3/templates/[template_id]", {
+                                slug,
+                                template_id: template.id,
+                            })}
                             tooltip="Back to template"
                         />
                         <Hermes.Title>Update: {template.name}</Hermes.Title>
@@ -337,17 +355,15 @@ export default function I3Module_UpdateTemplate_Page(
                                             }}
                                         />
                                         <Show when={mutation.isIdle}>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    router.push(
-                                                        Paths.main(slug).i3.template(template.id)
-                                                            .href,
-                                                    )
-                                                }
-                                            >
-                                                Cancel
+                                            <Button type="button" variant="outline" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/i3/templates/[template_id]",
+                                                        { slug, template_id: template.id },
+                                                    )}
+                                                >
+                                                    Cancel
+                                                </Link>
                                             </Button>
                                         </Show>
                                     </Field>

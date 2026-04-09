@@ -5,6 +5,7 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,13 +20,11 @@ import { Akagi } from "@/components/blocks/akagi";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 
-import { Link } from "@/components/ui/link";
-
 import { formatDate } from "@/lib/datetime";
+import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateInvitation_Dialog } from "../invitations/create-invitation";
@@ -43,8 +42,6 @@ export function AdminModule_UsersList({ organization, currentUserId }: AdminModu
         }),
     );
 
-    const adminModule = Paths.main(organization.slug).admin;
-
     type RowData = OrganizationMembershipData & { user: UserData };
 
     const columns = useMemo(
@@ -57,7 +54,12 @@ export function AdminModule_UsersList({ organization, currentUserId }: AdminModu
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Link to={adminModule.user(ctx.row.original.userId)}>
+                            <Link
+                                href={route("/main/[slug]/admin/users/[user_id]", {
+                                    slug: organization.slug,
+                                    user_id: ctx.row.original.userId,
+                                })}
+                            >
                                 {ctx.getValue()}
                                 {ctx.row.original.userId === currentUserId ? (
                                     <span className="bg-neutral-200 border border-neutral-300 text-xs ml-1 px-1.5 rounded-sm">

@@ -75,6 +75,7 @@ export const getFormInstancesCollection = perOrganization((organizationId) =>
                         async (mutation) =>
                             await trpcClient.forms.deleteFormInstance.mutate({
                                 organizationId: organizationId,
+                                formKey: mutation.modified.formKey,
                                 formInstanceId: mutation.original.id,
                             }),
                     ),

@@ -7,7 +7,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import SkillsModule_Sessions_List from "./sessions-list";
 
 export const metadata = {
@@ -22,7 +22,10 @@ export default async function SkillsModule_Sessions_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.main(slug).skills.index, Paths.main(slug).skills.sessions]}
+                breadcrumbs={[
+                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

@@ -22,23 +22,14 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import {
-    ModifiableSkillGroup,
-    SkillGroup,
-    SkillGroupId,
-} from "@/lib/schemas/skill-group";
+import { ModifiableSkillGroup, SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_CreateGroup_Dialog({
@@ -63,14 +54,11 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
         trpc.skillPackageBuilder.createGroup.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiableSkillGroup,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {
+                        message: error.message,
+                    });
                 } else {
-                    toast.error(
-                        `Failed to create skill group: ${error.message}`,
-                    );
+                    toast.error(`Failed to create skill group: ${error.message}`);
                     console.error("Failed to create skill group:", error);
                 }
             },
@@ -85,9 +73,14 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                 props.onOpenChange?.(false);
                 form.reset();
                 router.push(
-                    Paths.main(organization.slug)
-                        .skillPackageBuilder.skillPackage(skillPackage.id)
-                        .group(created.id).href,
+                    route(
+                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: skillPackage.id,
+                            group_id: created.id,
+                        },
+                    ),
                 );
                 mutation.reset();
             },
@@ -114,8 +107,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                 <DialogHeader>
                     <DialogTitle>New Group</DialogTitle>
                     <DialogDescription>
-                        Create a new skill group within the package{" "}
-                        {skillPackage.name}.
+                        Create a new skill group within the package {skillPackage.name}.
                     </DialogDescription>
                 </DialogHeader>
                 <form id="create-skill-group-form" onSubmit={handleSubmit}>
@@ -125,20 +117,14 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="group-name">
-                                        Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="group-name">Name</FieldLabel>
                                     <Input
                                         id="group-name"
                                         autoFocus
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -147,19 +133,13 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="group-description">
-                                        Description
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="group-description">Description</FieldLabel>
                                     <Textarea
                                         id="group-description"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -175,11 +155,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                                 }}
                             />
                             <Show when={mutation.isIdle}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
+                                <Button type="button" variant="outline" onClick={handleCancel}>
                                     Cancel
                                 </Button>
                             </Show>

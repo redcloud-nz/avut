@@ -30,7 +30,7 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export default function AdminModule_D4hAccessToken_Page(
@@ -79,19 +79,19 @@ export default function AdminModule_D4hAccessToken_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
-                        label: accessToken.label,
+                        label: "D4H Access Tokens",
+                        href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
                     },
+                    accessToken.label || `Access Token: ${accessToken.id}`,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).admin.d4hAccessTokens}
+                            href={route("/main/[slug]/admin/d4h-access-tokens", { slug })}
                             tooltip="Back to access token list"
                         />
                         <Hermes.Title>

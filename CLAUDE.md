@@ -91,6 +91,24 @@ Use `nanoId16()` from `src/lib/id.ts` for new record IDs.
 - Cached D4H fetches use the standard Next.js 16 `"use cache"` directive with `cacheLife` + `cacheTag`
 - D4H resource schemas validated with Zod live in `src/lib/d4h-api/`
 
+### Internal URLs
+
+Next.js typed routes are enabled, so static route strings are type-checked automatically. Use `route()` from `src/lib/routes.ts` only when a route has dynamic segments — it substitutes `[param]` placeholders and returns a typed `Route` string.
+
+```ts
+import { route } from "@/lib/routes";
+
+// Static route — plain string is fine
+href = "/main/acme/admin";
+
+// Dynamic route — use route() to substitute params
+route("/main/[slug]/admin", { slug: organization.slug });
+route("/main/[slug]/personnel/[person_id]", { slug, person_id: id });
+```
+
+- Route patterns must match the actual file-system path under `src/app/` (minus route group segments like `(authenticated)`)
+- The params object is fully typed — TypeScript will error if a required param is missing or the route pattern doesn't exist
+
 ## UI Block Components
 
 Reusable layout systems in `src/components/blocks/`:

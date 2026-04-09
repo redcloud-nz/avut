@@ -22,8 +22,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
-import { Link } from "@/components/ui/link";
+import { route } from "@/lib/routes";
+import Link from "next/link";
 
 export function D4HViewsModule_EquipmentCategory_Kinds_List({
     categoryId,
@@ -47,16 +47,19 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
             Akagi.defineColumns<(typeof kinds)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Kind ID
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Kind ID</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(organization.slug)
-                                    .d4HViews.equipment.category(categoryId)
-                                    .kind(ctx.row.original.id)}
+                                href={route(
+                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                    {
+                                        slug: organization.slug,
+                                        category_id: String(categoryId),
+                                        kind_id: String(ctx.row.original.id),
+                                    },
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -67,16 +70,19 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                 }),
                 columnHelper.accessor("title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Title
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Title</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(organization.slug)
-                                    .d4HViews.equipment.category(categoryId)
-                                    .kind(ctx.row.original.id)}
+                                href={route(
+                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                    {
+                                        slug: organization.slug,
+                                        category_id: String(categoryId),
+                                        kind_id: String(ctx.row.original.id),
+                                    },
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -87,14 +93,10 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                 }),
                 columnHelper.accessor("type", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Type
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Type</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: false,
                     enableSorting: true,
@@ -125,10 +127,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                 <div className="text-lg font-semibold">Kinds in Category</div>
                 <Akagi.TableSearch table={table} />
             </div>
-            <Show
-                when={isKindsReady}
-                fallback={<Skeleton className="w-full h-10" />}
-            >
+            <Show when={isKindsReady} fallback={<Skeleton className="w-full h-10" />}>
                 <Akagi.Table table={table} />
             </Show>
         </>

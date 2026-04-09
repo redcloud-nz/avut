@@ -6,7 +6,8 @@
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { Route } from "next";
+import { route } from "@/lib/routes";
 
 import { Pub_PPEIssue_Form } from "./ppe-issue-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,16 +67,16 @@ export default async function Pub_PPEIssue_Page(props: PageProps<"/pub/orgs/[slu
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.pub(slug).forms.index,
-                    Paths.pub(slug).forms.ppe,
-                    Paths.pub(slug).forms.ppe.issue,
+                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
+                    "Issue",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="md">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.pub(slug).forms.ppe}
+                            href={route("/pub/orgs/[slug]/forms/ppe", { slug })}
                             tooltip="Back to PPE Forms"
                         />
                         <Hermes.Title>Issue PPE</Hermes.Title>

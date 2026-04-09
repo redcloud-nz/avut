@@ -16,9 +16,11 @@ import { Lexington } from "@/components/blocks/lexington";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import type { Route } from "next";
+
 import { useOrganization } from "@/hooks/use-organization";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillsModule_Session_Details_Tab } from "./details";
@@ -42,11 +44,11 @@ export default function SkillsModule_SessionRecord_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skills.index,
-                    Paths.main(slug).skills.sessions,
+                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
                     {
                         label: session.name || session.id,
-                        href: Paths.main(slug).skills.session(session_id).href,
+                        href: `/main/${slug}/skills/sessions/${session_id}` as Route,
                     },
                     "Skill Check Session Recorder",
                 ]}

@@ -9,11 +9,12 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
-import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { route } from "@/lib/routes";
+
 import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import * as Paths from "@/paths";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipmentLocations(accessToken: D4HAccessToken_ServerOnly) {
@@ -75,11 +76,17 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
-                        label: accessToken.id,
+                        label: "D4H Access Tokens",
+                        href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
+                    },
+                    {
+                        label: accessToken.label || accessToken.id,
+                        href: route("/main/[slug]/admin/d4h-access-tokens/[token_id]/members", {
+                            slug,
+                            token_id,
+                        }),
                     },
                     "Equipment Locations",
                 ]}
@@ -89,7 +96,10 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(slug).admin.d4hAccessToken(token_id)}
+                                href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                    slug,
+                                    token_id,
+                                })}
                             />
                             <Hermes.Title>
                                 Equipment Locations ({successCount} of {locations.length})

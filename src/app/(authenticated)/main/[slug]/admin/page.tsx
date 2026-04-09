@@ -6,6 +6,7 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
@@ -18,9 +19,8 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
-import { Link } from "@/components/ui/link";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/admin`>) {
@@ -39,7 +39,9 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                     <ItemGroup>
                         <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.invitations}>
+                                <Link
+                                    href={route("/main/[slug]/admin/d4h-access-tokens", { slug })}
+                                >
                                     <ItemContent>
                                         <ItemTitle>D4H Access Tokens</ItemTitle>
                                         <ItemDescription>
@@ -55,7 +57,7 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ invitation: ["view"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.invitations}>
+                                <Link href={route("/main/[slug]/admin/invitations", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Invitations</ItemTitle>
                                         <ItemDescription>
@@ -71,7 +73,7 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
 
                         <Protect orgId={organization.id} permissions={{ organization: ["view"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.organization}>
+                                <Link href={route("/main/[slug]/admin/organization", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Organization</ItemTitle>
                                         <ItemDescription>
@@ -87,7 +89,7 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
 
                         <Protect orgId={organization.id} permissions={{ person: ["view"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.personnel}>
+                                <Link href={route("/main/[slug]/admin/personnel", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Personnel</ItemTitle>
                                         <ItemDescription>
@@ -102,7 +104,11 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ organization: ["update"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.organization.settings}>
+                                <Link
+                                    href={route("/main/[slug]/admin/organization/settings", {
+                                        slug,
+                                    })}
+                                >
                                     <ItemContent>
                                         <ItemTitle>Settings</ItemTitle>
                                         <ItemDescription>
@@ -117,7 +123,7 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ team: ["view"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.teams}>
+                                <Link href={route("/main/[slug]/admin/teams", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Teams</ItemTitle>
                                         <ItemDescription>
@@ -132,7 +138,7 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                         </Protect>
                         <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
                             <Item asChild>
-                                <Link to={Paths.main(slug).admin.users}>
+                                <Link href={route("/main/[slug]/admin/users", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Users</ItemTitle>
                                         <ItemDescription>

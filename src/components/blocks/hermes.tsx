@@ -7,15 +7,15 @@
  * A section that contains a header and main content area, designed to be used within a Lexington column.
  */
 
+import { Route } from "next";
+import NextLink from "next/link";
 import { ComponentProps } from "react";
 
 import { AlertInfoIcon, ToParentPageIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/items";
-import { Link, LinkProps } from "@/components/ui/link";
 
 import { cn } from "@/lib/utils";
-import { Description } from "../ui/typography";
 
 function HermesSection({ className, ...props }: ComponentProps<"section">) {
     return (
@@ -83,17 +83,16 @@ function HermesEmpty({
     );
 }
 
-function HermesBackButton({
-    to,
-    ...props
-}: Omit<ComponentProps<typeof Button>, "asChild" | "children"> & {
-    to: LinkProps["to"];
-}) {
+type HermesBackButtonProps = Omit<ComponentProps<typeof Button>, "asChild" | "children"> & {
+    href: Route;
+};
+
+function HermesBackButton({ href, ...props }: HermesBackButtonProps) {
     return (
         <Button variant="ghost" {...props} asChild>
-            <Link to={to}>
+            <NextLink href={href}>
                 <ToParentPageIcon className="size-5" />
-            </Link>
+            </NextLink>
         </Button>
     );
 }

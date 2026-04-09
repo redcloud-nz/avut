@@ -23,6 +23,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 import { trpc } from "@/trpc/client";
@@ -61,11 +62,11 @@ export default function AdminModule_User_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "Admin", href: `/main/${slug}/admin` },
-                    { label: "Users", href: `/main/${slug}/admin/users` },
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Users", href: route("/main/[slug]/admin/users", { slug }) },
                     {
                         label: organizationMembership.user.name,
-                        href: `/main/${slug}/admin/users/${user_id}`,
+                        href: route("/main/[slug]/admin/users/[user_id]", { slug, user_id }),
                     },
                 ]}
             />
@@ -73,7 +74,7 @@ export default function AdminModule_User_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={{ href: `/main/${slug}/admin/users` }}
+                            href={route("/main/[slug]/admin/users", { slug })}
                             tooltip="Back to users list"
                         />
                         <Hermes.Title>{organizationMembership.user.name}</Hermes.Title>

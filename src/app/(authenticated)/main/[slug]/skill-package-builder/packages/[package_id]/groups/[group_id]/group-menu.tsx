@@ -12,12 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,12 +21,12 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_DeleteSkillGroup_Dialog } from "./delete-group";
@@ -86,8 +81,7 @@ export function SkillPackageBuilder_Group_Menu({
             {
                 loading: "Archiving skill group...",
                 success: "Skill group archived.",
-                error: (error) =>
-                    "Error archiving skill group." + error.message,
+                error: (error) => "Error archiving skill group." + error.message,
             },
         );
     }
@@ -101,8 +95,7 @@ export function SkillPackageBuilder_Group_Menu({
             {
                 loading: "Restoring skill group...",
                 success: "Skill group restored.",
-                error: (error) =>
-                    "Error restoring skill group." + error.message,
+                error: (error) => "Error restoring skill group." + error.message,
             },
         );
     }
@@ -124,12 +117,10 @@ export function SkillPackageBuilder_Group_Menu({
                         fallback={
                             <Empty size="sm">
                                 <EmptyHeader>
-                                    <EmptyTitle>
-                                        No Actions Available
-                                    </EmptyTitle>
+                                    <EmptyTitle>No Actions Available</EmptyTitle>
                                     <EmptyDescription>
-                                        You do not have permission to perform
-                                        any actions on this skill-group.
+                                        You do not have permission to perform any actions on this
+                                        skill-group.
                                     </EmptyDescription>
                                 </EmptyHeader>
                             </Empty>
@@ -151,13 +142,14 @@ export function SkillPackageBuilder_Group_Menu({
                             )}
                             <DropdownMenuItem asChild>
                                 <Link
-                                    to={
-                                        Paths.main(organization.slug)
-                                            .skillPackageBuilder.skillPackage(
-                                                skillGroup.skillPackageId,
-                                            )
-                                            .group(skillGroup.id).update
-                                    }
+                                    href={route(
+                                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
+                                        {
+                                            slug: organization.slug,
+                                            package_id: skillGroup.skillPackageId,
+                                            group_id: skillGroup.id,
+                                        },
+                                    )}
                                 >
                                     <ObjectIcons.Edit /> Edit
                                 </Link>

@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -16,15 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
 
 import {
     ModifiableOrganizationData,
     OrganizationData,
     OrganizationId,
 } from "@/lib/schemas/organization";
-
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateOrganization_Form({
@@ -59,7 +58,7 @@ export function AdminModule_UpdateOrganization_Form({
                 }
             },
             async onSuccess() {
-                router.push(Paths.main(organization.slug).admin.organization.href);
+                router.push(route("/main/[slug]/admin/organization", { slug: organization.slug }));
                 queryClient.invalidateQueries(
                     trpc.organizations.getOrganization.queryFilter({
                         organizationId: organization.id,
@@ -135,7 +134,13 @@ export function AdminModule_UpdateOrganization_Form({
                         Update
                     </Button>
                     <Button type="button" variant="outline" onClick={() => form.reset()} asChild>
-                        <Link to={Paths.main(organization.slug).admin.organization}>Cancel</Link>
+                        <Link
+                            href={route("/main/[slug]/admin/organization", {
+                                slug: organization.slug,
+                            })}
+                        >
+                            Cancel
+                        </Link>
                     </Button>
                 </Field>
             </FieldGroup>

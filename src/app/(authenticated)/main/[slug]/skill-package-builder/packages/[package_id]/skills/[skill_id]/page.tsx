@@ -13,25 +13,14 @@ import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkill } from "@/hooks/use-skill";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Skill_Menu } from "./skill-menu";
 
@@ -46,16 +35,21 @@ export default function SkillPackageBuilder_Skill_Page(
         skillId: skill_id,
     });
 
-    const packagePath = Paths.main(slug).skillPackageBuilder.skillPackage(
-        skill.skillPackage,
-    );
-
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
-                    packagePath.index,
+                    {
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
+                        label: skill.skillPackage.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id,
+                        }),
+                    },
                     "Skills",
                     skill.name,
                 ]}
@@ -64,7 +58,10 @@ export default function SkillPackageBuilder_Skill_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={packagePath.group(skill.skillGroup)}
+                            href={route(
+                                "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                { slug, package_id, group_id: skill.skillGroup.id },
+                            )}
                             tooltip={`Back to skill group: ${skill.skillGroup.name}`}
                         />
                         <Hermes.Title>{skill.name}</Hermes.Title>
@@ -83,13 +80,10 @@ export default function SkillPackageBuilder_Skill_Page(
                                 >
                                     <Button variant="ghost" size="icon" asChild>
                                         <Link
-                                            to={
-                                                Paths.main(slug)
-                                                    .skillPackageBuilder.skillPackage(
-                                                        skill.skillPackage,
-                                                    )
-                                                    .skill(skill).update
-                                            }
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
+                                                { slug, package_id, skill_id },
+                                            )}
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>
@@ -101,22 +95,16 @@ export default function SkillPackageBuilder_Skill_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Skill ID</FieldLabel>
-                                    <FieldValue
-                                        value={skill.id}
-                                        className="min-w-1/2"
-                                    />
+                                    <FieldValue value={skill.id} className="min-w-1/2" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Package</FieldLabel>
                                     <FieldValue className="min-w-1/2">
                                         <Link
-                                            to={
-                                                Paths.main(
-                                                    slug,
-                                                ).skillPackageBuilder.skillPackage(
-                                                    package_id,
-                                                ).index
-                                            }
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                                { slug, package_id },
+                                            )}
                                         >
                                             {skill.skillPackage.name}
                                         </Link>
@@ -127,11 +115,14 @@ export default function SkillPackageBuilder_Skill_Page(
                                     {skill.skillGroup ? (
                                         <FieldValue className="min-w-1/2">
                                             <Link
-                                                to={Paths.main(slug)
-                                                    .skillPackageBuilder.skillPackage(
+                                                href={route(
+                                                    "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                    {
+                                                        slug,
                                                         package_id,
-                                                    )
-                                                    .group(skill.skillGroup.id)}
+                                                        group_id: skill.skillGroup.id,
+                                                    },
+                                                )}
                                             >
                                                 {skill.skillGroup.name}
                                             </Link>
@@ -142,37 +133,25 @@ export default function SkillPackageBuilder_Skill_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.name}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skill.name} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Description</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.description}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skill.description} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Required</FieldLabel>
                                     <FieldValue
                                         className="min-w-1/2"
-                                        value={
-                                            skill.defaultRequired ? "Yes" : "No"
-                                        }
+                                        value={skill.defaultRequired ? "Yes" : "No"}
                                     />
                                 </Field>
                                 <Field orientation="responsive">
-                                    <FieldLabel>
-                                        Revalidation Frequency
-                                    </FieldLabel>
+                                    <FieldLabel>Revalidation Frequency</FieldLabel>
                                     <FieldValue
                                         className="min-w-1/2"
                                         value={
-                                            skill.frequency
-                                                ? `${skill.frequency} months`
-                                                : "None"
+                                            skill.frequency ? `${skill.frequency} months` : "None"
                                         }
                                     />
                                 </Field>
@@ -197,10 +176,7 @@ export default function SkillPackageBuilder_Skill_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.status}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skill.status} />
                                 </Field>
                             </FieldGroup>
                         </CardContent>

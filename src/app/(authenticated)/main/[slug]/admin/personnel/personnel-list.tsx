@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -20,11 +21,10 @@ import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
 
+import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreatePerson_Dialog } from "./create-person";
@@ -36,16 +36,13 @@ interface AdminModule_PersonnelListProps {
 /**
  * List of personnel in the organization.
  */
-export function AdminModule_PersonnelList({
-    organization,
-}: AdminModule_PersonnelListProps) {
+export function AdminModule_PersonnelList({ organization }: AdminModule_PersonnelListProps) {
     const { data: personnel } = useSuspenseQuery(
         trpc.personnel.listPersonnel.queryOptions({
             organizationId: organization.id,
         }),
     );
 
-    const adminModule = Paths.main(organization.slug).admin;
     type RowData = PersonData;
 
     const columns = useMemo(
@@ -53,17 +50,15 @@ export function AdminModule_PersonnelList({
             Akagi.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={
-                                    adminModule.person(ctx.row.original.id)
-                                        .index
-                                }
+                                href={route("/main/[slug]/admin/personnel/[person_id]", {
+                                    slug: organization.slug,
+                                    person_id: ctx.row.original.id,
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -74,14 +69,10 @@ export function AdminModule_PersonnelList({
                 }),
                 columnHelper.accessor("email", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Email
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Email</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
@@ -130,10 +121,7 @@ export function AdminModule_PersonnelList({
         <>
             <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
-                <Protect
-                    orgId={organization.id}
-                    permissions={{ person: ["create"] }}
-                >
+                <Protect orgId={organization.id} permissions={{ person: ["create"] }}>
                     <Button
                         variant="outline"
                         onClick={() => setCreatePersonDialogOpen(true)}

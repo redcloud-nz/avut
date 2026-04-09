@@ -18,13 +18,13 @@ import {
 
 import { Akagi } from "@/components/blocks/akagi";
 import { Show } from "@/components/show";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: number }) {
     const organization = useOrganization();
@@ -49,9 +49,10 @@ export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: nu
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(organization.slug).d4HViews.equipment.item(
-                                    ctx.row.original.id,
-                                )}
+                                href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
+                                    slug: organization.slug,
+                                    item_id: String(ctx.row.original.id),
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>

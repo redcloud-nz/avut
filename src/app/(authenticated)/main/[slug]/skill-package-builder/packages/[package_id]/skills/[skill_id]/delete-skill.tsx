@@ -25,7 +25,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
 
@@ -58,9 +58,14 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
 
                 // Redirect to the package list page after deletion
                 router.push(
-                    Paths.main(organization.slug)
-                        .skillPackageBuilder.skillPackage(skill.skillPackageId)
-                        .group(skill.skillGroupId).href,
+                    route(
+                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: skill.skillPackageId,
+                            group_id: skill.skillGroupId,
+                        },
+                    ),
                 );
 
                 await queryClient.invalidateQueries(
@@ -80,12 +85,10 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Skill</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of skill{" "}
-                        <ObjectName>{skill.name}</ObjectName> from{" "}
-                        <ObjectName>{skill.skillPackage.name}</ObjectName>{" "}
-                        {" > "}
-                        <ObjectName>{skill.skillGroup.name}</ObjectName>. This
-                        action cannot be undone.
+                        Confirm deletion of skill <ObjectName>{skill.name}</ObjectName> from{" "}
+                        <ObjectName>{skill.skillPackage.name}</ObjectName> {" > "}
+                        <ObjectName>{skill.skillGroup.name}</ObjectName>. This action cannot be
+                        undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

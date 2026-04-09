@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -25,11 +26,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
 
@@ -60,10 +60,10 @@ export function AdminModule_TeamsList() {
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={
-                                    Paths.main(organization.slug).admin.team(ctx.row.original.id)
-                                        .index
-                                }
+                                href={route("/main/[slug]/admin/teams/[team_id]", {
+                                    slug: organization.slug,
+                                    team_id: ctx.row.original.id,
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>

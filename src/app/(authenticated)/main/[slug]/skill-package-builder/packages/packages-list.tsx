@@ -15,16 +15,17 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import Link from "next/link";
+
 import { Akagi } from "@/components/blocks/akagi";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
 import { Show } from "@/components/show";
 
 import { OrganizationData } from "@/lib/schemas/organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
@@ -62,20 +63,15 @@ export function SkillPackageBuilder_Packages_List({
             Akagi.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={
-                                    Paths.main(
-                                        organization.slug,
-                                    ).skillPackageBuilder.skillPackage(
-                                        ctx.row.original.id,
-                                    ).index
-                                }
+                                href={route(
+                                    "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                    { slug: organization.slug, package_id: ctx.row.original.id },
+                                )}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -84,14 +80,10 @@ export function SkillPackageBuilder_Packages_List({
                 }),
                 columnHelper.accessor("description", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Description
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Description</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: false,
                 }),
@@ -106,9 +98,7 @@ export function SkillPackageBuilder_Packages_List({
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableColumnFilter: true,
                     enableSorting: false,
@@ -117,18 +107,12 @@ export function SkillPackageBuilder_Packages_List({
                 }),
                 columnHelper.accessor("published", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-25"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} className="w-25">
                             Published
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell
-                            cell={ctx.cell}
-                            className="text-center"
-                        >
+                        <Akagi.TableCell cell={ctx.cell} className="text-center">
                             {ctx.getValue() ? "Yes" : "No"}
                         </Akagi.TableCell>
                     ),
@@ -154,8 +138,7 @@ export function SkillPackageBuilder_Packages_List({
         },
     });
 
-    const [createPackageDialogOpen, setCreatePackageDialogOpen] =
-        useState(false);
+    const [createPackageDialogOpen, setCreatePackageDialogOpen] = useState(false);
 
     return (
         <>
@@ -169,8 +152,7 @@ export function SkillPackageBuilder_Packages_List({
                         <EmptyHeader>
                             <EmptyTitle>No skill packages yet.</EmptyTitle>
                             <EmptyDescription>
-                                Your organization does not have any skill
-                                packages yet.
+                                Your organization does not have any skill packages yet.
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
@@ -180,11 +162,7 @@ export function SkillPackageBuilder_Packages_List({
                                     skillPackageBuilder: ["create"],
                                 }}
                             >
-                                <Button
-                                    onClick={() =>
-                                        setCreatePackageDialogOpen(true)
-                                    }
-                                >
+                                <Button onClick={() => setCreatePackageDialogOpen(true)}>
                                     Create Package
                                 </Button>
                             </Protect>
@@ -198,10 +176,7 @@ export function SkillPackageBuilder_Packages_List({
                         orgId={organization.id}
                         permissions={{ skillPackageBuilder: ["create"] }}
                     >
-                        <Button
-                            variant="outline"
-                            onClick={() => setCreatePackageDialogOpen(true)}
-                        >
+                        <Button variant="outline" onClick={() => setCreatePackageDialogOpen(true)}>
                             <CreateNewIcon /> New
                         </Button>
                     </Protect>

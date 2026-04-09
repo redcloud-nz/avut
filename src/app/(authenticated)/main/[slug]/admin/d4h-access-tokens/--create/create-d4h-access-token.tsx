@@ -5,6 +5,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, Watch } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Link } from "@/components/ui/link";
+import { ExternalLink } from "@/components/ui/link";
 import {
     Select,
     SelectContent,
@@ -28,9 +29,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { D4HServerList } from "@/lib/d4h-servers";
+import { route } from "@/lib/routes";
 import { D4HAccessToken, D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 interface CreateD4hAccessTokenFormProps {
@@ -74,7 +75,13 @@ export function AdminModule_CreateD4hAccessToken_Form({
                     }),
                 );
 
-                router.push(Paths.main(organization.slug).admin.d4hAccessToken(created.id).href);
+                router.push(
+                    route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                        slug: organization.slug,
+                        token_id: created.id,
+                    }),
+                );
+                toast.success("D4H access token created successfully");
             },
         }),
     );
@@ -188,7 +195,11 @@ export function AdminModule_CreateD4hAccessToken_Form({
                             onClick={() => form.reset()}
                             asChild
                         >
-                            <Link to={Paths.main(organization.slug).admin.d4hAccessTokens}>
+                            <Link
+                                href={route("/main/[slug]/admin/d4h-access-tokens", {
+                                    slug: organization.slug,
+                                })}
+                            >
                                 Cancel
                             </Link>
                         </Button>

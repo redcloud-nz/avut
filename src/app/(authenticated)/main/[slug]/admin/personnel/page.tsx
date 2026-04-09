@@ -7,7 +7,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
 import { AdminModule_PersonnelList } from "./personnel-list";
@@ -26,8 +26,8 @@ export default async function AdminModule_PersonnelList_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.personnel,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
                 ]}
             />
             <Lexington.Page>

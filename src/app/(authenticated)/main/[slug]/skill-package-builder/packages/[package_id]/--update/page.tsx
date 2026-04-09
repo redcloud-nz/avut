@@ -19,23 +19,15 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkillPackage } from "@/hooks/use-skill-package";
-import * as Paths from "@/paths";
-import {
-    ModifiableSkillPackage,
-    SkillPackage,
-} from "@/lib/schemas/skill-package";
+import { route } from "@/lib/routes";
+import { ModifiableSkillPackage, SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -61,15 +53,11 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
         trpc.skillPackageBuilder.updatePackage.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause
-                            .message as keyof ModifiableSkillPackage,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {
+                        message: error.message,
+                    });
                 } else {
-                    toast.error(
-                        `Failed to update skill package: ${error.message}`,
-                    );
+                    toast.error(`Failed to update skill package: ${error.message}`);
                     console.error("Failed to update skill package:", error);
                 }
             },
@@ -81,9 +69,10 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
                 );
 
                 router.push(
-                    Paths.main(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(skillPackage).index.href,
+                    route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                        slug: organization.slug,
+                        package_id: skillPackage.id,
+                    }),
                 );
             },
         }),
@@ -97,15 +86,21 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
         });
     });
 
-    const packagePath =
-        Paths.main(slug).skillPackageBuilder.skillPackage(skillPackage);
-
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
-                    packagePath.index,
+                    {
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
+                        label: skillPackage.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id: skillPackage.id,
+                        }),
+                    },
                     "Update",
                 ]}
             />
@@ -113,7 +108,10 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={packagePath.index}
+                            href={route(
+                                "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                { slug, package_id: skillPackage.id },
+                            )}
                             tooltip="Back to skill package"
                         />
                         <Hermes.Title>{skillPackage.name}</Hermes.Title>
@@ -123,45 +121,29 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
                             <CardTitle>Update Skill Package</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form
-                                id="update-skill-package-form"
-                                onSubmit={handleSubmit}
-                            >
+                            <form id="update-skill-package-form" onSubmit={handleSubmit}>
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Package ID</FieldLabel>
-                                        <FieldValue
-                                            value={skillPackage.id}
-                                            format="id"
-                                        />
+                                        <FieldValue value={skillPackage.id} format="id" />
                                     </Field>
                                     <Controller
                                         name="name"
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
-                                                <FieldLabel htmlFor="package-name">
-                                                    Name
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor="package-name">Name</FieldLabel>
                                                 <Input
                                                     id="package-name"
                                                     autoFocus
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -171,9 +153,7 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
                                                 <FieldLabel htmlFor="package-description">
@@ -181,17 +161,11 @@ export default function SkillPackageBuilder_UpdatePackage_Page(
                                                 </FieldLabel>
                                                 <Textarea
                                                     id="package-description"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}

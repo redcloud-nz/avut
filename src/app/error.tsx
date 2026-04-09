@@ -18,11 +18,9 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
-export default function Root_Error({
-    error,
-}: { error: Error } & { digest?: string }) {
+export default function Root_Error({ error }: { error: Error } & { digest?: string }) {
     useEffect(() => {
         console.error("Error occurred:", error);
     }, [error]);
@@ -41,7 +39,7 @@ export default function Root_Error({
                 </EmptyHeader>
                 <EmptyContent>
                     <Button variant="outline" asChild>
-                        <Link to={{ href: "/" }}>Home Page</Link>
+                        <Link href="/">Home Page</Link>
                     </Button>
                 </EmptyContent>
             </Empty>

@@ -23,8 +23,8 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeletePerson_Dialog({
@@ -50,7 +50,11 @@ export function AdminModule_DeletePerson_Dialog({
                 props.onOpenChange?.(false);
 
                 // Redirect to the personnel list page after deletion
-                router.push(Paths.main(organization.slug).admin.personnel.href);
+                router.push(
+                    route("/main/[slug]/admin/personnel", {
+                        slug: organization.slug,
+                    }),
+                );
 
                 await queryClient.invalidateQueries(
                     trpc.personnel.listPersonnel.queryFilter({

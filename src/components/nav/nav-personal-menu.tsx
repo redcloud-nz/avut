@@ -6,8 +6,6 @@
 import { InvitationsIcon, PersonalDashboardIcon } from "@/components/icons";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
-import * as Paths from "@/paths";
-
 import { NavItem, NavSubItem } from "./nav-section";
 
 export function NavPersonalMenu({}) {

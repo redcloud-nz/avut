@@ -12,31 +12,22 @@ import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import { useOrganization } from "@/hooks/use-organization";
-import {
-    ModifiablePersonData,
-    PersonData,
-    PersonId,
-} from "@/lib/schemas/person";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
+import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
@@ -58,10 +49,9 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
         trpc.personnel.createPerson.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiablePersonData,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiablePersonData, {
+                        message: error.message,
+                    });
                 } else {
                     toast.error(`Failed to create person: ${error.message}`);
                     console.error("Failed to create person:", error);
@@ -74,12 +64,13 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                     }),
                 );
 
-                props.onOpenChange?.(false);
-                form.reset();
+                handleOpenChange(false);
 
                 router.push(
-                    Paths.main(organization.slug).admin.person(created.id).index
-                        .href,
+                    route("/main/[slug]/admin/personnel/[person_id]", {
+                        slug: organization.slug,
+                        person_id: created.id,
+                    }),
                 );
             },
         }),
@@ -93,13 +84,16 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
         });
     });
 
-    function handleCancel() {
-        form.reset();
-        props.onOpenChange?.(false);
+    function handleOpenChange(open: boolean) {
+        if (!open) {
+            form.reset();
+            mutation.reset();
+        }
+        props.onOpenChange?.(open);
     }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Person</DialogTitle>
@@ -112,9 +106,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-name">
-                                        Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="person-name">Name</FieldLabel>
                                     <Input
                                         id="person-name"
                                         autoFocus
@@ -122,11 +114,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -135,9 +123,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-email">
-                                        Email
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor="person-email">Email</FieldLabel>
                                     <Input
                                         id="person-email"
                                         type="email"
@@ -145,11 +131,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
-                                    {fieldState.error && (
-                                        <FieldError
-                                            errors={[fieldState.error]}
-                                        />
-                                    )}
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
@@ -164,15 +146,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                     success: "Created",
                                 }}
                             />
-                            <Show when={mutation.isIdle}>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
-                                    Cancel
-                                </Button>
-                            </Show>
+                            <DialogCloseButton>Cancel</DialogCloseButton>
                         </Field>
                     </FieldGroup>
                 </form>

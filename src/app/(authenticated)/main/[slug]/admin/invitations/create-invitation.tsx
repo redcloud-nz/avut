@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";

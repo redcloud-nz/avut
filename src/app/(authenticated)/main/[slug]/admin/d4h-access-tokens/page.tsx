@@ -7,7 +7,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
 import { AdminModule_D4hAccessTokensList } from "./d4h-access-tokens-list";
@@ -26,15 +26,13 @@ export default async function AdminModule_D4hAccessTokens_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    "D4H Access Tokens",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
-                    <AdminModule_D4hAccessTokensList
-                        organization={organization}
-                    />
+                    <AdminModule_D4hAccessTokensList organization={organization} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

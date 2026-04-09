@@ -6,8 +6,6 @@
  */
 
 import { Argus } from "@/components/blocks/argus";
-import { Link } from "@/components/ui/link";
-import * as Paths from "@/paths";
 
 import { SignUp_Card } from "@/components/cards/sign-up";
 
@@ -21,13 +19,13 @@ export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
                 <SignUp_Card />
                 <Argus.Footer>
                     By clicking continue, you agree to our{" "}
-                    <Link to={Paths.marketing.termsOfService} target="_blank">
+                    <a href="/terms-of-service" target="_blank">
                         Terms of Service
-                    </Link>{" "}
+                    </a>{" "}
                     and{" "}
-                    <Link to={Paths.marketing.privacyPolicy} target="_blank">
+                    <a href="/privacy-policy" target="_blank">
                         Privacy Policy
-                    </Link>
+                    </a>
                     .
                 </Argus.Footer>
             </Argus.Column>

@@ -5,25 +5,19 @@
  * Paths: /main/[slug]/admin/organization
  */
 
+import Link from "next/link";
+
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function AdminModule_Organization_Page(
@@ -36,18 +30,15 @@ export default async function AdminModule_Organization_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.organization,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    "Organization",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.Title>Organization</Hermes.Title>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ organization: ["update"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ organization: ["update"] }}>
                             <Hermes.Action>
                                 <Button
                                     variant="outline"
@@ -56,10 +47,9 @@ export default async function AdminModule_Organization_Page(
                                     asChild
                                 >
                                     <Link
-                                        to={
-                                            Paths.main(slug).admin.organization
-                                                .settings
-                                        }
+                                        href={route("/main/[slug]/admin/organization/settings", {
+                                            slug,
+                                        })}
                                     >
                                         <SettingsIcon />
                                     </Link>
@@ -82,10 +72,10 @@ export default async function AdminModule_Organization_Page(
                                         asChild
                                     >
                                         <Link
-                                            to={
-                                                Paths.main(slug).admin
-                                                    .organization.update
-                                            }
+                                            href={route(
+                                                "/main/[slug]/admin/organization/--update",
+                                                { slug },
+                                            )}
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>
@@ -105,17 +95,11 @@ export default async function AdminModule_Organization_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue
-                                        value={organization.name}
-                                        className="min-w-1/2"
-                                    />
+                                    <FieldValue value={organization.name} className="min-w-1/2" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Slug</FieldLabel>
-                                    <FieldValue
-                                        value={organization.slug}
-                                        className="min-w-1/2"
-                                    />
+                                    <FieldValue value={organization.slug} className="min-w-1/2" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>

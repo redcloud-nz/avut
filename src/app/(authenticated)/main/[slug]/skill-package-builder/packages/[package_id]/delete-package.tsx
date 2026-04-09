@@ -24,7 +24,7 @@ import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_DeletePackage_Dialog({
@@ -44,8 +44,7 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
             async onSuccess() {
                 toast.success(
                     <>
-                        Skill Package{" "}
-                        <ObjectName>{skillPackage.name}</ObjectName> deleted.
+                        Skill Package <ObjectName>{skillPackage.name}</ObjectName> deleted.
                     </>,
                 );
 
@@ -53,8 +52,7 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
 
                 // Redirect to the package list page after deletion
                 router.push(
-                    Paths.main(organization.slug).skillPackageBuilder.index
-                        .href,
+                    route("/main/[slug]/skill-package-builder", { slug: organization.slug }),
                 );
 
                 await queryClient.invalidateQueries(

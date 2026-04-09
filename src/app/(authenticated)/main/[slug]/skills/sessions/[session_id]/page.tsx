@@ -13,14 +13,16 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
+import type { Route } from "next";
 
 import { trpc } from "@/trpc/client";
 
@@ -42,8 +44,8 @@ export default function SkillsModule_Session_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skills.index,
-                    Paths.main(slug).skills.sessions,
+                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
                     session.name || session.id,
                 ]}
             />
@@ -51,13 +53,17 @@ export default function SkillsModule_Session_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).skills.sessions}
+                            href={route("/main/[slug]/skills/sessions", { slug })}
                             tooltip="Back to sessions list"
                         />
                         <Hermes.Title>{session.name}</Hermes.Title>
                         <Hermes.Action>
                             <Button asChild>
-                                <Link to={Paths.main(slug).skills.session(session_id).record}>
+                                <Link
+                                    href={
+                                        `/main/${slug}/skills/sessions/${session_id}/record` as Route
+                                    }
+                                >
                                     Recorder
                                 </Link>
                             </Button>

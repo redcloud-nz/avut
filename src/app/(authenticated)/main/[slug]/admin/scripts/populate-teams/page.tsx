@@ -14,7 +14,8 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Button } from "@/components/ui/button";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
+
 import { populateTeamsAction } from "./action";
 
 export default function AdminScripts_PopulateTeams_Page(
@@ -40,17 +41,15 @@ export default function AdminScripts_PopulateTeams_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    "Scripts",
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Scripts", href: route("/main/[slug]/admin/scripts", { slug }) },
                     "Populate Teams",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
-                        <div className="font-semibold">
-                            Populate Teams Script
-                        </div>
+                        <div className="font-semibold">Populate Teams Script</div>
                         <Button onClick={runScript}>Run Script</Button>
                     </div>
                 </Lexington.Column>

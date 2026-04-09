@@ -9,23 +9,13 @@ import { Fragment, useState } from "react";
 
 import { useQueries } from "@tanstack/react-query";
 
-import {
-    FilterColumnValuesIcon,
-    ObjectIcons,
-    ReorderIcon,
-} from "@/components/icons";
+import { FilterColumnValuesIcon, ObjectIcons, ReorderIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -34,7 +24,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -47,17 +38,12 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
 import { SkillPackageBuilder_CreateGroup_Dialog } from "./groups/create-group";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 interface SkillPackageBuilder_Package_Groups_ListProps {
     skillPackage: SkillPackage;
@@ -91,23 +77,14 @@ export function SkillPackageBuilder_Package_Contents_List({
     const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
 
-    const packagePath = Paths.main(
-        organization.slug,
-    ).skillPackageBuilder.skillPackage(skillPackage.id);
+    const packageSlug = organization.slug;
+    const packageId = skillPackage.id;
 
-    const groups = (groupsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
-    const skills = (skillsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
+    const groups = (groupsQuery.data ?? []).sort((a, b) => a.sequence - b.sequence);
+    const skills = (skillsQuery.data ?? []).sort((a, b) => a.sequence - b.sequence);
 
-    const filteredGroups = groups.filter((group) =>
-        statusFilter.includes(group.status),
-    );
-    const filteredSkills = skills.filter((skill) =>
-        statusFilter.includes(skill.status),
-    );
+    const filteredGroups = groups.filter((group) => statusFilter.includes(group.status));
+    const filteredSkills = skills.filter((skill) => statusFilter.includes(skill.status));
 
     return (
         <Card>
@@ -142,24 +119,17 @@ export function SkillPackageBuilder_Package_Contents_List({
             <CardContent>
                 <Show
                     when={groupsQuery.isSuccess && skillsQuery.isSuccess}
-                    fallback={
-                        <Skeleton className="w-full h-13 mb-4">
-                            Loading Skills
-                        </Skeleton>
-                    }
+                    fallback={<Skeleton className="w-full h-13 mb-4">Loading Skills</Skeleton>}
                 >
                     <Show
-                        when={
-                            filteredGroups.length > 0 ||
-                            filteredSkills.length > 0
-                        }
+                        when={filteredGroups.length > 0 || filteredSkills.length > 0}
                         fallback={
                             <Empty>
                                 <EmptyHeader>
                                     <EmptyTitle>No skill yet</EmptyTitle>
                                     <EmptyDescription>
-                                        You have not created any groups or skill
-                                        in this package yet. Click the
+                                        You have not created any groups or skill in this package
+                                        yet. Click the
                                         <ObjectIcons.Create className="inline-block mx-1 size-4" />
                                         button to add a group.
                                     </EmptyDescription>
@@ -185,50 +155,31 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent className="w-50">
-                                                <DropdownMenuLabel>
-                                                    Filter
-                                                </DropdownMenuLabel>
+                                                <DropdownMenuLabel>Filter</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
 
-                                                {["Active", "Archived"].map(
-                                                    (status) => (
-                                                        <DropdownMenuCheckboxItem
-                                                            key={status}
-                                                            checked={statusFilter.includes(
-                                                                status,
-                                                            )}
-                                                            onCheckedChange={(
-                                                                checked,
-                                                            ) => {
-                                                                if (checked) {
-                                                                    setStatusFilter(
-                                                                        (
-                                                                            prev,
-                                                                        ) => [
-                                                                            ...prev,
-                                                                            status,
-                                                                        ],
-                                                                    );
-                                                                } else {
-                                                                    setStatusFilter(
-                                                                        (
-                                                                            prev,
-                                                                        ) =>
-                                                                            prev.filter(
-                                                                                (
-                                                                                    s,
-                                                                                ) =>
-                                                                                    s !==
-                                                                                    status,
-                                                                            ),
-                                                                    );
-                                                                }
-                                                            }}
-                                                        >
-                                                            {status}
-                                                        </DropdownMenuCheckboxItem>
-                                                    ),
-                                                )}
+                                                {["Active", "Archived"].map((status) => (
+                                                    <DropdownMenuCheckboxItem
+                                                        key={status}
+                                                        checked={statusFilter.includes(status)}
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) {
+                                                                setStatusFilter((prev) => [
+                                                                    ...prev,
+                                                                    status,
+                                                                ]);
+                                                            } else {
+                                                                setStatusFilter((prev) =>
+                                                                    prev.filter(
+                                                                        (s) => s !== status,
+                                                                    ),
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        {status}
+                                                    </DropdownMenuCheckboxItem>
+                                                ))}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableHeadCell>
@@ -237,9 +188,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                             <TableBody>
                                 {filteredGroups.map((skillGroup) => {
                                     const groupSkills = filteredSkills.filter(
-                                        (skill) =>
-                                            skill.skillGroupId ===
-                                            skillGroup.id,
+                                        (skill) => skill.skillGroupId === skillGroup.id,
                                     );
 
                                     return (
@@ -252,16 +201,19 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     colSpan={2}
                                                 >
                                                     <Link
-                                                        to={packagePath.group(
-                                                            skillGroup.id,
+                                                        href={route(
+                                                            "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                            {
+                                                                slug: packageSlug,
+                                                                package_id: packageId,
+                                                                group_id: skillGroup.id,
+                                                            },
                                                         )}
                                                     >
                                                         {skillGroup.name}
                                                     </Link>
                                                 </TableCell>
-                                                <TableCell>
-                                                    {skillGroup.status}
-                                                </TableCell>
+                                                <TableCell>{skillGroup.status}</TableCell>
                                             </TableRow>
                                             {groupSkills.map((skill) => (
                                                 // Skills that belong to a group will be listed under their respective group
@@ -269,22 +221,20 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                     <TableCell></TableCell>
                                                     <TableCell>
                                                         <Link
-                                                            to={Paths.main(
-                                                                organization.slug,
-                                                            )
-                                                                .skillPackageBuilder.skillPackage(
-                                                                    skillGroup.skillPackageId,
-                                                                )
-                                                                .skill(
-                                                                    skill.id,
-                                                                )}
+                                                            href={route(
+                                                                "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                                                                {
+                                                                    slug: packageSlug,
+                                                                    package_id:
+                                                                        skillGroup.skillPackageId,
+                                                                    skill_id: skill.id,
+                                                                },
+                                                            )}
                                                         >
                                                             {skill.name}
                                                         </Link>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        {skill.status}
-                                                    </TableCell>
+                                                    <TableCell>{skill.status}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </Fragment>

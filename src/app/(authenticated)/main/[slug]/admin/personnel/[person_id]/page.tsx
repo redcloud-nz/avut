@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
 import { Lexington } from "@/components/blocks/lexington";
@@ -13,25 +14,13 @@ import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
-import { Link } from "@/components/ui/link";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { usePerson } from "@/hooks/use-person";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { AdminModule_PersonMenu } from "./person-menu";
 
@@ -47,8 +36,8 @@ export default function AdminModule_Person_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.personnel,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
                     person.name,
                 ]}
             />
@@ -56,7 +45,7 @@ export default function AdminModule_Person_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).admin.personnel}
+                            href={route("/main/[slug]/admin/personnel", { slug })}
                             tooltip="Back to personnel list"
                         />
                         <Hermes.Title>{person.name}</Hermes.Title>
@@ -75,11 +64,10 @@ export default function AdminModule_Person_Page(
                                 >
                                     <Button variant="ghost" asChild>
                                         <Link
-                                            to={
-                                                Paths.main(slug).admin.person(
-                                                    person_id,
-                                                ).update
-                                            }
+                                            href={route(
+                                                "/main/[slug]/admin/personnel/[person_id]/--update",
+                                                { slug, person_id },
+                                            )}
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>

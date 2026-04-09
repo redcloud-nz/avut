@@ -15,9 +15,10 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
-import * as Paths from "@/paths";
+import { Route } from "next";
+import { route } from "@/lib/routes";
 
 export async function generateStaticParams() {
     return [{ slug: "christchurch-em" }];
@@ -33,7 +34,10 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.pub(slug).forms.index, Paths.pub(slug).forms.ppe]}
+                breadcrumbs={[
+                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="md">
@@ -44,7 +48,9 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
                         <div className="flex flex-col gap-4 mt-4">
                             <ItemGroup>
                                 <Item asChild>
-                                    <Link to={Paths.pub(slug).forms.ppe.borrow}>
+                                    <Link
+                                        href={route("/pub/orgs/[slug]/forms/ppe/borrow", { slug })}
+                                    >
                                         <ItemContent>
                                             <ItemTitle>Borrow PPE</ItemTitle>
                                             <ItemDescription>
@@ -57,7 +63,9 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
                                     </Link>
                                 </Item>
                                 <Item asChild>
-                                    <Link to={Paths.pub(slug).forms.ppe.inspect}>
+                                    <Link
+                                        href={route("/pub/orgs/[slug]/forms/ppe/inspect", { slug })}
+                                    >
                                         <ItemContent>
                                             <ItemTitle>Inspect PPE</ItemTitle>
                                             <ItemDescription>
@@ -71,7 +79,9 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
                                     </Link>
                                 </Item>
                                 <Item asChild>
-                                    <Link to={Paths.pub(slug).forms.ppe.issue}>
+                                    <Link
+                                        href={route("/pub/orgs/[slug]/forms/ppe/issue", { slug })}
+                                    >
                                         <ItemContent>
                                             <ItemTitle>Issue PPE</ItemTitle>
                                             <ItemDescription>
@@ -84,7 +94,9 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
                                     </Link>
                                 </Item>
                                 <Item asChild>
-                                    <Link to={Paths.pub(slug).forms.ppe.return}>
+                                    <Link
+                                        href={route("/pub/orgs/[slug]/forms/ppe/return", { slug })}
+                                    >
                                         <ItemContent>
                                             <ItemTitle>Return PPE</ItemTitle>
                                             <ItemDescription>

@@ -20,12 +20,12 @@ import {
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_EquipmentCategories_Page(
     props: PageProps<"/main/[slug]/d4h-views/equipment/categories">,
@@ -75,17 +75,17 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                 }),
                 columnHelper.accessor("title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Title
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Title</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.equipment.category(
-                                    ctx.row.original.id,
+                                href={route(
+                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]",
+                                    {
+                                        slug: organization.slug,
+                                        category_id: String(ctx.row.original.id),
+                                    },
                                 )}
                             >
                                 {ctx.getValue()}
@@ -111,10 +111,7 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                 }),
                 columnHelper.accessor("owner.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-1/4"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} className="w-1/4">
                             Owner
                         </Akagi.TableHeadCell>
                     ),
@@ -153,19 +150,26 @@ export default function D4HViewsModule_EquipmentCategories_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.categories,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    "Categories",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(organization.slug).d4HViews.equipment
-                                    .index
-                            }
+                            href={route("/main/[slug]/d4h-views/equipment", {
+                                slug: organization.slug,
+                            })}
                         />
                         <Hermes.Title>Equipment Categories</Hermes.Title>
                         <Hermes.Search>

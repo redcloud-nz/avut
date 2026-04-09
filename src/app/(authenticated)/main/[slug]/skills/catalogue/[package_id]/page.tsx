@@ -8,25 +8,16 @@
 
 import { use } from "react";
 
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { trpc } from "@/trpc/client";
 import { MutationButton } from "@/components/ui/button";
@@ -47,8 +38,7 @@ export default function SkillsModule_CataloguePackage_Page(
     );
 
     const skillPackage = packages.find((p) => p.id === package_id);
-    if (!skillPackage)
-        throw new Error(`Skill Package(${package_id}) not found`);
+    if (!skillPackage) throw new Error(`Skill Package(${package_id}) not found`);
 
     const subscribeMutation = useMutation(
         trpc.skills.subscribeToPackage.mutationOptions({
@@ -57,9 +47,7 @@ export default function SkillsModule_CataloguePackage_Page(
                 toast.error("Failed to subscribe to skill package.");
             },
             onSuccess() {
-                toast.success(
-                    `Successfully subscribed to skill package "${skillPackage.name}".`,
-                );
+                toast.success(`Successfully subscribed to skill package "${skillPackage.name}".`);
                 queryClient.invalidateQueries(
                     trpc.skills.listPackages.queryFilter({
                         organizationId: organization.id,
@@ -71,10 +59,7 @@ export default function SkillsModule_CataloguePackage_Page(
     const unsubscribeMutation = useMutation(
         trpc.skills.unsubscribeFromPackage.mutationOptions({
             onError(error) {
-                console.error(
-                    "Failed to unsubscribe from skill package",
-                    error,
-                );
+                console.error("Failed to unsubscribe from skill package", error);
                 toast.error("Failed to unsubscribe from skill package.");
             },
             onSuccess() {
@@ -94,8 +79,8 @@ export default function SkillsModule_CataloguePackage_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skills.index,
-                    Paths.main(slug).skills.catalogue,
+                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                    { label: "Catalogue", href: route("/main/[slug]/skills/catalogue", { slug }) },
                     skillPackage.name,
                 ]}
             />
@@ -103,13 +88,10 @@ export default function SkillsModule_CataloguePackage_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).skills.catalogue}
+                            href={route("/main/[slug]/skills/catalogue", { slug })}
                         />
                         <Hermes.Title>{skillPackage.name}</Hermes.Title>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skills: ["subscribe"] }}
-                        >
+                        <Protect orgId={organization.id} permissions={{ skills: ["subscribe"] }}>
                             <Hermes.Action>
                                 {skillPackage.subscription ? (
                                     <MutationButton
@@ -153,10 +135,7 @@ export default function SkillsModule_CataloguePackage_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Package ID</FieldLabel>
-                                    <FieldValue
-                                        value={skillPackage.id}
-                                        format="id"
-                                    />
+                                    <FieldValue value={skillPackage.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
@@ -164,27 +143,19 @@ export default function SkillsModule_CataloguePackage_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Description</FieldLabel>
-                                    <FieldValue
-                                        value={skillPackage.description}
-                                    />
+                                    <FieldValue value={skillPackage.description} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Publisher</FieldLabel>
-                                    <FieldValue>
-                                        {skillPackage.organization.name}
-                                    </FieldValue>
+                                    <FieldValue>{skillPackage.organization.name}</FieldValue>
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Skills</FieldLabel>
-                                    <FieldValue>
-                                        {skillPackage.skillCount}
-                                    </FieldValue>
+                                    <FieldValue>{skillPackage.skillCount}</FieldValue>
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Subscribers</FieldLabel>
-                                    <FieldValue>
-                                        {skillPackage.subscriptionCount}
-                                    </FieldValue>
+                                    <FieldValue>{skillPackage.subscriptionCount}</FieldValue>
                                 </Field>
                                 <FieldSeparator />
                                 <Field orientation="responsive">

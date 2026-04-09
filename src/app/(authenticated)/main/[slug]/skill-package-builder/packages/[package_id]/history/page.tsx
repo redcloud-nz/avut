@@ -12,7 +12,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { NotImplemented } from "@/components/nav/errors";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { useSkillPackage } from "@/hooks/use-skill-package";
 
@@ -30,10 +30,16 @@ export default function SkillPackageBuilder_Package_History_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
                     {
-                        ...Paths.main(slug).skillPackageBuilder.skillPackage(package_id).index,
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
                         label: skillPackage.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id,
+                        }),
                     },
                     "History",
                 ]}

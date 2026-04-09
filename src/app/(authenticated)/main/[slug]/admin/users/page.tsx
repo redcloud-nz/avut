@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
 
@@ -32,7 +32,10 @@ export default async function AdminModule_UsersList_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.main(slug).admin.index, Paths.main(slug).admin.users]}
+                breadcrumbs={[
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Users", href: route("/main/[slug]/admin/users", { slug }) },
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

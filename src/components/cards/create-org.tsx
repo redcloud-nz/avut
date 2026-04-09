@@ -22,8 +22,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Spinner } from "@/components/ui/spinner";
 
 import { authClient } from "@/client/auth-client";
-import * as Paths from "@/paths";
-import { Route } from "next";
+import { route } from "@/lib/routes";
 
 /**
  * Card for creating a new organization.
@@ -94,7 +93,7 @@ export function CreateOrganization_Card() {
             } else {
                 console.log("Organization created", data);
                 toast.success("Organization created successfully.");
-                router.push(Paths.main(data.slug).index.href as Route);
+                router.push(route("/main/[slug]", { slug: data.slug }));
             }
         } catch (error) {
             console.error("Organization creation error:", error);

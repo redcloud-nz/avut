@@ -9,12 +9,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import * as z from "zod";
 
-import {
-    useMutation,
-    useQueries,
-    useQuery,
-    useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
@@ -44,7 +39,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_MoveSkill_Dialog({
@@ -55,12 +50,11 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const { data: skillPackages = [], isSuccess: skillPackagesReady } =
-        useQuery(
-            trpc.skillPackageBuilder.listPackages.queryOptions({
-                organizationId: organization.id,
-            }),
-        );
+    const { data: skillPackages = [], isSuccess: skillPackagesReady } = useQuery(
+        trpc.skillPackageBuilder.listPackages.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
 
     const { data: skillGroups = [], isSuccess: skillGroupsReady } = useQueries({
         queries: skillPackages.map((skillPackage) =>
@@ -80,18 +74,11 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         },
     });
 
-    const originPackage = skillPackages.find(
-        (pkg) => pkg.id === skill.skillPackageId,
-    );
-    const originGroup = skillGroups.find(
-        (group) => group.id === skill.skillGroupId,
-    );
+    const originPackage = skillPackages.find((pkg) => pkg.id === skill.skillPackageId);
+    const originGroup = skillGroups.find((group) => group.id === skill.skillGroupId);
 
-    const [destinationPackageId, setDestinationPackageId] = useState<string>(
-        skill.skillPackageId,
-    );
-    const [destinationGroupId, setDestinationGroupId] =
-        useState<SkillGroupId | null>(null);
+    const [destinationPackageId, setDestinationPackageId] = useState<string>(skill.skillPackageId);
+    const [destinationGroupId, setDestinationGroupId] = useState<SkillGroupId | null>(null);
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.moveSkill.mutationOptions({
@@ -109,8 +96,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                     skillPackageId: destinationPackageId,
                 });
 
-                const previousDestinationSkills =
-                    queryClient.getQueryData(queryKey) || [];
+                const previousDestinationSkills = queryClient.getQueryData(queryKey) || [];
 
                 // Optimistically add the skill to the destination package's skill list
                 queryClient.setQueryData(queryKey, [
@@ -147,8 +133,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 );
                 toast.success(
                     <>
-                        Skill moved from{" "}
-                        <ObjectName>{originPackage?.name}</ObjectName>
+                        Skill moved from <ObjectName>{originPackage?.name}</ObjectName>
                         {" > "}
                         <ObjectName>{originGroup?.name}</ObjectName> to{" "}
                         <ObjectName>{destinationPackage?.name}</ObjectName>
@@ -160,11 +145,14 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 props.onOpenChange?.(false);
 
                 router.replace(
-                    Paths.main(organization.slug)
-                        .skillPackageBuilder.skillPackage(
-                            updated.skillPackageId,
-                        )
-                        .skill(updated.id).href,
+                    route(
+                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: updated.skillPackageId,
+                            skill_id: updated.id,
+                        },
+                    ),
                 );
             },
             async onSettled() {
@@ -203,8 +191,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 <DialogHeader>
                     <DialogTitle>Move Skill</DialogTitle>
                     <DialogDescription>
-                        Move skill <ObjectName>{skill.name}</ObjectName> to
-                        another group.
+                        Move skill <ObjectName>{skill.name}</ObjectName> to another group.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -242,10 +229,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                     {skillPackages.map((skillPackage) => (
-                                        <SelectItem
-                                            key={skillPackage.id}
-                                            value={skillPackage.id}
-                                        >
+                                        <SelectItem key={skillPackage.id} value={skillPackage.id}>
                                             {skillPackage.name}
                                         </SelectItem>
                                     ))}
@@ -267,17 +251,13 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                                     {skillGroups
                                         .filter(
                                             (group) =>
-                                                group.skillPackageId ===
-                                                destinationPackageId,
+                                                group.skillPackageId === destinationPackageId,
                                         )
                                         .map((group) => (
                                             <SelectItem
                                                 key={group.id}
                                                 value={group.id}
-                                                disabled={
-                                                    group.id ==
-                                                    skill.skillGroupId
-                                                }
+                                                disabled={group.id == skill.skillGroupId}
                                             >
                                                 {group.name}
                                             </SelectItem>
@@ -304,9 +284,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                                 success: "Moved",
                             }}
                         />
-                        <DialogCloseButton variant="outline">
-                            Cancel
-                        </DialogCloseButton>
+                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     </DialogFooter>
                 </Show>
             </DialogContent>

@@ -7,7 +7,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { AdminModule_TeamsList } from "./teams-list";
 
@@ -24,8 +24,8 @@ export default async function AdminModule_TeamsList_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.teams,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Teams", href: route("/main/[slug]/admin/teams", { slug }) },
                 ]}
             />
             <Lexington.Page>

@@ -9,10 +9,11 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
 
-import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { route } from "@/lib/routes";
+
 import { D4HMember } from "@/lib/schemas/d4h/member";
-import * as Paths from "@/paths";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 
 /**
@@ -24,16 +25,16 @@ export default async function Admin_D4hAccessToken_Members_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accesToken = await getOrganizationD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });
 
-    if (!accesToken) notFound();
+    if (!accessToken) notFound();
 
-    const fetchClient = getD4HFetchClient(accesToken);
+    const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accesToken);
+    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
 
     const members = (
         await Promise.all(
@@ -62,13 +63,19 @@ export default async function Admin_D4hAccessToken_Members_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
-                        label: accesToken.id,
+                        label: "D4H Access Tokens",
+                        href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
                     },
-                    "Teams",
+                    {
+                        label: accessToken.label || accessToken.id,
+                        href: route("/main/[slug]/admin/d4h-access-tokens/[token_id]/members", {
+                            slug,
+                            token_id,
+                        }),
+                    },
+                    "Members",
                 ]}
             />
             <Lexington.Page>
@@ -76,7 +83,10 @@ export default async function Admin_D4hAccessToken_Members_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(slug).admin.d4hAccessToken(token_id)}
+                                href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                    slug,
+                                    token_id,
+                                })}
                             />
                             <Hermes.Title>Teams with Members</Hermes.Title>
                         </Hermes.Header>

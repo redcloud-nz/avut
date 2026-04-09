@@ -9,22 +9,12 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import {
-    FilterColumnValuesIcon,
-    ObjectIcons,
-    ReorderIcon,
-} from "@/components/icons";
+import { FilterColumnValuesIcon, ObjectIcons, ReorderIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -33,7 +23,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -47,17 +38,12 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
 import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 /**
  * Component to display a list of skills within a skill group.
@@ -89,8 +75,7 @@ export function SkillPackageBuilder_Group_Contents_List({
     const skills = (skillsQuery.data ?? [])
         .filter((s) => s.skillGroupId === skillGroup.id)
         .sort((a, b) => a.sequence - b.sequence);
-    const filteredSkills =
-        skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
+    const filteredSkills = skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
 
     return (
         <Card>
@@ -134,8 +119,7 @@ export function SkillPackageBuilder_Group_Contents_List({
                                 <EmptyHeader>
                                     <EmptyTitle>No skill yet</EmptyTitle>
                                     <EmptyDescription>
-                                        You have not created any skill in this
-                                        group yet. Click the{" "}
+                                        You have not created any skill in this group yet. Click the{" "}
                                         <ObjectIcons.Create className="inline-block mr-1 size-4" />{" "}
                                         button to add a skill.
                                     </EmptyDescription>
@@ -160,50 +144,31 @@ export function SkillPackageBuilder_Group_Contents_List({
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent className="w-50">
-                                                <DropdownMenuLabel>
-                                                    Filter
-                                                </DropdownMenuLabel>
+                                                <DropdownMenuLabel>Filter</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
 
-                                                {["Active", "Archived"].map(
-                                                    (status) => (
-                                                        <DropdownMenuCheckboxItem
-                                                            key={status}
-                                                            checked={statusFilter.includes(
-                                                                status,
-                                                            )}
-                                                            onCheckedChange={(
-                                                                checked,
-                                                            ) => {
-                                                                if (checked) {
-                                                                    setStatusFilter(
-                                                                        (
-                                                                            prev,
-                                                                        ) => [
-                                                                            ...prev,
-                                                                            status,
-                                                                        ],
-                                                                    );
-                                                                } else {
-                                                                    setStatusFilter(
-                                                                        (
-                                                                            prev,
-                                                                        ) =>
-                                                                            prev.filter(
-                                                                                (
-                                                                                    s,
-                                                                                ) =>
-                                                                                    s !==
-                                                                                    status,
-                                                                            ),
-                                                                    );
-                                                                }
-                                                            }}
-                                                        >
-                                                            {status}
-                                                        </DropdownMenuCheckboxItem>
-                                                    ),
-                                                )}
+                                                {["Active", "Archived"].map((status) => (
+                                                    <DropdownMenuCheckboxItem
+                                                        key={status}
+                                                        checked={statusFilter.includes(status)}
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) {
+                                                                setStatusFilter((prev) => [
+                                                                    ...prev,
+                                                                    status,
+                                                                ]);
+                                                            } else {
+                                                                setStatusFilter((prev) =>
+                                                                    prev.filter(
+                                                                        (s) => s !== status,
+                                                                    ),
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        {status}
+                                                    </DropdownMenuCheckboxItem>
+                                                ))}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableHeadCell>
@@ -214,13 +179,14 @@ export function SkillPackageBuilder_Group_Contents_List({
                                     <TableRow key={skill.id}>
                                         <TableCell>
                                             <Link
-                                                to={Paths.main(
-                                                    organization.slug,
-                                                )
-                                                    .skillPackageBuilder.skillPackage(
-                                                        skillGroup.skillPackageId,
-                                                    )
-                                                    .skill(skill.id)}
+                                                href={route(
+                                                    "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                                                    {
+                                                        slug: organization.slug,
+                                                        package_id: skillGroup.skillPackageId,
+                                                        skill_id: skill.id,
+                                                    },
+                                                )}
                                             >
                                                 {skill.name}
                                             </Link>

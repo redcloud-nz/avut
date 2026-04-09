@@ -8,7 +8,7 @@
 import { Lexington } from "@/components/blocks/lexington";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { SkillsModule_CataloguePackages_List } from "./catalogue-packages-list";
 
@@ -25,8 +25,8 @@ export default async function SkillsModule_Catalogue_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skills.index,
-                    Paths.main(slug).skills.catalogue,
+                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                    { label: "Catalogue", href: route("/main/[slug]/skills/catalogue", { slug }) },
                 ]}
             />
             <Lexington.Page>

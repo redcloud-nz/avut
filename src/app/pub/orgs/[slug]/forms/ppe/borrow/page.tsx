@@ -9,7 +9,8 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import * as Paths from "@/paths";
+import { Route } from "next";
+import { route } from "@/lib/routes";
 
 export async function generateStaticParams() {
     return [{ slug: "christchurch-em" }];
@@ -28,16 +29,18 @@ export default async function Pub_PPEBorrow_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.pub(slug).forms.index,
-                    Paths.pub(slug).forms.ppe,
-                    Paths.pub(slug).forms.ppe.borrow,
+                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
+                    "Borrow",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Section>
                         <Hermes.Header>
-                            <Hermes.BackButton to={Paths.pub(slug).forms.ppe} />
+                            <Hermes.BackButton
+                                href={route("/pub/orgs/[slug]/forms/ppe", { slug })}
+                            />
                         </Hermes.Header>
                         <Card>
                             <CardHeader>

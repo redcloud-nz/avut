@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -15,19 +16,16 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
 
+import { getD4HServer } from "@/lib/d4h-servers";
+import { route } from "@/lib/routes";
 import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
-
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
-import { getD4HServer } from "@/lib/d4h-servers";
 
 interface AdminModule_D4hAccessTokensListProps {
     organization: OrganizationData;
@@ -55,9 +53,10 @@ export function AdminModule_D4hAccessTokensList({
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(organization.slug).admin.d4hAccessToken(
-                                    ctx.getValue(),
-                                )}
+                                href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                    slug: organization.slug,
+                                    token_id: ctx.getValue(),
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -110,7 +109,11 @@ export function AdminModule_D4hAccessTokensList({
                 <Akagi.TableSearch table={table} />
                 <Protect orgId={organization.id} permissions={{ d4hAccessToken: ["create"] }}>
                     <Button variant="outline" asChild>
-                        <Link to={Paths.main(organization.slug).admin.d4hAccessTokens.create}>
+                        <Link
+                            href={route("/main/[slug]/admin/d4h-access-tokens/--create", {
+                                slug: organization.slug,
+                            })}
+                        >
                             <CreateNewIcon /> New
                         </Link>
                     </Button>

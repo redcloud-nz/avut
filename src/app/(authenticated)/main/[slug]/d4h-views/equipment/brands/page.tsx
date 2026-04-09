@@ -20,11 +20,11 @@ import {
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-brands";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getD4HEquipmentModelsCollection } from "@/lib/collections/equipment-models";
 
 export default function D4HViewsModule_EquipmentBrands_Page(
@@ -66,9 +66,10 @@ export default function D4HViewsModule_EquipmentBrands_Page(
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell} align="center">
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.equipment.brand(ctx.row.original.id)}
+                                href={route("/main/[slug]/d4h-views/equipment/brands/[brand_id]", {
+                                    slug: organization.slug,
+                                    brand_id: String(ctx.row.original.id),
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -79,16 +80,15 @@ export default function D4HViewsModule_EquipmentBrands_Page(
                 }),
                 columnHelper.accessor("title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Title
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Title</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.equipment.brand(ctx.row.original.id)}
+                                href={route("/main/[slug]/d4h-views/equipment/brands/[brand_id]", {
+                                    slug: organization.slug,
+                                    brand_id: String(ctx.row.original.id),
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -113,10 +113,7 @@ export default function D4HViewsModule_EquipmentBrands_Page(
                 }),
                 columnHelper.accessor("owner.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-1/4"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} className="w-1/4">
                             Owner
                         </Akagi.TableHeadCell>
                     ),
@@ -155,19 +152,26 @@ export default function D4HViewsModule_EquipmentBrands_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.brands,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    "Brands",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(organization.slug).d4HViews.equipment
-                                    .index
-                            }
+                            href={route("/main/[slug]/d4h-views/equipment", {
+                                slug: organization.slug,
+                            })}
                             tooltip="Back to Equipment"
                         />
                         <Hermes.Title>Equipment Brands</Hermes.Title>

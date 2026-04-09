@@ -44,7 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
@@ -101,7 +101,12 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
                     }),
                 );
                 handleOpenChange(false);
-                router.push(Paths.main(organization.slug).i3.template(created.id).href);
+                router.push(
+                    route("/main/[slug]/i3/templates/[template_id]", {
+                        slug: organization.slug,
+                        template_id: created.id,
+                    }),
+                );
                 mutation.reset();
             },
         }),

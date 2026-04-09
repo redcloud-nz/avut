@@ -23,8 +23,8 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteTeam_Dialog({
@@ -51,7 +51,7 @@ export function AdminModule_DeleteTeam_Dialog({
                 );
                 props.onOpenChange?.(false);
 
-                router.push(Paths.main(organization.slug).admin.teams.href);
+                router.push(route("/main/[slug]/admin/teams", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
                     trpc.teams.listTeams.queryFilter({
@@ -70,9 +70,8 @@ export function AdminModule_DeleteTeam_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Team</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of team{" "}
-                        <ObjectName>{team.name}</ObjectName>. This action cannot
-                        be undone.
+                        Confirm deletion of team <ObjectName>{team.name}</ObjectName>. This action
+                        cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

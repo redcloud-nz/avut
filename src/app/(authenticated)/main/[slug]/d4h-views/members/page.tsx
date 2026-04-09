@@ -20,11 +20,11 @@ import {
 import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HMembersCollection } from "@/lib/collections/d4h-members";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_Members_Page(
     props: PageProps<"/main/[slug]/d4h-views/members">,
@@ -56,18 +56,18 @@ export default function D4HViewsModule_Members_Page(
                 }),
                 columnHelper.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).d4HViews.member(
-                                    ctx.row.original.team.id,
-                                    ctx.row.original.id,
+                                href={route(
+                                    "/main/[slug]/d4h-views/members/[team_id]/[member_id]",
+                                    {
+                                        slug: organization.slug,
+                                        team_id: String(ctx.row.original.team.id),
+                                        member_id: String(ctx.row.original.id),
+                                    },
                                 )}
                             >
                                 {ctx.getValue()}
@@ -79,14 +79,10 @@ export default function D4HViewsModule_Members_Page(
                 }),
                 columnHelper.accessor("team.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Team
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Team</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -115,15 +111,18 @@ export default function D4HViewsModule_Members_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.members,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    "Members",
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(organization.slug).d4HViews.index}
+                            href={route("/main/[slug]/d4h-views", { slug: organization.slug })}
                         />
                         <Hermes.Title>Members</Hermes.Title>
                         <Hermes.Search>

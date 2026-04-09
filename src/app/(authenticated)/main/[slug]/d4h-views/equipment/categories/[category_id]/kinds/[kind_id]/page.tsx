@@ -19,7 +19,7 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { D4HViewsModule_EquipmentKind_Items_List } from "./kind-items";
 
 export default function D4HViewsModule_EquipmentCategory_Kind_Page(
@@ -46,14 +46,28 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.categories,
                     {
-                        ...Paths.main(
-                            organization.slug,
-                        ).d4HViews.equipment.category(categoryId),
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: "Categories",
+                        href: route("/main/[slug]/d4h-views/equipment/categories", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
                         label: kind.category.title,
+                        href: route("/main/[slug]/d4h-views/equipment/categories/[category_id]", {
+                            slug: organization.slug,
+                            category_id: String(categoryId),
+                        }),
                     },
                     "Kinds",
                     kind.title,
@@ -63,9 +77,10 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(
-                                organization.slug,
-                            ).d4HViews.equipment.category(categoryId)}
+                            href={route(
+                                "/main/[slug]/d4h-views/equipment/categories/[category_id]",
+                                { slug: organization.slug, category_id: String(categoryId) },
+                            )}
                             tooltip={`Back to category ${kind.category.title}`}
                         />
                         <Hermes.Title>{kind.title}</Hermes.Title>

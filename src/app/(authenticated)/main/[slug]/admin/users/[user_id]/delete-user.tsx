@@ -23,9 +23,9 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { UserData } from "@/lib/schemas/user";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteUser_Dialog({
@@ -44,21 +44,18 @@ export function AdminModule_DeleteUser_Dialog({
         trpc.organizations.removeOrganizationMembership.mutationOptions({
             onError(error) {
                 console.error("Failed to delete organisation member:", error);
-                toast.error(
-                    `Failed to delete organisation member: ${error.message}`,
-                );
+                toast.error(`Failed to delete organisation member: ${error.message}`);
             },
             async onSuccess() {
                 toast.success(
                     <>
-                        User <ObjectName>{user.name}</ObjectName> removed from
-                        organisation.
+                        User <ObjectName>{user.name}</ObjectName> removed from organisation.
                     </>,
                 );
                 props.onOpenChange?.(false);
 
                 // Redirect to the personnel list page after deletion
-                router.push(Paths.main(organization.slug).admin.users.href);
+                router.push(route("/main/[slug]/admin/users", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
                     trpc.organizations.listOrganizationMembers.queryFilter({
@@ -77,8 +74,8 @@ export function AdminModule_DeleteUser_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete User</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm removal of user{" "}
-                        <ObjectName>{user.name}</ObjectName> from organisation.
+                        Confirm removal of user <ObjectName>{user.name}</ObjectName> from
+                        organisation.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

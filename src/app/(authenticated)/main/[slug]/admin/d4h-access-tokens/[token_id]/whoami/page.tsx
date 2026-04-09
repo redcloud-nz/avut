@@ -11,8 +11,8 @@ import { Eagle } from "@/components/blocks/eagle";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
+import { route } from "@/lib/routes";
 import { getD4HFetchClient } from "@/server/d4h-api/client";
-import * as Paths from "@/paths";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
@@ -35,14 +35,14 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
     const { slug, token_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    const accesToken = await getOrganizationD4HAccessToken({
+    const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
         organizationId: organization.id,
     });
 
-    if (!accesToken) notFound();
+    if (!accessToken) notFound();
 
-    const fetched = await fetchWhoami(accesToken);
+    const fetched = await fetchWhoami(accessToken);
 
     const whoami = {
         raw: fetched,
@@ -53,11 +53,17 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.d4hAccessTokens,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
-                        href: Paths.main(slug).admin.d4hAccessToken(token_id).href,
-                        label: accesToken.id,
+                        label: "D4H Access Tokens",
+                        href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
+                    },
+                    {
+                        label: accessToken.label || accessToken.id,
+                        href: route("/main/[slug]/admin/d4h-access-tokens/[token_id]/members", {
+                            slug,
+                            token_id,
+                        }),
                     },
                     "Whoami",
                 ]}
@@ -65,7 +71,12 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
-                        <Hermes.BackButton to={Paths.main(slug).admin.d4hAccessToken(token_id)} />
+                        <Hermes.BackButton
+                            href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                slug,
+                                token_id,
+                            })}
+                        />
                         <Hermes.Title>Whoami</Hermes.Title>
                     </Hermes.Header>
                     <Eagle.Section>

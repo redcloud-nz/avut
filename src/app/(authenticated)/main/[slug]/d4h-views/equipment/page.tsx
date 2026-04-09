@@ -17,9 +17,9 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export default async function D4HViewsModule_Equipment_Page(
     props: PageProps<`/main/[slug]/d4h-views/equipment`>,
@@ -28,20 +28,21 @@ export default async function D4HViewsModule_Equipment_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.main(slug).d4HViews.index]} />
+            <Lexington.Header
+                breadcrumbs={[
+                    { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
+                    "Equipment",
+                ]}
+            />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
                         <AVUTLogo />
-                        <div className="font-semibold">
-                            D4H Views Module - Equipment
-                        </div>
+                        <div className="font-semibold">D4H Views Module - Equipment</div>
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link
-                                to={Paths.main(slug).d4HViews.equipment.brands}
-                            >
+                            <Link href={route("/main/[slug]/d4h-views/equipment/brands", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Equipment Brands</ItemTitle>
                                     <ItemDescription>
@@ -55,10 +56,9 @@ export default async function D4HViewsModule_Equipment_Page(
                         </Item>
                         <Item asChild>
                             <Link
-                                to={
-                                    Paths.main(slug).d4HViews.equipment
-                                        .categories
-                                }
+                                href={route("/main/[slug]/d4h-views/equipment/categories", {
+                                    slug,
+                                })}
                             >
                                 <ItemContent>
                                     <ItemTitle>Equipment Categories</ItemTitle>

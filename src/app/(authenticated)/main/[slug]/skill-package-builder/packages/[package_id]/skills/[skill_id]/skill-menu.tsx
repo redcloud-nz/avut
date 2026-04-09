@@ -22,19 +22,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
-import { Link } from "@/components/ui/link";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_DeleteSkill_Dialog } from "./delete-skill";
@@ -47,9 +42,7 @@ interface SkillPackageBuilder_Skill_MenuProps {
     };
 }
 
-export function SkillPackageBuilder_Skill_Menu({
-    skill,
-}: SkillPackageBuilder_Skill_MenuProps) {
+export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -130,12 +123,10 @@ export function SkillPackageBuilder_Skill_Menu({
                         fallback={
                             <Empty size="sm">
                                 <EmptyHeader>
-                                    <EmptyTitle>
-                                        No Actions Available
-                                    </EmptyTitle>
+                                    <EmptyTitle>No Actions Available</EmptyTitle>
                                     <EmptyDescription>
-                                        You do not have permission to perform
-                                        any actions on this skill.
+                                        You do not have permission to perform any actions on this
+                                        skill.
                                     </EmptyDescription>
                                 </EmptyHeader>
                             </Empty>
@@ -148,9 +139,7 @@ export function SkillPackageBuilder_Skill_Menu({
                                     <ObjectIcons.Archive /> Archive
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                                onClick={() => setMoveDialogOpen(true)}
-                            >
+                            <DropdownMenuItem onClick={() => setMoveDialogOpen(true)}>
                                 <ObjectIcons.Move /> Move
                             </DropdownMenuItem>
                             {/* Show the restore option if the skill package is archived */}
@@ -161,13 +150,14 @@ export function SkillPackageBuilder_Skill_Menu({
                             )}
                             <DropdownMenuItem asChild>
                                 <Link
-                                    to={
-                                        Paths.main(organization.slug)
-                                            .skillPackageBuilder.skillPackage(
-                                                skill.skillPackageId,
-                                            )
-                                            .skill(skill.id).update
-                                    }
+                                    href={route(
+                                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
+                                        {
+                                            slug: organization.slug,
+                                            package_id: skill.skillPackageId,
+                                            skill_id: skill.id,
+                                        },
+                                    )}
                                 >
                                     <ObjectIcons.Edit /> Edit
                                 </Link>

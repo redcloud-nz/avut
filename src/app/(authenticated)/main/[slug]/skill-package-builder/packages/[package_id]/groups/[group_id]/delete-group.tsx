@@ -26,7 +26,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 interface SkillPackageBuilder_DeleteSkillGroup_DialogProps extends AlertDialogProps {
@@ -50,19 +50,17 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
             async onSuccess() {
                 toast.success(
                     <>
-                        Skill Group <ObjectName>{skillGroup.name}</ObjectName>{" "}
-                        deleted.
+                        Skill Group <ObjectName>{skillGroup.name}</ObjectName> deleted.
                     </>,
                 );
                 props.onOpenChange?.(false);
 
                 // Redirect to the package list page after deletion
                 router.push(
-                    Paths.main(
-                        organization.slug,
-                    ).skillPackageBuilder.skillPackage(
-                        skillGroup.skillPackageId,
-                    ).index.href,
+                    route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                        slug: organization.slug,
+                        package_id: skillGroup.skillPackageId,
+                    }),
                 );
 
                 await queryClient.invalidateQueries(
@@ -82,10 +80,9 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Skill Group</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of skill group{" "}
-                        <ObjectName>{skillGroup.name}</ObjectName> from package{" "}
-                        <ObjectName>{skillGroup.skillPackage.name}</ObjectName>.
-                        This action cannot be undone.
+                        Confirm deletion of skill group <ObjectName>{skillGroup.name}</ObjectName>{" "}
+                        from package <ObjectName>{skillGroup.skillPackage.name}</ObjectName>. This
+                        action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

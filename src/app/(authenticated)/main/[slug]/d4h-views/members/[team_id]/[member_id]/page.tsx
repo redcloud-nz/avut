@@ -21,12 +21,12 @@ import { Akagi } from "@/components/blocks/akagi";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Show } from "@/components/show";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -69,9 +69,10 @@ export default function D4HViewsModule_Member_Page(
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(organization.slug).d4HViews.equipment.item(
-                                    ctx.row.original.id,
-                                )}
+                                href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
+                                    slug: organization.slug,
+                                    item_id: String(ctx.row.original.id),
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -142,15 +143,25 @@ export default function D4HViewsModule_Member_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.members,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Members",
+                        href: route("/main/[slug]/d4h-views/members", { slug: organization.slug }),
+                    },
                     member.name,
                 ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">
                     <Hermes.Header>
-                        <Hermes.BackButton to={Paths.main(organization.slug).d4HViews.members} />
+                        <Hermes.BackButton
+                            href={route("/main/[slug]/d4h-views/members", {
+                                slug: organization.slug,
+                            })}
+                        />
                         <Hermes.Title>{member.name}</Hermes.Title>
                     </Hermes.Header>
                     <Card>

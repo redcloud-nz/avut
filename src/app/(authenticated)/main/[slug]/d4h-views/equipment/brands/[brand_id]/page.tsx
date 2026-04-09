@@ -19,7 +19,7 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-brands";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { D4HViewsModule_EquipmentBrand_Models_List } from "./brand-models";
 
@@ -46,9 +46,22 @@ export default function D4HViewsModule_EquipmentBrand_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.brands,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: "Brands",
+                        href: route("/main/[slug]/d4h-views/equipment/brands", {
+                            slug: organization.slug,
+                        }),
+                    },
                     brand.title,
                 ]}
             />
@@ -56,10 +69,9 @@ export default function D4HViewsModule_EquipmentBrand_Page(
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(organization.slug).d4HViews.equipment
-                                    .brands
-                            }
+                            href={route("/main/[slug]/d4h-views/equipment/brands", {
+                                slug: organization.slug,
+                            })}
                         />
                         <Hermes.Title>{brand.title}</Hermes.Title>
                     </Hermes.Header>
@@ -88,17 +100,12 @@ export default function D4HViewsModule_EquipmentBrand_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={brand.updatedAt}
-                                        format="datetime"
-                                    />
+                                    <FieldValue value={brand.updatedAt} format="datetime" />
                                 </Field>
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <D4HViewsModule_EquipmentBrand_Models_List
-                        brandId={brand.id}
-                    />
+                    <D4HViewsModule_EquipmentBrand_Models_List brandId={brand.id} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

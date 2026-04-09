@@ -15,7 +15,7 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 export default function Root_NotFound() {
     return (
@@ -27,13 +27,13 @@ export default function Root_NotFound() {
                     </EmptyMedia>
                     <EmptyTitle>404 - Not Found</EmptyTitle>
                     <EmptyDescription>
-                        The resource you requested was not found. Have you tried
-                        looking under the couch?
+                        The resource you requested was not found. Have you tried looking under the
+                        couch?
                     </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
                     <Button variant="outline" asChild>
-                        <Link to={{ href: "/" }}>Home Page</Link>
+                        <Link href="/">Home Page</Link>
                     </Button>
                 </EmptyContent>
             </Empty>

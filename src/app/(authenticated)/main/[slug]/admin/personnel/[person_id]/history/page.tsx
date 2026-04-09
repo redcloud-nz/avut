@@ -13,7 +13,7 @@ import { NotImplemented } from "@/components/nav/errors";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { usePerson } from "@/hooks/use-person";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export default function AdminModule_PersonHistory_Page(
     props: PageProps<`/main/[slug]/admin/personnel/[person_id]/history`>,
@@ -27,11 +27,15 @@ export default function AdminModule_PersonHistory_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.personnel,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
+
                     {
-                        href: Paths.main(slug).admin.person(person_id).index.href,
                         label: person.name,
+                        href: route("/main/[slug]/admin/personnel/[person_id]", {
+                            slug,
+                            person_id,
+                        }),
                     },
                     "History",
                 ]}

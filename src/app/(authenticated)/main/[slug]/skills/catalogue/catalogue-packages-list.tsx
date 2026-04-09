@@ -8,11 +8,12 @@ import { useMemo, useState } from "react";
 
 import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
+import Link from "next/link";
+
 import { Akagi } from "@/components/blocks/akagi";
-import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import {
     getCoreRowModel,
@@ -35,16 +36,15 @@ export function SkillsModule_CataloguePackages_List() {
             Akagi.defineColumns<(typeof packages)[0]>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Package Name
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Package Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
                             <Link
-                                to={Paths.main(
-                                    organization.slug,
-                                ).skills.cataloguePackage(ctx.row.original.id)}
+                                href={route("/main/[slug]/skills/catalogue/[package_id]", {
+                                    slug: organization.slug,
+                                    package_id: ctx.row.original.id,
+                                })}
                             >
                                 {ctx.getValue()}
                             </Link>
@@ -55,25 +55,17 @@ export function SkillsModule_CataloguePackages_List() {
                 }),
                 columnHelper.accessor("organization.name", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Publisher
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Publisher</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
                 }),
                 columnHelper.accessor("skillCount", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            align="center"
-                            className="w-16"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} align="center" className="w-16">
                             Skills
                         </Akagi.TableHeadCell>
                     ),
@@ -86,20 +78,12 @@ export function SkillsModule_CataloguePackages_List() {
                 }),
                 columnHelper.accessor("subscriptionCount", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            align="center"
-                            className="w-30"
-                        >
+                        <Akagi.TableHeadCell header={ctx.header} align="center" className="w-30">
                             Subscriptions
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell
-                            cell={ctx.cell}
-                            align="center"
-                            className="w-30"
-                        >
+                        <Akagi.TableCell cell={ctx.cell} align="center" className="w-30">
                             {ctx.getValue() + ""}
                         </Akagi.TableCell>
                     ),
@@ -108,9 +92,7 @@ export function SkillsModule_CataloguePackages_List() {
                 columnHelper.accessor("subscription", {
                     id: "status",
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Status
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Status</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>

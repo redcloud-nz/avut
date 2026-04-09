@@ -21,20 +21,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
 
-export function SkillPackageBuilder_Package_Menu({
-    skillPackage,
-}: {
-    skillPackage: SkillPackage;
-}) {
+export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -109,8 +105,7 @@ export function SkillPackageBuilder_Package_Menu({
             {
                 loading: "Archiving skill package...",
                 success: "Skill package archived.",
-                error: (error) =>
-                    "Error archiving skill package." + error.message,
+                error: (error) => "Error archiving skill package." + error.message,
             },
         );
     }
@@ -124,8 +119,7 @@ export function SkillPackageBuilder_Package_Menu({
             {
                 loading: "Publishing skill package...",
                 success: "Skill package published.",
-                error: (error) =>
-                    "Error publishing skill package." + error.message,
+                error: (error) => "Error publishing skill package." + error.message,
             },
         );
     }
@@ -139,8 +133,7 @@ export function SkillPackageBuilder_Package_Menu({
             {
                 loading: "Restoring skill package...",
                 success: "Skill package restored.",
-                error: (error) =>
-                    "Error restoring skill package." + error.message,
+                error: (error) => "Error restoring skill package." + error.message,
             },
         );
     }
@@ -154,8 +147,7 @@ export function SkillPackageBuilder_Package_Menu({
             {
                 loading: "Unpublishing skill package...",
                 success: "Skill package unpublished.",
-                error: (error) =>
-                    "Error unpublishing skill package." + error.message,
+                error: (error) => "Error unpublishing skill package." + error.message,
             },
         );
     }
@@ -172,13 +164,10 @@ export function SkillPackageBuilder_Package_Menu({
                     <DropdownMenuGroup>
                         <DropdownMenuItem asChild disabled>
                             <Link
-                                to={
-                                    Paths.main(
-                                        organization.slug,
-                                    ).skillPackageBuilder.skillPackage(
-                                        skillPackage.id,
-                                    ).history
-                                }
+                                href={route(
+                                    "/main/[slug]/skill-package-builder/packages/[package_id]/history",
+                                    { slug: organization.slug, package_id: skillPackage.id },
+                                )}
                             >
                                 <ObjectIcons.History /> History
                             </Link>
@@ -203,13 +192,10 @@ export function SkillPackageBuilder_Package_Menu({
                             )}
                             <DropdownMenuItem asChild>
                                 <Link
-                                    to={
-                                        Paths.main(
-                                            organization.slug,
-                                        ).skillPackageBuilder.skillPackage(
-                                            skillPackage.id,
-                                        ).update
-                                    }
+                                    href={route(
+                                        "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
+                                        { slug: organization.slug, package_id: skillPackage.id },
+                                    )}
                                 >
                                     <ObjectIcons.Edit /> Edit
                                 </Link>

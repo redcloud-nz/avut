@@ -18,13 +18,11 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
-export default function Root_Error({
-    error,
-}: { error: Error } & { digest?: string }) {
+export default function Root_Error({ error }: { error: Error } & { digest?: string }) {
     useEffect(() => {
         console.error("Error occurred:", error);
     }, [error]);
@@ -45,7 +43,7 @@ export default function Root_Error({
                 </EmptyHeader>
                 <EmptyContent>
                     <Button variant="outline" asChild>
-                        <Link to={Paths.main(organization.slug).index}>
+                        <Link href={route("/main/[slug]", { slug: organization.slug })}>
                             Dashboard
                         </Link>
                     </Button>

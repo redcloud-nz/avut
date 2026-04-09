@@ -6,26 +6,35 @@
  */
 "use client";
 
+import { use } from "react";
+
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
-import { AdminModule_UpdateOrganization_Form } from "./update-organization";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+
+import { AdminModule_UpdateOrganization_Form } from "./update-organization";
 
 export default function AdminModule_OrganizationUpdate_Page(
     props: PageProps<`/main/[slug]/admin/organization/--update`>,
 ) {
+    const { slug } = use(props.params);
+
     const organization = useOrganization();
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).admin.index,
-                    Paths.main(organization.slug).admin.organization,
-                    Paths.main(organization.slug).admin.organization.update,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    {
+                        label: "Organization",
+                        href: route("/main/[slug]/admin/organization", { slug }),
+                    },
+                    "Update",
                 ]}
             />
             <Lexington.Page>
@@ -33,7 +42,7 @@ export default function AdminModule_OrganizationUpdate_Page(
                     <Hermes.Section>
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(organization.slug).admin.organization}
+                                href={route("/main/[slug]/admin/organization", { slug })}
                                 tooltip="Back to Organisation"
                             />
                         </Hermes.Header>

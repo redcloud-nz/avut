@@ -9,7 +9,7 @@ import { Lexington } from "@/components/blocks/lexington";
 
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 import prisma from "@/server/prisma";
@@ -49,7 +49,10 @@ export default async function D4HViewsModule_Teams_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.main(slug).d4HViews.index, Paths.main(slug).d4HViews.teams]}
+                breadcrumbs={[
+                    { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
+                    "Teams",
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

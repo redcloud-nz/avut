@@ -23,7 +23,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 import {
     Empty,
     EmptyContent,
@@ -35,7 +35,7 @@ import { Show } from "@/components/show";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { I3Module_CreateTemplate_D4H_Dialog } from "./create-template-d4h";
@@ -63,7 +63,12 @@ export default function I3Module_Templates_Page(props: PageProps<"/main/[slug]/i
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            <Link to={Paths.main(slug).i3.template(ctx.row.original.id)}>
+                            <Link
+                                href={route("/main/[slug]/i3/templates/[template_id]", {
+                                    slug,
+                                    template_id: ctx.row.original.id,
+                                })}
+                            >
                                 {ctx.getValue()}
                             </Link>
                         </Akagi.TableCell>
@@ -123,13 +128,16 @@ export default function I3Module_Templates_Page(props: PageProps<"/main/[slug]/i
         <>
             <Lexington.Root>
                 <Lexington.Header
-                    breadcrumbs={[Paths.main(slug).i3.index, Paths.main(slug).i3.templates]}
+                    breadcrumbs={[
+                        { label: "I3", href: route("/main/[slug]/i3", { slug }) },
+                        "Templates",
+                    ]}
                 />
                 <Lexington.Page>
                     <Lexington.Column width="xl">
                         <Hermes.Header>
                             <Hermes.BackButton
-                                to={Paths.main(slug).i3.index}
+                                href={route("/main/[slug]/i3", { slug })}
                                 tooltip="Back to D4H PPE"
                             />
                             <Hermes.Title>PPE Templates</Hermes.Title>

@@ -25,13 +25,13 @@ import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
 import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_EquipmentItem_Page(
     props: PageProps<"/main/[slug]/d4h-views/equipment/items/[item_id]">,
@@ -48,9 +48,7 @@ export default function D4HViewsModule_EquipmentItem_Page(
             })
             .join(
                 {
-                    category: getD4HEquipmentCategoriesCollection(
-                        organization.id,
-                    ),
+                    category: getD4HEquipmentCategoriesCollection(organization.id),
                 },
                 ({ item, category }) => eq(item.category.id, category.id),
             )
@@ -75,42 +73,30 @@ export default function D4HViewsModule_EquipmentItem_Page(
             Akagi.defineColumns<(typeof contents)[number]>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Ref
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("kind.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Kind
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("model.title", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Model
-                        </Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() ?? ""}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -119,19 +105,13 @@ export default function D4HViewsModule_EquipmentItem_Page(
                     header: (ctx) => (
                         <Akagi.TableHeadCell
                             header={ctx.header}
-                            filterOptions={[
-                                "OPERATIONAL",
-                                "UNSERVICEABLE",
-                                "RETIRED",
-                            ]}
+                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
                         >
                             Status
                         </Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
                     ),
                     filterFn: "arrIncludesSome",
                     enableColumnFilter: true,
@@ -150,9 +130,7 @@ export default function D4HViewsModule_EquipmentItem_Page(
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] },
-            ],
+            columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
                 pageSize: Akagi.DEFAULT_PAGE_SIZE,
@@ -165,9 +143,17 @@ export default function D4HViewsModule_EquipmentItem_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.items,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    "Items",
                     item.ref,
                 ]}
             />
@@ -175,10 +161,9 @@ export default function D4HViewsModule_EquipmentItem_Page(
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(organization.slug).d4HViews.equipment
-                                    .categories
-                            }
+                            href={route("/main/[slug]/d4h-views/equipment/categories", {
+                                slug: organization.slug,
+                            })}
                         />
                         <Hermes.Title>{item.ref}</Hermes.Title>
                     </Hermes.Header>
@@ -201,10 +186,12 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                         <FieldLabel>Category</FieldLabel>
                                         <FieldValue>
                                             <Link
-                                                to={Paths.main(
-                                                    organization.slug,
-                                                ).d4HViews.equipment.category(
-                                                    item.category.id,
+                                                href={route(
+                                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]",
+                                                    {
+                                                        slug: organization.slug,
+                                                        category_id: String(item.category.id),
+                                                    },
                                                 )}
                                             >
                                                 {item.category.title}
@@ -219,15 +206,11 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Brand</FieldLabel>
-                                    <FieldValue
-                                        value={item.brand?.title ?? ""}
-                                    />
+                                    <FieldValue value={item.brand?.title ?? ""} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Model</FieldLabel>
-                                    <FieldValue
-                                        value={item.model?.title ?? ""}
-                                    />
+                                    <FieldValue value={item.model?.title ?? ""} />
                                 </Field>
 
                                 <Field orientation="responsive">
@@ -246,10 +229,12 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                                     )}
                                                     <div className="pt-1">
                                                         <Link
-                                                            to={Paths.main(
-                                                                organization.slug,
-                                                            ).d4HViews.equipment.item(
-                                                                parent.id,
+                                                            href={route(
+                                                                "/main/[slug]/d4h-views/equipment/items/[item_id]",
+                                                                {
+                                                                    slug: organization.slug,
+                                                                    item_id: String(parent.id),
+                                                                },
                                                             )}
                                                         >
                                                             {parent.ref}
@@ -272,10 +257,7 @@ export default function D4HViewsModule_EquipmentItem_Page(
                         <div className="text-lg font-semibold">Contents</div>
                         <Akagi.TableSearch table={table} />
                     </div>
-                    <Show
-                        when={isContentsReady}
-                        fallback={<Skeleton className="w-full h-10" />}
-                    >
+                    <Show when={isContentsReady} fallback={<Skeleton className="w-full h-10" />}>
                         <Akagi.Table table={table} />
                     </Show>
                 </Lexington.Column>

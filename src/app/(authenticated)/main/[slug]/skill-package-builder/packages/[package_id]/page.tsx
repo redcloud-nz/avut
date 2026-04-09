@@ -13,25 +13,14 @@ import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkillPackage } from "@/hooks/use-skill-package";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
 import { SkillPackageBuilder_Package_Menu } from "./package-menu";
@@ -48,7 +37,10 @@ export default function SkillPackageBuilder_Package_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
+                    {
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
                     skillPackage.name,
                 ]}
             />
@@ -56,14 +48,12 @@ export default function SkillPackageBuilder_Package_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).skillPackageBuilder.index}
+                            href={route("/main/[slug]/skill-package-builder", { slug })}
                             tooltip="Back to package list"
                         />
                         <Hermes.Title>{skillPackage.name}</Hermes.Title>
                         <Hermes.Action>
-                            <SkillPackageBuilder_Package_Menu
-                                skillPackage={skillPackage}
-                            />
+                            <SkillPackageBuilder_Package_Menu skillPackage={skillPackage} />
                         </Hermes.Action>
                     </Hermes.Header>
                     <Card>
@@ -82,13 +72,10 @@ export default function SkillPackageBuilder_Package_Page(
                                         asChild
                                     >
                                         <Link
-                                            to={
-                                                Paths.main(
-                                                    slug,
-                                                ).skillPackageBuilder.skillPackage(
-                                                    skillPackage.id,
-                                                ).update
-                                            }
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
+                                                { slug, package_id: skillPackage.id },
+                                            )}
                                         >
                                             <ObjectIcons.Edit />
                                         </Link>
@@ -108,10 +95,7 @@ export default function SkillPackageBuilder_Package_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.name}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skillPackage.name} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Description</FieldLabel>
@@ -139,28 +123,19 @@ export default function SkillPackageBuilder_Package_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.status}
-                                    />
+                                    <FieldValue className="min-w-1/2" value={skillPackage.status} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Published</FieldLabel>
                                     <FieldValue
                                         className="min-w-1/2"
-                                        value={
-                                            skillPackage.published
-                                                ? "Yes"
-                                                : "No"
-                                        }
+                                        value={skillPackage.published ? "Yes" : "No"}
                                     />
                                 </Field>
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <SkillPackageBuilder_Package_Contents_List
-                        skillPackage={skillPackage}
-                    />
+                    <SkillPackageBuilder_Package_Contents_List skillPackage={skillPackage} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

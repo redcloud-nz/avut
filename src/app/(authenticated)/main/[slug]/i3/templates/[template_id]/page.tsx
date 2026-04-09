@@ -16,11 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useI3Template } from "@/hooks/use-i3-template";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { I3Module_Template_Menu } from "./template-menu";
 import { I3Module_Template_Variants_List } from "./template-variants";
@@ -36,8 +36,8 @@ export default function I3Module_Template_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).i3.index,
-                    Paths.main(slug).i3.templates,
+                    { label: "I3", href: route("/main/[slug]/i3", { slug }) },
+                    { label: "Templates", href: route("/main/[slug]/i3/templates", { slug }) },
                     template.name,
                 ]}
             />
@@ -45,7 +45,7 @@ export default function I3Module_Template_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).i3.templates}
+                            href={route("/main/[slug]/i3/templates", { slug })}
                             tooltip="Back to templates"
                         />
                         <Hermes.Title>{template.name}</Hermes.Title>
@@ -67,7 +67,12 @@ export default function I3Module_Template_Page(
                                         tooltip="Edit template"
                                         asChild
                                     >
-                                        <Link to={Paths.main(slug).i3.template(template.id).update}>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/i3/templates/[template_id]/--update",
+                                                { slug, template_id: template.id },
+                                            )}
+                                        >
                                             <ObjectIcons.Edit />
                                         </Link>
                                     </Button>

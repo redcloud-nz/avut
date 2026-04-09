@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
 import { Lexington } from "@/components/blocks/lexington";
@@ -16,15 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
-import { Link } from "@/components/ui/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useTeam } from "@/hooks/use-team";
-import * as Paths from "@/paths";
+import { getD4HServer } from "@/lib/d4h-servers";
+import { route } from "@/lib/routes";
 
 import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
 import { AdminModule_TeamMenu } from "./team-menu";
-import { getD4HServer } from "@/lib/d4h-servers";
 
 export default function AdminModule_Team_Page(
     props: PageProps<`/main/[slug]/admin/teams/[team_id]`>,
@@ -38,8 +38,8 @@ export default function AdminModule_Team_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.teams,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Teams", href: route("/main/[slug]/admin/teams", { slug }) },
                     team.name,
                 ]}
             />
@@ -47,7 +47,7 @@ export default function AdminModule_Team_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).admin.teams}
+                            href={route("/main/[slug]/admin/teams", { slug })}
                             tooltip="Back to teams list"
                         />
                         <Hermes.Title>{team.name}</Hermes.Title>
@@ -62,7 +62,12 @@ export default function AdminModule_Team_Page(
                             <CardAction>
                                 <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
                                     <Button variant="ghost" asChild>
-                                        <Link to={Paths.main(slug).admin.team(team_id).update}>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/admin/teams/[team_id]/--update",
+                                                { slug, team_id },
+                                            )}
+                                        >
                                             <ObjectIcons.Edit />
                                         </Link>
                                     </Button>

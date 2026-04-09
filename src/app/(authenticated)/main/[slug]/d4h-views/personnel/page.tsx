@@ -8,7 +8,7 @@
 import { Lexington } from "@/components/blocks/lexington";
 
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -46,7 +46,10 @@ export default async function D4HViewsModules_Personnel_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.main(slug).d4HViews.index, Paths.main(slug).d4HViews.personnel]}
+                breadcrumbs={[
+                    { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
+                    "Personnel",
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Controller, useForm, Watch } from "react-hook-form";
@@ -19,21 +20,15 @@ import { Lexington } from "@/components/blocks/lexington";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
-import { Link } from "@/components/ui/link";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useTeam } from "@/hooks/use-team";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export default function AdminModule_TeamUpdate_Page(
@@ -55,10 +50,9 @@ export default function AdminModule_TeamUpdate_Page(
         trpc.teams.updateTeam.mutationOptions({
             async onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(
-                        error.shape.cause.message as keyof ModifiableTeamData,
-                        { message: error.message },
-                    );
+                    form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
+                        message: error.message,
+                    });
                 } else {
                     console.error("Failed to update team", error);
                     toast.error(`Failed to update team: ${error.message}`);
@@ -72,8 +66,10 @@ export default function AdminModule_TeamUpdate_Page(
                 );
 
                 router.push(
-                    Paths.main(organization.slug).admin.team(team.id).index
-                        .href,
+                    route("/main/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: team.id,
+                    }),
                 );
             },
         }),
@@ -91,9 +87,12 @@ export default function AdminModule_TeamUpdate_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.teams,
-                    Paths.main(slug).admin.team(team).index,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    { label: "Teams", href: route("/main/[slug]/admin/teams", { slug }) },
+                    {
+                        label: team.name,
+                        href: route("/main/[slug]/admin/teams/[team_id]", { slug, team_id }),
+                    },
                     "Update",
                 ]}
             />
@@ -101,15 +100,13 @@ export default function AdminModule_TeamUpdate_Page(
                 <Lexington.Column width="lg">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={Paths.main(slug).admin.team(team_id).index}
+                            href={route("/main/[slug]/admin/teams/[team_id]", { slug, team_id })}
                             tooltip={`Back to team: ${team.name}`}
                         />
                         <Watch
                             control={form.control}
                             names={["name"]}
-                            render={([name]) => (
-                                <Hermes.Title>{name}</Hermes.Title>
-                            )}
+                            render={([name]) => <Hermes.Title>{name}</Hermes.Title>}
                         />
                     </Hermes.Header>
                     <Card>
@@ -121,10 +118,7 @@ export default function AdminModule_TeamUpdate_Page(
                                 <FieldGroup>
                                     <Field orientation="responsive">
                                         <FieldLabel>Team ID</FieldLabel>
-                                        <FieldValue
-                                            className="min-w-1/2"
-                                            format="id"
-                                        >
+                                        <FieldValue className="min-w-1/2" format="id">
                                             {team.id}
                                         </FieldValue>
                                     </Field>
@@ -133,27 +127,17 @@ export default function AdminModule_TeamUpdate_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
-                                                <FieldLabel htmlFor="team-name">
-                                                    Name
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor="team-name">Name</FieldLabel>
                                                 <Input
                                                     id="team-name"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -163,9 +147,7 @@ export default function AdminModule_TeamUpdate_Page(
                                         control={form.control}
                                         render={({ field, fieldState }) => (
                                             <Field
-                                                data-invalid={
-                                                    fieldState.invalid
-                                                }
+                                                data-invalid={fieldState.invalid}
                                                 orientation="responsive"
                                             >
                                                 <FieldLabel htmlFor="team-description">
@@ -173,17 +155,11 @@ export default function AdminModule_TeamUpdate_Page(
                                                 </FieldLabel>
                                                 <Textarea
                                                     id="team-description"
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     {...field}
                                                 />
                                                 {fieldState.error && (
-                                                    <FieldError
-                                                        errors={[
-                                                            fieldState.error,
-                                                        ]}
-                                                    />
+                                                    <FieldError errors={[fieldState.error]} />
                                                 )}
                                             </Field>
                                         )}
@@ -207,12 +183,13 @@ export default function AdminModule_TeamUpdate_Page(
                                                 asChild
                                             >
                                                 <Link
-                                                    to={
-                                                        Paths.main(
-                                                            organization.slug,
-                                                        ).admin.team(team.id)
-                                                            .index
-                                                    }
+                                                    href={route(
+                                                        "/main/[slug]/admin/teams/[team_id]",
+                                                        {
+                                                            slug: organization.slug,
+                                                            team_id: team.id,
+                                                        },
+                                                    )}
                                                 >
                                                     Cancel
                                                 </Link>

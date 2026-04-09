@@ -11,8 +11,9 @@ import { Fragment, use } from "react";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
+import Link from "next/link";
+
 import { Alert } from "@/components/ui/alert";
-import { Link } from "@/components/ui/link";
 import {
     Table,
     TableBody,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export default function SkillPackageBuilder_PackageContents_Page(
@@ -32,35 +33,40 @@ export default function SkillPackageBuilder_PackageContents_Page(
     const { slug, package_id } = use(props.params);
     const organization = useOrganization();
 
-    const [{ data: skillPackages }, { data: groups }, { data: skills }] =
-        useSuspenseQueries({
-            queries: [
-                trpc.skillPackageBuilder.listPackages.queryOptions({
-                    organizationId: organization.id,
-                }),
-                trpc.skillPackageBuilder.listGroups.queryOptions({
-                    organizationId: organization.id,
-                    skillPackageId: package_id,
-                }),
-                trpc.skillPackageBuilder.listSkills.queryOptions({
-                    organizationId: organization.id,
-                    skillPackageId: package_id,
-                }),
-            ],
-        });
+    const [{ data: skillPackages }, { data: groups }, { data: skills }] = useSuspenseQueries({
+        queries: [
+            trpc.skillPackageBuilder.listPackages.queryOptions({
+                organizationId: organization.id,
+            }),
+            trpc.skillPackageBuilder.listGroups.queryOptions({
+                organizationId: organization.id,
+                skillPackageId: package_id,
+            }),
+            trpc.skillPackageBuilder.listSkills.queryOptions({
+                organizationId: organization.id,
+                skillPackageId: package_id,
+            }),
+        ],
+    });
 
     const skillPackage = skillPackages.find((pkg) => pkg.id === package_id);
     if (!skillPackage) throw new Error(`SkillPackage(${package_id}) not found`);
-
-    const packagePath =
-        Paths.main(slug).skillPackageBuilder.skillPackage(skillPackage);
 
     return (
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).skillPackageBuilder.index,
-                    packagePath.index,
+                    {
+                        label: "Skill Package Builder",
+                        href: route("/main/[slug]/skill-package-builder", { slug }),
+                    },
+                    {
+                        label: skillPackage.name,
+                        href: route("/main/[slug]/skill-package-builder/packages/[package_id]", {
+                            slug,
+                            package_id,
+                        }),
+                    },
                     "Contents",
                 ]}
             />
@@ -73,36 +79,29 @@ export default function SkillPackageBuilder_PackageContents_Page(
                                     <TableHeadCell>Group</TableHeadCell>
                                     <TableHeadCell>Skill</TableHeadCell>
                                     <TableHeadCell>Description</TableHeadCell>
-                                    <TableHeadCell className="text-center">
-                                        Required
-                                    </TableHeadCell>
-                                    <TableHeadCell className="text-center">
-                                        Frequency
-                                    </TableHeadCell>
-                                    <TableHeadCell className="text-center">
-                                        Status
-                                    </TableHeadCell>
+                                    <TableHeadCell className="text-center">Required</TableHeadCell>
+                                    <TableHeadCell className="text-center">Frequency</TableHeadCell>
+                                    <TableHeadCell className="text-center">Status</TableHeadCell>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {groups.map((skillGroup) => {
                                     const groupSkills = skills.filter(
-                                        (skill) =>
-                                            skill.skillGroupId ===
-                                            skillGroup.id,
+                                        (skill) => skill.skillGroupId === skillGroup.id,
                                     );
 
                                     return (
                                         <Fragment key={skillGroup.id}>
                                             <TableRow key={skillGroup.id}>
-                                                <TableCell
-                                                    rowSpan={
-                                                        groupSkills.length + 1
-                                                    }
-                                                >
+                                                <TableCell rowSpan={groupSkills.length + 1}>
                                                     <Link
-                                                        to={packagePath.group(
-                                                            skillGroup.id,
+                                                        href={route(
+                                                            "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                            {
+                                                                slug,
+                                                                package_id,
+                                                                group_id: skillGroup.id,
+                                                            },
                                                         )}
                                                     >
                                                         {skillGroup.name}
@@ -112,13 +111,10 @@ export default function SkillPackageBuilder_PackageContents_Page(
                                                     <>
                                                         <TableCell>
                                                             <em className="text-muted-foreground">
-                                                                No skills in
-                                                                this group
+                                                                No skills in this group
                                                             </em>
                                                         </TableCell>
-                                                        <TableCell>
-                                                            {skillGroup.status}
-                                                        </TableCell>
+                                                        <TableCell>{skillGroup.status}</TableCell>
                                                     </>
                                                 )}
                                             </TableRow>
@@ -127,33 +123,28 @@ export default function SkillPackageBuilder_PackageContents_Page(
                                                 <TableRow key={skill.id}>
                                                     <TableCell>
                                                         <Link
-                                                            to={Paths.main(
-                                                                organization.slug,
-                                                            )
-                                                                .skillPackageBuilder.skillPackage(
-                                                                    skillGroup.skillPackageId,
-                                                                )
-                                                                .skill(
-                                                                    skill.id,
-                                                                )}
+                                                            href={route(
+                                                                "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                                                                {
+                                                                    slug: organization.slug,
+                                                                    package_id:
+                                                                        skillGroup.skillPackageId,
+                                                                    skill_id: skill.id,
+                                                                },
+                                                            )}
                                                         >
                                                             {skill.name}
                                                         </Link>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        {skill.description}
-                                                    </TableCell>
+                                                    <TableCell>{skill.description}</TableCell>
                                                     <TableCell className="text-center">
-                                                        {skill.defaultRequired
-                                                            ? "Yes"
-                                                            : "No"}
+                                                        {skill.defaultRequired ? "Yes" : "No"}
                                                     </TableCell>
                                                     <TableCell className="text-center">
                                                         {`${skill.frequency}`}
                                                     </TableCell>
                                                     <TableCell className="text-center">
-                                                        {skillGroup.status ==
-                                                        "Active"
+                                                        {skillGroup.status == "Active"
                                                             ? skill.status
                                                             : skillGroup.status}
                                                     </TableCell>

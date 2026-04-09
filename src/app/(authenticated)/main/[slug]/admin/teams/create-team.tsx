@@ -28,8 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
-import * as Paths from "@/paths";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
@@ -68,7 +68,12 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
 
                 props.onOpenChange?.(false);
 
-                router.push(Paths.main(organization.slug).admin.team(created.id).index.href);
+                router.push(
+                    route("/main/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: created.id,
+                    }),
+                );
             },
         }),
     );

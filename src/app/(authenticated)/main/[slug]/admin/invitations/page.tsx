@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 
 import { Lexington } from "@/components/blocks/lexington";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
 
@@ -26,7 +26,7 @@ export default async function AdminModule_InvitationsList_Page(
         headers: await nextHeaders(),
     });
     if (!session || !session.user) {
-        redirect("/auth/sign-in");
+        redirect(`/auth/sign-in`);
     }
 
     // TODO  Check if the user has admin permissions for the organization
@@ -34,7 +34,13 @@ export default async function AdminModule_InvitationsList_Page(
     return (
         <Lexington.Root>
             <Lexington.Header
-                breadcrumbs={[Paths.main(slug).admin.index, Paths.main(slug).admin.invitations]}
+                breadcrumbs={[
+                    {
+                        label: "Admin",
+                        href: route("/main/[slug]/admin", { slug }),
+                    },
+                    "Invitations",
+                ]}
             />
             <Lexington.Page>
                 <Lexington.Column width="xl">

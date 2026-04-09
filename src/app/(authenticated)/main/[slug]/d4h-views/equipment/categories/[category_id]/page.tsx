@@ -19,7 +19,7 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
 import { D4HViewsModule_EquipmentCategory_Kinds_List } from "./category-kinds";
 
@@ -46,9 +46,22 @@ export default function D4HViewsModule_EquipmentCategory_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(organization.slug).d4HViews.index,
-                    Paths.main(organization.slug).d4HViews.equipment.index,
-                    Paths.main(organization.slug).d4HViews.equipment.categories,
+                    {
+                        label: "D4H Views",
+                        href: route("/main/[slug]/d4h-views", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Equipment",
+                        href: route("/main/[slug]/d4h-views/equipment", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: "Categories",
+                        href: route("/main/[slug]/d4h-views/equipment/categories", {
+                            slug: organization.slug,
+                        }),
+                    },
                     category.title,
                 ]}
             />
@@ -56,10 +69,9 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                 <Lexington.Column width="xl">
                     <Hermes.Header>
                         <Hermes.BackButton
-                            to={
-                                Paths.main(organization.slug).d4HViews.equipment
-                                    .categories
-                            }
+                            href={route("/main/[slug]/d4h-views/equipment/categories", {
+                                slug: organization.slug,
+                            })}
                             tooltip="Back to categories"
                         />
                         <Hermes.Title>{category.title}</Hermes.Title>
@@ -72,10 +84,7 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Category ID</FieldLabel>
-                                    <FieldValue
-                                        value={category.id}
-                                        format="id"
-                                    />
+                                    <FieldValue value={category.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Title</FieldLabel>
@@ -93,9 +102,7 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <D4HViewsModule_EquipmentCategory_Kinds_List
-                        categoryId={category.id}
-                    />
+                    <D4HViewsModule_EquipmentCategory_Kinds_List categoryId={category.id} />
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

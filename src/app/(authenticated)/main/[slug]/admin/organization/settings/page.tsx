@@ -7,7 +7,7 @@
 "use client";
 
 import { use } from "react";
-import { Controller, useForm, useWatch, Watch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Lens, useLens } from "@hookform/lenses";
@@ -26,7 +26,6 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
-    FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,13 +40,12 @@ import { Switch } from "@/components/ui/switch";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { D4HServerList } from "@/lib/d4h-servers";
+import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { countDirtyFields } from "@/lib/utils";
-import * as Paths from "@/paths";
 
 import { trpc } from "@/trpc/client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function AdminModule_Settings_Page(
     props: PageProps<`/main/[slug]/admin/organization/settings`>,
@@ -108,9 +106,12 @@ export default function AdminModule_Settings_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    Paths.main(slug).admin.index,
-                    Paths.main(slug).admin.organization,
-                    Paths.main(slug).admin.organization.settings,
+                    { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
+                    {
+                        label: "Organization",
+                        href: route("/main/[slug]/admin/organization", { slug }),
+                    },
+                    "Settings",
                 ]}
             />
             <Lexington.Page>
@@ -119,7 +120,7 @@ export default function AdminModule_Settings_Page(
                         <Hermes.Section>
                             <Hermes.Header>
                                 <Hermes.BackButton
-                                    to={Paths.main(slug).admin.organization}
+                                    href={route("/main/[slug]/admin/organization", { slug })}
                                     tooltip="Back to organization overview"
                                 />
                                 <Hermes.Title>Organization Settings</Hermes.Title>

@@ -9,7 +9,7 @@ import { ChevronRightIcon } from "lucide-react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Lexington } from "@/components/blocks/lexington";
-import { Link } from "@/components/ui/link";
+import Link from "next/link";
 
 import {
     Item,
@@ -20,16 +20,14 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
-import * as Paths from "@/paths";
+import { route } from "@/lib/routes";
 
-export default async function D4HViews_Index_Page(
-    props: PageProps<`/main/[slug]/d4h-views`>,
-) {
+export default async function D4HViews_Index_Page(props: PageProps<`/main/[slug]/d4h-views`>) {
     const { slug } = await props.params;
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[Paths.main(slug).d4HViews.index]} />
+            <Lexington.Header breadcrumbs={["D4H Views"]} />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
@@ -38,14 +36,10 @@ export default async function D4HViews_Index_Page(
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link
-                                to={Paths.main(slug).d4HViews.equipment.index}
-                            >
+                            <Link href={route("/main/[slug]/d4h-views/equipment", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Equipment</ItemTitle>
-                                    <ItemDescription>
-                                        View your D4H equipment.
-                                    </ItemDescription>
+                                    <ItemDescription>View your D4H equipment.</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
@@ -53,12 +47,10 @@ export default async function D4HViews_Index_Page(
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link to={Paths.main(slug).d4HViews.members}>
+                            <Link href={route("/main/[slug]/d4h-views/members", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Members</ItemTitle>
-                                    <ItemDescription>
-                                        View your D4H members.
-                                    </ItemDescription>
+                                    <ItemDescription>View your D4H members.</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
