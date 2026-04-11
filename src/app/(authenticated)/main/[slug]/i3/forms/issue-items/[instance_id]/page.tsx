@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { match } from "ts-pattern";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDebouncer } from "@tanstack/react-pacer";
@@ -59,6 +58,7 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/items";
+import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import {
     Select,
     SelectContent,
@@ -68,7 +68,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
 
 import {
     I3IssuedItem,
@@ -307,32 +306,6 @@ export default function I3Module_Issue_FormInstance_Page(
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>
-    );
-}
-
-function SaveStatusIndicator({ status }: { status: ReturnType<typeof useMutation>["status"] }) {
-    return (
-        <div className="relative w-12 h-4">
-            {match(status)
-                .with("idle", () => null)
-                .with("pending", () => (
-                    <>
-                        <div className="font-semibold text-center">Saving</div>
-                        <Spinner className="absolute size-8 transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 opacity-25" />
-                    </>
-                ))
-                .with("success", () => (
-                    <>
-                        <div className="font-semibold text-center">Saved</div>
-                    </>
-                ))
-                .with("error", () => (
-                    <>
-                        <div className="font-semibold text-center">Error</div>
-                    </>
-                ))
-                .exhaustive()}
-        </div>
     );
 }
 

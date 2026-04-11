@@ -45,7 +45,7 @@ function LexingtonRoot({ children }: { children: ReactNode }) {
 }
 
 const lexingtonPageVariants = tv({
-    base: "flex flex-row justify-center h-[calc(100vh-var(--header-height))] [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]",
+    base: "flex flex-row justify-center h-[calc(100svh-var(--header-height))] has-data-[slot=footer]:h-[calc(100svh-var(--header-height)-var(--footer-height))] [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]",
     variants: {
         scrollable: {
             true: "overflow-y-auto",
@@ -114,7 +114,10 @@ export function LexingtonHeader({
     sidebarTrigger = true,
 }: LexingtonHeaderProps) {
     return (
-        <header className="bg-background sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md">
+        <header
+            slot="header"
+            className="bg-background sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
+        >
             {sidebarTrigger && (
                 <>
                     <SidebarTrigger />
@@ -124,6 +127,17 @@ export function LexingtonHeader({
             {breadcrumbs && <LexingtonBreadcrumbs breadcrumbs={breadcrumbs} />}
             {children}
         </header>
+    );
+}
+
+export function LexingtonFooter({ children }: { children: ReactNode }) {
+    return (
+        <footer
+            data-slot="footer"
+            className="bg-background sticky bottom-0 flex h-(--footer-height) shrink-o items-center gap-1 border-t px-2 z-5 backdrop-blur-md"
+        >
+            {children}
+        </footer>
     );
 }
 
@@ -226,6 +240,7 @@ function LexingtonColumn({
 export const Lexington = {
     Root: LexingtonRoot,
     Header: LexingtonHeader,
+    Footer: LexingtonFooter,
     Title: LexingtonTitle,
     Actions: LexingtonActions,
     Page: LexingtonPage,

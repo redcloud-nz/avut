@@ -9,22 +9,22 @@
 
 import { Suspense, use } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Lexington } from "@/components/blocks/lexington";
 
 import { RainbowSpinner } from "@/components/ui/loading";
+import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import type { Route } from "next";
 
 import { useOrganization } from "@/hooks/use-organization";
 
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-import { SkillsModule_Session_Details_Tab } from "./details";
-import { SkillsModule_Session_Personnel_Tab } from "./personnel";
+import { SkillsModule_SessionRecord_Details_Tab } from "./details";
+import { SkillsModule_SessionRecord_Personnel_Tab } from "./personnel";
+import { SkillsModule_SessionRecord_Skills_Tab } from "./skills";
 
 export default function SkillsModule_SessionRecord_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]/record">,
@@ -37,6 +37,8 @@ export default function SkillsModule_SessionRecord_Page(
         trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
     );
 
+    const mutation = useMutation(trpc.skills.updateSession.mutationOptions());
+
     const session = sessions.find((s) => s.id === session_id);
     if (!session) throw new Error(`Session(${session_id}) not found`);
 
@@ -48,44 +50,46 @@ export default function SkillsModule_SessionRecord_Page(
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
                     {
                         label: session.name || session.id,
-                        href: `/main/${slug}/skills/sessions/${session_id}` as Route,
+                        href: route("/main/[slug]/skills/sessions/[session_id]", {
+                            slug,
+                            session_id,
+                        }),
                     },
                     "Skill Check Session Recorder",
                 ]}
             />
             <Lexington.Page>
-                <Lexington.Column width="lg">
+                <Lexington.Column width="lg" className="pt-0">
                     <Tabs defaultValue="details">
-                        <TabsList className="w-full">
-                            <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="personnel">Personnel</TabsTrigger>
-                            <TabsTrigger value="skills">Skills</TabsTrigger>
-                            <TabsTrigger value="by-person">Record</TabsTrigger>
-                        </TabsList>
+                        <div className="sticky top-0 z-5 border-b pt-2 -mx-px bg-background flex items-center gap-1 backdrop-blur-md">
+                            <TabsList variant="line" className="grow">
+                                <TabsTrigger value="details">Details</TabsTrigger>
+                                <TabsTrigger value="personnel">Personnel</TabsTrigger>
+                                <TabsTrigger value="skills">Skills</TabsTrigger>
+                                <TabsTrigger value="by-person">Record</TabsTrigger>
+                            </TabsList>
+                            <SaveStatusIndicator status={mutation.status} />
+                        </div>
 
                         <Suspense
                             fallback={
-                                <div className="flex items-center justify-center aspect-square">
+                                <div className="w-full flex items-center justify-center aspect-square">
                                     <RainbowSpinner className="w-1/2" />
                                 </div>
                             }
                         >
                             <TabsContent value="details">
-                                <SkillsModule_Session_Details_Tab session={session} />
+                                <SkillsModule_SessionRecord_Details_Tab session={session} />
                             </TabsContent>
                             <TabsContent value="personnel">
-                                <SkillsModule_Session_Personnel_Tab session={session} />
+                                <SkillsModule_SessionRecord_Personnel_Tab session={session} />
                             </TabsContent>
-                            <TabsContent value="skills"></TabsContent>
+                            <TabsContent value="skills">
+                                <SkillsModule_SessionRecord_Skills_Tab session={session} />
+                            </TabsContent>
                             <TabsContent value="by-person"></TabsContent>
                         </Suspense>
                     </Tabs>
-                    {/* <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 min-w-100 border border-gray-300 bg-gray-200/75 rounded-sm shadow px-4 py-2 flex items-center gap-2">
-                        <Button type="submit">Save</Button>
-                        <Button type="button" variant="outline">
-                            Cancel
-                        </Button>
-                    </div> */}
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

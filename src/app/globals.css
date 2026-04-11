@@ -42,6 +42,7 @@
 
   --button-height: 36px;
   --header-height: 49px;
+  --footer-height: 49px;
 
   --card-padding: var(--spacing) * 6;
   --mdxeditor-toolbar-height: 45px;

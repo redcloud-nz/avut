@@ -7,27 +7,37 @@
 
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useDebouncer } from "@tanstack/react-pacer";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-    Field,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-} from "@/components/ui/field";
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function SkillsModule_Session_Personnel_Tab({ session }: { session: SkillCheckSession }) {
+/**
+ * Tab for selecting personnel to be assessed in a skill check session.
+ */
+export function SkillsModule_SessionRecord_Personnel_Tab({
+    session,
+}: {
+    session: SkillCheckSession;
+}) {
     const organization = useOrganization();
 
     const [{ data: teams }, { data: teamMemberships }, { data: assignedPersonnel }] =
@@ -46,39 +56,84 @@ export function SkillsModule_Session_Personnel_Tab({ session }: { session: Skill
             ],
         });
 
-    const assignedPersonIds = assignedPersonnel.map((p) => p.id);
+    const mutation = useMutation(
+        trpc.skills.updateSessionAssessees.mutationOptions({
+            onError(error) {
+                console.error("Failed to update session assessees:", error);
+                toast.error(`Failed to update session assessees. ${error.message}`);
+            },
+            onSuccess({ updated }, _variables, _onMutateResult, context) {
+                toast.success("Session personnel updated.");
 
+                setChanges({});
+
+                context.client.setQueryData(
+                    trpc.skills.listSessionAssessees.queryKey({
+                        sessionId: session.id,
+                        organizationId: organization.id,
+                    }),
+                    updated,
+                );
+            },
+        }),
+    );
+
+    const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
+
+    // A record of changes made by the user in the current session. The keys are person IDs, and the values indicate whether the person is now selected (true) or deselected (false).
     const [changes, setChanges] = useState<Record<PersonId, boolean>>({});
 
-    const addedCount = Object.values(changes).filter((v) => v).length;
-    const removedCount = Object.values(changes).filter((v) => !v).length;
+    // The IDs of the personnel currently assigned to the session, used as the baseline for tracking changes.
+    const assignedPersonIds = assignedPersonnel.map((p) => p.id);
 
     function handleChangeChecked(personId: PersonId, newValue: boolean) {
+        if (mutation.status == "success") {
+            mutation.reset();
+        }
+
         const previousValue = assignedPersonIds.includes(personId);
 
+        let updatedChanges: typeof changes;
         if (newValue === previousValue) {
-            setChanges((c) => {
-                const { [personId]: _, ...rest } = c;
-                return rest;
-            });
+            const { [personId]: _, ...rest } = changes;
+            updatedChanges = rest;
         } else {
-            setChanges((c) => ({ ...c, [personId]: newValue }));
+            updatedChanges = { ...changes, [personId]: newValue };
         }
+        setChanges(updatedChanges);
+
+        debouncer.maybeExecute({
+            organizationId: organization.id,
+            skillCheckSessionId: session.id,
+            addedPersonIds: Object.entries(updatedChanges)
+                .filter(([_, selected]) => selected)
+                .map(([id, _]) => id as PersonId),
+            removedPersonIds: Object.entries(updatedChanges)
+                .filter(([_, selected]) => !selected)
+                .map(([id, _]) => id as PersonId),
+        });
     }
 
+    /**
+     * Determines whether a given person is currently selected.
+     */
     function isSelected(personId: PersonId) {
         return changes[personId] ?? assignedPersonIds.includes(personId);
     }
 
     return (
         <Card>
+            <CardHeader>
+                <CardTitle>Personnel to assess</CardTitle>
+                <CardDescription>
+                    Select the personnel you want to assess in this skill check session.
+                </CardDescription>
+                <CardAction>
+                    <SaveStatusIndicator status={mutation.status} />
+                </CardAction>
+            </CardHeader>
             <CardContent>
                 <FieldSet>
-                    <FieldLegend>Personnel to assess</FieldLegend>
-                    <FieldDescription>
-                        Select the personnel you want to assess in this skill check session.
-                    </FieldDescription>
-
                     {teams
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((team) => {
@@ -129,6 +184,17 @@ export function SkillsModule_Session_Personnel_Tab({ session }: { session: Skill
                                                         >
                                                             {membership.person.name}
                                                         </FieldLabel>
+                                                        {changes[membership.person.id] === true && (
+                                                            <div className="leading-snug text-green-500">
+                                                                +1
+                                                            </div>
+                                                        )}
+                                                        {changes[membership.person.id] ===
+                                                            false && (
+                                                            <div className="leading-snug text-red-500">
+                                                                -1
+                                                            </div>
+                                                        )}
                                                     </Field>
                                                 ))}
                                         </FieldGroup>

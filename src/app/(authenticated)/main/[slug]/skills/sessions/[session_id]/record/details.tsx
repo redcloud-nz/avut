@@ -19,7 +19,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
-export function SkillsModule_Session_Details_Tab({ session }: { session: SkillCheckSession }) {
+export function SkillsModule_SessionRecord_Details_Tab({
+    session,
+}: {
+    session: SkillCheckSession;
+}) {
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
         defaultValues: session,

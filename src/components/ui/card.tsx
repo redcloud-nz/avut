@@ -55,19 +55,13 @@ export function CardTitle({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="card-title"
-            className={cn(
-                "text-sm font-medium group-data-[size=sm]/card:text-sm",
-                className,
-            )}
+            className={cn("text-sm font-medium group-data-[size=sm]/card:text-sm", className)}
             {...props}
         />
     );
 }
 
-export function CardDescription({
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function CardDescription({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="card-description"
@@ -105,7 +99,7 @@ export function CardFooter({ className, ...props }: ComponentProps<"div">) {
         <div
             data-slot="card-footer"
             className={cn(
-                "flex items-center rounded-none border-t p-4 group-data-[size=sm]/card:p-3",
+                "flex items-center gap-2 rounded-none p-4 group-data-[size=sm]/card:p-3 [.border-t]:pt-4 group-data-[size=sm]/card:[.border-t]:pt-3",
                 className,
             )}
             {...props}

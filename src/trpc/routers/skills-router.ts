@@ -8,9 +8,9 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { OrganizationRef } from "@/lib/schemas/organization";
-import { PersonRef } from "@/lib/schemas/person";
+import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { Skill, SkillRef } from "@/lib/schemas/skill";
+import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import {
@@ -469,13 +469,14 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
-            const existing = await getSessionOrThrow(ctx, skillCheckSessionId);
+            await getSessionOrThrow(ctx, skillCheckSessionId);
 
             const updated = await ctx.prisma.skillCheckSession.update({
                 where: {
                     id: skillCheckSessionId,
                     organizationId,
                 },
+                include: {},
                 data: {
                     ...update,
                 },
@@ -487,31 +488,90 @@ export const skillsRouter = createTrpcRouter({
     /**
      * Update the personnel assigned to a skill check session as assessees. This will replace the current list of assessees with the provided list.
      * @param skillCheckSessionId The ID of the skill check session to update assessees for.
-     * @param personnelIds An array of personnel IDs to assign as assessees to the skill check session.
+     * @param personIds An array of person IDs to assign as assessees to the skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      */
     updateSessionAssessees: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
             z.object({
                 skillCheckSessionId: SkillCheckSessionId.schema,
-                personnelIds: z.array(z.string()),
+                addedPersonIds: z.array(PersonId.schema),
+                removedPersonIds: z.array(PersonId.schema),
             }),
         )
-        .mutation(async ({ ctx, input: { skillCheckSessionId, personnelIds } }) => {
-            // Verify that the session exists and belongs to the organization.
-            await getSessionOrThrow(ctx, skillCheckSessionId);
+        .output(z.object({ updated: z.array(PersonRef.schema) }))
+        .mutation(
+            async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
+                // Verify that the session exists and belongs to the organization.
+                await getSessionOrThrow(ctx, skillCheckSessionId);
 
-            await ctx.prisma.skillCheckSession.update({
-                where: {
-                    id: skillCheckSessionId,
-                },
-                data: {
-                    assessees: {
-                        set: personnelIds.map((id) => ({ id })),
+                const updated = await ctx.prisma.skillCheckSession.update({
+                    where: {
+                        id: skillCheckSessionId,
+                        organizationId: ctx.organizationId,
                     },
-                },
-            });
-        }),
+                    include: {
+                        assessees: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                    data: {
+                        assessees: {
+                            connect: addedPersonIds.map((id) => ({ id })),
+                            disconnect: removedPersonIds.map((id) => ({ id })),
+                        },
+                    },
+                });
+                return { updated: updated.assessees };
+            },
+        ),
+
+    /**
+     * Update the skills assigned to a skill check session. This will replace the current list of skills with the provided list.
+     * @param skillCheckSessionId The ID of the skill check session to update skills for.
+     * @param skillIds An array of skill IDs to assign to the skill check session.
+     * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     */
+    updateSessionSkills: organizationProcedure({ skillCheckSession: ["update"] })
+        .input(
+            z.object({
+                skillCheckSessionId: SkillCheckSessionId.schema,
+                addedSkillIds: z.array(SkillId.schema),
+                removedSkillIds: z.array(SkillId.schema),
+            }),
+        )
+        .output(z.object({ updated: z.array(SkillRef.schema) }))
+        .mutation(
+            async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
+                // Verify that the session exists and belongs to the organization.
+                await getSessionOrThrow(ctx, skillCheckSessionId);
+
+                const updated = await ctx.prisma.skillCheckSession.update({
+                    where: {
+                        id: skillCheckSessionId,
+                        organizationId: ctx.organizationId,
+                    },
+                    include: {
+                        skills: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                    data: {
+                        skills: {
+                            connect: addedSkillIds.map((id) => ({ id })),
+                            disconnect: removedSkillIds.map((id) => ({ id })),
+                        },
+                    },
+                });
+                return { updated: updated.skills };
+            },
+        ),
 });
 
 /**
