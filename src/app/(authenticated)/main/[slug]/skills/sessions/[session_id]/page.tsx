@@ -9,7 +9,7 @@
 
 import { use } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
@@ -22,7 +22,6 @@ import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import type { Route } from "next";
 
 import { trpc } from "@/trpc/client";
 
@@ -33,9 +32,15 @@ export default function SkillsModule_Session_Page(
 
     const organization = useOrganization();
 
-    const { data: sessions } = useSuspenseQuery(
-        trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
-    );
+    const [{ data: sessions }, { data: metrics }] = useSuspenseQueries({
+        queries: [
+            trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
+            trpc.skills.getSessionMetrics.queryOptions({
+                organizationId: organization.id,
+                skillCheckSessionId: session_id,
+            }),
+        ],
+    });
 
     const session = sessions.find((s) => s.id === session_id);
     if (!session) throw new Error(`Session(${session_id}) not found`);
@@ -60,9 +65,10 @@ export default function SkillsModule_Session_Page(
                         <Hermes.Action>
                             <Button asChild>
                                 <Link
-                                    href={
-                                        `/main/${slug}/skills/sessions/${session_id}/record` as Route
-                                    }
+                                    href={route(
+                                        "/main/[slug]/skills/sessions/[session_id]/record",
+                                        { slug, session_id },
+                                    )}
                                 >
                                     Recorder
                                 </Link>
@@ -100,15 +106,47 @@ export default function SkillsModule_Session_Page(
 
                                 <Field orientation="responsive">
                                     <FieldLabel>Created At</FieldLabel>
-                                    <FieldValue value={session.createdAt} format="datetime" />
+                                    <FieldValue
+                                        value={session.createdAt}
+                                        format="dateTimeWithDistance"
+                                    />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Updated At</FieldLabel>
-                                    <FieldValue value={session.updatedAt} format="datetime" />
+                                    <FieldValue
+                                        value={session.updatedAt}
+                                        format="dateTimeWithDistance"
+                                    />
                                 </Field>
                             </FieldGroup>
                         </CardContent>
                     </Card>
+                    <div className="grid grid-cols-3 gap-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Personnel</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-4xl text-center">{metrics.assesseeCount}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Skills</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-4xl text-center">{metrics.skillCount}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Checks</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-4xl text-center">{metrics.checkCount}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

@@ -22,10 +22,21 @@ function ArgusRoot({ className, ...props }: ComponentProps<"div">) {
     );
 }
 
-function ArgusColumn({ className, ...props }: ComponentProps<"div">) {
+function ArgusColumn({
+    className,
+    width = "sm",
+    ...props
+}: ComponentProps<"div"> & { width?: "sm" | "md" | "lg" }) {
     return (
         <div
-            className={cn("flex w-full max-w-sm flex-col gap-6", className)}
+            slot="column"
+            className={cn(
+                `flex w-full flex-col gap-6`,
+                width == "sm" && "max-w-sm",
+                width == "md" && "max-w-md",
+                width == "lg" && "max-w-lg",
+                className,
+            )}
             {...props}
         />
     );

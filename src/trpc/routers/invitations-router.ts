@@ -82,7 +82,7 @@ export const invitationsRouter = createTrpcRouter({
                 roles: z.array(OrganizationRole.schema),
             }),
         )
-        .output(z.object({ created: OrganizationInvitationData.schema }))
+        .output(z.object({ created: z.object({ id: z.string(), email: z.string() }) }))
         .mutation(async ({ ctx, input }) => {
             // Check for an existing pending invitation
             const existingInvitation = await ctx.prisma.organizationInvitation.findFirst({
@@ -131,7 +131,7 @@ export const invitationsRouter = createTrpcRouter({
             });
 
             return {
-                created: OrganizationInvitationData.fromAuth(invitation),
+                created: { id: invitation.id, email: invitation.email },
             };
         }),
 

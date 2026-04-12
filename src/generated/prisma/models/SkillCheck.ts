@@ -27,6 +27,7 @@ export type SkillCheckMinAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     assesseeId: string | null;
+    sessionId: string | null;
     assessorId: string | null;
     skillId: string | null;
     result: string | null;
@@ -39,6 +40,7 @@ export type SkillCheckMaxAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     assesseeId: string | null;
+    sessionId: string | null;
     assessorId: string | null;
     skillId: string | null;
     result: string | null;
@@ -51,6 +53,7 @@ export type SkillCheckCountAggregateOutputType = {
     id: number;
     organizationId: number;
     assesseeId: number;
+    sessionId: number;
     assessorId: number;
     skillId: number;
     result: number;
@@ -64,6 +67,7 @@ export type SkillCheckMinAggregateInputType = {
     id?: true;
     organizationId?: true;
     assesseeId?: true;
+    sessionId?: true;
     assessorId?: true;
     skillId?: true;
     result?: true;
@@ -76,6 +80,7 @@ export type SkillCheckMaxAggregateInputType = {
     id?: true;
     organizationId?: true;
     assesseeId?: true;
+    sessionId?: true;
     assessorId?: true;
     skillId?: true;
     result?: true;
@@ -88,6 +93,7 @@ export type SkillCheckCountAggregateInputType = {
     id?: true;
     organizationId?: true;
     assesseeId?: true;
+    sessionId?: true;
     assessorId?: true;
     skillId?: true;
     result?: true;
@@ -178,6 +184,7 @@ export type SkillCheckGroupByOutputType = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -208,6 +215,7 @@ export type SkillCheckWhereInput = {
     id?: Prisma.StringFilter<"SkillCheck"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheck"> | string;
     assesseeId?: Prisma.StringFilter<"SkillCheck"> | string;
+    sessionId?: Prisma.StringNullableFilter<"SkillCheck"> | string | null;
     assessorId?: Prisma.StringFilter<"SkillCheck"> | string;
     skillId?: Prisma.StringFilter<"SkillCheck"> | string;
     result?: Prisma.StringFilter<"SkillCheck"> | string;
@@ -218,6 +226,10 @@ export type SkillCheckWhereInput = {
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
+    session?: Prisma.XOR<
+        Prisma.SkillCheckSessionNullableScalarRelationFilter,
+        Prisma.SkillCheckSessionWhereInput
+    > | null;
     assessee?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
     assessor?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
     skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
@@ -227,6 +239,7 @@ export type SkillCheckOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     assesseeId?: Prisma.SortOrder;
+    sessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     assessorId?: Prisma.SortOrder;
     skillId?: Prisma.SortOrder;
     result?: Prisma.SortOrder;
@@ -234,6 +247,7 @@ export type SkillCheckOrderByWithRelationInput = {
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
+    session?: Prisma.SkillCheckSessionOrderByWithRelationInput;
     assessee?: Prisma.PersonOrderByWithRelationInput;
     assessor?: Prisma.PersonOrderByWithRelationInput;
     skill?: Prisma.SkillOrderByWithRelationInput;
@@ -247,6 +261,7 @@ export type SkillCheckWhereUniqueInput = Prisma.AtLeast<
         NOT?: Prisma.SkillCheckWhereInput | Prisma.SkillCheckWhereInput[];
         organizationId?: Prisma.StringFilter<"SkillCheck"> | string;
         assesseeId?: Prisma.StringFilter<"SkillCheck"> | string;
+        sessionId?: Prisma.StringNullableFilter<"SkillCheck"> | string | null;
         assessorId?: Prisma.StringFilter<"SkillCheck"> | string;
         skillId?: Prisma.StringFilter<"SkillCheck"> | string;
         result?: Prisma.StringFilter<"SkillCheck"> | string;
@@ -257,6 +272,10 @@ export type SkillCheckWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
+        session?: Prisma.XOR<
+            Prisma.SkillCheckSessionNullableScalarRelationFilter,
+            Prisma.SkillCheckSessionWhereInput
+        > | null;
         assessee?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
         assessor?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
         skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
@@ -268,6 +287,7 @@ export type SkillCheckOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     assesseeId?: Prisma.SortOrder;
+    sessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     assessorId?: Prisma.SortOrder;
     skillId?: Prisma.SortOrder;
     result?: Prisma.SortOrder;
@@ -290,6 +310,7 @@ export type SkillCheckScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
     organizationId?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
     assesseeId?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
+    sessionId?: Prisma.StringNullableWithAggregatesFilter<"SkillCheck"> | string | null;
     assessorId?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
     skillId?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
     result?: Prisma.StringWithAggregatesFilter<"SkillCheck"> | string;
@@ -307,6 +328,7 @@ export type SkillCheckCreateInput = {
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSkillChecksInput;
+    session?: Prisma.SkillCheckSessionCreateNestedOneWithoutSkillChecksInput;
     assessee: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssesseeInput;
     assessor: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssessorInput;
     skill: Prisma.SkillCreateNestedOneWithoutChecksInput;
@@ -316,6 +338,7 @@ export type SkillCheckUncheckedCreateInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -331,6 +354,7 @@ export type SkillCheckUpdateInput = {
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
+    session?: Prisma.SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
     skill?: Prisma.SkillUpdateOneRequiredWithoutChecksNestedInput;
@@ -340,6 +364,7 @@ export type SkillCheckUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -352,6 +377,7 @@ export type SkillCheckCreateManyInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -372,6 +398,7 @@ export type SkillCheckUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -394,6 +421,7 @@ export type SkillCheckCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     assesseeId?: Prisma.SortOrder;
+    sessionId?: Prisma.SortOrder;
     assessorId?: Prisma.SortOrder;
     skillId?: Prisma.SortOrder;
     result?: Prisma.SortOrder;
@@ -406,6 +434,7 @@ export type SkillCheckMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     assesseeId?: Prisma.SortOrder;
+    sessionId?: Prisma.SortOrder;
     assessorId?: Prisma.SortOrder;
     skillId?: Prisma.SortOrder;
     result?: Prisma.SortOrder;
@@ -418,6 +447,7 @@ export type SkillCheckMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     assesseeId?: Prisma.SortOrder;
+    sessionId?: Prisma.SortOrder;
     assessorId?: Prisma.SortOrder;
     skillId?: Prisma.SortOrder;
     result?: Prisma.SortOrder;
@@ -770,12 +800,99 @@ export type SkillCheckUncheckedUpdateManyWithoutSkillNestedInput = {
     deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
 };
 
+export type SkillCheckCreateNestedManyWithoutSessionInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillCheckCreateWithoutSessionInput,
+              Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+          >
+        | Prisma.SkillCheckCreateWithoutSessionInput[]
+        | Prisma.SkillCheckUncheckedCreateWithoutSessionInput[];
+    connectOrCreate?:
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput[];
+    createMany?: Prisma.SkillCheckCreateManySessionInputEnvelope;
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+};
+
+export type SkillCheckUncheckedCreateNestedManyWithoutSessionInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillCheckCreateWithoutSessionInput,
+              Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+          >
+        | Prisma.SkillCheckCreateWithoutSessionInput[]
+        | Prisma.SkillCheckUncheckedCreateWithoutSessionInput[];
+    connectOrCreate?:
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput[];
+    createMany?: Prisma.SkillCheckCreateManySessionInputEnvelope;
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+};
+
+export type SkillCheckUpdateManyWithoutSessionNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillCheckCreateWithoutSessionInput,
+              Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+          >
+        | Prisma.SkillCheckCreateWithoutSessionInput[]
+        | Prisma.SkillCheckUncheckedCreateWithoutSessionInput[];
+    connectOrCreate?:
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput[];
+    upsert?:
+        | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSessionInput
+        | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSessionInput[];
+    createMany?: Prisma.SkillCheckCreateManySessionInputEnvelope;
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    update?:
+        | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSessionInput
+        | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSessionInput[];
+    updateMany?:
+        | Prisma.SkillCheckUpdateManyWithWhereWithoutSessionInput
+        | Prisma.SkillCheckUpdateManyWithWhereWithoutSessionInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
+};
+
+export type SkillCheckUncheckedUpdateManyWithoutSessionNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.SkillCheckCreateWithoutSessionInput,
+              Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+          >
+        | Prisma.SkillCheckCreateWithoutSessionInput[]
+        | Prisma.SkillCheckUncheckedCreateWithoutSessionInput[];
+    connectOrCreate?:
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput
+        | Prisma.SkillCheckCreateOrConnectWithoutSessionInput[];
+    upsert?:
+        | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSessionInput
+        | Prisma.SkillCheckUpsertWithWhereUniqueWithoutSessionInput[];
+    createMany?: Prisma.SkillCheckCreateManySessionInputEnvelope;
+    set?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    disconnect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    delete?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    connect?: Prisma.SkillCheckWhereUniqueInput | Prisma.SkillCheckWhereUniqueInput[];
+    update?:
+        | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSessionInput
+        | Prisma.SkillCheckUpdateWithWhereUniqueWithoutSessionInput[];
+    updateMany?:
+        | Prisma.SkillCheckUpdateManyWithWhereWithoutSessionInput
+        | Prisma.SkillCheckUpdateManyWithWhereWithoutSessionInput[];
+    deleteMany?: Prisma.SkillCheckScalarWhereInput | Prisma.SkillCheckScalarWhereInput[];
+};
+
 export type SkillCheckCreateWithoutOrganizationInput = {
     id: string;
     result: string;
     notes: string;
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
+    session?: Prisma.SkillCheckSessionCreateNestedOneWithoutSkillChecksInput;
     assessee: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssesseeInput;
     assessor: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssessorInput;
     skill: Prisma.SkillCreateNestedOneWithoutChecksInput;
@@ -784,6 +901,7 @@ export type SkillCheckCreateWithoutOrganizationInput = {
 export type SkillCheckUncheckedCreateWithoutOrganizationInput = {
     id: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -842,6 +960,7 @@ export type SkillCheckScalarWhereInput = {
     id?: Prisma.StringFilter<"SkillCheck"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheck"> | string;
     assesseeId?: Prisma.StringFilter<"SkillCheck"> | string;
+    sessionId?: Prisma.StringNullableFilter<"SkillCheck"> | string | null;
     assessorId?: Prisma.StringFilter<"SkillCheck"> | string;
     skillId?: Prisma.StringFilter<"SkillCheck"> | string;
     result?: Prisma.StringFilter<"SkillCheck"> | string;
@@ -857,6 +976,7 @@ export type SkillCheckCreateWithoutAssesseeInput = {
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSkillChecksInput;
+    session?: Prisma.SkillCheckSessionCreateNestedOneWithoutSkillChecksInput;
     assessor: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssessorInput;
     skill: Prisma.SkillCreateNestedOneWithoutChecksInput;
 };
@@ -864,6 +984,7 @@ export type SkillCheckCreateWithoutAssesseeInput = {
 export type SkillCheckUncheckedCreateWithoutAssesseeInput = {
     id: string;
     organizationId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -892,6 +1013,7 @@ export type SkillCheckCreateWithoutAssessorInput = {
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSkillChecksInput;
+    session?: Prisma.SkillCheckSessionCreateNestedOneWithoutSkillChecksInput;
     assessee: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssesseeInput;
     skill: Prisma.SkillCreateNestedOneWithoutChecksInput;
 };
@@ -900,6 +1022,7 @@ export type SkillCheckUncheckedCreateWithoutAssessorInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     skillId: string;
     result: string;
     notes: string;
@@ -983,6 +1106,7 @@ export type SkillCheckCreateWithoutSkillInput = {
     status?: $Enums.SkillCheckStatus;
     createdAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSkillChecksInput;
+    session?: Prisma.SkillCheckSessionCreateNestedOneWithoutSkillChecksInput;
     assessee: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssesseeInput;
     assessor: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssessorInput;
 };
@@ -991,6 +1115,7 @@ export type SkillCheckUncheckedCreateWithoutSkillInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     result: string;
     notes: string;
@@ -1039,9 +1164,75 @@ export type SkillCheckUpdateManyWithWhereWithoutSkillInput = {
     >;
 };
 
+export type SkillCheckCreateWithoutSessionInput = {
+    id: string;
+    result: string;
+    notes: string;
+    status?: $Enums.SkillCheckStatus;
+    createdAt?: Date | string;
+    organization: Prisma.OrganizationCreateNestedOneWithoutSkillChecksInput;
+    assessee: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssesseeInput;
+    assessor: Prisma.PersonCreateNestedOneWithoutSkillChecksAsAssessorInput;
+    skill: Prisma.SkillCreateNestedOneWithoutChecksInput;
+};
+
+export type SkillCheckUncheckedCreateWithoutSessionInput = {
+    id: string;
+    organizationId: string;
+    assesseeId: string;
+    assessorId: string;
+    skillId: string;
+    result: string;
+    notes: string;
+    status?: $Enums.SkillCheckStatus;
+    createdAt?: Date | string;
+};
+
+export type SkillCheckCreateOrConnectWithoutSessionInput = {
+    where: Prisma.SkillCheckWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.SkillCheckCreateWithoutSessionInput,
+        Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+    >;
+};
+
+export type SkillCheckCreateManySessionInputEnvelope = {
+    data: Prisma.SkillCheckCreateManySessionInput | Prisma.SkillCheckCreateManySessionInput[];
+    skipDuplicates?: boolean;
+};
+
+export type SkillCheckUpsertWithWhereUniqueWithoutSessionInput = {
+    where: Prisma.SkillCheckWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.SkillCheckUpdateWithoutSessionInput,
+        Prisma.SkillCheckUncheckedUpdateWithoutSessionInput
+    >;
+    create: Prisma.XOR<
+        Prisma.SkillCheckCreateWithoutSessionInput,
+        Prisma.SkillCheckUncheckedCreateWithoutSessionInput
+    >;
+};
+
+export type SkillCheckUpdateWithWhereUniqueWithoutSessionInput = {
+    where: Prisma.SkillCheckWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.SkillCheckUpdateWithoutSessionInput,
+        Prisma.SkillCheckUncheckedUpdateWithoutSessionInput
+    >;
+};
+
+export type SkillCheckUpdateManyWithWhereWithoutSessionInput = {
+    where: Prisma.SkillCheckScalarWhereInput;
+    data: Prisma.XOR<
+        Prisma.SkillCheckUpdateManyMutationInput,
+        Prisma.SkillCheckUncheckedUpdateManyWithoutSessionInput
+    >;
+};
+
 export type SkillCheckCreateManyOrganizationInput = {
     id: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -1056,6 +1247,7 @@ export type SkillCheckUpdateWithoutOrganizationInput = {
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    session?: Prisma.SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
     skill?: Prisma.SkillUpdateOneRequiredWithoutChecksNestedInput;
@@ -1064,6 +1256,7 @@ export type SkillCheckUpdateWithoutOrganizationInput = {
 export type SkillCheckUncheckedUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1075,6 +1268,7 @@ export type SkillCheckUncheckedUpdateWithoutOrganizationInput = {
 export type SkillCheckUncheckedUpdateManyWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1086,6 +1280,7 @@ export type SkillCheckUncheckedUpdateManyWithoutOrganizationInput = {
 export type SkillCheckCreateManyAssesseeInput = {
     id: string;
     organizationId: string;
+    sessionId?: string | null;
     assessorId: string;
     skillId: string;
     result: string;
@@ -1098,6 +1293,7 @@ export type SkillCheckCreateManyAssessorInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     skillId: string;
     result: string;
     notes: string;
@@ -1112,6 +1308,7 @@ export type SkillCheckUpdateWithoutAssesseeInput = {
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
+    session?: Prisma.SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
     skill?: Prisma.SkillUpdateOneRequiredWithoutChecksNestedInput;
 };
@@ -1119,6 +1316,7 @@ export type SkillCheckUpdateWithoutAssesseeInput = {
 export type SkillCheckUncheckedUpdateWithoutAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1130,6 +1328,7 @@ export type SkillCheckUncheckedUpdateWithoutAssesseeInput = {
 export type SkillCheckUncheckedUpdateManyWithoutAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1145,6 +1344,7 @@ export type SkillCheckUpdateWithoutAssessorInput = {
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
+    session?: Prisma.SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
     skill?: Prisma.SkillUpdateOneRequiredWithoutChecksNestedInput;
 };
@@ -1153,6 +1353,7 @@ export type SkillCheckUncheckedUpdateWithoutAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1164,6 +1365,7 @@ export type SkillCheckUncheckedUpdateManyWithoutAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1175,6 +1377,7 @@ export type SkillCheckCreateManySkillInput = {
     id: string;
     organizationId: string;
     assesseeId: string;
+    sessionId?: string | null;
     assessorId: string;
     result: string;
     notes: string;
@@ -1189,6 +1392,7 @@ export type SkillCheckUpdateWithoutSkillInput = {
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
+    session?: Prisma.SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput;
     assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
     assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
 };
@@ -1197,6 +1401,7 @@ export type SkillCheckUncheckedUpdateWithoutSkillInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -1208,7 +1413,56 @@ export type SkillCheckUncheckedUpdateManyWithoutSkillInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
+    result?: Prisma.StringFieldUpdateOperationsInput | string;
+    notes?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+export type SkillCheckCreateManySessionInput = {
+    id: string;
+    organizationId: string;
+    assesseeId: string;
+    assessorId: string;
+    skillId: string;
+    result: string;
+    notes: string;
+    status?: $Enums.SkillCheckStatus;
+    createdAt?: Date | string;
+};
+
+export type SkillCheckUpdateWithoutSessionInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    result?: Prisma.StringFieldUpdateOperationsInput | string;
+    notes?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    organization?: Prisma.OrganizationUpdateOneRequiredWithoutSkillChecksNestedInput;
+    assessee?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssesseeNestedInput;
+    assessor?: Prisma.PersonUpdateOneRequiredWithoutSkillChecksAsAssessorNestedInput;
+    skill?: Prisma.SkillUpdateOneRequiredWithoutChecksNestedInput;
+};
+
+export type SkillCheckUncheckedUpdateWithoutSessionInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
+    skillId?: Prisma.StringFieldUpdateOperationsInput | string;
+    result?: Prisma.StringFieldUpdateOperationsInput | string;
+    notes?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+export type SkillCheckUncheckedUpdateManyWithoutSessionInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    assesseeId?: Prisma.StringFieldUpdateOperationsInput | string;
+    assessorId?: Prisma.StringFieldUpdateOperationsInput | string;
+    skillId?: Prisma.StringFieldUpdateOperationsInput | string;
     result?: Prisma.StringFieldUpdateOperationsInput | string;
     notes?: Prisma.StringFieldUpdateOperationsInput | string;
     status?: Prisma.EnumSkillCheckStatusFieldUpdateOperationsInput | $Enums.SkillCheckStatus;
@@ -1222,6 +1476,7 @@ export type SkillCheckSelect<
         id?: boolean;
         organizationId?: boolean;
         assesseeId?: boolean;
+        sessionId?: boolean;
         assessorId?: boolean;
         skillId?: boolean;
         result?: boolean;
@@ -1229,6 +1484,7 @@ export type SkillCheckSelect<
         status?: boolean;
         createdAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+        session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
         assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1243,6 +1499,7 @@ export type SkillCheckSelectCreateManyAndReturn<
         id?: boolean;
         organizationId?: boolean;
         assesseeId?: boolean;
+        sessionId?: boolean;
         assessorId?: boolean;
         skillId?: boolean;
         result?: boolean;
@@ -1250,6 +1507,7 @@ export type SkillCheckSelectCreateManyAndReturn<
         status?: boolean;
         createdAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+        session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
         assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1264,6 +1522,7 @@ export type SkillCheckSelectUpdateManyAndReturn<
         id?: boolean;
         organizationId?: boolean;
         assesseeId?: boolean;
+        sessionId?: boolean;
         assessorId?: boolean;
         skillId?: boolean;
         result?: boolean;
@@ -1271,6 +1530,7 @@ export type SkillCheckSelectUpdateManyAndReturn<
         status?: boolean;
         createdAt?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+        session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
         assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
         skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1282,6 +1542,7 @@ export type SkillCheckSelectScalar = {
     id?: boolean;
     organizationId?: boolean;
     assesseeId?: boolean;
+    sessionId?: boolean;
     assessorId?: boolean;
     skillId?: boolean;
     result?: boolean;
@@ -1296,6 +1557,7 @@ export type SkillCheckOmit<
     | "id"
     | "organizationId"
     | "assesseeId"
+    | "sessionId"
     | "assessorId"
     | "skillId"
     | "result"
@@ -1308,6 +1570,7 @@ export type SkillCheckInclude<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+    session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1316,6 +1579,7 @@ export type SkillCheckIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+    session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1324,6 +1588,7 @@ export type SkillCheckIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
+    session?: boolean | Prisma.SkillCheck$sessionArgs<ExtArgs>;
     assessee?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     assessor?: boolean | Prisma.PersonDefaultArgs<ExtArgs>;
     skill?: boolean | Prisma.SkillDefaultArgs<ExtArgs>;
@@ -1335,6 +1600,7 @@ export type $SkillCheckPayload<
     name: "SkillCheck";
     objects: {
         organization: Prisma.$OrganizationPayload<ExtArgs>;
+        session: Prisma.$SkillCheckSessionPayload<ExtArgs> | null;
         assessee: Prisma.$PersonPayload<ExtArgs>;
         assessor: Prisma.$PersonPayload<ExtArgs>;
         skill: Prisma.$SkillPayload<ExtArgs>;
@@ -1344,6 +1610,7 @@ export type $SkillCheckPayload<
             id: string;
             organizationId: string;
             assesseeId: string;
+            sessionId: string | null;
             assessorId: string;
             skillId: string;
             result: string;
@@ -1902,6 +2169,19 @@ export interface Prisma__SkillCheckClient<
         ExtArgs,
         GlobalOmitOptions
     >;
+    session<T extends Prisma.SkillCheck$sessionArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.SkillCheck$sessionArgs<ExtArgs>>,
+    ): Prisma.Prisma__SkillCheckSessionClient<
+        runtime.Types.Result.GetResult<
+            Prisma.$SkillCheckSessionPayload<ExtArgs>,
+            T,
+            "findUniqueOrThrow",
+            GlobalOmitOptions
+        > | null,
+        null,
+        ExtArgs,
+        GlobalOmitOptions
+    >;
     assessee<T extends Prisma.PersonDefaultArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.PersonDefaultArgs<ExtArgs>>,
     ): Prisma.Prisma__PersonClient<
@@ -1978,6 +2258,7 @@ export interface SkillCheckFieldRefs {
     readonly id: Prisma.FieldRef<"SkillCheck", "String">;
     readonly organizationId: Prisma.FieldRef<"SkillCheck", "String">;
     readonly assesseeId: Prisma.FieldRef<"SkillCheck", "String">;
+    readonly sessionId: Prisma.FieldRef<"SkillCheck", "String">;
     readonly assessorId: Prisma.FieldRef<"SkillCheck", "String">;
     readonly skillId: Prisma.FieldRef<"SkillCheck", "String">;
     readonly result: Prisma.FieldRef<"SkillCheck", "String">;
@@ -2416,6 +2697,27 @@ export type SkillCheckDeleteManyArgs<
      * Limit how many SkillChecks to delete.
      */
     limit?: number;
+};
+
+/**
+ * SkillCheck.session
+ */
+export type SkillCheck$sessionArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the SkillCheckSession
+     */
+    select?: Prisma.SkillCheckSessionSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the SkillCheckSession
+     */
+    omit?: Prisma.SkillCheckSessionOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.SkillCheckSessionInclude<ExtArgs> | null;
+    where?: Prisma.SkillCheckSessionWhereInput;
 };
 
 /**

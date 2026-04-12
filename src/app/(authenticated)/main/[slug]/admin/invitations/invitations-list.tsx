@@ -196,6 +196,7 @@ export function AdminModule_InvitationsList({ organization }: AdminModule_Invita
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         initialState: {
+            columnFilters: [{ id: "status", value: ["pending"] }],
             pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "createdAt", desc: true }],
         },

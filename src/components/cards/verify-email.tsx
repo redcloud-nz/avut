@@ -41,7 +41,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                 console.log("Email verification error", error);
             } else {
                 console.log("Email verified successfully", data);
-                router.push("/main");
+                router.push("/auth/post-sign-in");
             }
         } catch (error) {
             console.log("Email verification error", error);

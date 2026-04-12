@@ -14,7 +14,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { Lexington } from "@/components/blocks/lexington";
 
 import { RainbowSpinner } from "@/components/ui/loading";
-import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -55,7 +54,7 @@ export default function SkillsModule_SessionRecord_Page(
                             session_id,
                         }),
                     },
-                    "Skill Check Session Recorder",
+                    "Recorder",
                 ]}
             />
             <Lexington.Page>
@@ -66,9 +65,8 @@ export default function SkillsModule_SessionRecord_Page(
                                 <TabsTrigger value="details">Details</TabsTrigger>
                                 <TabsTrigger value="personnel">Personnel</TabsTrigger>
                                 <TabsTrigger value="skills">Skills</TabsTrigger>
-                                <TabsTrigger value="by-person">Record</TabsTrigger>
+                                <TabsTrigger value="record">Record</TabsTrigger>
                             </TabsList>
-                            <SaveStatusIndicator status={mutation.status} />
                         </div>
 
                         <Suspense

@@ -81,6 +81,48 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get metrics for a skill check session, including the number of assessees, skills, and checks associated with the session.
+     */
+    getSessionMetrics: organizationProcedure({ skillCheckSession: ["view"] })
+        .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
+        .output(
+            z.object({
+                assesseeCount: z.number(),
+                skillCount: z.number(),
+                checkCount: z.number(),
+            }),
+        )
+        .query(async ({ ctx, input: { skillCheckSessionId } }) => {
+            const session = await ctx.prisma.skillCheckSession.findUnique({
+                where: {
+                    organizationId: ctx.organizationId,
+                    id: skillCheckSessionId,
+                },
+                include: {
+                    _count: {
+                        select: {
+                            assessees: true,
+                            skills: true,
+                            skillChecks: true,
+                        },
+                    },
+                },
+            });
+
+            if (!session)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckSessionNotFound(skillCheckSessionId),
+                });
+
+            return {
+                assesseeCount: session._count.assessees,
+                skillCount: session._count.skills,
+                checkCount: session._count.skillChecks,
+            };
+        }),
+
+    /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
      */
     listAssessableSkills: organizationProcedure({ skills: ["view"] })
@@ -478,7 +520,11 @@ export const skillsRouter = createTrpcRouter({
                 },
                 include: {},
                 data: {
-                    ...update,
+                    name: update.name,
+                    startsAt: update.date,
+                    endsAt: update.date,
+                    notes: update.notes,
+                    status: update.status,
                 },
             });
 

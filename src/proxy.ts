@@ -12,6 +12,7 @@ export async function proxy(request: NextRequest) {
     if (
         pathname == "/" ||
         pathname.startsWith("/auth") ||
+        pathname.startsWith("/policies") ||
         pathname.startsWith("/public")
     ) {
         // Public routes that don't require authentication, allow through

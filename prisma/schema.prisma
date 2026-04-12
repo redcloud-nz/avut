@@ -411,24 +411,28 @@ model SkillCheckSession {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
+  skillChecks    SkillCheck[]     @relation("skill_check_session_checks")
+
   @@index([organizationId])
   @@map("skill_check_sessions")
 }
 
 model SkillCheck {
-  id             String           @id
+  id             String             @id
   organizationId String
-  organization   Organization     @relation("skill_check_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation("skill_check_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   assesseeId     String
-  assessee       Person           @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
+  sessionId      String?
+  session        SkillCheckSession? @relation("skill_check_session_checks", fields: [sessionId], references: [id], onDelete: SetNull)
+  assessee       Person             @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
   assessorId     String
-  assessor       Person           @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
+  assessor       Person             @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
   skillId        String
-  skill          Skill            @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
+  skill          Skill              @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   result         String
   notes          String
-  status         SkillCheckStatus @default(Draft)
-  createdAt      DateTime         @default(now())
+  status         SkillCheckStatus   @default(Draft)
+  createdAt      DateTime           @default(now())
 
   @@index([organizationId])
   @@index([assesseeId])

@@ -14,6 +14,8 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
+import { authClient } from "@/client/auth-client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,8 +28,6 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-import { authClient } from "@/client/auth-client";
 
 /**
  * Card for a user to sign in to the application.

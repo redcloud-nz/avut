@@ -7,11 +7,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
 import { MutationButton } from "@/components/ui/button";
 import {
@@ -57,7 +53,7 @@ export default function Auth_ViewInvitation_Dialog({
 
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({
-                        invitationId: invitationId,
+                        invitationId,
                     }),
                 );
             },
@@ -74,7 +70,7 @@ export default function Auth_ViewInvitation_Dialog({
 
                 queryClient.invalidateQueries(
                     trpc.invitations.getInvitation.queryFilter({
-                        invitationId: invitationId,
+                        invitationId,
                     }),
                 );
             },
@@ -107,10 +103,7 @@ export default function Auth_ViewInvitation_Dialog({
                         <FieldLabel>Role</FieldLabel>
                         <FieldValue className="min-w-1/2">
                             {invitation.role
-                                .map(
-                                    (role) =>
-                                        OrganizationRole.displayNames[role],
-                                )
+                                .map((role) => OrganizationRole.displayNames[role])
                                 .join(", ")}
                         </FieldValue>
                     </Field>
