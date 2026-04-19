@@ -43,9 +43,6 @@ export async function MainApp_Sidebar_Menu({
                             href={`/main/${slug}/admin/d4h-access-tokens`}
                         />
                     </Protect>
-                    <Protect permissions={{ invitation: ["create"] }} orgId={organization.id}>
-                        <NavSubItem label="Invitations" href={`/main/${slug}/admin/invitations`} />
-                    </Protect>
                     <NavSubItem label="Organization" href={`/main/${slug}/admin/organization`} />
                     <NavSubItem label="Personnel" href={`/main/${slug}/admin/personnel`} />
                     <Protect permissions={{ organization: ["update"] }} orgId={organization.id}>
@@ -55,9 +52,6 @@ export async function MainApp_Sidebar_Menu({
                         />
                     </Protect>
                     <NavSubItem label="Teams" href={`/main/${slug}/admin/teams`} />
-                    <Protect permissions={{ member: ["create"] }} orgId={organization.id}>
-                        <NavSubItem label="Users" href={`/main/${slug}/admin/users`} />
-                    </Protect>
                 </NavCollapsible>
                 <Show when={modules["d4h-views"].enabled}>
                     <NavCollapsible

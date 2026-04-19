@@ -6,6 +6,7 @@
 import { type ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
+import { RainbowSpinner } from "./loading";
 
 export function Card({
     className,
@@ -104,5 +105,19 @@ export function CardFooter({ className, ...props }: ComponentProps<"div">) {
             )}
             {...props}
         />
+    );
+}
+
+export function CardLoadingFallback({
+    className,
+    ...props
+}: Omit<ComponentProps<"div">, "children">) {
+    return (
+        <div
+            className={cn("w-full aspect-2/1 flex items-center justify-center", className)}
+            {...props}
+        >
+            <RainbowSpinner className="h-1/2 border-gray-200" />
+        </div>
     );
 }

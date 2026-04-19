@@ -20,10 +20,7 @@ export function LoadingSpinner({ className, ...props }: ComponentProps<"div">) {
     );
 }
 
-export function LoadingOverlay({
-    className,
-    ...props
-}: Omit<ComponentProps<"div">, "children">) {
+export function LoadingOverlay({ className, ...props }: Omit<ComponentProps<"div">, "children">) {
     return (
         <div
             className={cn(
@@ -41,10 +38,7 @@ export function LoadingOverlay({
     );
 }
 
-export function LoadingFallback({
-    className,
-    ...props
-}: Omit<ComponentProps<"div">, "children">) {
+export function LoadingFallback({ className, ...props }: Omit<ComponentProps<"div">, "children">) {
     return (
         <div
             className={cn(

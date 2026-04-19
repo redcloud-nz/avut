@@ -1,8 +1,8 @@
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
  */
-
 "use client";
 
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -12,11 +12,11 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { authClient } from "@/client/auth-client";
 import { Show } from "@/components/show";
-import { MutationButton } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
-    DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -24,7 +24,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldLegend } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -32,63 +31,83 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
+interface AdminModule_UpdateUserRoles_DialogProps extends Omit<DialogProps, "children"> {
+    user: OrganizationUser;
+    currentUser: OrganizationUser;
+}
+
 const schema = z.object({
-    email: z.email({ message: "Please enter a valid email address." }),
     primaryRole: z.enum(["owner", "admin", "member"]),
     i3Role: z.enum(["i3-admin", "i3-user"]).nullable(),
     skillsRole: z.enum(["skills-admin", "skills-assessor"]).nullable(),
     skillPackageRole: z.enum(["skill-package-author"]).nullable(),
 });
 
-export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
+export function AdminModule_UpdateUserRoles_Dialog({
+    user,
+    currentUser,
+    ...props
+}: AdminModule_UpdateUserRoles_DialogProps) {
     const organization = useOrganization();
 
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            email: "",
-            primaryRole: "member",
-            i3Role: null,
-            skillsRole: null,
-            skillPackageRole: null,
+            primaryRole: user.roles.find((v) => v === "owner" || v === "admin" || v === "member")!,
+            i3Role: user.roles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
+            skillsRole:
+                user.roles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
+            skillPackageRole: user.roles.find((v) => v === "skill-package-author") ?? null,
         },
     });
 
-    const mutation = useMutation(
-        trpc.accessControl.createInvitation.mutationOptions({
-            onError(error) {
-                if (error.data?.conflict) {
-                    form.setError(error.data.conflict.fieldName as keyof z.infer<typeof schema>, {
-                        message: error.data.conflict.message,
-                    });
-                } else {
-                    toast.error(`Failed to create invitation: ${error.message}`);
-                    console.error("Failed to create invitation:", error);
-                }
-            },
-            async onSuccess({ created }, _variables, _onMutateResult, context) {
-                toast.success(`Invitation sent to ${created.email}`);
+    const mutation = useMutation({
+        mutationFn: async (formData: z.infer<typeof schema>) => {
+            const { data, error } = await authClient.organization.updateMemberRole({
+                organizationId: organization.id,
+                memberId: user.organizationUserId,
+                role: [
+                    formData.primaryRole,
+                    formData.i3Role,
+                    formData.skillsRole,
+                    formData.skillPackageRole,
+                ].filter((r): r is OrganizationRole => r !== null),
+            });
 
-                props.onOpenChange?.(false);
+            if (error) toast.error("Failed to update user role.");
+            else toast.success("User role updated successfully.");
+        },
+        onSuccess: async (_data, _variables, _onMutateResult, context) => {
+            props.onOpenChange?.(false);
 
-                await context.client.invalidateQueries(
-                    trpc.accessControl.listOrganizationInvitations.queryFilter({
+            await Promise.all([
+                context.client.invalidateQueries(
+                    trpc.accessControl.listOrganizationUsers.queryFilter({
                         organizationId: organization.id,
                     }),
-                );
-            },
-        }),
-    );
+                ),
+                context.client.invalidateQueries(
+                    trpc.accessControl.listPersonnelWithAccess.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                ),
+            ]);
+        },
+    });
 
     function handleOpenChange(open: boolean) {
         if (!open) {
             form.reset();
+            mutation.reset();
         }
+
         props.onOpenChange?.(open);
     }
 
@@ -101,46 +120,17 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>New Invitation</DialogTitle>
-                    <DialogDescription>Invite a new user to the organization.</DialogDescription>
+                    <DialogTitle>Update user roles</DialogTitle>
+                    <DialogDescription>
+                        Select the roles for user <ObjectName>{user.name}</ObjectName> within the
+                        organization.
+                    </DialogDescription>
                 </DialogHeader>
                 <form
-                    id="create-invitation-form"
-                    onSubmit={form.handleSubmit((formData) => {
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            email: formData.email,
-                            roles: [
-                                formData.primaryRole,
-                                formData.i3Role,
-                                formData.skillsRole,
-                                formData.skillPackageRole,
-                            ].filter((r): r is OrganizationRole => r !== null),
-                            personId: null,
-                        });
-                    })}
+                    id="update-user-roles-form"
+                    onSubmit={form.handleSubmit((formData) => mutation.mutate(formData))}
                 >
                     <FieldGroup>
-                        <Controller
-                            name="email"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
-                                    <FieldLabel htmlFor="email">Email Address</FieldLabel>
-                                    <Input
-                                        id="email"
-                                        className="min-w-1/2"
-                                        placeholder="example@email.com"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-
                         <Controller
                             name="primaryRole"
                             control={form.control}
@@ -266,19 +256,24 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                 />
                             )}
                         </Show>
-
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="create-invitation-form"
+                                form="update-user-roles-form"
                                 status={mutation.status}
                                 text={{
-                                    idle: "Send",
-                                    pending: "Sending",
-                                    success: "Sent",
+                                    idle: "Update",
+                                    pending: "Updating",
+                                    success: "Updated",
                                 }}
                             />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleOpenChange(false)}
+                            >
+                                Cancel
+                            </Button>
                         </Field>
                     </FieldGroup>
                 </form>

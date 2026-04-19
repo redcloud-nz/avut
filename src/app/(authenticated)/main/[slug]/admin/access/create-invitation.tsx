@@ -1,22 +1,32 @@
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- *
  */
+
 "use client";
 
+import { ChevronsUpDownIcon } from "lucide-react";
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
 import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -24,6 +34,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldLegend } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     Select,
     SelectContent,
@@ -31,76 +43,76 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { PersonId } from "@/lib/schemas/person";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
-interface AdminModule_UpdateUserRoles_DialogProps extends Omit<DialogProps, "children"> {
-    user: OrganizationUser;
-    currentUser: OrganizationUser;
-}
-
 const schema = z.object({
+    personId: z.string().min(1, "Please select a person."),
+    email: z.email({ message: "Please enter a valid email address." }),
     primaryRole: z.enum(["owner", "admin", "member"]),
     i3Role: z.enum(["i3-admin", "i3-user"]).nullable(),
     skillsRole: z.enum(["skills-admin", "skills-assessor"]).nullable(),
     skillPackageRole: z.enum(["skill-package-author"]).nullable(),
 });
 
-export default function AdminModule_UpdateUserRoles_Dialog({
-    user,
-    currentUser,
-    ...props
-}: AdminModule_UpdateUserRoles_DialogProps) {
+export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
     const organization = useOrganization();
+
+    const { data: personnel } = useSuspenseQuery(
+        trpc.accessControl.listPersonnelWithAccess.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
+
+    const uninvitedPersonnel = personnel.filter((p) => p.accessStatus === "None");
 
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            primaryRole: user.roles.find((v) => v === "owner" || v === "admin" || v === "member")!,
-            i3Role: user.roles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
-            skillsRole:
-                user.roles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
-            skillPackageRole: user.roles.find((v) => v === "skill-package-author") ?? null,
+            personId: "",
+            email: "",
+            primaryRole: "member",
+            i3Role: null,
+            skillsRole: null,
+            skillPackageRole: null,
         },
     });
 
-    const mutation = useMutation({
-        mutationFn: async (formData: z.infer<typeof schema>) => {
-            const { data, error } = await authClient.organization.updateMemberRole({
-                organizationId: organization.id,
-                memberId: user.organizationUserId,
-                role: [
-                    formData.primaryRole,
-                    formData.i3Role,
-                    formData.skillsRole,
-                    formData.skillPackageRole,
-                ].filter((r): r is OrganizationRole => r !== null),
-            });
+    const [personPickerOpen, setPersonPickerOpen] = useState(false);
 
-            if (error) toast.error("Failed to update user role.");
-            else toast.success("User role updated successfully.");
-        },
-        onSuccess: async (_data, _variables, _onMutateResult, context) => {
-            props.onOpenChange?.(false);
+    const mutation = useMutation(
+        trpc.accessControl.createInvitation.mutationOptions({
+            onError(error) {
+                if (error.data?.conflict) {
+                    form.setError(error.data.conflict.fieldName as keyof z.infer<typeof schema>, {
+                        message: error.data.conflict.message,
+                    });
+                } else {
+                    toast.error(`Failed to create invitation: ${error.message}`);
+                    console.error("Failed to create invitation:", error);
+                }
+            },
+            async onSuccess({ created }, _variables, _onMutateResult, context) {
+                toast.success(`Invitation sent to ${created.email}`);
 
-            await context.client.invalidateQueries(
-                trpc.accessControl.listOrganizationUsers.queryFilter({
-                    organizationId: organization.id,
-                }),
-            );
-        },
-    });
+                props.onOpenChange?.(false);
+
+                await context.client.invalidateQueries(
+                    trpc.accessControl.listPersonnelWithAccess.queryFilter({
+                        organizationId: organization.id,
+                    }),
+                );
+            },
+        }),
+    );
 
     function handleOpenChange(open: boolean) {
         if (!open) {
             form.reset();
-            mutation.reset();
         }
-
         props.onOpenChange?.(open);
     }
 
@@ -109,21 +121,113 @@ export default function AdminModule_UpdateUserRoles_Dialog({
         name: "primaryRole",
     });
 
+    const selectedPersonId = useWatch({
+        control: form.control,
+        name: "personId",
+    });
+
+    const selectedPerson = uninvitedPersonnel.find((p) => p.id === selectedPersonId);
+
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Update user roles</DialogTitle>
-                    <DialogDescription>
-                        Select the roles for user <ObjectName>{user.name}</ObjectName> within the
-                        organization.
-                    </DialogDescription>
+                    <DialogTitle>New Invitation</DialogTitle>
+                    <DialogDescription>Invite a new user to the organization.</DialogDescription>
                 </DialogHeader>
                 <form
-                    id="update-user-roles-form"
-                    onSubmit={form.handleSubmit((formData) => mutation.mutate(formData))}
+                    id="create-invitation-form"
+                    onSubmit={form.handleSubmit((formData) => {
+                        mutation.mutate({
+                            organizationId: organization.id,
+                            personId: formData.personId as PersonId,
+                            email: formData.email,
+                            roles: [
+                                formData.primaryRole,
+                                formData.i3Role,
+                                formData.skillsRole,
+                                formData.skillPackageRole,
+                            ].filter((r): r is OrganizationRole => r !== null),
+                        });
+                    })}
                 >
                     <FieldGroup>
+                        <Controller
+                            name="personId"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                    <FieldLabel>Person</FieldLabel>
+                                    <Popover
+                                        open={personPickerOpen}
+                                        onOpenChange={setPersonPickerOpen}
+                                    >
+                                        <PopoverTrigger asChild>
+                                            <button
+                                                type="button"
+                                                role="combobox"
+                                                aria-expanded={personPickerOpen}
+                                                aria-invalid={fieldState.invalid}
+                                                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full min-w-1/2 items-center justify-between rounded-none border px-3 py-2 text-xs focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {selectedPerson?.name ?? "Select a person..."}
+                                                <ChevronsUpDownIcon className="ml-2 size-3.5 shrink-0 opacity-50" />
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-72 p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search personnel..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No personnel found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {uninvitedPersonnel.map((person) => (
+                                                            <CommandItem
+                                                                key={person.id}
+                                                                value={person.name}
+                                                                data-checked={
+                                                                    field.value === person.id
+                                                                }
+                                                                onSelect={() => {
+                                                                    field.onChange(person.id);
+                                                                    form.setValue(
+                                                                        "email",
+                                                                        person.email ?? "",
+                                                                    );
+                                                                    setPersonPickerOpen(false);
+                                                                }}
+                                                            >
+                                                                <span>{person.name}</span>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name="email"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                    <FieldLabel htmlFor="email">Email Address</FieldLabel>
+                                    <Input
+                                        id="email"
+                                        className="min-w-1/2"
+                                        placeholder="example@email.com"
+                                        autoComplete="off"
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+
                         <Controller
                             name="primaryRole"
                             control={form.control}
@@ -249,24 +353,19 @@ export default function AdminModule_UpdateUserRoles_Dialog({
                                 />
                             )}
                         </Show>
+
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="update-user-roles-form"
+                                form="create-invitation-form"
                                 status={mutation.status}
                                 text={{
-                                    idle: "Update",
-                                    pending: "Updating",
-                                    success: "Updated",
+                                    idle: "Send",
+                                    pending: "Sending",
+                                    success: "Sent",
                                 }}
                             />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => handleOpenChange(false)}
-                            >
-                                Cancel
-                            </Button>
+                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         </Field>
                     </FieldGroup>
                 </form>

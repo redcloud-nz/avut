@@ -5,9 +5,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { SendIcon } from "lucide-react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -17,11 +19,15 @@ import {
 } from "@tanstack/react-table";
 
 import { Akagi } from "@/components/blocks/akagi";
+import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
 export function AdminModule_AccessControl_List() {
     const organization = useOrganization();
@@ -31,6 +37,8 @@ export function AdminModule_AccessControl_List() {
             organizationId: organization.id,
         }),
     );
+
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
     const columns = useMemo(
         () =>
@@ -124,10 +132,19 @@ export function AdminModule_AccessControl_List() {
 
     return (
         <>
-            <div className="flex items-center justify-baseline">
+            <div className="flex items-center justify-between">
                 <Akagi.TableSearch table={table} />
+                <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
+                    <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                        <SendIcon /> Invite
+                    </Button>
+                </Protect>
             </div>
             <Akagi.Table table={table} />
+            <AdminModule_CreateInvitation_Dialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+            />
         </>
     );
 }

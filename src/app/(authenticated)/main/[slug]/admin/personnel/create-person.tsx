@@ -58,11 +58,18 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                 }
             },
             async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+                await Promise.all([
+                    queryClient.invalidateQueries(
+                        trpc.personnel.listPersonnel.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.accessControl.listPersonnelWithAccess.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                ]);
 
                 handleOpenChange(false);
 
@@ -146,7 +153,7 @@ export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
                                     success: "Created",
                                 }}
                             />
-                            <DialogCloseButton>Cancel</DialogCloseButton>
+                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         </Field>
                     </FieldGroup>
                 </form>

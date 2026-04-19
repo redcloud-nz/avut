@@ -83,7 +83,7 @@ export const accessControlRouter = createTrpcRouter({
             z.object({
                 email: z.email(),
                 roles: z.array(OrganizationRole.schema),
-                personId: PersonId.schema.nullable(),
+                personId: PersonId.schema,
             }),
         )
         .output(z.object({ created: z.object({ id: z.string(), email: z.string() }) }))
@@ -130,7 +130,7 @@ export const accessControlRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     email: input.email,
                     role: input.roles,
-                    personId: input.personId ?? undefined,
+                    personId: input.personId,
                 },
                 headers: ctx.headers,
             });
@@ -294,28 +294,23 @@ export const accessControlRouter = createTrpcRouter({
                 },
             });
 
-            return personnel.flatMap((person) => {
+            return personnel.map((person) => {
                 const user = person.organizationUser;
                 const invitation = person.organizationInvitation;
 
-                // Only include personnel that have an associated user or invitation, as those are the ones relevant for access control.
-                if (user || invitation) {
-                    return [
-                        {
-                            ...PersonData.fromRecord(person),
-                            accessStatus: user ? "Joined" : invitation ? "Invited" : "None",
-                            roles: (user
-                                ? user.role.split(",")
-                                : invitation
-                                  ? (invitation.role ?? "").split(",")
-                                  : []) as OrganizationRole[],
-                            user: user ? OrganizationUser.fromRecord(user.user, user) : null,
-                            invitation: invitation
-                                ? OrganizationInvitationData.fromRecord(invitation)
-                                : null,
-                        },
-                    ];
-                } else return [];
+                return {
+                    ...PersonData.fromRecord(person),
+                    accessStatus: user ? "Joined" : invitation ? "Invited" : "None",
+                    roles: (user
+                        ? user.role.split(",")
+                        : invitation
+                          ? (invitation.role ?? "").split(",")
+                          : []) as OrganizationRole[],
+                    user: user ? OrganizationUser.fromRecord(user.user, user) : null,
+                    invitation: invitation
+                        ? OrganizationInvitationData.fromRecord(invitation)
+                        : null,
+                };
             });
         }),
 

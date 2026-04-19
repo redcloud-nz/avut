@@ -71,22 +71,6 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ invitation: ["view"] }}>
-                            <Item asChild>
-                                <Link href={route("/main/[slug]/admin/invitations", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Invitations</ItemTitle>
-                                        <ItemDescription>
-                                            Manage invitations to your organisation.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-
                         <Protect orgId={organization.id} permissions={{ organization: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/main/[slug]/admin/organization", { slug })}>
@@ -144,21 +128,6 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                                         <ItemTitle>Teams</ItemTitle>
                                         <ItemDescription>
                                             Manage your organisation's teams.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                        <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
-                            <Item asChild>
-                                <Link href={route("/main/[slug]/admin/users", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Users</ItemTitle>
-                                        <ItemDescription>
-                                            Manage your organisation's users and their roles.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
