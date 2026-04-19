@@ -250,7 +250,7 @@ export type SkillGroupByOutputType = {
     _max: SkillMaxAggregateOutputType | null;
 };
 
-type GetSkillGroupByPayload<T extends SkillGroupByArgs> = Prisma.PrismaPromise<
+export type GetSkillGroupByPayload<T extends SkillGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<SkillGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof SkillGroupByOutputType]: P extends "_count"
@@ -2621,6 +2621,11 @@ export type SkillFindManyArgs<
      * Skip the first `n` Skills.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Skills.
+     */
     distinct?: Prisma.SkillScalarFieldEnum | Prisma.SkillScalarFieldEnum[];
 };
 

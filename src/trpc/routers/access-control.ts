@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
@@ -7,20 +7,23 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { roles } from "@/lib/permissions";
-import { OrganizationData } from "@/lib/schemas/organization";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
+import { PersonData, PersonId } from "@/lib/schemas/person";
+import { UserData, UserId } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
+import prisma from "@/server/prisma";
 
 import { FieldConflictError } from "../errors";
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { Messages } from "../messages";
 
 /**
- * Router for handling a users invitations.
+ * TRPC router for access control related operations, including managing organization invitations, memberships, and personnel access.
  */
-export const invitationsRouter = createTrpcRouter({
+export const accessControlRouter = createTrpcRouter({
     /**
      * Accept an organization invitation.
      *
@@ -80,6 +83,7 @@ export const invitationsRouter = createTrpcRouter({
             z.object({
                 email: z.email(),
                 roles: z.array(OrganizationRole.schema),
+                personId: PersonId.schema.nullable(),
             }),
         )
         .output(z.object({ created: z.object({ id: z.string(), email: z.string() }) }))
@@ -126,6 +130,7 @@ export const invitationsRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     email: input.email,
                     role: input.roles,
+                    personId: input.personId ?? undefined,
                 },
                 headers: ctx.headers,
             });
@@ -188,6 +193,149 @@ export const invitationsRouter = createTrpcRouter({
                     .pick({ id: true, name: true, slug: true })
                     .parse(invitation.organization),
             };
+        }),
+
+    /**
+     * Retrieves the personnel record linked to a user, if any.
+     * @param ctx The authenticated context.
+     * @param input The user ID to look up.
+     * @returns The linked personnel record, or null if no link exists.
+     * @throws TRPCError(NOT_FOUND) if the user does not exist or is not part of the organization.
+     */
+    getLinkedPerson: organizationProcedure({ member: ["view"], person: ["view"] })
+        .input(z.object({ userId: UserId.schema }))
+        .output(PersonData.schema.nullable())
+        .query(async ({ ctx, input }) => {
+            const user = await ctx.prisma.organizationUser.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    userId: input.userId,
+                    personId: { not: null },
+                },
+                include: { person: true },
+            });
+
+            if (!user)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.userNotFound(input.userId),
+                });
+
+            return user?.person ? PersonData.fromRecord(user.person) : null;
+        }),
+
+    /**
+     * List all invitations for an organization.
+     */
+    listOrganizationInvitations: organizationProcedure({
+        invitation: ["view"],
+    })
+        .output(z.array(OrganizationInvitationData.schema))
+        .query(async ({ ctx }) => {
+            const invitations = await ctx.prisma.organizationInvitation.findMany({
+                where: { organizationId: ctx.organizationId },
+                include: { inviter: true, organization: true },
+            });
+
+            return invitations.map((invitation) =>
+                OrganizationInvitationData.fromRecord({
+                    ...invitation,
+                    teamId: invitation.teamId ?? null,
+                }),
+            );
+        }),
+
+    /**
+     * List all users that are members of the organization.
+     */
+    listOrganizationUsers: organizationProcedure({ member: ["view"] })
+        .output(z.array(OrganizationUser.schema))
+        .query(async ({ ctx }) => {
+            const orgUsers = await ctx.prisma.organizationUser.findMany({
+                where: { organizationId: ctx.organizationId },
+                include: { user: true },
+            });
+
+            return orgUsers.map((orgUser) => OrganizationUser.fromRecord(orgUser.user, orgUser));
+        }),
+
+    /**
+     * Lists the personnel in the organization that have access along with their access status, roles, and linked user/invitation data if applicable.
+     * This is used to manage access control for personnel, including those who have been invited but have not yet joined.
+     * @param ctx The authenticated organization context.
+     * @returns An array of personnel records with access details.
+     */
+    listPersonnelWithAccess: organizationProcedure({
+        invitation: ["view"],
+        member: ["view"],
+        person: ["view"],
+    })
+        .output(
+            z.array(
+                PersonData.schema.extend({
+                    accessStatus: z.enum(["Joined", "Invited", "None"]),
+                    roles: z.array(OrganizationRole.schema),
+                    user: OrganizationUser.schema.nullable(),
+                    invitation: OrganizationInvitationData.schema.nullable(),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const personnel = await ctx.prisma.person.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    status: "Active",
+                },
+                include: {
+                    organizationUser: {
+                        include: { user: true },
+                    },
+                    organizationInvitation: true,
+                },
+            });
+
+            return personnel.flatMap((person) => {
+                const user = person.organizationUser;
+                const invitation = person.organizationInvitation;
+
+                // Only include personnel that have an associated user or invitation, as those are the ones relevant for access control.
+                if (user || invitation) {
+                    return [
+                        {
+                            ...PersonData.fromRecord(person),
+                            accessStatus: user ? "Joined" : invitation ? "Invited" : "None",
+                            roles: (user
+                                ? user.role.split(",")
+                                : invitation
+                                  ? (invitation.role ?? "").split(",")
+                                  : []) as OrganizationRole[],
+                            user: user ? OrganizationUser.fromRecord(user.user, user) : null,
+                            invitation: invitation
+                                ? OrganizationInvitationData.fromRecord(invitation)
+                                : null,
+                        },
+                    ];
+                } else return [];
+            });
+        }),
+
+    /**
+     * Lists all users in the organization that are not linked to any personnel record.
+     * @param ctx The authenticated context.
+     * @returns An array of unlinked user objects
+     */
+    listUnlinkedUsers: organizationProcedure({ person: ["view"] })
+        .output(z.array(OrganizationUser.schema))
+        .query(async ({ ctx }) => {
+            const users = await ctx.prisma.organizationUser.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    personId: null,
+                },
+                include: { user: true },
+            });
+
+            return users.map((u) => OrganizationUser.fromRecord(u.user, u));
         }),
 
     listUserInvitations: authenticatedProcedure
@@ -272,4 +420,75 @@ export const invitationsRouter = createTrpcRouter({
             }
             return true;
         }),
+
+    /**
+     * Remove a user from the organization.
+     */
+    removeOrganizationUser: organizationProcedure({
+        member: ["delete"],
+    })
+        .input(
+            z.object({
+                userId: UserId.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input: { userId } }) => {
+            try {
+                const orgUser = await findOrganizationUserById(ctx.organizationId, userId);
+
+                await auth.api.removeMember({
+                    headers: ctx.headers,
+                    body: {
+                        organizationId: ctx.organizationId,
+                        memberIdOrEmail: orgUser.organizationUserId,
+                    },
+                });
+
+                await ctx.logEvent({
+                    action: "Delete",
+                    objectType: "OrganizationMembership",
+                    objectId: orgUser.organizationUserId,
+                    description: `Removed user (${orgUser.userId}, ${orgUser.email}) from organization.`,
+                });
+            } catch (error) {
+                console.error("Error removing organization member:", error);
+
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to remove organization member",
+                    cause: error,
+                });
+            }
+        }),
 });
+
+/**
+ * Find an organization membership by ID.
+ * @param organizationId The organization ID.
+ * @param userId The user ID.
+ * @returns The organization user data with user info.
+ * @throws TRPCError(NOT_FOUND) if the user is not found.
+ */
+async function findOrganizationUserById(
+    organizationId: OrganizationId,
+    userId: UserId,
+): Promise<OrganizationUser> {
+    const membership = await prisma.organizationUser.findUnique({
+        where: {
+            organizationId_userId: {
+                organizationId,
+                userId,
+            },
+        },
+        include: { user: true },
+    });
+
+    if (!membership) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Organization membership not found for userId = " + userId,
+        });
+    }
+
+    return OrganizationUser.fromRecord(membership.user, membership);
+}

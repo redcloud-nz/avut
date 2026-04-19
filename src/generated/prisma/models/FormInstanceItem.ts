@@ -158,7 +158,7 @@ export type FormInstanceItemGroupByOutputType = {
     _max: FormInstanceItemMaxAggregateOutputType | null;
 };
 
-type GetFormInstanceItemGroupByPayload<T extends FormInstanceItemGroupByArgs> =
+export type GetFormInstanceItemGroupByPayload<T extends FormInstanceItemGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
             Prisma.PickEnumerable<FormInstanceItemGroupByOutputType, T["by"]> & {
@@ -1770,6 +1770,11 @@ export type FormInstanceItemFindManyArgs<
      * Skip the first `n` FormInstanceItems.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of FormInstanceItems.
+     */
     distinct?: Prisma.FormInstanceItemScalarFieldEnum | Prisma.FormInstanceItemScalarFieldEnum[];
 };
 

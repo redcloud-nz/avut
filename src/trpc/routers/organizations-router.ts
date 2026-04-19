@@ -8,14 +8,9 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
-import { UserData, UserId } from "@/lib/schemas/user";
-
+import { OrganizationData } from "@/lib/schemas/organization";
 import { auth } from "@/server/auth";
 import { revalidateOrganization } from "@/server/organization";
-import prisma from "@/server/prisma";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -27,7 +22,6 @@ export const organizationsRouter = createTrpcRouter({
      * @returns The organization object.
      * @throws TRPCError(NOT_FOUND) if the organization does not exist.
      */
-
     getOrganization: organizationProcedure({ organization: ["view"] })
         .output(OrganizationData.schema)
         .query(async ({ ctx }) => {
@@ -43,101 +37,6 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             return OrganizationData.fromRecord(organization);
-        }),
-
-    /**
-     * List all invitations for an organization.
-     *
-     *
-     */
-    listOrganizationInvitations: organizationProcedure({
-        invitation: ["view"],
-    })
-        .output(z.array(OrganizationInvitationData.schema))
-        .query(async ({ ctx, input }) => {
-            const invitations = await auth.api.listInvitations({
-                query: {
-                    organizationId: input.organizationId,
-                },
-                headers: ctx.headers,
-            });
-
-            return invitations.map((invitation) =>
-                OrganizationInvitationData.fromRecord({
-                    ...invitation,
-                    teamId: invitation.teamId ?? null,
-                }),
-            );
-        }),
-
-    /**
-     * List all users that are members of the organization.
-     */
-    listOrganizationMembers: organizationProcedure({ member: ["view"] })
-        .output(
-            z.array(
-                OrganizationMembershipData.schema.extend({
-                    user: UserData.schema,
-                }),
-            ),
-        )
-
-        .query(async ({ ctx, input }) => {
-            const { members } = await auth.api.listMembers({
-                query: {
-                    organizationId: input.organizationId,
-                },
-                headers: ctx.headers,
-            });
-
-            return members.map((member) => ({
-                ...OrganizationMembershipData.fromRecord(member),
-                user: UserData.schema.parse(member.user),
-            }));
-        }),
-
-    /**
-     * Remove a user from the organization.
-     */
-    removeOrganizationMembership: organizationProcedure({
-        member: ["delete"],
-    })
-        .input(
-            z.object({
-                userId: UserId.schema,
-            }),
-        )
-        .mutation(async ({ ctx, input: { userId } }) => {
-            try {
-                const organizationMembership =
-                    await findOrganizationMembershipById(
-                        ctx.organizationId,
-                        userId,
-                    );
-
-                await auth.api.removeMember({
-                    headers: ctx.headers,
-                    body: {
-                        organizationId: ctx.organizationId,
-                        memberIdOrEmail: organizationMembership.id,
-                    },
-                });
-
-                await ctx.logEvent({
-                    action: "Delete",
-                    objectType: "OrganizationMembership",
-                    objectId: organizationMembership.id,
-                    description: `Removed user (${organizationMembership.user.id}, ${organizationMembership.user.email}) from organization.`,
-                });
-            } catch (error) {
-                console.error("Error removing organization member:", error);
-
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to remove organization member",
-                    cause: error,
-                });
-            }
         }),
 
     /**
@@ -177,10 +76,7 @@ export const organizationsRouter = createTrpcRouter({
                 },
             });
 
-            const changes = diffObject(
-                OrganizationData.modifiableSchema.parse(existing),
-                update,
-            );
+            const changes = diffObject(OrganizationData.modifiableSchema.parse(existing), update);
 
             await ctx.logEvent({
                 action: "Update",
@@ -199,37 +95,3 @@ export const organizationsRouter = createTrpcRouter({
             };
         }),
 });
-
-/**
- * Find an organization membership by ID.
- * @param organizationId The organization ID.
- * @param userId The user ID.
- * @returns The organization membership data with user info.
- * @throws TRPCError(NOT_FOUND) if the membership is not found.
- */
-async function findOrganizationMembershipById(
-    organizationId: OrganizationId,
-    userId: UserId,
-) {
-    const membership = await prisma.organizationUser.findUnique({
-        where: {
-            organizationId_userId: {
-                organizationId,
-                userId,
-            },
-        },
-        include: { user: true },
-    });
-
-    if (!membership) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Organization membership not found for userId = " + userId,
-        });
-    }
-
-    return {
-        ...OrganizationMembershipData.fromRecord(membership),
-        user: UserData.schema.parse(membership.user),
-    };
-}

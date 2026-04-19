@@ -78,9 +78,23 @@ export const auth = betterAuth({
                 },
                 member: {
                     modelName: "OrganizationUser",
+                    additionalFields: {
+                        personId: {
+                            type: "string",
+                            input: true,
+                            required: false,
+                        },
+                    },
                 },
                 invitation: {
                     modelName: "OrganizationInvitation",
+                    additionalFields: {
+                        personId: {
+                            type: "string",
+                            input: true,
+                            required: false,
+                        },
+                    },
                 },
                 team: {
                     modelName: "Team",

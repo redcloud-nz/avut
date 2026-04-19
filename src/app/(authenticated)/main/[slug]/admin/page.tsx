@@ -37,6 +37,22 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                         <div className="font-semibold">Admin Module</div>
                     </div>
                     <ItemGroup>
+                        <Protect permissions={{ member: ["view"] }} orgId={organization.id}>
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/admin/access", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Access Control</ItemTitle>
+                                        <ItemDescription>
+                                            Manage permissions and access control for your
+                                            organisation.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                         <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                             <Item asChild>
                                 <Link

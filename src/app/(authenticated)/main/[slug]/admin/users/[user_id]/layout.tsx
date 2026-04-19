@@ -9,17 +9,17 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationUserById } from "@/server/organization-member";
+import { getOrganizationUserById } from "@/server/organization-user";
 
 export async function generateMetadata(
     props: LayoutProps<"/main/[slug]/admin/users/[user_id]">,
 ): Promise<Metadata> {
     const { slug, user_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
-    const orgMember = await getOrganizationUserById(organization.id, user_id);
+    const user = await getOrganizationUserById(organization.id, user_id);
 
     return {
-        title: `${orgMember.user.name} ${TITLE_SEPARATOR} Users`,
+        title: `${user.name} ${TITLE_SEPARATOR} Users`,
     };
 }
 

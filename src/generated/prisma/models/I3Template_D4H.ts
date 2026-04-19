@@ -214,17 +214,18 @@ export type I3Template_D4HGroupByOutputType = {
     _max: I3Template_D4HMaxAggregateOutputType | null;
 };
 
-type GetI3Template_D4HGroupByPayload<T extends I3Template_D4HGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<I3Template_D4HGroupByOutputType, T["by"]> & {
-            [P in keyof T & keyof I3Template_D4HGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<T[P], I3Template_D4HGroupByOutputType[P]>
-                : Prisma.GetScalarType<T[P], I3Template_D4HGroupByOutputType[P]>;
-        }
-    >
->;
+export type GetI3Template_D4HGroupByPayload<T extends I3Template_D4HGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<I3Template_D4HGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof I3Template_D4HGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], I3Template_D4HGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], I3Template_D4HGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type I3Template_D4HWhereInput = {
     AND?: Prisma.I3Template_D4HWhereInput | Prisma.I3Template_D4HWhereInput[];
@@ -1440,6 +1441,11 @@ export type I3Template_D4HFindManyArgs<
      * Skip the first `n` I3Template_D4HS.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of I3Template_D4HS.
+     */
     distinct?: Prisma.I3Template_D4HScalarFieldEnum | Prisma.I3Template_D4HScalarFieldEnum[];
 };
 

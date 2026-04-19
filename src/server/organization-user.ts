@@ -8,16 +8,13 @@ import { cacheTag, revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { OrganizationId } from "@/lib/schemas/organization";
-import {
-    OrganizationMembershipData,
-    OrganizationMembershipId,
-} from "@/lib/schemas/organization-member";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
+import { UserId } from "@/lib/schemas/user";
 
 import prisma from "./prisma";
 
 /**
- * Get an organization member (and the associated user) by their user ID;
+ * Get an organization user by their user ID;
  *
  * Notes:
  * - The results are cached for performance with a cache tag of `organization-user-{user_id}`.
@@ -31,29 +28,24 @@ import prisma from "./prisma";
 export async function getOrganizationUserById(
     organizationId: OrganizationId,
     user_id: string,
-): Promise<OrganizationMembershipData & { user: UserData }> {
+): Promise<OrganizationUser> {
     "use cache";
     cacheTag(`organization-user-${user_id}`);
 
     // Fetch organization user record
-    const organizationMembership = await prisma.organizationUser.findUnique({
+    const orgUser = await prisma.organizationUser.findUnique({
         where: { organizationId_userId: { organizationId, userId: user_id } },
         include: { user: true },
     });
 
-    if (!organizationMembership) return notFound();
-    return {
-        ...OrganizationMembershipData.fromRecord(organizationMembership),
-        user: UserData.fromRecord(organizationMembership.user),
-    };
+    if (!orgUser) return notFound();
+    return OrganizationUser.fromRecord(orgUser.user, orgUser);
 }
 
 /**
  * Revalidate the cache for an organization user.
  * @param user_id The ID of the user.
  */
-export async function revalidateOrganizationUser(
-    user_id: OrganizationMembershipId,
-) {
+export async function revalidateOrganizationUser(user_id: UserId) {
     revalidateTag(`organization-user-${user_id}`, { expire: 0 });
 }

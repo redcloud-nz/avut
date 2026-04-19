@@ -152,7 +152,7 @@ export type TeamUserGroupByOutputType = {
     _max: TeamUserMaxAggregateOutputType | null;
 };
 
-type GetTeamUserGroupByPayload<T extends TeamUserGroupByArgs> = Prisma.PrismaPromise<
+export type GetTeamUserGroupByPayload<T extends TeamUserGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<TeamUserGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof TeamUserGroupByOutputType]: P extends "_count"
@@ -1538,6 +1538,11 @@ export type TeamUserFindManyArgs<
      * Skip the first `n` TeamUsers.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of TeamUsers.
+     */
     distinct?: Prisma.TeamUserScalarFieldEnum | Prisma.TeamUserScalarFieldEnum[];
 };
 

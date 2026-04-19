@@ -8,10 +8,10 @@ import * as z from "zod";
 import type { OrganizationInvitation as InvitationRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
-import { type AuthInvitation } from "@/server/auth";
 
 import { OrganizationId } from "./organization";
 import { OrganizationRole } from "./organization-role";
+import { PersonId } from "./person";
 import { UserId } from "./user";
 
 export const InvitationId = {
@@ -26,8 +26,9 @@ export const OrganizationInvitationData = {
     schema: z.object({
         id: InvitationId.schema,
         organizationId: OrganizationId.schema,
+        personId: PersonId.schema.nullable(),
         email: z.email(),
-        role: z.array(OrganizationRole.schema),
+        roles: z.array(OrganizationRole.schema),
         status: z.string(),
         inviterId: UserId.schema,
         createdAt: z.iso.datetime(),
@@ -35,25 +36,12 @@ export const OrganizationInvitationData = {
         teamId: z.string().nullable(),
     }),
 
-    fromAuth: (data: AuthInvitation) =>
-        OrganizationInvitationData.schema.parse({
-            id: data.id,
-            organizationId: data.organizationId,
-            email: data.email,
-            role: [data.role],
-            status: data.status,
-            inviterId: data.inviterId,
-            createdAt: data.createdAt.toISOString(),
-            expiresAt: data.expiresAt.toISOString(),
-            teamId: data.teamId ?? null,
-        }),
-
     fromRecord: (record: InvitationRecord) =>
         OrganizationInvitationData.schema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
             expiresAt: record.expiresAt.toISOString(),
-            role: record.role?.split(",") ?? [],
+            roles: record.role?.split(",") ?? [],
             teamId: record.teamId ?? null,
         }),
 };

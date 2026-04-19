@@ -4,10 +4,7 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-import { useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -22,28 +19,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { authClient } from "@/client/auth-client";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
-import { UserData } from "@/lib/schemas/user";
+import { useOrganization } from "@/hooks/use-organization";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 
 import { AdminModule_DeleteUser_Dialog } from "./delete-user";
 
 interface AdminModule_UserMenuProps {
-    organizationUser: OrganizationMembershipData;
-    user: UserData;
+    user: OrganizationUser;
 }
 
-export function AdminModule_UserMenu({ organizationUser, user }: AdminModule_UserMenuProps) {
+export function AdminModule_UserMenu({ user }: AdminModule_UserMenuProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
 
     const { data: session } = authClient.useSession();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const isSelf = organizationUser.userId === session?.user.id;
+    const isSelf = user.userId === session?.user.id;
 
     return (
         <>
@@ -74,7 +67,7 @@ export function AdminModule_UserMenu({ organizationUser, user }: AdminModule_Use
                         >
                             <DropdownMenuItem
                                 onClick={() => setDeleteDialogOpen(true)}
-                                disabled={organizationUser.userId === session?.user.id}
+                                disabled={user.userId === session?.user.id}
                             >
                                 <ObjectIcons.Delete />
                                 Delete
@@ -86,7 +79,6 @@ export function AdminModule_UserMenu({ organizationUser, user }: AdminModule_Use
 
             {/* Delete confirmation dialog. */}
             <AdminModule_DeleteUser_Dialog
-                organizationUser={organizationUser}
                 user={user}
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

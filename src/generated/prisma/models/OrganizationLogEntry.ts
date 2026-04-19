@@ -53,6 +53,7 @@ export type OrganizationLogEntryCountAggregateOutputType = {
     action: number;
     objectType: number;
     objectId: number;
+    metadata: number;
     changes: number;
     description: number;
     timestamp: number;
@@ -88,6 +89,7 @@ export type OrganizationLogEntryCountAggregateInputType = {
     action?: true;
     objectType?: true;
     objectId?: true;
+    metadata?: true;
     changes?: true;
     description?: true;
     timestamp?: true;
@@ -178,6 +180,7 @@ export type OrganizationLogEntryGroupByOutputType = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata: runtime.JsonValue;
     changes: runtime.JsonValue;
     description: string | null;
     timestamp: Date;
@@ -186,7 +189,7 @@ export type OrganizationLogEntryGroupByOutputType = {
     _max: OrganizationLogEntryMaxAggregateOutputType | null;
 };
 
-type GetOrganizationLogEntryGroupByPayload<T extends OrganizationLogEntryGroupByArgs> =
+export type GetOrganizationLogEntryGroupByPayload<T extends OrganizationLogEntryGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
             Prisma.PickEnumerable<OrganizationLogEntryGroupByOutputType, T["by"]> & {
@@ -209,6 +212,7 @@ export type OrganizationLogEntryWhereInput = {
     action?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
+    metadata?: Prisma.JsonFilter<"OrganizationLogEntry">;
     changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
     description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
     timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
@@ -226,6 +230,7 @@ export type OrganizationLogEntryOrderByWithRelationInput = {
     action?: Prisma.SortOrder;
     objectType?: Prisma.SortOrder;
     objectId?: Prisma.SortOrder;
+    metadata?: Prisma.SortOrder;
     changes?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     timestamp?: Prisma.SortOrder;
@@ -244,6 +249,7 @@ export type OrganizationLogEntryWhereUniqueInput = Prisma.AtLeast<
         action?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
         objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
+        metadata?: Prisma.JsonFilter<"OrganizationLogEntry">;
         changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
         description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
         timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
@@ -263,6 +269,7 @@ export type OrganizationLogEntryOrderByWithAggregationInput = {
     action?: Prisma.SortOrder;
     objectType?: Prisma.SortOrder;
     objectId?: Prisma.SortOrder;
+    metadata?: Prisma.SortOrder;
     changes?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     timestamp?: Prisma.SortOrder;
@@ -285,6 +292,7 @@ export type OrganizationLogEntryScalarWhereWithAggregatesInput = {
     action?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
     objectType?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
     objectId?: Prisma.StringWithAggregatesFilter<"OrganizationLogEntry"> | string;
+    metadata?: Prisma.JsonWithAggregatesFilter<"OrganizationLogEntry">;
     changes?: Prisma.JsonWithAggregatesFilter<"OrganizationLogEntry">;
     description?: Prisma.StringNullableWithAggregatesFilter<"OrganizationLogEntry"> | string | null;
     timestamp?: Prisma.DateTimeWithAggregatesFilter<"OrganizationLogEntry"> | Date | string;
@@ -295,6 +303,7 @@ export type OrganizationLogEntryCreateInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -309,6 +318,7 @@ export type OrganizationLogEntryUncheckedCreateInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -319,6 +329,7 @@ export type OrganizationLogEntryUpdateInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -333,6 +344,7 @@ export type OrganizationLogEntryUncheckedUpdateInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -345,6 +357,7 @@ export type OrganizationLogEntryCreateManyInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -355,6 +368,7 @@ export type OrganizationLogEntryUpdateManyMutationInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -367,6 +381,7 @@ export type OrganizationLogEntryUncheckedUpdateManyInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -389,6 +404,7 @@ export type OrganizationLogEntryCountOrderByAggregateInput = {
     action?: Prisma.SortOrder;
     objectType?: Prisma.SortOrder;
     objectId?: Prisma.SortOrder;
+    metadata?: Prisma.SortOrder;
     changes?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     timestamp?: Prisma.SortOrder;
@@ -641,6 +657,7 @@ export type OrganizationLogEntryCreateWithoutUserInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -653,6 +670,7 @@ export type OrganizationLogEntryUncheckedCreateWithoutUserInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -715,6 +733,7 @@ export type OrganizationLogEntryScalarWhereInput = {
     action?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectType?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
     objectId?: Prisma.StringFilter<"OrganizationLogEntry"> | string;
+    metadata?: Prisma.JsonFilter<"OrganizationLogEntry">;
     changes?: Prisma.JsonFilter<"OrganizationLogEntry">;
     description?: Prisma.StringNullableFilter<"OrganizationLogEntry"> | string | null;
     timestamp?: Prisma.DateTimeFilter<"OrganizationLogEntry"> | Date | string;
@@ -725,6 +744,7 @@ export type OrganizationLogEntryCreateWithoutOrganizationInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -737,6 +757,7 @@ export type OrganizationLogEntryUncheckedCreateWithoutOrganizationInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -791,6 +812,7 @@ export type OrganizationLogEntryCreateManyUserInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -801,6 +823,7 @@ export type OrganizationLogEntryUpdateWithoutUserInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -813,6 +836,7 @@ export type OrganizationLogEntryUncheckedUpdateWithoutUserInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -824,6 +848,7 @@ export type OrganizationLogEntryUncheckedUpdateManyWithoutUserInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -835,6 +860,7 @@ export type OrganizationLogEntryCreateManyOrganizationInput = {
     action: string;
     objectType: string;
     objectId: string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: string | null;
     timestamp?: Date | string;
@@ -845,6 +871,7 @@ export type OrganizationLogEntryUpdateWithoutOrganizationInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -857,6 +884,7 @@ export type OrganizationLogEntryUncheckedUpdateWithoutOrganizationInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -868,6 +896,7 @@ export type OrganizationLogEntryUncheckedUpdateManyWithoutOrganizationInput = {
     action?: Prisma.StringFieldUpdateOperationsInput | string;
     objectType?: Prisma.StringFieldUpdateOperationsInput | string;
     objectId?: Prisma.StringFieldUpdateOperationsInput | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     changes?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -883,6 +912,7 @@ export type OrganizationLogEntrySelect<
         action?: boolean;
         objectType?: boolean;
         objectId?: boolean;
+        metadata?: boolean;
         changes?: boolean;
         description?: boolean;
         timestamp?: boolean;
@@ -902,6 +932,7 @@ export type OrganizationLogEntrySelectCreateManyAndReturn<
         action?: boolean;
         objectType?: boolean;
         objectId?: boolean;
+        metadata?: boolean;
         changes?: boolean;
         description?: boolean;
         timestamp?: boolean;
@@ -921,6 +952,7 @@ export type OrganizationLogEntrySelectUpdateManyAndReturn<
         action?: boolean;
         objectType?: boolean;
         objectId?: boolean;
+        metadata?: boolean;
         changes?: boolean;
         description?: boolean;
         timestamp?: boolean;
@@ -937,6 +969,7 @@ export type OrganizationLogEntrySelectScalar = {
     action?: boolean;
     objectType?: boolean;
     objectId?: boolean;
+    metadata?: boolean;
     changes?: boolean;
     description?: boolean;
     timestamp?: boolean;
@@ -951,6 +984,7 @@ export type OrganizationLogEntryOmit<
     | "action"
     | "objectType"
     | "objectId"
+    | "metadata"
     | "changes"
     | "description"
     | "timestamp",
@@ -991,6 +1025,7 @@ export type $OrganizationLogEntryPayload<
             action: string;
             objectType: string;
             objectId: string;
+            metadata: runtime.JsonValue;
             changes: runtime.JsonValue;
             description: string | null;
             timestamp: Date;
@@ -1601,6 +1636,7 @@ export interface OrganizationLogEntryFieldRefs {
     readonly action: Prisma.FieldRef<"OrganizationLogEntry", "String">;
     readonly objectType: Prisma.FieldRef<"OrganizationLogEntry", "String">;
     readonly objectId: Prisma.FieldRef<"OrganizationLogEntry", "String">;
+    readonly metadata: Prisma.FieldRef<"OrganizationLogEntry", "Json">;
     readonly changes: Prisma.FieldRef<"OrganizationLogEntry", "Json">;
     readonly description: Prisma.FieldRef<"OrganizationLogEntry", "String">;
     readonly timestamp: Prisma.FieldRef<"OrganizationLogEntry", "DateTime">;
@@ -1819,6 +1855,11 @@ export type OrganizationLogEntryFindManyArgs<
      * Skip the first `n` OrganizationLogEntries.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of OrganizationLogEntries.
+     */
     distinct?:
         | Prisma.OrganizationLogEntryScalarFieldEnum
         | Prisma.OrganizationLogEntryScalarFieldEnum[];

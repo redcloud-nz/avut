@@ -42,7 +42,7 @@ export function AdminModule_InvitationsList({ organization }: AdminModule_Invita
     const queryClient = useQueryClient();
 
     const { data: invitations } = useSuspenseQuery(
-        trpc.organizations.listOrganizationInvitations.queryOptions({
+        trpc.accessControl.listOrganizationInvitations.queryOptions({
             organizationId: organization.id,
         }),
     );
@@ -52,7 +52,7 @@ export function AdminModule_InvitationsList({ organization }: AdminModule_Invita
             await authClient.organization.inviteMember({
                 organizationId: organization.id,
                 email: invitation.email,
-                role: invitation.role,
+                role: invitation.roles,
                 resend: true,
             });
         },
@@ -78,7 +78,7 @@ export function AdminModule_InvitationsList({ organization }: AdminModule_Invita
         onSuccess(_, invitation) {
             toast.success(`Invitation successfully revoked for ${invitation.email}.`);
             queryClient.invalidateQueries(
-                trpc.organizations.listOrganizationInvitations.queryFilter({
+                trpc.accessControl.listOrganizationInvitations.queryFilter({
                     organizationId: organization.id,
                 }),
             );

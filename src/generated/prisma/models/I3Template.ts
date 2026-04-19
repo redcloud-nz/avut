@@ -175,7 +175,7 @@ export type I3TemplateGroupByOutputType = {
     _max: I3TemplateMaxAggregateOutputType | null;
 };
 
-type GetI3TemplateGroupByPayload<T extends I3TemplateGroupByArgs> = Prisma.PrismaPromise<
+export type GetI3TemplateGroupByPayload<T extends I3TemplateGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<I3TemplateGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof I3TemplateGroupByOutputType]: P extends "_count"
@@ -1763,6 +1763,11 @@ export type I3TemplateFindManyArgs<
      * Skip the first `n` I3Templates.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of I3Templates.
+     */
     distinct?: Prisma.I3TemplateScalarFieldEnum | Prisma.I3TemplateScalarFieldEnum[];
 };
 

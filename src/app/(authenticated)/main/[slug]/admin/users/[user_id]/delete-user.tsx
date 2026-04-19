@@ -24,27 +24,24 @@ import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteUser_Dialog({
-    organizationUser,
     user,
     ...props
 }: AlertDialogProps & {
-    organizationUser: OrganizationMembershipData;
-    user: UserData;
+    user: OrganizationUser;
 }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.organizations.removeOrganizationMembership.mutationOptions({
+        trpc.accessControl.removeOrganizationUser.mutationOptions({
             onError(error) {
-                console.error("Failed to delete organisation member:", error);
-                toast.error(`Failed to delete organisation member: ${error.message}`);
+                console.error("Failed to remove user from organization:", error);
+                toast.error(`Failed to remove user from organization: ${error.message}`);
             },
             async onSuccess() {
                 toast.success(
@@ -58,7 +55,7 @@ export function AdminModule_DeleteUser_Dialog({
                 router.push(route("/main/[slug]/admin/users", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
-                    trpc.organizations.listOrganizationMembers.queryFilter({
+                    trpc.accessControl.listOrganizationUsers.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -85,7 +82,7 @@ export function AdminModule_DeleteUser_Dialog({
                         onClick={() =>
                             mutation.mutate({
                                 organizationId: organization.id,
-                                userId: user.id,
+                                userId: user.userId,
                             })
                         }
                         status={mutation.status}

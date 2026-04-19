@@ -34,14 +34,14 @@ export default function Auth_ViewInvitation_Dialog({
 
     const [{ data: invitation }] = useSuspenseQueries({
         queries: [
-            trpc.invitations.getInvitation.queryOptions({
+            trpc.accessControl.getInvitation.queryOptions({
                 invitationId: invitationId,
             }),
         ],
     });
 
     const acceptMutation = useMutation(
-        trpc.invitations.acceptInvitation.mutationOptions({
+        trpc.accessControl.acceptInvitation.mutationOptions({
             async onError(error) {
                 console.error("Failed to accept invitation", error);
                 toast.error("Failed to accept invitation: " + error.message);
@@ -52,7 +52,7 @@ export default function Auth_ViewInvitation_Dialog({
                 router.push(`/main/${invitation.organization.slug}`);
 
                 queryClient.invalidateQueries(
-                    trpc.invitations.getInvitation.queryFilter({
+                    trpc.accessControl.getInvitation.queryFilter({
                         invitationId,
                     }),
                 );
@@ -60,7 +60,7 @@ export default function Auth_ViewInvitation_Dialog({
         }),
     );
     const rejectMutation = useMutation(
-        trpc.invitations.rejectInvitation.mutationOptions({
+        trpc.accessControl.rejectInvitation.mutationOptions({
             async onError(error) {
                 console.error("Failed to reject invitation", error);
                 toast.error("Failed to reject invitation: " + error.message);
@@ -69,7 +69,7 @@ export default function Auth_ViewInvitation_Dialog({
                 props.onOpenChange?.(false);
 
                 queryClient.invalidateQueries(
-                    trpc.invitations.getInvitation.queryFilter({
+                    trpc.accessControl.getInvitation.queryFilter({
                         invitationId,
                     }),
                 );
@@ -102,7 +102,7 @@ export default function Auth_ViewInvitation_Dialog({
                     <Field orientation="responsive">
                         <FieldLabel>Role</FieldLabel>
                         <FieldValue className="min-w-1/2">
-                            {invitation.role
+                            {invitation.roles
                                 .map((role) => OrganizationRole.displayNames[role])
                                 .join(", ")}
                         </FieldValue>

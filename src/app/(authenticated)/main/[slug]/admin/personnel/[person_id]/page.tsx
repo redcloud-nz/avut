@@ -9,6 +9,8 @@
 import Link from "next/link";
 import { use } from "react";
 
+import { useSuspenseQueries } from "@tanstack/react-query";
+
 import { Lexington } from "@/components/blocks/lexington";
 import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
@@ -19,8 +21,9 @@ import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/f
 import { FieldValue } from "@/components/ui/field-value";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { usePerson } from "@/hooks/use-person";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
 
 import { AdminModule_PersonMenu } from "./person-menu";
 
@@ -30,7 +33,18 @@ export default function AdminModule_Person_Page(
     const { slug, person_id } = use(props.params);
     const organization = useOrganization();
 
-    const person = usePerson(person_id);
+    const [{ data: person }, { data: linkedUser }] = useSuspenseQueries({
+        queries: [
+            trpc.personnel.getPerson.queryOptions({
+                organizationId: organization.id,
+                personId: person_id,
+            }),
+            trpc.personnel.getLinkedUser.queryOptions({
+                organizationId: organization.id,
+                personId: person_id,
+            }),
+        ],
+    });
 
     return (
         <Lexington.Root>
@@ -113,6 +127,37 @@ export default function AdminModule_Person_Page(
                             </FieldGroup>
                         </CardContent>
                     </Card>
+                    {linkedUser && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Linked User Account</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <FieldGroup>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>User ID</FieldLabel>
+                                        <FieldValue value={linkedUser.userId} format="id" />
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Name</FieldLabel>
+                                        <FieldValue value={linkedUser.name} />
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Email</FieldLabel>
+                                        <FieldValue value={linkedUser.email} />
+                                    </Field>
+                                    <Field orientation="responsive">
+                                        <FieldLabel>Roles</FieldLabel>
+                                        <FieldValue
+                                            value={linkedUser.roles
+                                                .map((role) => OrganizationRole.displayNames[role])
+                                                .join(", ")}
+                                        />
+                                    </Field>
+                                </FieldGroup>
+                            </CardContent>
+                        </Card>
+                    )}
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

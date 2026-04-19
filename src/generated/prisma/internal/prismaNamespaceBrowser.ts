@@ -216,6 +216,8 @@ export const OrganizationUserScalarFieldEnum = {
     userId: "userId",
     role: "role",
     createdAt: "createdAt",
+    updatedAt: "updatedAt",
+    personId: "personId",
 } as const;
 
 export type OrganizationUserScalarFieldEnum =
@@ -231,6 +233,7 @@ export const OrganizationInvitationScalarFieldEnum = {
     expiresAt: "expiresAt",
     createdAt: "createdAt",
     inviterId: "inviterId",
+    personId: "personId",
 } as const;
 
 export type OrganizationInvitationScalarFieldEnum =
@@ -243,6 +246,7 @@ export const OrganizationLogEntryScalarFieldEnum = {
     action: "action",
     objectType: "objectType",
     objectId: "objectId",
+    metadata: "metadata",
     changes: "changes",
     description: "description",
     timestamp: "timestamp",
@@ -271,7 +275,6 @@ export type D4hAccessTokenScalarFieldEnum =
 export const PersonScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
-    userId: "userId",
     name: "name",
     email: "email",
     tags: "tags",

@@ -34,6 +34,9 @@ export async function MainApp_Sidebar_Menu({
                     href={`/main/${slug}/admin`}
                     icon={<ModuleIcons.Admin />}
                 >
+                    <Protect permissions={{ member: ["view"] }} orgId={organization.id}>
+                        <NavSubItem label="Access Control" href={`/main/${slug}/admin/access`} />
+                    </Protect>
                     <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                         <NavSubItem
                             label="D4H Access Tokens"

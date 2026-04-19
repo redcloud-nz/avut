@@ -20,13 +20,13 @@ export const notificationsRouter = createTrpcRouter({
                     email: ctx.auth.user.email,
                     status: "pending",
                 },
-                include: { organization: true, user: true },
+                include: { organization: true, inviter: true },
             });
 
             return invitations.map((invitation) => ({
                 id: invitation.id,
                 title: "Organization Invite",
-                description: `${invitation.user.name} invited you to join ${invitation.organization.name}.`,
+                description: `${invitation.inviter.name} invited you to join ${invitation.organization.name}.`,
                 path: `/personal/invitations/${invitation.id}`,
                 date: invitation.createdAt,
             }));

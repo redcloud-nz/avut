@@ -61,6 +61,7 @@ src/
 
 - One file per domain in `src/trpc/routers/`
 - Register new routers in `src/trpc/routers/_app.ts`
+- Procedures within each router must be kept in alphabetical order
 - Use `organizationProcedure()` for org-scoped mutations/queries — it injects `organizationId` into input and checks permissions automatically
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints

@@ -6,7 +6,6 @@
  */
 
 import { headers as nextHeaders } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { Lexington } from "@/components/blocks/lexington";
 
@@ -15,6 +14,10 @@ import { auth } from "@/server/auth";
 import { getOrganizationBySlug } from "@/server/organization";
 
 import { AdminModule_UsersList } from "./users-list";
+
+export const metadata = {
+    title: "Users",
+};
 
 export default async function AdminModule_UsersList_Page(
     props: PageProps<`/main/[slug]/admin/users`>,
@@ -25,9 +28,7 @@ export default async function AdminModule_UsersList_Page(
     const session = await auth.api.getSession({
         headers: await nextHeaders(),
     });
-    if (!session || !session.user) {
-        redirect("/auth/sign-in");
-    }
+    if (!session) throw new Error("User is not authenticated");
 
     return (
         <Lexington.Root>

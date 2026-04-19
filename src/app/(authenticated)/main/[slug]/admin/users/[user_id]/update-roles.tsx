@@ -19,7 +19,6 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -35,15 +34,13 @@ import {
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
-interface AdminModule_UpdateUserRoles_Dialog_Props extends Omit<DialogProps, "children"> {
-    organizationMember: OrganizationMembershipData;
-    user: UserData;
-    currentUserMembership: OrganizationMembershipData;
+interface AdminModule_UpdateUserRoles_DialogProps extends Omit<DialogProps, "children"> {
+    user: OrganizationUser;
+    currentUser: OrganizationUser;
 }
 
 const schema = z.object({
@@ -54,27 +51,20 @@ const schema = z.object({
 });
 
 export default function AdminModule_UpdateUserRoles_Dialog({
-    organizationMember,
     user,
-    currentUserMembership,
+    currentUser,
     ...props
-}: AdminModule_UpdateUserRoles_Dialog_Props) {
+}: AdminModule_UpdateUserRoles_DialogProps) {
     const organization = useOrganization();
 
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            primaryRole: organizationMember.role.find(
-                (v) => v === "owner" || v === "admin" || v === "member",
-            )!,
-            i3Role:
-                organizationMember.role.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
+            primaryRole: user.roles.find((v) => v === "owner" || v === "admin" || v === "member")!,
+            i3Role: user.roles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
             skillsRole:
-                organizationMember.role.find(
-                    (v) => v === "skills-admin" || v === "skills-assessor",
-                ) ?? null,
-            skillPackageRole:
-                organizationMember.role.find((v) => v === "skill-package-author") ?? null,
+                user.roles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
+            skillPackageRole: user.roles.find((v) => v === "skill-package-author") ?? null,
         },
     });
 
@@ -82,7 +72,7 @@ export default function AdminModule_UpdateUserRoles_Dialog({
         mutationFn: async (formData: z.infer<typeof schema>) => {
             const { data, error } = await authClient.organization.updateMemberRole({
                 organizationId: organization.id,
-                memberId: organizationMember.id,
+                memberId: user.organizationUserId,
                 role: [
                     formData.primaryRole,
                     formData.i3Role,
@@ -98,7 +88,7 @@ export default function AdminModule_UpdateUserRoles_Dialog({
             props.onOpenChange?.(false);
 
             await context.client.invalidateQueries(
-                trpc.organizations.listOrganizationMembers.queryFilter({
+                trpc.accessControl.listOrganizationUsers.queryFilter({
                     organizationId: organization.id,
                 }),
             );

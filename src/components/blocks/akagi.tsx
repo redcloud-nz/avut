@@ -43,11 +43,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -68,10 +64,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-type AkagiTableHeadCellProps<TData extends RowData> = Omit<
-    ComponentProps<"th">,
-    "align"
-> &
+type AkagiTableHeadCellProps<TData extends RowData> = Omit<ComponentProps<"th">, "align"> &
     Pick<HeaderContext<TData, unknown>, "header"> & {
         align?: "start" | "center" | "end";
         filterOptions?: (string | { value: any; label: string })[];
@@ -87,10 +80,7 @@ function AkagiTableHeadCell<TData extends RowData>({
     showAbove: showAbove,
     ...props
 }: AkagiTableHeadCellProps<TData>) {
-    const canFilter =
-        header.column.getCanFilter() &&
-        filterOptions &&
-        filterOptions.length > 0;
+    const canFilter = header.column.getCanFilter() && filterOptions && filterOptions.length > 0;
     const canSort = header.column.getCanSort();
     const isSorted = header.column.getIsSorted();
 
@@ -126,12 +116,8 @@ function AkagiTableHeadCell<TData extends RowData>({
                                 className="text-muted-foreground"
                             >
                                 {match(isSorted)
-                                    .with("asc", () => (
-                                        <ArrowDownAZIcon className="size-4" />
-                                    ))
-                                    .with("desc", () => (
-                                        <ArrowDownZAIcon className="size-4" />
-                                    ))
+                                    .with("asc", () => <ArrowDownAZIcon className="size-4" />)
+                                    .with("desc", () => <ArrowDownZAIcon className="size-4" />)
                                     .otherwise(() => (
                                         <ChevronsUpDownIcon className="size-4" />
                                     ))}
@@ -140,18 +126,14 @@ function AkagiTableHeadCell<TData extends RowData>({
                         <DropdownMenuContent className="w-32">
                             <DropdownMenuLabel>Sort</DropdownMenuLabel>
                             <DropdownMenuItem
-                                onClick={() =>
-                                    header.column.toggleSorting(false)
-                                }
+                                onClick={() => header.column.toggleSorting(false)}
                                 disabled={isSorted == "asc"}
                             >
                                 <ArrowDownAZIcon />
                                 <span>Ascending</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                onClick={() =>
-                                    header.column.toggleSorting(true)
-                                }
+                                onClick={() => header.column.toggleSorting(true)}
                                 disabled={isSorted == "desc"}
                             >
                                 <ArrowDownZAIcon />
@@ -181,8 +163,7 @@ function AkagiTableHeadCell<TData extends RowData>({
                                         : option;
 
                                 const checked = (
-                                    (header.column.getFilterValue() as string[]) ??
-                                    []
+                                    (header.column.getFilterValue() as string[]) ?? []
                                 ).includes(value);
                                 return (
                                     <DropdownMenuCheckboxItem
@@ -195,9 +176,7 @@ function AkagiTableHeadCell<TData extends RowData>({
                                                     (
                                                         (header.column.getFilterValue() as string[]) ??
                                                         []
-                                                    ).filter(
-                                                        (v) => v !== value,
-                                                    ),
+                                                    ).filter((v) => v !== value),
                                                 );
                                             else
                                                 header.column.setFilterValue([
@@ -219,10 +198,7 @@ function AkagiTableHeadCell<TData extends RowData>({
     );
 }
 
-type AkagiTableCellProps<TData extends RowData> = Omit<
-    ComponentProps<"td">,
-    "align"
-> &
+type AkagiTableCellProps<TData extends RowData> = Omit<ComponentProps<"td">, "align"> &
     Pick<CellContext<TData, unknown>, "cell"> & {
         align?: "start" | "center" | "end";
         showAbove?: "sm" | "md" | "lg" | "xl" | "2xl";
@@ -260,10 +236,7 @@ interface AkagiTableProps<TData extends RowData> {
     pagination?: boolean;
 }
 
-function AkagiTable<TData extends RowData>({
-    table,
-    pagination = true,
-}: AkagiTableProps<TData>) {
+function AkagiTable<TData extends RowData>({ table, pagination = true }: AkagiTableProps<TData>) {
     const tableId = useId();
 
     const isEmpty = table.getRowCount() == 0;
@@ -282,10 +255,7 @@ function AkagiTable<TData extends RowData>({
                     <TableRow key={`${row.id}`}>
                         {row.getVisibleCells().map((cell) => (
                             <Fragment key={cell.id}>
-                                {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext(),
-                                )}
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </Fragment>
                         ))}
                     </TableRow>
@@ -301,9 +271,7 @@ function AkagiTable<TData extends RowData>({
                     </tr>
                 )}
             </TableBody>
-            {pagination && !isEmpty ? (
-                <AkagiPagination tableId={tableId} table={table} />
-            ) : null}
+            {pagination && !isEmpty ? <AkagiPagination tableId={tableId} table={table} /> : null}
         </Table>
     );
 }
@@ -314,18 +282,12 @@ function AkagiTableHeader<TData extends RowData>({
     ...props
 }: ComponentProps<"thead"> & { table: TanstackTable<TData> }) {
     return (
-        <TableHeader
-            className={cn("w-full sticky top-0 bg-background z-5", className)}
-            {...props}
-        >
+        <TableHeader className={cn("w-full sticky top-0 bg-background z-5", className)} {...props}>
             {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="rounded-md">
                     {headerGroup.headers.map((header) => (
                         <Fragment key={header.id}>
-                            {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                            )}
+                            {flexRender(header.column.columnDef.header, header.getContext())}
                         </Fragment>
                     ))}
                 </tr>
@@ -349,19 +311,14 @@ function AkagiPagination<TData extends RowData>({
     const endRowIndex = Math.min(startRowIndex + pagination.pageSize, rowCount);
 
     return (
-        <TableFooter
-            className={cn("sticky bottom-0 bg-background z-5", className)}
-            {...props}
-        >
+        <TableFooter className={cn("sticky bottom-0 bg-background z-5", className)} {...props}>
             <tr>
                 <td colSpan={table.getAllColumns().length}>
                     <div className="h-10 grid grid-cols-3 items-center text-sm px-2 py-1">
                         <div
                             className={cn(
                                 "flex gap-1 lg:gap-1.5 text-muted-foreground",
-                                rowCount > 10
-                                    ? "justify-start"
-                                    : "col-span-full justify-center",
+                                rowCount > 10 ? "justify-start" : "col-span-full justify-center",
                             )}
                         >
                             {pageCount > 1 ? (
@@ -374,9 +331,7 @@ function AkagiPagination<TData extends RowData>({
                                             ? `${startRowIndex + 1} - ${endRowIndex}`
                                             : "1"}
                                     </span>
-                                    <span className="text-muted-foreground/80">
-                                        of
-                                    </span>
+                                    <span className="text-muted-foreground/80">of</span>
                                     <span>{rowCount}</span>
                                 </>
                             ) : (
@@ -395,9 +350,7 @@ function AkagiPagination<TData extends RowData>({
                                     onClick={() => table.previousPage()}
                                 >
                                     <ChevronLeftIcon />{" "}
-                                    <span className="hidden sm:block">
-                                        Previous
-                                    </span>
+                                    <span className="hidden sm:block">Previous</span>
                                 </Button>
 
                                 {/* Preceeding ellipsis. Shown if there are more than 2 preceeding pages. */}
@@ -419,12 +372,7 @@ function AkagiPagination<TData extends RowData>({
                                 ) : null}
 
                                 {/* Current page number button. Disabled */}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="border"
-                                    disabled
-                                >
+                                <Button variant="ghost" size="sm" className="border" disabled>
                                     {pageIndex + 1}
                                 </Button>
 
@@ -453,15 +401,12 @@ function AkagiPagination<TData extends RowData>({
                                     disabled={!table.getCanNextPage()}
                                     onClick={() => table.nextPage()}
                                 >
-                                    <span className="hidden sm:block">
-                                        Next
-                                    </span>{" "}
+                                    <span className="hidden sm:block">Next</span>{" "}
                                     <ChevronRightIcon />
                                 </Button>
                             </div>
                         ) : (
-                            <div /* Empty center div to maintain grid structure */
-                            ></div>
+                            <div /* Empty center div to maintain grid structure */></div>
                         )}
                         {rowCount > 10 ? (
                             <div className="flex items-center justify-end gap-2">
@@ -485,16 +430,11 @@ function AkagiPagination<TData extends RowData>({
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {[10, 20, 50, 100, 200, 500].map(
-                                            (size) => (
-                                                <SelectItem
-                                                    key={size}
-                                                    value={size.toString()}
-                                                >
-                                                    {size}
-                                                </SelectItem>
-                                            ),
-                                        )}
+                                        {[10, 20, 50, 100, 200, 500].map((size) => (
+                                            <SelectItem key={size} value={size.toString()}>
+                                                {size}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -521,25 +461,19 @@ function AkagiTableSearch<TData extends RowData>({
             <InputGroupAddon>
                 <SearchIcon className="size-4" />
             </InputGroupAddon>
-            <InputGroupAddon align="inline-end">
-                {table.getRowCount()} results
-            </InputGroupAddon>
+            <InputGroupAddon align="inline-end">{table.getRowCount()} results</InputGroupAddon>
         </InputGroup>
     );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function defineColumns<TData extends RowData>(
-    factory: (
-        columnHelper: ColumnHelper<TData>,
-    ) => (ColumnDef<TData, any> | null)[],
+    factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData, any> | null)[],
 ): ColumnDef<TData>[] {
     const columnHelper = createColumnHelper<TData>();
     const columns = factory(columnHelper);
 
-    return columns.filter(
-        (column): column is ColumnDef<TData> => column !== null,
-    );
+    return columns.filter((column): column is ColumnDef<TData> => column !== null);
 }
 
 export const Akagi = {

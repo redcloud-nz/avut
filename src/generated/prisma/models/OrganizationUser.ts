@@ -30,6 +30,8 @@ export type OrganizationUserMinAggregateOutputType = {
     userId: string | null;
     role: string | null;
     createdAt: Date | null;
+    updatedAt: Date | null;
+    personId: string | null;
 };
 
 export type OrganizationUserMaxAggregateOutputType = {
@@ -38,6 +40,8 @@ export type OrganizationUserMaxAggregateOutputType = {
     userId: string | null;
     role: string | null;
     createdAt: Date | null;
+    updatedAt: Date | null;
+    personId: string | null;
 };
 
 export type OrganizationUserCountAggregateOutputType = {
@@ -46,6 +50,8 @@ export type OrganizationUserCountAggregateOutputType = {
     userId: number;
     role: number;
     createdAt: number;
+    updatedAt: number;
+    personId: number;
     _all: number;
 };
 
@@ -55,6 +61,8 @@ export type OrganizationUserMinAggregateInputType = {
     userId?: true;
     role?: true;
     createdAt?: true;
+    updatedAt?: true;
+    personId?: true;
 };
 
 export type OrganizationUserMaxAggregateInputType = {
@@ -63,6 +71,8 @@ export type OrganizationUserMaxAggregateInputType = {
     userId?: true;
     role?: true;
     createdAt?: true;
+    updatedAt?: true;
+    personId?: true;
 };
 
 export type OrganizationUserCountAggregateInputType = {
@@ -71,6 +81,8 @@ export type OrganizationUserCountAggregateInputType = {
     userId?: true;
     role?: true;
     createdAt?: true;
+    updatedAt?: true;
+    personId?: true;
     _all?: true;
 };
 
@@ -157,12 +169,14 @@ export type OrganizationUserGroupByOutputType = {
     userId: string;
     role: string;
     createdAt: Date;
+    updatedAt: Date;
+    personId: string | null;
     _count: OrganizationUserCountAggregateOutputType | null;
     _min: OrganizationUserMinAggregateOutputType | null;
     _max: OrganizationUserMaxAggregateOutputType | null;
 };
 
-type GetOrganizationUserGroupByPayload<T extends OrganizationUserGroupByArgs> =
+export type GetOrganizationUserGroupByPayload<T extends OrganizationUserGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
             Prisma.PickEnumerable<OrganizationUserGroupByOutputType, T["by"]> & {
@@ -184,11 +198,14 @@ export type OrganizationUserWhereInput = {
     userId?: Prisma.StringFilter<"OrganizationUser"> | string;
     role?: Prisma.StringFilter<"OrganizationUser"> | string;
     createdAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
+    personId?: Prisma.StringNullableFilter<"OrganizationUser"> | string | null;
     organization?: Prisma.XOR<
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+    person?: Prisma.XOR<Prisma.PersonNullableScalarRelationFilter, Prisma.PersonWhereInput> | null;
 };
 
 export type OrganizationUserOrderByWithRelationInput = {
@@ -197,13 +214,17 @@ export type OrganizationUserOrderByWithRelationInput = {
     userId?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    personId?: Prisma.SortOrderInput | Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
+    person?: Prisma.PersonOrderByWithRelationInput;
 };
 
 export type OrganizationUserWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        personId?: string;
         organizationId_userId?: Prisma.OrganizationUserOrganizationIdUserIdCompoundUniqueInput;
         AND?: Prisma.OrganizationUserWhereInput | Prisma.OrganizationUserWhereInput[];
         OR?: Prisma.OrganizationUserWhereInput[];
@@ -212,13 +233,18 @@ export type OrganizationUserWhereUniqueInput = Prisma.AtLeast<
         userId?: Prisma.StringFilter<"OrganizationUser"> | string;
         role?: Prisma.StringFilter<"OrganizationUser"> | string;
         createdAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
+        updatedAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
         organization?: Prisma.XOR<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
         user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+        person?: Prisma.XOR<
+            Prisma.PersonNullableScalarRelationFilter,
+            Prisma.PersonWhereInput
+        > | null;
     },
-    "id" | "organizationId_userId"
+    "id" | "personId" | "organizationId_userId"
 >;
 
 export type OrganizationUserOrderByWithAggregationInput = {
@@ -227,6 +253,8 @@ export type OrganizationUserOrderByWithAggregationInput = {
     userId?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    personId?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.OrganizationUserCountOrderByAggregateInput;
     _max?: Prisma.OrganizationUserMaxOrderByAggregateInput;
     _min?: Prisma.OrganizationUserMinOrderByAggregateInput;
@@ -245,14 +273,18 @@ export type OrganizationUserScalarWhereWithAggregatesInput = {
     userId?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
     role?: Prisma.StringWithAggregatesFilter<"OrganizationUser"> | string;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"OrganizationUser"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"OrganizationUser"> | Date | string;
+    personId?: Prisma.StringNullableWithAggregatesFilter<"OrganizationUser"> | string | null;
 };
 
 export type OrganizationUserCreateInput = {
     id: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutUsersInput;
     user: Prisma.UserCreateNestedOneWithoutOrganizationUsersInput;
+    person?: Prisma.PersonCreateNestedOneWithoutOrganizationUserInput;
 };
 
 export type OrganizationUserUncheckedCreateInput = {
@@ -261,14 +293,18 @@ export type OrganizationUserUncheckedCreateInput = {
     userId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutUsersNestedInput;
     user?: Prisma.UserUpdateOneRequiredWithoutOrganizationUsersNestedInput;
+    person?: Prisma.PersonUpdateOneWithoutOrganizationUserNestedInput;
 };
 
 export type OrganizationUserUncheckedUpdateInput = {
@@ -277,6 +313,8 @@ export type OrganizationUserUncheckedUpdateInput = {
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserCreateManyInput = {
@@ -285,12 +323,15 @@ export type OrganizationUserCreateManyInput = {
     userId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type OrganizationUserUncheckedUpdateManyInput = {
@@ -299,6 +340,8 @@ export type OrganizationUserUncheckedUpdateManyInput = {
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserListRelationFilter = {
@@ -322,6 +365,8 @@ export type OrganizationUserCountOrderByAggregateInput = {
     userId?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    personId?: Prisma.SortOrder;
 };
 
 export type OrganizationUserMaxOrderByAggregateInput = {
@@ -330,6 +375,8 @@ export type OrganizationUserMaxOrderByAggregateInput = {
     userId?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    personId?: Prisma.SortOrder;
 };
 
 export type OrganizationUserMinOrderByAggregateInput = {
@@ -338,6 +385,13 @@ export type OrganizationUserMinOrderByAggregateInput = {
     userId?: Prisma.SortOrder;
     role?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    personId?: Prisma.SortOrder;
+};
+
+export type OrganizationUserNullableScalarRelationFilter = {
+    is?: Prisma.OrganizationUserWhereInput | null;
+    isNot?: Prisma.OrganizationUserWhereInput | null;
 };
 
 export type OrganizationUserCreateNestedManyWithoutUserInput = {
@@ -528,11 +582,69 @@ export type OrganizationUserUncheckedUpdateManyWithoutOrganizationNestedInput = 
         | Prisma.OrganizationUserScalarWhereInput[];
 };
 
+export type OrganizationUserCreateNestedOneWithoutPersonInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+    connectOrCreate?: Prisma.OrganizationUserCreateOrConnectWithoutPersonInput;
+    connect?: Prisma.OrganizationUserWhereUniqueInput;
+};
+
+export type OrganizationUserUncheckedCreateNestedOneWithoutPersonInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+    connectOrCreate?: Prisma.OrganizationUserCreateOrConnectWithoutPersonInput;
+    connect?: Prisma.OrganizationUserWhereUniqueInput;
+};
+
+export type OrganizationUserUpdateOneWithoutPersonNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+    connectOrCreate?: Prisma.OrganizationUserCreateOrConnectWithoutPersonInput;
+    upsert?: Prisma.OrganizationUserUpsertWithoutPersonInput;
+    disconnect?: Prisma.OrganizationUserWhereInput | boolean;
+    delete?: Prisma.OrganizationUserWhereInput | boolean;
+    connect?: Prisma.OrganizationUserWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUserUpdateToOneWithWhereWithoutPersonInput,
+            Prisma.OrganizationUserUpdateWithoutPersonInput
+        >,
+        Prisma.OrganizationUserUncheckedUpdateWithoutPersonInput
+    >;
+};
+
+export type OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+    connectOrCreate?: Prisma.OrganizationUserCreateOrConnectWithoutPersonInput;
+    upsert?: Prisma.OrganizationUserUpsertWithoutPersonInput;
+    disconnect?: Prisma.OrganizationUserWhereInput | boolean;
+    delete?: Prisma.OrganizationUserWhereInput | boolean;
+    connect?: Prisma.OrganizationUserWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.OrganizationUserUpdateToOneWithWhereWithoutPersonInput,
+            Prisma.OrganizationUserUpdateWithoutPersonInput
+        >,
+        Prisma.OrganizationUserUncheckedUpdateWithoutPersonInput
+    >;
+};
+
 export type OrganizationUserCreateWithoutUserInput = {
     id: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutUsersInput;
+    person?: Prisma.PersonCreateNestedOneWithoutOrganizationUserInput;
 };
 
 export type OrganizationUserUncheckedCreateWithoutUserInput = {
@@ -540,6 +652,8 @@ export type OrganizationUserUncheckedCreateWithoutUserInput = {
     organizationId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserCreateOrConnectWithoutUserInput = {
@@ -592,13 +706,17 @@ export type OrganizationUserScalarWhereInput = {
     userId?: Prisma.StringFilter<"OrganizationUser"> | string;
     role?: Prisma.StringFilter<"OrganizationUser"> | string;
     createdAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"OrganizationUser"> | Date | string;
+    personId?: Prisma.StringNullableFilter<"OrganizationUser"> | string | null;
 };
 
 export type OrganizationUserCreateWithoutOrganizationInput = {
     id: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
     user: Prisma.UserCreateNestedOneWithoutOrganizationUsersInput;
+    person?: Prisma.PersonCreateNestedOneWithoutOrganizationUserInput;
 };
 
 export type OrganizationUserUncheckedCreateWithoutOrganizationInput = {
@@ -606,6 +724,8 @@ export type OrganizationUserUncheckedCreateWithoutOrganizationInput = {
     userId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserCreateOrConnectWithoutOrganizationInput = {
@@ -651,18 +771,86 @@ export type OrganizationUserUpdateManyWithWhereWithoutOrganizationInput = {
     >;
 };
 
+export type OrganizationUserCreateWithoutPersonInput = {
+    id: string;
+    role?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    organization: Prisma.OrganizationCreateNestedOneWithoutUsersInput;
+    user: Prisma.UserCreateNestedOneWithoutOrganizationUsersInput;
+};
+
+export type OrganizationUserUncheckedCreateWithoutPersonInput = {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+
+export type OrganizationUserCreateOrConnectWithoutPersonInput = {
+    where: Prisma.OrganizationUserWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+};
+
+export type OrganizationUserUpsertWithoutPersonInput = {
+    update: Prisma.XOR<
+        Prisma.OrganizationUserUpdateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedUpdateWithoutPersonInput
+    >;
+    create: Prisma.XOR<
+        Prisma.OrganizationUserCreateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedCreateWithoutPersonInput
+    >;
+    where?: Prisma.OrganizationUserWhereInput;
+};
+
+export type OrganizationUserUpdateToOneWithWhereWithoutPersonInput = {
+    where?: Prisma.OrganizationUserWhereInput;
+    data: Prisma.XOR<
+        Prisma.OrganizationUserUpdateWithoutPersonInput,
+        Prisma.OrganizationUserUncheckedUpdateWithoutPersonInput
+    >;
+};
+
+export type OrganizationUserUpdateWithoutPersonInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    role?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    organization?: Prisma.OrganizationUpdateOneRequiredWithoutUsersNestedInput;
+    user?: Prisma.UserUpdateOneRequiredWithoutOrganizationUsersNestedInput;
+};
+
+export type OrganizationUserUncheckedUpdateWithoutPersonInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    userId?: Prisma.StringFieldUpdateOperationsInput | string;
+    role?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
 export type OrganizationUserCreateManyUserInput = {
     id: string;
     organizationId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutUsersNestedInput;
+    person?: Prisma.PersonUpdateOneWithoutOrganizationUserNestedInput;
 };
 
 export type OrganizationUserUncheckedUpdateWithoutUserInput = {
@@ -670,6 +858,8 @@ export type OrganizationUserUncheckedUpdateWithoutUserInput = {
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserUncheckedUpdateManyWithoutUserInput = {
@@ -677,6 +867,8 @@ export type OrganizationUserUncheckedUpdateManyWithoutUserInput = {
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserCreateManyOrganizationInput = {
@@ -684,13 +876,17 @@ export type OrganizationUserCreateManyOrganizationInput = {
     userId: string;
     role?: string;
     createdAt?: Date | string;
+    updatedAt?: Date | string;
+    personId?: string | null;
 };
 
 export type OrganizationUserUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user?: Prisma.UserUpdateOneRequiredWithoutOrganizationUsersNestedInput;
+    person?: Prisma.PersonUpdateOneWithoutOrganizationUserNestedInput;
 };
 
 export type OrganizationUserUncheckedUpdateWithoutOrganizationInput = {
@@ -698,6 +894,8 @@ export type OrganizationUserUncheckedUpdateWithoutOrganizationInput = {
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserUncheckedUpdateManyWithoutOrganizationInput = {
@@ -705,6 +903,8 @@ export type OrganizationUserUncheckedUpdateManyWithoutOrganizationInput = {
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     role?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    personId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type OrganizationUserSelect<
@@ -716,8 +916,11 @@ export type OrganizationUserSelect<
         userId?: boolean;
         role?: boolean;
         createdAt?: boolean;
+        updatedAt?: boolean;
+        personId?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+        person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
     },
     ExtArgs["result"]["organizationUser"]
 >;
@@ -731,8 +934,11 @@ export type OrganizationUserSelectCreateManyAndReturn<
         userId?: boolean;
         role?: boolean;
         createdAt?: boolean;
+        updatedAt?: boolean;
+        personId?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+        person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
     },
     ExtArgs["result"]["organizationUser"]
 >;
@@ -746,8 +952,11 @@ export type OrganizationUserSelectUpdateManyAndReturn<
         userId?: boolean;
         role?: boolean;
         createdAt?: boolean;
+        updatedAt?: boolean;
+        personId?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+        person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
     },
     ExtArgs["result"]["organizationUser"]
 >;
@@ -758,12 +967,14 @@ export type OrganizationUserSelectScalar = {
     userId?: boolean;
     role?: boolean;
     createdAt?: boolean;
+    updatedAt?: boolean;
+    personId?: boolean;
 };
 
 export type OrganizationUserOmit<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-    "id" | "organizationId" | "userId" | "role" | "createdAt",
+    "id" | "organizationId" | "userId" | "role" | "createdAt" | "updatedAt" | "personId",
     ExtArgs["result"]["organizationUser"]
 >;
 export type OrganizationUserInclude<
@@ -771,18 +982,21 @@ export type OrganizationUserInclude<
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
 };
 export type OrganizationUserIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
 };
 export type OrganizationUserIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    person?: boolean | Prisma.OrganizationUser$personArgs<ExtArgs>;
 };
 
 export type $OrganizationUserPayload<
@@ -792,6 +1006,7 @@ export type $OrganizationUserPayload<
     objects: {
         organization: Prisma.$OrganizationPayload<ExtArgs>;
         user: Prisma.$UserPayload<ExtArgs>;
+        person: Prisma.$PersonPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -800,6 +1015,8 @@ export type $OrganizationUserPayload<
             userId: string;
             role: string;
             createdAt: Date;
+            updatedAt: Date;
+            personId: string | null;
         },
         ExtArgs["result"]["organizationUser"]
     >;
@@ -1369,6 +1586,19 @@ export interface Prisma__OrganizationUserClient<
         ExtArgs,
         GlobalOmitOptions
     >;
+    person<T extends Prisma.OrganizationUser$personArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.OrganizationUser$personArgs<ExtArgs>>,
+    ): Prisma.Prisma__PersonClient<
+        runtime.Types.Result.GetResult<
+            Prisma.$PersonPayload<ExtArgs>,
+            T,
+            "findUniqueOrThrow",
+            GlobalOmitOptions
+        > | null,
+        null,
+        ExtArgs,
+        GlobalOmitOptions
+    >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1405,6 +1635,8 @@ export interface OrganizationUserFieldRefs {
     readonly userId: Prisma.FieldRef<"OrganizationUser", "String">;
     readonly role: Prisma.FieldRef<"OrganizationUser", "String">;
     readonly createdAt: Prisma.FieldRef<"OrganizationUser", "DateTime">;
+    readonly updatedAt: Prisma.FieldRef<"OrganizationUser", "DateTime">;
+    readonly personId: Prisma.FieldRef<"OrganizationUser", "String">;
 }
 
 // Custom InputTypes
@@ -1616,6 +1848,11 @@ export type OrganizationUserFindManyArgs<
      * Skip the first `n` OrganizationUsers.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of OrganizationUsers.
+     */
     distinct?: Prisma.OrganizationUserScalarFieldEnum | Prisma.OrganizationUserScalarFieldEnum[];
 };
 
@@ -1849,6 +2086,27 @@ export type OrganizationUserDeleteManyArgs<
      * Limit how many OrganizationUsers to delete.
      */
     limit?: number;
+};
+
+/**
+ * OrganizationUser.person
+ */
+export type OrganizationUser$personArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the Person
+     */
+    select?: Prisma.PersonSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Person
+     */
+    omit?: Prisma.PersonOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PersonInclude<ExtArgs> | null;
+    where?: Prisma.PersonWhereInput;
 };
 
 /**

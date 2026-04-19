@@ -155,7 +155,7 @@ export type SkillGroupOverrideGroupByOutputType = {
     _max: SkillGroupOverrideMaxAggregateOutputType | null;
 };
 
-type GetSkillGroupOverrideGroupByPayload<T extends SkillGroupOverrideGroupByArgs> =
+export type GetSkillGroupOverrideGroupByPayload<T extends SkillGroupOverrideGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
             Prisma.PickEnumerable<SkillGroupOverrideGroupByOutputType, T["by"]> & {
@@ -1605,6 +1605,11 @@ export type SkillGroupOverrideFindManyArgs<
      * Skip the first `n` SkillGroupOverrides.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of SkillGroupOverrides.
+     */
     distinct?:
         | Prisma.SkillGroupOverrideScalarFieldEnum
         | Prisma.SkillGroupOverrideScalarFieldEnum[];

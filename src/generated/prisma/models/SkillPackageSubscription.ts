@@ -166,18 +166,19 @@ export type SkillPackageSubscriptionGroupByOutputType = {
     _max: SkillPackageSubscriptionMaxAggregateOutputType | null;
 };
 
-type GetSkillPackageSubscriptionGroupByPayload<T extends SkillPackageSubscriptionGroupByArgs> =
-    Prisma.PrismaPromise<
-        Array<
-            Prisma.PickEnumerable<SkillPackageSubscriptionGroupByOutputType, T["by"]> & {
-                [P in keyof T & keyof SkillPackageSubscriptionGroupByOutputType]: P extends "_count"
-                    ? T[P] extends boolean
-                        ? number
-                        : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>
-                    : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>;
-            }
-        >
-    >;
+export type GetSkillPackageSubscriptionGroupByPayload<
+    T extends SkillPackageSubscriptionGroupByArgs,
+> = Prisma.PrismaPromise<
+    Array<
+        Prisma.PickEnumerable<SkillPackageSubscriptionGroupByOutputType, T["by"]> & {
+            [P in keyof T & keyof SkillPackageSubscriptionGroupByOutputType]: P extends "_count"
+                ? T[P] extends boolean
+                    ? number
+                    : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>
+                : Prisma.GetScalarType<T[P], SkillPackageSubscriptionGroupByOutputType[P]>;
+        }
+    >
+>;
 
 export type SkillPackageSubscriptionWhereInput = {
     AND?: Prisma.SkillPackageSubscriptionWhereInput | Prisma.SkillPackageSubscriptionWhereInput[];
@@ -1967,6 +1968,11 @@ export type SkillPackageSubscriptionFindManyArgs<
      * Skip the first `n` SkillPackageSubscriptions.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of SkillPackageSubscriptions.
+     */
     distinct?:
         | Prisma.SkillPackageSubscriptionScalarFieldEnum
         | Prisma.SkillPackageSubscriptionScalarFieldEnum[];

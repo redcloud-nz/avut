@@ -77,12 +77,12 @@ export type PrismaVersion = {
 };
 
 /**
- * Prisma Client JS version: 7.3.0
- * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
+ * Prisma Client JS version: 7.7.0
+ * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
  */
 export const prismaVersion: PrismaVersion = {
-    client: "7.3.0",
-    engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735",
+    client: "7.7.0",
+    engine: "75cbdc1eb7150937890ad5465d861175c6624711",
 };
 
 /**
@@ -2974,6 +2974,8 @@ export const OrganizationUserScalarFieldEnum = {
     userId: "userId",
     role: "role",
     createdAt: "createdAt",
+    updatedAt: "updatedAt",
+    personId: "personId",
 } as const;
 
 export type OrganizationUserScalarFieldEnum =
@@ -2989,6 +2991,7 @@ export const OrganizationInvitationScalarFieldEnum = {
     expiresAt: "expiresAt",
     createdAt: "createdAt",
     inviterId: "inviterId",
+    personId: "personId",
 } as const;
 
 export type OrganizationInvitationScalarFieldEnum =
@@ -3001,6 +3004,7 @@ export const OrganizationLogEntryScalarFieldEnum = {
     action: "action",
     objectType: "objectType",
     objectId: "objectId",
+    metadata: "metadata",
     changes: "changes",
     description: "description",
     timestamp: "timestamp",
@@ -3029,7 +3033,6 @@ export type D4hAccessTokenScalarFieldEnum =
 export const PersonScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
-    userId: "userId",
     name: "name",
     email: "email",
     tags: "tags",

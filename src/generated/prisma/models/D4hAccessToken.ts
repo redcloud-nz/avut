@@ -200,17 +200,18 @@ export type D4hAccessTokenGroupByOutputType = {
     _max: D4hAccessTokenMaxAggregateOutputType | null;
 };
 
-type GetD4hAccessTokenGroupByPayload<T extends D4hAccessTokenGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<D4hAccessTokenGroupByOutputType, T["by"]> & {
-            [P in keyof T & keyof D4hAccessTokenGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>
-                : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>;
-        }
-    >
->;
+export type GetD4hAccessTokenGroupByPayload<T extends D4hAccessTokenGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<D4hAccessTokenGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof D4hAccessTokenGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], D4hAccessTokenGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type D4hAccessTokenWhereInput = {
     AND?: Prisma.D4hAccessTokenWhereInput | Prisma.D4hAccessTokenWhereInput[];
@@ -1841,6 +1842,11 @@ export type D4hAccessTokenFindManyArgs<
      * Skip the first `n` D4hAccessTokens.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of D4hAccessTokens.
+     */
     distinct?: Prisma.D4hAccessTokenScalarFieldEnum | Prisma.D4hAccessTokenScalarFieldEnum[];
 };
 

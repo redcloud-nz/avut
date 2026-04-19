@@ -60,7 +60,7 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
     });
 
     const mutation = useMutation(
-        trpc.invitations.createInvitation.mutationOptions({
+        trpc.accessControl.createInvitation.mutationOptions({
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof z.infer<typeof schema>, {
@@ -77,7 +77,7 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                 props.onOpenChange?.(false);
 
                 await context.client.invalidateQueries(
-                    trpc.organizations.listOrganizationInvitations.queryFilter({
+                    trpc.accessControl.listOrganizationInvitations.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -116,6 +116,7 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                 formData.skillsRole,
                                 formData.skillPackageRole,
                             ].filter((r): r is OrganizationRole => r !== null),
+                            personId: null,
                         });
                     })}
                 >

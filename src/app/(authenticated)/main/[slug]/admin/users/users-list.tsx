@@ -23,12 +23,11 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
-import { UserData } from "@/lib/schemas/user";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateInvitation_Dialog } from "../invitations/create-invitation";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 type AdminModule_UsersListProps = {
     organization: OrganizationData;
@@ -37,17 +36,17 @@ type AdminModule_UsersListProps = {
 
 export function AdminModule_UsersList({ organization, currentUserId }: AdminModule_UsersListProps) {
     const { data: members } = useSuspenseQuery(
-        trpc.organizations.listOrganizationMembers.queryOptions({
+        trpc.accessControl.listOrganizationUsers.queryOptions({
             organizationId: organization.id,
         }),
     );
 
-    type RowData = OrganizationMembershipData & { user: UserData };
+    type RowData = OrganizationUser;
 
     const columns = useMemo(
         () =>
             Akagi.defineColumns<RowData>((columnHelper) => [
-                columnHelper.accessor("user.name", {
+                columnHelper.accessor("name", {
                     id: "name",
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>User</Akagi.TableHeadCell>
@@ -72,7 +71,7 @@ export function AdminModule_UsersList({ organization, currentUserId }: AdminModu
                     enableSorting: true,
                     enableGlobalFilter: true,
                 }),
-                columnHelper.accessor("user.email", {
+                columnHelper.accessor("email", {
                     id: "email",
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>Email</Akagi.TableHeadCell>
@@ -95,13 +94,13 @@ export function AdminModule_UsersList({ organization, currentUserId }: AdminModu
                     enableSorting: true,
                     enableGlobalFilter: false,
                 }),
-                columnHelper.accessor("role", {
+                columnHelper.accessor("roles", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>Role</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.row.original.role
+                            {ctx.row.original.roles
                                 .map((role) => OrganizationRole.displayNames[role])
                                 .join(", ")}
                         </Akagi.TableCell>

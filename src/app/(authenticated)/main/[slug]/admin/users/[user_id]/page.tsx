@@ -40,19 +40,19 @@ export default function AdminModule_User_Page(
 
     const { data: session } = authClient.useSession();
 
-    const { data: memberships } = useSuspenseQuery(
-        trpc.organizations.listOrganizationMembers.queryOptions({
+    const { data: organizationUsers } = useSuspenseQuery(
+        trpc.accessControl.listOrganizationUsers.queryOptions({
             organizationId: organization.id,
         }),
     );
 
-    const organizationMembership = memberships.find((m) => m.userId === user_id);
-    if (!organizationMembership) {
+    const targetUser = organizationUsers.find((m) => m.userId === user_id);
+    if (!targetUser) {
         throw new Error(`Organization membership for User(${user_id}) not found`);
     }
 
-    const currentUserMembership = memberships.find((m) => m.userId === session?.user.id);
-    if (!currentUserMembership) {
+    const currentUser = organizationUsers.find((m) => m.userId === session?.user.id);
+    if (!currentUser) {
         throw new Error(`Current user's organization membership not found`);
     }
 
@@ -65,7 +65,7 @@ export default function AdminModule_User_Page(
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Users", href: route("/main/[slug]/admin/users", { slug }) },
                     {
-                        label: organizationMembership.user.name,
+                        label: targetUser.name,
                         href: route("/main/[slug]/admin/users/[user_id]", { slug, user_id }),
                     },
                 ]}
@@ -77,12 +77,9 @@ export default function AdminModule_User_Page(
                             href={route("/main/[slug]/admin/users", { slug })}
                             tooltip="Back to users list"
                         />
-                        <Hermes.Title>{organizationMembership.user.name}</Hermes.Title>
+                        <Hermes.Title>{targetUser.name}</Hermes.Title>
                         <Hermes.Action>
-                            <AdminModule_UserMenu
-                                organizationUser={organizationMembership}
-                                user={organizationMembership.user}
-                            />
+                            <AdminModule_UserMenu user={targetUser} />
                         </Hermes.Action>
                     </Hermes.Header>
 
@@ -113,36 +110,22 @@ export default function AdminModule_User_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>User ID</FieldLabel>
-                                    <FieldValue
-                                        value={organizationMembership.user.id}
-                                        format="id"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Organization Member ID</FieldLabel>
-                                    <FieldValue value={organizationMembership.id} format="id" />
+                                    <FieldValue value={targetUser.userId} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={organizationMembership.user.name} />
+                                    <FieldValue value={targetUser.name} />
                                 </Field>
 
                                 <Field orientation="responsive">
                                     <FieldLabel>Email</FieldLabel>
-                                    <FieldValue>
-                                        {organizationMembership.user.email}
-                                        {organizationMembership.user.emailVerified ? (
-                                            <span className="text-muted-foreground ml-2">
-                                                (Verified)
-                                            </span>
-                                        ) : null}
-                                    </FieldValue>
+                                    <FieldValue>{targetUser.email}</FieldValue>
                                 </Field>
 
                                 <Field orientation="responsive">
                                     <FieldLabel>Role(s)</FieldLabel>
                                     <FieldValue
-                                        value={organizationMembership.role
+                                        value={targetUser.roles
                                             .map((role) => OrganizationRole.displayNames[role])
                                             .join(", ")}
                                     />
@@ -153,7 +136,14 @@ export default function AdminModule_User_Page(
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue
-                                        value={organizationMembership.createdAt}
+                                        value={targetUser.createdAt}
+                                        format="dateWithDistance"
+                                    />
+                                </Field>
+                                <Field orientation="responsive">
+                                    <FieldLabel>Updated</FieldLabel>
+                                    <FieldValue
+                                        value={targetUser.updatedAt}
                                         format="dateWithDistance"
                                     />
                                 </Field>
@@ -163,9 +153,8 @@ export default function AdminModule_User_Page(
                     <AdminModule_UpdateUserRoles_Dialog
                         open={updateDialogOpen}
                         onOpenChange={setUpdateDialogOpen}
-                        organizationMember={organizationMembership}
-                        user={organizationMembership.user}
-                        currentUserMembership={currentUserMembership}
+                        user={targetUser}
+                        currentUser={currentUser}
                     />
                 </Lexington.Column>
             </Lexington.Page>

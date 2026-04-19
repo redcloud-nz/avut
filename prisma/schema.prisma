@@ -26,13 +26,12 @@ model User {
   accounts          Account[]                @relation("account_to_user")
   teamUsers         TeamUser[]               @relation("team_user_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
-  invitations       OrganizationInvitation[] @relation("organization_invitation_to_user")
+  invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
   d4hAccessTokens   D4hAccessToken[]         @relation("d4h_access_token_to_user")
 
   authoredNotes Note[]                 @relation("note_to_author")
   formInstances FormInstance[]         @relation("form_instance_to_user")
   logEntries    OrganizationLogEntry[] @relation("organization_log_entry_to_user")
-  personnel     Person[]               @relation("person_to_user")
 
   @@unique([email])
   @@map("users")
@@ -186,6 +185,10 @@ model OrganizationUser {
   user           User         @relation("organization_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+
+  personId      String?       @unique
+  person        Person?       @relation("person_to_organization_user", fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@unique([organizationId, userId])
@@ -203,7 +206,9 @@ model OrganizationInvitation {
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
   inviterId      String
-  user           User         @relation("organization_invitation_to_user", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviter        User         @relation("organization_invitation_to_inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  personId       String?      @unique
+  person         Person?      @relation("organization_invitation_to_person", fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([email])
@@ -220,6 +225,7 @@ model OrganizationLogEntry {
   action         String
   objectType     String
   objectId       String
+  metadata       Json         @default("{}")
   changes        Json         @default("{}")
   description    String?
   timestamp      DateTime     @default(now())
@@ -259,8 +265,8 @@ model Person {
   id             String       @id
   organizationId String
   organization   Organization @relation("person_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         String?
-  user           User?        @relation("person_to_user", fields: [userId], references: [id], onDelete: SetNull)
+  
+  
   name           String
   email          String
   tags           String[]     @default([])
@@ -269,7 +275,9 @@ model Person {
   updatedAt      DateTime     @updatedAt
   status         RecordStatus @default(Active)
 
-  issuedItems                  I3IssuedItem[]            @relation("i3_issued_item_to_person")
+  issuedItems                  I3IssuedItem[]      @relation("i3_issued_item_to_person")
+  organizationInvitation       OrganizationInvitation? @relation("organization_invitation_to_person")
+  organizationUser             OrganizationUser?   @relation("person_to_organization_user")
   skillChecksAsAssessee        SkillCheck[]        @relation("skill_check_assessee")
   skillChecksAsAssessor        SkillCheck[]        @relation("skill_check_assessor")
   skillCheckSessionsAsAssessee SkillCheckSession[] @relation("skill_check_session_assessees")
@@ -277,7 +285,6 @@ model Person {
   teamMemberships              TeamMembership[]    @relation("team_membership_to_person")
 
   @@unique([organizationId, email]) // Only one person per email address in an organization
-  @@unique([organizationId, userId]) // One person record per user in an organization
   @@index([organizationId])
   @@map("personnel")
 }

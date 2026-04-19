@@ -188,7 +188,7 @@ export type SkillPackageGroupByOutputType = {
     _max: SkillPackageMaxAggregateOutputType | null;
 };
 
-type GetSkillPackageGroupByPayload<T extends SkillPackageGroupByArgs> = Prisma.PrismaPromise<
+export type GetSkillPackageGroupByPayload<T extends SkillPackageGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<SkillPackageGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof SkillPackageGroupByOutputType]: P extends "_count"
@@ -2061,6 +2061,11 @@ export type SkillPackageFindManyArgs<
      * Skip the first `n` SkillPackages.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of SkillPackages.
+     */
     distinct?: Prisma.SkillPackageScalarFieldEnum | Prisma.SkillPackageScalarFieldEnum[];
 };
 

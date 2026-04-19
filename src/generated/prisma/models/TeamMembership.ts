@@ -175,17 +175,18 @@ export type TeamMembershipGroupByOutputType = {
     _max: TeamMembershipMaxAggregateOutputType | null;
 };
 
-type GetTeamMembershipGroupByPayload<T extends TeamMembershipGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-        Prisma.PickEnumerable<TeamMembershipGroupByOutputType, T["by"]> & {
-            [P in keyof T & keyof TeamMembershipGroupByOutputType]: P extends "_count"
-                ? T[P] extends boolean
-                    ? number
-                    : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>
-                : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>;
-        }
-    >
->;
+export type GetTeamMembershipGroupByPayload<T extends TeamMembershipGroupByArgs> =
+    Prisma.PrismaPromise<
+        Array<
+            Prisma.PickEnumerable<TeamMembershipGroupByOutputType, T["by"]> & {
+                [P in keyof T & keyof TeamMembershipGroupByOutputType]: P extends "_count"
+                    ? T[P] extends boolean
+                        ? number
+                        : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>
+                    : Prisma.GetScalarType<T[P], TeamMembershipGroupByOutputType[P]>;
+            }
+        >
+    >;
 
 export type TeamMembershipWhereInput = {
     AND?: Prisma.TeamMembershipWhereInput | Prisma.TeamMembershipWhereInput[];
@@ -1936,6 +1937,11 @@ export type TeamMembershipFindManyArgs<
      * Skip the first `n` TeamMemberships.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of TeamMemberships.
+     */
     distinct?: Prisma.TeamMembershipScalarFieldEnum | Prisma.TeamMembershipScalarFieldEnum[];
 };
 

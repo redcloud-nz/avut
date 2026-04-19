@@ -26,7 +26,6 @@ export type AggregatePerson = {
 export type PersonMinAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
-    userId: string | null;
     name: string | null;
     email: string | null;
     createdAt: Date | null;
@@ -37,7 +36,6 @@ export type PersonMinAggregateOutputType = {
 export type PersonMaxAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
-    userId: string | null;
     name: string | null;
     email: string | null;
     createdAt: Date | null;
@@ -48,7 +46,6 @@ export type PersonMaxAggregateOutputType = {
 export type PersonCountAggregateOutputType = {
     id: number;
     organizationId: number;
-    userId: number;
     name: number;
     email: number;
     tags: number;
@@ -62,7 +59,6 @@ export type PersonCountAggregateOutputType = {
 export type PersonMinAggregateInputType = {
     id?: true;
     organizationId?: true;
-    userId?: true;
     name?: true;
     email?: true;
     createdAt?: true;
@@ -73,7 +69,6 @@ export type PersonMinAggregateInputType = {
 export type PersonMaxAggregateInputType = {
     id?: true;
     organizationId?: true;
-    userId?: true;
     name?: true;
     email?: true;
     createdAt?: true;
@@ -84,7 +79,6 @@ export type PersonMaxAggregateInputType = {
 export type PersonCountAggregateInputType = {
     id?: true;
     organizationId?: true;
-    userId?: true;
     name?: true;
     email?: true;
     tags?: true;
@@ -171,7 +165,6 @@ export type PersonGroupByArgs<
 export type PersonGroupByOutputType = {
     id: string;
     organizationId: string;
-    userId: string | null;
     name: string;
     email: string;
     tags: string[];
@@ -184,7 +177,7 @@ export type PersonGroupByOutputType = {
     _max: PersonMaxAggregateOutputType | null;
 };
 
-type GetPersonGroupByPayload<T extends PersonGroupByArgs> = Prisma.PrismaPromise<
+export type GetPersonGroupByPayload<T extends PersonGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<PersonGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof PersonGroupByOutputType]: P extends "_count"
@@ -202,7 +195,6 @@ export type PersonWhereInput = {
     NOT?: Prisma.PersonWhereInput | Prisma.PersonWhereInput[];
     id?: Prisma.StringFilter<"Person"> | string;
     organizationId?: Prisma.StringFilter<"Person"> | string;
-    userId?: Prisma.StringNullableFilter<"Person"> | string | null;
     name?: Prisma.StringFilter<"Person"> | string;
     email?: Prisma.StringFilter<"Person"> | string;
     tags?: Prisma.StringNullableListFilter<"Person">;
@@ -214,8 +206,15 @@ export type PersonWhereInput = {
         Prisma.OrganizationScalarRelationFilter,
         Prisma.OrganizationWhereInput
     >;
-    user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
     issuedItems?: Prisma.I3IssuedItemListRelationFilter;
+    organizationInvitation?: Prisma.XOR<
+        Prisma.OrganizationInvitationNullableScalarRelationFilter,
+        Prisma.OrganizationInvitationWhereInput
+    > | null;
+    organizationUser?: Prisma.XOR<
+        Prisma.OrganizationUserNullableScalarRelationFilter,
+        Prisma.OrganizationUserWhereInput
+    > | null;
     skillChecksAsAssessee?: Prisma.SkillCheckListRelationFilter;
     skillChecksAsAssessor?: Prisma.SkillCheckListRelationFilter;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionListRelationFilter;
@@ -226,7 +225,6 @@ export type PersonWhereInput = {
 export type PersonOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    userId?: Prisma.SortOrderInput | Prisma.SortOrder;
     name?: Prisma.SortOrder;
     email?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
@@ -235,8 +233,9 @@ export type PersonOrderByWithRelationInput = {
     updatedAt?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
-    user?: Prisma.UserOrderByWithRelationInput;
     issuedItems?: Prisma.I3IssuedItemOrderByRelationAggregateInput;
+    organizationInvitation?: Prisma.OrganizationInvitationOrderByWithRelationInput;
+    organizationUser?: Prisma.OrganizationUserOrderByWithRelationInput;
     skillChecksAsAssessee?: Prisma.SkillCheckOrderByRelationAggregateInput;
     skillChecksAsAssessor?: Prisma.SkillCheckOrderByRelationAggregateInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionOrderByRelationAggregateInput;
@@ -248,12 +247,10 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
         organizationId_email?: Prisma.PersonOrganizationIdEmailCompoundUniqueInput;
-        organizationId_userId?: Prisma.PersonOrganizationIdUserIdCompoundUniqueInput;
         AND?: Prisma.PersonWhereInput | Prisma.PersonWhereInput[];
         OR?: Prisma.PersonWhereInput[];
         NOT?: Prisma.PersonWhereInput | Prisma.PersonWhereInput[];
         organizationId?: Prisma.StringFilter<"Person"> | string;
-        userId?: Prisma.StringNullableFilter<"Person"> | string | null;
         name?: Prisma.StringFilter<"Person"> | string;
         email?: Prisma.StringFilter<"Person"> | string;
         tags?: Prisma.StringNullableListFilter<"Person">;
@@ -265,21 +262,27 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationScalarRelationFilter,
             Prisma.OrganizationWhereInput
         >;
-        user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
         issuedItems?: Prisma.I3IssuedItemListRelationFilter;
+        organizationInvitation?: Prisma.XOR<
+            Prisma.OrganizationInvitationNullableScalarRelationFilter,
+            Prisma.OrganizationInvitationWhereInput
+        > | null;
+        organizationUser?: Prisma.XOR<
+            Prisma.OrganizationUserNullableScalarRelationFilter,
+            Prisma.OrganizationUserWhereInput
+        > | null;
         skillChecksAsAssessee?: Prisma.SkillCheckListRelationFilter;
         skillChecksAsAssessor?: Prisma.SkillCheckListRelationFilter;
         skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionListRelationFilter;
         skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionListRelationFilter;
         teamMemberships?: Prisma.TeamMembershipListRelationFilter;
     },
-    "id" | "organizationId_email" | "organizationId_userId"
+    "id" | "organizationId_email"
 >;
 
 export type PersonOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    userId?: Prisma.SortOrderInput | Prisma.SortOrder;
     name?: Prisma.SortOrder;
     email?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
@@ -302,7 +305,6 @@ export type PersonScalarWhereWithAggregatesInput = {
         | Prisma.PersonScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"Person"> | string;
     organizationId?: Prisma.StringWithAggregatesFilter<"Person"> | string;
-    userId?: Prisma.StringNullableWithAggregatesFilter<"Person"> | string | null;
     name?: Prisma.StringWithAggregatesFilter<"Person"> | string;
     email?: Prisma.StringWithAggregatesFilter<"Person"> | string;
     tags?: Prisma.StringNullableListFilter<"Person">;
@@ -322,8 +324,9 @@ export type PersonCreateInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
@@ -334,7 +337,6 @@ export type PersonCreateInput = {
 export type PersonUncheckedCreateInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -343,6 +345,8 @@ export type PersonUncheckedCreateInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
@@ -360,8 +364,9 @@ export type PersonUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
@@ -372,7 +377,6 @@ export type PersonUpdateInput = {
 export type PersonUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -381,6 +385,8 @@ export type PersonUncheckedUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
@@ -391,7 +397,6 @@ export type PersonUncheckedUpdateInput = {
 export type PersonCreateManyInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -415,7 +420,6 @@ export type PersonUpdateManyMutationInput = {
 export type PersonUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -435,20 +439,19 @@ export type PersonOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
 
+export type PersonNullableScalarRelationFilter = {
+    is?: Prisma.PersonWhereInput | null;
+    isNot?: Prisma.PersonWhereInput | null;
+};
+
 export type PersonOrganizationIdEmailCompoundUniqueInput = {
     organizationId: string;
     email: string;
 };
 
-export type PersonOrganizationIdUserIdCompoundUniqueInput = {
-    organizationId: string;
-    userId: string;
-};
-
 export type PersonCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    userId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     email?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
@@ -461,7 +464,6 @@ export type PersonCountOrderByAggregateInput = {
 export type PersonMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    userId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     email?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -472,7 +474,6 @@ export type PersonMaxOrderByAggregateInput = {
 export type PersonMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
-    userId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     email?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
@@ -483,92 +484,6 @@ export type PersonMinOrderByAggregateInput = {
 export type PersonScalarRelationFilter = {
     is?: Prisma.PersonWhereInput;
     isNot?: Prisma.PersonWhereInput;
-};
-
-export type PersonCreateNestedManyWithoutUserInput = {
-    create?:
-        | Prisma.XOR<
-              Prisma.PersonCreateWithoutUserInput,
-              Prisma.PersonUncheckedCreateWithoutUserInput
-          >
-        | Prisma.PersonCreateWithoutUserInput[]
-        | Prisma.PersonUncheckedCreateWithoutUserInput[];
-    connectOrCreate?:
-        | Prisma.PersonCreateOrConnectWithoutUserInput
-        | Prisma.PersonCreateOrConnectWithoutUserInput[];
-    createMany?: Prisma.PersonCreateManyUserInputEnvelope;
-    connect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-};
-
-export type PersonUncheckedCreateNestedManyWithoutUserInput = {
-    create?:
-        | Prisma.XOR<
-              Prisma.PersonCreateWithoutUserInput,
-              Prisma.PersonUncheckedCreateWithoutUserInput
-          >
-        | Prisma.PersonCreateWithoutUserInput[]
-        | Prisma.PersonUncheckedCreateWithoutUserInput[];
-    connectOrCreate?:
-        | Prisma.PersonCreateOrConnectWithoutUserInput
-        | Prisma.PersonCreateOrConnectWithoutUserInput[];
-    createMany?: Prisma.PersonCreateManyUserInputEnvelope;
-    connect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-};
-
-export type PersonUpdateManyWithoutUserNestedInput = {
-    create?:
-        | Prisma.XOR<
-              Prisma.PersonCreateWithoutUserInput,
-              Prisma.PersonUncheckedCreateWithoutUserInput
-          >
-        | Prisma.PersonCreateWithoutUserInput[]
-        | Prisma.PersonUncheckedCreateWithoutUserInput[];
-    connectOrCreate?:
-        | Prisma.PersonCreateOrConnectWithoutUserInput
-        | Prisma.PersonCreateOrConnectWithoutUserInput[];
-    upsert?:
-        | Prisma.PersonUpsertWithWhereUniqueWithoutUserInput
-        | Prisma.PersonUpsertWithWhereUniqueWithoutUserInput[];
-    createMany?: Prisma.PersonCreateManyUserInputEnvelope;
-    set?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    disconnect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    delete?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    connect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    update?:
-        | Prisma.PersonUpdateWithWhereUniqueWithoutUserInput
-        | Prisma.PersonUpdateWithWhereUniqueWithoutUserInput[];
-    updateMany?:
-        | Prisma.PersonUpdateManyWithWhereWithoutUserInput
-        | Prisma.PersonUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
-};
-
-export type PersonUncheckedUpdateManyWithoutUserNestedInput = {
-    create?:
-        | Prisma.XOR<
-              Prisma.PersonCreateWithoutUserInput,
-              Prisma.PersonUncheckedCreateWithoutUserInput
-          >
-        | Prisma.PersonCreateWithoutUserInput[]
-        | Prisma.PersonUncheckedCreateWithoutUserInput[];
-    connectOrCreate?:
-        | Prisma.PersonCreateOrConnectWithoutUserInput
-        | Prisma.PersonCreateOrConnectWithoutUserInput[];
-    upsert?:
-        | Prisma.PersonUpsertWithWhereUniqueWithoutUserInput
-        | Prisma.PersonUpsertWithWhereUniqueWithoutUserInput[];
-    createMany?: Prisma.PersonCreateManyUserInputEnvelope;
-    set?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    disconnect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    delete?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    connect?: Prisma.PersonWhereUniqueInput | Prisma.PersonWhereUniqueInput[];
-    update?:
-        | Prisma.PersonUpdateWithWhereUniqueWithoutUserInput
-        | Prisma.PersonUpdateWithWhereUniqueWithoutUserInput[];
-    updateMany?:
-        | Prisma.PersonUpdateManyWithWhereWithoutUserInput
-        | Prisma.PersonUpdateManyWithWhereWithoutUserInput[];
-    deleteMany?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
 };
 
 export type PersonCreateNestedManyWithoutOrganizationInput = {
@@ -655,6 +570,62 @@ export type PersonUncheckedUpdateManyWithoutOrganizationNestedInput = {
         | Prisma.PersonUpdateManyWithWhereWithoutOrganizationInput
         | Prisma.PersonUpdateManyWithWhereWithoutOrganizationInput[];
     deleteMany?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
+};
+
+export type PersonCreateNestedOneWithoutOrganizationUserInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationUserInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutOrganizationUserInput;
+    connect?: Prisma.PersonWhereUniqueInput;
+};
+
+export type PersonUpdateOneWithoutOrganizationUserNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationUserInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutOrganizationUserInput;
+    upsert?: Prisma.PersonUpsertWithoutOrganizationUserInput;
+    disconnect?: Prisma.PersonWhereInput | boolean;
+    delete?: Prisma.PersonWhereInput | boolean;
+    connect?: Prisma.PersonWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.PersonUpdateToOneWithWhereWithoutOrganizationUserInput,
+            Prisma.PersonUpdateWithoutOrganizationUserInput
+        >,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationUserInput
+    >;
+};
+
+export type PersonCreateNestedOneWithoutOrganizationInvitationInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationInvitationInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutOrganizationInvitationInput;
+    connect?: Prisma.PersonWhereUniqueInput;
+};
+
+export type PersonUpdateOneWithoutOrganizationInvitationNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationInvitationInput
+    >;
+    connectOrCreate?: Prisma.PersonCreateOrConnectWithoutOrganizationInvitationInput;
+    upsert?: Prisma.PersonUpsertWithoutOrganizationInvitationInput;
+    disconnect?: Prisma.PersonWhereInput | boolean;
+    delete?: Prisma.PersonWhereInput | boolean;
+    connect?: Prisma.PersonWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.PersonUpdateToOneWithWhereWithoutOrganizationInvitationInput,
+            Prisma.PersonUpdateWithoutOrganizationInvitationInput
+        >,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationInvitationInput
+    >;
 };
 
 export type PersonCreatetagsInput = {
@@ -938,99 +909,6 @@ export type PersonUpdateOneRequiredWithoutIssuedItemsNestedInput = {
     >;
 };
 
-export type PersonCreateWithoutUserInput = {
-    id: string;
-    name: string;
-    email: string;
-    tags?: Prisma.PersonCreatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    status?: $Enums.RecordStatus;
-    organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
-    skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
-    skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
-    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
-    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
-    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
-};
-
-export type PersonUncheckedCreateWithoutUserInput = {
-    id: string;
-    organizationId: string;
-    name: string;
-    email: string;
-    tags?: Prisma.PersonCreatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    status?: $Enums.RecordStatus;
-    issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
-    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
-    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
-    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
-    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
-    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
-};
-
-export type PersonCreateOrConnectWithoutUserInput = {
-    where: Prisma.PersonWhereUniqueInput;
-    create: Prisma.XOR<
-        Prisma.PersonCreateWithoutUserInput,
-        Prisma.PersonUncheckedCreateWithoutUserInput
-    >;
-};
-
-export type PersonCreateManyUserInputEnvelope = {
-    data: Prisma.PersonCreateManyUserInput | Prisma.PersonCreateManyUserInput[];
-    skipDuplicates?: boolean;
-};
-
-export type PersonUpsertWithWhereUniqueWithoutUserInput = {
-    where: Prisma.PersonWhereUniqueInput;
-    update: Prisma.XOR<
-        Prisma.PersonUpdateWithoutUserInput,
-        Prisma.PersonUncheckedUpdateWithoutUserInput
-    >;
-    create: Prisma.XOR<
-        Prisma.PersonCreateWithoutUserInput,
-        Prisma.PersonUncheckedCreateWithoutUserInput
-    >;
-};
-
-export type PersonUpdateWithWhereUniqueWithoutUserInput = {
-    where: Prisma.PersonWhereUniqueInput;
-    data: Prisma.XOR<
-        Prisma.PersonUpdateWithoutUserInput,
-        Prisma.PersonUncheckedUpdateWithoutUserInput
-    >;
-};
-
-export type PersonUpdateManyWithWhereWithoutUserInput = {
-    where: Prisma.PersonScalarWhereInput;
-    data: Prisma.XOR<
-        Prisma.PersonUpdateManyMutationInput,
-        Prisma.PersonUncheckedUpdateManyWithoutUserInput
-    >;
-};
-
-export type PersonScalarWhereInput = {
-    AND?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
-    OR?: Prisma.PersonScalarWhereInput[];
-    NOT?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
-    id?: Prisma.StringFilter<"Person"> | string;
-    organizationId?: Prisma.StringFilter<"Person"> | string;
-    userId?: Prisma.StringNullableFilter<"Person"> | string | null;
-    name?: Prisma.StringFilter<"Person"> | string;
-    email?: Prisma.StringFilter<"Person"> | string;
-    tags?: Prisma.StringNullableListFilter<"Person">;
-    properties?: Prisma.JsonFilter<"Person">;
-    createdAt?: Prisma.DateTimeFilter<"Person"> | Date | string;
-    updatedAt?: Prisma.DateTimeFilter<"Person"> | Date | string;
-    status?: Prisma.EnumRecordStatusFilter<"Person"> | $Enums.RecordStatus;
-};
-
 export type PersonCreateWithoutOrganizationInput = {
     id: string;
     name: string;
@@ -1040,8 +918,9 @@ export type PersonCreateWithoutOrganizationInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
@@ -1051,7 +930,6 @@ export type PersonCreateWithoutOrganizationInput = {
 
 export type PersonUncheckedCreateWithoutOrganizationInput = {
     id: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1060,6 +938,8 @@ export type PersonUncheckedCreateWithoutOrganizationInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
@@ -1108,6 +988,229 @@ export type PersonUpdateManyWithWhereWithoutOrganizationInput = {
     >;
 };
 
+export type PersonScalarWhereInput = {
+    AND?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
+    OR?: Prisma.PersonScalarWhereInput[];
+    NOT?: Prisma.PersonScalarWhereInput | Prisma.PersonScalarWhereInput[];
+    id?: Prisma.StringFilter<"Person"> | string;
+    organizationId?: Prisma.StringFilter<"Person"> | string;
+    name?: Prisma.StringFilter<"Person"> | string;
+    email?: Prisma.StringFilter<"Person"> | string;
+    tags?: Prisma.StringNullableListFilter<"Person">;
+    properties?: Prisma.JsonFilter<"Person">;
+    createdAt?: Prisma.DateTimeFilter<"Person"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Person"> | Date | string;
+    status?: Prisma.EnumRecordStatusFilter<"Person"> | $Enums.RecordStatus;
+};
+
+export type PersonCreateWithoutOrganizationUserInput = {
+    id: string;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
+    issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
+};
+
+export type PersonUncheckedCreateWithoutOrganizationUserInput = {
+    id: string;
+    organizationId: string;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
+};
+
+export type PersonCreateOrConnectWithoutOrganizationUserInput = {
+    where: Prisma.PersonWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationUserInput
+    >;
+};
+
+export type PersonUpsertWithoutOrganizationUserInput = {
+    update: Prisma.XOR<
+        Prisma.PersonUpdateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationUserInput
+    >;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationUserInput
+    >;
+    where?: Prisma.PersonWhereInput;
+};
+
+export type PersonUpdateToOneWithWhereWithoutOrganizationUserInput = {
+    where?: Prisma.PersonWhereInput;
+    data: Prisma.XOR<
+        Prisma.PersonUpdateWithoutOrganizationUserInput,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationUserInput
+    >;
+};
+
+export type PersonUpdateWithoutOrganizationUserInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
+    organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
+    issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
+};
+
+export type PersonUncheckedUpdateWithoutOrganizationUserInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
+    issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
+};
+
+export type PersonCreateWithoutOrganizationInvitationInput = {
+    id: string;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
+    issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipCreateNestedManyWithoutPersonInput;
+};
+
+export type PersonUncheckedCreateWithoutOrganizationInvitationInput = {
+    id: string;
+    organizationId: string;
+    name: string;
+    email: string;
+    tags?: Prisma.PersonCreatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    status?: $Enums.RecordStatus;
+    issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedCreateNestedManyWithoutPersonInput;
+};
+
+export type PersonCreateOrConnectWithoutOrganizationInvitationInput = {
+    where: Prisma.PersonWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationInvitationInput
+    >;
+};
+
+export type PersonUpsertWithoutOrganizationInvitationInput = {
+    update: Prisma.XOR<
+        Prisma.PersonUpdateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationInvitationInput
+    >;
+    create: Prisma.XOR<
+        Prisma.PersonCreateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedCreateWithoutOrganizationInvitationInput
+    >;
+    where?: Prisma.PersonWhereInput;
+};
+
+export type PersonUpdateToOneWithWhereWithoutOrganizationInvitationInput = {
+    where?: Prisma.PersonWhereInput;
+    data: Prisma.XOR<
+        Prisma.PersonUpdateWithoutOrganizationInvitationInput,
+        Prisma.PersonUncheckedUpdateWithoutOrganizationInvitationInput
+    >;
+};
+
+export type PersonUpdateWithoutOrganizationInvitationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
+    organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
+    issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
+};
+
+export type PersonUncheckedUpdateWithoutOrganizationInvitationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    tags?: Prisma.PersonUpdatetagsInput | string[];
+    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
+    issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
+    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
+    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
+    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
+    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
+    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
+};
+
 export type PersonCreateWithoutTeamMembershipsInput = {
     id: string;
     name: string;
@@ -1118,8 +1221,9 @@ export type PersonCreateWithoutTeamMembershipsInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
@@ -1129,7 +1233,6 @@ export type PersonCreateWithoutTeamMembershipsInput = {
 export type PersonUncheckedCreateWithoutTeamMembershipsInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1138,6 +1241,8 @@ export type PersonUncheckedCreateWithoutTeamMembershipsInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
@@ -1182,8 +1287,9 @@ export type PersonUpdateWithoutTeamMembershipsInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
@@ -1193,7 +1299,6 @@ export type PersonUpdateWithoutTeamMembershipsInput = {
 export type PersonUncheckedUpdateWithoutTeamMembershipsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1202,6 +1307,8 @@ export type PersonUncheckedUpdateWithoutTeamMembershipsInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
@@ -1218,8 +1325,9 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
@@ -1229,7 +1337,6 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssesseeInput = {
 export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1238,6 +1345,8 @@ export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssesseeInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
@@ -1262,8 +1371,9 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssessorInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
@@ -1273,7 +1383,6 @@ export type PersonCreateWithoutSkillCheckSessionsAsAssessorInput = {
 export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssessorInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1282,6 +1391,8 @@ export type PersonUncheckedCreateWithoutSkillCheckSessionsAsAssessorInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
@@ -1362,8 +1473,9 @@ export type PersonCreateWithoutSkillChecksAsAssesseeInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
@@ -1373,7 +1485,6 @@ export type PersonCreateWithoutSkillChecksAsAssesseeInput = {
 export type PersonUncheckedCreateWithoutSkillChecksAsAssesseeInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1382,6 +1493,8 @@ export type PersonUncheckedCreateWithoutSkillChecksAsAssesseeInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
@@ -1406,8 +1519,9 @@ export type PersonCreateWithoutSkillChecksAsAssessorInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
     issuedItems?: Prisma.I3IssuedItemCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssessorsInput;
@@ -1417,7 +1531,6 @@ export type PersonCreateWithoutSkillChecksAsAssessorInput = {
 export type PersonUncheckedCreateWithoutSkillChecksAsAssessorInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1426,6 +1539,8 @@ export type PersonUncheckedCreateWithoutSkillChecksAsAssessorInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedCreateNestedManyWithoutPersonInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssessorsInput;
@@ -1470,8 +1585,9 @@ export type PersonUpdateWithoutSkillChecksAsAssesseeInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
@@ -1481,7 +1597,6 @@ export type PersonUpdateWithoutSkillChecksAsAssesseeInput = {
 export type PersonUncheckedUpdateWithoutSkillChecksAsAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1490,6 +1605,8 @@ export type PersonUncheckedUpdateWithoutSkillChecksAsAssesseeInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
@@ -1526,8 +1643,9 @@ export type PersonUpdateWithoutSkillChecksAsAssessorInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
@@ -1537,7 +1655,6 @@ export type PersonUpdateWithoutSkillChecksAsAssessorInput = {
 export type PersonUncheckedUpdateWithoutSkillChecksAsAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1546,6 +1663,8 @@ export type PersonUncheckedUpdateWithoutSkillChecksAsAssessorInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
@@ -1562,7 +1681,8 @@ export type PersonCreateWithoutIssuedItemsInput = {
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
     organization: Prisma.OrganizationCreateNestedOneWithoutPersonnelInput;
-    user?: Prisma.UserCreateNestedOneWithoutPersonnelInput;
+    organizationInvitation?: Prisma.OrganizationInvitationCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionCreateNestedManyWithoutAssesseesInput;
@@ -1573,7 +1693,6 @@ export type PersonCreateWithoutIssuedItemsInput = {
 export type PersonUncheckedCreateWithoutIssuedItemsInput = {
     id: string;
     organizationId: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1581,6 +1700,8 @@ export type PersonUncheckedCreateWithoutIssuedItemsInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     status?: $Enums.RecordStatus;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedCreateNestedOneWithoutPersonInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedCreateNestedOneWithoutPersonInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssesseeInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedCreateNestedManyWithoutAssessorInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedCreateNestedManyWithoutAssesseesInput;
@@ -1626,7 +1747,8 @@ export type PersonUpdateWithoutIssuedItemsInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
@@ -1637,7 +1759,6 @@ export type PersonUpdateWithoutIssuedItemsInput = {
 export type PersonUncheckedUpdateWithoutIssuedItemsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1645,76 +1766,17 @@ export type PersonUncheckedUpdateWithoutIssuedItemsInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
     teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
-};
-
-export type PersonCreateManyUserInput = {
-    id: string;
-    organizationId: string;
-    name: string;
-    email: string;
-    tags?: Prisma.PersonCreatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    status?: $Enums.RecordStatus;
-};
-
-export type PersonUpdateWithoutUserInput = {
-    id?: Prisma.StringFieldUpdateOperationsInput | string;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    tags?: Prisma.PersonUpdatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
-    organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
-    skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
-    skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
-    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
-    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
-    teamMemberships?: Prisma.TeamMembershipUpdateManyWithoutPersonNestedInput;
-};
-
-export type PersonUncheckedUpdateWithoutUserInput = {
-    id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    tags?: Prisma.PersonUpdatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
-    issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
-    skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
-    skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
-    skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
-    skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
-    teamMemberships?: Prisma.TeamMembershipUncheckedUpdateManyWithoutPersonNestedInput;
-};
-
-export type PersonUncheckedUpdateManyWithoutUserInput = {
-    id?: Prisma.StringFieldUpdateOperationsInput | string;
-    organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    tags?: Prisma.PersonUpdatetagsInput | string[];
-    properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
-    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
 };
 
 export type PersonCreateManyOrganizationInput = {
     id: string;
-    userId?: string | null;
     name: string;
     email: string;
     tags?: Prisma.PersonCreatetagsInput | string[];
@@ -1733,8 +1795,9 @@ export type PersonUpdateWithoutOrganizationInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
@@ -1744,7 +1807,6 @@ export type PersonUpdateWithoutOrganizationInput = {
 
 export type PersonUncheckedUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1753,6 +1815,8 @@ export type PersonUncheckedUpdateWithoutOrganizationInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
@@ -1762,7 +1826,6 @@ export type PersonUncheckedUpdateWithoutOrganizationInput = {
 
 export type PersonUncheckedUpdateManyWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1782,8 +1845,9 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUpdateManyWithoutAssessorsNestedInput;
@@ -1793,7 +1857,6 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
 export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1802,6 +1865,8 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessor?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssessorsNestedInput;
@@ -1811,7 +1876,6 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssesseeInput = {
 export type PersonUncheckedUpdateManyWithoutSkillCheckSessionsAsAssesseeInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1831,8 +1895,9 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssessorInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutPersonnelNestedInput;
-    user?: Prisma.UserUpdateOneWithoutPersonnelNestedInput;
     issuedItems?: Prisma.I3IssuedItemUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUpdateManyWithoutAssesseesNestedInput;
@@ -1842,7 +1907,6 @@ export type PersonUpdateWithoutSkillCheckSessionsAsAssessorInput = {
 export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1851,6 +1915,8 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssessorInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     status?: Prisma.EnumRecordStatusFieldUpdateOperationsInput | $Enums.RecordStatus;
     issuedItems?: Prisma.I3IssuedItemUncheckedUpdateManyWithoutPersonNestedInput;
+    organizationInvitation?: Prisma.OrganizationInvitationUncheckedUpdateOneWithoutPersonNestedInput;
+    organizationUser?: Prisma.OrganizationUserUncheckedUpdateOneWithoutPersonNestedInput;
     skillChecksAsAssessee?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssesseeNestedInput;
     skillChecksAsAssessor?: Prisma.SkillCheckUncheckedUpdateManyWithoutAssessorNestedInput;
     skillCheckSessionsAsAssessee?: Prisma.SkillCheckSessionUncheckedUpdateManyWithoutAssesseesNestedInput;
@@ -1860,7 +1926,6 @@ export type PersonUncheckedUpdateWithoutSkillCheckSessionsAsAssessorInput = {
 export type PersonUncheckedUpdateManyWithoutSkillCheckSessionsAsAssessorInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
-    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.PersonUpdatetagsInput | string[];
@@ -1970,7 +2035,6 @@ export type PersonSelect<
     {
         id?: boolean;
         organizationId?: boolean;
-        userId?: boolean;
         name?: boolean;
         email?: boolean;
         tags?: boolean;
@@ -1979,8 +2043,9 @@ export type PersonSelect<
         updatedAt?: boolean;
         status?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-        user?: boolean | Prisma.Person$userArgs<ExtArgs>;
         issuedItems?: boolean | Prisma.Person$issuedItemsArgs<ExtArgs>;
+        organizationInvitation?: boolean | Prisma.Person$organizationInvitationArgs<ExtArgs>;
+        organizationUser?: boolean | Prisma.Person$organizationUserArgs<ExtArgs>;
         skillChecksAsAssessee?: boolean | Prisma.Person$skillChecksAsAssesseeArgs<ExtArgs>;
         skillChecksAsAssessor?: boolean | Prisma.Person$skillChecksAsAssessorArgs<ExtArgs>;
         skillCheckSessionsAsAssessee?:
@@ -2001,7 +2066,6 @@ export type PersonSelectCreateManyAndReturn<
     {
         id?: boolean;
         organizationId?: boolean;
-        userId?: boolean;
         name?: boolean;
         email?: boolean;
         tags?: boolean;
@@ -2010,7 +2074,6 @@ export type PersonSelectCreateManyAndReturn<
         updatedAt?: boolean;
         status?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-        user?: boolean | Prisma.Person$userArgs<ExtArgs>;
     },
     ExtArgs["result"]["person"]
 >;
@@ -2021,7 +2084,6 @@ export type PersonSelectUpdateManyAndReturn<
     {
         id?: boolean;
         organizationId?: boolean;
-        userId?: boolean;
         name?: boolean;
         email?: boolean;
         tags?: boolean;
@@ -2030,7 +2092,6 @@ export type PersonSelectUpdateManyAndReturn<
         updatedAt?: boolean;
         status?: boolean;
         organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-        user?: boolean | Prisma.Person$userArgs<ExtArgs>;
     },
     ExtArgs["result"]["person"]
 >;
@@ -2038,7 +2099,6 @@ export type PersonSelectUpdateManyAndReturn<
 export type PersonSelectScalar = {
     id?: boolean;
     organizationId?: boolean;
-    userId?: boolean;
     name?: boolean;
     email?: boolean;
     tags?: boolean;
@@ -2053,7 +2113,6 @@ export type PersonOmit<
 > = runtime.Types.Extensions.GetOmit<
     | "id"
     | "organizationId"
-    | "userId"
     | "name"
     | "email"
     | "tags"
@@ -2067,8 +2126,9 @@ export type PersonInclude<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-    user?: boolean | Prisma.Person$userArgs<ExtArgs>;
     issuedItems?: boolean | Prisma.Person$issuedItemsArgs<ExtArgs>;
+    organizationInvitation?: boolean | Prisma.Person$organizationInvitationArgs<ExtArgs>;
+    organizationUser?: boolean | Prisma.Person$organizationUserArgs<ExtArgs>;
     skillChecksAsAssessee?: boolean | Prisma.Person$skillChecksAsAssesseeArgs<ExtArgs>;
     skillChecksAsAssessor?: boolean | Prisma.Person$skillChecksAsAssessorArgs<ExtArgs>;
     skillCheckSessionsAsAssessee?:
@@ -2084,13 +2144,11 @@ export type PersonIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-    user?: boolean | Prisma.Person$userArgs<ExtArgs>;
 };
 export type PersonIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
-    user?: boolean | Prisma.Person$userArgs<ExtArgs>;
 };
 
 export type $PersonPayload<
@@ -2099,8 +2157,9 @@ export type $PersonPayload<
     name: "Person";
     objects: {
         organization: Prisma.$OrganizationPayload<ExtArgs>;
-        user: Prisma.$UserPayload<ExtArgs> | null;
         issuedItems: Prisma.$I3IssuedItemPayload<ExtArgs>[];
+        organizationInvitation: Prisma.$OrganizationInvitationPayload<ExtArgs> | null;
+        organizationUser: Prisma.$OrganizationUserPayload<ExtArgs> | null;
         skillChecksAsAssessee: Prisma.$SkillCheckPayload<ExtArgs>[];
         skillChecksAsAssessor: Prisma.$SkillCheckPayload<ExtArgs>[];
         skillCheckSessionsAsAssessee: Prisma.$SkillCheckSessionPayload<ExtArgs>[];
@@ -2111,7 +2170,6 @@ export type $PersonPayload<
         {
             id: string;
             organizationId: string;
-            userId: string | null;
             name: string;
             email: string;
             tags: string[];
@@ -2668,19 +2726,6 @@ export interface Prisma__PersonClient<
         ExtArgs,
         GlobalOmitOptions
     >;
-    user<T extends Prisma.Person$userArgs<ExtArgs> = {}>(
-        args?: Prisma.Subset<T, Prisma.Person$userArgs<ExtArgs>>,
-    ): Prisma.Prisma__UserClient<
-        runtime.Types.Result.GetResult<
-            Prisma.$UserPayload<ExtArgs>,
-            T,
-            "findUniqueOrThrow",
-            GlobalOmitOptions
-        > | null,
-        null,
-        ExtArgs,
-        GlobalOmitOptions
-    >;
     issuedItems<T extends Prisma.Person$issuedItemsArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.Person$issuedItemsArgs<ExtArgs>>,
     ): Prisma.PrismaPromise<
@@ -2691,6 +2736,32 @@ export interface Prisma__PersonClient<
               GlobalOmitOptions
           >
         | Null
+    >;
+    organizationInvitation<T extends Prisma.Person$organizationInvitationArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Person$organizationInvitationArgs<ExtArgs>>,
+    ): Prisma.Prisma__OrganizationInvitationClient<
+        runtime.Types.Result.GetResult<
+            Prisma.$OrganizationInvitationPayload<ExtArgs>,
+            T,
+            "findUniqueOrThrow",
+            GlobalOmitOptions
+        > | null,
+        null,
+        ExtArgs,
+        GlobalOmitOptions
+    >;
+    organizationUser<T extends Prisma.Person$organizationUserArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Person$organizationUserArgs<ExtArgs>>,
+    ): Prisma.Prisma__OrganizationUserClient<
+        runtime.Types.Result.GetResult<
+            Prisma.$OrganizationUserPayload<ExtArgs>,
+            T,
+            "findUniqueOrThrow",
+            GlobalOmitOptions
+        > | null,
+        null,
+        ExtArgs,
+        GlobalOmitOptions
     >;
     skillChecksAsAssessee<T extends Prisma.Person$skillChecksAsAssesseeArgs<ExtArgs> = {}>(
         args?: Prisma.Subset<T, Prisma.Person$skillChecksAsAssesseeArgs<ExtArgs>>,
@@ -2784,7 +2855,6 @@ export interface Prisma__PersonClient<
 export interface PersonFieldRefs {
     readonly id: Prisma.FieldRef<"Person", "String">;
     readonly organizationId: Prisma.FieldRef<"Person", "String">;
-    readonly userId: Prisma.FieldRef<"Person", "String">;
     readonly name: Prisma.FieldRef<"Person", "String">;
     readonly email: Prisma.FieldRef<"Person", "String">;
     readonly tags: Prisma.FieldRef<"Person", "String[]">;
@@ -2997,6 +3067,11 @@ export type PersonFindManyArgs<
      * Skip the first `n` People.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of People.
+     */
     distinct?: Prisma.PersonScalarFieldEnum | Prisma.PersonScalarFieldEnum[];
 };
 
@@ -3215,27 +3290,6 @@ export type PersonDeleteManyArgs<
 };
 
 /**
- * Person.user
- */
-export type Person$userArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
-> = {
-    /**
-     * Select specific fields to fetch from the User
-     */
-    select?: Prisma.UserSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the User
-     */
-    omit?: Prisma.UserOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.UserInclude<ExtArgs> | null;
-    where?: Prisma.UserWhereInput;
-};
-
-/**
  * Person.issuedItems
  */
 export type Person$issuedItemsArgs<
@@ -3261,6 +3315,48 @@ export type Person$issuedItemsArgs<
     take?: number;
     skip?: number;
     distinct?: Prisma.I3IssuedItemScalarFieldEnum | Prisma.I3IssuedItemScalarFieldEnum[];
+};
+
+/**
+ * Person.organizationInvitation
+ */
+export type Person$organizationInvitationArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the OrganizationInvitation
+     */
+    select?: Prisma.OrganizationInvitationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the OrganizationInvitation
+     */
+    omit?: Prisma.OrganizationInvitationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.OrganizationInvitationInclude<ExtArgs> | null;
+    where?: Prisma.OrganizationInvitationWhereInput;
+};
+
+/**
+ * Person.organizationUser
+ */
+export type Person$organizationUserArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the OrganizationUser
+     */
+    select?: Prisma.OrganizationUserSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the OrganizationUser
+     */
+    omit?: Prisma.OrganizationUserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.OrganizationUserInclude<ExtArgs> | null;
+    where?: Prisma.OrganizationUserWhereInput;
 };
 
 /**

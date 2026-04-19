@@ -190,7 +190,7 @@ export type SkillCheckSessionGroupByOutputType = {
     _max: SkillCheckSessionMaxAggregateOutputType | null;
 };
 
-type GetSkillCheckSessionGroupByPayload<T extends SkillCheckSessionGroupByArgs> =
+export type GetSkillCheckSessionGroupByPayload<T extends SkillCheckSessionGroupByArgs> =
     Prisma.PrismaPromise<
         Array<
             Prisma.PickEnumerable<SkillCheckSessionGroupByOutputType, T["by"]> & {
@@ -2457,6 +2457,11 @@ export type SkillCheckSessionFindManyArgs<
      * Skip the first `n` SkillCheckSessions.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of SkillCheckSessions.
+     */
     distinct?: Prisma.SkillCheckSessionScalarFieldEnum | Prisma.SkillCheckSessionScalarFieldEnum[];
 };
 

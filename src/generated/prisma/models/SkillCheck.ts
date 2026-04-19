@@ -196,7 +196,7 @@ export type SkillCheckGroupByOutputType = {
     _max: SkillCheckMaxAggregateOutputType | null;
 };
 
-type GetSkillCheckGroupByPayload<T extends SkillCheckGroupByArgs> = Prisma.PrismaPromise<
+export type GetSkillCheckGroupByPayload<T extends SkillCheckGroupByArgs> = Prisma.PrismaPromise<
     Array<
         Prisma.PickEnumerable<SkillCheckGroupByOutputType, T["by"]> & {
             [P in keyof T & keyof SkillCheckGroupByOutputType]: P extends "_count"
@@ -2476,6 +2476,11 @@ export type SkillCheckFindManyArgs<
      * Skip the first `n` SkillChecks.
      */
     skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of SkillChecks.
+     */
     distinct?: Prisma.SkillCheckScalarFieldEnum | Prisma.SkillCheckScalarFieldEnum[];
 };
 
