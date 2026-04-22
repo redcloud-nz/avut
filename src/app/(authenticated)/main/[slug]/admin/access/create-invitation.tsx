@@ -5,8 +5,6 @@
 
 "use client";
 
-import { ChevronsUpDownIcon } from "lucide-react";
-import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -16,14 +14,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
 import {
     Dialog,
     DialogCloseButton,
@@ -35,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldLegend } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
     Select,
     SelectContent,
@@ -81,8 +71,6 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
         },
     });
 
-    const [personPickerOpen, setPersonPickerOpen] = useState(false);
-
     const mutation = useMutation(
         trpc.accessControl.createInvitation.mutationOptions({
             onError(error) {
@@ -121,13 +109,6 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
         name: "primaryRole",
     });
 
-    const selectedPersonId = useWatch({
-        control: form.control,
-        name: "personId",
-    });
-
-    const selectedPerson = uninvitedPersonnel.find((p) => p.id === selectedPersonId);
-
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
@@ -158,52 +139,24 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid} orientation="responsive">
                                     <FieldLabel>Person</FieldLabel>
-                                    <Popover
-                                        open={personPickerOpen}
-                                        onOpenChange={setPersonPickerOpen}
-                                    >
-                                        <PopoverTrigger asChild>
-                                            <button
-                                                type="button"
-                                                role="combobox"
-                                                aria-expanded={personPickerOpen}
-                                                aria-invalid={fieldState.invalid}
-                                                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-9 w-full min-w-1/2 items-center justify-between rounded-none border px-3 py-2 text-xs focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                {selectedPerson?.name ?? "Select a person..."}
-                                                <ChevronsUpDownIcon className="ml-2 size-3.5 shrink-0 opacity-50" />
-                                            </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-72 p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search personnel..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No personnel found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {uninvitedPersonnel.map((person) => (
-                                                            <CommandItem
-                                                                key={person.id}
-                                                                value={person.name}
-                                                                data-checked={
-                                                                    field.value === person.id
-                                                                }
-                                                                onSelect={() => {
-                                                                    field.onChange(person.id);
-                                                                    form.setValue(
-                                                                        "email",
-                                                                        person.email ?? "",
-                                                                    );
-                                                                    setPersonPickerOpen(false);
-                                                                }}
-                                                            >
-                                                                <span>{person.name}</span>
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <SearchableSelect
+                                        value={field.value || null}
+                                        onValueChange={(personId) => {
+                                            field.onChange(personId);
+                                            const person = uninvitedPersonnel.find(
+                                                (p) => p.id === personId,
+                                            );
+                                            form.setValue("email", person?.email ?? "");
+                                        }}
+                                        options={uninvitedPersonnel.map((p) => ({
+                                            value: p.id,
+                                            label: p.name,
+                                        }))}
+                                        placeholder="Select a person..."
+                                        searchPlaceholder="Search personnel..."
+                                        emptyMessage="No personnel found."
+                                        aria-invalid={fieldState.invalid}
+                                    />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}

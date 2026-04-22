@@ -12,7 +12,7 @@ import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getPersonById } from "@/server/person";
 
-import { AdminModule_AccessControl_PersonAccessControl_Card } from "./person-access-control-card";
+import { AdminModule_AccessControl_PersonAccessControl_Card } from "./person-access-control";
 
 export default async function AdminModule_AccessControl_PersonPage(
     props: PageProps<"/main/[slug]/admin/access/[person_id]">,

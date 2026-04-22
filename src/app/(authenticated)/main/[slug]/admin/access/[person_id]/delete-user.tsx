@@ -29,11 +29,9 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteUser_Dialog({
     user,
-    onDeleteSuccess,
     ...props
 }: AlertDialogProps & {
     user: OrganizationUser;
-    onDeleteSuccess?: () => void;
 }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
@@ -53,14 +51,10 @@ export function AdminModule_DeleteUser_Dialog({
                 );
                 props.onOpenChange?.(false);
 
-                if (onDeleteSuccess) {
-                    onDeleteSuccess();
-                } else {
-                    router.push(route("/main/[slug]/admin/users", { slug: organization.slug }));
-                }
+                router.push(route("/main/[slug]/admin/users", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
-                    trpc.accessControl.listOrganizationUsers.queryFilter({
+                    trpc.accessControl.listPersonnelWithAccess.queryFilter({
                         organizationId: organization.id,
                     }),
                 );

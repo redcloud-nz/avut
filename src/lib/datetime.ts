@@ -12,7 +12,7 @@ import { format, formatISO } from "date-fns";
  */
 export function formatDate(dateOrString: string | Date): string {
     const date = new Date(dateOrString);
-    return formatISO(date, { representation: "date" });
+    return format(date, "yyyy-MM-dd");
 }
 
 export function formatDateTime(dateOrString: string | Date): string {

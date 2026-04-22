@@ -225,41 +225,6 @@ export const accessControlRouter = createTrpcRouter({
         }),
 
     /**
-     * List all invitations for an organization.
-     */
-    listOrganizationInvitations: organizationProcedure({
-        invitation: ["view"],
-    })
-        .output(z.array(OrganizationInvitationData.schema))
-        .query(async ({ ctx }) => {
-            const invitations = await ctx.prisma.organizationInvitation.findMany({
-                where: { organizationId: ctx.organizationId },
-                include: { inviter: true, organization: true },
-            });
-
-            return invitations.map((invitation) =>
-                OrganizationInvitationData.fromRecord({
-                    ...invitation,
-                    teamId: invitation.teamId ?? null,
-                }),
-            );
-        }),
-
-    /**
-     * List all users that are members of the organization.
-     */
-    listOrganizationUsers: organizationProcedure({ member: ["view"] })
-        .output(z.array(OrganizationUser.schema))
-        .query(async ({ ctx }) => {
-            const orgUsers = await ctx.prisma.organizationUser.findMany({
-                where: { organizationId: ctx.organizationId },
-                include: { user: true },
-            });
-
-            return orgUsers.map((orgUser) => OrganizationUser.fromRecord(orgUser.user, orgUser));
-        }),
-
-    /**
      * Lists the personnel in the organization that have access along with their access status, roles, and linked user/invitation data if applicable.
      * This is used to manage access control for personnel, including those who have been invited but have not yet joined.
      * @param ctx The authenticated organization context.
@@ -272,12 +237,26 @@ export const accessControlRouter = createTrpcRouter({
     })
         .output(
             z.array(
-                PersonData.schema.extend({
-                    accessStatus: z.enum(["Joined", "Invited", "None"]),
-                    roles: z.array(OrganizationRole.schema),
-                    user: OrganizationUser.schema.nullable(),
-                    invitation: OrganizationInvitationData.schema.nullable(),
-                }),
+                z.discriminatedUnion("accessStatus", [
+                    PersonData.schema.extend({
+                        accessStatus: z.literal("None"),
+                        roles: z.array(OrganizationRole.schema),
+                        user: z.null(),
+                        invitation: z.null(),
+                    }),
+                    PersonData.schema.extend({
+                        accessStatus: z.literal("Invited"),
+                        roles: z.array(OrganizationRole.schema),
+                        user: z.null(),
+                        invitation: OrganizationInvitationData.schema,
+                    }),
+                    PersonData.schema.extend({
+                        accessStatus: z.literal("Joined"),
+                        roles: z.array(OrganizationRole.schema),
+                        user: OrganizationUser.schema,
+                        invitation: z.null(),
+                    }),
+                ]),
             ),
         )
         .query(async ({ ctx }) => {
@@ -295,21 +274,36 @@ export const accessControlRouter = createTrpcRouter({
             });
 
             return personnel.map((person) => {
+                const base = PersonData.fromRecord(person);
                 const user = person.organizationUser;
                 const invitation = person.organizationInvitation;
 
+                if (user) {
+                    return {
+                        ...base,
+                        accessStatus: "Joined" as const,
+                        roles: user.role.split(",") as OrganizationRole[],
+                        user: OrganizationUser.fromRecord(user.user, user),
+                        invitation: null,
+                    };
+                }
+
+                if (invitation) {
+                    return {
+                        ...base,
+                        accessStatus: "Invited" as const,
+                        roles: (invitation.role ?? "").split(",") as OrganizationRole[],
+                        user: null,
+                        invitation: OrganizationInvitationData.fromRecord(invitation),
+                    };
+                }
+
                 return {
-                    ...PersonData.fromRecord(person),
-                    accessStatus: user ? "Joined" : invitation ? "Invited" : "None",
-                    roles: (user
-                        ? user.role.split(",")
-                        : invitation
-                          ? (invitation.role ?? "").split(",")
-                          : []) as OrganizationRole[],
-                    user: user ? OrganizationUser.fromRecord(user.user, user) : null,
-                    invitation: invitation
-                        ? OrganizationInvitationData.fromRecord(invitation)
-                        : null,
+                    ...base,
+                    accessStatus: "None" as const,
+                    roles: [] as OrganizationRole[],
+                    user: null,
+                    invitation: null,
                 };
             });
         }),
@@ -454,6 +448,33 @@ export const accessControlRouter = createTrpcRouter({
                     cause: error,
                 });
             }
+        }),
+
+    /**
+     * Update the roles on a pending invitation by cancelling and re-creating it.
+     *
+     * @param ctx The authenticated organization context.
+     * @param input The invitation ID and new roles.
+     */
+    updateInvitationRoles: organizationProcedure({ invitation: ["create"] })
+        .input(
+            z.object({
+                invitationId: InvitationId.schema,
+                roles: z.array(OrganizationRole.schema),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const invitation = await ctx.prisma.organizationInvitation.findUnique({
+                where: { id: input.invitationId, organizationId: ctx.organizationId },
+            });
+
+            if (!invitation || invitation.status !== "pending")
+                throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+
+            await ctx.prisma.organizationInvitation.update({
+                where: { id: input.invitationId },
+                data: { role: input.roles.join(",") },
+            });
         }),
 });
 

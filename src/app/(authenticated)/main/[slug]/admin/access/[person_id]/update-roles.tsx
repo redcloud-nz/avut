@@ -10,9 +10,8 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -38,8 +37,11 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
-interface AdminModule_UpdateUserRoles_DialogProps extends Omit<DialogProps, "children"> {
-    user: OrganizationUser;
+interface AdminModule_UpdateRoles_DialogProps extends Omit<DialogProps, "children"> {
+    personName: string;
+    defaultRoles: OrganizationRole[];
+    title: string;
+    mutationFn: (roles: OrganizationRole[]) => Promise<void>;
     currentUser: OrganizationUser;
 }
 
@@ -50,55 +52,62 @@ const schema = z.object({
     skillPackageRole: z.enum(["skill-package-author"]).nullable(),
 });
 
-export function AdminModule_UpdateUserRoles_Dialog({
-    user,
+export function AdminModule_UpdateRoles_Dialog({
+    personName,
+    defaultRoles,
+    title,
+    mutationFn,
     currentUser,
     ...props
-}: AdminModule_UpdateUserRoles_DialogProps) {
+}: AdminModule_UpdateRoles_DialogProps) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
+
+    const canAssignOwner = currentUser.roles.includes("owner");
 
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            primaryRole: user.roles.find((v) => v === "owner" || v === "admin" || v === "member")!,
-            i3Role: user.roles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
+            primaryRole: defaultRoles.find(
+                (v) => v === "owner" || v === "admin" || v === "member",
+            )!,
+            i3Role: defaultRoles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
             skillsRole:
-                user.roles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
-            skillPackageRole: user.roles.find((v) => v === "skill-package-author") ?? null,
+                defaultRoles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
+            skillPackageRole: defaultRoles.find((v) => v === "skill-package-author") ?? null,
         },
     });
 
     const mutation = useMutation({
         mutationFn: async (formData: z.infer<typeof schema>) => {
-            const { data, error } = await authClient.organization.updateMemberRole({
-                organizationId: organization.id,
-                memberId: user.organizationUserId,
-                role: [
-                    formData.primaryRole,
-                    formData.i3Role,
-                    formData.skillsRole,
-                    formData.skillPackageRole,
-                ].filter((r): r is OrganizationRole => r !== null),
-            });
+            const roles = [
+                formData.primaryRole,
+                formData.i3Role,
+                formData.skillsRole,
+                formData.skillPackageRole,
+            ].filter((r): r is OrganizationRole => r !== null);
 
-            if (error) toast.error("Failed to update user role.");
-            else toast.success("User role updated successfully.");
+            await mutationFn(roles);
         },
-        onSuccess: async (_data, _variables, _onMutateResult, context) => {
+        onError(error) {
+            console.error("Failed to update roles:", error);
+            toast.error("Failed to update roles.");
+        },
+        async onSuccess() {
+            toast.success(
+                <>
+                    Roles updated for <ObjectName>{personName}</ObjectName>.
+                </>,
+            );
             props.onOpenChange?.(false);
 
-            await Promise.all([
-                context.client.invalidateQueries(
-                    trpc.accessControl.listOrganizationUsers.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                ),
-                context.client.invalidateQueries(
-                    trpc.accessControl.listPersonnelWithAccess.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                ),
-            ]);
+            await queryClient.invalidateQueries(
+                trpc.accessControl.listPersonnelWithAccess.queryFilter({
+                    organizationId: organization.id,
+                }),
+            );
+
+            mutation.reset();
         },
     });
 
@@ -111,23 +120,20 @@ export function AdminModule_UpdateUserRoles_Dialog({
         props.onOpenChange?.(open);
     }
 
-    const primaryRole = useWatch({
-        control: form.control,
-        name: "primaryRole",
-    });
+    const primaryRole = useWatch({ control: form.control, name: "primaryRole" });
 
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Update user roles</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
-                        Select the roles for user <ObjectName>{user.name}</ObjectName> within the
+                        Select the roles for <ObjectName>{personName}</ObjectName> within the
                         organization.
                     </DialogDescription>
                 </DialogHeader>
                 <form
-                    id="update-user-roles-form"
+                    id="update-roles-form"
                     onSubmit={form.handleSubmit((formData) => mutation.mutate(formData))}
                 >
                     <FieldGroup>
@@ -142,7 +148,9 @@ export function AdminModule_UpdateUserRoles_Dialog({
                                             <SelectValue placeholder="Select primary role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="owner">Owner</SelectItem>
+                                            <SelectItem value="owner" disabled={!canAssignOwner}>
+                                                Owner
+                                            </SelectItem>
                                             <SelectItem value="admin">Admin</SelectItem>
                                             <SelectItem value="member">Member</SelectItem>
                                         </SelectContent>
@@ -152,7 +160,7 @@ export function AdminModule_UpdateUserRoles_Dialog({
                             )}
                         />
 
-                        <Show when={primaryRole == "member"}>
+                        <Show when={primaryRole === "member"}>
                             <FieldLegend>Module-specific Roles</FieldLegend>
 
                             {organization.settings.modules.i3.enabled && (
@@ -259,7 +267,7 @@ export function AdminModule_UpdateUserRoles_Dialog({
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="update-user-roles-form"
+                                form="update-roles-form"
                                 status={mutation.status}
                                 text={{
                                     idle: "Update",
