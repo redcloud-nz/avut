@@ -5,6 +5,7 @@
 
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -13,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
-import { MutationButton } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     Dialog,
     DialogCloseButton,
@@ -173,6 +175,7 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                         className="min-w-1/2"
                                         placeholder="example@email.com"
                                         autoComplete="off"
+                                        disabled
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -203,108 +206,158 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                         />
 
                         <Show when={primaryRole == "member"}>
-                            <FieldLegend>Module-specific Roles</FieldLegend>
-
-                            {organization.settings.modules.i3.enabled && (
-                                <Controller
-                                    name="i3Role"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>I3 Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
-                                                    field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select I3 module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="i3-admin">
-                                                        I3 Admin
-                                                    </SelectItem>
-                                                    <SelectItem value="i3-user">I3 User</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </Field>
-                                    )}
-                                />
-                            )}
-                            {organization.settings.modules.skills.enabled && (
-                                <Controller
-                                    name="skillsRole"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Skills Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
-                                                    field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select Skills module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="skills-admin">
-                                                        Skills Admin
-                                                    </SelectItem>
-                                                    <SelectItem value="skills-assessor">
-                                                        Skills Assessor
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </Field>
-                                    )}
-                                />
-                            )}
-                            {organization.settings.modules["skill-package-builder"].enabled && (
-                                <Controller
-                                    name="skillPackageRole"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Skill Package Builder Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
-                                                    field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select Skill Package module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="skill-package-author">
-                                                        Skill Package Author
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </Field>
-                                    )}
-                                />
-                            )}
+                            <Collapsible>
+                                <div className="flex items-center justify-between gap-4">
+                                    <FieldLegend>Module-specific Roles</FieldLegend>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <ChevronDownIcon className="size-4" />
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent>
+                                    <FieldGroup>
+                                        {organization.settings.modules.i3.enabled && (
+                                            <Controller
+                                                name="i3Role"
+                                                control={form.control}
+                                                render={({ field, fieldState }) => (
+                                                    <Field
+                                                        orientation="responsive"
+                                                        data-invalid={fieldState.invalid}
+                                                    >
+                                                        <FieldLabel>I3 Module</FieldLabel>
+                                                        <Select
+                                                            value={field.value ?? "NONE"}
+                                                            onValueChange={(newValue) =>
+                                                                field.onChange(
+                                                                    newValue === "NONE"
+                                                                        ? null
+                                                                        : newValue,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger
+                                                                aria-invalid={fieldState.invalid}
+                                                            >
+                                                                <SelectValue placeholder="Select I3 module role" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="NONE">
+                                                                    None
+                                                                </SelectItem>
+                                                                <SelectItem value="i3-admin">
+                                                                    I3 Admin
+                                                                </SelectItem>
+                                                                <SelectItem value="i3-user">
+                                                                    I3 User
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {fieldState.error && (
+                                                            <FieldError
+                                                                errors={[fieldState.error]}
+                                                            />
+                                                        )}
+                                                    </Field>
+                                                )}
+                                            />
+                                        )}
+                                        {organization.settings.modules.skills.enabled && (
+                                            <Controller
+                                                name="skillsRole"
+                                                control={form.control}
+                                                render={({ field, fieldState }) => (
+                                                    <Field
+                                                        orientation="responsive"
+                                                        data-invalid={fieldState.invalid}
+                                                    >
+                                                        <FieldLabel>Skills Module</FieldLabel>
+                                                        <Select
+                                                            value={field.value ?? "NONE"}
+                                                            onValueChange={(newValue) =>
+                                                                field.onChange(
+                                                                    newValue === "NONE"
+                                                                        ? null
+                                                                        : newValue,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger
+                                                                aria-invalid={fieldState.invalid}
+                                                            >
+                                                                <SelectValue placeholder="Select Skills module role" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="NONE">
+                                                                    None
+                                                                </SelectItem>
+                                                                <SelectItem value="skills-admin">
+                                                                    Skills Admin
+                                                                </SelectItem>
+                                                                <SelectItem value="skills-assessor">
+                                                                    Skills Assessor
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {fieldState.error && (
+                                                            <FieldError
+                                                                errors={[fieldState.error]}
+                                                            />
+                                                        )}
+                                                    </Field>
+                                                )}
+                                            />
+                                        )}
+                                        {organization.settings.modules["skill-package-builder"]
+                                            .enabled && (
+                                            <Controller
+                                                name="skillPackageRole"
+                                                control={form.control}
+                                                render={({ field, fieldState }) => (
+                                                    <Field
+                                                        orientation="responsive"
+                                                        data-invalid={fieldState.invalid}
+                                                    >
+                                                        <FieldLabel>
+                                                            Skill Package Builder Module
+                                                        </FieldLabel>
+                                                        <Select
+                                                            value={field.value ?? "NONE"}
+                                                            onValueChange={(newValue) =>
+                                                                field.onChange(
+                                                                    newValue === "NONE"
+                                                                        ? null
+                                                                        : newValue,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger
+                                                                aria-invalid={fieldState.invalid}
+                                                            >
+                                                                <SelectValue placeholder="Select Skill Package module role" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="NONE">
+                                                                    None
+                                                                </SelectItem>
+                                                                <SelectItem value="skill-package-author">
+                                                                    Skill Package Author
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {fieldState.error && (
+                                                            <FieldError
+                                                                errors={[fieldState.error]}
+                                                            />
+                                                        )}
+                                                    </Field>
+                                                )}
+                                            />
+                                        )}
+                                    </FieldGroup>
+                                </CollapsibleContent>
+                            </Collapsible>
                         </Show>
 
                         <Field orientation="horizontal">

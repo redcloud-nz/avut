@@ -13,12 +13,15 @@ import { SignUp_Card } from "@/components/cards/sign-up";
 
 export const metadata = { title: "Sign Up" };
 
-export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
+export default async function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
+    const params = await props.searchParams;
+    const email = Array.isArray(params.email) ? params.email[0] : params.email;
+
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <SignUp_Card />
+                <SignUp_Card email={email ? decodeURIComponent(email) : undefined} />
                 <Argus.Footer>
                     By clicking continue, you agree to our{" "}
                     <Link href="/policies/terms-of-service" target="_blank">

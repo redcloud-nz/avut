@@ -450,13 +450,48 @@ export const accessControlRouter = createTrpcRouter({
             }
         }),
 
+    resendInvitation: organizationProcedure({ invitation: ["create"] })
+        .input(
+            z.object({
+                invitationId: InvitationId.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const invitation = await ctx.prisma.organizationInvitation.findUnique({
+                where: { id: input.invitationId, organizationId: ctx.organizationId },
+            });
+
+            if (!invitation || invitation.status !== "pending")
+                throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+
+            try {
+                await auth.api.createInvitation({
+                    body: {
+                        organizationId: ctx.organizationId,
+                        email: invitation.email,
+                        role: (invitation.role ?? "").split(",") as OrganizationRole[],
+                        personId: invitation.personId ?? undefined,
+                        resend: true,
+                    },
+                    headers: ctx.headers,
+                });
+            } catch (error) {
+                console.error("Error resending invitation:", error);
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to resend invitation",
+                    cause: error,
+                });
+            }
+        }),
+
     /**
      * Update the roles on a pending invitation by cancelling and re-creating it.
      *
      * @param ctx The authenticated organization context.
      * @param input The invitation ID and new roles.
      */
-    updateInvitationRoles: organizationProcedure({ invitation: ["create"] })
+    updateInvitationRoles: organizationProcedure({ invitation: ["update"] })
         .input(
             z.object({
                 invitationId: InvitationId.schema,

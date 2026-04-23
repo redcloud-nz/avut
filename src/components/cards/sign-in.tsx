@@ -32,9 +32,9 @@ import { Input } from "@/components/ui/input";
 /**
  * Card for a user to sign in to the application.
  *
- * @param redirect Optional redirect URL after successful sign-in.
+ * @param email Optional email to pre-fill in the form.
  */
-export function SignIn_Card() {
+export function SignIn_Card({ email }: { email?: string }) {
     return (
         <Card>
             <CardHeader>
@@ -43,7 +43,7 @@ export function SignIn_Card() {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <EmailPasswordSignIn_Form />
+                    <EmailPasswordSignIn_Form email={email} />
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
@@ -60,9 +60,9 @@ export function SignIn_Card() {
 /**
  * Sign in form using email and password.
  *
- * @param redirect Optional redirect URL after successful sign-in.
+ * @param email Optional email to pre-fill in the form.
  */
-function EmailPasswordSignIn_Form() {
+function EmailPasswordSignIn_Form({ email }: { email?: string }) {
     const router = useRouter();
 
     const form = useForm({
@@ -74,7 +74,7 @@ function EmailPasswordSignIn_Form() {
             }),
         ),
         defaultValues: {
-            email: "",
+            email: email || "",
             password: "",
             rememberMe: true,
         },
@@ -103,7 +103,7 @@ function EmailPasswordSignIn_Form() {
                     form.reset();
                     setState({ status: "Ready" });
 
-                    router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
+                    router.push(`/auth/verify-email/${encodeURIComponent(formData.email)}`);
                 }
             }
         } catch (error) {

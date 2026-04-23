@@ -6,7 +6,6 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { match } from "ts-pattern";
 
@@ -30,7 +29,6 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc, trpcClient } from "@/trpc/client";
@@ -46,7 +44,6 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
     personId: PersonId;
 }) {
     const organization = useOrganization();
-    const router = useRouter();
 
     const { data: session } = authClient.useSession();
 
@@ -88,7 +85,7 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                         <CardAction className="flex items-center gap-1">
                             <Protect
                                 orgId={organization.id}
-                                permissions={{ invitation: ["create"] }}
+                                permissions={{ invitation: ["update"] }}
                             >
                                 <Tooltip>
                                     <TooltipTrigger asChild>

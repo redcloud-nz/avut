@@ -34,10 +34,12 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
+    },
+    emailVerification: {
+        autoSignInAfterVerification: true,
     },
     experimental: {
         joins: true,
@@ -66,6 +68,21 @@ export const auth = betterAuth({
             ac,
             cancelPendingInvitationsOnReInvite: true,
             organizationHooks: {
+                async afterAcceptInvitation({ invitation, organization, user }) {
+                    // Copy personId from invitation to organization user
+                    console.log(
+                        `Attaching User(${user.id}) to Person(${invitation.personId}) in Organization(${organization.id})`,
+                    );
+                    await prisma.organizationUser.updateMany({
+                        where: {
+                            organizationId: organization.id,
+                            userId: user.id,
+                        },
+                        data: {
+                            personId: invitation.personId,
+                        },
+                    });
+                },
                 async afterUpdateOrganization({ organization }) {
                     // Revalidate organization cache
                     revalidateOrganization(organization!.slug);

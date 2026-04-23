@@ -18,6 +18,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { EntryControlSelect } from "@/server/entry-control";
 
 export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlSelect }) {
@@ -54,7 +55,9 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
                                 </ItemMedia>
                                 <ItemContent>
                                     <ItemTitle>{membership.organization.name}</ItemTitle>
-                                    <ItemDescription>{membership.role.join(", ")}</ItemDescription>
+                                    <ItemDescription>
+                                        {OrganizationRole.formatList(membership.roles)}
+                                    </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />

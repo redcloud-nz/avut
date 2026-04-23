@@ -29,7 +29,11 @@ import { authClient } from "@/client/auth-client";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
-export function SignUp_Card() {
+/**
+ *
+ * @param email Optional email to pre-fill in the form.
+ */
+export function SignUp_Card({ email }: { email?: string }) {
     return (
         <Card>
             <CardHeader>
@@ -38,7 +42,7 @@ export function SignUp_Card() {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Auth_EmailPasswordSignUp_Form />
+                    <Auth_EmailPasswordSignUp_Form email={email} />
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
@@ -58,7 +62,7 @@ export function SignUp_Card() {
 /**
  * Form form signing up with email and password.
  */
-function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
+function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
     const router = useRouter();
 
     const form = useForm({
@@ -71,7 +75,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
         ),
         defaultValues: {
             name: "",
-            email: "",
+            email: email || "",
             password: "",
         },
     });
@@ -93,7 +97,7 @@ function Auth_EmailPasswordSignUp_Form({ redirect }: { redirect?: string }) {
             } else {
                 // Successful signup. BetterAuth automatically sends a verification email.
                 console.log("Sign up successful", data);
-                router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
+                router.push(`/auth/verify-email/${encodeURIComponent(formData.email)}`);
             }
         } catch (error) {
             // We're assuming this is an unexpected error

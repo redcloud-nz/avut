@@ -11,12 +11,15 @@ import { SignIn_Card } from "@/components/cards/sign-in";
 
 export const metadata = { title: "Sign In" };
 
-export default function SignIn_Page(props: PageProps<"/auth/sign-in">) {
+export default async function SignIn_Page(props: PageProps<"/auth/sign-in">) {
+    const params = await props.searchParams;
+    const email = Array.isArray(params.email) ? params.email[0] : params.email;
+
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <SignIn_Card />
+                <SignIn_Card email={email ? decodeURIComponent(email) : undefined} />
             </Argus.Column>
         </Argus.Root>
     );

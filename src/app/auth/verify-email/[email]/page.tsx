@@ -12,16 +12,15 @@ import { VerifyEmail_Card } from "@/components/cards/verify-email";
 export const metadata = { title: "Verify Email" };
 
 export default async function Auth_VerifyEmail_Page(
-    props: PageProps<"/auth/verify-email">,
+    props: PageProps<"/auth/verify-email/[email]">,
 ) {
-    const params = await props.searchParams;
-    const email = Array.isArray(params.e) ? params.e[0] : params.e || "";
+    const { email } = await props.params;
 
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <VerifyEmail_Card email={email} />
+                <VerifyEmail_Card email={decodeURIComponent(email)} />
             </Argus.Column>
         </Argus.Root>
     );

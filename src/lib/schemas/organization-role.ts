@@ -35,6 +35,10 @@ export const OrganizationRole = {
         { value: "admin", label: "Admin", isAdminAssignable: true },
         { value: "member", label: "Member", isAdminAssignable: true },
     ] as const,
+
+    formatList(roles: OrganizationRole[]) {
+        return roles.map((role) => this.displayNames[role]).join(", ");
+    },
 } as const;
 
 export type OrganizationRole = z.infer<typeof organizationRoleSchema>;

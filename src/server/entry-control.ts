@@ -8,7 +8,7 @@ import { headers as nextHeaders } from "next/headers";
 
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { OrganizationMembershipData } from "@/lib/schemas/organization-member";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 
 import { auth, AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
@@ -24,7 +24,7 @@ export interface EntryControlSelect {
     slug?: never;
     data: {
         session: AuthSession;
-        memberships: (OrganizationMembershipData & {
+        memberships: (OrganizationUser & {
             organization: OrganizationData;
         })[];
         invitations: (OrganizationInvitationData & {
@@ -47,6 +47,7 @@ export async function getEntryControl(): Promise<EntryControl> {
             },
             include: {
                 organization: true,
+                user: true,
             },
         }),
         await prisma.organizationInvitation.findMany({
@@ -73,7 +74,7 @@ export async function getEntryControl(): Promise<EntryControl> {
         data: {
             session,
             memberships: memberships.map((membership) => ({
-                ...OrganizationMembershipData.fromRecord(membership),
+                ...OrganizationUser.fromRecord(membership.user, membership),
                 organization: OrganizationData.fromRecord(membership.organization),
             })),
             invitations: invitations.map((invitation) => ({
