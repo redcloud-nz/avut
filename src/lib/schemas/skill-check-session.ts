@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { formatISO } from "date-fns";
 import * as z from "zod";
 
 import { SkillCheckSession as SkillCheckSessionRecord } from "@/generated/prisma/client";

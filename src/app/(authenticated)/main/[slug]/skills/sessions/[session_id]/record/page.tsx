@@ -9,10 +9,10 @@
 
 import { Suspense, use } from "react";
 
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-
 import { RainbowSpinner } from "@/components/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -21,9 +21,9 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
+import { SkillsModule_SessionRecord_ByPerson_Tab } from "./by-person";
+import { SkillsModule_SessionRecord_BySkill_Tab } from "./by-skill";
 import { SkillsModule_SessionRecord_Details_Tab } from "./details";
-import { SkillsModule_SessionRecord_Personnel_Tab } from "./personnel";
-import { SkillsModule_SessionRecord_Skills_Tab } from "./skills";
 
 export default function SkillsModule_SessionRecord_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]/record">,
@@ -35,8 +35,6 @@ export default function SkillsModule_SessionRecord_Page(
     const { data: sessions } = useSuspenseQuery(
         trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
     );
-
-    const mutation = useMutation(trpc.skills.updateSession.mutationOptions());
 
     const session = sessions.find((s) => s.id === session_id);
     if (!session) throw new Error(`Session(${session_id}) not found`);
@@ -58,16 +56,22 @@ export default function SkillsModule_SessionRecord_Page(
                 ]}
             />
             <Lexington.Page>
-                <Lexington.Column width="lg" className="pt-0">
+                <Lexington.Column width="lg">
                     <Tabs defaultValue="details">
-                        <div className="sticky top-0 z-5 border-b pt-2 -mx-px bg-background flex items-center gap-1 backdrop-blur-md">
-                            <TabsList variant="line" className="grow">
+                        <Hermes.Header>
+                            <Hermes.BackButton
+                                href={route("/main/[slug]/skills/sessions/[session_id]", {
+                                    slug,
+                                    session_id,
+                                })}
+                            />
+                            <TabsList variant="line" className="w-full">
                                 <TabsTrigger value="details">Details</TabsTrigger>
-                                <TabsTrigger value="personnel">Personnel</TabsTrigger>
-                                <TabsTrigger value="skills">Skills</TabsTrigger>
-                                <TabsTrigger value="record">Record</TabsTrigger>
+
+                                <TabsTrigger value="by-person">By Person</TabsTrigger>
+                                <TabsTrigger value="by-skill">By Skill</TabsTrigger>
                             </TabsList>
-                        </div>
+                        </Hermes.Header>
 
                         <Suspense
                             fallback={
@@ -79,13 +83,12 @@ export default function SkillsModule_SessionRecord_Page(
                             <TabsContent value="details">
                                 <SkillsModule_SessionRecord_Details_Tab session={session} />
                             </TabsContent>
-                            <TabsContent value="personnel">
-                                <SkillsModule_SessionRecord_Personnel_Tab session={session} />
+                            <TabsContent value="by-person">
+                                <SkillsModule_SessionRecord_ByPerson_Tab session={session} />
                             </TabsContent>
-                            <TabsContent value="skills">
-                                <SkillsModule_SessionRecord_Skills_Tab session={session} />
+                            <TabsContent value="by-skill">
+                                <SkillsModule_SessionRecord_BySkill_Tab session={session} />
                             </TabsContent>
-                            <TabsContent value="by-person"></TabsContent>
                         </Suspense>
                     </Tabs>
                 </Lexington.Column>

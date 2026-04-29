@@ -7,22 +7,30 @@
 
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 import { use } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemMedia,
+    ItemTitle,
+} from "@/components/ui/items";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-
 import { trpc } from "@/trpc/client";
 
 export default function SkillsModule_Session_Page(
@@ -62,18 +70,6 @@ export default function SkillsModule_Session_Page(
                             tooltip="Back to sessions list"
                         />
                         <Hermes.Title>{session.name}</Hermes.Title>
-                        <Hermes.Action>
-                            <Button asChild>
-                                <Link
-                                    href={route(
-                                        "/main/[slug]/skills/sessions/[session_id]/record",
-                                        { slug, session_id },
-                                    )}
-                                >
-                                    Recorder
-                                </Link>
-                            </Button>
-                        </Hermes.Action>
                     </Hermes.Header>
 
                     <Card>
@@ -121,32 +117,62 @@ export default function SkillsModule_Session_Page(
                             </FieldGroup>
                         </CardContent>
                     </Card>
-                    <div className="grid grid-cols-3 gap-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Personnel</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-4xl text-center">{metrics.assesseeCount}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Skills</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-4xl text-center">{metrics.skillCount}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Checks</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-4xl text-center">{metrics.checkCount}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <ItemGroup>
+                        <Item variant="outline" size="xs" asChild>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]/personnel", {
+                                    slug,
+                                    session_id,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Personnel</ItemTitle>
+                                    <ItemDescription>
+                                        Manage the personnel assigned to this session
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" size="xs" asChild>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
+                                    slug,
+                                    session_id,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Skills</ItemTitle>
+                                    <ItemDescription>
+                                        Manage the skills assigned to this session
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" size="xs" asChild>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]/record", {
+                                    slug,
+                                    session_id,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Record</ItemTitle>
+                                    <ItemDescription>
+                                        Record skill checks in this session.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>

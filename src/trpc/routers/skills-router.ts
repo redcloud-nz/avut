@@ -20,6 +20,7 @@ import {
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+import { SkillCheck } from "@/lib/schemas/skill-check";
 
 /**
  * Router for managing skill package subscriptions and listing the groups and skills associated with the organization's subscribed skill packages.
@@ -271,7 +272,9 @@ export const skillsRouter = createTrpcRouter({
                 });
             }
 
-            return session.assessees;
+            return session.assessees
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((person) => PersonRef.schema.parse(person));
         }),
 
     /**

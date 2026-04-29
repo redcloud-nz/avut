@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -25,13 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { formatDateTime } from "@/lib/datetime";
+import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
 import { SkillsModule_CreateSession_Dialog } from "./create-session";
-import { formatDateTime } from "@/lib/datetime";
-import Link from "next/link";
-import { Route } from "next";
 
 export default function SkillsModule_Sessions_List() {
     const organization = useOrganization();
@@ -47,29 +47,38 @@ export default function SkillsModule_Sessions_List() {
     const columns = useMemo(
         () =>
             Akagi.defineColumns<RowData>((columnHelper) => [
-                columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>ID</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={
-                                    `/main/${organization.slug}/skills/sessions/${ctx.row.original.id}` as Route
-                                }
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
-                    ),
-                    enableSorting: false,
-                }),
+                // columnHelper.accessor("id", {
+                //     header: (ctx) => (
+                //         <Akagi.TableHeadCell header={ctx.header}>ID</Akagi.TableHeadCell>
+                //     ),
+                //     cell: (ctx) => (
+                //         <Akagi.TableCell cell={ctx.cell}>
+                //             <Link
+                //                 href={
+                //                     `/main/${organization.slug}/skills/sessions/${ctx.row.original.id}` as Route
+                //                 }
+                //             >
+                //                 {ctx.getValue()}
+                //             </Link>
+                //         </Akagi.TableCell>
+                //     ),
+                //     enableSorting: false,
+                // }),
                 columnHelper.accessor("name", {
                     header: (ctx) => (
                         <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
+                        <Akagi.TableCell cell={ctx.cell}>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]", {
+                                    slug: organization.slug,
+                                    session_id: ctx.row.original.id,
+                                })}
+                            >
+                                {ctx.getValue() || ctx.row.original.id}
+                            </Link>
+                        </Akagi.TableCell>
                     ),
                     enableSorting: true,
                 }),
