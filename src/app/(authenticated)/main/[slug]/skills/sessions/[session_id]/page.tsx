@@ -9,14 +9,15 @@
 
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
-import { use } from "react";
+import { use, useState } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ObjectIcons } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import {
@@ -25,13 +26,15 @@ import {
     ItemContent,
     ItemDescription,
     ItemGroup,
-    ItemMedia,
     ItemTitle,
 } from "@/components/ui/items";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
+
+import { SkillsModule_SessionMenu } from "./session-menu";
+import { SkillsModule_UpdateSession_Dialog } from "./update-session";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -40,18 +43,14 @@ export default function SkillsModule_Session_Page(
 
     const organization = useOrganization();
 
-    const [{ data: sessions }, { data: metrics }] = useSuspenseQueries({
-        queries: [
-            trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
-            trpc.skills.getSessionMetrics.queryOptions({
-                organizationId: organization.id,
-                skillCheckSessionId: session_id,
-            }),
-        ],
-    });
+    const { data: session } = useSuspenseQuery(
+        trpc.skills.getSession.queryOptions({
+            organizationId: organization.id,
+            skillCheckSessionId: session_id,
+        }),
+    );
 
-    const session = sessions.find((s) => s.id === session_id);
-    if (!session) throw new Error(`Session(${session_id}) not found`);
+    const [updateSessionDialogOpen, setUpdateSessionDialogOpen] = useState(false);
 
     return (
         <Lexington.Root>
@@ -75,6 +74,16 @@ export default function SkillsModule_Session_Page(
                     <Card>
                         <CardHeader>
                             <CardTitle>Session details</CardTitle>
+                            <CardAction>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setUpdateSessionDialogOpen(true)}
+                                >
+                                    <ObjectIcons.Edit />
+                                </Button>
+                                <SkillsModule_SessionMenu session={session} />
+                            </CardAction>
                         </CardHeader>
                         <CardContent>
                             <FieldGroup>
@@ -175,6 +184,11 @@ export default function SkillsModule_Session_Page(
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>
+            <SkillsModule_UpdateSession_Dialog
+                session={session}
+                open={updateSessionDialogOpen}
+                onOpenChange={setUpdateSessionDialogOpen}
+            />
         </Lexington.Root>
     );
 }

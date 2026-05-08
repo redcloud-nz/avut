@@ -31,9 +31,16 @@ import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { PersonId } from "@/lib/schemas/person";
+import { PersonId, PersonRef } from "@/lib/schemas/person";
+import { TeamData } from "@/lib/schemas/team";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
 import { trpc } from "@/trpc/client";
 
+/**
+ * Page for selecting personnel to be assessed in a skill check session.
+ * Displays a list of teams, each containing its members with checkboxes to select/deselect them for the session.
+ * Changes are saved automatically with a debounce, and the UI indicates pending changes and errors.
+ */
 export default function SkillModule_SessionPersonnel_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]/personnel">,
 ) {
@@ -43,7 +50,7 @@ export default function SkillModule_SessionPersonnel_Page(
 
     const [
         { data: assignedPersonnel },
-        { data: sessions },
+        { data: session },
         { data: teams },
         { data: teamMemberships },
     ] = useSuspenseQueries({
@@ -52,7 +59,10 @@ export default function SkillModule_SessionPersonnel_Page(
                 sessionId: session_id,
                 organizationId: organization.id,
             }),
-            trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
+            trpc.skills.getSession.queryOptions({
+                organizationId: organization.id,
+                skillCheckSessionId: session_id,
+            }),
             trpc.teams.listTeams.queryOptions({
                 organizationId: organization.id,
             }),
@@ -61,8 +71,6 @@ export default function SkillModule_SessionPersonnel_Page(
             }),
         ],
     });
-    const session = sessions.find((s) => s.id === session_id);
-    if (!session) throw new Error(`Session(${session_id}) not found`);
 
     const mutation = useMutation(
         trpc.skills.updateSessionAssessees.mutationOptions({
@@ -70,17 +78,30 @@ export default function SkillModule_SessionPersonnel_Page(
                 console.error("Failed to update session assessees:", error);
                 toast.error(`Failed to update session assessees. ${error.message}`);
             },
-            onSuccess({ updated }, _variables, _onMutateResult, context) {
+            onSuccess({ updatedAssessees, updatedSession }, _variables, _onMutateResult, context) {
                 toast.success("Session personnel updated.");
 
                 setChanges({});
 
+                // Update the cached assessees and session data with the response from the server
                 context.client.setQueryData(
                     trpc.skills.listSessionAssessees.queryKey({
                         sessionId: session_id,
                         organizationId: organization.id,
                     }),
-                    updated,
+                    updatedAssessees,
+                );
+                context.client.setQueryData(
+                    trpc.skills.getSession.queryKey({
+                        organizationId: organization.id,
+                        skillCheckSessionId: session_id,
+                    }),
+                    updatedSession,
+                );
+                context.client.invalidateQueries(
+                    trpc.skills.listSessions.queryFilter({
+                        organizationId: organization.id,
+                    }),
                 );
             },
         }),
@@ -120,13 +141,6 @@ export default function SkillModule_SessionPersonnel_Page(
                 .filter(([_, selected]) => !selected)
                 .map(([id, _]) => id as PersonId),
         });
-    }
-
-    /**
-     * Determines whether a given person is currently selected.
-     */
-    function isSelected(personId: PersonId) {
-        return changes[personId] ?? assignedPersonIds.includes(personId);
     }
 
     return (
@@ -172,89 +186,93 @@ export default function SkillModule_SessionPersonnel_Page(
                             <FieldSet>
                                 {teams
                                     .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((team) => {
-                                        const members = teamMemberships.filter(
-                                            (m) => m.teamId === team.id,
-                                        );
-                                        const teamSelectedCount = members.filter((m) =>
-                                            isSelected(m.person.id),
-                                        ).length;
-
-                                        return (
-                                            <Collapsible key={team.id}>
-                                                <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
-                                                    <div className="font-medium">{team.name}</div>
-                                                    <div className="flex item-center gap-2">
-                                                        <div className="flex gap-1 text-muted-foreground">
-                                                            <span>
-                                                                {teamSelectedCount}/{members.length}
-                                                            </span>
-                                                            <span className="hidden md:inline">
-                                                                selected
-                                                            </span>
-                                                        </div>
-                                                        <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                                                    </div>
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent>
-                                                    <FieldGroup className="py-4 px-2">
-                                                        {members
-                                                            .sort((a, b) =>
-                                                                a.person.name.localeCompare(
-                                                                    b.person.name,
-                                                                ),
-                                                            )
-                                                            .map((membership) => (
-                                                                <Field
-                                                                    orientation="horizontal"
-                                                                    key={membership.id}
-                                                                >
-                                                                    <Checkbox
-                                                                        id={`membership-${membership.id}`}
-                                                                        checked={isSelected(
-                                                                            membership.person.id,
-                                                                        )}
-                                                                        onCheckedChange={(
-                                                                            checked,
-                                                                        ) => {
-                                                                            handleChangeChecked(
-                                                                                membership.person
-                                                                                    .id,
-                                                                                !!checked,
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                    <FieldLabel
-                                                                        htmlFor={`membership-${membership.id}`}
-                                                                    >
-                                                                        {membership.person.name}
-                                                                    </FieldLabel>
-                                                                    {changes[
-                                                                        membership.person.id
-                                                                    ] === true && (
-                                                                        <div className="leading-snug text-green-500">
-                                                                            +1
-                                                                        </div>
-                                                                    )}
-                                                                    {changes[
-                                                                        membership.person.id
-                                                                    ] === false && (
-                                                                        <div className="leading-snug text-red-500">
-                                                                            -1
-                                                                        </div>
-                                                                    )}
-                                                                </Field>
-                                                            ))}
-                                                    </FieldGroup>
-                                                </CollapsibleContent>
-                                            </Collapsible>
-                                        );
-                                    })}
+                                    .map((team) => (
+                                        <TeamSection
+                                            key={team.id}
+                                            team={team}
+                                            members={teamMemberships.filter(
+                                                (m) => m.teamId === team.id,
+                                            )}
+                                            assignedPersonIds={assignedPersonIds}
+                                            changes={changes}
+                                            onChangeChecked={handleChangeChecked}
+                                        />
+                                    ))}
                             </FieldSet>
                         </CardContent>
                     </Card>
                 </Lexington.Column>
             </Lexington.Page>
         </Lexington.Root>
+    );
+}
+
+interface TeamSectionProps {
+    assignedPersonIds: PersonId[];
+    changes: Record<PersonId, boolean>;
+    members: (TeamMembershipData & { person: PersonRef })[];
+    team: TeamData;
+    onChangeChecked: (personId: PersonId, newValue: boolean) => void;
+}
+
+/**
+ * Team section of the personnel selection page.
+ * Displays a collapsible section for a team, showing its members with checkboxes to select/deselect them for the skill check session.
+ * Also shows the count of selected members in the team and indicates changes with +1/-1.
+ */
+function TeamSection({
+    assignedPersonIds,
+    changes,
+    onChangeChecked,
+    members,
+    team,
+}: TeamSectionProps) {
+    function isSelected(personId: PersonId) {
+        return changes[personId] ?? assignedPersonIds.includes(personId);
+    }
+
+    const teamSelectedCount = members.filter((m) => isSelected(m.person.id)).length;
+
+    return (
+        <Collapsible key={team.id}>
+            <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
+                <div className="font-medium">{team.name}</div>
+                <div className="flex item-center gap-2">
+                    <div className="flex gap-1 text-muted-foreground">
+                        <span>
+                            {teamSelectedCount}/{members.length}
+                        </span>
+                        <span className="hidden md:inline">selected</span>
+                    </div>
+                    <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <FieldGroup className="py-4 px-2">
+                    {members
+                        .sort((a, b) => a.person.name.localeCompare(b.person.name))
+                        .map((membership) => (
+                            <Field orientation="horizontal" key={membership.id}>
+                                <Checkbox
+                                    id={`membership-${membership.id}`}
+                                    checked={isSelected(membership.person.id)}
+                                    onCheckedChange={(checked) =>
+                                        onChangeChecked(membership.person.id, !!checked)
+                                    }
+                                />
+                                <FieldLabel htmlFor={`membership-${membership.id}`}>
+                                    {membership.person.name}
+                                </FieldLabel>
+                                {changes[membership.person.id] === true && (
+                                    <div className="leading-snug text-green-500">+1</div>
+                                )}
+                                {changes[membership.person.id] === false && (
+                                    <div className="leading-snug text-red-500">-1</div>
+                                )}
+                            </Field>
+                        ))}
+                </FieldGroup>
+            </CollapsibleContent>
+        </Collapsible>
     );
 }

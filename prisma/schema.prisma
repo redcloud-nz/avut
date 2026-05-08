@@ -441,9 +441,11 @@ model SkillCheck {
   status         SkillCheckStatus   @default(Draft)
   createdAt      DateTime           @default(now())
 
+  @@unique([assesseeId, assessorId, sessionId, skillId])
   @@index([organizationId])
   @@index([assesseeId])
   @@index([assessorId])
+  @@index([sessionId])
   @@index([skillId])
   @@map("skill_checks")
 }

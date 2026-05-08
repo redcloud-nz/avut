@@ -15,7 +15,7 @@ import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
-import { skillChecksRouter } from "./skill-checks";
+import { skillChecksRouter } from "./skill-checks-router";
 import { skillsRouter } from "./skills-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { teamsRouter } from "./teams-router";

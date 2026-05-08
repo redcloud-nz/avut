@@ -255,6 +255,19 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Returns the person record linked to the current user within the organization, or null if no link exists.
+     */
+    getPersonSelf: organizationProcedure()
+        .output(PersonData.schema.nullable())
+        .query(async ({ ctx }) => {
+            const orgUser = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: ctx.organizationId, userId: ctx.userId },
+                include: { person: true },
+            });
+            return orgUser?.person ? PersonData.fromRecord(orgUser.person) : null;
+        }),
+
+    /**
      * Lists all personnel in the organization.
      * @param ctx The authenticated context.
      * @returns An array of person objects.

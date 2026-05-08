@@ -82,6 +82,21 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a skill check session by ID.
+     * @param skillCheckSessionId The ID of the skill check session to retrieve.
+     * @returns The skill check session.
+     * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     */
+    getSession: organizationProcedure({ skillCheckSession: ["view"] })
+        .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
+        .output(SkillCheckSession.schema)
+        .query(async ({ ctx, input: { skillCheckSessionId } }) => {
+            const session = await getSessionOrThrow(ctx, skillCheckSessionId);
+
+            return session;
+        }),
+
+    /**
      * Get metrics for a skill check session, including the number of assessees, skills, and checks associated with the session.
      */
     getSessionMetrics: organizationProcedure({ skillCheckSession: ["view"] })
@@ -548,7 +563,12 @@ export const skillsRouter = createTrpcRouter({
                 removedPersonIds: z.array(PersonId.schema),
             }),
         )
-        .output(z.object({ updated: z.array(PersonRef.schema) }))
+        .output(
+            z.object({
+                updatedAssessees: z.array(PersonRef.schema),
+                updatedSession: SkillCheckSession.schema,
+            }),
+        )
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 // Verify that the session exists and belongs to the organization.
@@ -574,7 +594,10 @@ export const skillsRouter = createTrpcRouter({
                         },
                     },
                 });
-                return { updated: updated.assessees };
+                return {
+                    updatedAssessees: updated.assessees,
+                    updatedSession: SkillCheckSession.fromRecord(updated),
+                };
             },
         ),
 
@@ -592,7 +615,12 @@ export const skillsRouter = createTrpcRouter({
                 removedSkillIds: z.array(SkillId.schema),
             }),
         )
-        .output(z.object({ updated: z.array(SkillRef.schema) }))
+        .output(
+            z.object({
+                updatedSkills: z.array(SkillRef.schema),
+                updatedSession: SkillCheckSession.schema,
+            }),
+        )
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 // Verify that the session exists and belongs to the organization.
@@ -618,7 +646,10 @@ export const skillsRouter = createTrpcRouter({
                         },
                     },
                 });
-                return { updated: updated.skills };
+                return {
+                    updatedSkills: updated.skills,
+                    updatedSession: SkillCheckSession.fromRecord(updated),
+                };
             },
         ),
 });

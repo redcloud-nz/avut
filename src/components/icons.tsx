@@ -51,6 +51,8 @@ import {
     CircleCheckBigIcon,
     ShieldXIcon,
     BuildingIcon,
+    CircleSlashedIcon,
+    MessageSquarePlusIcon,
 } from "lucide-react";
 
 export {
@@ -127,4 +129,13 @@ export const ObjectIcons = {
     Publish: BookUpIcon,
     Restore: ArchiveRestoreIcon,
     Unpublish: BookXIcon,
+};
+
+export const SkillsIcons = {
+    AddNotes: MessageSquarePlusIcon,
+    Competent: CheckIcon,
+    HighlyConfident: CheckCheckIcon,
+    NotAssessed: CircleIcon,
+    NotCompetent: XIcon,
+    NotTaught: CircleSlashedIcon,
 };

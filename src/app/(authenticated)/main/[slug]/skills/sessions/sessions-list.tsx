@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -84,11 +84,11 @@ export default function SkillsModule_Sessions_List() {
                 }),
                 columnHelper.accessor("updatedAt", {
                     header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Last Updated</Akagi.TableHeadCell>
+                        <Akagi.TableHeadCell header={ctx.header}>Updated</Akagi.TableHeadCell>
                     ),
                     cell: (ctx) => (
                         <Akagi.TableCell cell={ctx.cell}>
-                            {formatDateTime(ctx.getValue())}
+                            {formatDate(ctx.getValue())}
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,

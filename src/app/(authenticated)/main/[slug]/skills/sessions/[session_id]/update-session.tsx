@@ -5,7 +5,6 @@
 
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -28,50 +27,46 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
-import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
+export function SkillsModule_UpdateSession_Dialog({
+    session,
+    ...props
+}: DialogProps & { session: SkillCheckSession }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
-    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
         defaultValues: {
-            name: "",
-            date: new Date().toISOString(),
-            notes: "",
-            status: "Draft" as const,
+            name: session.name,
+            date: session.date,
+            notes: session.notes,
+            status: session.status,
         },
     });
 
     const mutation = useMutation(
-        trpc.skills.createSession.mutationOptions({
+        trpc.skills.updateSession.mutationOptions({
             onError(error) {
-                console.error("Failed to create session", error);
-                toast.error(`Failed to create session ${error.message}`);
+                console.error("Failed to update session", error);
+                toast.error(`Failed to update session ${error.message}`);
             },
-            onSuccess({ created }) {
-                toast.success("Session created");
+
+            onSuccess({ updated }) {
+                toast.success("Session updated");
 
                 handleOpenChange(false);
 
+                // Invalidate session list to reflect changes in the list view
                 queryClient.invalidateQueries(
                     trpc.skills.listSessions.queryFilter({ organizationId: organization.id }),
                 );
 
                 queryClient.setQueryData(
-                    trpc.skills.getSession.queryKey({ skillCheckSessionId: created.id }),
-                    created,
-                );
-
-                router.push(
-                    route("/main/[slug]/skills/sessions/[session_id]", {
-                        slug: organization.slug,
-                        session_id: created.id,
-                    }),
+                    trpc.skills.getSession.queryKey({ skillCheckSessionId: session.id }),
+                    updated,
                 );
             },
         }),
@@ -90,19 +85,16 @@ export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
         <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>New Session</DialogTitle>
-                    <DialogDescription>
-                        Create a new skill check session. You can add skill checks to the session
-                        after it's created.
-                    </DialogDescription>
+                    <DialogTitle>Update session</DialogTitle>
+                    <DialogDescription>Update the basic details of this session.</DialogDescription>
                 </DialogHeader>
                 <form
-                    id="new-session-form"
+                    id="update-session-form"
                     onSubmit={form.handleSubmit((formData) =>
                         mutation.mutate({
                             organizationId: organization.id,
-                            skillCheckSessionId: SkillCheckSessionId.create(),
-                            create: formData,
+                            skillCheckSessionId: session.id,
+                            update: formData,
                         }),
                     )}
                 >
@@ -147,12 +139,12 @@ export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="new-session-form"
+                                form="update-session-form"
                                 status={mutation.status}
                                 text={{
-                                    idle: "Create",
-                                    pending: "Creating...",
-                                    success: "Created",
+                                    idle: "Update",
+                                    pending: "Updating...",
+                                    success: "Updated",
                                 }}
                             />
                             <DialogCloseButton variant="outline">Cancel</DialogCloseButton>

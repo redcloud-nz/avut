@@ -256,6 +256,7 @@ export type SkillCheckOrderByWithRelationInput = {
 export type SkillCheckWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        assesseeId_assessorId_sessionId_skillId?: Prisma.SkillCheckAssesseeIdAssessorIdSessionIdSkillIdCompoundUniqueInput;
         AND?: Prisma.SkillCheckWhereInput | Prisma.SkillCheckWhereInput[];
         OR?: Prisma.SkillCheckWhereInput[];
         NOT?: Prisma.SkillCheckWhereInput | Prisma.SkillCheckWhereInput[];
@@ -280,7 +281,7 @@ export type SkillCheckWhereUniqueInput = Prisma.AtLeast<
         assessor?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>;
         skill?: Prisma.XOR<Prisma.SkillScalarRelationFilter, Prisma.SkillWhereInput>;
     },
-    "id"
+    "id" | "assesseeId_assessorId_sessionId_skillId"
 >;
 
 export type SkillCheckOrderByWithAggregationInput = {
@@ -415,6 +416,13 @@ export type SkillCheckListRelationFilter = {
 
 export type SkillCheckOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
+};
+
+export type SkillCheckAssesseeIdAssessorIdSessionIdSkillIdCompoundUniqueInput = {
+    assesseeId: string;
+    assessorId: string;
+    sessionId: string;
+    skillId: string;
 };
 
 export type SkillCheckCountOrderByAggregateInput = {

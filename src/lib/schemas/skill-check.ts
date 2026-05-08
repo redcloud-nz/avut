@@ -32,7 +32,7 @@ export const SkillCheck = {
         assessorId: PersonId.schema,
         skillId: SkillId.schema,
         name: z.string().max(100),
-        result: z.enum(["Pass", "Fail", "NotAssessed"]),
+        result: z.string(),
         notes: z.string(),
         createdAt: z.iso.datetime(),
     }),
