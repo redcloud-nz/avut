@@ -20,6 +20,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 
@@ -41,7 +42,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link href={`/main/${slug}/admin`}>
+                            <Link href={route("/main/[slug]/admin", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Admin Module</ItemTitle>
                                     <ItemDescription>
@@ -54,7 +55,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/d4h-views`}>
+                            <Link href={route("/main/[slug]/d4h-views", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>D4H Views Module</ItemTitle>
                                     <ItemDescription>View and manage D4H data</ItemDescription>
@@ -65,7 +66,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3`}>
+                            <Link href={route("/main/[slug]/i3", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>I3</ItemTitle>
                                     <ItemDescription>
@@ -79,7 +80,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Item>
                         <Show when={modules.notes.enabled}>
                             <Item asChild>
-                                <Link href={`/main/${slug}/notes`}>
+                                <Link href={route("/main/[slug]/notes", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Notes</ItemTitle>
                                         <ItemDescription>
@@ -94,7 +95,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Show>
                         <Show when={modules["skill-package-builder"].enabled}>
                             <Item asChild>
-                                <Link href={`/main/${slug}/skill-package-builder`}>
+                                <Link href={route("/main/[slug]/skill-package-builder", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Skill Package Builder</ItemTitle>
                                         <ItemDescription>
@@ -109,7 +110,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Show>
                         <Show when={modules.skills.enabled}>
                             <Item asChild>
-                                <Link href={`/main/${slug}/skills`}>
+                                <Link href={route("/main/[slug]/skills", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Skills</ItemTitle>
                                         <ItemDescription>

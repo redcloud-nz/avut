@@ -5,7 +5,6 @@
  * Path: /main/[slug]/i3/equipment-kinds
  */
 
-import { Route } from "next";
 import Link from "next/link";
 import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
@@ -15,6 +14,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/items";
 
+import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
@@ -44,7 +44,12 @@ export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
         );
 
     if (d4HTeams.length == 1) {
-        redirect(`/main/${organization.slug}/i3/teams/${d4HTeams[0].id}/kinds` as Route);
+        redirect(
+            route("/main/[slug]/i3/teams/[team_id]/equipment-kinds", {
+                slug: organization.slug,
+                team_id: String(d4HTeams[0].id),
+            }),
+        );
     }
 
     return (
@@ -66,9 +71,10 @@ export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
                                 <Item key={team.id} size="sm" asChild>
                                     <Link
                                         key={team.id}
-                                        href={
-                                            `/main/${organization.slug}/i3/teams/${team.id}/kinds` as Route
-                                        }
+                                        href={route(
+                                            "/main/[slug]/i3/teams/[team_id]/equipment-kinds",
+                                            { slug: organization.slug, team_id: String(team.id) },
+                                        )}
                                     >
                                         <ItemContent>
                                             <ItemTitle>{team.title}</ItemTitle>

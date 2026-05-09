@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { Route } from "next";
 import Link from "next/link";
 import { use } from "react";
 
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/items";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import { ItemLinkActionIcon } from "@/components/icons";
 
@@ -46,7 +46,7 @@ export default function I3Module_Team_Page(props: PageProps<"/main/[slug]/i3/tea
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
                     { label: team.title },
                 ]}
@@ -59,9 +59,10 @@ export default function I3Module_Team_Page(props: PageProps<"/main/[slug]/i3/tea
                     <ItemGroup>
                         <Item asChild>
                             <Link
-                                href={
-                                    `/main/${organization.slug}/i3/teams/${team.id}/equipment-kinds` as Route
-                                }
+                                href={route("/main/[slug]/i3/teams/[team_id]/equipment-kinds", {
+                                    slug: organization.slug,
+                                    team_id: String(team.id),
+                                })}
                             >
                                 <ItemContent>
                                     <ItemTitle>By Equipment Type</ItemTitle>
@@ -76,9 +77,10 @@ export default function I3Module_Team_Page(props: PageProps<"/main/[slug]/i3/tea
                         </Item>
                         <Item asChild>
                             <Link
-                                href={
-                                    `/main/${organization.slug}/i3/teams/${team.id}/members` as Route
-                                }
+                                href={route("/main/[slug]/i3/teams/[team_id]/members", {
+                                    slug: organization.slug,
+                                    team_id: String(team.id),
+                                })}
                             >
                                 <ItemContent>
                                     <ItemTitle>By Member</ItemTitle>

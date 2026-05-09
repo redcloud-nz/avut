@@ -18,6 +18,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
+import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { EntryControlSelect } from "@/server/entry-control";
 
@@ -49,7 +50,9 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
                 >
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
-                            <Link href={`/main/${membership.organization.slug}`}>
+                            <Link
+                                href={route("/main/[slug]", { slug: membership.organization.slug })}
+                            >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
                                 </ItemMedia>
@@ -71,7 +74,11 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
 
                     {invitations.map((invitation) => (
                         <Item key={invitation.id} asChild>
-                            <Link href={`/personal/invitations/${invitation.id}`}>
+                            <Link
+                                href={route("/personal/invitations/[invitation_id]", {
+                                    invitation_id: invitation.id,
+                                })}
+                            >
                                 <ItemMedia>
                                     <SendIcon className="size-5" />
                                 </ItemMedia>

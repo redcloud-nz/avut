@@ -9,6 +9,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 import { AlertIcons } from "@/components/icons";
+import { route } from "@/lib/routes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UnderConstruction } from "@/components/under-construction";
 import { useOrganization } from "@/hooks/use-organization";
@@ -21,7 +22,7 @@ export default function I3_Return_Page(props: PageProps<"/main/[slug]/i3/forms/r
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Forms" },
                     { label: "Return Items" },
                 ]}

@@ -6,7 +6,6 @@
 "use client";
 
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
-import { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import { authClient } from "@/client/auth-client";
+import { route } from "@/lib/routes";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu({ slug }: { slug: string }) {
@@ -102,13 +102,13 @@ export function UserMenu({ slug }: { slug: string }) {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href={`/main/${slug}/account/profile` as Route}>
+                                <Link href={route("/main/[slug]/account/profile", { slug })}>
                                     <PersonalProfileIcon />
                                     <span>Profile</span>
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href={`/main/${slug}/account/settings` as Route}>
+                                <Link href={route("/main/[slug]/account/settings", { slug })}>
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>

@@ -8,7 +8,6 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +39,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 
+import { route } from "@/lib/routes";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { trpc } from "@/trpc/client";
 
@@ -62,7 +62,10 @@ export default function I3Module_Issue_FormInstanceList_Page() {
         newFormInstanceMutation({
             onMutate(data) {
                 router.push(
-                    `/main/${organization.slug}/i3/forms/issue-items/${data.formInstanceId}` as Route,
+                    route("/main/[slug]/i3/forms/issue-items/[instance_id]", {
+                        slug: organization.slug,
+                        instance_id: data.formInstanceId,
+                    }),
                 );
             },
         }),
@@ -86,7 +89,7 @@ export default function I3Module_Issue_FormInstanceList_Page() {
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Forms" },
                     { label: "Issue Items" },
                 ]}
@@ -129,9 +132,13 @@ export default function I3Module_Issue_FormInstanceList_Page() {
                                 return (
                                     <Item key={instance.id} variant="outline" asChild>
                                         <Link
-                                            href={
-                                                `/main/${organization.slug}/i3/forms/issue-items/${instance.id}` as Route
-                                            }
+                                            href={route(
+                                                "/main/[slug]/i3/forms/issue-items/[instance_id]",
+                                                {
+                                                    slug: organization.slug,
+                                                    instance_id: instance.id,
+                                                },
+                                            )}
                                         >
                                             <ItemContent>
                                                 <ItemTitle>

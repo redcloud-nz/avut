@@ -33,6 +33,7 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export default function I3Module_Team_MemberItems_Page(
@@ -111,12 +112,21 @@ export default function I3Module_Team_MemberItems_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
-                    { label: team.title, href: `/main/${organization.slug}/i3/teams/${teamId}` },
+                    {
+                        label: team.title,
+                        href: route("/main/[slug]/i3/teams/[team_id]", {
+                            slug: organization.slug,
+                            team_id,
+                        }),
+                    },
                     {
                         label: "Members",
-                        href: `/main/${organization.slug}/i3/teams/${teamId}/members`,
+                        href: route("/main/[slug]/i3/teams/[team_id]/members", {
+                            slug: organization.slug,
+                            team_id,
+                        }),
                     },
                     { label: member.name },
                 ]}

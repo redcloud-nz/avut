@@ -9,7 +9,6 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Route } from "next";
 import { route } from "@/lib/routes";
 
 export async function generateStaticParams() {
@@ -29,7 +28,7 @@ export default async function Pub_PPEBorrow_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "Forms" },
                     { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
                     "Borrow",
                 ]}

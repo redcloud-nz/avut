@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/items";
 import Link from "next/link";
 
-import { Route } from "next";
 import { route } from "@/lib/routes";
 
 export async function generateStaticParams() {
@@ -35,7 +34,7 @@ export default async function Pub_PPEIndex_Page(props: PageProps<"/pub/orgs/[slu
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "Forms" },
                     { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
                 ]}
             />

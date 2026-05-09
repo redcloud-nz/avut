@@ -7,7 +7,6 @@
 
 "use client";
 
-import { Route } from "next";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
@@ -121,7 +120,7 @@ export default function I3Module_Issue_FormInstance_Page(
             onSuccess(_data, _variables, _result, context) {
                 toast.success("Form processed successfully.");
 
-                router.push(`/main/${slug}/i3/forms/issue-items` as Route);
+                router.push(route("/main/[slug]/i3/forms/issue-items", { slug }));
 
                 context.client.invalidateQueries(
                     trpc.forms.listDraftFormInstances.queryOptions({
@@ -146,7 +145,7 @@ export default function I3Module_Issue_FormInstance_Page(
     );
 
     function handleDelete() {
-        router.push(`/main/${slug}/i3/forms/issue-items` as Route);
+        router.push(route("/main/[slug]/i3/forms/issue-items", { slug }));
         deleteMutation.mutate({
             formInstanceId: instanceId,
             organizationId: organization.id,
@@ -181,11 +180,11 @@ export default function I3Module_Issue_FormInstance_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug }) },
                     { label: "Forms" },
                     {
                         label: "Issue Items",
-                        href: `/main/${organization.slug}/i3/forms/issue-items`,
+                        href: route("/main/[slug]/i3/forms/issue-items", { slug }),
                     },
                     { label: form.getValues().recipient.name || "No Recipient" },
                 ]}

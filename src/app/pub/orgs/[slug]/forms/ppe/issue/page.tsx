@@ -6,7 +6,6 @@
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
-import { Route } from "next";
 import { route } from "@/lib/routes";
 
 import { Pub_PPEIssue_Form } from "./ppe-issue-form";
@@ -67,7 +66,7 @@ export default async function Pub_PPEIssue_Page(props: PageProps<"/pub/orgs/[slu
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "Forms", href: `/pub/orgs/${slug}/forms` as Route },
+                    { label: "Forms" },
                     { label: "PPE", href: route("/pub/orgs/[slug]/forms/ppe", { slug }) },
                     "Issue",
                 ]}

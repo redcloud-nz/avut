@@ -14,10 +14,10 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import { Table, TableBody, TableHeadCell, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
-import { Route } from "next";
 
 export default function I3Module_Team_EquipmentKindsList_Page(
     props: PageProps<"/main/[slug]/i3/teams/[team_id]/equipment-kinds">,
@@ -69,9 +69,15 @@ export default function I3Module_Team_EquipmentKindsList_Page(
         <Lexington.Root>
             <Lexington.Header
                 breadcrumbs={[
-                    { label: "I3", href: `/main/${organization.slug}/i3` },
+                    { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
-                    { label: team.title, href: `/main/${organization.slug}/i3/teams/${teamId}` },
+                    {
+                        label: team.title,
+                        href: route("/main/[slug]/i3/teams/[team_id]", {
+                            slug: organization.slug,
+                            team_id,
+                        }),
+                    },
                     { label: "Equipment Kinds" },
                 ]}
             />
@@ -101,9 +107,14 @@ export default function I3Module_Team_EquipmentKindsList_Page(
                                                 <TableHeadCell />
                                                 <TableHeadCell>
                                                     <Link
-                                                        href={
-                                                            `/main/${organization.slug}/i3/teams/${teamId}/equipment-kinds/${kind.id}` as Route
-                                                        }
+                                                        href={route(
+                                                            "/main/[slug]/i3/teams/[team_id]/equipment-kinds/[kind_id]",
+                                                            {
+                                                                slug: organization.slug,
+                                                                team_id,
+                                                                kind_id: String(kind.id),
+                                                            },
+                                                        )}
                                                     >
                                                         {kind.title}
                                                     </Link>

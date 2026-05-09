@@ -6,7 +6,6 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
-import { Route } from "next";
 import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
@@ -21,6 +20,7 @@ import {
     ItemTitle,
 } from "@/components/ui/items";
 
+import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>) {
@@ -30,7 +30,9 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
 
     return (
         <Lexington.Root>
-            <Lexington.Header breadcrumbs={[{ href: `/main/${slug}/i3`, label: "I3" }]} />
+            <Lexington.Header
+                breadcrumbs={[{ href: route("/main/[slug]/i3", { slug }), label: "I3" }]}
+            />
             <Lexington.Page>
                 <Lexington.Column width="sm">
                     <div className="flex flex-col items-center my-4 gap-4">
@@ -39,7 +41,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                     </div>
                     <ItemGroup>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/equipment-kinds` as Route}>
+                            <Link href={route("/main/[slug]/i3/equipment-kinds", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>By Equipment Type</ItemTitle>
                                     <ItemDescription>
@@ -52,7 +54,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/members` as Route}>
+                            <Link href={route("/main/[slug]/i3/members", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>By Member</ItemTitle>
                                     <ItemDescription>
@@ -65,7 +67,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/forms/issue-items` as Route}>
+                            <Link href={route("/main/[slug]/i3/forms/issue-items", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Issue Items</ItemTitle>
                                     <ItemDescription>
@@ -78,7 +80,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={`/main/${slug}/i3/forms/return-items` as Route}>
+                            <Link href={route("/main/[slug]/i3/forms/return-items", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Return Items</ItemTitle>
                                     <ItemDescription>
@@ -92,7 +94,7 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                         </Item>
                         <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>
                             <Item asChild>
-                                <Link href={`/main/${slug}/i3/templates`}>
+                                <Link href={route("/main/[slug]/i3/templates", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Templates</ItemTitle>
                                         <ItemDescription>

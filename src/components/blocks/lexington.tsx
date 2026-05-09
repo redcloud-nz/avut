@@ -55,7 +55,7 @@ const lexingtonPageVariants = tv({
 
 type BreadcrumbItem = {
     label: string;
-    href?: string;
+    href?: Route;
 };
 
 function normalizeBreadcrumbs(breadcrumbs: (BreadcrumbItem | string)[]): BreadcrumbItem[] {
@@ -79,7 +79,7 @@ function LexingtonBreadcrumbs({ breadcrumbs = [] }: LexingtonBreadcrumbsProps) {
                         <BreadcrumbItem className="hidden md:block">
                             {breadcrumb.href ? (
                                 <BreadcrumbLink asChild>
-                                    <Link href={breadcrumb.href as Route}>{breadcrumb.label}</Link>
+                                    <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
                                 </BreadcrumbLink>
                             ) : (
                                 <span className="text-muted-foreground">{breadcrumb.label}</span>
