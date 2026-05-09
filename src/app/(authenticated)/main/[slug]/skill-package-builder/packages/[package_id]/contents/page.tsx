@@ -13,7 +13,7 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import { Lexington } from "@/components/blocks/lexington";
 import Link from "next/link";
 
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
     Table,
     TableBody,
@@ -156,14 +156,13 @@ export default function SkillPackageBuilder_PackageContents_Page(
                             </TableBody>
                         </Table>
                     ) : (
-                        <Alert
-                            severity="info"
-                            title={
-                                groups.length == 0 && skills.length == 0
+                        <Alert>
+                            <AlertTitle>
+                                {groups.length == 0 && skills.length == 0
                                     ? "No groups or skills defined for this package yet."
-                                    : "No groups or skills match the current filter settings."
-                            }
-                        />
+                                    : "No groups or skills match the current filter settings."}
+                            </AlertTitle>
+                        </Alert>
                     )}
                 </Lexington.Column>
             </Lexington.Page>

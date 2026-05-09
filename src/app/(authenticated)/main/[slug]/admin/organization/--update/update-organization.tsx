@@ -35,7 +35,7 @@ export function AdminModule_UpdateOrganization_Form({
     const router = useRouter();
 
     const { data: organization } = useSuspenseQuery(
-        trpc.accessControl.getOrganization.queryOptions({
+        trpc.organizations.getOrganization.queryOptions({
             organizationId,
         }),
     );
@@ -49,7 +49,7 @@ export function AdminModule_UpdateOrganization_Form({
     });
 
     const mutation = useMutation(
-        trpc.accessControl.updateOrganization.mutationOptions({
+        trpc.organizations.updateOrganization.mutationOptions({
             async onError(error: any) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableOrganizationData, {
@@ -60,7 +60,7 @@ export function AdminModule_UpdateOrganization_Form({
             async onSuccess() {
                 router.push(route("/main/[slug]/admin/organization", { slug: organization.slug }));
                 queryClient.invalidateQueries(
-                    trpc.accessControl.getOrganization.queryFilter({
+                    trpc.organizations.getOrganization.queryFilter({
                         organizationId: organization.id,
                     }),
                 );

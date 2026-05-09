@@ -51,7 +51,7 @@ export function AdminModule_DeleteUser_Dialog({
                 );
                 props.onOpenChange?.(false);
 
-                router.push(route("/main/[slug]/admin/users", { slug: organization.slug }));
+                router.push(route("/main/[slug]/admin/access", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
                     trpc.accessControl.listPersonnelWithAccess.queryFilter({

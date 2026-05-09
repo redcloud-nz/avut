@@ -1,102 +1,106 @@
-/*
- *  Copyright (c) 2025 A.V.U.T. Project.
- *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- */
-
+import { ComponentProps, ElementType } from "react";
 import {
     CircleCheckIcon,
-    TriangleAlertIcon,
-    InfoIcon,
     CircleXIcon,
     FlaskConicalIcon,
+    InfoIcon,
+    TriangleAlertIcon,
 } from "lucide-react";
 import { tv, VariantProps } from "tailwind-variants";
-
 import { cn } from "@/lib/utils";
 
-const alertStyles = tv({
-    slots: {
-        root: "rounded-md p-4",
-        icon: "h-5 w-5",
-        title: "text-sm font-medium",
-        description: "mt-2 text-sm",
-        action: "ml-4 self-center shrink-0",
-    },
+const alertVariants = tv({
+    base: cn(
+        // Base styles
+        "grid gap-0.5 rounded-none border px-2.5 py-2 text-left text-xs w-full relative group/alert",
+
+        "has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18",
+        "has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2",
+        "*:[svg]:row-span-2 *:[svg]:translate-y-0 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4 ",
+    ),
+
     variants: {
-        severity: {
-            info: {
-                root: "bg-blue-50",
-                icon: "text-blue-400",
-                title: "text-blue-800",
-                description: "text-blue-700",
-            },
-            success: {
-                root: "bg-green-50",
-                icon: "text-green-400",
-                title: "text-green-800",
-                description: "text-green-700",
-            },
-            warning: {
-                root: "bg-yellow-50",
-                icon: "text-yellow-400",
-                title: "text-yellow-800",
-                description: "text-yellow-700",
-            },
-            error: {
-                root: "bg-red-50",
-                icon: "text-red-400",
-                title: "text-red-800",
-                description: "text-red-700",
-            },
-            mockup: {
-                root: "bg-pink-50",
-                icon: "text-pink-400",
-                title: "text-pink-800",
-                description: "text-pink-700",
-            },
+        variant: {
+            default: "bg-card text-card-foreground",
+            destructive: "text-destructive bg-card *:[svg]:text-current",
+            error: "bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-100",
+            success: "bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-100",
+            warning: "bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100",
+            underConstruction: "bg-pink-50 dark:bg-pink-950 text-pink-900 dark:text-pink-100",
         },
+    },
+    defaultVariants: {
+        variant: "default",
     },
 });
 
-const alertIcons = {
-    info: InfoIcon,
+type AlertVariant = NonNullable<VariantProps<typeof alertVariants>["variant"]>;
+
+const defaultIcons: Partial<Record<AlertVariant, ElementType>> = {
+    default: InfoIcon,
+    error: CircleXIcon,
     success: CircleCheckIcon,
     warning: TriangleAlertIcon,
-    error: CircleXIcon,
-    mockup: FlaskConicalIcon,
+    underConstruction: FlaskConicalIcon,
 };
 
-export type AlertProps = React.ComponentPropsWithRef<"div"> &
-    VariantProps<typeof alertStyles> & {
-        action?: React.ReactNode;
-        title: string;
+type AlertProps = ComponentProps<"div"> &
+    VariantProps<typeof alertVariants> & {
+        icon?: React.ReactNode | false;
     };
 
-export function Alert({
-    action,
-    className,
-    children,
-    severity = "info",
-    title,
-    ...props
-}: AlertProps) {
-    const slots = alertStyles({ severity });
-    const Icon = alertIcons[severity];
+export function Alert({ className, variant, icon, children, ...props }: AlertProps) {
+    const DefaultIcon = variant ? defaultIcons[variant] : undefined;
+    const resolvedIcon = icon === false ? null : (icon ?? (DefaultIcon ? <DefaultIcon /> : null));
 
     return (
-        <div {...props} className={cn(slots.root(), className)}>
-            <div className="flex">
-                <div className="shrink-0">
-                    <Icon aria-hidden="true" className={slots.icon()} />
-                </div>
-                <div className="ml-3 grow">
-                    <h3 className={slots.title()}>{title}</h3>
-                    {children && (
-                        <div className={slots.description()}>{children}</div>
-                    )}
-                </div>
-                {action ? <div className={slots.action()}>{action}</div> : null}
-            </div>
+        <div
+            data-slot="alert"
+            role="alert"
+            className={cn(alertVariants({ variant }), className)}
+            {...props}
+        >
+            {resolvedIcon}
+            {children}
         </div>
+    );
+}
+
+export function AlertTitle({ className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="alert-title"
+            className={cn(
+                "[&_a]:hover:text-foreground font-medium group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3",
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
+export function AlertDescription({ className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="alert-description"
+            className={cn(
+                "text-current/80 [&_a]:hover:text-foreground text-xs/relaxed text-balance md:text-pretty [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-2",
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
+export function AlertAction({ className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="alert-action"
+            className={cn(
+                "absolute top-[calc(--spacing(1.25))] right-[calc(--spacing(1.25))]",
+                className,
+            )}
+            {...props}
+        />
     );
 }

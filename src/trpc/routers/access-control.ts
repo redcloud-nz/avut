@@ -175,7 +175,7 @@ export const accessControlRouter = createTrpcRouter({
                     status: "pending",
                     email: ctx.auth.user.email,
                 },
-                include: { organization: true, user: true },
+                include: { organization: true, inviter: true },
             });
 
             if (!invitation)
@@ -188,7 +188,7 @@ export const accessControlRouter = createTrpcRouter({
                 ...OrganizationInvitationData.fromRecord(invitation),
                 inviter: UserData.schema
                     .pick({ id: true, name: true, email: true })
-                    .parse(invitation.user),
+                    .parse(invitation.inviter),
                 organization: OrganizationData.schema
                     .pick({ id: true, name: true, slug: true })
                     .parse(invitation.organization),
@@ -308,25 +308,6 @@ export const accessControlRouter = createTrpcRouter({
             });
         }),
 
-    /**
-     * Lists all users in the organization that are not linked to any personnel record.
-     * @param ctx The authenticated context.
-     * @returns An array of unlinked user objects
-     */
-    listUnlinkedUsers: organizationProcedure({ person: ["view"] })
-        .output(z.array(OrganizationUser.schema))
-        .query(async ({ ctx }) => {
-            const users = await ctx.prisma.organizationUser.findMany({
-                where: {
-                    organizationId: ctx.organizationId,
-                    personId: null,
-                },
-                include: { user: true },
-            });
-
-            return users.map((u) => OrganizationUser.fromRecord(u.user, u));
-        }),
-
     listUserInvitations: authenticatedProcedure
         .output(
             z.array(
@@ -349,14 +330,14 @@ export const accessControlRouter = createTrpcRouter({
                 where: {
                     email: ctx.auth.user.email,
                 },
-                include: { organization: true, user: true },
+                include: { organization: true, inviter: true },
             });
 
             return invitations.map((invitation) => ({
                 ...OrganizationInvitationData.fromRecord(invitation),
                 inviter: UserData.schema
                     .pick({ id: true, name: true, email: true })
-                    .parse(invitation.user),
+                    .parse(invitation.inviter),
                 organization: OrganizationData.schema
                     .pick({ id: true, name: true, slug: true })
                     .parse(invitation.organization),

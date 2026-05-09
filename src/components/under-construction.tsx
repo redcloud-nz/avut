@@ -4,7 +4,7 @@
  */
 
 import { AlertIcons } from "./icons";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 export function UnderConstruction() {
     return (

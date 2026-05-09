@@ -27,7 +27,7 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { AlertIcons, ObjectIcons } from "@/components/icons";
-import { Alert, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";

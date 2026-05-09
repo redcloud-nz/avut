@@ -8,7 +8,7 @@ import { omit } from "remeda";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";

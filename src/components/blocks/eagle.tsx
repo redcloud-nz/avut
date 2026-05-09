@@ -10,7 +10,7 @@
 import { ComponentProps } from "react";
 import { cn } from "tailwind-variants";
 import { ZodSafeParseResult } from "zod";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 function EagleSection({ className, ...props }: ComponentProps<"section">) {
     return <section className={cn("border-b py-2", className)} {...props} />;
@@ -36,26 +36,16 @@ type EagleContentProps = Omit<ComponentProps<"div">, "children"> & {
 function EagleContent({ className, raw, parsed, ...props }: EagleContentProps) {
     return (
         <div className={cn("grid grid-cols-2 gap-4", className)} {...props}>
-            <div
-                data-role="raw-json"
-                className="px-2 max-h-[50vh] overflow-y-auto"
-            >
+            <div data-role="raw-json" className="px-2 max-h-[50vh] overflow-y-auto">
                 <pre className="text-xs">{JSON.stringify(raw, null, 2)}</pre>
             </div>
-            <div
-                data-role="parsed-json"
-                className="px-2 max-h-[50vh] overflow-y-auto"
-            >
+            <div data-role="parsed-json" className="px-2 max-h-[50vh] overflow-y-auto">
                 {parsed.success ? (
-                    <pre className="text-xs">
-                        {JSON.stringify(parsed.data, null, 2)}
-                    </pre>
+                    <pre className="text-xs">{JSON.stringify(parsed.data, null, 2)}</pre>
                 ) : (
                     <Alert>
                         <AlertTitle>Failed to validate</AlertTitle>
-                        <AlertDescription>
-                            {parsed.error.message}
-                        </AlertDescription>
+                        <AlertDescription>{parsed.error.message}</AlertDescription>
                     </Alert>
                 )}
             </div>

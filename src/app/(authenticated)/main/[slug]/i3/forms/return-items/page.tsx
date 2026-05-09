@@ -9,7 +9,7 @@
 
 import { Lexington } from "@/components/blocks/lexington";
 import { AlertIcons } from "@/components/icons";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UnderConstruction } from "@/components/under-construction";
 import { useOrganization } from "@/hooks/use-organization";
 import { use } from "react";

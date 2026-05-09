@@ -15,7 +15,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 
 import { AlertIcons } from "@/components/icons";
 import { Show } from "@/components/show";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

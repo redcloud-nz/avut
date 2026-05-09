@@ -14,7 +14,7 @@ import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldSeparator } from "@/components/ui/field";

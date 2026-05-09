@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert2";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { route } from "@/lib/routes";
 
