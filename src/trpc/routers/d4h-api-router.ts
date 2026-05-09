@@ -29,12 +29,6 @@ export const d4hApiRouter = createTrpcRouter({
      * List the teams that the current user has access to in the D4H system for the organization. This is used to populate the team selector in the UI.
      */
     listAccessibleTeams: organizationProcedure({})
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-                action: z.enum(["read", "write"]),
-            }),
-        )
         .output(
             z.array(
                 D4HTeam.schema.extend({
@@ -42,11 +36,8 @@ export const d4hApiRouter = createTrpcRouter({
                 }),
             ),
         )
-        .query(async ({ ctx, input: { action, module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action,
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
             return d4HTeams;
@@ -78,17 +69,9 @@ export const d4hApiRouter = createTrpcRouter({
     listEquipmentBrands: organizationProcedure({
         d4hEquipment: ["view"],
     })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HEquipmentBrand.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
@@ -135,17 +118,9 @@ export const d4hApiRouter = createTrpcRouter({
     listEquipmentCategories: organizationProcedure({
         d4hEquipment: ["view"],
     })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HEquipmentCategory.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
@@ -192,17 +167,9 @@ export const d4hApiRouter = createTrpcRouter({
     listEquipmentItems: organizationProcedure({
         d4hEquipment: ["view"],
     })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HEquipmentItem.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
@@ -244,17 +211,9 @@ export const d4hApiRouter = createTrpcRouter({
     listEquipmentKinds: organizationProcedure({
         d4hEquipment: ["view"],
     })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HEquipmentKind.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = accessToken.metadata;
@@ -300,17 +259,9 @@ export const d4hApiRouter = createTrpcRouter({
     listEquipmentModels: organizationProcedure({
         d4hEquipment: ["view"],
     })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HEquipmentModel.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
@@ -354,17 +305,9 @@ export const d4hApiRouter = createTrpcRouter({
      * Lists all members of the teams in the D4H system that are accessible to the organization.
      */
     listMembers: organizationProcedure({ d4hEquipment: ["view"] })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HMember.schema.extend({ team: D4HTeamRef.schema })))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
@@ -408,17 +351,13 @@ export const d4hApiRouter = createTrpcRouter({
     listMemberEquipment: organizationProcedure({ d4hEquipment: ["view"] })
         .input(
             z.object({
-                module: z.enum(["d4h-views", "i3"]),
                 teamId: z.number(),
                 memberId: z.number(),
             }),
         )
         .output(z.array(D4HEquipmentItem.schema))
-        .query(async ({ ctx, input: { module, teamId, memberId } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx, input: { teamId, memberId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
 
@@ -451,17 +390,9 @@ export const d4hApiRouter = createTrpcRouter({
      * Lists all teams in the D4H system that are accessible to the organization.
      */
     listTeams: organizationProcedure({ d4hEquipment: ["view"] })
-        .input(
-            z.object({
-                module: z.enum(["d4h-views", "i3"]),
-            }),
-        )
         .output(z.array(D4HTeamRef.schema))
-        .query(async ({ ctx, input: { module } }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId, {
-                module,
-                action: "read",
-            });
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
             return d4HTeams;

@@ -54,24 +54,18 @@ export default function I3Module_Team_MemberItems_Page(
         queries: [
             trpc.d4hApi.listAccessibleTeams.queryOptions({
                 organizationId: organization.id,
-                module: "i3",
-                action: "read",
             }),
             trpc.d4hApi.listEquipmentCategories.queryOptions({
                 organizationId: organization.id,
-                module: "i3",
             }),
             trpc.d4hApi.listEquipmentKinds.queryOptions({
                 organizationId: organization.id,
-                module: "i3",
             }),
             trpc.d4hApi.listMembers.queryOptions({
                 organizationId: organization.id,
-                module: "i3",
             }),
             trpc.d4hApi.listMemberEquipment.queryOptions({
                 organizationId: organization.id,
-                module: "i3",
                 memberId,
                 teamId,
             }),

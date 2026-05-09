@@ -26,7 +26,6 @@ interface D4HTeamMemberSelectProps {
     value: { id: number; teamId: number; name: string };
     onChange: (value: { id: number; teamId: number; name: string }) => void;
     organizationId: OrganizationId;
-    module: "d4h-views" | "i3";
     slotProps?: {
         content?: ComponentProps<typeof SelectContent>;
         trigger?: ComponentProps<typeof SelectTrigger>;
@@ -48,19 +47,12 @@ export function D4HTeamMemberSelect({
     value,
     onChange,
     organizationId,
-    module,
     slotProps = {},
 }: D4HTeamMemberSelectProps) {
     const [{ data: teams }, { data: members }] = useSuspenseQueries({
         queries: [
-            trpc.d4hApi.listTeams.queryOptions({
-                organizationId,
-                module,
-            }),
-            trpc.d4hApi.listMembers.queryOptions({
-                organizationId,
-                module,
-            }),
+            trpc.d4hApi.listTeams.queryOptions({ organizationId }),
+            trpc.d4hApi.listMembers.queryOptions({ organizationId }),
         ],
     });
 

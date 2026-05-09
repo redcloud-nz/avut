@@ -34,10 +34,6 @@ export default async function I3Module_MembersList_SelectTeam_Page(
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
         session!.user.id as UserId,
-        {
-            module: "i3",
-            action: "read",
-        },
     );
 
     const { d4HTeams } = await getD4HTokenMetadata(accessToken);

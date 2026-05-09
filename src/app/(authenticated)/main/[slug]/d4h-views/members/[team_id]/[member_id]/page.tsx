@@ -44,7 +44,6 @@ export default function D4HViewsModule_Member_Page(
     const { data: members } = useSuspenseQuery(
         trpc.d4hApi.listMembers.queryOptions({
             organizationId: organization.id,
-            module: "d4h-views",
         }),
     );
     const member = members.find((m) => m.id === memberId);
@@ -55,7 +54,6 @@ export default function D4HViewsModule_Member_Page(
             organizationId: organization.id,
             teamId,
             memberId,
-            module: "d4h-views",
         }),
     );
 

@@ -52,14 +52,12 @@ export default function I3Module_UpdateTemplate_Page(
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
             organizationId: organization.id,
-            module: "i3",
         }),
     );
 
     const { data: kinds } = useQuery(
         trpc.d4hApi.listEquipmentKinds.queryOptions({
             organizationId: organization.id,
-            module: "i3",
         }),
     );
 

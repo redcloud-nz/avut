@@ -85,16 +85,12 @@ export function revalidatePersonalD4HAccessTokenForUser(
 }
 
 /**
- * Get the D4H Access Token configured.
- * @throws If the token is not found or if the module is not enabled.
+ * Get the personal D4H Access Token for the given user, verifying that the D4H integration is enabled.
+ * @throws If the D4H integration is not enabled or the user has no personal token.
  */
 export async function getConfiguredD4HAccessToken(
     organizationId: OrganizationId,
     userId: UserId,
-    options: {
-        module: "d4h-views" | "i3";
-        action: "read" | "write";
-    },
 ): Promise<D4HAccessToken_ServerOnly> {
     const settings = await getOrganizationSettings(organizationId);
 
@@ -102,45 +98,13 @@ export async function getConfiguredD4HAccessToken(
         throw new NotConfiguredError("D4H integration is not enabled for this organization.");
     }
 
-    const moduleSettings = settings.modules[options.module];
+    const personalToken = await getPersonalD4HAccessTokenForUser(organizationId, userId);
 
-    if (moduleSettings.enabled === false)
+    if (!personalToken) {
         throw new NotConfiguredError(
-            `${options.module} module is not enabled for this organization.`,
+            "No personal D4H Access Token configured. Please create one in your account settings.",
         );
-
-    if (
-        (options.action == "read" && moduleSettings.d4hReadStrategy === "PersonalToken") ||
-        (options.action == "write" && moduleSettings.d4hWriteStrategy === "PersonalToken")
-    ) {
-        const personalToken = await getPersonalD4HAccessTokenForUser(organizationId, userId);
-
-        if (!personalToken) {
-            throw new NotConfiguredError(
-                "No personal D4H Access Token configured. Please create one in your account settings.",
-            );
-        }
-
-        return personalToken;
-    } else {
-        // Shared token policy
-
-        const tokenId = moduleSettings.d4hSharedTokenId;
-
-        if (!tokenId) {
-            throw new NotConfiguredError(
-                `No shared D4H Access Token configured for ${module} module. Please configure one in the organization settings.`,
-            );
-        }
-
-        const accessToken = await getOrganizationD4HAccessToken({ organizationId, tokenId });
-
-        if (!accessToken) {
-            throw new NotConfiguredError(
-                `The configured D4H Access Token for ${module} module was not found. It may have been deleted. Please check the organization settings.`,
-            );
-        }
-
-        return accessToken;
     }
+
+    return personalToken;
 }

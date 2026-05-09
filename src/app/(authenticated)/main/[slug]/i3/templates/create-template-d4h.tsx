@@ -56,14 +56,12 @@ export function I3Module_CreateTemplate_D4H_Dialog(props: DialogProps) {
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
             organizationId: organization.id,
-            module: "i3",
         }),
     );
 
     const { data: kinds } = useQuery(
         trpc.d4hApi.listEquipmentKinds.queryOptions({
             organizationId: organization.id,
-            module: "i3",
         }),
     );
 

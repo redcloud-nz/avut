@@ -16,10 +16,10 @@ import { ItemLinkActionIcon } from "@/components/icons";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/items";
 
 import { UserId } from "@/lib/schemas/user";
+import { auth } from "@/server/auth";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
-import { auth } from "@/server/auth";
 
 export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
     props: PageProps<"/main/[slug]/i3/equipment-kinds">,
@@ -34,10 +34,6 @@ export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
         session!.user.id as UserId,
-        {
-            module: "i3",
-            action: "read",
-        },
     );
 
     const { d4HTeams } = await getD4HTokenMetadata(accessToken);

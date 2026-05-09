@@ -36,8 +36,6 @@ export default function I3Module_Team_Page(props: PageProps<"/main/[slug]/i3/tea
     const { data: teams } = useSuspenseQuery(
         trpc.d4hApi.listAccessibleTeams.queryOptions({
             organizationId: organization.id,
-            module: "i3",
-            action: "read",
         }),
     );
 

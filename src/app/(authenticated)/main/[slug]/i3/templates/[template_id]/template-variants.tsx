@@ -189,14 +189,12 @@ function I3Module_Template_AddVariant_Dialog({
             trpc.d4hApi.listEquipmentBrands.queryOptions(
                 {
                     organizationId: organization.id,
-                    module: "i3",
                 },
                 { enabled: props.open },
             ),
             trpc.d4hApi.listEquipmentModels.queryOptions(
                 {
                     organizationId: organization.id,
-                    module: "i3",
                 },
                 { enabled: props.open },
             ),

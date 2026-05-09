@@ -8,7 +8,6 @@ import * as z from "zod";
 
 import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
-import { read } from "fs";
 
 const organizationSettingsSchema = z.object({
     general: z.object({
@@ -30,18 +29,12 @@ const organizationSettingsSchema = z.object({
     modules: z.object({
         "d4h-views": z.object({
             enabled: z.boolean().default(false),
-            d4hReadStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
-            d4hWriteStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
-            d4hSharedTokenId: z.string().nullable().default(null),
         }),
         forms: z.object({
             enabled: z.boolean().default(false),
         }),
         i3: z.object({
             enabled: z.boolean().default(false),
-            d4hReadStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
-            d4hWriteStrategy: z.enum(["SharedToken", "PersonalToken"]).default("PersonalToken"),
-            d4hSharedTokenId: z.string().nullable().default(null),
             storage: z.enum(["AVUT", "D4H"]).default("D4H"),
         }),
         notes: z.object({
