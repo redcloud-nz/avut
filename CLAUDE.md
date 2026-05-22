@@ -109,6 +109,7 @@ route("/main/[slug]/personnel/[person_id]", { slug, person_id: id });
 
 - Route patterns must match the actual file-system path under `src/app/` (minus route group segments like `(authenticated)`)
 - The params object is fully typed — TypeScript will error if a required param is missing or the route pattern doesn't exist
+- Routes are auto-discovered from the filesystem — no manual registration needed. New `page.tsx` files become valid route patterns automatically after the next dev server start or build
 
 ## UI Block Components
 

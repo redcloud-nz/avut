@@ -9,17 +9,12 @@
 
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
-import { use, useState } from "react";
+import { use } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
-import { ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
 import {
     Item,
     ItemActions,
@@ -32,9 +27,6 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import { SkillsModule_SessionMenu } from "./session-menu";
-import { SkillsModule_UpdateSession_Dialog } from "./update-session";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -49,8 +41,6 @@ export default function SkillsModule_Session_Page(
             skillCheckSessionId: session_id,
         }),
     );
-
-    const [updateSessionDialogOpen, setUpdateSessionDialogOpen] = useState(false);
 
     return (
         <Lexington.Root>
@@ -71,62 +61,23 @@ export default function SkillsModule_Session_Page(
                         <Hermes.Title>{session.name}</Hermes.Title>
                     </Hermes.Header>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Session Details</CardTitle>
-                            <CardAction>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setUpdateSessionDialogOpen(true)}
-                                >
-                                    <ObjectIcons.Edit />
-                                </Button>
-                                <SkillsModule_SessionMenu session={session} />
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Session ID</FieldLabel>
-                                    <FieldValue value={session.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={session.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Date</FieldLabel>
-                                    <FieldValue value={session.date} format="date" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Notes</FieldLabel>
-                                    <FieldValue value={session.notes} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={session.status} />
-                                </Field>
-                                <FieldSeparator />
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={session.createdAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={session.updatedAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
                     <ItemGroup>
+                        <Item variant="outline" size="xs" asChild>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]/details", {
+                                    slug,
+                                    session_id,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Details</ItemTitle>
+                                    <ItemDescription>View and edit session details</ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                         <Item variant="outline" size="xs" asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/personnel", {
@@ -165,15 +116,35 @@ export default function SkillsModule_Session_Page(
                         </Item>
                         <Item variant="outline" size="xs" asChild>
                             <Link
-                                href={route("/main/[slug]/skills/sessions/[session_id]/record", {
+                                href={route("/main/[slug]/skills/sessions/[session_id]/by-person", {
                                     slug,
                                     session_id,
                                 })}
                             >
                                 <ItemContent>
-                                    <ItemTitle>Record</ItemTitle>
+                                    <ItemTitle>Assess By Person</ItemTitle>
                                     <ItemDescription>
-                                        Record skill checks in this session.
+                                        Record skill checks for a person across all skills assigned
+                                        to the session
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" size="xs" asChild>
+                            <Link
+                                href={route("/main/[slug]/skills/sessions/[session_id]/by-skill", {
+                                    slug,
+                                    session_id,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Assess By Skill</ItemTitle>
+                                    <ItemDescription>
+                                        Record skill checks for a skill across all personnel
+                                        assigned to the session
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
@@ -184,11 +155,6 @@ export default function SkillsModule_Session_Page(
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>
-            <SkillsModule_UpdateSession_Dialog
-                session={session}
-                open={updateSessionDialogOpen}
-                onOpenChange={setUpdateSessionDialogOpen}
-            />
         </Lexington.Root>
     );
 }

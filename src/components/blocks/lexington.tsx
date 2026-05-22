@@ -240,6 +240,7 @@ function LexingtonColumn({
 export const Lexington = {
     Root: LexingtonRoot,
     Header: LexingtonHeader,
+    Breadcrumbs: LexingtonBreadcrumbs,
     Footer: LexingtonFooter,
     Title: LexingtonTitle,
     Actions: LexingtonActions,

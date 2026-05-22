@@ -31,7 +31,7 @@ interface AssessmentRowProps {
 }
 
 /**
- * Row component for displaying and editing an assessment for a specific assess/skill combination.
+ * Row component for displaying and editing an assessment for a specific assessee/skill combination.
  * Allows selecting a result and adding optional notes.
  */
 export function AssessmentRow({ title, value, onValueChange }: AssessmentRowProps) {
