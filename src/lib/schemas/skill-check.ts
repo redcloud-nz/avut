@@ -31,7 +31,6 @@ export const SkillCheck = {
         assesseeId: PersonId.schema,
         assessorId: PersonId.schema,
         skillId: SkillId.schema,
-        name: z.string().max(100),
         result: z.string(),
         notes: z.string(),
         createdAt: z.iso.datetime(),
