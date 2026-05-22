@@ -25,7 +25,7 @@ import {
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
-import { AlertIcons, ObjectIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -315,7 +315,6 @@ function UserNameFieldValue() {
     } else if (error) {
         return (
             <Alert variant="warning" className="min-w-1/2">
-                <AlertIcons.Warning />
                 <AlertTitle>Unable to load user information.</AlertTitle>
             </Alert>
         );

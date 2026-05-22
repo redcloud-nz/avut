@@ -97,13 +97,6 @@ export {
     SendIcon as InvitationsIcon,
 };
 
-export const AlertIcons = {
-    NotAllowed: ShieldXIcon,
-    Success: CircleCheckBigIcon,
-    UnderConstruction: ShovelIcon,
-    Warning: TriangleAlertIcon,
-};
-
 export const AppIcons = {
     I3: ShirtIcon,
     Main: BuildingIcon,

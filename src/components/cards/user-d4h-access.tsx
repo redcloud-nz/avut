@@ -13,7 +13,6 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
-import { AlertIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -79,7 +78,6 @@ export function UserD4HAccess_Card() {
                         when={organization.settings.integrations.d4h.enabled}
                         fallback={
                             <Alert variant="warning">
-                                <AlertIcons.NotAllowed />
                                 <AlertTitle>Integration Not Enabled</AlertTitle>
                                 <AlertDescription>
                                     The D4H integration is not enabled for this organization. Please
