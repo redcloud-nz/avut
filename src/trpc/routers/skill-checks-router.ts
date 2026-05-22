@@ -98,13 +98,23 @@ export const skillChecksRouter = createTrpcRouter({
         .query(async ({ ctx, input }) => {
             const { sessionId, skillId, assesseeId, assessorId, ownChecksOnly } = input;
 
+            let resolvedAssessorId = assessorId;
+            if (ownChecksOnly) {
+                const orgUser = await ctx.prisma.organizationUser.findFirst({
+                    where: { organizationId: ctx.organizationId, userId: ctx.userId },
+                    select: { personId: true },
+                });
+
+                resolvedAssessorId = (orgUser?.personId ?? undefined) as PersonId | undefined;
+            }
+
             const checks = await ctx.prisma.skillCheck.findMany({
                 where: {
                     organizationId: ctx.organizationId,
                     sessionId,
                     skillId,
                     assesseeId,
-                    assessorId: ownChecksOnly ? ctx.userId : assessorId,
+                    assessorId: resolvedAssessorId,
                 },
             });
 

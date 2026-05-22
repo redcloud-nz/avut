@@ -73,7 +73,7 @@ export default function SkillsModule_Session_Page(
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Session details</CardTitle>
+                            <CardTitle>Session Details</CardTitle>
                             <CardAction>
                                 <Button
                                     variant="ghost"
@@ -110,14 +110,14 @@ export default function SkillsModule_Session_Page(
                                 <FieldSeparator />
 
                                 <Field orientation="responsive">
-                                    <FieldLabel>Created At</FieldLabel>
+                                    <FieldLabel>Created</FieldLabel>
                                     <FieldValue
                                         value={session.createdAt}
                                         format="dateTimeWithDistance"
                                     />
                                 </Field>
                                 <Field orientation="responsive">
-                                    <FieldLabel>Updated At</FieldLabel>
+                                    <FieldLabel>Updated</FieldLabel>
                                     <FieldValue
                                         value={session.updatedAt}
                                         format="dateTimeWithDistance"
