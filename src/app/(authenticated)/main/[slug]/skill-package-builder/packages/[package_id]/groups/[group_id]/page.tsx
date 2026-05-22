@@ -14,7 +14,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import Link from "next/link";
 
@@ -131,6 +131,7 @@ export default function SkillPackageBuilder_Group_Page(
                                         value={skillGroup.description ?? "-"}
                                     />
                                 </Field>
+                                <FieldSeparator />
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
                                     <FieldValue

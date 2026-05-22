@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -64,12 +65,14 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
                     console.error("Failed to update skill group:", error);
                 }
             },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listGroups.queryFilter({
+            async onSuccess({ updated }) {
+                // Patch the update group into the list of groups for the skill package to avoid a full refetch
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.listGroups.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skillGroup.skillPackageId,
                     }),
+                    (old = []) => old.map((group) => (group.id === updated.id ? updated : group)),
                 );
 
                 router.push(
@@ -82,6 +85,8 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
                         },
                     ),
                 );
+
+                mutation.reset();
             },
         }),
     );
@@ -141,8 +146,8 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
                         <Hermes.Title>{skillGroup.name}</Hermes.Title>
                     </Hermes.Header>
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Update Group</CardTitle>
+                        <CardHeader className="h-8">
+                            <CardTitle>Update Skill Group</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form id="skill-group-form" onSubmit={handleSubmit}>
@@ -212,15 +217,19 @@ export default function SkillPackageBuilder_UpdateGroup_Page(
                                             }}
                                         />
                                         <Show when={mutation.isIdle}>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    form.reset();
-                                                    router.back();
-                                                }}
-                                            >
-                                                Cancel
+                                            <Button type="button" variant="outline" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                        {
+                                                            slug,
+                                                            package_id: skillGroup.skillPackageId,
+                                                            group_id: skillGroup.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    Cancel
+                                                </Link>
                                             </Button>
                                         </Show>
                                     </Field>

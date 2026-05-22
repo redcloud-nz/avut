@@ -95,11 +95,11 @@ export default function SkillPackageBuilder_Skill_Page(
                             <FieldGroup>
                                 <Field orientation="responsive">
                                     <FieldLabel>Skill ID</FieldLabel>
-                                    <FieldValue value={skill.id} className="min-w-1/2" />
+                                    <FieldValue value={skill.id} format="id" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Package</FieldLabel>
-                                    <FieldValue className="min-w-1/2">
+                                    <FieldValue>
                                         <Link
                                             href={route(
                                                 "/main/[slug]/skill-package-builder/packages/[package_id]",
@@ -113,7 +113,7 @@ export default function SkillPackageBuilder_Skill_Page(
                                 <Field orientation="responsive">
                                     <FieldLabel>Group</FieldLabel>
                                     {skill.skillGroup ? (
-                                        <FieldValue className="min-w-1/2">
+                                        <FieldValue>
                                             <Link
                                                 href={route(
                                                     "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
@@ -133,23 +133,19 @@ export default function SkillPackageBuilder_Skill_Page(
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Name</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skill.name} />
+                                    <FieldValue value={skill.name} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Description</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skill.description} />
+                                    <FieldValue value={skill.description} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Required</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.defaultRequired ? "Yes" : "No"}
-                                    />
+                                    <FieldValue value={skill.defaultRequired ? "Yes" : "No"} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Revalidation Frequency</FieldLabel>
                                     <FieldValue
-                                        className="min-w-1/2"
                                         value={
                                             skill.frequency ? `${skill.frequency} months` : "None"
                                         }
@@ -160,23 +156,15 @@ export default function SkillPackageBuilder_Skill_Page(
 
                                 <Field orientation="responsive">
                                     <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.createdAt}
-                                        format="dateWithDistance"
-                                    />
+                                    <FieldValue value={skill.createdAt} format="dateWithDistance" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skill.updatedAt}
-                                        format="dateWithDistance"
-                                    />
+                                    <FieldValue value={skill.updatedAt} format="dateWithDistance" />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Status</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skill.status} />
+                                    <FieldValue value={skill.status} />
                                 </Field>
                             </FieldGroup>
                         </CardContent>

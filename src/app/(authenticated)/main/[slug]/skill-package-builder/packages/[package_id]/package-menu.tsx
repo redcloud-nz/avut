@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +22,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -104,8 +105,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             }),
             {
                 loading: "Archiving skill package...",
-                success: "Skill package archived.",
-                error: (error) => "Error archiving skill package." + error.message,
+                success: (
+                    <>
+                        Skill package <ObjectName>{skillPackage.name}</ObjectName> archived.
+                    </>
+                ),
+                error: (error) => (
+                    <>
+                        Error archiving skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
+                        {error.message}
+                    </>
+                ),
             },
         );
     }
@@ -118,8 +128,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             }),
             {
                 loading: "Publishing skill package...",
-                success: "Skill package published.",
-                error: (error) => "Error publishing skill package." + error.message,
+                success: (
+                    <>
+                        Skill package <ObjectName>{skillPackage.name}</ObjectName> published.
+                    </>
+                ),
+                error: (error) => (
+                    <>
+                        Error publishing skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
+                        {error.message}
+                    </>
+                ),
             },
         );
     }
@@ -132,8 +151,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             }),
             {
                 loading: "Restoring skill package...",
-                success: "Skill package restored.",
-                error: (error) => "Error restoring skill package." + error.message,
+                success: (
+                    <>
+                        Skill package <ObjectName>{skillPackage.name}</ObjectName> restored.
+                    </>
+                ),
+                error: (error) => (
+                    <>
+                        Error restoring skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
+                        {error.message}
+                    </>
+                ),
             },
         );
     }
@@ -146,8 +174,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             }),
             {
                 loading: "Unpublishing skill package...",
-                success: "Skill package unpublished.",
-                error: (error) => "Error unpublishing skill package." + error.message,
+                success: (
+                    <>
+                        Skill package <ObjectName>{skillPackage.name}</ObjectName> unpublished.
+                    </>
+                ),
+                error: (error) => (
+                    <>
+                        Error unpublishing skill package{" "}
+                        <ObjectName>{skillPackage.name}</ObjectName>: {error.message}
+                    </>
+                ),
             },
         );
     }

@@ -55,7 +55,7 @@ export function FieldValue({
         <div
             data-slot="field-value"
             className={cn(
-                "w-full min-w-0 h-8 px-2.5 py-1", // Sizing and padding
+                "w-full min-w-0 min-h-8 px-2.5 py-1", // Sizing and padding
                 "flex items-center",
                 "border border-transparent rounded-nonew outline-none", // Border
                 "text-xs align-baseline overflow-clip", // Text size
@@ -81,10 +81,7 @@ export function FieldValue({
     );
 }
 
-function formatValue(
-    value: string,
-    format: FieldValueProps["format"],
-): ReactNode {
+function formatValue(value: string, format: FieldValueProps["format"]): ReactNode {
     if (typeof format === "function") {
         return format(value);
     }

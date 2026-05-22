@@ -98,6 +98,7 @@ export default function SkillsModule_Sessions_List() {
                         <Akagi.TableHeadCell
                             header={ctx.header}
                             filterOptions={["Draft", "Include", "Exclude"]}
+                            className="w-25"
                         >
                             Status
                         </Akagi.TableHeadCell>

@@ -54,30 +54,35 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item asChild>
-                            <Link href={route("/main/[slug]/d4h-views", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>D4H Views Module</ItemTitle>
-                                    <ItemDescription>View and manage D4H data</ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link href={route("/main/[slug]/i3", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>I3</ItemTitle>
-                                    <ItemDescription>
-                                        Manange individually issued items.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
+                        <Show when={modules["d4h-views"].enabled}>
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/d4h-views", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>D4H Views Module</ItemTitle>
+                                        <ItemDescription>View and manage D4H data</ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Show>
+                        <Show when={modules.i3.enabled}>
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/i3", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>I3</ItemTitle>
+                                        <ItemDescription>
+                                            Manange individually issued items.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Show>
+
                         <Show when={modules.notes.enabled}>
                             <Item asChild>
                                 <Link href={route("/main/[slug]/notes", { slug })}>

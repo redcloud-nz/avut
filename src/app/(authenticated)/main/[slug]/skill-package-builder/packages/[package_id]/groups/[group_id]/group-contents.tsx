@@ -5,11 +5,17 @@
 
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { FilterColumnValuesIcon, ObjectIcons, ReorderIcon } from "@/components/icons";
+import {
+    DropdownMenuTriggerIcon,
+    FilterColumnValuesIcon,
+    ObjectIcons,
+    ReorderIcon,
+} from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
@@ -19,12 +25,12 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -43,7 +49,7 @@ import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
 import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Checkbox } from "@/components/ui/checkbox";
 
 /**
  * Component to display a list of skills within a skill group.
@@ -68,14 +74,14 @@ export function SkillPackageBuilder_Group_Contents_List({
         }),
     );
 
-    const [statusFilter, setStatusFilter] = useState(["Active"]);
     const [createSkillDialogOpen, setCreateSkillDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     const skills = (skillsQuery.data ?? [])
         .filter((s) => s.skillGroupId === skillGroup.id)
         .sort((a, b) => a.sequence - b.sequence);
-    const filteredSkills = skills.filter((skill) => statusFilter.includes(skill.status)) ?? [];
+    const filteredSkills = skills.filter((skill) => showArchived || skill.status !== "Archived");
 
     return (
         <Card>
@@ -103,6 +109,22 @@ export function SkillPackageBuilder_Group_Contents_List({
                             >
                                 <ReorderIcon />
                             </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <FilterColumnValuesIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-50" align="end">
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showArchived}
+                                        onCheckedChange={(checked) => setShowArchived(checked)}
+                                    >
+                                        Archived
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </ButtonGroup>
                     </Protect>
                 </CardAction>
@@ -131,47 +153,8 @@ export function SkillPackageBuilder_Group_Contents_List({
                             <TableHeader>
                                 <TableRow>
                                     <TableHeadCell>Name</TableHeadCell>
-                                    <TableHeadCell>
-                                        Status
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    className="text-muted-foreground ml-1"
-                                                >
-                                                    <FilterColumnValuesIcon />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-50">
-                                                <DropdownMenuLabel>Filter</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-
-                                                {["Active", "Archived"].map((status) => (
-                                                    <DropdownMenuCheckboxItem
-                                                        key={status}
-                                                        checked={statusFilter.includes(status)}
-                                                        onCheckedChange={(checked) => {
-                                                            if (checked) {
-                                                                setStatusFilter((prev) => [
-                                                                    ...prev,
-                                                                    status,
-                                                                ]);
-                                                            } else {
-                                                                setStatusFilter((prev) =>
-                                                                    prev.filter(
-                                                                        (s) => s !== status,
-                                                                    ),
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        {status}
-                                                    </DropdownMenuCheckboxItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableHeadCell>
+                                    <TableHeadCell className="text-center">Required</TableHeadCell>
+                                    <TableHeadCell>Status</TableHeadCell>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -190,6 +173,9 @@ export function SkillPackageBuilder_Group_Contents_List({
                                             >
                                                 {skill.name}
                                             </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {skill.defaultRequired ? "Yes" : "No"}
                                         </TableCell>
                                         <TableCell>{skill.status}</TableCell>
                                     </TableRow>

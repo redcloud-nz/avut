@@ -12,19 +12,40 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+    InputGroupText,
+} from "@/components/ui/input-group";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkill, Skill, SkillId } from "@/lib/schemas/skill";
@@ -50,6 +71,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
             tags: [],
             properties: {},
             frequency: 12,
+            defaultRequired: false,
         },
     });
 
@@ -66,15 +88,21 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                 }
             },
             async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listSkills.queryFilter({
+                toast.success(
+                    <>
+                        Skill <ObjectName>{created.name}</ObjectName> created successfully!
+                    </>,
+                );
+
+                handleOpenChange(false);
+
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.listSkills.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skillGroup.skillPackageId,
                     }),
+                    (old = []) => [...old, created],
                 );
-
-                props.onOpenChange?.(false);
-                form.reset();
 
                 router.push(
                     route(
@@ -86,8 +114,6 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                         },
                     ),
                 );
-
-                mutation.reset();
             },
         }),
     );
@@ -102,13 +128,16 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
         });
     });
 
-    function handleCancel() {
-        form.reset();
-        props.onOpenChange?.(false);
+    function handleOpenChange(open: boolean) {
+        if (!open) {
+            form.reset();
+            mutation.reset();
+        }
+        props.onOpenChange?.(open);
     }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Skill</DialogTitle>
@@ -150,6 +179,69 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 </Field>
                             )}
                         />
+                        <Controller
+                            name="defaultRequired"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                    <FieldContent>
+                                        <FieldLabel htmlFor="default-required">Required</FieldLabel>
+                                        <FieldDescription>
+                                            Whether this skill is required by default.
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <Select
+                                        value={field.value ? "true" : "false"}
+                                        onValueChange={(value) => field.onChange(value === "true")}
+                                    >
+                                        <SelectTrigger
+                                            id="default-required"
+                                            aria-invalid={fieldState.invalid}
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="true">Yes</SelectItem>
+                                            <SelectItem value="false">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="frequency"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                    <FieldContent>
+                                        <FieldLabel htmlFor="frequency">
+                                            Revalidation Frequency
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            How often this skill should be revalidated.
+                                        </FieldDescription>
+                                    </FieldContent>
+
+                                    <InputGroup aria-invalid={fieldState.invalid}>
+                                        <InputGroupInput
+                                            id="frequency"
+                                            type="number"
+                                            min={1}
+                                            max={48}
+                                            value={field.value}
+                                            onChange={(ev) =>
+                                                field.onChange(parseInt(ev.currentTarget.value))
+                                            }
+                                        />
+                                        <InputGroupAddon align="inline-end">
+                                            <InputGroupText>months</InputGroupText>
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
@@ -161,11 +253,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                     success: "Created",
                                 }}
                             />
-                            <Show when={mutation.isIdle}>
-                                <Button type="button" variant="outline" onClick={handleCancel}>
-                                    Cancel
-                                </Button>
-                            </Show>
+                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         </Field>
                     </FieldGroup>
                 </form>

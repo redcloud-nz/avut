@@ -16,6 +16,7 @@ import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -25,6 +26,7 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillGroup, SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
@@ -63,15 +65,22 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                 }
             },
             async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listGroups.queryFilter({
+                toast.success(
+                    <>
+                        Skill Group <ObjectName>{created.name}</ObjectName> created successfully!
+                    </>,
+                );
+
+                handleOpenChange(false);
+
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.listGroups.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skillPackage.id,
                     }),
+                    (old = []) => [...old, created],
                 );
 
-                props.onOpenChange?.(false);
-                form.reset();
                 router.push(
                     route(
                         "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
@@ -82,7 +91,6 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                         },
                     ),
                 );
-                mutation.reset();
             },
         }),
     );
@@ -96,13 +104,17 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
         });
     });
 
-    function handleCancel() {
-        form.reset();
-        props.onOpenChange?.(false);
+    function handleOpenChange(open: boolean) {
+        if (!open) {
+            form.reset();
+            mutation.reset();
+        }
+
+        props.onOpenChange?.(open);
     }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Group</DialogTitle>
@@ -154,11 +166,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                                     success: "Created",
                                 }}
                             />
-                            <Show when={mutation.isIdle}>
-                                <Button type="button" variant="outline" onClick={handleCancel}>
-                                    Cancel
-                                </Button>
-                            </Show>
+                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         </Field>
                     </FieldGroup>
                 </form>

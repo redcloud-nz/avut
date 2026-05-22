@@ -72,9 +72,9 @@ export function SkillPackageBuilder_Package_Contents_List({
         ],
     });
 
-    const [statusFilter, setStatusFilter] = useState(["Active"]);
     const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     const packageSlug = organization.slug;
     const packageId = skillPackage.id;
@@ -82,8 +82,8 @@ export function SkillPackageBuilder_Package_Contents_List({
     const groups = (groupsQuery.data ?? []).sort((a, b) => a.sequence - b.sequence);
     const skills = (skillsQuery.data ?? []).sort((a, b) => a.sequence - b.sequence);
 
-    const filteredGroups = groups.filter((group) => statusFilter.includes(group.status));
-    const filteredSkills = skills.filter((skill) => statusFilter.includes(skill.status));
+    const filteredGroups = groups.filter((group) => showArchived || group.status !== "Archived");
+    const filteredSkills = skills.filter((skill) => showArchived || skill.status !== "Archived");
 
     return (
         <Card>
@@ -111,6 +111,28 @@ export function SkillPackageBuilder_Package_Contents_List({
                             >
                                 <ReorderIcon />
                             </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        className="text-muted-foreground"
+                                    >
+                                        <FilterColumnValuesIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-50">
+                                    <DropdownMenuLabel>Filter</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuCheckboxItem
+                                        checked={showArchived}
+                                        onCheckedChange={(checked) => setShowArchived(checked)}
+                                    >
+                                        Archived
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </ButtonGroup>
                     </Protect>
                 </CardAction>
@@ -141,47 +163,10 @@ export function SkillPackageBuilder_Package_Contents_List({
                                 <TableRow>
                                     <TableHeadCell>Group</TableHeadCell>
                                     <TableHeadCell>Skill</TableHeadCell>
-                                    <TableHeadCell className="w-25">
-                                        Status{" "}
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    className="text-muted-foreground"
-                                                >
-                                                    <FilterColumnValuesIcon />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-50">
-                                                <DropdownMenuLabel>Filter</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-
-                                                {["Active", "Archived"].map((status) => (
-                                                    <DropdownMenuCheckboxItem
-                                                        key={status}
-                                                        checked={statusFilter.includes(status)}
-                                                        onCheckedChange={(checked) => {
-                                                            if (checked) {
-                                                                setStatusFilter((prev) => [
-                                                                    ...prev,
-                                                                    status,
-                                                                ]);
-                                                            } else {
-                                                                setStatusFilter((prev) =>
-                                                                    prev.filter(
-                                                                        (s) => s !== status,
-                                                                    ),
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        {status}
-                                                    </DropdownMenuCheckboxItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <TableHeadCell className="text-center hidden md:table-cell">
+                                        Required
                                     </TableHeadCell>
+                                    <TableHeadCell className="text-center">Status</TableHeadCell>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -212,7 +197,10 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                         {skillGroup.name}
                                                     </Link>
                                                 </TableCell>
-                                                <TableCell>{skillGroup.status}</TableCell>
+                                                <TableCell className="text-center hidden md:table-cell" />
+                                                <TableCell className="text-center">
+                                                    {skillGroup.status}
+                                                </TableCell>
                                             </TableRow>
                                             {groupSkills.map((skill) => (
                                                 // Skills that belong to a group will be listed under their respective group
@@ -233,7 +221,12 @@ export function SkillPackageBuilder_Package_Contents_List({
                                                             {skill.name}
                                                         </Link>
                                                     </TableCell>
-                                                    <TableCell>{skill.status}</TableCell>
+                                                    <TableCell className="text-center hidden md:table-cell">
+                                                        {skill.defaultRequired ? "Yes" : "No"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {skill.status}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </Fragment>

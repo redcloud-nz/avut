@@ -97,11 +97,6 @@ export {
     SendIcon as InvitationsIcon,
 };
 
-export const AppIcons = {
-    I3: ShirtIcon,
-    Main: BuildingIcon,
-};
-
 export const ModuleIcons = {
     I3: ShirtIcon,
     D4HViews: CableIcon,

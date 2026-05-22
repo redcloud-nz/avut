@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -81,12 +82,16 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                     console.error("Failed to update skill:", error);
                 }
             },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listSkills.queryFilter({
+            async onSuccess({ updated }) {
+                toast.success("Skill updated successfully");
+
+                // Patch the updated skill into the list of skills for the skill group to avoid a full refetch
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.listSkills.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skill.skillPackageId,
                     }),
+                    (old = []) => old.map((s) => (s.id === updated.id ? updated : s)),
                 );
 
                 router.push(
@@ -99,6 +104,8 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                         },
                     ),
                 );
+
+                mutation.reset();
             },
         }),
     );
@@ -151,7 +158,7 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                     </Hermes.Header>
 
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="h-8">
                             <CardTitle>Update Skill</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -307,15 +314,15 @@ export default function SkillPackageBuilder_UpdateSkill_Page(
                                             }}
                                         />
                                         <Show when={mutation.isIdle}>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    form.reset();
-                                                    router.back();
-                                                }}
-                                            >
-                                                Cancel
+                                            <Button type="button" variant="outline" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
+                                                        { slug, package_id, skill_id },
+                                                    )}
+                                                >
+                                                    Cancel
+                                                </Link>
                                             </Button>
                                         </Show>
                                     </Field>
