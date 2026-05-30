@@ -31,10 +31,7 @@ export function createInnerTrpcContext({
     headers,
 }: {
     auth: AuthSession | null;
-    hasPermission(
-        organizationId: OrganizationId,
-        permissions: Permissions,
-    ): Promise<void>;
+    hasPermission(organizationId: OrganizationId, permissions: Permissions): Promise<void>;
     headers: Headers;
 }) {
     return {
@@ -55,10 +52,7 @@ export const createTrpcContext = cache(async () => {
 
     return createInnerTrpcContext({
         auth: authSession,
-        hasPermission: async (
-            organizationId: OrganizationId,
-            requiredPermissions: Permissions,
-        ) => {
+        hasPermission: async (organizationId: OrganizationId, requiredPermissions: Permissions) => {
             try {
                 await auth.api.hasPermission({
                     headers,
@@ -92,8 +86,7 @@ const t = initTRPC.context<Context>().create({
             data: {
                 ...shape,
                 conflict:
-                    error.code == "CONFLICT" &&
-                    error.cause instanceof FieldConflictError
+                    error.code == "CONFLICT" && error.cause instanceof FieldConflictError
                         ? {
                               fieldName: error.cause.fieldName,
                               message: error.cause.message,
@@ -110,26 +103,22 @@ export const createTrpcRouter = t.router;
 //
 export type PublicContext = Context;
 
-export const publicProcedure = t.procedure.use(
-    async function artificialDelayInDevelopment(opts) {
-        const res = opts.next(opts);
+export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
+    const res = opts.next(opts);
 
-        if (process.env.NODE_ENV === "development") {
-            const delay =
-                Math.floor(
-                    Math.random() *
-                        (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1),
-                ) + DEVELOPMENT_DELAY.min;
+    if (process.env.NODE_ENV === "development") {
+        const delay =
+            Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
+            DEVELOPMENT_DELAY.min;
 
-            console.debug(
-                `ℹ️  doing artificial delay of ${delay}ms before returning result for ${opts.path}`,
-            );
-            await new Promise((resolve) => setTimeout(resolve, delay));
-        }
+        console.debug(
+            `ℹ️  doing artificial delay of ${delay}ms before returning result for ${opts.path}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+    }
 
-        return res;
-    },
-);
+    return res;
+});
 
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
@@ -185,10 +174,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 
         .use(async (opts) => {
             // Check organization permissions
-            await opts.ctx.hasPermission(
-                opts.input.organizationId,
-                requiredPermissions,
-            );
+            await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
 
             async function logEvent({
                 action,
@@ -223,6 +209,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
 
 interface LogEventOptions {
     action:
+        | "Approve"
         | "Archive"
         | "Create"
         | "Delete"
@@ -241,6 +228,7 @@ interface LogEventOptions {
         | "OrganizationSettings"
         | "Person"
         | "Skill"
+        | "SkillCheckSession"
         | "SkillGroup"
         | "SkillPackage"
         | "Team"

@@ -19,7 +19,7 @@ import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
@@ -68,11 +68,13 @@ export default function SkillsModule_SessionBySkill_Page(
             trpc.skills.listSessionAssessees.queryOptions({
                 sessionId: session_id,
                 organizationId: organization.id,
+                scope: "assigned",
             }),
             skillChecksQueryOptions,
             trpc.skills.listSessionSkills.queryOptions({
                 sessionId: session_id,
                 organizationId: organization.id,
+                scope: "assigned",
             }),
             trpc.personnel.getPersonSelf.queryOptions({
                 organizationId: organization.id,

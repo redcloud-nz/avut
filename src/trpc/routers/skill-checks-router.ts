@@ -8,7 +8,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { PersonId } from "@/lib/schemas/person";
-import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 
@@ -16,6 +16,69 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 export const skillChecksRouter = createTrpcRouter({
+    /**
+     * Approves a session by stamping each skill check as Include or Exclude and moving the session to Include status.
+     */
+    approveSession: organizationProcedure({ skillCheckSession: ["update"], skillCheck: ["update"] })
+        .input(
+            z.object({
+                sessionId: SkillCheckSessionId.schema,
+                includedCheckIds: z.array(SkillCheckId.schema),
+            }),
+        )
+        .output(z.object({ updated: SkillCheckSession.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const { sessionId, includedCheckIds } = input;
+
+            const session = await ctx.prisma.skillCheckSession.findUnique({
+                where: { id: sessionId, organizationId: ctx.organizationId },
+            });
+            if (!session) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckSessionNotFound(sessionId),
+                });
+            }
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.skillCheck.updateMany({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        sessionId,
+                        id: { in: includedCheckIds },
+                    },
+                    data: { status: "Include" },
+                }),
+                ctx.prisma.skillCheck.updateMany({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        sessionId,
+                        NOT: { id: { in: includedCheckIds } },
+                    },
+                    data: { status: "Exclude" },
+                }),
+                ctx.prisma.skillCheckSession.update({
+                    where: { id: sessionId, organizationId: ctx.organizationId },
+                    data: { status: "Include" },
+                }),
+            ]);
+
+            await ctx.logEvent({
+                action: "Approve",
+                objectType: "SkillCheckSession",
+                objectId: sessionId,
+                description: `Approved session "${session.name}".`,
+            });
+
+            return {
+                updated: SkillCheckSession.fromRecord({
+                    ...session,
+                    status: "Include",
+                    updatedAt: new Date(),
+                }),
+            };
+        }),
+
     /**
      * Creates a skill check. If sessionId is provided, the session must exist and belong to the same organization.
      */

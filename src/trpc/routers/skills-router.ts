@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import * as R from "remeda";
 import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
@@ -20,7 +21,6 @@ import {
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-import { SkillCheck } from "@/lib/schemas/skill-check";
 
 /**
  * Router for managing skill package subscriptions and listing the groups and skills associated with the organization's subscribed skill packages.
@@ -254,6 +254,7 @@ export const skillsRouter = createTrpcRouter({
     /**
      * List the personnel that are assigned to a particular skill check session as assessees.
      * @param skillCheckSessionId The ID of the skill check session to list assessees for.
+     * @param scope The scope of assessees to return, either "all" for all personnel that are assigned or have checks recorded in the session, or "assigned" for only those personnel that are currently assigned to the session.
      * @returns An array of assessees assigned to the skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      */
@@ -261,10 +262,11 @@ export const skillsRouter = createTrpcRouter({
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,
+                scope: z.enum(["all", "assigned"]),
             }),
         )
         .output(z.array(PersonRef.schema))
-        .query(async ({ ctx, input: { sessionId } }) => {
+        .query(async ({ ctx, input: { sessionId, scope } }) => {
             const session = await ctx.prisma.skillCheckSession.findUnique({
                 where: {
                     id: sessionId,
@@ -287,14 +289,114 @@ export const skillsRouter = createTrpcRouter({
                 });
             }
 
-            return session.assessees
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((person) => PersonRef.schema.parse(person));
+            if (scope == "assigned") {
+                // Return only the personnel that are currently assigned.
+                return session.assessees
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((person) => PersonRef.schema.parse(person));
+            } else {
+                // Return all personnel that are either currently assigned or have checks recorded in the session.
+                const checks = await ctx.prisma.skillCheck.findMany({
+                    where: {
+                        sessionId,
+                    },
+                    select: {
+                        assesseeId: true,
+                        assessee: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                    distinct: ["assesseeId"],
+                });
+                const allAssessees = [
+                    ...session.assessees,
+                    ...checks.map((check) => check.assessee),
+                ];
+
+                const uniqueAssessees = R.uniqueBy(allAssessees, (a) => a.id);
+
+                return uniqueAssessees
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((person) => PersonRef.schema.parse(person));
+            }
+        }),
+
+    /**
+     * List the personnel that are assigned to a particular skill check session as assessors.
+     * @param skillCheckSessionId The ID of the skill check session to list assessors for.
+     * @param scope The scope of assessors to return, either "all" for all personnel that are assigned or have checks recorded in the session, or "assigned" for only those personnel that are currently assigned to the session.
+     * @returns An array of assessors assigned to the skill check session.
+     * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     */
+    listSessionAssessors: organizationProcedure({ skillCheckSession: ["view"] })
+        .input(
+            z.object({
+                sessionId: SkillCheckSessionId.schema,
+                scope: z.enum(["all", "assigned"]),
+            }),
+        )
+        .output(z.array(PersonRef.schema))
+        .query(async ({ ctx, input: { sessionId, scope } }) => {
+            const session = await ctx.prisma.skillCheckSession.findUnique({
+                where: {
+                    id: sessionId,
+                    organizationId: ctx.organizationId,
+                },
+                include: {
+                    assessors: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+            });
+
+            if (!session) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckSessionNotFound(sessionId),
+                });
+            }
+
+            if (scope === "assigned") {
+                return session.assessors
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((person) => PersonRef.schema.parse(person));
+            } else {
+                const checks = await ctx.prisma.skillCheck.findMany({
+                    where: {
+                        sessionId,
+                    },
+                    select: {
+                        assessorId: true,
+                        assessor: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                    distinct: ["assessorId"],
+                });
+
+                const assessors = checks.map((check) => check.assessor);
+
+                const uniqueAssessors = R.uniqueBy(assessors, (a) => a.id);
+
+                return uniqueAssessors
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((person) => PersonRef.schema.parse(person));
+            }
         }),
 
     /**
      * List the skills that are assigned to a particular skill check session.
      * @param skillCheckSessionId The ID of the skill check session to list skills for.
+     * @param scope The scope of skills to return, either "all" for all skills that are assigned or have checks recorded in the session, or "assigned" for only those skills that are currently assigned to the session.
      * @returns An array of refs representing the skills assigned to the skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      */
@@ -302,10 +404,11 @@ export const skillsRouter = createTrpcRouter({
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,
+                scope: z.enum(["all", "assigned"]),
             }),
         )
         .output(z.array(SkillRef.schema))
-        .query(async ({ ctx, input: { sessionId } }) => {
+        .query(async ({ ctx, input: { sessionId, scope } }) => {
             const session = await ctx.prisma.skillCheckSession.findUnique({
                 where: {
                     id: sessionId,
@@ -328,7 +431,36 @@ export const skillsRouter = createTrpcRouter({
                 });
             }
 
-            return session.skills.map((skill) => SkillRef.schema.parse(skill));
+            if (scope == "assigned") {
+                // Return only the skills that are currently assigned.
+                return session.skills
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((skill) => SkillRef.schema.parse(skill));
+            } else {
+                // Return all skills that are either currently assigned or have checks recorded in the session.
+                const checks = await ctx.prisma.skillCheck.findMany({
+                    where: {
+                        sessionId,
+                    },
+                    select: {
+                        skillId: true,
+                        skill: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                    distinct: ["skillId"],
+                });
+                const allSkills = [...session.skills, ...checks.map((check) => check.skill)];
+
+                const uniqueSkills = R.uniqueBy(allSkills, (a) => a.id);
+
+                return uniqueSkills
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((skill) => SkillRef.schema.parse(skill));
+            }
         }),
 
     /**

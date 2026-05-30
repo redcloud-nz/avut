@@ -58,6 +58,7 @@ export default function SkillModule_SessionPersonnel_Page(
             trpc.skills.listSessionAssessees.queryOptions({
                 sessionId: session_id,
                 organizationId: organization.id,
+                scope: "assigned",
             }),
             trpc.skills.getSession.queryOptions({
                 organizationId: organization.id,
@@ -79,8 +80,6 @@ export default function SkillModule_SessionPersonnel_Page(
                 toast.error(`Failed to update session assessees. ${error.message}`);
             },
             onSuccess({ updatedAssessees, updatedSession }, _variables, _onMutateResult, context) {
-                toast.success("Session personnel updated.");
-
                 setChanges({});
 
                 // Update the cached assessees and session data with the response from the server
@@ -88,6 +87,7 @@ export default function SkillModule_SessionPersonnel_Page(
                     trpc.skills.listSessionAssessees.queryKey({
                         sessionId: session_id,
                         organizationId: organization.id,
+                        scope: "assigned",
                     }),
                     updatedAssessees,
                 );
@@ -98,9 +98,19 @@ export default function SkillModule_SessionPersonnel_Page(
                     }),
                     updatedSession,
                 );
+
                 context.client.invalidateQueries(
                     trpc.skills.listSessions.queryFilter({
                         organizationId: organization.id,
+                    }),
+                );
+
+                // Invalidate the "all" assessees query to ensure that it's fetched from the server the next time it's needed.
+                context.client.invalidateQueries(
+                    trpc.skills.listSessionAssessees.queryFilter({
+                        sessionId: session_id,
+                        organizationId: organization.id,
+                        scope: "all",
                     }),
                 );
             },
@@ -145,20 +155,28 @@ export default function SkillModule_SessionPersonnel_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[
-                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
-                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
-                    {
-                        label: session.name,
-                        href: route("/main/[slug]/skills/sessions/[session_id]", {
-                            slug,
-                            session_id,
-                        }),
-                    },
-                    "Personnel",
-                ]}
-            />
+            <Lexington.Header>
+                <Lexington.Breadcrumbs
+                    breadcrumbs={[
+                        { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                        {
+                            label: "Sessions",
+                            href: route("/main/[slug]/skills/sessions", { slug }),
+                        },
+                        {
+                            label: session.name,
+                            href: route("/main/[slug]/skills/sessions/[session_id]", {
+                                slug,
+                                session_id,
+                            }),
+                        },
+                        "Personnel",
+                    ]}
+                />
+                <div className="flex justify-end grow">
+                    <SaveStatusIndicator status={mutation.status} />
+                </div>
+            </Lexington.Header>
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
@@ -178,8 +196,11 @@ export default function SkillModule_SessionPersonnel_Page(
                                 Select the personnel you want to assess in this skill check session.
                                 Changes will be saved automatically.
                             </CardDescription>
-                            <CardAction>
-                                <SaveStatusIndicator status={mutation.status} />
+                            <CardAction className="flex flex-col items-center">
+                                <div className="text-lg font-medium">
+                                    {assignedPersonIds.length}
+                                </div>
+                                <div className="text-muted-foreground">selected</div>
                             </CardAction>
                         </CardHeader>
                         <CardContent>
@@ -240,7 +261,7 @@ function TeamSection({
                 <div className="flex item-center gap-2">
                     <div className="flex gap-1 text-muted-foreground">
                         <span>
-                            {teamSelectedCount}/{members.length}
+                            {teamSelectedCount} of {members.length}
                         </span>
                         <span className="hidden md:inline">selected</span>
                     </div>

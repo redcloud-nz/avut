@@ -68,11 +68,13 @@ export default function SkillsModule_SessionByPerson_Page(
             trpc.skills.listSessionAssessees.queryOptions({
                 sessionId: session_id,
                 organizationId: organization.id,
+                scope: "assigned",
             }),
             skillChecksQueryOptions,
             trpc.skills.listSessionSkills.queryOptions({
                 sessionId: session_id,
                 organizationId: organization.id,
+                scope: "assigned",
             }),
             trpc.personnel.getPersonSelf.queryOptions({
                 organizationId: organization.id,

@@ -33,6 +33,7 @@ export const SkillCheck = {
         skillId: SkillId.schema,
         result: z.string(),
         notes: z.string(),
+        status: z.enum(["Draft", "Include", "Exclude"]),
         createdAt: z.iso.datetime(),
     }),
 

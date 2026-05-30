@@ -66,6 +66,7 @@ export default function SkillModule_SessionSkills_Page(
             trpc.skills.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: session_id,
+                scope: "assigned",
             }),
         ],
     });
@@ -77,14 +78,13 @@ export default function SkillModule_SessionSkills_Page(
                 toast.error(`Failed to update session skills. ${error.message}`);
             },
             onSuccess({ updatedSkills, updatedSession }, _variables, _onMutateResult, context) {
-                toast.success("Session skills updated.");
-
                 setChanges({});
 
                 context.client.setQueryData(
                     trpc.skills.listSessionSkills.queryKey({
                         organizationId: organization.id,
                         sessionId: session.id,
+                        scope: "assigned",
                     }),
                     updatedSkills,
                 );
@@ -99,6 +99,13 @@ export default function SkillModule_SessionSkills_Page(
                 context.client.invalidateQueries(
                     trpc.skills.listSessions.queryFilter({
                         organizationId: organization.id,
+                    }),
+                );
+                context.client.invalidateQueries(
+                    trpc.skills.listSessionAssessees.queryFilter({
+                        organizationId: organization.id,
+                        sessionId: session_id,
+                        scope: "all",
                     }),
                 );
             },
@@ -144,20 +151,28 @@ export default function SkillModule_SessionSkills_Page(
 
     return (
         <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[
-                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
-                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
-                    {
-                        label: session.name,
-                        href: route("/main/[slug]/skills/sessions/[session_id]", {
-                            slug,
-                            session_id,
-                        }),
-                    },
-                    "Skills",
-                ]}
-            />
+            <Lexington.Header>
+                <Lexington.Breadcrumbs
+                    breadcrumbs={[
+                        { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
+                        {
+                            label: "Sessions",
+                            href: route("/main/[slug]/skills/sessions", { slug }),
+                        },
+                        {
+                            label: session.name,
+                            href: route("/main/[slug]/skills/sessions/[session_id]", {
+                                slug,
+                                session_id,
+                            }),
+                        },
+                        "Skills",
+                    ]}
+                />
+                <div className="flex justify-end grow">
+                    <SaveStatusIndicator status={mutation.status} />
+                </div>
+            </Lexington.Header>
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
@@ -177,8 +192,9 @@ export default function SkillModule_SessionSkills_Page(
                                 Select the skills you want to assess in this skill check session.
                                 Your changes will be saved automatically.
                             </CardDescription>
-                            <CardAction>
-                                <SaveStatusIndicator status={mutation.status} />
+                            <CardAction className="flex flex-col items-center">
+                                <div className="text-lg font-medium">{assignedSkillIds.length}</div>
+                                <div className="text-muted-foreground">selected</div>
                             </CardAction>
                         </CardHeader>
                         <CardContent>
@@ -244,7 +260,7 @@ function SkillPackageSection({
                 <div className="flex item-center gap-2">
                     <div className="flex gap-1 text-muted-foreground">
                         <span>
-                            {packageSelectedCount}/{skillsInPackage.length}
+                            {packageSelectedCount} of {skillsInPackage.length}
                         </span>
                         <span className="hidden md:inline">selected</span>
                     </div>

@@ -71,8 +71,25 @@ src/
 
 Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `d4h-ppe-admin`, `skills-admin`, `skills-assessor`, `skills-author`.
 
+**Server-side** (tRPC): pass a permissions object to `organizationProcedure`:
+
 ```ts
 organizationProcedure({ person: ["create", "update"] });
+```
+
+**Client-side**: use `<Protect>` from `@/components/protect` to conditionally render UI based on the current user's permissions. It renders `children` if the user has all required permissions, or `fallback` (default: `null`) otherwise:
+
+```tsx
+import { Protect } from "@/components/protect";
+
+<Protect orgId={organization.id} permissions={{ skillCheckSession: ["update"] }}>
+    <Button>Approve</Button>
+</Protect>
+
+// With a fallback
+<Protect orgId={organization.id} permissions={{ person: ["delete"] }} fallback={<DisabledButton />}>
+    <DeleteButton />
+</Protect>
 ```
 
 ### Zod Schemas

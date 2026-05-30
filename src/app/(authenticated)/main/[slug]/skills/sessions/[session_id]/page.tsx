@@ -27,6 +27,8 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
+import { Protect } from "@/components/protect";
+import { Separator } from "@/components/ui/separator";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -52,7 +54,7 @@ export default function SkillsModule_Session_Page(
                 ]}
             />
             <Lexington.Page>
-                <Lexington.Column width="lg">
+                <Lexington.Column width="sm">
                     <Hermes.Header>
                         <Hermes.BackButton
                             href={route("/main/[slug]/skills/sessions", { slug })}
@@ -62,7 +64,7 @@ export default function SkillsModule_Session_Page(
                     </Hermes.Header>
 
                     <ItemGroup>
-                        <Item variant="outline" size="xs" asChild>
+                        <Item asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/details", {
                                     slug,
@@ -78,7 +80,7 @@ export default function SkillsModule_Session_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item variant="outline" size="xs" asChild>
+                        <Item asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/personnel", {
                                     slug,
@@ -96,7 +98,7 @@ export default function SkillsModule_Session_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item variant="outline" size="xs" asChild>
+                        <Item asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
                                     slug,
@@ -114,7 +116,8 @@ export default function SkillsModule_Session_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item variant="outline" size="xs" asChild>
+                        <Separator />
+                        <Item asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/by-person", {
                                     slug,
@@ -133,7 +136,7 @@ export default function SkillsModule_Session_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item variant="outline" size="xs" asChild>
+                        <Item asChild>
                             <Link
                                 href={route("/main/[slug]/skills/sessions/[session_id]/by-skill", {
                                     slug,
@@ -152,6 +155,35 @@ export default function SkillsModule_Session_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
+
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillCheckSession: ["update"] }}
+                        >
+                            <Separator />
+                            <Item asChild>
+                                <Link
+                                    href={route(
+                                        "/main/[slug]/skills/sessions/[session_id]/review",
+                                        {
+                                            slug,
+                                            session_id,
+                                        },
+                                    )}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Review</ItemTitle>
+                                        <ItemDescription>
+                                            Review and approve the skill checks recorded in this
+                                            session
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                     </ItemGroup>
                 </Lexington.Column>
             </Lexington.Page>
