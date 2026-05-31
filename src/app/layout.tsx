@@ -7,10 +7,13 @@
 
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Jersey_10 } from "next/font/google";
+import { Jersey_10, Inter } from "next/font/google";
 
 import "./globals.css";
 import { Toaster } from "sonner";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -40,7 +43,7 @@ export const metadata: Metadata = {
 
 export default async function Root_Layout(props: LayoutProps<"/">) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >

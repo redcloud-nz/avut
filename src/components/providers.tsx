@@ -11,10 +11,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getQueryClient } from "@/trpc/client";
+import { TooltipProvider } from "./ui/tooltip";
 
-export function CommonProviders({
-    children,
-}: Readonly<{ children: ReactNode }>) {
+export function CommonProviders({ children }: Readonly<{ children: ReactNode }>) {
     const queryClient = getQueryClient();
 
     return (
@@ -25,7 +24,9 @@ export function CommonProviders({
             disableTransitionOnChange
         >
             <QueryClientProvider client={queryClient}>
-                <SidebarProvider>{children}</SidebarProvider>
+                <SidebarProvider>
+                    <TooltipProvider>{children}</TooltipProvider>
+                </SidebarProvider>
             </QueryClientProvider>
         </ThemeProvider>
     );

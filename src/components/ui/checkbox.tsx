@@ -1,38 +1,29 @@
-/*
- *  Copyright (c) 2025 A.V.U.T. Project.
- *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- */
+"use client";
 
-import { CheckIcon, MinusIcon } from "lucide-react";
-import { Checkbox as CheckboxPrimitive } from "radix-ui";
 import * as React from "react";
+import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
+import { CheckIcon } from "lucide-react";
 
-export function Checkbox({
-    className,
-    ...props
-}: React.ComponentPropsWithRef<typeof CheckboxPrimitive.Root>) {
+function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
     return (
         <CheckboxPrimitive.Root
             data-slot="checkbox"
             className={cn(
-                "border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary data-checked:border-primary aria-invalid:aria-checked:border-primary aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 peer relative flex size-4 shrink-0 items-center justify-center rounded-none border transition-colors outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-1",
-
+                "peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input transition-colors outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
                 className,
             )}
             {...props}
         >
             <CheckboxPrimitive.Indicator
                 data-slot="checkbox-indicator"
-                className={cn("flex items-center justify-center text-current")}
+                className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
             >
-                {props.checked == "indeterminate" ? (
-                    <MinusIcon className="h-4 w-4" />
-                ) : (
-                    <CheckIcon className="h-4 w-4" />
-                )}
+                <CheckIcon />
             </CheckboxPrimitive.Indicator>
         </CheckboxPrimitive.Root>
     );
 }
+
+export { Checkbox };

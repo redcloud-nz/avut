@@ -31,9 +31,7 @@ export function getUserInitials(name: string | null): string {
             return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
         default:
             // Name has three or more parts. We assume the middle ones to be middle names or Tuessenvoegsel
-            return (
-                parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
-            ).toUpperCase();
+            return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
 }
 

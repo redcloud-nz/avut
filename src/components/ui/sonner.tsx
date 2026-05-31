@@ -1,21 +1,18 @@
-/*
- *  Copyright (c) 2025 A.V.U.T. Project.
- *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- */
 "use client";
 
+import { useTheme } from "next-themes";
+import { Toaster as Sonner, type ToasterProps } from "sonner";
 import {
     CircleCheckIcon,
     InfoIcon,
-    Loader2Icon,
-    OctagonXIcon,
     TriangleAlertIcon,
+    OctagonXIcon,
+    Loader2Icon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
-import { Toaster as Sonner, type ToasterProps } from "sonner";
 
-export function Toaster({ ...props }: ToasterProps) {
+const Toaster = ({ ...props }: ToasterProps) => {
     const { theme = "system" } = useTheme();
+
     return (
         <Sonner
             theme={theme as ToasterProps["theme"]}
@@ -43,4 +40,6 @@ export function Toaster({ ...props }: ToasterProps) {
             {...props}
         />
     );
-}
+};
+
+export { Toaster };

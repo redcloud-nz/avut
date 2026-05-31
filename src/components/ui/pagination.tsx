@@ -1,19 +1,10 @@
-/*
- *  Copyright (c) 2025 A.V.U.T. Project.
- *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
- */
+import * as React from "react";
 
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    MoreHorizontalIcon,
-} from "lucide-react";
-import { ComponentProps } from "react";
-
-import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react";
 
-export function Pagination({ className, ...props }: ComponentProps<"nav">) {
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
     return (
         <nav
             role="navigation"
@@ -25,57 +16,48 @@ export function Pagination({ className, ...props }: ComponentProps<"nav">) {
     );
 }
 
-export function PaginationContent({
-    className,
-    ...props
-}: ComponentProps<"ul">) {
+function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) {
     return (
         <ul
             data-slot="pagination-content"
-            className={cn("flex flex-row items-center gap-0.5", className)}
+            className={cn("flex items-center gap-0.5", className)}
             {...props}
         />
     );
 }
 
-export function PaginationItem({ ...props }: ComponentProps<"li">) {
+function PaginationItem({ ...props }: React.ComponentProps<"li">) {
     return <li data-slot="pagination-item" {...props} />;
 }
 
-type PaginationLinkProps = { isActive?: boolean } & Pick<
-    ComponentProps<typeof Button>,
-    "size"
-> &
-    ComponentProps<"a">;
+type PaginationLinkProps = {
+    isActive?: boolean;
+} & Pick<React.ComponentProps<typeof Button>, "size"> &
+    React.ComponentProps<"a">;
 
-export function PaginationLink({
-    className,
-    isActive,
-    size = "icon",
-    ...props
-}: PaginationLinkProps) {
+function PaginationLink({ className, isActive, size = "icon", ...props }: PaginationLinkProps) {
     return (
         <Button
             asChild
             variant={isActive ? "outline" : "ghost"}
             size={size}
-            className={className}
+            className={cn(className)}
         >
             <a
                 aria-current={isActive ? "page" : undefined}
                 data-slot="pagination-link"
                 data-active={isActive}
                 {...props}
-                {...props}
             />
         </Button>
     );
 }
 
-export function PaginationPrevious({
+function PaginationPrevious({
     className,
+    text = "Previous",
     ...props
-}: ComponentProps<typeof PaginationLink>) {
+}: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
     return (
         <PaginationLink
             aria-label="Go to previous page"
@@ -84,15 +66,16 @@ export function PaginationPrevious({
             {...props}
         >
             <ChevronLeftIcon data-icon="inline-start" />
-            <span className="hidden sm:block">Previous</span>
+            <span className="hidden sm:block">{text}</span>
         </PaginationLink>
     );
 }
 
-export function PaginationNext({
+function PaginationNext({
     className,
+    text = "Next",
     ...props
-}: ComponentProps<typeof PaginationLink>) {
+}: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
     return (
         <PaginationLink
             aria-label="Go to next page"
@@ -100,16 +83,13 @@ export function PaginationNext({
             className={cn("pr-1.5!", className)}
             {...props}
         >
-            <span className="hidden sm:block">Next</span>
+            <span className="hidden sm:block">{text}</span>
             <ChevronRightIcon data-icon="inline-end" />
         </PaginationLink>
     );
 }
 
-export function PaginationEllipsis({
-    className,
-    ...props
-}: ComponentProps<"span">) {
+function PaginationEllipsis({ className, ...props }: React.ComponentProps<"span">) {
     return (
         <span
             aria-hidden
@@ -125,3 +105,13 @@ export function PaginationEllipsis({
         </span>
     );
 }
+
+export {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+};

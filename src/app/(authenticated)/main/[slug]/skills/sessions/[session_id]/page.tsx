@@ -30,7 +30,7 @@ import {
     ItemGroup,
     ItemMedia,
     ItemTitle,
-} from "@/components/ui/items";
+} from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -58,8 +58,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 import { SkillsModule_SessionMenu } from "./session-menu";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -165,7 +166,7 @@ export default function SkillsModule_Session_Page(
                             <SkillsModule_SessionMenu session={session} />
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
                         <div className="">
                             <Card>
                                 <CardHeader>
@@ -178,130 +179,110 @@ export default function SkillsModule_Session_Page(
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <FieldGroup>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Session ID</FieldLabel>
-                                            <FieldValue value={session.id} format="id" />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Name</FieldLabel>
-                                            <FieldValue value={session.name} />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Date</FieldLabel>
-                                            <FieldValue value={session.date} format="date" />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Notes</FieldLabel>
-                                            <FieldValue value={session.notes} />
-                                        </Field>
+                                    <DL>
+                                        <DLTerm>Session ID</DLTerm>
+                                        <DLDetails className="font-mono">{session.id}</DLDetails>
 
-                                        {/* <FieldSeparator />
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{session.name}</DLDetails>
 
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Status</FieldLabel>
-                                        <FieldValue value={session.status} />
-                                    </Field>
+                                        <DLTerm>Date</DLTerm>
+                                        <DLDetails>{formatDate(session.date)}</DLDetails>
 
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Created</FieldLabel>
-                                        <FieldValue
-                                            value={session.createdAt}
-                                            format="dateTimeWithDistance"
-                                        />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Updated</FieldLabel>
-                                        <FieldValue
-                                            value={session.updatedAt}
-                                            format="dateTimeWithDistance"
-                                        />
-                                    </Field> */}
-                                    </FieldGroup>
+                                        <DLTerm>Notes</DLTerm>
+                                        <DLDetails>{session.notes}</DLDetails>
+
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{session.status}</DLDetails>
+                                    </DL>
                                 </CardContent>
                             </Card>
                         </div>
-                        <div>
-                            <div>
-                                <div className="text-sm font-medium">Contents</div>
+                        <div className="space-y-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Contents</CardTitle>
+                                </CardHeader>
 
-                                <Item size="xs" asChild>
-                                    <Link
-                                        href={route(
-                                            "/main/[slug]/skills/sessions/[session_id]/personnel",
-                                            {
-                                                slug,
-                                                session_id,
-                                            },
-                                        )}
-                                    >
-                                        <ItemMedia>
-                                            <UsersIcon className="size-4" />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>{assessees.length} Personnel</ItemTitle>
-                                            <ItemDescription>
-                                                assigned to the session
-                                            </ItemDescription>
-                                        </ItemContent>
-                                    </Link>
-                                </Item>
-                                <Item size="xs" asChild>
-                                    <Link
-                                        href={route(
-                                            "/main/[slug]/skills/sessions/[session_id]/skills",
-                                            {
-                                                slug,
-                                                session_id,
-                                            },
-                                        )}
-                                    >
-                                        <ItemMedia>
-                                            <PocketKnifeIcon className="size-4" />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>{skills.length} Skills</ItemTitle>
-                                            <ItemDescription>
-                                                assigned to the session
-                                            </ItemDescription>
-                                        </ItemContent>
-                                    </Link>
-                                </Item>
-                                <Item size="xs" asChild>
-                                    <Link
-                                        href={route(
-                                            "/main/[slug]/skills/sessions/[session_id]/skills",
-                                            {
-                                                slug,
-                                                session_id,
-                                            },
-                                        )}
-                                    >
-                                        <ItemMedia>
-                                            <ClipboardCheckIcon className="size-4" />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>{skillChecks.length} Skill checks</ItemTitle>
-                                            <ItemDescription>
-                                                recorded in the session
-                                            </ItemDescription>
-                                        </ItemContent>
-                                    </Link>
-                                </Item>
-                            </div>
+                                <CardContent className="px-2">
+                                    <Item size="sm" asChild>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/skills/sessions/[session_id]/personnel",
+                                                {
+                                                    slug,
+                                                    session_id,
+                                                },
+                                            )}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>{assessees.length} Personnel</ItemTitle>
+                                                <ItemDescription>
+                                                    assigned to the session
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                    <Item size="sm" asChild>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/skills/sessions/[session_id]/skills",
+                                                {
+                                                    slug,
+                                                    session_id,
+                                                },
+                                            )}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>{skills.length} Skills</ItemTitle>
+                                                <ItemDescription>
+                                                    assigned to the session
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                    <Item size="sm" asChild>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/skills/sessions/[session_id]/skills",
+                                                {
+                                                    slug,
+                                                    session_id,
+                                                },
+                                            )}
+                                        >
+                                            <ItemContent>
+                                                <ItemTitle>
+                                                    {skillChecks.length} Skill checks
+                                                </ItemTitle>
+                                                <ItemDescription>
+                                                    recorded in the session
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                </CardContent>
+                            </Card>
 
-                            <Separator className="my-2" />
-
-                            <div className="text-xs p-4 grid grid-cols-[1fr_2fr] gap-4">
-                                <div className="font-medium">Status</div>
-                                <div>{session.status} </div>
-
-                                <div className="font-medium">Created</div>
-                                <div>{formatDateTime(session.createdAt)} </div>
-
-                                <div className="font-medium">Updated</div>
-                                <div>{formatDateTime(session.updatedAt)} </div>
-                            </div>
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>{formatDateTime(session.createdAt)}</DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>{formatDateTime(session.updatedAt)}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
                         </div>
                     </div>
                 </div>
