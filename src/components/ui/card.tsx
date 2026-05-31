@@ -24,7 +24,7 @@ export function Card({
                 // Layout
                 "flex flex-col gap-4 py-4 overflow-hidden",
                 // Border and shadow
-                "rounded-none ring-1 ring-foreground/10",
+                "rounded-none ring-1 ring-foreground/10 ",
                 // Small size adjustments
                 "data-[size=sm]:gap-3 data-[size=sm]:py-3",
                 // Image handling
