@@ -13,7 +13,7 @@ import { ComponentProps } from "react";
 
 import { AlertInfoIcon, ToParentPageIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/items";
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 
 import { cn } from "@/lib/utils";
 

@@ -20,7 +20,7 @@ import {
     ItemDescription,
     ItemGroup,
     ItemTitle,
-} from "@/components/ui/items";
+} from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";

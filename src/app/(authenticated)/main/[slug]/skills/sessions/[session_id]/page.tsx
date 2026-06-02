@@ -61,6 +61,8 @@ import {
 import { formatDate, formatDateTime } from "@/lib/datetime";
 import { SkillsModule_SessionMenu } from "./session-menu";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { formatDistanceToNow } from "date-fns";
+import { Saratoga } from "@/components/blocks/saratoga";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -103,15 +105,11 @@ export default function SkillsModule_Session_Page(
                 ]}
             />
             <Lexington.Page className="p-4">
-                <div className="w-full max-w-5xl space-y-2">
-                    <div className="flex flex-col gap-2 md:flex-row md:justify-between">
-                        <div>
-                            <div className="scroll-m-20 text-xl font-semibold tracking-tight">
-                                {session.name}
-                            </div>
-                        </div>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{session.name}</Saratoga.Title>
 
-                        <div className="flex items-center justify-end gap-2">
+                        <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline">
@@ -164,10 +162,10 @@ export default function SkillsModule_Session_Page(
                                 </Link>
                             </Button>
                             <SkillsModule_SessionMenu session={session} />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-                        <div className="">
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Main>
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Session Details</CardTitle>
@@ -175,7 +173,6 @@ export default function SkillsModule_Session_Page(
                                         <Button variant="ghost" size="icon">
                                             <ObjectIcons.Edit />
                                         </Button>
-                                        {/* <SkillsModule_SessionMenu session={session} /> */}
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
@@ -197,14 +194,14 @@ export default function SkillsModule_Session_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
-                        </div>
-                        <div className="space-y-2">
+                        </Saratoga.Main>
+                        <Saratoga.Secondary>
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Contents</CardTitle>
                                 </CardHeader>
 
-                                <CardContent className="px-2">
+                                <CardContent className="px-2 -my-2">
                                     <Item size="sm" asChild>
                                         <Link
                                             href={route(
@@ -277,15 +274,31 @@ export default function SkillsModule_Session_Page(
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Created</DLTerm>
-                                        <DLDetails>{formatDateTime(session.createdAt)}</DLDetails>
+                                        <DLDetails>
+                                            <div>{formatDateTime(session.createdAt)}</div>
+
+                                            <div className="text-muted-foreground">
+                                                {formatDistanceToNow(session.createdAt, {
+                                                    addSuffix: true,
+                                                })}
+                                            </div>
+                                        </DLDetails>
                                         <DLTerm>Updated</DLTerm>
-                                        <DLDetails>{formatDateTime(session.updatedAt)}</DLDetails>
+                                        <DLDetails>
+                                            <div>{formatDateTime(session.updatedAt)}</div>
+
+                                            <div className="text-muted-foreground">
+                                                {formatDistanceToNow(session.updatedAt, {
+                                                    addSuffix: true,
+                                                })}
+                                            </div>
+                                        </DLDetails>
                                     </DL>
                                 </CardContent>
                             </Card>
-                        </div>
-                    </div>
-                </div>
+                        </Saratoga.Secondary>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
             </Lexington.Page>
         </Lexington.Root>
     );

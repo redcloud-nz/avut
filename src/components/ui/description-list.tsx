@@ -11,7 +11,7 @@ export function DL({ className, ...props }: React.ComponentPropsWithRef<"dl">) {
     return (
         <dl
             className={cn(
-                "grid text-sm/6 sm:grid-cols-[min(30%,--spacing(80))_auto] items-center sm:text-sm -my-3",
+                "grid text-sm/6 sm:grid-cols-[min(30%,--spacing(80))_auto] sm:text-sm -my-3",
                 className,
             )}
             {...props}
@@ -23,7 +23,7 @@ export function DLTerm({ className, ...props }: React.ComponentPropsWithRef<"dt"
     return (
         <dt
             className={cn(
-                "col-start-1 border-t border-border/50 pt-3 text-foreground text-sm leading-none font-medium select-none first:border-none sm:border-t sm:py-3",
+                "col-start-1 border-t border-border/50 pt-3 text-foreground font-medium select-none first:border-none sm:border-t sm:py-3",
                 className,
             )}
             {...props}

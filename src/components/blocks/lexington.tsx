@@ -166,8 +166,8 @@ function LexingtonPage({
     className,
     scrollable = true,
     ...props
-}: ComponentProps<"main"> & VariantProps<typeof lexingtonPageVariants> & { asChild?: boolean }) {
-    const Comp = asChild ? Slot.Root : "main";
+}: ComponentProps<"div"> & VariantProps<typeof lexingtonPageVariants> & { asChild?: boolean }) {
+    const Comp = asChild ? Slot.Root : "div";
 
     return (
         <Comp

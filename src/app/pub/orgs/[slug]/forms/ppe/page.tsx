@@ -14,7 +14,7 @@ import {
     ItemDescription,
     ItemGroup,
     ItemTitle,
-} from "@/components/ui/items";
+} from "@/components/ui/item";
 import Link from "next/link";
 
 import { route } from "@/lib/routes";

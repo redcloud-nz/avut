@@ -81,6 +81,7 @@ export default function SkillsModule_Sessions_List() {
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,
+                    meta: { columnName: "Name" },
                 }),
                 columnHelper.accessor("updatedAt", {
                     header: (ctx) => (
@@ -92,6 +93,7 @@ export default function SkillsModule_Sessions_List() {
                         </Akagi.TableCell>
                     ),
                     enableSorting: true,
+                    meta: { columnName: "Updated" },
                 }),
                 columnHelper.accessor("status", {
                     header: (ctx) => (
@@ -135,12 +137,9 @@ export default function SkillsModule_Sessions_List() {
             <Hermes.Header>
                 <Hermes.Title>Skill Check Sessions</Hermes.Title>
                 <Hermes.Action>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setCreateSessionDialogOpen(true)}
-                    >
+                    <Button variant="outline" onClick={() => setCreateSessionDialogOpen(true)}>
                         <ObjectIcons.Create />
+                        <span className="hidden sm:inline">New Session</span>
                     </Button>
                 </Hermes.Action>
             </Hermes.Header>
@@ -160,6 +159,7 @@ export default function SkillsModule_Sessions_List() {
                     </Empty>
                 }
             >
+                <Akagi.TableToolbar table={table} />
                 <Akagi.Table table={table} />
             </Show>
             <SkillsModule_CreateSession_Dialog

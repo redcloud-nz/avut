@@ -12,6 +12,7 @@
 import {
     ArrowDownAZIcon,
     ArrowDownZAIcon,
+    ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     ChevronsUpDownIcon,
@@ -34,12 +35,15 @@ import {
 } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "../ui/button-group";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -63,6 +67,8 @@ import {
 } from "@/components/ui/table";
 
 import { cn } from "@/lib/utils";
+import { DropdownMenuRadioGroup } from "../ui-prev/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type AkagiTableHeadCellProps<TData extends RowData> = Omit<ComponentProps<"th">, "align"> &
     Pick<HeaderContext<TData, unknown>, "header"> & {
@@ -243,11 +249,11 @@ function AkagiTable<TData extends RowData>({ table, pagination = true }: AkagiTa
 
     return (
         <Table
-            slotProps={{
-                container: {
-                    className: "",
-                },
-            }}
+        // slotProps={{
+        //     container: {
+        //         className: "",
+        //     },
+        // }}
         >
             <AkagiTableHeader table={table} />
             <TableBody>
@@ -466,6 +472,100 @@ function AkagiTableSearch<TData extends RowData>({
     );
 }
 
+function AkagiTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
+    const sortableColumns = table.getAllColumns().filter((column) => column.getCanSort());
+
+    const sortedColumn =
+        sortableColumns.find((column) => column.getIsSorted()) ?? sortableColumns[0];
+
+    function handleSortChange(columnId: string) {
+        const column = table.getAllColumns().find((col) => col.id === columnId);
+
+        column?.toggleSorting(column.getIsSorted() === "asc" ? true : false);
+    }
+
+    function handleSortDirectionChange() {
+        const currentDirection = sortedColumn.getIsSorted();
+        sortedColumn.toggleSorting(currentDirection == "asc");
+    }
+
+    return (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-accent/50 p-2 border rounded-lg">
+            <InputGroup className={cn("grow bg-background")}>
+                <InputGroupInput
+                    placeholder="Search..."
+                    value={table.getState().globalFilter ?? ""}
+                    onChange={(ev) => table.setGlobalFilter(ev.target.value)}
+                />
+                <InputGroupAddon>
+                    <SearchIcon className="size-4" />
+                </InputGroupAddon>
+                <InputGroupAddon align="inline-end">{table.getRowCount()} results</InputGroupAddon>
+            </InputGroup>
+
+            <div className="flex items-center gap-2">
+                <ButtonGroup>
+                    <DropdownMenu>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        {sortedColumn.columnDef.meta?.columnName ?? sortedColumn.id}
+                                        <ChevronDownIcon className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Select column to sort by. Currently sorted by{" "}
+                                {sortedColumn.columnDef.meta?.columnName ?? sortedColumn.id}.
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <DropdownMenuContent className="w-50" align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup
+                                    value={sortedColumn.id}
+                                    onValueChange={handleSortChange}
+                                >
+                                    {sortableColumns.map((column) => (
+                                        <DropdownMenuRadioItem value={column.id} key={column.id}>
+                                            {column.columnDef.meta?.columnName ?? column.id}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleSortDirectionChange}
+                            >
+                                {sortedColumn.getIsSorted() == "asc" ? (
+                                    <ArrowDownAZIcon className="size-4" />
+                                ) : (
+                                    <ArrowDownZAIcon className="size-4" />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Toggle sort direction:{" "}
+                            {sortedColumn.getIsSorted() == "asc" ? "Ascending" : "Descending"}
+                        </TooltipContent>
+                    </Tooltip>
+                </ButtonGroup>
+                {/* <Button variant="outline" size="icon">
+                    <FunnelIcon className="size-4" />
+                </Button> */}
+            </div>
+        </div>
+    );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function defineColumns<TData extends RowData>(
     factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData, any> | null)[],
@@ -482,5 +582,6 @@ export const Akagi = {
     TableHeadCell: AkagiTableHeadCell,
     TableCell: AkagiTableCell,
     TableSearch: AkagiTableSearch,
+    TableToolbar: AkagiTableToolbar,
     defineColumns,
 };

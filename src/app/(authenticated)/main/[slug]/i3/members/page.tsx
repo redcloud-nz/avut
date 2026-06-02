@@ -12,7 +12,7 @@ import { redirect } from "next/navigation";
 import { Hermes } from "@/components/blocks/hermes";
 import { Lexington } from "@/components/blocks/lexington";
 import { ItemLinkActionIcon } from "@/components/icons";
-import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/items";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";

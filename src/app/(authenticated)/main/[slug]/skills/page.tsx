@@ -19,7 +19,7 @@ import {
     ItemDescription,
     ItemGroup,
     ItemTitle,
-} from "@/components/ui/items";
+} from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
