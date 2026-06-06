@@ -72,19 +72,21 @@ function SaratogaColumns({ children, className, ...props }: ComponentProps<"div"
     );
 }
 
-function SaratogaMain({ children, className, ...props }: ComponentProps<"main">) {
+function SaratogaColumn({
+    children,
+    className,
+    slot,
+    ...props
+}: ComponentProps<"div"> & { slot: "main" | "secondary" }) {
     return (
-        <main data-component="SaratogaMain" className={cn("space-y-4", className)} {...props}>
+        <div
+            data-component="SaratogaColumn"
+            data-slot={slot}
+            className={cn("space-y-4", className)}
+            {...props}
+        >
             {children}
-        </main>
-    );
-}
-
-function SaratogaSecondary({ children, className, ...props }: ComponentProps<"aside">) {
-    return (
-        <aside data-component="SaratogaSecondary" className={cn("space-y-4", className)} {...props}>
-            {children}
-        </aside>
+        </div>
     );
 }
 
@@ -94,6 +96,5 @@ export const Saratoga = {
     Title: SaratogaTitle,
     Actions: SaratogaActions,
     Columns: SaratogaColumns,
-    Main: SaratogaMain,
-    Secondary: SaratogaSecondary,
+    Column: SaratogaColumn,
 };

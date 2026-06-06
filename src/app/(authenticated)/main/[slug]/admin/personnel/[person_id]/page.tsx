@@ -7,25 +7,35 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { Suspense, use, useState } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
-import { ObjectIcons } from "@/components/icons";
+import { Std } from "@/components/blocks/std";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardLoadingFallback,
+    CardTitle,
+} from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_PersonMenu } from "./person-menu";
+import { AdminModule_UpdatePerson_Dialog } from "./update-person";
+import { PersonId } from "@/lib/schemas/person";
 
 export default function AdminModule_Person_Page(
     props: PageProps<`/main/[slug]/admin/personnel/[person_id]`>,
@@ -46,120 +56,161 @@ export default function AdminModule_Person_Page(
         ],
     });
 
+    const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
                     person.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/personnel", { slug })}
-                            tooltip="Back to personnel list"
-                        />
-                        <Hermes.Title>{person.name}</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{person.name}</Saratoga.Title>
+                        <Saratoga.Actions>
                             <AdminModule_PersonMenu person={person} />
-                        </Hermes.Action>
-                    </Hermes.Header>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Person Details</CardTitle>
-                            <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ person: ["update"] }}
-                                >
-                                    <Button variant="ghost" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/admin/personnel/[person_id]/--update",
-                                                { slug, person_id },
-                                            )}
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Person Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ person: ["update"] }}
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Person ID</FieldLabel>
-                                    <FieldValue value={person.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={person.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Email</FieldLabel>
-                                    <FieldValue value={person.email} />
-                                </Field>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setUpdateDialogOpen(true)}
+                                            >
+                                                <ObjectIcons.Edit />
+                                            </Button>
+                                            <AdminModule_UpdatePerson_Dialog
+                                                person={person}
+                                                open={updateDialogOpen}
+                                                onOpenChange={setUpdateDialogOpen}
+                                            />
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Person ID</DLTerm>
+                                        <DLDetails className="font-mono">{person.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{person.name}</DLDetails>
+                                        <DLTerm>Email</DLTerm>
+                                        <DLDetails>{person.email}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{person.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            {linkedUser && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Linked User Account</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <DL>
+                                            <DLTerm>User ID</DLTerm>
+                                            <DLDetails className="font-mono">
+                                                {linkedUser.userId}
+                                            </DLDetails>
+                                            <DLTerm>Name</DLTerm>
+                                            <DLDetails>{linkedUser.name}</DLDetails>
+                                            <DLTerm>Email</DLTerm>
+                                            <DLDetails>{linkedUser.email}</DLDetails>
+                                            <DLTerm>Roles</DLTerm>
+                                            <DLDetails>
+                                                {linkedUser.roles
+                                                    .map(
+                                                        (role) =>
+                                                            OrganizationRole.displayNames[role],
+                                                    )
+                                                    .join(", ")}
+                                            </DLDetails>
+                                        </DL>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Suspense fallback={<CardLoadingFallback />}>
+                                <AdminModule_Person_TeamMemberships_Card personId={person.id} />
+                            </Suspense>
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(person.createdAt)}</div>
 
-                                <FieldSeparator />
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(person.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(person.updatedAt)}</div>
 
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created At</FieldLabel>
-                                    <FieldValue
-                                        value={person.createdAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated At</FieldLabel>
-                                    <FieldValue
-                                        value={person.updatedAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={person.status} />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                    {linkedUser && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Linked User Account</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>User ID</FieldLabel>
-                                        <FieldValue value={linkedUser.userId} format="id" />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Name</FieldLabel>
-                                        <FieldValue value={linkedUser.name} />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Email</FieldLabel>
-                                        <FieldValue value={linkedUser.email} />
-                                    </Field>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Roles</FieldLabel>
-                                        <FieldValue
-                                            value={linkedUser.roles
-                                                .map((role) => OrganizationRole.displayNames[role])
-                                                .join(", ")}
-                                        />
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    )}
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(person.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
+    );
+}
+
+function AdminModule_Person_TeamMemberships_Card({ personId }: { personId: PersonId }) {
+    const organization = useOrganization();
+
+    const { data: teamMemberships } = useSuspenseQuery(
+        trpc.teams.listTeamMemberships.queryOptions({
+            organizationId: organization.id,
+            personId: personId,
+        }),
+    );
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Teams</CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 -my-2">
+                {teamMemberships.map((membership) => (
+                    <Item key={membership.teamId} className="px-2" asChild>
+                        <Link
+                            href={route("/main/[slug]/admin/teams/[team_id]", {
+                                slug: organization.slug,
+                                team_id: membership.teamId,
+                            })}
+                        >
+                            <ItemContent>
+                                <ItemTitle>{membership.team.name}</ItemTitle>
+                            </ItemContent>
+                            <ItemActions>
+                                <ItemLinkActionIcon className="size-4" />
+                            </ItemActions>
+                        </Link>
+                    </Item>
+                ))}
+            </CardContent>
+        </Card>
     );
 }

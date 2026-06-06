@@ -5,6 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ComponentProps } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,6 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogProps,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_DeletePerson_Dialog({
     person,
     ...props
-}: AlertDialogProps & { person: PersonData }) {
+}: ComponentProps<typeof AlertDialog> & { person: PersonData }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();

@@ -34,10 +34,7 @@ export default async function AdminModule_AccessControl_PersonPage(
             <Lexington.Page>
                 <Lexington.Column width="lg">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/access", { slug })}
-                            tooltip="Back to access control list"
-                        />
+                        <Hermes.BackButton href={route("/main/[slug]/admin/access", { slug })} />
                         <Hermes.Title>{person.name}</Hermes.Title>
                     </Hermes.Header>
                     <Suspense fallback={<CardLoadingFallback />}>

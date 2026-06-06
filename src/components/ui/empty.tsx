@@ -2,12 +2,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-function Empty({ className, ...props }: React.ComponentProps<"div">) {
+function Empty({
+    className,
+    size = "default",
+    ...props
+}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
     return (
         <div
             data-slot="empty"
+            data-size={size}
             className={cn(
+                "group/empty",
                 "flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance",
+                "data-[size=sm]:gap-2 data-[size=sm]:p-2",
                 className,
             )}
             {...props}
@@ -19,7 +26,10 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="empty-header"
-            className={cn("flex max-w-sm flex-col items-center gap-2", className)}
+            className={cn(
+                "flex max-w-sm flex-col items-center gap-2 group-data-[size=sm]/empty:gap-1",
+                className,
+            )}
             {...props}
         />
     );

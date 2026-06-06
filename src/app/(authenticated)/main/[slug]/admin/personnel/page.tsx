@@ -5,7 +5,7 @@
  * Paths: /main/[slug]/admin/personnel
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -23,18 +23,16 @@ export default async function AdminModule_PersonnelList_Page(
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <AdminModule_PersonnelList organization={organization} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <AdminModule_PersonnelList organization={organization} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

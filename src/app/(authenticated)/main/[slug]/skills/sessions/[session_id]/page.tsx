@@ -9,14 +9,21 @@
 
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
-import { use } from "react";
+import { Suspense, use } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
-import { Lexington } from "@/components/blocks/lexington";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardLoadingFallback,
+    CardTitle,
+} from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     DropdownMenu,
@@ -32,6 +39,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate, formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
 import { SkillsModule_SessionMenu } from "./session-menu";
@@ -43,40 +51,25 @@ export default function SkillsModule_Session_Page(
 
     const organization = useOrganization();
 
-    const [{ data: session }, { data: skillChecks }, { data: assessees }, { data: skills }] =
-        useSuspenseQueries({
-            queries: [
-                trpc.skills.getSession.queryOptions({
-                    organizationId: organization.id,
-                    skillCheckSessionId: session_id,
-                }),
-                trpc.skillChecks.listSkillChecks.queryOptions({
-                    organizationId: organization.id,
-                    sessionId: session_id,
-                }),
-                trpc.skills.listSessionAssessees.queryOptions({
-                    organizationId: organization.id,
-                    sessionId: session_id,
-                    scope: "assigned",
-                }),
-                trpc.skills.listSessionSkills.queryOptions({
-                    organizationId: organization.id,
-                    sessionId: session_id,
-                    scope: "assigned",
-                }),
-            ],
-        });
+    const [{ data: session }] = useSuspenseQueries({
+        queries: [
+            trpc.skills.getSession.queryOptions({
+                organizationId: organization.id,
+                skillCheckSessionId: session_id,
+            }),
+        ],
+    });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
                     session.name || session.id,
                 ]}
             />
-            <Lexington.Page className="p-4">
+            <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{session.name}</Saratoga.Title>
@@ -137,7 +130,7 @@ export default function SkillsModule_Session_Page(
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
-                        <Saratoga.Main>
+                        <Saratoga.Column slot="main">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Session Details</CardTitle>
@@ -166,82 +159,11 @@ export default function SkillsModule_Session_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
-                        </Saratoga.Main>
-                        <Saratoga.Secondary>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Contents</CardTitle>
-                                </CardHeader>
-
-                                <CardContent className="px-2 -my-2">
-                                    <Item size="sm" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skills/sessions/[session_id]/personnel",
-                                                {
-                                                    slug,
-                                                    session_id,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>{assessees.length} Personnel</ItemTitle>
-                                                <ItemDescription>
-                                                    assigned to the session
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                    <Item size="sm" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skills/sessions/[session_id]/skills",
-                                                {
-                                                    slug,
-                                                    session_id,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>{skills.length} Skills</ItemTitle>
-                                                <ItemDescription>
-                                                    assigned to the session
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                    <Item size="sm" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skills/sessions/[session_id]/skills",
-                                                {
-                                                    slug,
-                                                    session_id,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>
-                                                    {skillChecks.length} Skill checks
-                                                </ItemTitle>
-                                                <ItemDescription>
-                                                    recorded in the session
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                </CardContent>
-                            </Card>
-
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Suspense fallback={<CardLoadingFallback />}>
+                                <SkillsModule_Session_Contents_Card sessionId={session.id} />
+                            </Suspense>
                             <Card>
                                 <CardContent>
                                     <DL>
@@ -264,10 +186,92 @@ export default function SkillsModule_Session_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
-                        </Saratoga.Secondary>
+                        </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
-            </Lexington.Page>
-        </Lexington.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
+    );
+}
+
+function SkillsModule_Session_Contents_Card({ sessionId }: { sessionId: SkillCheckSessionId }) {
+    const organization = useOrganization();
+
+    const [{ data: skillChecks }, { data: assessees }, { data: skills }] = useSuspenseQueries({
+        queries: [
+            trpc.skillChecks.listSkillChecks.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+            }),
+            trpc.skills.listSessionAssessees.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "assigned",
+            }),
+            trpc.skills.listSessionSkills.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "assigned",
+            }),
+        ],
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Contents</CardTitle>
+            </CardHeader>
+
+            <CardContent className="px-2 -my-2">
+                <Item size="sm" asChild>
+                    <Link
+                        href={route("/main/[slug]/skills/sessions/[session_id]/personnel", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        })}
+                    >
+                        <ItemContent>
+                            <ItemTitle>{assessees.length} Personnel</ItemTitle>
+                            <ItemDescription>assigned to the session</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                            <ChevronRightIcon className="size-4" />
+                        </ItemActions>
+                    </Link>
+                </Item>
+                <Item size="sm" asChild>
+                    <Link
+                        href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        })}
+                    >
+                        <ItemContent>
+                            <ItemTitle>{skills.length} Skills</ItemTitle>
+                            <ItemDescription>assigned to the session</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                            <ChevronRightIcon className="size-4" />
+                        </ItemActions>
+                    </Link>
+                </Item>
+                <Item size="sm" asChild>
+                    <Link
+                        href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        })}
+                    >
+                        <ItemContent>
+                            <ItemTitle>{skillChecks.length} Skill checks</ItemTitle>
+                            <ItemDescription>recorded in the session</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                            <ChevronRightIcon className="size-4" />
+                        </ItemActions>
+                    </Link>
+                </Item>
+            </CardContent>
+        </Card>
     );
 }

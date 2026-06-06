@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { RainbowSpinner } from "./loading";
 
 function Card({
     className,
@@ -92,4 +93,30 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     );
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };
+function CardLoadingFallback({
+    className,
+    ...props
+}: Omit<React.ComponentProps<"div">, "children">) {
+    return (
+        <div
+            className={cn(
+                "w-full aspect-2/1 flex items-center justify-center p-4 border rounded-lg",
+                className,
+            )}
+            {...props}
+        >
+            <RainbowSpinner className="size-32 border-gray-200" />
+        </div>
+    );
+}
+
+export {
+    Card,
+    CardHeader,
+    CardFooter,
+    CardTitle,
+    CardAction,
+    CardDescription,
+    CardContent,
+    CardLoadingFallback,
+};

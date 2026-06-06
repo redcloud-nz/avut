@@ -143,6 +143,8 @@ export function DialogCloseButton(props: React.ComponentProps<typeof Button>) {
     );
 }
 
+export type DialogProps = React.ComponentProps<typeof Dialog>;
+
 export {
     Dialog,
     DialogClose,

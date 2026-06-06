@@ -47,10 +47,6 @@ import {
     BookXIcon,
     MoveIcon,
     ShirtIcon,
-    ShovelIcon,
-    CircleCheckBigIcon,
-    ShieldXIcon,
-    BuildingIcon,
     CircleSlashedIcon,
     MessageSquarePlusIcon,
 } from "lucide-react";

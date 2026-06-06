@@ -121,7 +121,7 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
 
     return (
         <div
-            className="flex flex-col sm:flex-row sm:items-center gap-2 bg-accent/50 p-2 border-b"
+            className="flex flex-col sm:flex-row sm:items-center gap-2 bg-accent/50 p-2 border rounded-lg"
             data-slot="table-toolbar"
         >
             <InputGroup className={cn("grow bg-background")}>
@@ -362,6 +362,7 @@ oneOfFilterFn.resolveFilterValue = (filterValue: any) =>
     Array.isArray(filterValue) ? filterValue : [filterValue];
 
 export const Kaga = {
+    DEFAULT_PAGE_SIZE: 50,
     Table: KagaTable,
     TableToolbar: KagaTableToolbar,
     TablePagination: KagaTablePagination,

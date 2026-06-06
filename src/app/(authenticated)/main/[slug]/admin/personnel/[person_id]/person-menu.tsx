@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -62,8 +61,8 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
     const restoreMutation = useMutation(
         trpc.personnel.restorePerson.mutationOptions({
             onError(error) {
-                toast.error(`Failed to archive person: ${error.message}`);
-                console.error("Failed to archive person:", error);
+                toast.error(`Failed to restore person: ${error.message}`);
+                console.error("Failed to restore person:", error);
             },
             async onSuccess() {
                 await queryClient.invalidateQueries(
@@ -82,9 +81,9 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                 personId: person.id,
             }),
             {
-                loading: "Archiving person...",
-                success: "Person archived.",
-                error: (error) => "Failed to archive person: " + error.message,
+                loading: "Archiving person record...",
+                success: "Person record archived.",
+                error: (error) => "Failed to archive person record: " + error.message,
             },
         );
     }
@@ -96,9 +95,9 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                 personId: person.id,
             }),
             {
-                loading: "Restoring person...",
-                success: "Person restored.",
-                error: (error) => "Failed to restore person: " + error.message,
+                loading: "Restoring person record...",
+                success: "Person record restored.",
+                error: (error) => "Failed to restore person record: " + error.message,
             },
         );
     }
@@ -112,7 +111,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="end">
+                <DropdownMenuContent className="w-50" align="end">
                     <DropdownMenuGroup>
                         <DropdownMenuItem disabled asChild>
                             <Link
@@ -161,11 +160,11 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                     Delete
                                 </DropdownMenuItem>
                             )}
-                            {person.status == "Active" && (
+                            {/* {person.status == "Active" && (
                                 <DropdownMenuItem onClick={() => setLinkUserDialogOpen(true)}>
                                     <UserIcon /> Link User
                                 </DropdownMenuItem>
-                            )}
+                            )} */}
                             {person.status != "Active" && (
                                 <DropdownMenuItem onClick={handleRestore}>
                                     <ObjectIcons.Restore /> Restore
