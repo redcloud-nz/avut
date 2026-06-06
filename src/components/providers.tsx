@@ -24,9 +24,9 @@ export function CommonProviders({ children }: Readonly<{ children: ReactNode }>)
             disableTransitionOnChange
         >
             <QueryClientProvider client={queryClient}>
-                <SidebarProvider>
-                    <TooltipProvider>{children}</TooltipProvider>
-                </SidebarProvider>
+                <TooltipProvider>
+                    <SidebarProvider>{children}</SidebarProvider>
+                </TooltipProvider>
             </QueryClientProvider>
         </ThemeProvider>
     );

@@ -27,7 +27,9 @@ import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_CreatePerson_Dialog } from "./create-person";
+import { AdminModule_CreatePerson_Dialog } from "../personnel/create-person";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 
 interface AdminModule_PersonnelListProps {
     organization: OrganizationData;
@@ -47,56 +49,43 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<RowData>((columnHelper) => [
+            Kaga.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
+                    header: "Name",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/admin/personnel/[person_id]", {
-                                    slug: organization.slug,
-                                    person_id: ctx.row.original.id,
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/admin/personnel/[person_id]", {
+                                slug: organization.slug,
+                                person_id: ctx.row.original.id,
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableColumnFilter: false,
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("email", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Email</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Email",
+                    cell: (ctx) => ctx.getValue(),
                     enableColumnFilter: false,
                     enableGlobalFilter: true,
                     enableSorting: true,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-25"
-                            filterOptions={["Active", "Archived"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} className="w-25">
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
                     enableColumnFilter: true,
-                    enableGlobalFilter: false,
                     enableSorting: false,
+                    enableGlobalFilter: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Active", value: "Active" },
+                            { label: "Archived", value: "Archived" },
+                        ],
+                    },
                 }),
             ]),
         [],
@@ -120,15 +109,22 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
 
     return (
         <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
-                <Protect orgId={organization.id} permissions={{ person: ["create"] }}>
-                    <Button variant="outline" onClick={() => setCreatePersonDialogOpen(true)}>
-                        <CreateNewIcon /> New Person
-                    </Button>
-                </Protect>
+            <Saratoga.Header>
+                <Saratoga.Title>Personnel</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect orgId={organization.id} permissions={{ person: ["create"] }}>
+                        <Button variant="outline" onClick={() => setCreatePersonDialogOpen(true)}>
+                            <CreateNewIcon /> <span className="hidden md:inline">New Person</span>
+                        </Button>
+                    </Protect>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div className="border rounded-lg">
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </div>
-            <Akagi.Table table={table} />
+
             <AdminModule_CreatePerson_Dialog
                 open={createPersonDialogOpen}
                 onOpenChange={setCreatePersonDialogOpen}

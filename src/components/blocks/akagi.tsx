@@ -67,7 +67,7 @@ import {
 } from "@/components/ui/table";
 
 import { cn } from "@/lib/utils";
-import { DropdownMenuRadioGroup } from "../ui-prev/dropdown-menu";
+import { DropdownMenuRadioGroup } from "../ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type AkagiTableHeadCellProps<TData extends RowData> = Omit<ComponentProps<"th">, "align"> &

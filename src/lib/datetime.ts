@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { format, formatISO } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 /**
  * Formats a date string for display to the user.
@@ -18,4 +18,9 @@ export function formatDate(dateOrString: string | Date): string {
 export function formatDateTime(dateOrString: string | Date): string {
     const date = new Date(dateOrString);
     return format(date, "yyyy-MM-dd HH:mm");
+}
+
+export function formatRelativeDateTime(dateOrString: string | Date): string {
+    const date = new Date(dateOrString);
+    return formatDistanceToNow(date, { addSuffix: true });
 }

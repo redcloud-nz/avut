@@ -7,6 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ComponentProps } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -19,7 +20,6 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
-    DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -30,7 +30,7 @@ import { route } from "@/lib/routes";
 import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_CreatePerson_Dialog(props: DialogProps) {
+export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dialog>) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();

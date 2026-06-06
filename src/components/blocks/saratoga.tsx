@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Saratoga page design components.
+ * Saratoga layout components.
  *
  */
 
@@ -13,7 +13,7 @@ function SaratogaRoot({ children, className, ...props }: ComponentProps<"div">) 
     return (
         <div
             data-component="SaratogaRoot"
-            className={cn("w-full max-w-5xl space-y-2", className)}
+            className={cn("w-full max-w-5xl mx-auto space-y-2", className)}
             {...props}
         >
             {children}
@@ -21,15 +21,15 @@ function SaratogaRoot({ children, className, ...props }: ComponentProps<"div">) 
     );
 }
 
-function SaratogaHeader({ children, className, ...props }: ComponentProps<"div">) {
+function SaratogaHeader({ children, className, ...props }: ComponentProps<"header">) {
     return (
-        <div
+        <header
             data-component="SaratogaHeader"
-            className={cn("flex flex-col gap-2 md:flex-row md:justify-between", className)}
+            className={cn("flex gap-2 justify-between", className)}
             {...props}
         >
             {children}
-        </div>
+        </header>
     );
 }
 

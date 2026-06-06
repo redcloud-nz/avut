@@ -7,36 +7,17 @@
 
 "use client";
 
-import {
-    CheckIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    ClipboardCheckIcon,
-    PocketKnifeIcon,
-    UsersIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
+import { ObjectIcons } from "@/components/icons";
 import { Lexington } from "@/components/blocks/lexington";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemMedia,
-    ItemTitle,
-} from "@/components/ui/item";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
-import { Protect } from "@/components/protect";
-import { Separator } from "@/components/ui/separator";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -46,23 +27,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHeadCell,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { formatDate, formatDateTime } from "@/lib/datetime";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+
+import { useOrganization } from "@/hooks/use-organization";
+import { formatDate, formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
+import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
+
 import { SkillsModule_SessionMenu } from "./session-menu";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { formatDistanceToNow } from "date-fns";
-import { Saratoga } from "@/components/blocks/saratoga";
 
 export default function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -278,9 +250,7 @@ export default function SkillsModule_Session_Page(
                                             <div>{formatDateTime(session.createdAt)}</div>
 
                                             <div className="text-muted-foreground">
-                                                {formatDistanceToNow(session.createdAt, {
-                                                    addSuffix: true,
-                                                })}
+                                                {formatRelativeDateTime(session.createdAt)}
                                             </div>
                                         </DLDetails>
                                         <DLTerm>Updated</DLTerm>
@@ -288,9 +258,7 @@ export default function SkillsModule_Session_Page(
                                             <div>{formatDateTime(session.updatedAt)}</div>
 
                                             <div className="text-muted-foreground">
-                                                {formatDistanceToNow(session.updatedAt, {
-                                                    addSuffix: true,
-                                                })}
+                                                {formatRelativeDateTime(session.updatedAt)}
                                             </div>
                                         </DLDetails>
                                     </DL>
