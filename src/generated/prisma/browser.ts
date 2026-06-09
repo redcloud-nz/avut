@@ -52,6 +52,11 @@ export type OrganizationConfig = Prisma.OrganizationConfigModel;
  */
 export type Team = Prisma.TeamModel;
 /**
+ * Model Team_D4H
+ *
+ */
+export type Team_D4H = Prisma.Team_D4HModel;
+/**
  * Model TeamConfig
  *
  */

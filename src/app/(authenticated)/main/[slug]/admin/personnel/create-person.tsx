@@ -48,9 +48,9 @@ export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dia
     const mutation = useMutation(
         trpc.personnel.createPerson.mutationOptions({
             onError(error) {
-                if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(error.shape.cause.message as keyof ModifiablePersonData, {
-                        message: error.message,
+                if (error.data?.conflict) {
+                    form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {
+                        message: error.data.conflict.message,
                     });
                 } else {
                     toast.error(`Failed to create person: ${error.message}`);

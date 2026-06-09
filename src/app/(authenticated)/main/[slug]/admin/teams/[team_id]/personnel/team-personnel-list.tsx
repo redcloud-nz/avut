@@ -5,16 +5,14 @@
  */
 "use client";
 
-import { RefreshCwIcon } from "lucide-react";
 import { ComponentProps, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import {
@@ -27,7 +25,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, MutationButton } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
     Dialog,
@@ -45,7 +42,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
     TableBody,
@@ -63,16 +59,14 @@ import { TeamData, TeamRef } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { trpc } from "@/trpc/client";
 
-interface AdminModule_TeamPersonnel_SectionProps {
+interface AdminModule_Team_PersonnelListProps {
     team: TeamData;
 }
 
-export function AdminModule_TeamPersonnel_Section({
-    team,
-}: AdminModule_TeamPersonnel_SectionProps) {
+export function AdminModule_Team_PersonnelList({ team }: AdminModule_Team_PersonnelListProps) {
     const organization = useOrganization();
 
-    const teamMembersQuery = useQuery(
+    const { data: teamMembers } = useSuspenseQuery(
         trpc.teams.listTeamMemberships.queryOptions({
             organizationId: organization.id,
             teamId: team.id,
@@ -80,75 +74,41 @@ export function AdminModule_TeamPersonnel_Section({
     );
 
     const [newMemberDialogOpen, setNewMemberDialogOpen] = useState(false);
-    const [syncD4HDialogOpen, setSyncD4HDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<PersonRef | null>(null);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Team Personnel</CardTitle>
-                <CardAction>
-                    <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
-                        {team.type == "General" && (
-                            <Button variant="ghost" onClick={() => setNewMemberDialogOpen(true)}>
-                                <ObjectIcons.Create />
-                            </Button>
-                        )}
-                        {team.type == "D4HDefined" && (
-                            <Button variant="ghost" onClick={() => setSyncD4HDialogOpen(true)}>
-                                <RefreshCwIcon />
-                            </Button>
-                        )}
-                    </Protect>
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                {teamMembersQuery.isLoading ? (
-                    <>
-                        <Hermes.Header>
-                            <Skeleton className="h-8 w-50" />
-                            <Skeleton className="h-8 w-20" />
-                        </Hermes.Header>
-                        <Skeleton className="h-20 w-full" />
-                    </>
-                ) : (
-                    <>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHeadCell>Name</TableHeadCell>
-                                    <TableCell className="w-9"></TableCell>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(teamMembersQuery.data ?? [])
-                                    .sort((a, b) => a.person.name.localeCompare(b.person.name))
-                                    .map(({ person, ...teamMembership }) => (
-                                        <TableRow key={teamMembership.personId}>
-                                            <TableCell>{person.name}</TableCell>
-                                            <TableCell className="w-9 p-0">
-                                                <Protect
-                                                    orgId={organization.id}
-                                                    permissions={{ team: ["update"] }}
-                                                >
-                                                    {team.type == "General" && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => setDeleteTarget(person)}
-                                                        >
-                                                            <ObjectIcons.Delete />
-                                                        </Button>
-                                                    )}
-                                                </Protect>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                            </TableBody>
-                        </Table>
-                    </>
-                )}
-            </CardContent>
+        <>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeadCell>Name</TableHeadCell>
+                        <TableCell className="w-9"></TableCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {teamMembers
+                        .sort((a, b) => a.person.name.localeCompare(b.person.name))
+                        .map(({ person, ...teamMembership }) => (
+                            <TableRow key={teamMembership.personId}>
+                                <TableCell>{person.name}</TableCell>
+                                <TableCell className="w-9 p-0">
+                                    <Protect
+                                        orgId={organization.id}
+                                        permissions={{ team: ["update"] }}
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setDeleteTarget(person)}
+                                        >
+                                            <ObjectIcons.Delete />
+                                        </Button>
+                                    </Protect>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                </TableBody>
+            </Table>
 
             {/* Add Person Dialog */}
             <AddTeamMemberDialog
@@ -166,13 +126,7 @@ export function AdminModule_TeamPersonnel_Section({
                 open={deleteTarget !== null}
                 onOpenChange={() => setDeleteTarget(null)}
             />
-
-            <SyncD4HTeamDialog
-                team={team}
-                open={syncD4HDialogOpen}
-                onOpenChange={setSyncD4HDialogOpen}
-            />
-        </Card>
+        </>
     );
 }
 

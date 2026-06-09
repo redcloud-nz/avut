@@ -382,6 +382,7 @@ export const ModelName = {
     Organization: "Organization",
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
+    Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
     TeamUser: "TeamUser",
     OrganizationUser: "OrganizationUser",
@@ -433,6 +434,7 @@ export type TypeMap<
             | "organization"
             | "organizationConfig"
             | "team"
+            | "team_D4H"
             | "teamConfig"
             | "teamUser"
             | "organizationUser"
@@ -988,6 +990,82 @@ export type TypeMap<
                     args: Prisma.TeamCountArgs<ExtArgs>;
                     result:
                         | runtime.Types.Utils.Optional<Prisma.TeamCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        Team_D4H: {
+            payload: Prisma.$Team_D4HPayload<ExtArgs>;
+            fields: Prisma.Team_D4HFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.Team_D4HFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.Team_D4HFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                findFirst: {
+                    args: Prisma.Team_D4HFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.Team_D4HFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                findMany: {
+                    args: Prisma.Team_D4HFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>[];
+                };
+                create: {
+                    args: Prisma.Team_D4HCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                createMany: {
+                    args: Prisma.Team_D4HCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.Team_D4HCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>[];
+                };
+                delete: {
+                    args: Prisma.Team_D4HDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                update: {
+                    args: Prisma.Team_D4HUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.Team_D4HDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.Team_D4HUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.Team_D4HUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>[];
+                };
+                upsert: {
+                    args: Prisma.Team_D4HUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Team_D4HPayload>;
+                };
+                aggregate: {
+                    args: Prisma.Team_D4HAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeam_D4H>;
+                };
+                groupBy: {
+                    args: Prisma.Team_D4HGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.Team_D4HGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.Team_D4HCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.Team_D4HCountAggregateOutputType>
                         | number;
                 };
             };
@@ -2939,7 +3017,6 @@ export const TeamScalarFieldEnum = {
     id: "id",
     name: "name",
     description: "description",
-    type: "type",
     tags: "tags",
     properties: "properties",
     organizationId: "organizationId",
@@ -2948,6 +3025,17 @@ export const TeamScalarFieldEnum = {
 } as const;
 
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
+
+export const Team_D4HScalarFieldEnum = {
+    teamId: "teamId",
+    d4hTeamId: "d4hTeamId",
+    d4hTeamName: "d4hTeamName",
+    d4hServer: "d4hServer",
+    d4hLastSyncedAt: "d4hLastSyncedAt",
+} as const;
+
+export type Team_D4HScalarFieldEnum =
+    (typeof Team_D4HScalarFieldEnum)[keyof typeof Team_D4HScalarFieldEnum];
 
 export const TeamConfigScalarFieldEnum = {
     teamId: "teamId",
@@ -3350,17 +3438,14 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "J
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "QueryMode">;
 
 /**
- * Reference to a field of type 'TeamType'
+ * Reference to a field of type 'Int'
  */
-export type EnumTeamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "TeamType">;
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
 
 /**
- * Reference to a field of type 'TeamType[]'
+ * Reference to a field of type 'Int[]'
  */
-export type ListEnumTeamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
-    $PrismaModel,
-    "TeamType[]"
->;
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
 
 /**
  * Reference to a field of type 'RecordStatus'
@@ -3377,16 +3462,6 @@ export type ListEnumRecordStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
     $PrismaModel,
     "RecordStatus[]"
 >;
-
-/**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
 
 /**
  * Reference to a field of type 'SkillCheckStatus'
@@ -3524,6 +3599,7 @@ export type GlobalOmitConfig = {
     organization?: Prisma.OrganizationOmit;
     organizationConfig?: Prisma.OrganizationConfigOmit;
     team?: Prisma.TeamOmit;
+    team_D4H?: Prisma.Team_D4HOmit;
     teamConfig?: Prisma.TeamConfigOmit;
     teamUser?: Prisma.TeamUserOmit;
     organizationUser?: Prisma.OrganizationUserOmit;

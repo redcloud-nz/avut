@@ -5,10 +5,11 @@
 
 import * as z from "zod";
 
-import { Team as TeamRecord } from "@/generated/prisma/client";
+import { Team as TeamRecord, Team_D4H as TeamD4HRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { propertiesSchema, tagsSchema, zodNanoId16 } from "../validation";
+import { D4HServerCode } from "../d4h-servers";
 
 export const TeamId = {
     schema: zodNanoId16("TeamId expected").brand<"TeamId">(),
@@ -22,12 +23,20 @@ const teamSchema = z.object({
     id: TeamId.schema,
     name: z.string().min(3).max(100),
     description: z.string().max(500),
-    type: z.enum(["General", "D4HDefined"]),
     tags: tagsSchema,
     properties: propertiesSchema,
     organizationId: z.string(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime().nullable(),
+
+    d4h: z
+        .object({
+            d4hTeamId: z.number(),
+            d4hTeamName: z.string(),
+            d4hServer: D4HServerCode.schema,
+            d4hLastSyncedAt: z.iso.datetime().nullable(),
+        })
+        .nullable(),
 });
 
 export const TeamData = {
@@ -40,11 +49,19 @@ export const TeamData = {
         properties: true,
     }),
 
-    fromRecord: (record: TeamRecord): TeamData =>
+    fromRecord: (record: TeamRecord & { d4h: TeamD4HRecord | null }): TeamData =>
         teamSchema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt?.toISOString() ?? null,
+            d4h: record.d4h
+                ? {
+                      d4hTeamId: record.d4h.d4hTeamId,
+                      d4hTeamName: record.d4h.d4hTeamName,
+                      d4hServer: record.d4h.d4hServer,
+                      d4hLastSyncedAt: record.d4h.d4hLastSyncedAt?.toISOString() ?? null,
+                  }
+                : null,
         }),
 } as const;
 

@@ -215,40 +215,6 @@ export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
     _max?: Prisma.NestedJsonFilter<$PrismaModel>;
 };
 
-export type EnumTeamTypeFilter<$PrismaModel = never> = {
-    equals?: $Enums.TeamType | Prisma.EnumTeamTypeFieldRefInput<$PrismaModel>;
-    in?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel> | $Enums.TeamType;
-};
-
-export type EnumTeamTypeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.TeamType | Prisma.EnumTeamTypeFieldRefInput<$PrismaModel>;
-    in?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumTeamTypeWithAggregatesFilter<$PrismaModel> | $Enums.TeamType;
-    _count?: Prisma.NestedIntFilter<$PrismaModel>;
-    _min?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel>;
-    _max?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel>;
-};
-
-export type EnumRecordStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
-    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel> | $Enums.RecordStatus;
-};
-
-export type EnumRecordStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
-    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel> | $Enums.RecordStatus;
-    _count?: Prisma.NestedIntFilter<$PrismaModel>;
-    _min?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
-    _max?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
-};
-
 export type IntFilter<$PrismaModel = never> = {
     equals?: number | Prisma.IntFieldRefInput<$PrismaModel>;
     in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>;
@@ -274,6 +240,23 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
     _sum?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedIntFilter<$PrismaModel>;
     _max?: Prisma.NestedIntFilter<$PrismaModel>;
+};
+
+export type EnumRecordStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel> | $Enums.RecordStatus;
+};
+
+export type EnumRecordStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel> | $Enums.RecordStatus;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
 };
 
 export type EnumSkillCheckStatusFilter<$PrismaModel = never> = {
@@ -502,40 +485,6 @@ export type NestedJsonFilterBase<$PrismaModel = never> = {
         | Prisma.JsonNullValueFilter;
 };
 
-export type NestedEnumTeamTypeFilter<$PrismaModel = never> = {
-    equals?: $Enums.TeamType | Prisma.EnumTeamTypeFieldRefInput<$PrismaModel>;
-    in?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel> | $Enums.TeamType;
-};
-
-export type NestedEnumTeamTypeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.TeamType | Prisma.EnumTeamTypeFieldRefInput<$PrismaModel>;
-    in?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.TeamType[] | Prisma.ListEnumTeamTypeFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumTeamTypeWithAggregatesFilter<$PrismaModel> | $Enums.TeamType;
-    _count?: Prisma.NestedIntFilter<$PrismaModel>;
-    _min?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel>;
-    _max?: Prisma.NestedEnumTeamTypeFilter<$PrismaModel>;
-};
-
-export type NestedEnumRecordStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
-    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel> | $Enums.RecordStatus;
-};
-
-export type NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
-    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
-    not?: Prisma.NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel> | $Enums.RecordStatus;
-    _count?: Prisma.NestedIntFilter<$PrismaModel>;
-    _min?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
-    _max?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
-};
-
 export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | Prisma.IntFieldRefInput<$PrismaModel>;
     in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>;
@@ -561,6 +510,23 @@ export type NestedFloatFilter<$PrismaModel = never> = {
     gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>;
     gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>;
     not?: Prisma.NestedFloatFilter<$PrismaModel> | number;
+};
+
+export type NestedEnumRecordStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel> | $Enums.RecordStatus;
+};
+
+export type NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RecordStatus | Prisma.EnumRecordStatusFieldRefInput<$PrismaModel>;
+    in?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.RecordStatus[] | Prisma.ListEnumRecordStatusFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumRecordStatusWithAggregatesFilter<$PrismaModel> | $Enums.RecordStatus;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumRecordStatusFilter<$PrismaModel>;
 };
 
 export type NestedEnumSkillCheckStatusFilter<$PrismaModel = never> = {

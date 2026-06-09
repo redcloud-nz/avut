@@ -5,15 +5,16 @@
 
 "use client";
 
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -22,6 +23,7 @@ import {
     DialogHeader,
     DialogProps,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -32,10 +34,12 @@ import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
+export function AdminModule_CreateTeam_Dialog() {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
@@ -50,9 +54,9 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
     const mutation = useMutation(
         trpc.teams.createTeam.mutationOptions({
             onError(error) {
-                if (error.shape?.cause?.name == "FieldConflictError") {
-                    form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
-                        message: error.message,
+                if (error.data?.conflict) {
+                    form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {
+                        message: error.data.conflict.message,
                     });
                 } else {
                     toast.error(`Failed to create team: ${error.message}`);
@@ -66,7 +70,7 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
                     }),
                 );
 
-                props.onOpenChange?.(false);
+                handleOpenChange(false);
 
                 router.push(
                     route("/main/[slug]/admin/teams/[team_id]", {
@@ -85,15 +89,21 @@ export function AdminModule_CreateTeam_Dialog(props: DialogProps) {
         });
     });
 
-    useEffect(() => {
-        if (!props.open) {
+    function handleOpenChange(open: boolean) {
+        if (!open) {
             form.reset();
             mutation.reset();
         }
-    }, [props.open]);
+        setDialogOpen(open);
+    }
 
     return (
-        <Dialog {...props}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ObjectIcons.Create /> <span className="hidden md:inline">New Team</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Team</DialogTitle>

@@ -4,14 +4,15 @@
  */
 "use client";
 
-import { ComponentProps } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -19,49 +20,47 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { ModifiablePersonData, PersonData } from "@/lib/schemas/person";
+import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdatePerson_Dialog({
-    person,
-    ...props
-}: ComponentProps<typeof Dialog> & { person: PersonData }) {
+export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
+    const [dialogOpen, setDialogOpen] = useState(false);
+
     const form = useForm({
-        resolver: zodResolver(PersonData.modifiableSchema),
-        defaultValues: person,
+        resolver: zodResolver(TeamData.modifiableSchema),
+        defaultValues: team,
     });
 
     const mutation = useMutation(
-        trpc.personnel.updatePerson.mutationOptions({
+        trpc.teams.updateTeam.mutationOptions({
             async onError(error) {
                 if (error.data?.conflict) {
-                    form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {
+                    form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {
                         message: error.data.conflict.message,
                     });
                 } else {
-                    console.error("Failed to update person", error);
-                    toast.error(`Failed to update person: ${error.message}`);
+                    console.error("Failed to update team", error);
+                    toast.error(`Failed to update team: ${error.message}`);
                 }
             },
-            async onSuccess({ updated }) {
-                toast.success("Person updated");
+            async onSuccess() {
+                toast.success("Team updated");
 
-                queryClient.setQueryData(
-                    trpc.personnel.getPerson.queryKey({ personId: person.id }),
-                    updated,
-                );
+                handleOpenChange(false);
 
                 await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
+                    trpc.teams.listTeams.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
@@ -74,39 +73,44 @@ export function AdminModule_UpdatePerson_Dialog({
             form.reset();
             mutation.reset();
         }
-        props.onOpenChange?.(open);
+        setDialogOpen(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Update person</DialogTitle>
-                    <DialogDescription>Update the details of this person record.</DialogDescription>
+                    <DialogTitle>Update team</DialogTitle>
+                    <DialogDescription>Update the details of this team record.</DialogDescription>
                 </DialogHeader>
                 <form
-                    id="update-person-form"
+                    id="update-team-form"
                     onSubmit={form.handleSubmit((formData) =>
                         mutation.mutate({
                             organizationId: organization.id,
-                            personId: person.id,
+                            teamId: team.id,
                             update: formData,
                         }),
                     )}
                 >
                     <FieldGroup>
                         <Field orientation="responsive">
-                            <FieldLabel>Person ID</FieldLabel>
-                            <FieldValue value={person.id} format="id" />
+                            <FieldLabel>Team ID</FieldLabel>
+                            <FieldValue value={team.id} format="id" />
                         </Field>
                         <Controller
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid} orientation="responsive">
-                                    <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                                    <FieldLabel htmlFor="team-name">Name</FieldLabel>
                                     <Input
-                                        id="person-name"
+                                        id="team-name"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -115,27 +119,24 @@ export function AdminModule_UpdatePerson_Dialog({
                             )}
                         />
                         <Controller
-                            name="email"
+                            name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid} orientation="responsive">
-                                    <FieldLabel htmlFor="person-email">Email</FieldLabel>
-                                    <Input
-                                        id="person-email"
-                                        type="email"
+                                    <FieldLabel htmlFor="team-description">Description</FieldLabel>
+                                    <Textarea
+                                        id="team-description"
                                         aria-invalid={fieldState.invalid}
-                                        className="min-w-1/2"
                                         {...field}
                                     />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />
-
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="submit"
-                                form="update-person-form"
+                                form="update-team-form"
                                 status={mutation.status}
                                 text={{
                                     idle: "Update",

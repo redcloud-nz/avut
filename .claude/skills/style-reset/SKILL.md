@@ -1,3 +1,8 @@
+---
+name: style-reset
+description: Apply the Lexington → Std + Saratoga style reset to a page route.
+---
+
 # Style Reset Migration
 
 Apply the Lexington → Std + Saratoga style reset to a page route.
@@ -9,6 +14,8 @@ Apply the Lexington → Std + Saratoga style reset to a page route.
 ```
 
 If no path is given, use the file currently open in the IDE. The argument should point to the `page.tsx` server component — the skill will also update the co-located client component(s) as needed.
+
+> **If `page.tsx` is already `"use client"`**: apply both the `Std` shell changes (section 1) and the `Saratoga` content changes (section 2 or 3) to the same file. No separate server/client split is needed.
 
 ## What to do
 
@@ -69,6 +76,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 
 - If the component was previously using `Hermes.Header` / `Hermes.Title` for the title area, replace with `Saratoga.Header` / `Saratoga.Title` / `Saratoga.Actions`.
 - If the component was using `Akagi` for tables, replace with `Kaga` — see section 4 below for column definition changes.
+- If `Hermes.Header` appears elsewhere (e.g. as a flex container for loading skeletons inside a card), replace it with `<div className="flex items-center gap-2">` — it's just a styled `div`.
 - Remove any `Lexington`, `Hermes`, or `Akagi` imports that are no longer used.
 
 ### 3. Detail page client component
@@ -199,6 +207,10 @@ import { DL, DLTerm, DLDetails } from "@/components/ui/description-list";
   </DL>
 </CardContent>;
 ```
+
+**`FieldSeparator` / `FieldLegend`**: drop both entirely. `DL` rows flow naturally without separators. If a `FieldLegend` was labelling a sub-section (e.g. "D4H Integration"), the `DLTerm` labels themselves provide enough context — no heading equivalent is needed.
+
+**`FieldValue format="id"`**: render the value directly in `DLDetails` — there's no format prop on `DL` components.
 
 ### 6. Created/Updated dates — separate secondary card
 

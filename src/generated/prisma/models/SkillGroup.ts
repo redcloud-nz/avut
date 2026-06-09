@@ -608,14 +608,6 @@ export type SkillGroupUpdatetagsInput = {
     push?: string | string[];
 };
 
-export type IntFieldUpdateOperationsInput = {
-    set?: number;
-    increment?: number;
-    decrement?: number;
-    multiply?: number;
-    divide?: number;
-};
-
 export type SkillGroupCreateNestedOneWithoutSkillsInput = {
     create?: Prisma.XOR<
         Prisma.SkillGroupCreateWithoutSkillsInput,

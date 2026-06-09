@@ -133,12 +133,12 @@ model Team {
   id          String   @id
   name        String
   description String   @default("")
-  type        TeamType @default(General)
   tags        String[] @default([])
   properties  Json     @default("{}")
 
   organizationId  String
   organization    Organization     @relation("team_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  d4h             Team_D4H?        @relation("team_d4h_to_team")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime?        @updatedAt
   configs         TeamConfig[]     @relation("team_config_to_team")
@@ -152,6 +152,19 @@ model Team {
 enum TeamType {
   General
   D4HDefined
+}
+
+model Team_D4H {
+  teamId String
+  team   Team   @relation("team_d4h_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+
+  d4hTeamId    Int
+  d4hTeamName  String
+  d4hServer    String
+  d4hLastSyncedAt DateTime?
+
+  @@unique([teamId])
+  @@map("team_d4h")
 }
 
 model TeamConfig {

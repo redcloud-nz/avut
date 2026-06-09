@@ -55,6 +55,7 @@ export const ModelName = {
     Organization: "Organization",
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
+    Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
     TeamUser: "TeamUser",
     OrganizationUser: "OrganizationUser",
@@ -181,7 +182,6 @@ export const TeamScalarFieldEnum = {
     id: "id",
     name: "name",
     description: "description",
-    type: "type",
     tags: "tags",
     properties: "properties",
     organizationId: "organizationId",
@@ -190,6 +190,17 @@ export const TeamScalarFieldEnum = {
 } as const;
 
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
+
+export const Team_D4HScalarFieldEnum = {
+    teamId: "teamId",
+    d4hTeamId: "d4hTeamId",
+    d4hTeamName: "d4hTeamName",
+    d4hServer: "d4hServer",
+    d4hLastSyncedAt: "d4hLastSyncedAt",
+} as const;
+
+export type Team_D4HScalarFieldEnum =
+    (typeof Team_D4HScalarFieldEnum)[keyof typeof Team_D4HScalarFieldEnum];
 
 export const TeamConfigScalarFieldEnum = {
     teamId: "teamId",

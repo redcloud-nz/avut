@@ -4,158 +4,159 @@
  *
  * Paths: /main/[slug]/admin/teams/[team_id]
  */
-"use client";
 
-import Link from "next/link";
-import { use } from "react";
-
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { useTeam } from "@/hooks/use-team";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
+import { getOrganizationBySlug } from "@/server/organization";
+import { getTeamById } from "@/server/team";
 
-import { AdminModule_TeamPersonnel_Section } from "./assigned-personnel";
+import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_TeamMenu } from "./team-menu";
+import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
-export default function AdminModule_Team_Page(
+export default async function AdminModule_Team_Page(
     props: PageProps<`/main/[slug]/admin/teams/[team_id]`>,
 ) {
-    const { slug, team_id } = use(props.params);
-    const organization = useOrganization();
+    const { slug, team_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
 
-    const team = useTeam(team_id);
+    const team = await getTeamById(organization.id, team_id);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Teams", href: route("/main/[slug]/admin/teams", { slug }) },
-                    team.name,
+                    { label: team.name },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/teams", { slug })}
-                            tooltip="Back to teams list"
-                        />
-                        <Hermes.Title>{team.name}</Hermes.Title>
-                        <Hermes.Action>
-                            <AdminModule_TeamMenu organization={organization} team={team} />
-                        </Hermes.Action>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{team.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <AdminModule_TeamMenu team={team} />
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{team.name}</CardTitle>
-                            <CardAction>
-                                <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
-                                    <Button variant="ghost" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/admin/teams/[team_id]/--update",
-                                                { slug, team_id },
-                                            )}
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Team Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ team: ["update"] }}
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Team ID</FieldLabel>
-                                    <FieldValue value={team.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={team.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue value={team.description} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Type</FieldLabel>
-                                    <FieldValue value={team.type} />
-                                </Field>
+                                            <AdminModule_UpdateTeam_Dialog team={team} />
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Team ID</DLTerm>
+                                        <DLDetails>{team.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{team.name}</DLDetails>
+                                        <DLTerm>Description</DLTerm>
+                                        <DLDetails>{team.description}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
 
-                                {team.type === "D4HDefined" && (
-                                    <>
-                                        <FieldSeparator />
-                                        <FieldLegend>D4H Integration</FieldLegend>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>D4H Team ID</FieldLabel>
-                                            <FieldValue
-                                                value={team.properties.d4hTeamId}
-                                                format="id"
-                                            />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>D4H Team Name</FieldLabel>
-                                            <FieldValue value={team.properties.d4hTeamName} />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>D4H Server</FieldLabel>
-                                            <FieldValue
-                                                value={
-                                                    team.properties.d4hServer
-                                                        ? getD4HServer(team.properties.d4hServer)
-                                                              .name
-                                                        : ""
-                                                }
-                                            />
-                                        </Field>
-                                        <Field orientation="responsive">
-                                            <FieldLabel>D4H Lasy Sync</FieldLabel>
-                                            <FieldValue
-                                                value={
-                                                    team.properties.d4hLastSync
-                                                        ? new Date(team.properties.d4hLastSync)
-                                                        : "Never"
-                                                }
-                                                format="dateTimeWithDistance"
-                                            />
-                                        </Field>
-                                    </>
-                                )}
+                            {team.d4h && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>D4H Integration</CardTitle>
+                                        <CardAction>
+                                            <Protect
+                                                orgId={organization.id}
+                                                permissions={{ team: ["update"] }}
+                                            >
+                                                <Button variant="ghost">
+                                                    <ObjectIcons.Edit />
+                                                </Button>
+                                            </Protect>
+                                        </CardAction>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <DL>
+                                            <DLTerm>D4H Team ID</DLTerm>
+                                            <DLDetails>{team.d4h.d4hTeamId}</DLDetails>
+                                            <DLTerm>D4H Team Name</DLTerm>
+                                            <DLDetails>{team.d4h.d4hTeamName}</DLDetails>
+                                            <DLTerm>D4H Server</DLTerm>
+                                            <DLDetails>
+                                                {getD4HServer(team.d4h.d4hServer).name}
+                                            </DLDetails>
+                                            <DLTerm>D4H Last Sync</DLTerm>
+                                            <DLDetails>
+                                                {team.d4h.d4hLastSyncedAt ? (
+                                                    <>
+                                                        <div>
+                                                            {formatDateTime(
+                                                                team.d4h.d4hLastSyncedAt,
+                                                            )}
+                                                        </div>
+                                                        <div className="text-muted-foreground">
+                                                            {formatRelativeDateTime(
+                                                                team.d4h.d4hLastSyncedAt,
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    "Never"
+                                                )}
+                                            </DLDetails>
+                                        </DL>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </Saratoga.Column>
 
-                                <FieldSeparator />
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={team.createdAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={team.updatedAt ?? "N/A"}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-
-                    <AdminModule_TeamPersonnel_Section team={team} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                        <Saratoga.Column slot="secondary">
+                            <AdminModule_TeamLinks_Card team={team} />
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(team.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(team.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            {team.updatedAt ? (
+                                                <>
+                                                    <div>{formatDateTime(team.updatedAt)}</div>
+                                                    <div className="text-muted-foreground">
+                                                        {formatRelativeDateTime(team.updatedAt)}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                "N/A"
+                                            )}
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

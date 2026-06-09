@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { CableIcon } from "lucide-react";
 import { useState } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
@@ -16,27 +17,20 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
-import { OrganizationClient } from "@/hooks/use-organization";
+import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
 
 interface AdminModule_TeamMenuProps {
-    organization: OrganizationClient;
     team: TeamData;
 }
 
-export function AdminModule_TeamMenu({
-    organization,
-    team,
-}: AdminModule_TeamMenuProps) {
+export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
+    const organization = useOrganization();
+
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     return (
@@ -51,28 +45,26 @@ export function AdminModule_TeamMenu({
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
                         orgId={organization.id}
+                        permissions={{ team: ["update"] }}
+                        render={(allowed) => (
+                            <DropdownMenuItem disabled={!allowed}>
+                                <CableIcon /> Link to D4H
+                            </DropdownMenuItem>
+                        )}
+                    />
+                    <Protect
+                        orgId={organization.id}
                         permissions={{ team: ["delete"] }}
-                        fallback={
-                            <Empty size="sm">
-                                <EmptyHeader>
-                                    <EmptyTitle>
-                                        No Actions Available
-                                    </EmptyTitle>
-                                    <EmptyDescription>
-                                        You do not have permission to perform
-                                        any actions on this team.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    >
-                        <DropdownMenuItem
-                            onSelect={() => setDeleteDialogOpen(true)}
-                            className="text-destructive"
-                        >
-                            <ObjectIcons.Delete /> Delete
-                        </DropdownMenuItem>
-                    </Protect>
+                        render={(allowed) => (
+                            <DropdownMenuItem
+                                onSelect={() => setDeleteDialogOpen(true)}
+                                disabled={!allowed}
+                                className="text-destructive"
+                            >
+                                <ObjectIcons.Delete /> Delete
+                            </DropdownMenuItem>
+                        )}
+                    />
                 </DropdownMenuContent>
             </DropdownMenu>
 

@@ -14,6 +14,7 @@ export type * from "./models/Verification";
 export type * from "./models/Organization";
 export type * from "./models/OrganizationConfig";
 export type * from "./models/Team";
+export type * from "./models/Team_D4H";
 export type * from "./models/TeamConfig";
 export type * from "./models/TeamUser";
 export type * from "./models/OrganizationUser";

@@ -310,24 +310,26 @@ function KagaTablePagination<TData extends RowData>({
                     </span>
                 )}
             </div>
-            <div className="flex gap-2 items-center justify-end text-muted-foreground">
-                <Button
-                    variant="outline"
-                    disabled={!table.getCanPreviousPage()}
-                    onClick={() => table.previousPage()}
-                >
-                    <ChevronLeftIcon className="size-4" />{" "}
-                    <span className="hidden sm:block">Previous</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    disabled={!table.getCanNextPage()}
-                    onClick={() => table.nextPage()}
-                >
-                    <span className="hidden sm:block">Next</span>{" "}
-                    <ChevronRightIcon className="size-4" />
-                </Button>
-            </div>
+            {pageCount > 1 && (
+                <div className="flex gap-2 items-center justify-end text-muted-foreground">
+                    <Button
+                        variant="outline"
+                        disabled={!table.getCanPreviousPage()}
+                        onClick={() => table.previousPage()}
+                    >
+                        <ChevronLeftIcon className="size-4" />{" "}
+                        <span className="hidden sm:block">Previous</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        disabled={!table.getCanNextPage()}
+                        onClick={() => table.nextPage()}
+                    >
+                        <span className="hidden sm:block">Next</span>{" "}
+                        <ChevronRightIcon className="size-4" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

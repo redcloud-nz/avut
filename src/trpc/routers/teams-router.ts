@@ -55,6 +55,9 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma.team.update({
                     where: { organizationId: organizationId, id: data.id },
                     data: pick(create, ["description", "tags", "properties"]),
+                    include: {
+                        d4h: true,
+                    },
                 }),
                 ctx.logEvent({
                     action: "Create",
@@ -118,11 +121,6 @@ export const teamsRouter = createTrpcRouter({
                     message: Messages.teamNotFound(teamId),
                 });
             }
-            if (team.type == "D4HDefined")
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Cannot manually add members to a team that is D4HDefined.",
-                });
 
             if (!person) {
                 throw new TRPCError({
@@ -249,12 +247,6 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            if (team.type == "D4HDefined")
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Cannot manually remove members from a team that is D4HDefined.",
-                });
-
             if (!existing) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
@@ -285,6 +277,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Import a team from D4H, creating a new team in the organization that is linked to an existing team in D4H.
+     * @deprecated
      */
     importTeamFromD4H: organizationProcedure({ team: ["create"] })
         .input(
@@ -334,6 +327,9 @@ export const teamsRouter = createTrpcRouter({
                             d4hLastSync: new Date().toISOString(),
                             ...create.properties,
                         },
+                    },
+                    include: {
+                        d4h: true,
                     },
                 }),
                 ctx.logEvent({
@@ -404,6 +400,9 @@ export const teamsRouter = createTrpcRouter({
             const teamRecords = await ctx.prisma.team.findMany({
                 where: {
                     organizationId: ctx.organizationId,
+                },
+                include: {
+                    d4h: true,
                 },
                 orderBy: {
                     name: "asc",
@@ -476,7 +475,7 @@ export const teamsRouter = createTrpcRouter({
                     message: Messages.teamNotFound(teamId),
                 });
 
-            if (team.type !== "D4HDefined")
+            if (team.d4h == null)
                 throw new TRPCError({
                     code: "BAD_REQUEST",
                     message: "Team is not linked to D4H",
@@ -620,6 +619,9 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: teamId },
                     data: { ...update },
+                    include: {
+                        d4h: true,
+                    },
                 }),
                 // Record an event for the update
                 ctx.logEvent({
@@ -769,6 +771,9 @@ async function getTeam(
         where: {
             id: teamId,
             organizationId: ctx.organizationId,
+        },
+        include: {
+            d4h: true,
         },
     });
 

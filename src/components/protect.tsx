@@ -4,23 +4,23 @@
  */
 "use client";
 
-import { ReactNode, useMemo } from "react";
+import { ReactNode } from "react";
 import { entries } from "remeda";
 
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import { Permissions } from "@/lib/permissions";
-import { trpc } from "@/trpc/client";
 
-interface ProtectProps {
-    children: ReactNode;
+type ProtectProps = {
     orgId: string;
     permissions: Permissions;
-    fallback?: ReactNode;
-}
+} & (
+    | { children: ReactNode; fallback?: ReactNode }
+    | { render: (hasPermission: boolean) => ReactNode }
+);
 
-export function Protect({ children, orgId, permissions, fallback = null }: ProtectProps) {
+export function Protect({ orgId, permissions, ...props }: ProtectProps) {
     // Flatten permissions for query key
     const flatPermissions = entries(permissions).flatMap(([key, value]) => {
         if (Array.isArray(value)) {
@@ -46,7 +46,11 @@ export function Protect({ children, orgId, permissions, fallback = null }: Prote
         },
     });
 
-    return hasPermission ? <>{children}</> : fallback;
+    return "children" in props ? (
+        <>{hasPermission ? props.children : props.fallback || null}</>
+    ) : (
+        <>{props.render(hasPermission)}</>
+    );
 }
 
 // function Protect2({ children, orgId, permissions }: ProtectProps) {

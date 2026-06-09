@@ -26,5 +26,5 @@ export async function generateMetadata(
 export default async function AdminModule_Team_Layout(
     props: LayoutProps<`/main/[slug]/admin/teams/[team_id]`>,
 ) {
-    return props.children;
+    return <>{props.children}</>;
 }
