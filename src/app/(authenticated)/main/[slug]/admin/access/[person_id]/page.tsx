@@ -5,8 +5,7 @@
 
 import { Suspense } from "react";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { CardLoadingFallback } from "@/components/ui/card";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -23,25 +22,19 @@ export default async function AdminModule_AccessControl_PersonPage(
     const person = await getPersonById(organization.id, person_id);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Access Control", href: route("/main/[slug]/admin/access", { slug }) },
                     { label: person.name },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton href={route("/main/[slug]/admin/access", { slug })} />
-                        <Hermes.Title>{person.name}</Hermes.Title>
-                    </Hermes.Header>
-                    <Suspense fallback={<CardLoadingFallback />}>
-                        <AdminModule_AccessControl_PersonAccessControl_Card personId={person.id} />
-                    </Suspense>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Suspense fallback={<CardLoadingFallback />}>
+                    <AdminModule_AccessControl_PersonAccessControl_Card personId={person.id} />
+                </Suspense>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

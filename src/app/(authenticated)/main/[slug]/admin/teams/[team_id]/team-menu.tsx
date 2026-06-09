@@ -17,7 +17,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";

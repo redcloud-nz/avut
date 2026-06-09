@@ -18,7 +18,8 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 
@@ -42,75 +43,63 @@ export function AdminModule_AccessControl_List() {
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof personnel)[0]>((columnHelper) => [
+            Kaga.defineColumns<(typeof personnel)[0]>((columnHelper) => [
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
+                    header: "Name",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/admin/access/[person_id]", {
-                                    slug: organization.slug,
-                                    person_id: ctx.row.original.id,
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/admin/access/[person_id]", {
+                                slug: organization.slug,
+                                person_id: ctx.row.original.id,
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("email", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Email</Akagi.TableHeadCell>
-                    ),
+                    header: "Email",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/admin/access/[person_id]", {
-                                    slug: organization.slug,
-                                    person_id: ctx.row.original.id,
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/admin/access/[person_id]", {
+                                slug: organization.slug,
+                                person_id: ctx.row.original.id,
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("roles", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Roles</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.row.original.roles
-                                .map((role) => OrganizationRole.displayNames[role])
-                                .join(", ")}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Roles",
+                    cell: (ctx) =>
+                        ctx.row.original.roles
+                            .map((role) => OrganizationRole.displayNames[role])
+                            .join(", "),
                     enableSorting: false,
                     enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("accessStatus", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            filterOptions={["Joined", "Invited", "None"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
-                    filterFn: "arrIncludesSome",
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Joined", value: "Joined" },
+                            { label: "Invited", value: "Invited" },
+                            { label: "None", value: "None" },
+                        ],
+                    },
                 }),
             ]),
         [],
@@ -125,26 +114,32 @@ export function AdminModule_AccessControl_List() {
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             columnFilters: [{ id: "accessStatus", value: ["Joined", "Invited"] }],
-            pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },
     });
 
     return (
-        <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
-                <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
-                    <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
-                        <SendIcon /> Invite
-                    </Button>
-                </Protect>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Access Control</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
+                        <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                            <SendIcon /> Invite
+                        </Button>
+                    </Protect>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </div>
-            <Akagi.Table table={table} />
             <AdminModule_CreateInvitation_Dialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
             />
-        </>
+        </Saratoga.Root>
     );
 }

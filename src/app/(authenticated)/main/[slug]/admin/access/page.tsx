@@ -5,7 +5,7 @@
  * Paths: /main/[slug]/admin/access
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
@@ -21,18 +21,16 @@ export default async function AdminModule_AccessControl_Page(
     const { slug } = await props.params;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Access Control", href: route("/main/[slug]/admin/access", { slug }) },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <AdminModule_AccessControl_List />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <AdminModule_AccessControl_List />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

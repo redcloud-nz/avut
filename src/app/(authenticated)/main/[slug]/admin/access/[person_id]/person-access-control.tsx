@@ -13,9 +13,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,11 +26,10 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc, trpcClient } from "@/trpc/client";
@@ -65,102 +66,112 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
 
     return match(person)
         .with({ accessStatus: "None" }, () => (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Access</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground text-sm">
-                        No access configured. Use the Invite button on the access control list to
-                        invite this person.
-                    </p>
-                </CardContent>
-            </Card>
-        ))
-        .with({ accessStatus: "Invited" }, ({ invitation }) => (
-            <>
+            <Saratoga.Root>
+                <Saratoga.Header>
+                    <Saratoga.Title>{person.name}</Saratoga.Title>
+                </Saratoga.Header>
                 <Card>
                     <CardHeader>
                         <CardTitle>Access</CardTitle>
-                        <CardAction className="flex items-center gap-1">
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ invitation: ["update"] }}
-                            >
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setDialogOpen("update-invitation")}
-                                        >
-                                            <ObjectIcons.Edit />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Edit roles</TooltipContent>
-                                </Tooltip>
-                            </Protect>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onSelect={() => setDialogOpen("resend")}>
-                                            <SendIcon />
-                                            Resend
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onSelect={() => setDialogOpen("revoke")}
-                                            className="text-destructive"
-                                        >
-                                            <ObjectIcons.Delete />
-                                            Revoke
-                                        </DropdownMenuItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </CardAction>
                     </CardHeader>
                     <CardContent>
-                        <FieldGroup>
-                            <Field orientation="responsive">
-                                <FieldLabel>Status</FieldLabel>
-                                <FieldValue value="Invited" />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Email</FieldLabel>
-                                <FieldValue value={invitation.email} />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Role(s)</FieldLabel>
-                                <FieldValue
-                                    value={invitation.roles
-                                        .map((r) => OrganizationRole.displayNames[r])
-                                        .join(", ")}
-                                />
-                            </Field>
-                            <FieldSeparator />
-                            <Field orientation="responsive">
-                                <FieldLabel>Sent</FieldLabel>
-                                <FieldValue
-                                    value={invitation.createdAt}
-                                    format="dateTimeWithDistance"
-                                />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Expires</FieldLabel>
-                                <FieldValue
-                                    value={invitation.expiresAt}
-                                    format="dateTimeWithDistance"
-                                />
-                            </Field>
-                        </FieldGroup>
+                        <p className="text-muted-foreground text-sm">
+                            No access configured. Use the Invite button on the access control list
+                            to invite this person.
+                        </p>
                     </CardContent>
                 </Card>
+            </Saratoga.Root>
+        ))
+        .with({ accessStatus: "Invited" }, ({ invitation }) => (
+            <Saratoga.Root>
+                <Saratoga.Header>
+                    <Saratoga.Title>{person.name}</Saratoga.Title>
+                    <Saratoga.Actions>
+                        <Protect orgId={organization.id} permissions={{ invitation: ["update"] }}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setDialogOpen("update-invitation")}
+                                    >
+                                        <ObjectIcons.Edit />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit roles</TooltipContent>
+                            </Tooltip>
+                        </Protect>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={() => setDialogOpen("resend")}>
+                                        <SendIcon />
+                                        Resend
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onSelect={() => setDialogOpen("revoke")}
+                                        className="text-destructive"
+                                    >
+                                        <ObjectIcons.Delete />
+                                        Revoke
+                                    </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Access</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <DL>
+                                    <DLTerm>Status</DLTerm>
+                                    <DLDetails>Invited</DLDetails>
+                                    <DLTerm>Email</DLTerm>
+                                    <DLDetails>{invitation.email}</DLDetails>
+                                    <DLTerm>Role(s)</DLTerm>
+                                    <DLDetails>
+                                        {invitation.roles
+                                            .map((r) => OrganizationRole.displayNames[r])
+                                            .join(", ")}
+                                    </DLDetails>
+                                </DL>
+                            </CardContent>
+                        </Card>
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
+                        <Card>
+                            <CardContent>
+                                <DL>
+                                    <DLTerm>Sent</DLTerm>
+                                    <DLDetails>
+                                        <div>{formatDateTime(invitation.createdAt)}</div>
+                                        <div className="text-muted-foreground">
+                                            {formatRelativeDateTime(invitation.createdAt)}
+                                        </div>
+                                    </DLDetails>
+                                    <DLTerm>Expires</DLTerm>
+                                    <DLDetails>
+                                        <div>{formatDateTime(invitation.expiresAt)}</div>
+                                        <div className="text-muted-foreground">
+                                            {formatRelativeDateTime(invitation.expiresAt)}
+                                        </div>
+                                    </DLDetails>
+                                </DL>
+                            </CardContent>
+                        </Card>
+                    </Saratoga.Column>
+                </Saratoga.Columns>
                 <AdminModule_ResendInvitation_Dialog
                     invitation={invitation}
                     personName={person.name}
@@ -188,86 +199,98 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                     open={dialogOpen === "update-invitation"}
                     onOpenChange={(open) => setDialogOpen(open ? "update-invitation" : false)}
                 />
-            </>
+            </Saratoga.Root>
         ))
         .with({ accessStatus: "Joined" }, ({ user }) => (
-            <>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Access</CardTitle>
-                        <CardAction className="flex items-center gap-1">
-                            <Protect orgId={organization.id} permissions={{ member: ["update"] }}>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setDialogOpen("update")}
+            <Saratoga.Root>
+                <Saratoga.Header>
+                    <Saratoga.Title>{person.name}</Saratoga.Title>
+                    <Saratoga.Actions>
+                        <Protect orgId={organization.id} permissions={{ member: ["update"] }}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setDialogOpen("update")}
+                                    >
+                                        <ObjectIcons.Edit />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit roles</TooltipContent>
+                            </Tooltip>
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ member: ["delete"] }}>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <DropdownMenuTriggerIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem
+                                            onSelect={() => setDialogOpen("delete")}
+                                            disabled={user.userId === session?.user.id}
+                                            className="text-destructive"
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Edit roles</TooltipContent>
-                                </Tooltip>
-                            </Protect>
-                            <Protect orgId={organization.id} permissions={{ member: ["delete"] }}>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <DropdownMenuTriggerIcon />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuGroup>
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem
-                                                onSelect={() => setDialogOpen("delete")}
-                                                disabled={user.userId === session?.user.id}
-                                                className="text-destructive"
-                                            >
-                                                <ObjectIcons.Delete />
-                                                Remove
-                                            </DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </Protect>
-                        </CardAction>
-                    </CardHeader>
-                    <CardContent>
-                        <FieldGroup>
-                            <Field orientation="responsive">
-                                <FieldLabel>Status</FieldLabel>
-                                <FieldValue value="Joined" />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>User ID</FieldLabel>
-                                <FieldValue value={user.userId} format="id" />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Email</FieldLabel>
-                                <FieldValue value={user.email} />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Role(s)</FieldLabel>
-                                <FieldValue
-                                    value={user.roles
-                                        .map((r) => OrganizationRole.displayNames[r])
-                                        .join(", ")}
-                                />
-                            </Field>
-                            <FieldSeparator />
-                            <Field orientation="responsive">
-                                <FieldLabel>Joined</FieldLabel>
-                                <FieldValue value={user.createdAt} format="dateTimeWithDistance" />
-                            </Field>
-                            <Field orientation="responsive">
-                                <FieldLabel>Updated</FieldLabel>
-                                <FieldValue value={user.updatedAt} format="dateTimeWithDistance" />
-                            </Field>
-                        </FieldGroup>
-                    </CardContent>
-                </Card>
+                                            <ObjectIcons.Delete />
+                                            Remove
+                                        </DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Protect>
+                    </Saratoga.Actions>
+                </Saratoga.Header>
+                <Saratoga.Columns>
+                    <Saratoga.Column slot="main">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Access</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <DL>
+                                    <DLTerm>Status</DLTerm>
+                                    <DLDetails>Joined</DLDetails>
+                                    <DLTerm>User ID</DLTerm>
+                                    <DLDetails>{user.userId}</DLDetails>
+                                    <DLTerm>Email</DLTerm>
+                                    <DLDetails>{user.email}</DLDetails>
+                                    <DLTerm>Role(s)</DLTerm>
+                                    <DLDetails>
+                                        {user.roles
+                                            .map((r) => OrganizationRole.displayNames[r])
+                                            .join(", ")}
+                                    </DLDetails>
+                                </DL>
+                            </CardContent>
+                        </Card>
+                    </Saratoga.Column>
+                    <Saratoga.Column slot="secondary">
+                        <Card>
+                            <CardContent>
+                                <DL>
+                                    <DLTerm>Joined</DLTerm>
+                                    <DLDetails>
+                                        <div>{formatDateTime(user.createdAt)}</div>
+                                        <div className="text-muted-foreground">
+                                            {formatRelativeDateTime(user.createdAt)}
+                                        </div>
+                                    </DLDetails>
+                                    <DLTerm>Updated</DLTerm>
+                                    <DLDetails>
+                                        <div>{formatDateTime(user.updatedAt)}</div>
+                                        <div className="text-muted-foreground">
+                                            {formatRelativeDateTime(user.updatedAt)}
+                                        </div>
+                                    </DLDetails>
+                                </DL>
+                            </CardContent>
+                        </Card>
+                    </Saratoga.Column>
+                </Saratoga.Columns>
                 <AdminModule_UpdateRoles_Dialog
                     personName={user.name}
                     defaultRoles={user.roles}
@@ -289,7 +312,7 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                     open={dialogOpen === "delete"}
                     onOpenChange={(open) => setDialogOpen(open ? "delete" : false)}
                 />
-            </>
+            </Saratoga.Root>
         ))
         .exhaustive();
 }
