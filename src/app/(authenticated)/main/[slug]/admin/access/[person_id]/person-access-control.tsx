@@ -16,7 +16,7 @@ import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     DropdownMenu,
@@ -88,20 +88,6 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                 <Saratoga.Header>
                     <Saratoga.Title>{person.name}</Saratoga.Title>
                     <Saratoga.Actions>
-                        <Protect orgId={organization.id} permissions={{ invitation: ["update"] }}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setDialogOpen("update-invitation")}
-                                    >
-                                        <ObjectIcons.Edit />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Edit roles</TooltipContent>
-                            </Tooltip>
-                        </Protect>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
@@ -111,17 +97,29 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                             <DropdownMenuContent align="end">
                                 <DropdownMenuGroup>
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem onSelect={() => setDialogOpen("resend")}>
-                                        <SendIcon />
-                                        Resend
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onSelect={() => setDialogOpen("revoke")}
-                                        className="text-destructive"
-                                    >
-                                        <ObjectIcons.Delete />
-                                        Revoke
-                                    </DropdownMenuItem>
+                                    <Protect
+                                        orgId={organization.id}
+                                        permissions={{ invitation: ["update"] }}
+                                        render={(allowed) => (
+                                            <>
+                                                <DropdownMenuItem
+                                                    disabled={!allowed}
+                                                    onSelect={() => setDialogOpen("resend")}
+                                                >
+                                                    <SendIcon />
+                                                    Resend
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    disabled={!allowed}
+                                                    onSelect={() => setDialogOpen("revoke")}
+                                                    className="text-destructive"
+                                                >
+                                                    <ObjectIcons.Delete />
+                                                    Revoke
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                    />
                                 </DropdownMenuGroup>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -132,6 +130,27 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                         <Card>
                             <CardHeader>
                                 <CardTitle>Access</CardTitle>
+                                <CardAction>
+                                    <Protect
+                                        orgId={organization.id}
+                                        permissions={{ invitation: ["update"] }}
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() =>
+                                                        setDialogOpen("update-invitation")
+                                                    }
+                                                >
+                                                    <ObjectIcons.Edit />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Edit roles</TooltipContent>
+                                        </Tooltip>
+                                    </Protect>
+                                </CardAction>
                             </CardHeader>
                             <CardContent>
                                 <DL>
@@ -206,20 +225,6 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                 <Saratoga.Header>
                     <Saratoga.Title>{person.name}</Saratoga.Title>
                     <Saratoga.Actions>
-                        <Protect orgId={organization.id} permissions={{ member: ["update"] }}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setDialogOpen("update")}
-                                    >
-                                        <ObjectIcons.Edit />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Edit roles</TooltipContent>
-                            </Tooltip>
-                        </Protect>
                         <Protect orgId={organization.id} permissions={{ member: ["delete"] }}>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -249,6 +254,25 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                         <Card>
                             <CardHeader>
                                 <CardTitle>Access</CardTitle>
+                                <CardAction>
+                                    <Protect
+                                        orgId={organization.id}
+                                        permissions={{ member: ["update"] }}
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setDialogOpen("update")}
+                                                >
+                                                    <ObjectIcons.Edit />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Edit roles</TooltipContent>
+                                        </Tooltip>
+                                    </Protect>
+                                </CardAction>
                             </CardHeader>
                             <CardContent>
                                 <DL>

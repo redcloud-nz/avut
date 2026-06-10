@@ -6,7 +6,7 @@
  */
 
 import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -18,8 +18,8 @@ export default async function SkillPackageBuilder_Index_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -27,15 +27,13 @@ export default async function SkillPackageBuilder_Index_Page(
                     },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">Skill Package Builder Module</div>
-                    </div>
-                    <SkillPackageBuilder_Packages_List organization={organization} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <div className="flex flex-col items-center my-4 gap-4">
+                    <AVUTLogo />
+                    <div className="font-semibold">Skill Package Builder Module</div>
+                </div>
+                <SkillPackageBuilder_Packages_List organization={organization} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

@@ -111,57 +111,48 @@ export function SkillPackageBuilder_Group_Menu({
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["delete"] }}
-                        fallback={
-                            <Empty size="sm">
-                                <EmptyHeader>
-                                    <EmptyTitle>No Actions Available</EmptyTitle>
-                                    <EmptyDescription>
-                                        You do not have permission to perform any actions on this
-                                        skill-group.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    >
-                        <DropdownMenuGroup>
-                            {/** Show the archive option if the skill group is active */}
-                            {skillGroup.status == "Active" && (
-                                <DropdownMenuItem onSelect={handleArchive}>
-                                    <ObjectIcons.Archive /> Archive
-                                </DropdownMenuItem>
-                            )}
-
-                            {/* Show the restore option if the skill group is archived */}
-                            {skillGroup.status == "Archived" && (
-                                <DropdownMenuItem onSelect={handleRestore}>
-                                    <ObjectIcons.Restore /> Restore
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
-                                        {
-                                            slug: organization.slug,
-                                            package_id: skillGroup.skillPackageId,
-                                            group_id: skillGroup.id,
-                                        },
+                    <DropdownMenuGroup>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            render={(allowed) => (
+                                <>
+                                    {/** Show the archive option if the skill group is active */}
+                                    {skillGroup.status == "Active" && (
+                                        <DropdownMenuItem
+                                            onSelect={handleArchive}
+                                            disabled={!allowed || archiveMutation.isPending}
+                                        >
+                                            <ObjectIcons.Archive /> Archive
+                                        </DropdownMenuItem>
                                     )}
+
+                                    {/* Show the restore option if the skill group is archived */}
+                                    {skillGroup.status == "Archived" && (
+                                        <DropdownMenuItem
+                                            onSelect={handleRestore}
+                                            disabled={!allowed || restoreMutation.isPending}
+                                        >
+                                            <ObjectIcons.Restore /> Restore
+                                        </DropdownMenuItem>
+                                    )}
+                                </>
+                            )}
+                        />
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            render={(allowed) => (
+                                <DropdownMenuItem
+                                    onSelect={() => setDeleteDialogOpen(true)}
+                                    className="text-destructive focus:text-destructive"
+                                    disabled={!allowed}
                                 >
-                                    <ObjectIcons.Edit /> Edit
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onSelect={() => setDeleteDialogOpen(true)}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                    </Protect>
+                                    <ObjectIcons.Delete /> Delete
+                                </DropdownMenuItem>
+                            )}
+                        />
+                    </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
 

@@ -12,13 +12,12 @@ import { toast } from "sonner";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     Table,
     TableBody,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/table";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
@@ -76,8 +76,8 @@ export default function AdminModule_D4hAccessToken_Page(
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -87,129 +87,130 @@ export default function AdminModule_D4hAccessToken_Page(
                     accessToken.label || `Access Token: ${accessToken.id}`,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/d4h-access-tokens", { slug })}
-                            tooltip="Back to access token list"
-                        />
-                        <Hermes.Title>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>
                             {accessToken.label || `Access Token: ${accessToken.id}`}
-                        </Hermes.Title>
-
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ d4hAccessToken: ["update"] }}
-                        >
-                            <Hermes.Action>
+                        </Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ d4hAccessToken: ["update"] }}
+                            >
                                 <Button variant="ghost" size="icon" onClick={handleRefresh}>
                                     <RefreshCwIcon />
                                 </Button>
-                            </Hermes.Action>
-                        </Protect>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>D4H Access Token</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Token ID</FieldLabel>
-                                    <FieldValue value={accessToken.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Server</FieldLabel>
-                                    <FieldValue
-                                        value={getD4HServer(accessToken.serverCode)?.name!}
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Label</FieldLabel>
-                                    <FieldValue value={accessToken.label} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={accessToken.status} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={accessToken.createdAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                    {/* <Card>
-                        <CardHeader>
-                            <CardTitle>Organizations</CardTitle>
-                            <CardDescription>
-                                List of organizations accessible with this
-                                access token.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeadCell className="text-center w-20">
-                                            D4H ID
-                                        </TableHeadCell>
-                                        <TableHeadCell>Name</TableHeadCell>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {accessToken.metadata.d4HOrganisations.map(
-                                        (org) => (
-                                            <TableRow key={org.id}>
-                                                <TableCell className="text-center">
-                                                    {org.id}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {org.title}
-                                                </TableCell>
+                            </Protect>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>D4H Access Token</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Token ID</DLTerm>
+                                        <DLDetails>{accessToken.id}</DLDetails>
+                                        <DLTerm>Server</DLTerm>
+                                        <DLDetails>
+                                            {getD4HServer(accessToken.serverCode)?.name}
+                                        </DLDetails>
+                                        <DLTerm>Label</DLTerm>
+                                        <DLDetails>{accessToken.label}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{accessToken.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            {/* <Card>
+                                <CardHeader>
+                                    <CardTitle>Organizations</CardTitle>
+                                    <CardDescription>
+                                        List of organizations accessible with this
+                                        access token.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHeadCell className="text-center w-20">
+                                                    D4H ID
+                                                </TableHeadCell>
+                                                <TableHeadCell>Name</TableHeadCell>
                                             </TableRow>
-                                        ),
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card> */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Teams</CardTitle>
-                            <CardDescription>
-                                List of teams accessible with this access token.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeadCell className="text-center w-20">
-                                            D4H ID
-                                        </TableHeadCell>
-                                        <TableHeadCell>Name</TableHeadCell>
-                                        <TableHeadCell>Organization</TableHeadCell>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {accessToken.metadata.d4HTeams.map((team) => (
-                                        <TableRow key={team.id}>
-                                            <TableCell className="text-center">{team.id}</TableCell>
-                                            <TableCell>{team.title}</TableCell>
-                                            <TableCell>{team.owner?.title}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {accessToken.metadata.d4HOrganisations.map(
+                                                (org) => (
+                                                    <TableRow key={org.id}>
+                                                        <TableCell className="text-center">
+                                                            {org.id}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {org.title}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ),
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card> */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Teams</CardTitle>
+                                    <CardDescription>
+                                        List of teams accessible with this access token.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHeadCell className="text-center w-20">
+                                                    D4H ID
+                                                </TableHeadCell>
+                                                <TableHeadCell>Name</TableHeadCell>
+                                                <TableHeadCell>Organization</TableHeadCell>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {accessToken.metadata.d4HTeams.map((team) => (
+                                                <TableRow key={team.id}>
+                                                    <TableCell className="text-center">
+                                                        {team.id}
+                                                    </TableCell>
+                                                    <TableCell>{team.title}</TableCell>
+                                                    <TableCell>{team.owner?.title}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(accessToken.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(accessToken.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

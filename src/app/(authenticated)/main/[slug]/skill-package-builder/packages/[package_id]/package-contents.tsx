@@ -98,7 +98,6 @@ export function SkillPackageBuilder_Package_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                tooltip="Add Group"
                                 onClick={() => setCreateGroupDialogOpen(true)}
                             >
                                 <ObjectIcons.Create />
@@ -106,7 +105,6 @@ export function SkillPackageBuilder_Package_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                tooltip="Reorder Groups"
                                 onClick={() => setReorderDialogOpen(true)}
                             >
                                 <ReorderIcon />

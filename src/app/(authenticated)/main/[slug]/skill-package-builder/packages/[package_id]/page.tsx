@@ -6,20 +6,20 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
-import Link from "next/link";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkillPackage } from "@/hooks/use-skill-package";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
@@ -34,8 +34,8 @@ export default function SkillPackageBuilder_Package_Page(
     const skillPackage = useSkillPackage(package_id);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -44,100 +44,83 @@ export default function SkillPackageBuilder_Package_Page(
                     skillPackage.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/skill-package-builder", { slug })}
-                            tooltip="Back to package list"
-                        />
-                        <Hermes.Title>{skillPackage.name}</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
+                        <Saratoga.Actions>
                             <SkillPackageBuilder_Package_Menu skillPackage={skillPackage} />
-                        </Hermes.Action>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Package Details</CardTitle>
-
-                            <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ organization: ["update"] }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        tooltip="Edit package"
-                                        asChild
-                                    >
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
-                                                { slug, package_id: skillPackage.id },
-                                            )}
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Package Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ organization: ["update"] }}
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Package ID</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        format="id"
-                                        value={skillPackage.id}
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skillPackage.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.description}
-                                    />
-                                </Field>
-                                <FieldSeparator />
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.createdAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.updatedAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skillPackage.status} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Published</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillPackage.published ? "Yes" : "No"}
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                    <SkillPackageBuilder_Package_Contents_List skillPackage={skillPackage} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
+                                                        { slug, package_id: skillPackage.id },
+                                                    )}
+                                                >
+                                                    <ObjectIcons.Edit />
+                                                </Link>
+                                            </Button>
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Package ID</DLTerm>
+                                        <DLDetails>{skillPackage.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{skillPackage.name}</DLDetails>
+                                        <DLTerm>Description</DLTerm>
+                                        <DLDetails>{skillPackage.description}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{skillPackage.status}</DLDetails>
+                                        <DLTerm>Published</DLTerm>
+                                        <DLDetails>
+                                            {skillPackage.published ? "Yes" : "No"}
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            <SkillPackageBuilder_Package_Contents_List
+                                skillPackage={skillPackage}
+                            />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillPackage.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillPackage.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillPackage.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillPackage.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

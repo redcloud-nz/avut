@@ -16,7 +16,7 @@ import {
     ItemDescription,
     ItemMedia,
     ItemTitle,
-} from "@/components/ui/items";
+} from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";

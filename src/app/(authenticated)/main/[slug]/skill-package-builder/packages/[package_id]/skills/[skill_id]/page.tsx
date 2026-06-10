@@ -6,20 +6,20 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
-import Link from "next/link";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkill } from "@/hooks/use-skill";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Skill_Menu } from "./skill-menu";
@@ -36,8 +36,8 @@ export default function SkillPackageBuilder_Skill_Page(
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -54,123 +54,114 @@ export default function SkillPackageBuilder_Skill_Page(
                     skill.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route(
-                                "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
-                                { slug, package_id, group_id: skill.skillGroup.id },
-                            )}
-                            tooltip={`Back to skill group: ${skill.skillGroup.name}`}
-                        />
-                        <Hermes.Title>{skill.name}</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{skill.name}</Saratoga.Title>
+                        <Saratoga.Actions>
                             <SkillPackageBuilder_Skill_Menu skill={skill} />
-                        </Hermes.Action>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Skill Details</CardTitle>
-
-                            <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ organization: ["update"] }}
-                                >
-                                    <Button variant="ghost" size="icon" asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
-                                                { slug, package_id, skill_id },
-                                            )}
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Skill Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ organization: ["update"] }}
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Skill ID</FieldLabel>
-                                    <FieldValue value={skill.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Package</FieldLabel>
-                                    <FieldValue>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]",
-                                                { slug, package_id },
-                                            )}
-                                        >
-                                            {skill.skillPackage.name}
-                                        </Link>
-                                    </FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Group</FieldLabel>
-                                    {skill.skillGroup ? (
-                                        <FieldValue>
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
+                                                        { slug, package_id, skill_id },
+                                                    )}
+                                                >
+                                                    <ObjectIcons.Edit />
+                                                </Link>
+                                            </Button>
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Skill ID</DLTerm>
+                                        <DLDetails>{skill.id}</DLDetails>
+                                        <DLTerm>Package</DLTerm>
+                                        <DLDetails>
                                             <Link
                                                 href={route(
-                                                    "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
-                                                    {
-                                                        slug,
-                                                        package_id,
-                                                        group_id: skill.skillGroup.id,
-                                                    },
+                                                    "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                                    { slug, package_id },
                                                 )}
                                             >
-                                                {skill.skillGroup.name}
+                                                {skill.skillPackage.name}
                                             </Link>
-                                        </FieldValue>
-                                    ) : (
-                                        <FieldValue value="" />
-                                    )}
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={skill.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue value={skill.description} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Required</FieldLabel>
-                                    <FieldValue value={skill.defaultRequired ? "Yes" : "No"} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Revalidation Frequency</FieldLabel>
-                                    <FieldValue
-                                        value={
-                                            skill.frequency ? `${skill.frequency} months` : "None"
-                                        }
-                                    />
-                                </Field>
-
-                                <FieldSeparator />
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue value={skill.createdAt} format="dateWithDistance" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue value={skill.updatedAt} format="dateWithDistance" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={skill.status} />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                        </DLDetails>
+                                        <DLTerm>Group</DLTerm>
+                                        <DLDetails>
+                                            {skill.skillGroup ? (
+                                                <Link
+                                                    href={route(
+                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                        {
+                                                            slug,
+                                                            package_id,
+                                                            group_id: skill.skillGroup.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    {skill.skillGroup.name}
+                                                </Link>
+                                            ) : (
+                                                ""
+                                            )}
+                                        </DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{skill.name}</DLDetails>
+                                        <DLTerm>Description</DLTerm>
+                                        <DLDetails>{skill.description}</DLDetails>
+                                        <DLTerm>Required</DLTerm>
+                                        <DLDetails>
+                                            {skill.defaultRequired ? "Yes" : "No"}
+                                        </DLDetails>
+                                        <DLTerm>Revalidation Frequency</DLTerm>
+                                        <DLDetails>
+                                            {skill.frequency ? `${skill.frequency} months` : "None"}
+                                        </DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{skill.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skill.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skill.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skill.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skill.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

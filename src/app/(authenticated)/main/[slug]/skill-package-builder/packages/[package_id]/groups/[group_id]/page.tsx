@@ -6,24 +6,24 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
-import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useSkillGroup } from "@/hooks/use-skill-group";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
-import { SkillPackageBuilder_Group_Menu } from "./group-menu";
 import { SkillPackageBuilder_Group_Contents_List } from "./group-contents";
+import { SkillPackageBuilder_Group_Menu } from "./group-menu";
 
 export default function SkillPackageBuilder_Group_Page(
     props: PageProps<`/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]`>,
@@ -37,8 +37,8 @@ export default function SkillPackageBuilder_Group_Page(
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -55,113 +55,89 @@ export default function SkillPackageBuilder_Group_Page(
                     skillGroup.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route(
-                                "/main/[slug]/skill-package-builder/packages/[package_id]",
-                                { slug, package_id },
-                            )}
-                            tooltip={`Back to package: ${skillGroup.skillPackage.name}`}
-                        />
-                        <Hermes.Title>{skillGroup.name}</Hermes.Title>
-                        <Hermes.Action>
-                            <SkillPackageBuilder_Group_Menu skillGroup={skillGroup} />
-                        </Hermes.Action>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Skill Group Details</CardTitle>
-
-                            <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ organization: ["update"] }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        tooltip="Edit skill group"
-                                        asChild
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{skillGroup.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ organization: ["update"] }}
+                            >
+                                <Button variant="ghost" size="icon" asChild>
+                                    <Link
+                                        href={route(
+                                            "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
+                                            { slug, package_id, group_id },
+                                        )}
                                     >
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
-                                                { slug, package_id, group_id },
-                                            )}
-                                        >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Group ID</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        format="id"
-                                        value={skillGroup.id}
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Package</FieldLabel>
-                                    <FieldValue className="min-w-1/2">
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]",
-                                                { slug, package_id },
-                                            )}
-                                        >
-                                            {skillGroup.skillPackage.name}
-                                        </Link>
-                                    </FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skillGroup.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillGroup.description ?? "-"}
-                                    />
-                                </Field>
-                                <FieldSeparator />
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillGroup.createdAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        className="min-w-1/2"
-                                        value={skillGroup.updatedAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue className="min-w-1/2" value={skillGroup.status} />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-
-                    <SkillPackageBuilder_Group_Contents_List
-                        skillGroup={skillGroup}
-                        skillPackage={skillGroup.skillPackage}
-                    />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                        <ObjectIcons.Edit />
+                                    </Link>
+                                </Button>
+                            </Protect>
+                            <SkillPackageBuilder_Group_Menu skillGroup={skillGroup} />
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Skill Group Details</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Group ID</DLTerm>
+                                        <DLDetails>{skillGroup.id}</DLDetails>
+                                        <DLTerm>Package</DLTerm>
+                                        <DLDetails>
+                                            <Link
+                                                href={route(
+                                                    "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                                    { slug, package_id },
+                                                )}
+                                            >
+                                                {skillGroup.skillPackage.name}
+                                            </Link>
+                                        </DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{skillGroup.name}</DLDetails>
+                                        <DLTerm>Description</DLTerm>
+                                        <DLDetails>{skillGroup.description ?? "-"}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{skillGroup.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            <SkillPackageBuilder_Group_Contents_List
+                                skillGroup={skillGroup}
+                                skillPackage={skillGroup.skillPackage}
+                            />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillGroup.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillGroup.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillGroup.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillGroup.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

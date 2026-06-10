@@ -9,20 +9,19 @@
 import { use } from "react";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
+import { Protect } from "@/components/protect";
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-
 import { trpc } from "@/trpc/client";
-import { MutationButton } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Protect } from "@/components/protect";
 
 export default function SkillsModule_CataloguePackage_Page(
     props: PageProps<`/main/[slug]/skills/catalogue/[package_id]`>,
@@ -76,23 +75,23 @@ export default function SkillsModule_CataloguePackage_Page(
     );
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Catalogue", href: route("/main/[slug]/skills/catalogue", { slug }) },
                     skillPackage.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/skills/catalogue", { slug })}
-                        />
-                        <Hermes.Title>{skillPackage.name}</Hermes.Title>
-                        <Protect orgId={organization.id} permissions={{ skills: ["subscribe"] }}>
-                            <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ skills: ["subscribe"] }}
+                            >
                                 {skillPackage.subscription ? (
                                     <MutationButton
                                         status={unsubscribeMutation.status}
@@ -124,77 +123,71 @@ export default function SkillsModule_CataloguePackage_Page(
                                         }
                                     />
                                 )}
-                            </Hermes.Action>
-                        </Protect>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Package Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Package ID</FieldLabel>
-                                    <FieldValue value={skillPackage.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue>{skillPackage.name}</FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Description</FieldLabel>
-                                    <FieldValue value={skillPackage.description} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Publisher</FieldLabel>
-                                    <FieldValue>{skillPackage.organization.name}</FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Skills</FieldLabel>
-                                    <FieldValue>{skillPackage.skillCount}</FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Subscribers</FieldLabel>
-                                    <FieldValue>{skillPackage.subscriptionCount}</FieldValue>
-                                </Field>
-                                <FieldSeparator />
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={skillPackage.createdAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={skillPackage.updatedAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                    {skillPackage.subscription && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Subscription Information</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup>
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Subscription ID</FieldLabel>
-                                        <FieldValue
-                                            value={skillPackage.subscription.id}
-                                            format="id"
-                                        />
-                                    </Field>
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    )}
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                            </Protect>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Package Information</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Package ID</DLTerm>
+                                        <DLDetails>{skillPackage.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{skillPackage.name}</DLDetails>
+                                        <DLTerm>Description</DLTerm>
+                                        <DLDetails>{skillPackage.description}</DLDetails>
+                                        <DLTerm>Publisher</DLTerm>
+                                        <DLDetails>{skillPackage.organization.name}</DLDetails>
+                                        <DLTerm>Skills</DLTerm>
+                                        <DLDetails>{skillPackage.skillCount}</DLDetails>
+                                        <DLTerm>Subscribers</DLTerm>
+                                        <DLDetails>{skillPackage.subscriptionCount}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            {skillPackage.subscription && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Subscription Information</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <DL>
+                                            <DLTerm>Subscription ID</DLTerm>
+                                            <DLDetails>{skillPackage.subscription.id}</DLDetails>
+                                        </DL>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillPackage.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillPackage.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(skillPackage.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(skillPackage.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

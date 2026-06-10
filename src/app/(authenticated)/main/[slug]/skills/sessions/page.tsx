@@ -5,7 +5,7 @@
  * Path: /main/[slug]/skills/sessions
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import SkillsModule_Sessions_List from "./sessions-list";
@@ -20,18 +20,16 @@ export default async function SkillsModule_Sessions_Page(
     const { slug } = await props.params;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <SkillsModule_Sessions_List />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <SkillsModule_Sessions_List />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

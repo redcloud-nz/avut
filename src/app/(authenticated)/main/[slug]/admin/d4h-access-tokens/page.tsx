@@ -2,10 +2,10 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /main/[slug]/admin/teams
+ * Paths: /main/[slug]/admin/d4h-access-tokens
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -23,18 +23,16 @@ export default async function AdminModule_D4hAccessTokens_Page(
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     "D4H Access Tokens",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <AdminModule_D4hAccessTokensList organization={organization} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <AdminModule_D4hAccessTokensList organization={organization} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

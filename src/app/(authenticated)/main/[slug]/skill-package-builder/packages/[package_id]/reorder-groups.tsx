@@ -15,6 +15,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -22,17 +23,12 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Field } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -41,7 +37,6 @@ import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
-import { Show } from "@/components/show";
 
 /**
  * Dialog component that allows users to reorder skill groups within a skill package using drag-and-drop functionality.
@@ -63,9 +58,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
             { enabled: props.open },
         ),
     );
-    const skillGroups = (groupsQuery.data ?? []).sort(
-        (a, b) => a.sequence - b.sequence,
-    );
+    const skillGroups = (groupsQuery.data ?? []).sort((a, b) => a.sequence - b.sequence);
 
     const [order, setOrder] = useState<SkillGroupId[]>([]);
 
@@ -110,8 +103,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                 <DialogHeader>
                     <DialogTitle>Reorder Groups</DialogTitle>
                     <DialogDescription>
-                        Drag and drop the groups to reorder them within the
-                        skill package{" "}
+                        Drag and drop the groups to reorder them within the skill package{" "}
                         <ObjectName>{skillPackage.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
@@ -123,9 +115,8 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                             <EmptyHeader>
                                 <EmptyTitle>No groups to reorder</EmptyTitle>
                                 <EmptyDescription>
-                                    This skill package does not contain any
-                                    groups to reorder. Please add groups to this
-                                    package before attempting to reorder.
+                                    This skill package does not contain any groups to reorder.
+                                    Please add groups to this package before attempting to reorder.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -143,10 +134,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                                 if (initialIndex != index) {
                                     setOrder((prevOrder) => {
                                         const newOrder = [...prevOrder];
-                                        const [removed] = newOrder.splice(
-                                            initialIndex,
-                                            1,
-                                        );
+                                        const [removed] = newOrder.splice(initialIndex, 1);
                                         newOrder.splice(index, 0, removed);
                                         return newOrder;
                                     });
@@ -156,30 +144,19 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                     >
                         <div className="space-y-2" id="sortable-group-list">
                             {order.map((groupId, index) => {
-                                const group = skillGroups.find(
-                                    (g) => g.id === groupId,
-                                )!;
+                                const group = skillGroups.find((g) => g.id === groupId)!;
 
                                 return (
                                     <SortableGroup
                                         key={groupId}
                                         group={group}
                                         index={index}
-                                        isLast={
-                                            index === skillGroups.length - 1
-                                        }
+                                        isLast={index === skillGroups.length - 1}
                                         onSwap={(fromIndex, toIndex) => {
                                             setOrder((prevOrder) => {
                                                 const newOrder = [...prevOrder];
-                                                const [moved] = newOrder.splice(
-                                                    fromIndex,
-                                                    1,
-                                                );
-                                                newOrder.splice(
-                                                    toIndex,
-                                                    0,
-                                                    moved,
-                                                );
+                                                const [moved] = newOrder.splice(fromIndex, 1);
+                                                newOrder.splice(toIndex, 0, moved);
                                                 return newOrder;
                                             });
                                         }}
@@ -189,7 +166,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                         </div>
                     </DragDropProvider>
 
-                    <DialogFooter>
+                    <Field orientation="horizontal">
                         <MutationButton
                             type="button"
                             onClick={() =>
@@ -206,10 +183,8 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                                 success: "Saved",
                             }}
                         />
-                        <DialogCloseButton variant="outline">
-                            Cancel
-                        </DialogCloseButton>
-                    </DialogFooter>
+                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    </Field>
                 </Show>
             </DialogContent>
         </Dialog>
@@ -248,12 +223,7 @@ function SortableGroup({
             )}
             data-dragging={isDragging}
         >
-            <Button
-                variant="ghost"
-                size="icon"
-                className="cursor-move"
-                ref={handleRef}
-            >
+            <Button variant="ghost" size="icon" className="cursor-move" ref={handleRef}>
                 <GripVerticalIcon />
             </Button>
 

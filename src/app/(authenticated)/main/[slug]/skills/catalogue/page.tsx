@@ -5,7 +5,7 @@
  * Paths: /main/[slug]/skills/catalogue
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 
 import { route } from "@/lib/routes";
@@ -22,18 +22,16 @@ export default async function SkillsModule_Catalogue_Page(
     const { slug } = await props.params;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Catalogue", href: route("/main/[slug]/skills/catalogue", { slug }) },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <SkillsModule_CataloguePackages_List />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <SkillsModule_CataloguePackages_List />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

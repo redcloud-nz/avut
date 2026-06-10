@@ -7,16 +7,16 @@
 
 import Link from "next/link";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
@@ -27,19 +27,41 @@ export default async function AdminModule_Organization_Page(
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     "Organization",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.Title>Organization</Hermes.Title>
-                        <Protect orgId={organization.id} permissions={{ organization: ["update"] }}>
-                            <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Organization</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ organization: ["update"] }}
+                            >
+                                <Button
+                                    variant="ghost"
+                                    tooltip="Edit Organization"
+                                    size="icon"
+                                    asChild
+                                >
+                                    <Link
+                                        href={route("/main/[slug]/admin/organization/--update", {
+                                            slug,
+                                        })}
+                                    >
+                                        <ObjectIcons.Edit />
+                                    </Link>
+                                </Button>
+                            </Protect>
+                            <Protect
+                                orgId={organization.id}
+                                permissions={{ organization: ["update"] }}
+                            >
                                 <Button
                                     variant="outline"
                                     tooltip="Organization Settings"
@@ -54,66 +76,45 @@ export default async function AdminModule_Organization_Page(
                                         <SettingsIcon />
                                     </Link>
                                 </Button>
-                            </Hermes.Action>
-                        </Protect>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{organization.name}</CardTitle>
-                            <CardAction>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ organization: ["update"] }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        tooltip="Edit Organization"
-                                        size="icon"
-                                        asChild
-                                    >
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/admin/organization/--update",
-                                                { slug },
-                                            )}
-                                        >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Organization ID</FieldLabel>
-                                    <FieldValue
-                                        format="id"
-                                        value={organization.id}
-                                        className="min-w-1/2"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={organization.name} className="min-w-1/2" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Slug</FieldLabel>
-                                    <FieldValue value={organization.slug} className="min-w-1/2" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={organization.createdAt}
-                                        format="dateTimeWithDistance"
-                                        className="min-w-1/2"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                            </Protect>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>{organization.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Organization ID</DLTerm>
+                                        <DLDetails>{organization.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{organization.name}</DLDetails>
+                                        <DLTerm>Slug</DLTerm>
+                                        <DLDetails>{organization.slug}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(organization.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(organization.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

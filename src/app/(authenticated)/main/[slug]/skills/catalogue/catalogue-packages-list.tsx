@@ -4,23 +4,23 @@
  */
 "use client";
 
-import { useMemo, useState } from "react";
-
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
-
 import Link from "next/link";
+import { useMemo } from "react";
 
-import { Akagi } from "@/components/blocks/akagi";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
+
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
 
 export function SkillsModule_CataloguePackages_List() {
     const organization = useOrganization();
@@ -33,73 +33,51 @@ export function SkillsModule_CataloguePackages_List() {
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof packages)[0]>((columnHelper) => [
+            Kaga.defineColumns<(typeof packages)[0]>((columnHelper) => [
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Package Name</Akagi.TableHeadCell>
-                    ),
+                    header: "Package Name",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/skills/catalogue/[package_id]", {
-                                    slug: organization.slug,
-                                    package_id: ctx.row.original.id,
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/skills/catalogue/[package_id]", {
+                                slug: organization.slug,
+                                package_id: ctx.row.original.id,
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("organization.name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Publisher</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Publisher",
+                    cell: (ctx) => ctx.getValue(),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("skillCount", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center" className="w-16">
-                            Skills
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue() + ""}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Skills",
+                    cell: (ctx) => ctx.getValue() + "",
                     enableSorting: false,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("subscriptionCount", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center" className="w-30">
-                            Subscriptions
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center" className="w-30">
-                            {ctx.getValue() + ""}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Subscriptions",
+                    cell: (ctx) => ctx.getValue() + "",
                     enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("subscription", {
                     id: "status",
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Status</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue() ? "Subscribed" : ""}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Status",
+                    cell: (ctx) => (ctx.getValue() ? "Subscribed" : ""),
                     enableSorting: false,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
             ]),
         [organization.slug],
@@ -118,11 +96,14 @@ export function SkillsModule_CataloguePackages_List() {
     });
 
     return (
-        <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Catalogue</Saratoga.Title>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
             </div>
-            <Akagi.Table table={table} />
-        </>
+        </Saratoga.Root>
     );
 }

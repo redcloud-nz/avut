@@ -15,7 +15,8 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
@@ -31,9 +32,6 @@ interface AdminModule_D4hAccessTokensListProps {
     organization: OrganizationData;
 }
 
-/**
- * List of D4H access tokens in the organization.
- */
 export function AdminModule_D4hAccessTokensList({
     organization,
 }: AdminModule_D4hAccessTokensListProps) {
@@ -45,51 +43,43 @@ export function AdminModule_D4hAccessTokensList({
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4HAccessToken>((columnHelper) => [
+            Kaga.defineColumns<D4HAccessToken>((columnHelper) => [
                 columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>ID</Akagi.TableHeadCell>
-                    ),
+                    header: "ID",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
-                                    slug: organization.slug,
-                                    token_id: ctx.getValue(),
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
+                                slug: organization.slug,
+                                token_id: ctx.getValue(),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("label", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Label</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Label",
+                    cell: (ctx) => ctx.getValue(),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("serverCode", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Server</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {getD4HServer(ctx.getValue())?.name}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Server",
+                    cell: (ctx) => getD4HServer(ctx.getValue())?.name,
+                    enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("createdAt", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Created At</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {new Date(ctx.getValue()).toLocaleString()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Created At",
+                    cell: (ctx) => new Date(ctx.getValue()).toLocaleString(),
+                    enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
             ]),
         [],
@@ -104,22 +94,27 @@ export function AdminModule_D4hAccessTokensList({
     });
 
     return (
-        <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
-                <Protect orgId={organization.id} permissions={{ d4hAccessToken: ["create"] }}>
-                    <Button variant="outline" asChild>
-                        <Link
-                            href={route("/main/[slug]/admin/d4h-access-tokens/--create", {
-                                slug: organization.slug,
-                            })}
-                        >
-                            <CreateNewIcon /> New
-                        </Link>
-                    </Button>
-                </Protect>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>D4H Access Tokens</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect orgId={organization.id} permissions={{ d4hAccessToken: ["create"] }}>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={route("/main/[slug]/admin/d4h-access-tokens/--create", {
+                                    slug: organization.slug,
+                                })}
+                            >
+                                <CreateNewIcon /> New
+                            </Link>
+                        </Button>
+                    </Protect>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
             </div>
-            <Akagi.Table table={table} />
-        </>
+        </Saratoga.Root>
     );
 }

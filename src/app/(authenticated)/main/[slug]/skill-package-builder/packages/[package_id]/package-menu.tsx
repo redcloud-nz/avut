@@ -211,75 +211,83 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
 
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["update"] }}
-                    >
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            {/* Show the archive option if the skill package is active */}
-                            {skillPackage.status == "Active" && (
-                                <DropdownMenuItem
-                                    onClick={handleArchive}
-                                    disabled={archiveMutation.isPending}
-                                >
-                                    <ObjectIcons.Archive /> Archive
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
-                                        { slug: organization.slug, package_id: skillPackage.id },
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageBuilder: ["update"] }}
+                            render={(allowed) => (
+                                <>
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    {/* Show the archive option if the skill package is active */}
+                                    {skillPackage.status == "Active" && (
+                                        <DropdownMenuItem
+                                            onClick={handleArchive}
+                                            disabled={!allowed || archiveMutation.isPending}
+                                        >
+                                            <ObjectIcons.Archive /> Archive
+                                        </DropdownMenuItem>
                                     )}
-                                >
-                                    <ObjectIcons.Edit /> Edit
-                                </Link>
-                            </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={route(
+                                                "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
+                                                {
+                                                    slug: organization.slug,
+                                                    package_id: skillPackage.id,
+                                                },
+                                            )}
+                                        >
+                                            <ObjectIcons.Edit /> Edit
+                                        </Link>
+                                    </DropdownMenuItem>
 
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{
-                                    skillPackageBuilder: ["delete"],
-                                }}
-                            >
+                                    {/* Show the publish option if the skill package is not published */}
+                                    {!skillPackage.published && (
+                                        <DropdownMenuItem
+                                            onClick={handlePublish}
+                                            disabled={!allowed || publishMutation.isPending}
+                                        >
+                                            <ObjectIcons.Publish /> Publish
+                                        </DropdownMenuItem>
+                                    )}
+                                    {/* Show the restore option if the skill package is archived */}
+                                    {skillPackage.status == "Archived" && (
+                                        <DropdownMenuItem
+                                            onClick={handleRestore}
+                                            disabled={!allowed || restoreMutation.isPending}
+                                        >
+                                            <ObjectIcons.Restore /> Restore
+                                        </DropdownMenuItem>
+                                    )}
+                                    {/* Show the unpublish option if the skill package is published */}
+                                    {skillPackage.published && (
+                                        <DropdownMenuItem
+                                            onClick={handleUnpublish}
+                                            disabled={!allowed || unpublishMutation.isPending}
+                                        >
+                                            <ObjectIcons.Unpublish /> Unpublish
+                                        </DropdownMenuItem>
+                                    )}
+                                </>
+                            )}
+                        />
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{
+                                skillPackageBuilder: ["delete"],
+                            }}
+                            render={(allowed) => (
                                 <DropdownMenuItem
                                     onSelect={() => setDeleteDialogOpen(true)}
                                     className="text-destructive focus:text-destructive"
+                                    disabled={!allowed}
                                 >
                                     <ObjectIcons.Delete /> Delete
                                 </DropdownMenuItem>
-                            </Protect>
-                            {/* Show the publish option if the skill package is not published */}
-                            {!skillPackage.published && (
-                                <DropdownMenuItem
-                                    onClick={handlePublish}
-                                    disabled={publishMutation.isPending}
-                                >
-                                    <ObjectIcons.Publish /> Publish
-                                </DropdownMenuItem>
                             )}
-                            {/* Show the restore option if the skill package is archived */}
-                            {skillPackage.status == "Archived" && (
-                                <DropdownMenuItem
-                                    onClick={handleRestore}
-                                    disabled={restoreMutation.isPending}
-                                >
-                                    <ObjectIcons.Restore /> Restore
-                                </DropdownMenuItem>
-                            )}
-                            {/* Show the unpublish option if the skill package is published */}
-                            {skillPackage.published && (
-                                <DropdownMenuItem
-                                    onClick={handleUnpublish}
-                                    disabled={unpublishMutation.isPending}
-                                >
-                                    <ObjectIcons.Unpublish /> Unpublish
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuGroup>
-                    </Protect>
+                        />
+                    </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
             <SkillPackageBuilder_DeletePackage_Dialog

@@ -4,11 +4,21 @@
  *
  */
 
-import { ComponentProps, Suspense } from "react";
+import { ComponentProps, ReactNode, Suspense } from "react";
 
-import { SidebarInset } from "@/components/ui/sidebar";
 import { Lexington } from "./lexington";
 import { RainbowSpinner } from "../ui/loading";
+
+function SidebarInset({ children }: { children: ReactNode }) {
+    return (
+        <div
+            data-component="LexingtonRoot"
+            className="relative flex w-full h-svh flex-1 flex-col bg-background"
+        >
+            {children}
+        </div>
+    );
+}
 
 function ScrollContainer({ children, className, ...props }: ComponentProps<"main">) {
     return (

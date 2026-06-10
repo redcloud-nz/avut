@@ -5,8 +5,10 @@
 
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -15,21 +17,14 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import Link from "next/link";
-
-import { Akagi } from "@/components/blocks/akagi";
+import Artie from "@/components/art/artie";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Show } from "@/components/show";
 
-import { OrganizationData } from "@/lib/schemas/organization";
-import { SkillPackage } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { trpc } from "@/trpc/client";
-
-import { SkillPackageBuilder_CreatePackage_Dialog } from "./create-package";
 import {
     Empty,
     EmptyContent,
@@ -38,15 +33,18 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import Artie from "@/components/art/artie";
+
+import { route } from "@/lib/routes";
+import { OrganizationData } from "@/lib/schemas/organization";
+import { SkillPackage } from "@/lib/schemas/skill-package";
+import { trpc } from "@/trpc/client";
+
+import { SkillPackageBuilder_CreatePackage_Dialog } from "./create-package";
 
 interface SkillPackageBuilder_Packages_ListProps {
     organization: OrganizationData;
 }
 
-/**
- * List of skill packages owned by the organization, with options to view, create, and manage packages.
- */
 export function SkillPackageBuilder_Packages_List({
     organization,
 }: SkillPackageBuilder_Packages_ListProps) {
@@ -60,65 +58,57 @@ export function SkillPackageBuilder_Packages_List({
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<RowData>((columnHelper) => [
+            Kaga.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
+                    header: "Name",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route(
-                                    "/main/[slug]/skill-package-builder/packages/[package_id]",
-                                    { slug: organization.slug, package_id: ctx.row.original.id },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route(
+                                "/main/[slug]/skill-package-builder/packages/[package_id]",
+                                { slug: organization.slug, package_id: ctx.row.original.id },
+                            )}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("description", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Description</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Description",
+                    cell: (ctx) => ctx.getValue(),
                     enableSorting: false,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            className="w-25"
-                            filterOptions={["Active", "Archived"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
-                    filterFn: "arrIncludesSome",
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Active", value: "Active" },
+                            { label: "Archived", value: "Archived" },
+                        ],
+                    },
                 }),
                 columnHelper.accessor("published", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} className="w-25">
-                            Published
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} className="text-center">
-                            {ctx.getValue() ? "Yes" : "No"}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Published",
+                    cell: (ctx) => (ctx.getValue() ? "Yes" : "No"),
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Yes", value: true },
+                            { label: "No", value: false },
+                        ],
+                    },
                 }),
             ]),
         [organization.slug],
@@ -132,8 +122,11 @@ export function SkillPackageBuilder_Packages_List({
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
-            columnFilters: [{ id: "status", value: ["Active"] }],
-            pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
+            columnFilters: [
+                { id: "status", value: ["Active"] },
+                { id: "published", value: [true] },
+            ],
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },
     });
@@ -141,7 +134,20 @@ export function SkillPackageBuilder_Packages_List({
     const [createPackageDialogOpen, setCreatePackageDialogOpen] = useState(false);
 
     return (
-        <>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Skill Packages</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect
+                        orgId={organization.id}
+                        permissions={{ skillPackageBuilder: ["create"] }}
+                    >
+                        <Button variant="outline" onClick={() => setCreatePackageDialogOpen(true)}>
+                            <CreateNewIcon /> New
+                        </Button>
+                    </Protect>
+                </Saratoga.Actions>
+            </Saratoga.Header>
             <Show
                 when={skillPackages.length > 0}
                 fallback={
@@ -170,23 +176,16 @@ export function SkillPackageBuilder_Packages_List({
                     </Empty>
                 }
             >
-                <div className="flex items-center justify-between">
-                    <Akagi.TableSearch table={table} />
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["create"] }}
-                    >
-                        <Button variant="outline" onClick={() => setCreatePackageDialogOpen(true)}>
-                            <CreateNewIcon /> New
-                        </Button>
-                    </Protect>
+                <div>
+                    <Kaga.TableToolbar table={table} />
+                    <Kaga.Table table={table} />
+                    <Kaga.TablePagination table={table} />
                 </div>
-                <Akagi.Table table={table} />
             </Show>
             <SkillPackageBuilder_CreatePackage_Dialog
                 open={createPackageDialogOpen}
                 onOpenChange={setCreatePackageDialogOpen}
             />
-        </>
+        </Saratoga.Root>
     );
 }

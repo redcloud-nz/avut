@@ -22,14 +22,11 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_DeleteSkill_Dialog } from "./delete-skill";
@@ -117,59 +114,53 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["update"] }}
-                        fallback={
-                            <Empty size="sm">
-                                <EmptyHeader>
-                                    <EmptyTitle>No Actions Available</EmptyTitle>
-                                    <EmptyDescription>
-                                        You do not have permission to perform any actions on this
-                                        skill.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    >
-                        <DropdownMenuGroup>
-                            {/* Show the archive option if the skill package is active */}
-                            {skill.status == "Active" && (
-                                <DropdownMenuItem onClick={handleArchive}>
-                                    <ObjectIcons.Archive /> Archive
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => setMoveDialogOpen(true)}>
-                                <ObjectIcons.Move /> Move
-                            </DropdownMenuItem>
-                            {/* Show the restore option if the skill package is archived */}
-                            {skill.status == "Archived" && (
-                                <DropdownMenuItem onClick={handleRestore}>
-                                    <ObjectIcons.Restore /> Restore
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={route(
-                                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
-                                        {
-                                            slug: organization.slug,
-                                            package_id: skill.skillPackageId,
-                                            skill_id: skill.id,
-                                        },
+                    <DropdownMenuGroup>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageBuilder: ["update"] }}
+                            render={(allowed) => (
+                                <>
+                                    {/* Show the archive option if the skill package is active */}
+                                    {skill.status == "Active" && (
+                                        <DropdownMenuItem
+                                            onClick={handleArchive}
+                                            disabled={!allowed}
+                                        >
+                                            <ObjectIcons.Archive /> Archive
+                                        </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuItem
+                                        onClick={() => setMoveDialogOpen(true)}
+                                        disabled={!allowed}
+                                    >
+                                        <ObjectIcons.Move /> Move
+                                    </DropdownMenuItem>
+                                    {/* Show the restore option if the skill package is archived */}
+                                    {skill.status == "Archived" && (
+                                        <DropdownMenuItem
+                                            onClick={handleRestore}
+                                            disabled={!allowed}
+                                        >
+                                            <ObjectIcons.Restore /> Restore
+                                        </DropdownMenuItem>
+                                    )}
+                                </>
+                            )}
+                        />
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            render={(allowed) => (
+                                <DropdownMenuItem
+                                    onClick={() => setDeleteDialogOpen(true)}
+                                    className="text-destructive focus:text-destructive"
+                                    disabled={!allowed}
                                 >
-                                    <ObjectIcons.Edit /> Edit
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => setDeleteDialogOpen(true)}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                    </Protect>
+                                    <ObjectIcons.Delete /> Delete
+                                </DropdownMenuItem>
+                            )}
+                        />
+                    </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
 
