@@ -228,20 +228,6 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                             <ObjectIcons.Archive /> Archive
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
-                                                {
-                                                    slug: organization.slug,
-                                                    package_id: skillPackage.id,
-                                                },
-                                            )}
-                                        >
-                                            <ObjectIcons.Edit /> Edit
-                                        </Link>
-                                    </DropdownMenuItem>
-
                                     {/* Show the publish option if the skill package is not published */}
                                     {!skillPackage.published && (
                                         <DropdownMenuItem

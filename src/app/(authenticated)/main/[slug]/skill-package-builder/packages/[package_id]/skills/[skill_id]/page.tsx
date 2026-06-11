@@ -11,9 +11,7 @@ import { use } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
@@ -23,6 +21,7 @@ import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Skill_Menu } from "./skill-menu";
+import { SkillPackageBuilder_UpdateSkill_Dialog } from "./update-skill";
 
 export default function SkillPackageBuilder_Skill_Page(
     props: PageProps<`/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]`>,
@@ -70,18 +69,9 @@ export default function SkillPackageBuilder_Skill_Page(
                                     <CardAction>
                                         <Protect
                                             orgId={organization.id}
-                                            permissions={{ organization: ["update"] }}
+                                            permissions={{ skillPackageBuilder: ["update"] }}
                                         >
-                                            <Button variant="ghost" size="icon" asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/--update",
-                                                        { slug, package_id, skill_id },
-                                                    )}
-                                                >
-                                                    <ObjectIcons.Edit />
-                                                </Link>
-                                            </Button>
+                                            <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
                                         </Protect>
                                     </CardAction>
                                 </CardHeader>

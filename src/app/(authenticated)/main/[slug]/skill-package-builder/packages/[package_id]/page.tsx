@@ -6,14 +6,11 @@
  */
 "use client";
 
-import Link from "next/link";
 import { use } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
@@ -24,6 +21,7 @@ import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Package_Contents_List } from "./package-contents";
 import { SkillPackageBuilder_Package_Menu } from "./package-menu";
+import { SkillPackageBuilder_UpdatePackage_Dialog } from "./update-package";
 
 export default function SkillPackageBuilder_Package_Page(
     props: PageProps<`/main/[slug]/skill-package-builder/packages/[package_id]`>,
@@ -60,18 +58,11 @@ export default function SkillPackageBuilder_Package_Page(
                                     <CardAction>
                                         <Protect
                                             orgId={organization.id}
-                                            permissions={{ organization: ["update"] }}
+                                            permissions={{ skillPackageBuilder: ["update"] }}
                                         >
-                                            <Button variant="ghost" size="icon" asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/main/[slug]/skill-package-builder/packages/[package_id]/--update",
-                                                        { slug, package_id: skillPackage.id },
-                                                    )}
-                                                >
-                                                    <ObjectIcons.Edit />
-                                                </Link>
-                                            </Button>
+                                            <SkillPackageBuilder_UpdatePackage_Dialog
+                                                skillPackage={skillPackage}
+                                            />
                                         </Protect>
                                     </CardAction>
                                 </CardHeader>

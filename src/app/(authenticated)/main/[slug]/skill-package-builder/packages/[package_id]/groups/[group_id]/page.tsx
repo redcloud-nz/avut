@@ -11,10 +11,8 @@ import { use } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -24,6 +22,7 @@ import { route } from "@/lib/routes";
 
 import { SkillPackageBuilder_Group_Contents_List } from "./group-contents";
 import { SkillPackageBuilder_Group_Menu } from "./group-menu";
+import { SkillPackageBuilder_UpdateGroup_Dialog } from "./update-group";
 
 export default function SkillPackageBuilder_Group_Page(
     props: PageProps<`/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]`>,
@@ -60,21 +59,6 @@ export default function SkillPackageBuilder_Group_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>{skillGroup.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ organization: ["update"] }}
-                            >
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        href={route(
-                                            "/main/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/--update",
-                                            { slug, package_id, group_id },
-                                        )}
-                                    >
-                                        <ObjectIcons.Edit />
-                                    </Link>
-                                </Button>
-                            </Protect>
                             <SkillPackageBuilder_Group_Menu skillGroup={skillGroup} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
@@ -83,6 +67,16 @@ export default function SkillPackageBuilder_Group_Page(
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Skill Group Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ skillPackageBuilder: ["update"] }}
+                                        >
+                                            <SkillPackageBuilder_UpdateGroup_Dialog
+                                                skillGroup={skillGroup}
+                                            />
+                                        </Protect>
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DL>
