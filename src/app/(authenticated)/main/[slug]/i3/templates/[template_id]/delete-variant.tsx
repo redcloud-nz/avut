@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,35 +23,38 @@ import { ObjectName } from "@/components/ui/typography";
 
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { I3Template } from "@/lib/schemas/i3-template";
+import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { trpc } from "@/trpc/client";
 
-interface I3Module_DeleteTemplate_DialogProps extends AlertDialogProps {
+interface I3Module_DeleteVariant_DialogProps extends AlertDialogProps {
     template: I3Template;
+    variant: I3TemplateVariant;
 }
 
-export function I3Module_DeleteTemplate_Dialog({
+export function I3Module_DeleteVariant_Dialog({
     template,
+    variant,
     ...props
-}: I3Module_DeleteTemplate_DialogProps) {
-    const logger = useLogger("I3", "DeleteTemplate");
+}: I3Module_DeleteVariant_DialogProps) {
+    const logger = useLogger("I3", "DeleteVariant");
     const organization = useOrganization();
     const queryClient = useQueryClient();
-    const router = useRouter();
 
     const mutation = useMutation(
-        trpc.i3.deleteTemplate.mutationOptions({
+        trpc.i3.deleteTemplateVariant.mutationOptions({
             onError(error) {
-                logger.error("Failed to delete template", error);
-                toast.error(`Failed to delete template: ${error.message}`);
+                logger.error("Failed to delete template variant", error);
+                toast.error(`Failed to delete template variant: ${error.message}`);
             },
             async onSuccess() {
-                logger.info(`Template "${template.name}" deleted.`);
-                toast.success(`Template "${template.name}" deleted.`);
+                logger.info(
+                    `Template variant "${variant.name}" deleted from template "${template.name}".`,
+                );
+                toast.success(
+                    `Template variant "${variant.name}" deleted from template "${template.name}".`,
+                );
                 handleOpenChange(false);
-
-                router.push(route("/main/[slug]/i3/templates", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
                     trpc.i3.listTemplates.queryFilter({
@@ -74,10 +76,11 @@ export function I3Module_DeleteTemplate_Dialog({
         <AlertDialog {...props} onOpenChange={handleOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete I3 Template</AlertDialogTitle>
+                    <AlertDialogTitle>Delete I3 Template Variant</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of template <ObjectName>{template.name}</ObjectName>. This
-                        action cannot be undone.
+                        Confirm deletion of template variant <ObjectName>{variant.name}</ObjectName>{" "}
+                        from template <ObjectName>{template.name}</ObjectName>. This action cannot
+                        be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -88,6 +91,7 @@ export function I3Module_DeleteTemplate_Dialog({
                             mutation.mutate({
                                 organizationId: organization.id,
                                 templateId: template.id,
+                                variantId: variant.id,
                             })
                         }
                         status={mutation.status}

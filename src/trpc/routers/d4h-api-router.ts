@@ -109,7 +109,7 @@ export const d4hApiRouter = createTrpcRouter({
                 )
             ).flat();
 
-            return R.uniqueBy(brands, (b) => b.id);
+            return R.uniqueBy(brands, (b) => b.id).sort((a, b) => a.title.localeCompare(b.title));
         }),
 
     /**
@@ -158,7 +158,9 @@ export const d4hApiRouter = createTrpcRouter({
                 )
             ).flat();
 
-            return R.uniqueBy(categories, (c) => c.id);
+            return R.uniqueBy(categories, (c) => c.id).sort((a, b) =>
+                a.title.localeCompare(b.title),
+            );
         }),
 
     /**
@@ -298,7 +300,7 @@ export const d4hApiRouter = createTrpcRouter({
                 )
             ).flat();
 
-            return R.uniqueBy(models, (m) => m.id);
+            return R.uniqueBy(models, (m) => m.id).sort((a, b) => a.title.localeCompare(b.title));
         }),
 
     /**

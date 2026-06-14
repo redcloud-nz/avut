@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const alertVariants = tv({
     base: cn(
         // Base styles
-        "grid gap-0.5 rounded-none border px-2.5 py-2 text-left text-xs w-full relative group/alert",
+        "group/alert relative grid w-full gap-0.5 rounded-lg border px-2.5 py-2 text-left text-xs",
 
         "has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18",
         "has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2",
@@ -71,7 +71,7 @@ export function AlertTitle({ className, ...props }: ComponentProps<"div">) {
         <div
             data-slot="alert-title"
             className={cn(
-                "[&_a]:hover:text-foreground font-medium group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3",
+                "[&_a]:hover:text-foreground font-medium group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 ",
                 className,
             )}
             {...props}

@@ -5,6 +5,7 @@
 
 export interface AVUTLogger {
     log(message: string, ...data: any[]): void;
+    info(message: string, ...data: any[]): void;
     debug(message: string, ...data: any[]): void;
     error(message: string, ...optionalParams: any[]): void;
     warn(message: string, ...optionalParams: any[]): void;
@@ -25,6 +26,9 @@ export class AVUTConsoleLogger implements AVUTLogger {
 
     log(message: string, ...data: any[]) {
         console.log(`[${this.name}] ${message}`, ...data);
+    }
+    info(message: string, ...data: any[]) {
+        console.info(`[${this.name}] ${message}`, ...data);
     }
 
     debug(message: string, ...data: any[]) {

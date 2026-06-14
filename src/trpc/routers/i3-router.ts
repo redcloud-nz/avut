@@ -312,11 +312,71 @@ export const i3Router = createTrpcRouter({
                     action: "Update",
                     objectType: "I3Template",
                     objectId: templateId,
-                    changes: diffObject(existing, update),
+                    changes: diffObject(I3Template.modifiableSchema.parse(existing), update),
                 }),
             ]);
 
             return { updated: I3Template.fromRecord(updated) };
+        }),
+
+    updateTemplateVariant: organizationProcedure({ i3Template: ["update"] })
+        .input(
+            z.object({
+                templateId: I3TemplateId.schema,
+                variantId: I3TemplateVariantId.schema,
+                update: I3TemplateVariant.modifiableSchema,
+            }),
+        )
+        .output(z.object({ updated: I3TemplateVariant.schema }))
+        .mutation(async ({ ctx, input: { templateId, variantId, update } }) => {
+            const existing = await ctx.prisma.i3TemplateVariant.findUnique({
+                where: {
+                    id: variantId,
+                    template: {
+                        id: templateId,
+                        organizationId: ctx.organizationId,
+                    },
+                },
+                include: { d4h: true },
+            });
+
+            if (!existing)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.i3TemplateVariantNotFound(variantId),
+                });
+
+            const [updated] = await Promise.all([
+                ctx.prisma.i3TemplateVariant.update({
+                    where: { id: variantId },
+                    data: {
+                        name: update.name,
+                        d4h: update.d4h
+                            ? {
+                                  upsert: {
+                                      create: {
+                                          ...update.d4h,
+                                      },
+                                      update: {
+                                          ...update.d4h,
+                                      },
+                                  },
+                              }
+                            : {
+                                  delete: true,
+                              },
+                    },
+                    include: { d4h: true },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "I3TemplateVariant",
+                    objectId: variantId,
+                    changes: diffObject(I3TemplateVariant.modifiableSchema.parse(existing), update),
+                }),
+            ]);
+
+            return { updated: I3TemplateVariant.fromRecord(updated) };
         }),
 });
 

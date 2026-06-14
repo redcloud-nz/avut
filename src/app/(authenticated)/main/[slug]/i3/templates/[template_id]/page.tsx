@@ -8,21 +8,19 @@
 
 import { use } from "react";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
-import { ObjectIcons } from "@/components/icons";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
-import Link from "next/link";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { useI3Template } from "@/hooks/use-i3-template";
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { I3Module_Template_Menu } from "./template-menu";
+import { I3Module_UpdateTemplate_Dialog } from "./update-template";
 import { I3Module_Template_Variants_List } from "./template-variants";
 
 export default function I3Module_Template_Page(
@@ -33,114 +31,87 @@ export default function I3Module_Template_Page(
     const template = useI3Template(template_id);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug }) },
                     { label: "Templates", href: route("/main/[slug]/i3/templates", { slug }) },
                     template.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/i3/templates", { slug })}
-                            tooltip="Back to templates"
-                        />
-                        <Hermes.Title>{template.name}</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{template.name}</Saratoga.Title>
+                        <Saratoga.Actions>
                             <I3Module_Template_Menu template={template} />
-                        </Hermes.Action>
-                    </Hermes.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Template Details</CardTitle>
-                            <CardAction className="flex gap-2">
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ i3Template: ["update"] }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        tooltip="Edit template"
-                                        asChild
-                                    >
-                                        <Link
-                                            href={route(
-                                                "/main/[slug]/i3/templates/[template_id]/--update",
-                                                { slug, template_id: template.id },
-                                            )}
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Template Details</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ i3Template: ["update"] }}
                                         >
-                                            <ObjectIcons.Edit />
-                                        </Link>
-                                    </Button>
-                                </Protect>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={template.name} />
-                                </Field>
-                                {template.description && (
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Description</FieldLabel>
-                                        <FieldValue value={template.description} />
-                                    </Field>
-                                )}
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>D4H Category</FieldLabel>
-                                    <FieldValue value={template.d4h?.categoryTitle ?? ""} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>D4H Kind</FieldLabel>
-                                    <FieldValue value={template.d4h?.kindTitle ?? ""} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Require Serial Number</FieldLabel>
-                                    <FieldValue value={template.d4h?.requireSN ? "Yes" : "No"} />
-                                </Field>
-
-                                {/* <Field>
-                                    <FieldLabel>
-                                        D4H Output Format Ref
-                                    </FieldLabel>
-                                    <FieldValue
-                                        value={
-                                            template.d4h?.outputRefFormat ?? ""
-                                        }
-                                        format="tmplExpr"
-                                    />
-                                </Field> */}
-                                <FieldSeparator />
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={template.status} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={template.createdAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={template.updatedAt}
-                                        format="dateWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                    <I3Module_Template_Variants_List template={template} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                                            <I3Module_UpdateTemplate_Dialog template={template} />
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{template.name}</DLDetails>
+                                        {template.description && (
+                                            <>
+                                                <DLTerm>Description</DLTerm>
+                                                <DLDetails>{template.description}</DLDetails>
+                                            </>
+                                        )}
+                                        <DLTerm>D4H Category</DLTerm>
+                                        <DLDetails>{template.d4h?.categoryTitle}</DLDetails>
+                                        <DLTerm>D4H Kind</DLTerm>
+                                        <DLDetails>{template.d4h?.kindTitle}</DLDetails>
+                                        <DLTerm>Require Serial Number</DLTerm>
+                                        <DLDetails>
+                                            {template.d4h?.requireSN ? "Yes" : "No"}
+                                        </DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{template.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                            <I3Module_Template_Variants_List template={template} />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(template.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(template.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(template.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(template.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
