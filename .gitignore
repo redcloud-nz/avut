@@ -44,3 +44,5 @@ next-env.d.ts
 .env*.local
 
 src/app/system/scratch/
+# Ideas
+.ideas/
