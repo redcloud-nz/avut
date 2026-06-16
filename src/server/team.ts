@@ -24,15 +24,15 @@ import prisma from "./prisma";
  * @param teamId The ID of the team.
  * @returns The team data.
  */
-export async function getTeamById(
-    organizationId: OrganizationId,
-    teamId: string,
-) {
+export async function getTeamById(organizationId: OrganizationId, teamId: string) {
     "use cache";
     cacheTag(`team-${teamId}`);
 
     const team = await prisma.team.findUnique({
         where: { organizationId: organizationId, id: teamId },
+        include: {
+            d4h: true,
+        },
     });
 
     if (!team) return notFound();

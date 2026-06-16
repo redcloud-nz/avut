@@ -81,7 +81,6 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
                                 "/main/[slug]/d4h-views/equipment/categories/[category_id]",
                                 { slug: organization.slug, category_id: String(categoryId) },
                             )}
-                            tooltip={`Back to category ${kind.category.title}`}
                         />
                         <Hermes.Title>{kind.title}</Hermes.Title>
                     </Hermes.Header>

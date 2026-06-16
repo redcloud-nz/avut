@@ -121,7 +121,6 @@ export default function AdminModule_Settings_Page(
                             <Hermes.Header>
                                 <Hermes.BackButton
                                     href={route("/main/[slug]/admin/organization", { slug })}
-                                    tooltip="Back to organization overview"
                                 />
                                 <Hermes.Title>Organization Settings</Hermes.Title>
                             </Hermes.Header>

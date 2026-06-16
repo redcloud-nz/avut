@@ -226,7 +226,7 @@ export const teamsRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                         id: teamId,
                     },
-                    select: { id: true, type: true },
+                    select: { id: true },
                 }),
                 ctx.prisma.teamMembership.findUnique({
                     where: {
@@ -307,10 +307,7 @@ export const teamsRouter = createTrpcRouter({
                 },
             });
 
-            const changes = diffObject(
-                {},
-                { ...create, type: "D4HDefined", properties: { d4hTeamId } },
-            );
+            const changes = diffObject({}, { ...create, properties: { d4hTeamId } });
 
             const [createdTeam] = await Promise.all([
                 // Update additional fields
@@ -319,7 +316,7 @@ export const teamsRouter = createTrpcRouter({
                     data: {
                         description: create.description,
                         tags: create.tags,
-                        type: "D4HDefined",
+
                         properties: {
                             d4hTeamId,
                             d4hTeamName: d4hTeam.title,

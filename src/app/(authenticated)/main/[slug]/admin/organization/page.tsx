@@ -43,12 +43,7 @@ export default async function AdminModule_Organization_Page(
                                 orgId={organization.id}
                                 permissions={{ organization: ["update"] }}
                             >
-                                <Button
-                                    variant="ghost"
-                                    tooltip="Edit Organization"
-                                    size="icon"
-                                    asChild
-                                >
+                                <Button variant="ghost" size="icon" asChild>
                                     <Link
                                         href={route("/main/[slug]/admin/organization/--update", {
                                             slug,
@@ -62,12 +57,7 @@ export default async function AdminModule_Organization_Page(
                                 orgId={organization.id}
                                 permissions={{ organization: ["update"] }}
                             >
-                                <Button
-                                    variant="outline"
-                                    tooltip="Organization Settings"
-                                    size="icon"
-                                    asChild
-                                >
+                                <Button variant="outline" size="icon" asChild>
                                     <Link
                                         href={route("/main/[slug]/admin/organization/settings", {
                                             slug,

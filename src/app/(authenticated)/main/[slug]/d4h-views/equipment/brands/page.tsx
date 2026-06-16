@@ -172,7 +172,6 @@ export default function D4HViewsModule_EquipmentBrands_Page(
                             href={route("/main/[slug]/d4h-views/equipment", {
                                 slug: organization.slug,
                             })}
-                            tooltip="Back to Equipment"
                         />
                         <Hermes.Title>Equipment Brands</Hermes.Title>
                         <Hermes.Search>

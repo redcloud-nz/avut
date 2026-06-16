@@ -66,7 +66,6 @@ export default function SkillsModule_SessionDetails_Page(
                                 slug,
                                 session_id,
                             })}
-                            tooltip="Back to session"
                         />
                         <Hermes.Title>Session Details</Hermes.Title>
                     </Hermes.Header>

@@ -43,7 +43,6 @@ export default function AdminModule_OrganizationUpdate_Page(
                         <Hermes.Header>
                             <Hermes.BackButton
                                 href={route("/main/[slug]/admin/organization", { slug })}
-                                tooltip="Back to Organisation"
                             />
                         </Hermes.Header>
                         <Card>

@@ -72,7 +72,6 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                             href={route("/main/[slug]/d4h-views/equipment/categories", {
                                 slug: organization.slug,
                             })}
-                            tooltip="Back to categories"
                         />
                         <Hermes.Title>{category.title}</Hermes.Title>
                     </Hermes.Header>

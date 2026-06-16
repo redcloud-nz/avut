@@ -194,7 +194,6 @@ export default function I3Module_Issue_FormInstance_Page(
                     <Hermes.Header>
                         <Hermes.BackButton
                             href={route("/main/[slug]/i3/forms/issue-items", { slug })}
-                            tooltip="Back to Form List"
                         />
                         <Hermes.Title>Issue Items</Hermes.Title>
                     </Hermes.Header>

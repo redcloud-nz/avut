@@ -27,6 +27,7 @@ async function getTeams(organizationId: OrganizationId): Promise<
             organizationId: organizationId,
         },
         include: {
+            d4h: true,
             teamMemberships: {
                 include: {
                     person: true,
@@ -74,10 +75,7 @@ export default async function Pub_PPEIssue_Page(props: PageProps<"/pub/orgs/[slu
             <Lexington.Page>
                 <Lexington.Column width="md">
                     <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/pub/orgs/[slug]/forms/ppe", { slug })}
-                            tooltip="Back to PPE Forms"
-                        />
+                        <Hermes.BackButton href={route("/pub/orgs/[slug]/forms/ppe", { slug })} />
                         <Hermes.Title>Issue PPE</Hermes.Title>
                     </Hermes.Header>
                     <Card>
