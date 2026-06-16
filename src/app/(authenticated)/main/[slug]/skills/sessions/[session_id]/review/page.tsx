@@ -13,8 +13,8 @@ import { toast } from "sonner";
 
 import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
@@ -153,8 +153,8 @@ export default function SkillsModule_SessionReview_Page(
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
@@ -168,18 +168,11 @@ export default function SkillsModule_SessionReview_Page(
                     "Review",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/skills/sessions/[session_id]", {
-                                slug,
-                                session_id,
-                            })}
-                        />
-                        <Hermes.Title>Review</Hermes.Title>
-                    </Hermes.Header>
-
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Review</Saratoga.Title>
+                    </Saratoga.Header>
                     <Show when={session.status === "Include"}>
                         <Alert>
                             <AlertTitle>Already approved</AlertTitle>
@@ -244,9 +237,9 @@ export default function SkillsModule_SessionReview_Page(
                             </CardContent>
                         </Card>
                     </Show>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
 

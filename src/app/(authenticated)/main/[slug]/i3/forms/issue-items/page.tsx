@@ -14,8 +14,8 @@ import { useRouter } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { newFormInstanceMutation } from "@/client/form-queries";
-import { Lexington } from "@/components/blocks/lexington";
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
@@ -86,28 +86,28 @@ export default function I3Module_Issue_FormInstanceList_Page() {
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Forms" },
                     { label: "Issue Items" },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.Title>Issue Items</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Issue Items</Saratoga.Title>
+                        <Saratoga.Actions>
                             <Button onClick={handleNewForm} variant="outline">
                                 <ObjectIcons.Create /> New
                             </Button>
-                        </Hermes.Action>
-                        <Hermes.Description className="text-xs text-muted-foreground mb-4">
-                            Your current draft forms are listed below. Click on a form to continue
-                            editing, or create a new form to issue items.
-                        </Hermes.Description>
-                    </Hermes.Header>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <p className="text-sm text-muted-foreground">
+                        Your current draft forms are listed below. Click on a form to continue
+                        editing, or create a new form to issue items.
+                    </p>
                     <Show
                         when={sortedInstances.length > 0}
                         fallback={
@@ -169,8 +169,8 @@ export default function I3Module_Issue_FormInstanceList_Page() {
                             })}
                         </ItemGroup>
                     </Show>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

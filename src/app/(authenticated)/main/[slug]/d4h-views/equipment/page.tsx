@@ -7,8 +7,7 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import {
     Item,
     ItemActions,
@@ -27,19 +26,15 @@ export default async function D4HViewsModule_Equipment_Page(
     const { slug } = await props.params;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
                     "Equipment",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">D4H Views Module - Equipment</div>
-                    </div>
+            <Std.ScrollContainer>
+                <Std.IndexPage title="D4H Views Module - Equipment">
                     <ItemGroup>
                         <Item asChild>
                             <Link href={route("/main/[slug]/d4h-views/equipment/brands", { slug })}>
@@ -72,8 +67,8 @@ export default async function D4HViewsModule_Equipment_Page(
                             </Link>
                         </Item>
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

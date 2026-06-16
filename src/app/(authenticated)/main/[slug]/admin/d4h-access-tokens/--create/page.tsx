@@ -5,8 +5,7 @@
  * Paths: /main/[slug]/admin/d4h-access-tokens/--create
  */
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { route } from "@/lib/routes";
@@ -25,40 +24,27 @@ export default async function AdminModule_CreateD4hAccessToken_Page(
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
                         label: "D4H Access Tokens",
                         href: route("/main/[slug]/admin/d4h-access-tokens", { slug }),
                     },
-                    {
-                        label: "Create",
-                    },
+                    "Create",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton
-                                href={route("/main/[slug]/admin/d4h-access-tokens", { slug })}
-                            />
-                        </Hermes.Header>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>New D4H Access Token</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <AdminModule_CreateD4hAccessToken_Form
-                                    organization={organization}
-                                />
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>New D4H Access Token</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AdminModule_CreateD4hAccessToken_Form organization={organization} />
+                    </CardContent>
+                </Card>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

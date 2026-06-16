@@ -5,7 +5,7 @@
  * Path: /main/[slug]/d4h-views/personnel
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { route } from "@/lib/routes";
@@ -44,18 +44,16 @@ export default async function D4HViewsModules_Personnel_Page(
     const members = teams.flatMap((t) => t.members.map((m) => ({ ...m, team: t })));
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
                     "Personnel",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <D4HViewsModules_Personnel_List members={members} teams={teams} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <D4HViewsModules_Personnel_List members={members} teams={teams} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

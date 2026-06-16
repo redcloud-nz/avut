@@ -5,25 +5,25 @@
  * Path: /main/[slug]/account/profile
  */
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { UserProfileInfo_Card } from "@/components/cards/user-profile-info";
 import { UserLinkedAccounts_Card } from "@/components/cards/user-linked-accounts";
 
 export default function Account_Profile_Page() {
     return (
-        <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Account", "Profile"]} />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.Title>Profile</Hermes.Title>
-                    </Hermes.Header>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={["Account", "Profile"]} />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Profile</Saratoga.Title>
+                    </Saratoga.Header>
                     <UserProfileInfo_Card />
                     <UserLinkedAccounts_Card />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

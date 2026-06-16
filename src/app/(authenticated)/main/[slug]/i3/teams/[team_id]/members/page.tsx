@@ -11,8 +11,8 @@ import { use } from "react";
 
 import { useQueries, useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import {
     Table,
     TableBody,
@@ -64,8 +64,8 @@ export default function I3Module_MembersList_Page(
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
@@ -85,14 +85,14 @@ export default function I3Module_MembersList_Page(
                     },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="md">
-                    <Hermes.Header>
-                        <Hermes.Title>Members of {team.title}</Hermes.Title>
-                        <Hermes.Description>
-                            Select a team member to view their issued items.
-                        </Hermes.Description>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Members of {team.title}</Saratoga.Title>
+                    </Saratoga.Header>
+                    <p className="text-sm text-muted-foreground">
+                        Select a team member to view their issued items.
+                    </p>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -126,8 +126,8 @@ export default function I3Module_MembersList_Page(
                             ))}
                         </TableBody>
                     </Table>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

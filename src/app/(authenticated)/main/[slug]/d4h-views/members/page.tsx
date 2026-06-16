@@ -17,9 +17,9 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -39,56 +39,40 @@ export default function D4HViewsModule_Members_Page(
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof members)[number]>((columnHelper) => [
+            Kaga.defineColumns<(typeof members)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Member ID
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Member ID",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: false,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
+                    header: "Name",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route(
-                                    "/main/[slug]/d4h-views/members/[team_id]/[member_id]",
-                                    {
-                                        slug: organization.slug,
-                                        team_id: String(ctx.row.original.team.id),
-                                        member_id: String(ctx.row.original.id),
-                                    },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/d4h-views/members/[team_id]/[member_id]", {
+                                slug: organization.slug,
+                                team_id: String(ctx.row.original.team.id),
+                                member_id: String(ctx.row.original.id),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("team.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Team</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Team",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable({
@@ -101,15 +85,15 @@ export default function D4HViewsModule_Members_Page(
         initialState: {
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "name", desc: false }],
         },
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -118,20 +102,18 @@ export default function D4HViewsModule_Members_Page(
                     "Members",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views", { slug: organization.slug })}
-                        />
-                        <Hermes.Title>Members</Hermes.Title>
-                        <Hermes.Search>
-                            <Akagi.TableSearch table={table} />
-                        </Hermes.Search>
-                    </Hermes.Header>
-                    <Akagi.Table table={table} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Members</Saratoga.Title>
+                    </Saratoga.Header>
+                    <div>
+                        <Kaga.TableToolbar table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
+                    </div>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

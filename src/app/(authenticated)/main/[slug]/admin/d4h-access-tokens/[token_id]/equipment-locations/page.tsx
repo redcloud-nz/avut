@@ -5,8 +5,8 @@
 
 import { notFound } from "next/navigation";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { route } from "@/lib/routes";
@@ -73,8 +73,8 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
     const successCount = locations.filter((i) => i.parsed.success).length;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -91,51 +91,41 @@ export default async function Admin_D4hAccessToken_EquipmentLocations_Page(
                     "Equipment Locations",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="full">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton
-                                href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
-                                    slug,
-                                    token_id,
-                                })}
-                            />
-                            <Hermes.Title>
-                                Equipment Locations ({successCount} of {locations.length})
-                            </Hermes.Title>
-                        </Hermes.Header>
-                        {locations.map((item) => (
-                            <div className="grid grid-cols-2 border-b py-2">
-                                <div className="col-span-full py-2 font-semibold text-center">
-                                    {item.raw.id}
-                                </div>
-                                <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                    <pre className="text-xs">
-                                        {JSON.stringify(item.raw, null, 2)}
-                                    </pre>
-                                </div>
-                                <div className="px-2 max-h-[50vh] overflow-y-auto">
-                                    {item.parsed.success ? (
-                                        <pre className="text-xs">
-                                            {JSON.stringify(item.parsed.data, null, 2)}
-                                        </pre>
-                                    ) : (
-                                        <Alert>
-                                            <AlertTitle>
-                                                Failed to parse equipment category data
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                {item.parsed.error.message}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
-                                </div>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>
+                            Equipment Locations ({successCount} of {locations.length})
+                        </Saratoga.Title>
+                    </Saratoga.Header>
+                    {locations.map((item) => (
+                        <div className="grid grid-cols-2 border-b py-2">
+                            <div className="col-span-full py-2 font-semibold text-center">
+                                {item.raw.id}
                             </div>
-                        ))}
-                    </Hermes.Section>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                            <div className="px-2 max-h-[50vh] overflow-y-auto">
+                                <pre className="text-xs">{JSON.stringify(item.raw, null, 2)}</pre>
+                            </div>
+                            <div className="px-2 max-h-[50vh] overflow-y-auto">
+                                {item.parsed.success ? (
+                                    <pre className="text-xs">
+                                        {JSON.stringify(item.parsed.data, null, 2)}
+                                    </pre>
+                                ) : (
+                                    <Alert>
+                                        <AlertTitle>
+                                            Failed to parse equipment category data
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            {item.parsed.error.message}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

@@ -16,18 +16,14 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
+import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentModelsCollection } from "@/lib/collections/equipment-models";
 
-export function D4HViewsModule_EquipmentBrand_Models_List({
-    brandId,
-}: {
-    brandId: number;
-}) {
+export function D4HViewsModule_EquipmentBrand_Models_List({ brandId }: { brandId: number }) {
     const organization = useOrganization();
 
     const { data: models = [], isReady: isModelsReady } = useLiveQuery(
@@ -42,34 +38,20 @@ export function D4HViewsModule_EquipmentBrand_Models_List({
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof models)[number]>((columnHelper) => [
+            Kaga.defineColumns<(typeof models)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Model ID
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Model ID",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: false,
                     enableSorting: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>
-                            Model
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Model",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
             ]),
         [],
@@ -83,14 +65,11 @@ export function D4HViewsModule_EquipmentBrand_Models_List({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] },
-            ],
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
-            sorting: [{ id: "ref", desc: false }],
+            sorting: [{ id: "title", desc: false }],
         },
     });
 
@@ -98,13 +77,11 @@ export function D4HViewsModule_EquipmentBrand_Models_List({
         <>
             <div className="flex items-center justify-between mt-4">
                 <div className="text-lg font-semibold">Models</div>
-                <Akagi.TableSearch table={table} />
             </div>
-            <Show
-                when={isModelsReady}
-                fallback={<Skeleton className="w-full h-10" />}
-            >
-                <Akagi.Table table={table} />
+            <Kaga.TableToolbar table={table} />
+            <Show when={isModelsReady} fallback={<Skeleton className="w-full h-10" />}>
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </Show>
         </>
     );

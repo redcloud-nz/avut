@@ -11,13 +11,14 @@ import { use, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+
+import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -43,8 +44,8 @@ export default function SkillsModule_SessionDetails_Page(
     const [updateSessionDialogOpen, setUpdateSessionDialogOpen] = useState(false);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
@@ -58,80 +59,73 @@ export default function SkillsModule_SessionDetails_Page(
                     "Details",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/skills/sessions/[session_id]", {
-                                slug,
-                                session_id,
-                            })}
-                        />
-                        <Hermes.Title>Session Details</Hermes.Title>
-                    </Hermes.Header>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Session Details</CardTitle>
-                            <CardAction>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setUpdateSessionDialogOpen(true)}
-                                >
-                                    <ObjectIcons.Edit />
-                                </Button>
-                                <SkillsModule_SessionMenu session={session} />
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Session ID</FieldLabel>
-                                    <FieldValue value={session.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={session.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Date</FieldLabel>
-                                    <FieldValue value={session.date} format="date" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Notes</FieldLabel>
-                                    <FieldValue value={session.notes} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={session.status} />
-                                </Field>
-                                <FieldSeparator />
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Created</FieldLabel>
-                                    <FieldValue
-                                        value={session.createdAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue
-                                        value={session.updatedAt}
-                                        format="dateTimeWithDistance"
-                                    />
-                                </Field>
-                            </FieldGroup>
-                        </CardContent>
-                    </Card>
-                </Lexington.Column>
-            </Lexington.Page>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Session Details</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setUpdateSessionDialogOpen(true)}
+                            >
+                                <ObjectIcons.Edit />
+                            </Button>
+                            <SkillsModule_SessionMenu session={session} />
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Session Details</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Session ID</DLTerm>
+                                        <DLDetails>{session.id}</DLDetails>
+                                        <DLTerm>Name</DLTerm>
+                                        <DLDetails>{session.name}</DLDetails>
+                                        <DLTerm>Date</DLTerm>
+                                        <DLDetails>{session.date}</DLDetails>
+                                        <DLTerm>Notes</DLTerm>
+                                        <DLDetails>{session.notes}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{session.status}</DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(session.createdAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(session.createdAt)}
+                                            </div>
+                                        </DLDetails>
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDetails>
+                                            <div>{formatDateTime(session.updatedAt)}</div>
+                                            <div className="text-muted-foreground">
+                                                {formatRelativeDateTime(session.updatedAt)}
+                                            </div>
+                                        </DLDetails>
+                                    </DL>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
             <SkillsModule_UpdateSession_Dialog
                 session={session}
                 open={updateSessionDialogOpen}
                 onOpenChange={setUpdateSessionDialogOpen}
             />
-        </Lexington.Root>
+        </Std.SidebarInset>
     );
 }

@@ -8,8 +8,8 @@
 import { notFound } from "next/navigation";
 
 import { Eagle } from "@/components/blocks/eagle";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
@@ -71,8 +71,8 @@ export default async function Admin_D4hAccessToken_Organisation_Page(
     };
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -89,22 +89,16 @@ export default async function Admin_D4hAccessToken_Organisation_Page(
                     "Organisation",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
-                                slug,
-                                token_id,
-                            })}
-                        />
-                        <Hermes.Title>Organisation</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Organisation</Saratoga.Title>
+                    </Saratoga.Header>
                     <Eagle.Section>
                         <Eagle.Content raw={organisation.raw} parsed={organisation.parsed} />
                     </Eagle.Section>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

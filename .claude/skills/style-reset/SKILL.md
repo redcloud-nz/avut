@@ -15,7 +15,7 @@ Apply the Lexington → Std + Saratoga style reset to a page route.
 
 If no path is given, use the file currently open in the IDE. The argument should point to the `page.tsx` server component — the skill will also update the co-located client component(s) as needed.
 
-> **If `page.tsx` is already `"use client"`**: apply both the `Std` shell changes (section 1) and the `Saratoga` content changes (section 2 or 3) to the same file. No separate server/client split is needed.
+> **If `page.tsx` is already `"use client"`**: apply both the `Std` shell changes (section 1) and the `Saratoga` content changes (section 3 or 4) to the same file. No separate server/client split is needed.
 
 ## What to do
 
@@ -53,7 +53,48 @@ import { Std } from "@/components/blocks/std";
 - `Lexington.Header` → `Std.Navbar` (same `breadcrumbs` prop shape).
 - Remove the `Lexington` import; add `Std` import.
 
-### 2. List page client component
+### 2. Index page (no client component)
+
+Index pages have all their content in `page.tsx` (no separate client component). They feature a logo/module-name header block and a list of navigation items.
+
+```tsx
+// BEFORE
+import { Lexington } from "@/components/blocks/lexington";
+
+<Lexington.Root>
+  <Lexington.Header breadcrumbs={["Module"]} />
+  <Lexington.Page>
+    <Lexington.Column width="sm">
+      <div className="flex flex-col items-center my-4 gap-4">
+        <AVUTLogo />
+        <div className="font-semibold">Module Name</div>
+      </div>
+      <ItemGroup>{/* nav items */}</ItemGroup>
+    </Lexington.Column>
+  </Lexington.Page>
+</Lexington.Root>;
+
+// AFTER
+import { Std } from "@/components/blocks/std";
+
+<Std.SidebarInset>
+  <Std.Navbar breadcrumbs={["Module"]} />
+  <Std.ScrollContainer>
+    <Std.IndexPage>
+      <ItemGroup>{/* nav items */}</ItemGroup>
+    </Std.IndexPage>
+  </Std.ScrollContainer>
+</Std.SidebarInset>;
+```
+
+- `Lexington.Root` → `Std.SidebarInset`
+- `Lexington.Header` → `Std.Navbar` (same `breadcrumbs` prop)
+- `Lexington.Page` + `Lexington.Column` → `Std.ScrollContainer` + `Std.IndexPage`
+- Drop the logo `<div>` (containing `AVUTLogo` and the module name heading) entirely — `Std.IndexPage` provides its own header treatment
+- The remaining content (e.g. `ItemGroup`) becomes children of `Std.IndexPage`
+- Replace `Lexington` import with `Std`
+
+### 3. List page client component
 
 Wrap content in `Saratoga.Root`. Move the page title and actions into `Saratoga.Header`:
 
@@ -75,11 +116,11 @@ import { Saratoga } from "@/components/blocks/saratoga";
 ```
 
 - If the component was previously using `Hermes.Header` / `Hermes.Title` for the title area, replace with `Saratoga.Header` / `Saratoga.Title` / `Saratoga.Actions`.
-- If the component was using `Akagi` for tables, replace with `Kaga` — see section 4 below for column definition changes.
+- If the component was using `Akagi` for tables, replace with `Kaga` — see section 5 below for column definition changes.
 - If `Hermes.Header` appears elsewhere (e.g. as a flex container for loading skeletons inside a card), replace it with `<div className="flex items-center gap-2">` — it's just a styled `div`.
 - Remove any `Lexington`, `Hermes`, or `Akagi` imports that are no longer used.
 
-### 3. Detail page client component
+### 4. Detail page client component
 
 Use `Saratoga.Columns` for the 2/3 + 1/3 responsive grid:
 
@@ -104,7 +145,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 - The `slot` prop on `Saratoga.Column` must be either `"main"` or `"secondary"`.
 - Remove any `Lexington`, `Hermes`, or `Akagi` imports that are no longer used.
 
-### 4. `Kaga.defineColumns` — column definition changes
+### 5. `Kaga.defineColumns` — column definition changes
 
 `Kaga` columns are simpler than `Akagi`: no wrapper components inside `header` or `cell`.
 
@@ -173,7 +214,7 @@ Key changes:
 - `filterFn: "arrIncludesSome"` → `filterFn: Kaga.filterFns.oneOf`
 - `Akagi.DEFAULT_PAGE_SIZE` → `Kaga.DEFAULT_PAGE_SIZE`
 
-### 5. Detail cards: `DL` instead of `FieldGroup`/`Field`
+### 6. Detail cards: `DL` instead of `FieldGroup`/`Field`
 
 Display-only fields inside cards use `DL`/`DLTerm`/`DLDetails` instead of `FieldGroup`/`Field`/`FieldLabel`/`FieldValue`. Note: `Field`/`FieldGroup` are still correct for _form_ inputs — only replace them where they are showing read-only data.
 
@@ -212,7 +253,7 @@ import { DL, DLTerm, DLDetails } from "@/components/ui/description-list";
 
 **`FieldValue format="id"`**: render the value directly in `DLDetails` — there's no format prop on `DL` components.
 
-### 6. Created/Updated dates — separate secondary card
+### 7. Created/Updated dates — separate secondary card
 
 Move `createdAt` and `updatedAt` out of the main details card and into their own card in the `secondary` column. Use `formatDateTime` and `formatRelativeDateTime` for display (not `FieldValue format="dateWithDistance"`).
 

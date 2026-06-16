@@ -5,8 +5,8 @@
 
 import { notFound } from "next/navigation";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
@@ -72,8 +72,8 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
     const successCount = categories.filter((i) => i.parsed.success).length;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -90,28 +90,21 @@ export default async function Admin_D4hAccessToken_EquipmentCategories_Page(
                     "Equipment Categories",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="full">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
-                                slug,
-                                token_id,
-                            })}
-                        />
-                        <Hermes.Title>Equipment Categories</Hermes.Title>
-                        <Hermes.Description>
-                            Validated: {successCount} of {categories.length}
-                        </Hermes.Description>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>
+                            Equipment Categories ({successCount} of {categories.length})
+                        </Saratoga.Title>
+                    </Saratoga.Header>
                     {categories.map((item) => (
                         <Eagle.Section key={item.raw.id}>
                             <Eagle.Title>{item.raw.id}</Eagle.Title>
                             <Eagle.Content raw={item.raw} parsed={item.parsed} />
                         </Eagle.Section>
                     ))}
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

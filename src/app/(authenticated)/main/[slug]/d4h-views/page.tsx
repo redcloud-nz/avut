@@ -7,8 +7,7 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import Link from "next/link";
 
 import {
@@ -26,14 +25,10 @@ export default async function D4HViews_Index_Page(props: PageProps<`/main/[slug]
     const { slug } = await props.params;
 
     return (
-        <Lexington.Root>
-            <Lexington.Header breadcrumbs={["D4H Views"]} />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">D4H Views Module</div>
-                    </div>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={["D4H Views"]} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title="D4H Views Module">
                     <ItemGroup>
                         <Item asChild>
                             <Link href={route("/main/[slug]/d4h-views/equipment", { slug })}>
@@ -58,8 +53,8 @@ export default async function D4HViews_Index_Page(props: PageProps<`/main/[slug]
                             </Link>
                         </Item>
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

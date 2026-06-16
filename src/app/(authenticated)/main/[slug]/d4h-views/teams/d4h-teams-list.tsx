@@ -15,8 +15,8 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { D4HTeam } from "@/lib/schemas/d4h/team";
 
 interface D4HViewsModule_Teams_ListProps {
@@ -26,16 +26,13 @@ interface D4HViewsModule_Teams_ListProps {
 export function D4HViewsModule_Teams_List({ teams }: D4HViewsModule_Teams_ListProps) {
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4HTeam>((columnHelper) => [
+            Kaga.defineColumns<D4HTeam>((columnHelper) => [
                 columnHelper.accessor("title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Name",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
             ]),
         [],
@@ -51,11 +48,15 @@ export function D4HViewsModule_Teams_List({ teams }: D4HViewsModule_Teams_ListPr
     });
 
     return (
-        <Hermes.Section>
-            <Hermes.Header>
-                <Akagi.TableSearch table={table} />
-            </Hermes.Header>
-            <Akagi.Table table={table} />
-        </Hermes.Section>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Teams</Saratoga.Title>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
+            </div>
+        </Saratoga.Root>
     );
 }

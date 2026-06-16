@@ -22,8 +22,8 @@ import {
     saveDraftFormInstanceMutation,
 } from "@/client/form-queries";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -39,15 +39,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSeparator,
-} from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
     Item,
@@ -177,8 +169,8 @@ export default function I3Module_Issue_FormInstance_Page(
     );
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug }) },
                     { label: "Forms" },
@@ -189,14 +181,11 @@ export default function I3Module_Issue_FormInstance_Page(
                     { label: form.getValues().recipient.name || "No Recipient" },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/i3/forms/issue-items", { slug })}
-                        />
-                        <Hermes.Title>Issue Items</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Issue Items</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardDescription>
@@ -300,9 +289,9 @@ export default function I3Module_Issue_FormInstance_Page(
                             </form>
                         </CardContent>
                     </Card>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
 
@@ -318,7 +307,7 @@ function UserNameFieldValue() {
             </Alert>
         );
     } else if (data) {
-        return <FieldValue value={data.user.name} />;
+        return <div>{data.user.name}</div>;
     }
 }
 
@@ -358,7 +347,7 @@ function I3_Issue_ItemsSection({
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-                <FieldLegend>Issued Items</FieldLegend>
+                <div className="text-sm font-medium">Issued Items</div>
                 <Button
                     type="button"
                     variant="outline"

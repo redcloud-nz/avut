@@ -8,7 +8,7 @@
 
 import { use } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { NotImplemented } from "@/components/nav/errors";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -27,8 +27,8 @@ export default function SkillPackageBuilder_Package_History_Page(
     if (!skillPackage) throw new Error(`Skill Package (${package_id}) not found`);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -44,11 +44,9 @@ export default function SkillPackageBuilder_Package_History_Page(
                     "History",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg" className="h-full flex flex-col justify-center">
-                    <NotImplemented />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <NotImplemented />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

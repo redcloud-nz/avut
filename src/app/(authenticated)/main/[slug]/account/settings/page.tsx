@@ -5,25 +5,25 @@
  * Path: /main/[slug]/account/settings
  */
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { UserD4HAccess_Card } from "@/components/cards/user-d4h-access";
 import { UserSettings_Card } from "@/components/cards/user-settings";
 
 export default function Account_Settings_Page() {
     return (
-        <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Account", "Settings"]} />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.Title>User Settings</Hermes.Title>
-                    </Hermes.Header>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={["Account", "Settings"]} />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>User Settings</Saratoga.Title>
+                    </Saratoga.Header>
                     <UserSettings_Card />
                     <UserD4HAccess_Card />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

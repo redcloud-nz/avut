@@ -6,8 +6,11 @@
 
 import { ComponentProps, ReactNode, Suspense } from "react";
 
+import { AVUTLogo } from "@/components/art/avut-logo";
+import { RainbowSpinner } from "@/components/ui/loading";
+import { cn } from "@/lib/utils";
+
 import { Lexington } from "./lexington";
-import { RainbowSpinner } from "../ui/loading";
 
 function SidebarInset({ children }: { children: ReactNode }) {
     return (
@@ -44,9 +47,27 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
     );
 }
 
+function IndexPage({
+    children,
+    className,
+    title,
+    ...props
+}: ComponentProps<"div"> & { title: string }) {
+    return (
+        <div className={cn("w-full sm:w-lg sm:mx-auto ${className}", className)} {...props}>
+            <div className="flex flex-col items-center my-4 gap-4">
+                <AVUTLogo />
+                <div className="font-semibold">{title}</div>
+            </div>
+            {children}
+        </div>
+    );
+}
+
 export const Std = {
     SidebarInset,
     ScrollContainer,
     Breadcrumbs: Lexington.Breadcrumbs,
     Navbar: Lexington.Header,
+    IndexPage,
 };

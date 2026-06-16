@@ -8,8 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -29,16 +28,10 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
-                breadcrumbs={[{ href: route("/main/[slug]/i3", { slug }), label: "I3" }]}
-            />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">I3 Module</div>
-                    </div>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={[{ href: route("/main/[slug]/i3", { slug }), label: "I3" }]} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title="I3 Module">
                     <ItemGroup>
                         <Item asChild>
                             <Link href={route("/main/[slug]/i3/equipment-kinds", { slug })}>
@@ -108,8 +101,8 @@ export default async function I3_Index_Page(props: PageProps<`/main/[slug]/i3`>)
                             </Item>
                         </Protect>
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

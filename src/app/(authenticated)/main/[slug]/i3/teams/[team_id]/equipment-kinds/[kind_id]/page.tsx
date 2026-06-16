@@ -10,9 +10,9 @@ import { use, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-import { Lexington } from "@/components/blocks/lexington";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -93,8 +93,8 @@ export default function I3Module_Team_EquipmentKindItems_Page(
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
@@ -115,11 +115,11 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                     { label: kind.title },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="full">
-                    <Hermes.Header>
-                        <Hermes.Title>{kind.title}</Hermes.Title>
-                        <Hermes.Action>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{kind.title}</Saratoga.Title>
+                        <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon">
@@ -198,8 +198,8 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                                     </DropdownMenuGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                        </Hermes.Action>
-                    </Hermes.Header>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -284,8 +284,8 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                             )}
                         </TableBody>
                     </Table>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

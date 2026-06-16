@@ -10,15 +10,15 @@ import { use } from "react";
 
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-brands";
+import { formatDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { D4HViewsModule_EquipmentBrand_Models_List } from "./brand-models";
@@ -43,8 +43,8 @@ export default function D4HViewsModule_EquipmentBrand_Page(
     if (!brand) throw new Error(`Brand(${brandId}) not found`);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -65,49 +65,36 @@ export default function D4HViewsModule_EquipmentBrand_Page(
                     brand.title,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views/equipment/brands", {
-                                slug: organization.slug,
-                            })}
-                        />
-                        <Hermes.Title>{brand.title}</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{brand.title}</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardTitle>Brand Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Brand ID</FieldLabel>
-                                    <FieldValue value={brand.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Title</FieldLabel>
-                                    <FieldValue value={brand.title} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Owner</FieldLabel>
-                                    <FieldValue>
-                                        <span>{brand.owner.title}</span>
-                                        <span className="text-muted-foreground pl-2">
-                                            ({brand.owner.resourceType})
-                                        </span>
-                                    </FieldValue>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Updated</FieldLabel>
-                                    <FieldValue value={brand.updatedAt} format="datetime" />
-                                </Field>
-                            </FieldGroup>
+                            <DL>
+                                <DLTerm>Brand ID</DLTerm>
+                                <DLDetails>{brand.id}</DLDetails>
+                                <DLTerm>Title</DLTerm>
+                                <DLDetails>{brand.title}</DLDetails>
+                                <DLTerm>Owner</DLTerm>
+                                <DLDetails>
+                                    <span>{brand.owner.title}</span>
+                                    <span className="text-muted-foreground pl-2">
+                                        ({brand.owner.resourceType})
+                                    </span>
+                                </DLDetails>
+                                <DLTerm>Updated</DLTerm>
+                                <DLDetails>{formatDateTime(brand.updatedAt)}</DLDetails>
+                            </DL>
                         </CardContent>
                     </Card>
                     <D4HViewsModule_EquipmentBrand_Models_List brandId={brand.id} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

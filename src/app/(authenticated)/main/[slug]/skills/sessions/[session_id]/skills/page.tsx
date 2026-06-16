@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import {
     Card,
     CardAction,
@@ -150,9 +150,9 @@ export default function SkillModule_SessionSkills_Page(
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header>
-                <Lexington.Breadcrumbs
+        <Std.SidebarInset>
+            <Std.Navbar>
+                <Std.Breadcrumbs
                     breadcrumbs={[
                         { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                         {
@@ -172,19 +172,12 @@ export default function SkillModule_SessionSkills_Page(
                 <div className="flex justify-end grow">
                     <SaveStatusIndicator status={mutation.status} />
                 </div>
-            </Lexington.Header>
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/skills/sessions/[session_id]", {
-                                slug,
-                                session_id,
-                            })}
-                        />
-                        <Hermes.Title>Session Skills</Hermes.Title>
-                    </Hermes.Header>
-
+            </Std.Navbar>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Session Skills</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardTitle>Skills to assess</CardTitle>
@@ -215,9 +208,9 @@ export default function SkillModule_SessionSkills_Page(
                             </FieldSet>
                         </CardContent>
                     </Card>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
 

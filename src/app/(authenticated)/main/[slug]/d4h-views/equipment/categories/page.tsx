@@ -17,9 +17,9 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -58,76 +58,56 @@ export default function D4HViewsModule_EquipmentCategories_Page(
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof categories)[number]>((columnHelper) => [
+            Kaga.defineColumns<(typeof categories)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Category ID
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Category ID",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: false,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Title</Akagi.TableHeadCell>
-                    ),
+                    header: "Title",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route(
-                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]",
-                                    {
-                                        slug: organization.slug,
-                                        category_id: String(ctx.row.original.id),
-                                    },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route(
+                                "/main/[slug]/d4h-views/equipment/categories/[category_id]",
+                                {
+                                    slug: organization.slug,
+                                    category_id: String(ctx.row.original.id),
+                                },
+                            )}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("kindCount", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} align="center">
-                            Kinds
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} align="center">
-                            {ctx.getValue()}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Kinds",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: false,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("owner.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header} className="w-1/4">
-                            Owner
-                        </Akagi.TableHeadCell>
-                    ),
+                    header: "Owner",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell} className="w-1/4">
+                        <>
                             <span>{ctx.getValue()}</span>
                             <span className="text-muted-foreground pl-2">
                                 ({ctx.row.original.owner.resourceType})
                             </span>
-                        </Akagi.TableCell>
+                        </>
                     ),
                     enableGlobalFilter: false,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable({
@@ -140,15 +120,15 @@ export default function D4HViewsModule_EquipmentCategories_Page(
         initialState: {
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "title", desc: false }],
         },
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -163,22 +143,18 @@ export default function D4HViewsModule_EquipmentCategories_Page(
                     "Categories",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views/equipment", {
-                                slug: organization.slug,
-                            })}
-                        />
-                        <Hermes.Title>Equipment Categories</Hermes.Title>
-                        <Hermes.Search>
-                            <Akagi.TableSearch table={table} />
-                        </Hermes.Search>
-                    </Hermes.Header>
-                    <Akagi.Table table={table} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Equipment Categories</Saratoga.Title>
+                    </Saratoga.Header>
+                    <div>
+                        <Kaga.TableToolbar table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
+                    </div>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

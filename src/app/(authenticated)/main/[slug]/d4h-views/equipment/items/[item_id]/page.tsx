@@ -18,13 +18,12 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -70,53 +69,42 @@ export default function D4HViewsModule_EquipmentItem_Page(
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof contents)[number]>((columnHelper) => [
+            Kaga.defineColumns<(typeof contents)[number]>((columnHelper) => [
                 columnHelper.accessor("ref", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Ref",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("kind.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Kind",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("model.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
-                    ),
+                    header: "Model",
+                    cell: (ctx) => ctx.getValue() ?? "",
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
-                    filterFn: "arrIncludesSome",
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
+                    filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableSorting: false,
+                    meta: {
+                        columnOptions: [
+                            { label: "OPERATIONAL", value: "OPERATIONAL" },
+                            { label: "UNSERVICEABLE", value: "UNSERVICEABLE" },
+                            { label: "RETIRED", value: "RETIRED" },
+                        ],
+                    },
                 }),
             ]),
         [],
@@ -133,15 +121,15 @@ export default function D4HViewsModule_EquipmentItem_Page(
             columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "ref", desc: false }],
         },
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -157,34 +145,25 @@ export default function D4HViewsModule_EquipmentItem_Page(
                     item.ref,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views/equipment/categories", {
-                                slug: organization.slug,
-                            })}
-                        />
-                        <Hermes.Title>{item.ref}</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{item.ref}</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardTitle>Item Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Item ID</FieldLabel>
-                                    <FieldValue value={item.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Reference</FieldLabel>
-                                    <FieldValue value={item.ref} format="id" />
-                                </Field>
+                            <DL>
+                                <DLTerm>Item ID</DLTerm>
+                                <DLDetails>{item.id}</DLDetails>
+                                <DLTerm>Reference</DLTerm>
+                                <DLDetails>{item.ref}</DLDetails>
                                 {item.category && (
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Category</FieldLabel>
-                                        <FieldValue>
+                                    <>
+                                        <DLTerm>Category</DLTerm>
+                                        <DLDetails>
                                             <Link
                                                 href={route(
                                                     "/main/[slug]/d4h-views/equipment/categories/[category_id]",
@@ -196,26 +175,18 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                             >
                                                 {item.category.title}
                                             </Link>
-                                        </FieldValue>
-                                    </Field>
+                                        </DLDetails>
+                                    </>
                                 )}
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Kind</FieldLabel>
-                                    <FieldValue value={item.kind.title} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Brand</FieldLabel>
-                                    <FieldValue value={item.brand?.title ?? ""} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Model</FieldLabel>
-                                    <FieldValue value={item.model?.title ?? ""} />
-                                </Field>
-
-                                <Field orientation="responsive">
-                                    <FieldLabel>Parents</FieldLabel>
-                                    <div className="min-w-1/2 flex flex-col px-2.5">
+                                <DLTerm>Kind</DLTerm>
+                                <DLDetails>{item.kind.title}</DLDetails>
+                                <DLTerm>Brand</DLTerm>
+                                <DLDetails>{item.brand?.title ?? ""}</DLDetails>
+                                <DLTerm>Model</DLTerm>
+                                <DLDetails>{item.model?.title ?? ""}</DLDetails>
+                                <DLTerm>Parents</DLTerm>
+                                <DLDetails>
+                                    <div className="flex flex-col">
                                         {item.parents.map((parent, index) => (
                                             <div
                                                 key={index}
@@ -244,24 +215,23 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                             </div>
                                         ))}
                                     </div>
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={item.status} />
-                                </Field>
-                            </FieldGroup>
+                                </DLDetails>
+                                <DLTerm>Status</DLTerm>
+                                <DLDetails>{item.status}</DLDetails>
+                            </DL>
                         </CardContent>
                     </Card>
 
                     <div className="flex items-center justify-between mt-4">
                         <div className="text-lg font-semibold">Contents</div>
-                        <Akagi.TableSearch table={table} />
                     </div>
+                    <Kaga.TableToolbar table={table} />
                     <Show when={isContentsReady} fallback={<Skeleton className="w-full h-10" />}>
-                        <Akagi.Table table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
                     </Show>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

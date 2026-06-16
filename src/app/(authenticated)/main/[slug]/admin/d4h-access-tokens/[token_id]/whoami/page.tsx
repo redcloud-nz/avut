@@ -8,8 +8,8 @@
 import { notFound } from "next/navigation";
 
 import { Eagle } from "@/components/blocks/eagle";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 import { getD4HFetchClient } from "@/server/d4h-api/client";
@@ -50,8 +50,8 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
     };
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -68,22 +68,16 @@ export default async function Admin_D4hAccessToken_Whoami_Page(
                     "Whoami",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/admin/d4h-access-tokens/[token_id]", {
-                                slug,
-                                token_id,
-                            })}
-                        />
-                        <Hermes.Title>Whoami</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Whoami</Saratoga.Title>
+                    </Saratoga.Header>
                     <Eagle.Section>
                         <Eagle.Content raw={whoami.raw} parsed={whoami.parsed} />
                     </Eagle.Section>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

@@ -17,9 +17,9 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,8 +29,7 @@ import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 export default function D4HViewsModule_Member_Page(
     props: PageProps<"/main/[slug]/d4h-views/members/[team_id]/[member_id]">,
@@ -59,65 +58,54 @@ export default function D4HViewsModule_Member_Page(
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4HEquipmentItem>((columnHelper) => [
+            Kaga.defineColumns<D4HEquipmentItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
-                    ),
+                    header: "Ref",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
-                                    slug: organization.slug,
-                                    item_id: String(ctx.row.original.id),
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
+                                slug: organization.slug,
+                                item_id: String(ctx.row.original.id),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("kind.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Kind",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("model.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
-                    ),
+                    header: "Model",
+                    cell: (ctx) => ctx.getValue() ?? "",
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
-                    filterFn: "arrIncludesSome",
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
+                    filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableSorting: false,
+                    meta: {
+                        columnOptions: [
+                            { label: "OPERATIONAL", value: "OPERATIONAL" },
+                            { label: "UNSERVICEABLE", value: "UNSERVICEABLE" },
+                            { label: "RETIRED", value: "RETIRED" },
+                        ],
+                    },
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable({
@@ -131,15 +119,15 @@ export default function D4HViewsModule_Member_Page(
             columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "ref", desc: false }],
         },
     });
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -152,55 +140,40 @@ export default function D4HViewsModule_Member_Page(
                     member.name,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views/members", {
-                                slug: organization.slug,
-                            })}
-                        />
-                        <Hermes.Title>{member.name}</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{member.name}</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardTitle>Member Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>ID</FieldLabel>
-                                    <FieldValue value={member.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Name</FieldLabel>
-                                    <FieldValue value={member.name} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Email</FieldLabel>
-                                    <FieldValue value={member.email.value} />
-                                </Field>
+                            <DL>
+                                <DLTerm>ID</DLTerm>
+                                <DLDetails>{member.id}</DLDetails>
+                                <DLTerm>Name</DLTerm>
+                                <DLDetails>{member.name}</DLDetails>
+                                <DLTerm>Email</DLTerm>
+                                <DLDetails>{member.email.value}</DLDetails>
                                 {member.ref && (
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Ref</FieldLabel>
-                                        <FieldValue value={member.ref ?? ""} />
-                                    </Field>
+                                    <>
+                                        <DLTerm>Ref</DLTerm>
+                                        <DLDetails>{member.ref}</DLDetails>
+                                    </>
                                 )}
                                 {member.position && (
-                                    <Field orientation="responsive">
-                                        <FieldLabel>Position</FieldLabel>
-                                        <FieldValue value={member.position} />
-                                    </Field>
+                                    <>
+                                        <DLTerm>Position</DLTerm>
+                                        <DLDetails>{member.position}</DLDetails>
+                                    </>
                                 )}
-                                <Field orientation="responsive">
-                                    <FieldLabel>Team</FieldLabel>
-                                    <FieldValue value={member.team.title} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Status</FieldLabel>
-                                    <FieldValue value={member.status} />
-                                </Field>
-                            </FieldGroup>
+                                <DLTerm>Team</DLTerm>
+                                <DLDetails>{member.team.title}</DLDetails>
+                                <DLTerm>Status</DLTerm>
+                                <DLDetails>{member.status}</DLDetails>
+                            </DL>
                         </CardContent>
                     </Card>
 
@@ -208,10 +181,12 @@ export default function D4HViewsModule_Member_Page(
                         <div className="text-lg font-semibold">Issued Equipment</div>
                     </div>
                     <Show when={isSuccess} fallback={<Skeleton className="w-full h-10" />}>
-                        <Akagi.Table table={table} />
+                        <Kaga.TableToolbar table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
                     </Show>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

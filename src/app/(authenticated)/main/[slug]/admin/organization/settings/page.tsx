@@ -14,10 +14,17 @@ import { Lens, useLens } from "@hookform/lenses";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 
 import {
     Field,
@@ -103,8 +110,8 @@ export default function AdminModule_Settings_Page(
     const dirtyFieldCount = countDirtyFields(form.formState.dirtyFields);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -114,23 +121,20 @@ export default function AdminModule_Settings_Page(
                     "Settings",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <form id="organization-settings-form" className="pb-14" onSubmit={handleSubmit}>
-                        <Hermes.Section>
-                            <Hermes.Header>
-                                <Hermes.BackButton
-                                    href={route("/main/[slug]/admin/organization", { slug })}
-                                />
-                                <Hermes.Title>Organization Settings</Hermes.Title>
-                            </Hermes.Header>
-                            <General_SettingsCard lens={lens.focus("general")} />
-                        </Hermes.Section>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Organization Settings</Saratoga.Title>
+                    </Saratoga.Header>
+                    <form
+                        id="organization-settings-form"
+                        className="pb-14 space-y-2"
+                        onSubmit={handleSubmit}
+                    >
+                        <General_SettingsCard lens={lens.focus("general")} />
 
-                        <Hermes.Section>
-                            <Hermes.Header>
-                                <Hermes.Title>Integrations</Hermes.Title>
-                            </Hermes.Header>
+                        <div className="space-y-2 pt-6">
+                            <h3 className="text-lg font-semibold tracking-tight">Integrations</h3>
                             <D4hIntegration_SettingsCard
                                 lens={lens.focus("integrations.d4h")}
                                 organizationId={organization.id}
@@ -138,22 +142,19 @@ export default function AdminModule_Settings_Page(
                             <EmailIntegration_SettingsCard
                                 lens={lens.focus("integrations.email")}
                             />
-                        </Hermes.Section>
+                        </div>
 
-                        <Hermes.Section>
-                            <Hermes.Header>
-                                <Hermes.Title>Modules</Hermes.Title>
-                            </Hermes.Header>
-
+                        <div className="space-y-2 pt-6">
+                            <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
                             <D4HViewsModule_SettingsCard lens={lens.focus("modules.d4h-views")} />
-                            <FormsModule_SettingsCard lens={lens.focus("modules.forms")} />
+                            {/* <FormsModule_SettingsCard lens={lens.focus("modules.forms")} /> */}
                             <I3Module_SettingsCard lens={lens.focus("modules.i3")} />
-                            <NotesModule_SettingsCard lens={lens.focus("modules.notes")} />
+                            {/* <NotesModule_SettingsCard lens={lens.focus("modules.notes")} /> */}
                             <SkillsModule_SettingsCard lens={lens.focus("modules.skills")} />
                             <SkillPackageBuilderModule_SettingsCard
                                 lens={lens.focus("modules.skill-package-builder")}
                             />
-                        </Hermes.Section>
+                        </div>
 
                         {dirtyFieldCount > 0 && (
                             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 min-w-100 border border-gray-300 bg-gray-200/75 rounded-sm shadow px-4 py-2 flex items-center gap-2">
@@ -173,9 +174,9 @@ export default function AdminModule_Settings_Page(
                             </div>
                         )}
                     </form>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
 
@@ -187,7 +188,7 @@ function General_SettingsCard({ lens }: { lens: Lens<Partial<OrganizationSetting
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Controller
+                    {/* <Controller
                         {...lens.focus("publicDomain").interop()}
                         render={({ field, fieldState }) => (
                             <Field orientation="responsive" data-invalid={fieldState.invalid}>
@@ -220,7 +221,7 @@ function General_SettingsCard({ lens }: { lens: Lens<Partial<OrganizationSetting
                                 </FieldContent>
                             </Field>
                         )}
-                    />
+                    /> */}
                 </FieldGroup>
             </CardContent>
         </Card>
@@ -290,7 +291,7 @@ function D4hIntegration_SettingsCard({
                             </Field>
                         )}
                     />
-                    <Controller
+                    {/* <Controller
                         {...lens.focus("syncToken").interop()}
                         render={({ field, fieldState }) => (
                             <Field orientation="responsive" data-invalid={fieldState.invalid}>
@@ -402,7 +403,7 @@ function D4hIntegration_SettingsCard({
                                 </Select>
                             </Field>
                         )}
-                    />
+                    /> */}
                 </FieldGroup>
             </CardContent>
         </Card>
@@ -514,6 +515,10 @@ function I3Module_SettingsCard({
         <Card>
             <CardHeader>
                 <CardTitle>I3 Module</CardTitle>
+                <CardDescription>
+                    The I3 module provides tools to manage individually issued items (I3s) within
+                    your organization.
+                </CardDescription>
                 <CardAction>
                     <Controller
                         {...lens.focus("enabled").interop()}
@@ -529,11 +534,19 @@ function I3Module_SettingsCard({
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Controller
+                    {/* <Controller
                         {...lens.focus("storage").interop()}
                         render={({ field, fieldState }) => (
                             <Field orientation="responsive" data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="i3-storage">I3 Data Storage</FieldLabel>
+                                <FieldContent>
+                                    <FieldLabel htmlFor="i3-storage">I3 Data Storage</FieldLabel>
+                                    <FieldDescription>
+                                        Where should I3 item-data be stored? If AVUT is selected, I3
+                                        data will be stored in AVUT's database. If D4H is selected,
+                                        I3 data will be stored in D4H and associated with the
+                                        corresponding teams and team members.
+                                    </FieldDescription>
+                                </FieldContent>
                                 <Select
                                     value={field.value}
                                     onValueChange={field.onChange}
@@ -552,16 +565,11 @@ function I3Module_SettingsCard({
                                         <SelectItem value="D4H">D4H</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <FieldDescription>
-                                    Where should I3 item-data be stored? If AVUT is selected, I3
-                                    data will be stored in AVUT's database. If D4H is selected, I3
-                                    data will be stored in D4H and associated with the corresponding
-                                    teams and team members.
-                                </FieldDescription>
+
                                 {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
-                    />
+                    /> */}
                 </FieldGroup>
             </CardContent>
         </Card>
@@ -610,6 +618,10 @@ function SkillsModule_SettingsCard({
         <Card>
             <CardHeader>
                 <CardTitle>Skills Module</CardTitle>
+                <CardDescription>
+                    The skills module provides functionality for managing skills and competencies
+                    within your organization.
+                </CardDescription>
                 <CardAction>
                     <Controller
                         {...lens.focus("enabled").interop()}
@@ -641,6 +653,10 @@ function SkillPackageBuilderModule_SettingsCard({
         <Card>
             <CardHeader>
                 <CardTitle>Skill Package Builder Module</CardTitle>
+                <CardDescription>
+                    The Skill Package Builder module allows you to create and manage skill packages
+                    that can then be used by the Skills Module.
+                </CardDescription>
                 <CardAction>
                     <Controller
                         {...lens.focus("enabled").interop()}

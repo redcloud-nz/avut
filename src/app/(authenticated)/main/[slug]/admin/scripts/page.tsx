@@ -5,8 +5,7 @@
  * Path: /main/[slug]/admin/scripts
  */
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { getOrganizationBySlug } from "@/server/organization";
 
@@ -15,16 +14,11 @@ export default async function AdminScripts_Page(props: PageProps<`/main/[slug]/a
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Admin", "Scripts"]} />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">Admin Scripts</div>
-                    </div>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={["Admin", "Scripts"]} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title="Admin Scripts" />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

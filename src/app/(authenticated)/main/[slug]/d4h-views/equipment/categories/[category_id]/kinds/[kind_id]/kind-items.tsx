@@ -16,7 +16,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
+import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,65 +41,54 @@ export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: nu
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4HEquipmentItem>((columnHelper) => [
+            Kaga.defineColumns<D4HEquipmentItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Ref</Akagi.TableHeadCell>
-                    ),
+                    header: "Ref",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
-                                    slug: organization.slug,
-                                    item_id: String(ctx.row.original.id),
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route("/main/[slug]/d4h-views/equipment/items/[item_id]", {
+                                slug: organization.slug,
+                                item_id: String(ctx.row.original.id),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("kind.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Kind</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Kind",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("model.title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Model</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue() ?? ""}</Akagi.TableCell>
-                    ),
+                    header: "Model",
+                    cell: (ctx) => ctx.getValue() ?? "",
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            filterOptions={["OPERATIONAL", "UNSERVICEABLE", "RETIRED"]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
-                    filterFn: "arrIncludesSome",
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
+                    filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableSorting: false,
+                    meta: {
+                        columnOptions: [
+                            { label: "OPERATIONAL", value: "OPERATIONAL" },
+                            { label: "UNSERVICEABLE", value: "UNSERVICEABLE" },
+                            { label: "RETIRED", value: "RETIRED" },
+                        ],
+                    },
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable({
@@ -113,7 +102,7 @@ export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: nu
             columnFilters: [{ id: "status", value: ["OPERATIONAL", "UNSERVICEABLE"] }],
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "ref", desc: false }],
         },
@@ -123,10 +112,11 @@ export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: nu
         <>
             <div className="flex items-center justify-between mt-4">
                 <div className="text-lg font-semibold">Items in Kind</div>
-                <Akagi.TableSearch table={table} />
             </div>
+            <Kaga.TableToolbar table={table} />
             <Show when={isItemsReady} fallback={<Skeleton className="w-full h-10" />}>
-                <Akagi.Table table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </Show>
         </>
     );

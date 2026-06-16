@@ -10,8 +10,8 @@ import { Fragment, use } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -66,8 +66,8 @@ export default function I3Module_Team_EquipmentKindsList_Page(
     const usedKinds = kinds.filter((kind) => memberEquipment.some((eq) => eq.kind.id === kind.id));
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Teams" },
@@ -81,11 +81,11 @@ export default function I3Module_Team_EquipmentKindsList_Page(
                     { label: "Equipment Kinds" },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="md">
-                    <Hermes.Header>
-                        <Hermes.Title>Equipment Types issued to {team.title}</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Equipment Types issued to {team.title}</Saratoga.Title>
+                    </Saratoga.Header>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -132,8 +132,8 @@ export default function I3Module_Team_EquipmentKindsList_Page(
                             ))}
                         </TableBody>
                     </Table>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

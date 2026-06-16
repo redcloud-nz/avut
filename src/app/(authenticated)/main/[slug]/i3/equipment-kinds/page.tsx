@@ -9,8 +9,8 @@ import Link from "next/link";
 import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 
@@ -53,17 +53,17 @@ export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <Hermes.Header>
-                        <Hermes.Title>Select Team</Hermes.Title>
-                        <Hermes.Description>
-                            You have multiple teams available. Please select a team to view its
-                            equipment kinds.
-                        </Hermes.Description>
-                    </Hermes.Header>
+        <Std.SidebarInset>
+            <Std.Navbar />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Select Team</Saratoga.Title>
+                    </Saratoga.Header>
+                    <p className="text-sm text-muted-foreground">
+                        You have multiple teams available. Please select a team to view its
+                        equipment kinds.
+                    </p>
                     <ItemGroup>
                         {d4HTeams
                             .sort((a, b) => a.title.localeCompare(b.title))
@@ -86,8 +86,8 @@ export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
                                 </Item>
                             ))}
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

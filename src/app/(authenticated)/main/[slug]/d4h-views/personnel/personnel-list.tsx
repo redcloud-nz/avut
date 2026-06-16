@@ -16,8 +16,8 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
-import { Hermes } from "@/components/blocks/hermes";
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 
@@ -32,60 +32,38 @@ export function D4HViewsModules_Personnel_List({
 }: D4HViewsModules_Personnel_ListProps) {
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<D4HMember & { team: D4HTeamRef }>((columnHelper) => [
+            Kaga.defineColumns<D4HMember & { team: D4HTeamRef }>((columnHelper) => [
                 columnHelper.accessor("name", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Name</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Name",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("team.title", {
                     id: "team",
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Team</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Team",
+                    cell: (ctx) => ctx.getValue(),
                     enableSorting: true,
                     enableGlobalFilter: false,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell
-                            header={ctx.header}
-                            filterOptions={[
-                                {
-                                    value: "OPERATIONAL",
-                                    label: "Operational",
-                                },
-                                {
-                                    value: "NON_OPERATIONAL",
-                                    label: "Non-operational",
-                                },
-                            ]}
-                        >
-                            Status
-                        </Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            {match(ctx.getValue())
-                                .with("OPERATIONAL", () => "Operational")
-                                .with("NON_OPERATIONAL", () => "Non-operational")
-                                .otherwise(() => ctx.getValue())}
-                        </Akagi.TableCell>
-                    ),
+                    header: "Status",
+                    cell: (ctx) =>
+                        match(ctx.getValue())
+                            .with("OPERATIONAL", () => "Operational")
+                            .with("NON_OPERATIONAL", () => "Non-operational")
+                            .otherwise(() => ctx.getValue()),
+                    filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
-                    filterFn: (row, columnId, filterValue) => {
-                        const rowValue = row.getValue(columnId) as string;
-                        return filterValue.includes(rowValue);
+                    meta: {
+                        columnOptions: [
+                            { value: "OPERATIONAL", label: "Operational" },
+                            { value: "NON_OPERATIONAL", label: "Non-operational" },
+                        ],
                     },
                 }),
             ]),
@@ -101,17 +79,21 @@ export function D4HViewsModules_Personnel_List({
         getSortedRowModel: getSortedRowModel(),
         initialState: {
             columnFilters: [{ id: "status", value: ["OPERATIONAL", "NON_OPERATIONAL"] }],
-            pagination: { pageIndex: 0, pageSize: Akagi.DEFAULT_PAGE_SIZE },
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },
     });
 
     return (
-        <>
-            <div className="flex items-center justify-between">
-                <Akagi.TableSearch table={table} />
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Personnel</Saratoga.Title>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </div>
-            <Akagi.Table table={table} />
-        </>
+        </Saratoga.Root>
     );
 }

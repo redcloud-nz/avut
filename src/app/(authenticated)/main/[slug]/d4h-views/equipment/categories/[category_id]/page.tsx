@@ -10,12 +10,11 @@ import { use } from "react";
 
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
+import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
@@ -43,8 +42,8 @@ export default function D4HViewsModule_EquipmentCategory_Page(
     if (!category) throw new Error(`Category(${categoryId}) not found`);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "D4H Views",
@@ -65,45 +64,34 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                     category.title,
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <Hermes.Header>
-                        <Hermes.BackButton
-                            href={route("/main/[slug]/d4h-views/equipment/categories", {
-                                slug: organization.slug,
-                            })}
-                        />
-                        <Hermes.Title>{category.title}</Hermes.Title>
-                    </Hermes.Header>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{category.title}</Saratoga.Title>
+                    </Saratoga.Header>
                     <Card>
                         <CardHeader>
                             <CardTitle>Category Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <FieldGroup>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Category ID</FieldLabel>
-                                    <FieldValue value={category.id} format="id" />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Title</FieldLabel>
-                                    <FieldValue value={category.title} />
-                                </Field>
-                                <Field orientation="responsive">
-                                    <FieldLabel>Owner</FieldLabel>
-                                    <FieldValue>
-                                        <span>{category.owner.title}</span>
-                                        <span className="text-muted-foreground pl-2">
-                                            ({category.owner.resourceType})
-                                        </span>
-                                    </FieldValue>
-                                </Field>
-                            </FieldGroup>
+                            <DL>
+                                <DLTerm>Category ID</DLTerm>
+                                <DLDetails>{category.id}</DLDetails>
+                                <DLTerm>Title</DLTerm>
+                                <DLDetails>{category.title}</DLDetails>
+                                <DLTerm>Owner</DLTerm>
+                                <DLDetails>
+                                    <span>{category.owner.title}</span>
+                                    <span className="text-muted-foreground pl-2">
+                                        ({category.owner.resourceType})
+                                    </span>
+                                </DLDetails>
+                            </DL>
                         </CardContent>
                     </Card>
                     <D4HViewsModule_EquipmentCategory_Kinds_List categoryId={category.id} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

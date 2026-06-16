@@ -8,7 +8,7 @@
 
 import { use } from "react";
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { NotImplemented } from "@/components/nav/errors";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -24,12 +24,11 @@ export default function AdminModule_PersonHistory_Page(
     const person = usePerson(person_id);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Personnel", href: route("/main/[slug]/admin/personnel", { slug }) },
-
                     {
                         label: person.name,
                         href: route("/main/[slug]/admin/personnel/[person_id]", {
@@ -40,11 +39,9 @@ export default function AdminModule_PersonHistory_Page(
                     "History",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg" className="h-full flex flex-col justify-center">
-                    <NotImplemented />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <NotImplemented />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

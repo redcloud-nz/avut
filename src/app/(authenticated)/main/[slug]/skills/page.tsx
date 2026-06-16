@@ -7,8 +7,7 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import Link from "next/link";
 
@@ -29,16 +28,12 @@ export default async function SkillsIndex_Page(props: PageProps<`/main/[slug]/sk
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[{ label: "Skills", href: route("/main/[slug]/skills", { slug }) }]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">Skills Module</div>
-                    </div>
+            <Std.ScrollContainer>
+                <Std.IndexPage title="Skills Module">
                     <ItemGroup>
                         <Protect orgId={organization.id} permissions={{ skills: ["view"] }}>
                             <Item asChild>
@@ -56,8 +51,8 @@ export default async function SkillsIndex_Page(props: PageProps<`/main/[slug]/sk
                             </Item>
                         </Protect>
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

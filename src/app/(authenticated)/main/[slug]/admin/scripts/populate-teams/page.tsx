@@ -10,7 +10,8 @@
 import { use } from "react";
 import { toast } from "sonner";
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Button } from "@/components/ui/button";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -38,22 +39,24 @@ export default function AdminScripts_PopulateTeams_Page(
     }
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     { label: "Scripts", href: route("/main/[slug]/admin/scripts", { slug }) },
                     "Populate Teams",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <div className="font-semibold">Populate Teams Script</div>
-                        <Button onClick={runScript}>Run Script</Button>
-                    </div>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Populate Teams Script</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Button onClick={runScript}>Run Script</Button>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

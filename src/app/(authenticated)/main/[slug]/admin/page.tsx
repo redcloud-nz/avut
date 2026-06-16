@@ -8,8 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { AVUTLogo } from "@/components/art/avut-logo";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -28,14 +27,10 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
     const organization = await getOrganizationBySlug(slug);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header breadcrumbs={["Admin"]} />
-            <Lexington.Page>
-                <Lexington.Column width="sm">
-                    <div className="flex flex-col items-center my-4 gap-4">
-                        <AVUTLogo />
-                        <div className="font-semibold">Admin Module</div>
-                    </div>
+        <Std.SidebarInset>
+            <Std.Navbar breadcrumbs={["Admin"]} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title="Admin Module">
                     <ItemGroup>
                         <Protect permissions={{ member: ["view"] }} orgId={organization.id}>
                             <Item asChild>
@@ -137,8 +132,8 @@ export default async function AdminIndex_Page(props: PageProps<`/main/[slug]/adm
                             </Item>
                         </Protect>
                     </ItemGroup>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

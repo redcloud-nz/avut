@@ -8,8 +8,7 @@
 
 import { use } from "react";
 
-import { Hermes } from "@/components/blocks/hermes";
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -26,8 +25,8 @@ export default function AdminModule_OrganizationUpdate_Page(
     const organization = useOrganization();
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/main/[slug]/admin", { slug }) },
                     {
@@ -37,27 +36,16 @@ export default function AdminModule_OrganizationUpdate_Page(
                     "Update",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="lg">
-                    <Hermes.Section>
-                        <Hermes.Header>
-                            <Hermes.BackButton
-                                href={route("/main/[slug]/admin/organization", { slug })}
-                            />
-                        </Hermes.Header>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Update Organization</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <AdminModule_UpdateOrganization_Form
-                                    organizationId={organization.id}
-                                />
-                            </CardContent>
-                        </Card>
-                    </Hermes.Section>
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Update Organization</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AdminModule_UpdateOrganization_Form organizationId={organization.id} />
+                    </CardContent>
+                </Card>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

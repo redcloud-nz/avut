@@ -5,7 +5,7 @@
  * Path: /main/[slug]/d4h-views/teams
  */
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
@@ -47,18 +47,16 @@ export default async function D4HViewsModule_Teams_Page(
     const teams = await getD4HTeamsAccessibleWithToken(token);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/main/[slug]/d4h-views", { slug }) },
                     "Teams",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="xl">
-                    <D4HViewsModule_Teams_List teams={teams} />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <D4HViewsModule_Teams_List teams={teams} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

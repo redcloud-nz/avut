@@ -7,7 +7,7 @@
 
 "use client";
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Std } from "@/components/blocks/std";
 import { UnderConstruction } from "@/components/under-construction";
 import { route } from "@/lib/routes";
 import { useOrganization } from "@/hooks/use-organization";
@@ -16,19 +16,17 @@ export default function I3_Return_Page(props: PageProps<"/main/[slug]/i3/forms/r
     const organization = useOrganization();
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/main/[slug]/i3", { slug: organization.slug }) },
                     { label: "Forms" },
                     { label: "Return Items" },
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="md">
-                    <UnderConstruction />
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+            <Std.ScrollContainer>
+                <UnderConstruction />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

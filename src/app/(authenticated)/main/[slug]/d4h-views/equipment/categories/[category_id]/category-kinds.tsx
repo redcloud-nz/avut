@@ -16,7 +16,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { Akagi } from "@/components/blocks/akagi";
+import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -44,65 +44,56 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
 
     const columns = useMemo(
         () =>
-            Akagi.defineColumns<(typeof kinds)[number]>((columnHelper) => [
+            Kaga.defineColumns<(typeof kinds)[number]>((columnHelper) => [
                 columnHelper.accessor("id", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Kind ID</Akagi.TableHeadCell>
-                    ),
+                    header: "Kind ID",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route(
-                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
-                                    {
-                                        slug: organization.slug,
-                                        category_id: String(categoryId),
-                                        kind_id: String(ctx.row.original.id),
-                                    },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route(
+                                "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                {
+                                    slug: organization.slug,
+                                    category_id: String(categoryId),
+                                    kind_id: String(ctx.row.original.id),
+                                },
+                            )}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("title", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Title</Akagi.TableHeadCell>
-                    ),
+                    header: "Title",
                     cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>
-                            <Link
-                                href={route(
-                                    "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
-                                    {
-                                        slug: organization.slug,
-                                        category_id: String(categoryId),
-                                        kind_id: String(ctx.row.original.id),
-                                    },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        </Akagi.TableCell>
+                        <Link
+                            href={route(
+                                "/main/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                {
+                                    slug: organization.slug,
+                                    category_id: String(categoryId),
+                                    kind_id: String(ctx.row.original.id),
+                                },
+                            )}
+                        >
+                            {ctx.getValue()}
+                        </Link>
                     ),
                     enableGlobalFilter: true,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
                 columnHelper.accessor("type", {
-                    header: (ctx) => (
-                        <Akagi.TableHeadCell header={ctx.header}>Type</Akagi.TableHeadCell>
-                    ),
-                    cell: (ctx) => (
-                        <Akagi.TableCell cell={ctx.cell}>{ctx.getValue()}</Akagi.TableCell>
-                    ),
+                    header: "Type",
+                    cell: (ctx) => ctx.getValue(),
                     enableGlobalFilter: false,
                     enableSorting: true,
+                    enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [organization.slug, categoryId],
     );
 
     const table = useReactTable({
@@ -115,7 +106,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
         initialState: {
             pagination: {
                 pageIndex: 0,
-                pageSize: Akagi.DEFAULT_PAGE_SIZE,
+                pageSize: Kaga.DEFAULT_PAGE_SIZE,
             },
             sorting: [{ id: "title", desc: false }],
         },
@@ -125,10 +116,11 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
         <>
             <div className="flex items-center justify-between mt-4">
                 <div className="text-lg font-semibold">Kinds in Category</div>
-                <Akagi.TableSearch table={table} />
             </div>
+            <Kaga.TableToolbar table={table} />
             <Show when={isKindsReady} fallback={<Skeleton className="w-full h-10" />}>
-                <Akagi.Table table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
             </Show>
         </>
     );

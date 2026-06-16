@@ -10,7 +10,8 @@ import { Fragment, use } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { Lexington } from "@/components/blocks/lexington";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import Link from "next/link";
 
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -53,8 +54,8 @@ export default function SkillPackageBuilder_PackageContents_Page(
     if (!skillPackage) throw new Error(`SkillPackage(${package_id}) not found`);
 
     return (
-        <Lexington.Root>
-            <Lexington.Header
+        <Std.SidebarInset>
+            <Std.Navbar
                 breadcrumbs={[
                     {
                         label: "Skill Package Builder",
@@ -70,8 +71,11 @@ export default function SkillPackageBuilder_PackageContents_Page(
                     "Contents",
                 ]}
             />
-            <Lexington.Page>
-                <Lexington.Column width="full">
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Package Contents</Saratoga.Title>
+                    </Saratoga.Header>
                     {groups.length > 0 || skills.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -164,8 +168,8 @@ export default function SkillPackageBuilder_PackageContents_Page(
                             </AlertTitle>
                         </Alert>
                     )}
-                </Lexington.Column>
-            </Lexington.Page>
-        </Lexington.Root>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }
