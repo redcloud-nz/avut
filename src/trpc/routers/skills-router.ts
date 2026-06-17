@@ -141,7 +141,7 @@ export const skillsRouter = createTrpcRouter({
     /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
      */
-    listAssessableSkills: organizationProcedure({ skills: ["view"] })
+    listAssessableSkills: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
             z.object({
                 skillPackages: z.array(SkillPackage.schema),
@@ -181,7 +181,7 @@ export const skillsRouter = createTrpcRouter({
      * @returns An array of skill packages including subscription status for the organization.
      */
     listPackages: organizationProcedure({
-        skills: ["view"],
+        skillPackageSubscription: ["view"],
     })
         .output(
             z.array(
@@ -468,7 +468,7 @@ export const skillsRouter = createTrpcRouter({
      * @returns An array of skill check sessions associated with the organization.
      */
     listSessions: organizationProcedure({
-        skills: ["view"],
+        skillPackageSubscription: ["view"],
     })
         .output(z.array(SkillCheckSession.schema))
         .query(async ({ ctx, input: { organizationId } }) => {
@@ -485,7 +485,7 @@ export const skillsRouter = createTrpcRouter({
      * List the packages that the organization is currently subscribed to, including details about the package and the subscription. Requires "view" skill on "Skills" module.
      * @returns An array of skill packages that the organization is subscribed to, including subscription details.
      */
-    listSubscribedPackages: organizationProcedure({ skills: ["view"] })
+    listSubscribedPackages: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
             z.array(
                 SkillPackage.schema.extend({
@@ -527,7 +527,7 @@ export const skillsRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the skill package does not exist or is not published.
      * @throws TRPCError(BAD_REQUEST) if the organization is already subscribed to the skill package.
      */
-    subscribeToPackage: organizationProcedure({ skills: ["subscribe"] })
+    subscribeToPackage: organizationProcedure({ skillPackageSubscription: ["subscribe"] })
         .input(
             z.object({
                 skillPackageId: SkillPackageId.schema,
@@ -595,7 +595,7 @@ export const skillsRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the subscription does not exist.
      */
     unsubscribeFromPackage: organizationProcedure({
-        skills: ["subscribe"],
+        skillPackageSubscription: ["subscribe"],
     })
         .input(
             z.object({

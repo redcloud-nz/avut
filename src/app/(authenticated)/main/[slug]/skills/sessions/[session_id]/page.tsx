@@ -257,7 +257,7 @@ function SkillsModule_Session_Contents_Card({ sessionId }: { sessionId: SkillChe
                 </Item>
                 <Item size="sm" asChild>
                     <Link
-                        href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
+                        href={route("/main/[slug]/skills/sessions/[session_id]/checks", {
                             slug: organization.slug,
                             session_id: sessionId,
                         })}

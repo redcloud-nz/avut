@@ -14,7 +14,9 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     EllipsisIcon,
+    EyeIcon,
     FunnelIcon,
+    MoreVerticalIcon,
     SearchIcon,
 } from "lucide-react";
 import { ComponentProps, Fragment } from "react";
@@ -23,6 +25,7 @@ import {
     ColumnHelper,
     createColumnHelper,
     flexRender,
+    Header,
     Row,
     RowData,
     Table as TanstackTable,
@@ -35,6 +38,7 @@ import {
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuGroup,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
@@ -65,26 +69,9 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
             <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} className="">
-                        {headerGroup.headers.map((header) => {
-                            const { columnDef } = header.column;
-                            const isSorted = header.column.getIsSorted();
-                            return (
-                                <Fragment key={header.id}>
-                                    <TableHeadCell
-                                        data-column-id={header.column.id}
-                                        {...(columnDef.meta?.headerProps ?? {})}
-                                    >
-                                        {flexRender(columnDef.header, header.getContext())}
-                                        {isSorted == "asc" && (
-                                            <ArrowDownAZIcon className="size-4 ml-2 inline-block text-muted-foreground" />
-                                        )}
-                                        {isSorted == "desc" && (
-                                            <ArrowDownZAIcon className="size-4 ml-2 inline-block text-muted-foreground" />
-                                        )}
-                                    </TableHeadCell>
-                                </Fragment>
-                            );
-                        })}
+                        {headerGroup.headers.map((header) => (
+                            <KagaTableHeadCell key={header.id} header={header} table={table} />
+                        ))}
                     </TableRow>
                 ))}
             </TableHeader>
@@ -116,6 +103,85 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
     );
 }
 
+function KagaTableHeadCell<TData extends RowData>({
+    header,
+    table,
+}: ComponentProps<typeof TableHeadCell> & {
+    header: Header<TData, unknown>;
+    table: TanstackTable<TData>;
+}) {
+    const { columnDef } = header.column;
+
+    const canFilter = header.column.getCanFilter();
+    const canSort = header.column.getCanSort();
+    const isSorted = header.column.getIsSorted();
+    return (
+        <TableHeadCell
+            key={header.id}
+            data-column-id={header.column.id}
+            {...(columnDef.meta?.headerProps ?? {})}
+        >
+            <div className="flex items-center">
+                <div data-slot="table-head-cell-content">
+                    {flexRender(columnDef.header, header.getContext())}
+                </div>
+                <div data-slot="table-head-cell-indicators" className="flex items-center">
+                    {isSorted == "asc" && (
+                        <ArrowDownAZIcon className="size-4 ml-2 inline-block text-muted-foreground" />
+                    )}
+                    {isSorted == "desc" && (
+                        <ArrowDownZAIcon className="size-4 ml-2 inline-block text-muted-foreground" />
+                    )}
+                    {/* <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreVerticalIcon className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50" align="end">
+                            <DropdownMenuGroup>
+                                {canFilter && (
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Filter</DropdownMenuLabel>
+                                        <DropdownMenuItem></DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                )}
+                                {canSort && (
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Sort</DropdownMenuLabel>
+                                        <DropdownMenuCheckboxItem
+                                            onSelect={() => {
+                                                if (isSorted != "asc")
+                                                    header.column.toggleSorting(false);
+                                                else header.column.clearSorting();
+                                            }}
+                                            checked={isSorted === "asc"}
+                                        >
+                                            <ArrowDownAZIcon />
+                                            Ascending
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            onSelect={() => {
+                                                if (isSorted != "desc")
+                                                    header.column.toggleSorting(true);
+                                                else header.column.clearSorting();
+                                            }}
+                                            checked={isSorted === "desc"}
+                                        >
+                                            <ArrowDownZAIcon />
+                                            Descending
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
+                                )}
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu> */}
+                </div>
+            </div>
+        </TableHeadCell>
+    );
+}
+
 function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
     const columns = table.getAllColumns();
 
@@ -139,6 +205,7 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
             <div className="flex items-center gap-2">
                 <KagaColumnSortingControl table={table} />
                 <KagaColumnFilterControl table={table} />
+                <KagaColumnVisibilityControl table={table} />
             </div>
         </div>
     );
@@ -269,6 +336,43 @@ function KagaColumnFilterControl<TData extends RowData>({
                         </DropdownMenuGroup>
                     );
                 })}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function KagaColumnVisibilityControl<TData extends RowData>({
+    table,
+}: {
+    table: TanstackTable<TData>;
+}) {
+    const hidableColumns = table.getAllColumns().filter((column) => column.getCanHide());
+
+    if (hidableColumns.length === 0) {
+        return null;
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <EyeIcon className="size-4" />
+                    <ChevronDownIcon className="size-3.5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-50" align="end">
+                <DropdownMenuGroup>
+                    <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+                    {hidableColumns.map((column) => (
+                        <DropdownMenuCheckboxItem
+                            key={column.id}
+                            checked={column.getIsVisible()}
+                            onCheckedChange={(checked) => column.toggleVisibility(checked)}
+                        >
+                            {getColumnDisplayName(column.columnDef)}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuGroup>
             </DropdownMenuContent>
         </DropdownMenu>
     );

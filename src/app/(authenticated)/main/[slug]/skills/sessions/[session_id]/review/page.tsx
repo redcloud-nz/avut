@@ -7,7 +7,7 @@
 
 "use client";
 
-import { ChevronDownIcon, ClipboardCheckIcon } from "lucide-react";
+import { ClipboardCheckIcon } from "lucide-react";
 import { use, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,25 +18,16 @@ import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldSet,
-} from "@/components/ui/field";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
-import { PersonId, PersonRef } from "@/lib/schemas/person";
-import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
-import { trpc } from "@/trpc/client";
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import {
     Table,
     TableBody,
@@ -45,6 +36,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { PersonId, PersonRef } from "@/lib/schemas/person";
+import { SkillId, SkillRef } from "@/lib/schemas/skill";
+import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import { trpc } from "@/trpc/client";
 
 const RESULT_LABELS: Record<string, string> = {
     NotAssessed: "Not Assessed",
@@ -207,34 +205,44 @@ export default function SkillsModule_SessionReview_Page(
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <FieldSet>
-                                    {assessees.map((assessee) => (
-                                        <AssesseeChecks
-                                            key={assessee.id}
-                                            assessee={assessee}
-                                            assesseeChecks={skillChecks.filter(
-                                                (check) => check.assesseeId === assessee.id,
-                                            )}
-                                            skillById={skillById}
-                                            assessorById={assessorById}
-                                            selected={selected}
-                                            toggleCheck={toggleCheck}
-                                            toggleGroup={toggleGroup}
-                                        />
-                                    ))}
-                                    <Field orientation="horizontal">
-                                        <MutationButton
-                                            status={mutation.status}
-                                            onClick={handleApprove}
-                                            text={{
-                                                idle: "Approve",
-                                                pending: "Submitting...",
-                                                success: "Submitted",
-                                            }}
-                                        />
-                                    </Field>
-                                </FieldSet>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHeadCell></TableHeadCell>
+                                            <TableHeadCell>Assessee</TableHeadCell>
+                                            <TableHeadCell>Skill</TableHeadCell>
+                                            <TableHeadCell>Result</TableHeadCell>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {assessees.map((assessee) => (
+                                            <AssesseeChecks
+                                                key={assessee.id}
+                                                assessee={assessee}
+                                                assesseeChecks={skillChecks.filter(
+                                                    (check) => check.assesseeId === assessee.id,
+                                                )}
+                                                skillById={skillById}
+                                                assessorById={assessorById}
+                                                selected={selected}
+                                                toggleCheck={toggleCheck}
+                                                toggleGroup={toggleGroup}
+                                            />
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </CardContent>
+                            <CardFooter className="justify-end">
+                                <MutationButton
+                                    status={mutation.status}
+                                    onClick={handleApprove}
+                                    text={{
+                                        idle: "Approve",
+                                        pending: "Submitting...",
+                                        success: "Submitted",
+                                    }}
+                                />
+                            </CardFooter>
                         </Card>
                     </Show>
                 </Saratoga.Root>
@@ -264,74 +272,55 @@ function AssesseeChecks({
 }: AssesseeChecksProps) {
     const selectedCount = assesseeChecks.filter((check) => selected.has(check.id)).length;
 
-    if (assesseeChecks.length === 0) {
-        return (
-            <div
-                className="group w-full flex items-center px-2 py-1 justify-between border-b"
-                key={assessee.id}
-            >
-                <div className="font-medium">{assessee.name}</div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>No skill checks recorded</span>
-                </div>
-            </div>
-        );
-    }
+    const hasChecks = assesseeChecks.length > 0;
 
     return (
-        <Collapsible key={assessee.id}>
-            <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
-                <div className="font-medium">{assessee.name}</div>
-                <div className="flex items-center gap-2">
-                    <div className="flex gap-1 text-muted-foreground">
-                        <span>
-                            {selectedCount} of {assesseeChecks.length}
-                        </span>
-                        <span className="hidden md:inline">selected</span>
-                    </div>
-                    <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHeadCell>
-                                <Checkbox
-                                    id={`select-all-${assessee.id}`}
-                                    checked={selectedCount === assesseeChecks.length}
-                                    onCheckedChange={() =>
-                                        toggleGroup(assesseeChecks.map((check) => check.id))
-                                    }
-                                />
-                            </TableHeadCell>
-                            <TableHeadCell>Skill</TableHeadCell>
-                            <TableHeadCell className="text-center">Result</TableHeadCell>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {assesseeChecks.map((check) => {
-                            const skill = skillById.get(check.skillId);
-                            const assessor = assessorById.get(check.assessorId);
-                            return (
-                                <TableRow key={check.id}>
-                                    <TableCell>
-                                        <Checkbox
-                                            id={`check-${check.id}`}
-                                            checked={selected.has(check.id)}
-                                            onCheckedChange={() => toggleCheck(check.id)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{skill?.name ?? check.skillId}</TableCell>
-                                    <TableCell className="text-center">
-                                        {RESULT_LABELS[check.result] ?? check.result}
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </CollapsibleContent>
-        </Collapsible>
+        <>
+            <TableRow>
+                <TableCell>
+                    {hasChecks && (
+                        <Checkbox
+                            id={`select-all-${assessee.id}`}
+                            checked={
+                                selectedCount == assesseeChecks.length
+                                    ? true
+                                    : selectedCount === 0
+                                      ? false
+                                      : "indeterminate"
+                            }
+                            onCheckedChange={() =>
+                                toggleGroup(assesseeChecks.map((check) => check.id))
+                            }
+                        />
+                    )}
+                </TableCell>
+                <TableCell className="font-medium" colSpan={2}>
+                    {assessee.name}
+                </TableCell>
+                {!hasChecks && (
+                    <TableCell className="text-muted-foreground">
+                        No skill checks recorded
+                    </TableCell>
+                )}
+            </TableRow>
+            {assesseeChecks.map((check) => {
+                const skill = skillById.get(check.skillId);
+                const assessor = assessorById.get(check.assessorId);
+                return (
+                    <TableRow key={check.id}>
+                        <TableCell>
+                            <Checkbox
+                                id={`check-${check.id}`}
+                                checked={selected.has(check.id)}
+                                onCheckedChange={() => toggleCheck(check.id)}
+                            />
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>{skill?.name ?? check.skillId}</TableCell>
+                        <TableCell>{RESULT_LABELS[check.result] ?? check.result}</TableCell>
+                    </TableRow>
+                );
+            })}
+        </>
     );
 }

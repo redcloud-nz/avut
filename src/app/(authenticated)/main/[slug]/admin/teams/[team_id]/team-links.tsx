@@ -33,7 +33,7 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
                 <CardTitle>Related</CardTitle>
             </CardHeader>
             <CardContent className="px-2 -my-2">
-                {teamMembersQuery.isLoading && <Skeleton className="h-[66.25px] w-full" />}
+                {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
                 {teamMembersQuery.data && (
                     <Item className="px-2" size="sm" asChild>
                         <Link

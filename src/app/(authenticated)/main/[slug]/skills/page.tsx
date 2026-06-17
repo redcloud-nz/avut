@@ -35,13 +35,64 @@ export default async function SkillsIndex_Page(props: PageProps<`/main/[slug]/sk
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skills Module">
                     <ItemGroup>
-                        <Protect orgId={organization.id} permissions={{ skills: ["view"] }}>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillPackageSubscription: ["view"] }}
+                        >
                             <Item asChild>
                                 <Link href={route("/main/[slug]/skills/catalogue", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Skill Catalogue</ItemTitle>
                                         <ItemDescription>
                                             Browse and subscribe to skill packages.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/skills/checks", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Skill Checks</ItemTitle>
+                                        <ItemDescription>
+                                            View recent skill checks and their results.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect
+                            orgId={organization.id}
+                            permissions={{ skillCheckSession: ["view"] }}
+                        >
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/skills/sessions", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Skill Check Sessions</ItemTitle>
+                                        <ItemDescription>
+                                            View and manage skill check sessions.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/main/[slug]/skills/reports", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Reports</ItemTitle>
+                                        <ItemDescription>
+                                            Generate reports on skill check performance.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

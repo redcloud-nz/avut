@@ -7,9 +7,9 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { PersonId } from "@/lib/schemas/person";
+import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { SkillId } from "@/lib/schemas/skill";
+import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -142,6 +142,55 @@ export const skillChecksRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                 },
             });
+        }),
+
+    /**
+     * Lists skill checks recorded within the last month, with resolved names for assessee,
+     * assessor, skill, and session. Ordered by createdAt descending.
+     */
+    listRecentChecks: organizationProcedure({ skillCheck: ["view"] })
+        .output(
+            z.array(
+                SkillCheck.schema.extend({
+                    assessee: PersonRef.schema,
+                    assessor: PersonRef.schema,
+                    skill: SkillRef.schema,
+                    session: z
+                        .object({ id: SkillCheckSessionId.schema, name: z.string() })
+                        .nullable(),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const since = new Date();
+            since.setMonth(since.getMonth() - 1);
+
+            const checks = await ctx.prisma.skillCheck.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    createdAt: { gte: since },
+                },
+                include: {
+                    assessee: { select: { id: true, name: true } },
+                    assessor: { select: { id: true, name: true } },
+                    skill: { select: { id: true, name: true } },
+                    session: { select: { id: true, name: true } },
+                },
+                orderBy: { createdAt: "desc" },
+            });
+
+            return checks.map((check) => ({
+                ...SkillCheck.fromRecord(check),
+                assessee: PersonRef.schema.parse(check.assessee),
+                assessor: PersonRef.schema.parse(check.assessor),
+                skill: SkillRef.schema.parse(check.skill),
+                session: check.session
+                    ? {
+                          id: check.session.id as SkillCheckSessionId,
+                          name: check.session.name,
+                      }
+                    : null,
+            }));
         }),
 
     /**

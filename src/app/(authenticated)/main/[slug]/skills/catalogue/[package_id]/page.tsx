@@ -90,7 +90,7 @@ export default function SkillsModule_CataloguePackage_Page(
                         <Saratoga.Actions>
                             <Protect
                                 orgId={organization.id}
-                                permissions={{ skills: ["subscribe"] }}
+                                permissions={{ skillPackageSubscription: ["subscribe"] }}
                             >
                                 {skillPackage.subscription ? (
                                     <MutationButton
