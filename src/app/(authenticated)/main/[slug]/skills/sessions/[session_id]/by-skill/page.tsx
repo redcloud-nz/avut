@@ -7,7 +7,7 @@
 
 "use client";
 
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { use, useState } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
@@ -19,9 +19,9 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import {
     Select,
@@ -30,6 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -90,7 +91,7 @@ export default function SkillsModule_SessionBySkill_Page(
             },
             onSuccess({ created, updated, deleted }, variables) {
                 // Surgically remove only changes whose values still match what was sent.
-                // If the user edited a skill again while the mutation was in flight, the
+                // If the user edited a person again while the mutation was in flight, the
                 // current value will differ from what we sent — leave those entries alone.
                 setChanges((prev) => {
                     const next = { ...prev };
@@ -194,26 +195,28 @@ export default function SkillsModule_SessionBySkill_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Assess by Skill</Saratoga.Title>
                     </Saratoga.Header>
-                    <Card>
-                        <CardContent>
-                            <Show
-                                when={!!personSelf}
-                                fallback={
-                                    <Alert variant="warning">
-                                        <AlertTitle>No linked person record</AlertTitle>
-                                        <AlertDescription>
-                                            Your account is not linked to a person record in this
-                                            organization. Contact an administrator to link your
-                                            account before recording skill checks.
-                                        </AlertDescription>
-                                    </Alert>
-                                }
-                            >
-                                <FieldGroup>
+                    {/* <Card>
+                        <CardContent> */}
+                    <Show
+                        when={!!personSelf}
+                        fallback={
+                            <Alert variant="warning">
+                                <AlertTitle>No linked person record</AlertTitle>
+                                <AlertDescription>
+                                    Your account is not linked to a person record in this
+                                    organization. Contact an administrator to link your account
+                                    before recording skill checks.
+                                </AlertDescription>
+                            </Alert>
+                        }
+                    >
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
+                            <div>
+                                <FieldGroup className="block lg:hidden">
                                     <Field>
                                         <FieldLabel>Skill</FieldLabel>
                                         <Select
-                                            value={selectedSkillId ?? ""}
+                                            value={selectedSkillId ?? "undefined"}
                                             onValueChange={(value) => {
                                                 mutation.reset();
                                                 setSelectedSkillId(value as SkillId);
@@ -231,15 +234,45 @@ export default function SkillsModule_SessionBySkill_Page(
                                             </SelectContent>
                                         </Select>
                                     </Field>
+                                </FieldGroup>
+                                <ItemGroup className="hidden lg:block">
+                                    {sessionSkills.map((skill) => (
+                                        <Item
+                                            key={skill.id}
+                                            asChild
+                                            variant={
+                                                skill.id === selectedSkillId ? "outline" : "default"
+                                            }
+                                        >
+                                            <a
+                                                onClick={() => {
+                                                    mutation.reset();
+                                                    setSelectedSkillId(skill.id);
+                                                }}
+                                            >
+                                                <ItemContent>
+                                                    <ItemTitle>{skill.name}</ItemTitle>
+                                                </ItemContent>
 
-                                    <FieldSeparator />
-
+                                                <ItemActions>
+                                                    <ChevronRightIcon className="size-4 text-muted-foreground" />
+                                                </ItemActions>
+                                            </a>
+                                        </Item>
+                                    ))}
+                                </ItemGroup>
+                            </div>
+                            <Separator orientation="vertical" className="hidden lg:block" />
+                            <Separator orientation="horizontal" className="block lg:hidden" />
+                            <div>
+                                <FieldGroup>
                                     <Show
                                         when={selectedSkillId !== null}
                                         fallback={
                                             <Empty>
                                                 <EmptyMedia>
-                                                    <ArrowUpIcon className="size-12 text-muted-foreground" />
+                                                    <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
+                                                    <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
                                                 </EmptyMedia>
                                                 <EmptyDescription>
                                                     Select a skill to assess personnel.
@@ -259,9 +292,11 @@ export default function SkillsModule_SessionBySkill_Page(
                                         ))}
                                     </Show>
                                 </FieldGroup>
-                            </Show>
-                        </CardContent>
-                    </Card>
+                            </div>
+                        </div>
+                    </Show>
+                    {/* </CardContent>
+                    </Card> */}
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>

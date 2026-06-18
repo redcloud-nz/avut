@@ -11,9 +11,8 @@ import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -101,24 +100,12 @@ export default async function AdminModule_Team_Page(
                                                 {getD4HServer(team.d4h.d4hServer).name}
                                             </DLDetails>
                                             <DLTerm>D4H Last Sync</DLTerm>
-                                            <DLDetails>
-                                                {team.d4h.d4hLastSyncedAt ? (
-                                                    <>
-                                                        <div>
-                                                            {formatDateTime(
-                                                                team.d4h.d4hLastSyncedAt,
-                                                            )}
-                                                        </div>
-                                                        <div className="text-muted-foreground">
-                                                            {formatRelativeDateTime(
-                                                                team.d4h.d4hLastSyncedAt,
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    "Never"
-                                                )}
-                                            </DLDetails>
+
+                                            {team.d4h.d4hLastSyncedAt ? (
+                                                <DLDateDetails date={team.d4h.d4hLastSyncedAt} />
+                                            ) : (
+                                                <DLDetails>Never</DLDetails>
+                                            )}
                                         </DL>
                                     </CardContent>
                                 </Card>
@@ -131,25 +118,13 @@ export default async function AdminModule_Team_Page(
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(team.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(team.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            {team.updatedAt ? (
-                                                <>
-                                                    <div>{formatDateTime(team.updatedAt)}</div>
-                                                    <div className="text-muted-foreground">
-                                                        {formatRelativeDateTime(team.updatedAt)}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                "N/A"
-                                            )}
-                                        </DLDetails>
+                                        <DLDateDetails date={team.createdAt} />
+                                        {team.updatedAt && (
+                                            <>
+                                                <DLTerm>Updated</DLTerm>
+                                                <DLDateDetails date={team.updatedAt} />
+                                            </>
+                                        )}
                                     </DL>
                                 </CardContent>
                             </Card>

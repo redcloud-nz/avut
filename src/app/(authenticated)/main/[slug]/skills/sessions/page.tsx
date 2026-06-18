@@ -7,11 +7,12 @@
 
 import { Std } from "@/components/blocks/std";
 
+import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
 import SkillsModule_Sessions_List from "./sessions-list";
 
 export const metadata = {
-    title: "Skill Check Sessions",
+    title: `Skill Check Sessions ${TITLE_SEPARATOR} Skills Module`,
 };
 
 export default async function SkillsModule_Sessions_Page(

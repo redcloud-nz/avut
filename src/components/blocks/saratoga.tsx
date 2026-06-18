@@ -8,6 +8,7 @@
 
 import { cn } from "@/lib/utils";
 import { ComponentProps } from "react";
+import { tv, VariantProps } from "tailwind-variants";
 
 function SaratogaRoot({ children, className, ...props }: ComponentProps<"div">) {
     return (
@@ -60,11 +61,30 @@ function SaratogaActions({ children, className, ...props }: ComponentProps<"div"
     );
 }
 
-function SaratogaColumns({ children, className, ...props }: ComponentProps<"div">) {
+const columnsVariants = tv({
+    base: "grid grid-cols-1  gap-4",
+    variants: {
+        variant: {
+            "2-1": "lg:grid-cols-[2fr_1fr]",
+            "1-1": "lg:grid-cols-[1fr_1fr]",
+            "1-2": "lg:grid-cols-[1fr_2fr]",
+        },
+    },
+    defaultVariants: {
+        variant: "2-1",
+    },
+});
+
+function SaratogaColumns({
+    children,
+    className,
+    variant,
+    ...props
+}: ComponentProps<"div"> & VariantProps<typeof columnsVariants>) {
     return (
         <div
             data-component="SaratogaColumns"
-            className={cn("grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4", className)}
+            className={cn(columnsVariants({ variant }), className)}
             {...props}
         >
             {children}
@@ -77,7 +97,7 @@ function SaratogaColumn({
     className,
     slot,
     ...props
-}: ComponentProps<"div"> & { slot: "main" | "secondary" }) {
+}: ComponentProps<"div"> & { slot: "list" | "main" | "secondary" }) {
     return (
         <div
             data-component="SaratogaColumn"

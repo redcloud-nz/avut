@@ -18,6 +18,7 @@ import {
     SkillPackageSubscription,
     SkillPackageSubscriptionId,
 } from "@/lib/schemas/skill-package-subscription";
+import { revalidateSkillCheckSession } from "@/server/skill-check-session";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -267,27 +268,21 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.array(PersonRef.schema))
         .query(async ({ ctx, input: { sessionId, scope } }) => {
-            const session = await ctx.prisma.skillCheckSession.findUnique({
-                where: {
-                    id: sessionId,
-                    organizationId: ctx.organizationId,
-                },
-                include: {
-                    assessees: {
-                        select: {
-                            id: true,
-                            name: true,
+            const session =
+                (await ctx.prisma.skillCheckSession.findUnique({
+                    where: {
+                        id: sessionId,
+                        organizationId: ctx.organizationId,
+                    },
+                    include: {
+                        assessees: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
                         },
                     },
-                },
-            });
-
-            if (!session) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillCheckSessionNotFound(sessionId),
-                });
-            }
+                })) ?? sessionNotFound(sessionId);
 
             if (scope == "assigned") {
                 // Return only the personnel that are currently assigned.
@@ -340,27 +335,21 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.array(PersonRef.schema))
         .query(async ({ ctx, input: { sessionId, scope } }) => {
-            const session = await ctx.prisma.skillCheckSession.findUnique({
-                where: {
-                    id: sessionId,
-                    organizationId: ctx.organizationId,
-                },
-                include: {
-                    assessors: {
-                        select: {
-                            id: true,
-                            name: true,
+            const session =
+                (await ctx.prisma.skillCheckSession.findUnique({
+                    where: {
+                        id: sessionId,
+                        organizationId: ctx.organizationId,
+                    },
+                    include: {
+                        assessors: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
                         },
                     },
-                },
-            });
-
-            if (!session) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillCheckSessionNotFound(sessionId),
-                });
-            }
+                })) ?? sessionNotFound(sessionId);
 
             if (scope === "assigned") {
                 return session.assessors
@@ -409,27 +398,21 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.array(SkillRef.schema))
         .query(async ({ ctx, input: { sessionId, scope } }) => {
-            const session = await ctx.prisma.skillCheckSession.findUnique({
-                where: {
-                    id: sessionId,
-                    organizationId: ctx.organizationId,
-                },
-                include: {
-                    skills: {
-                        select: {
-                            id: true,
-                            name: true,
+            const session =
+                (await ctx.prisma.skillCheckSession.findUnique({
+                    where: {
+                        id: sessionId,
+                        organizationId: ctx.organizationId,
+                    },
+                    include: {
+                        skills: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
                         },
                     },
-                },
-            });
-
-            if (!session) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillCheckSessionNotFound(sessionId),
-                });
-            }
+                })) ?? sessionNotFound(sessionId);
 
             if (scope == "assigned") {
                 // Return only the skills that are currently assigned.
@@ -678,6 +661,8 @@ export const skillsRouter = createTrpcRouter({
                 },
             });
 
+            await revalidateSkillCheckSession(skillCheckSessionId);
+
             return { updated: SkillCheckSession.fromRecord(updated) };
         }),
 
@@ -797,17 +782,19 @@ async function getSessionOrThrow(
     ctx: AuthenticatedOrganizationContext,
     sessionId: SkillCheckSessionId,
 ): Promise<SkillCheckSession> {
-    const session = await ctx.prisma.skillCheckSession.findUnique({
-        where: {
-            id: sessionId,
-            organizationId: ctx.organizationId,
-        },
-    });
-    if (!session) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.skillCheckSessionNotFound(sessionId),
-        });
-    }
+    const session =
+        (await ctx.prisma.skillCheckSession.findUnique({
+            where: {
+                id: sessionId,
+                organizationId: ctx.organizationId,
+            },
+        })) ?? sessionNotFound(sessionId);
     return SkillCheckSession.fromRecord(session);
+}
+
+function sessionNotFound(sessionId: SkillCheckSessionId): never {
+    throw new TRPCError({
+        code: "NOT_FOUND",
+        message: Messages.skillCheckSessionNotFound(sessionId),
+    });
 }

@@ -5,17 +5,15 @@
  * Path: /main/[slug]/skills/sessions/[session_id]
  */
 
-"use client";
-
-import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import Link from "next/link";
-import { Suspense, use } from "react";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
-
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
-import { Saratoga } from "@/components/blocks/saratoga";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
@@ -24,7 +22,7 @@ import {
     CardLoadingFallback,
     CardTitle,
 } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,32 +31,22 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { formatDate, formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
+import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { trpc } from "@/trpc/client";
+import { getOrganizationBySlug } from "@/server/organization";
+import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
+import { SkillsModule_Session_Contents_Card } from "./session-contents";
 import { SkillsModule_SessionMenu } from "./session-menu";
 
-export default function SkillsModule_Session_Page(
+export default async function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
 ) {
-    const { slug, session_id } = use(props.params);
+    const { slug, session_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
 
-    const organization = useOrganization();
-
-    const [{ data: session }] = useSuspenseQueries({
-        queries: [
-            trpc.skills.getSession.queryOptions({
-                organizationId: organization.id,
-                skillCheckSessionId: session_id,
-            }),
-        ],
-    });
+    const session = (await getSkillCheckSessionById(organization.id, session_id)) ?? notFound();
 
     return (
         <Std.SidebarInset>
@@ -66,14 +54,13 @@ export default function SkillsModule_Session_Page(
                 breadcrumbs={[
                     { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
                     { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
-                    session.name || session.id,
+                    { label: session.name || session.id },
                 ]}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{session.name}</Saratoga.Title>
-
                         <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -88,10 +75,7 @@ export default function SkillsModule_Session_Page(
                                             <Link
                                                 href={route(
                                                     "/main/[slug]/skills/sessions/[session_id]/by-person",
-                                                    {
-                                                        slug,
-                                                        session_id,
-                                                    },
+                                                    { slug, session_id },
                                                 )}
                                             >
                                                 By Person
@@ -101,10 +85,7 @@ export default function SkillsModule_Session_Page(
                                             <Link
                                                 href={route(
                                                     "/main/[slug]/skills/sessions/[session_id]/by-skill",
-                                                    {
-                                                        slug,
-                                                        session_id,
-                                                    },
+                                                    { slug, session_id },
                                                 )}
                                             >
                                                 By Skill
@@ -117,10 +98,7 @@ export default function SkillsModule_Session_Page(
                                 <Link
                                     href={route(
                                         "/main/[slug]/skills/sessions/[session_id]/review",
-                                        {
-                                            slug,
-                                            session_id,
-                                        },
+                                        { slug, session_id },
                                     )}
                                 >
                                     Review
@@ -168,21 +146,9 @@ export default function SkillsModule_Session_Page(
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(session.createdAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(session.createdAt)}
-                                            </div>
-                                        </DLDetails>
+                                        <DLDateDetails date={session.createdAt} />
                                         <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(session.updatedAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(session.updatedAt)}
-                                            </div>
-                                        </DLDetails>
+                                        <DLDateDetails date={session.updatedAt} />
                                     </DL>
                                 </CardContent>
                             </Card>
@@ -191,87 +157,5 @@ export default function SkillsModule_Session_Page(
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>
-    );
-}
-
-function SkillsModule_Session_Contents_Card({ sessionId }: { sessionId: SkillCheckSessionId }) {
-    const organization = useOrganization();
-
-    const [{ data: skillChecks }, { data: assessees }, { data: skills }] = useSuspenseQueries({
-        queries: [
-            trpc.skillChecks.listSkillChecks.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-            }),
-            trpc.skills.listSessionAssessees.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-            trpc.skills.listSessionSkills.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-        ],
-    });
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Contents</CardTitle>
-            </CardHeader>
-
-            <CardContent className="px-2 -my-2">
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/main/[slug]/skills/sessions/[session_id]/personnel", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{assessees.length} Personnel</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/main/[slug]/skills/sessions/[session_id]/skills", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{skills.length} Skills</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/main/[slug]/skills/sessions/[session_id]/checks", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{skillChecks.length} Skill checks</ItemTitle>
-                            <ItemDescription>recorded in the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
-            </CardContent>
-        </Card>
     );
 }
