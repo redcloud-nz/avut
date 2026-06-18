@@ -1,0 +1,538 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { TRPCError } from "@trpc/server";
+
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { nanoId16 } from "@/lib/id";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillId } from "@/lib/schemas/skill";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { TeamId } from "@/lib/schemas/team";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { skillChecksRouter } from "./skill-checks-router";
+
+describe("skillChecks.getCompetencyMatrix", () => {
+    // Dataset layout:
+    //   People:  person1 Alice (Active, team1)
+    //            person2 Bob   (Active, team1 + team2)
+    //            person3 Charlie (Archived, team1)
+    //   Teams:   team1 = [person1, person2, person3], team2 = [person2]
+    //   Pkgs:    pkg1 "First Aid" (published) → grp1 "Basic Skills" → skill1 CPR freq=12 (Active)
+    //                                                               → skill2 Bandaging freq=6 (Active)
+    //                                                               → skill5 Deprecated (Archived)
+    //                                        → grp2 "Advanced Skills" → skill3 Airway freq=12 (Active)
+    //            pkg2 "Advanced" (not published) → grp3 → skill4 (Active but unreachable)
+    //   Checks (fake now = 2026-01-01 for isCurrent tests):
+    //     person1+skill1+assessor1: Include 2025-01-01 "NotYetCompetent" (old, expired → de-duped away)
+    //     person1+skill1+assessor2: Include 2025-06-01 "Competent"       (newer, current → kept)
+    //     person1+skill2+assessor1: Include 2025-10-15 "Competent"       (freq=6, expires 2026-04-15)
+    //     person2+skill1+assessor1: Include 2024-12-01 "Competent"       (13 months ago → expired)
+    //     person2+skill2+assessor1: Draft  2025-06-01  "HighlyConfident" (excluded by status filter)
+
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        person1: PersonId.create(),
+        person2: PersonId.create(),
+        person3: PersonId.create(),
+        assessor1: PersonId.create(),
+        assessor2: PersonId.create(),
+        team1: TeamId.create(),
+        team2: TeamId.create(),
+        pkg1: SkillPackageId.create(),
+        pkg2: SkillPackageId.create(),
+        grp1: SkillGroupId.create(),
+        grp2: SkillGroupId.create(),
+        grp3: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        skill3: SkillId.create(),
+        skill4: SkillId.create(),
+        skill5: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        // People
+        await db.person.create({
+            data: {
+                id: T.person1,
+                organizationId: T.org,
+                name: "Alice",
+                email: `${T.person1}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.person2,
+                organizationId: T.org,
+                name: "Bob",
+                email: `${T.person2}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.person3,
+                organizationId: T.org,
+                name: "Charlie",
+                email: `${T.person3}@example.com`,
+                status: "Archived" as never,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessor1,
+                organizationId: T.org,
+                name: "Assessor 1",
+                email: `${T.assessor1}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessor2,
+                organizationId: T.org,
+                name: "Assessor 2",
+                email: `${T.assessor2}@example.com`,
+            },
+        });
+
+        // Teams
+        await db.team.create({ data: { id: T.team1, organizationId: T.org, name: "Team A" } });
+        await db.team.create({ data: { id: T.team2, organizationId: T.org, name: "Team B" } });
+        await db.teamMembership.create({
+            data: { id: nanoId16(), organizationId: T.org, teamId: T.team1, personId: T.person1 },
+        });
+        await db.teamMembership.create({
+            data: { id: nanoId16(), organizationId: T.org, teamId: T.team1, personId: T.person2 },
+        });
+        await db.teamMembership.create({
+            data: { id: nanoId16(), organizationId: T.org, teamId: T.team1, personId: T.person3 },
+        }); // archived
+        await db.teamMembership.create({
+            data: { id: nanoId16(), organizationId: T.org, teamId: T.team2, personId: T.person2 },
+        });
+
+        // Skill packages
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg1,
+                organizationId: T.org,
+                name: "First Aid",
+                description: "",
+                published: true,
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg2,
+                organizationId: T.org,
+                name: "Advanced",
+                description: "",
+                published: false,
+            },
+        });
+
+        // Skill groups
+        await db.skillGroup.create({
+            data: { id: T.grp1, skillPackageId: T.pkg1, name: "Basic Skills", description: "" },
+        });
+        await db.skillGroup.create({
+            data: { id: T.grp2, skillPackageId: T.pkg1, name: "Advanced Skills", description: "" },
+        });
+        await db.skillGroup.create({
+            data: { id: T.grp3, skillPackageId: T.pkg2, name: "Special", description: "" },
+        });
+
+        // Skills
+        await db.skill.create({
+            data: {
+                id: T.skill1,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp1,
+                name: "CPR",
+                description: "",
+                frequency: 12,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill2,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp1,
+                name: "Bandaging",
+                description: "",
+                frequency: 6,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill3,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp2,
+                name: "Airway",
+                description: "",
+                frequency: 12,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill4,
+                skillPackageId: T.pkg2,
+                skillGroupId: T.grp3,
+                name: "Defibrillation",
+                description: "",
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill5,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp1,
+                name: "Deprecated",
+                description: "",
+                status: "Archived" as never,
+            },
+        });
+
+        // Subscriptions (both packages)
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg1 },
+        });
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg2 },
+        });
+
+        // Skill checks — two assessors let us create two Include checks for the same (assessee, skill)
+        // without hitting the @@unique(assesseeId, assessorId, sessionId, skillId) constraint.
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person1,
+                assessorId: T.assessor1,
+                skillId: T.skill1,
+                result: "NotYetCompetent",
+                notes: "",
+                status: "Include",
+                createdAt: new Date("2025-01-01"),
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person1,
+                assessorId: T.assessor2,
+                skillId: T.skill1,
+                result: "Competent",
+                notes: "",
+                status: "Include",
+                createdAt: new Date("2025-06-01"),
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person1,
+                assessorId: T.assessor1,
+                skillId: T.skill2,
+                result: "Competent",
+                notes: "",
+                status: "Include",
+                createdAt: new Date("2025-10-15"),
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person2,
+                assessorId: T.assessor1,
+                skillId: T.skill1,
+                result: "Competent",
+                notes: "",
+                status: "Include",
+                createdAt: new Date("2024-12-01"),
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person2,
+                assessorId: T.assessor1,
+                skillId: T.skill2,
+                result: "HighlyConfident",
+                notes: "",
+                status: "Draft",
+                createdAt: new Date("2025-06-01"),
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillCheck: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    describe("personnel scope", () => {
+        it("returns only active members of the given team", async () => {
+            // team1 contains person1, person2 (Active) and person3 (Archived)
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                teamId: T.team1,
+            });
+
+            const ids = result.personnel.map((p) => p.id);
+            expect(ids).toContain(T.person1);
+            expect(ids).toContain(T.person2);
+            expect(ids).not.toContain(T.person3);
+            expect(result.personnel).toHaveLength(2);
+        });
+
+        it("returns only members of the specified team, not other org personnel", async () => {
+            // team2 has only person2
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                teamId: T.team2,
+            });
+
+            expect(result.personnel).toHaveLength(1);
+            expect(result.personnel[0].id).toBe(T.person2);
+        });
+
+        it("returns the person by id when personId is provided", async () => {
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person1,
+            });
+
+            expect(result.personnel).toEqual([{ id: T.person1, name: "Alice" }]);
+        });
+
+        it("returns empty personnel when the person is not active", async () => {
+            // person3 exists in the org but is Archived
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person3,
+            });
+
+            expect(result.personnel).toHaveLength(0);
+        });
+
+        it("returns all active org personnel when no scope is provided", async () => {
+            const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
+
+            const ids = result.personnel.map((p) => p.id);
+            expect(ids).toContain(T.person1);
+            expect(ids).toContain(T.person2);
+            expect(ids).not.toContain(T.person3); // Archived
+        });
+    });
+
+    describe("skill scope", () => {
+        it("returns active skills from all subscribed packages", async () => {
+            const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
+
+            const ids = result.skills.map((s) => s.id);
+            expect(ids).toContain(T.skill1);
+            expect(ids).toContain(T.skill2);
+            expect(ids).toContain(T.skill3);
+            expect(ids).not.toContain(T.skill4); // pkg2 not published
+            expect(ids).not.toContain(T.skill5); // Archived
+        });
+
+        it("filters to a single skill when skillId is provided", async () => {
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                skillId: T.skill1,
+            });
+
+            expect(result.skills).toHaveLength(1);
+            expect(result.skills[0].id).toBe(T.skill1);
+        });
+
+        it("filters skills by skillGroupId", async () => {
+            // grp1 has skill1, skill2 (Active) and skill5 (Archived — excluded)
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                skillGroupId: T.grp1,
+            });
+
+            const ids = result.skills.map((s) => s.id);
+            expect(ids).toContain(T.skill1);
+            expect(ids).toContain(T.skill2);
+            expect(ids).not.toContain(T.skill5);
+            expect(result.skills).toHaveLength(2);
+        });
+
+        it("filters skills by skillPackageId", async () => {
+            // pkg1 has skill1, skill2, skill3 (Active) and skill5 (Archived — excluded)
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                skillPackageId: T.pkg1,
+            });
+
+            const ids = result.skills.map((s) => s.id);
+            expect(ids).toContain(T.skill1);
+            expect(ids).toContain(T.skill2);
+            expect(ids).toContain(T.skill3);
+            expect(ids).not.toContain(T.skill5);
+            expect(result.skills).toHaveLength(3);
+        });
+
+        it("includes skill group and package hierarchy in each skill", async () => {
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                skillId: T.skill1,
+            });
+
+            expect(result.skills[0]).toMatchObject({
+                id: T.skill1,
+                name: "CPR",
+                skillGroup: { id: T.grp1, name: "Basic Skills" },
+                skillPackage: { id: T.pkg1, name: "First Aid" },
+            });
+        });
+    });
+
+    describe("competencies", () => {
+        it("returns empty competencies when no check exists for the given scope", async () => {
+            // person1 has no check for skill3
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person1,
+                skillId: T.skill3,
+            });
+
+            expect(result.competencies).toHaveLength(0);
+        });
+
+        it("only includes Include-status checks", async () => {
+            // person2 has an Include check for skill1 and a Draft check for skill2
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person2,
+            });
+
+            const skillIds = result.competencies.map((c) => c.skillId);
+            expect(skillIds).toContain(T.skill1);
+            expect(skillIds).not.toContain(T.skill2); // only Draft check
+        });
+
+        it("de-duplicates checks, keeping the most recent Include per (assessee, skill)", async () => {
+            // person1+skill1 has two Include checks; the newer one (2025-06-01) should win
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person1,
+                skillId: T.skill1,
+            });
+
+            expect(result.competencies).toHaveLength(1);
+            expect(result.competencies[0].result).toBe("Competent");
+        });
+
+        it("returns a separate entry for each (assessee, skill) pair", async () => {
+            // Active personnel × active skills with Include checks:
+            //   person1+skill1, person1+skill2, person2+skill1  (person2+skill2 is Draft → excluded)
+            const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
+
+            expect(result.competencies).toHaveLength(3);
+        });
+    });
+
+    describe("isCurrent and expiresAt", () => {
+        beforeEach(() => {
+            vi.useFakeTimers({ now: new Date("2026-01-01T00:00:00.000Z") });
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("marks check as current when within the frequency window", async () => {
+            // person1+skill1 newest check: 2025-06-01, freq=12 → expires 2026-06-01 > now
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person1,
+                skillId: T.skill1,
+            });
+
+            expect(result.competencies[0].isCurrent).toBe(true);
+        });
+
+        it("marks check as expired when past the frequency window", async () => {
+            // person2+skill1: 2024-12-01, freq=12 → expires 2025-12-01 < now
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person2,
+                skillId: T.skill1,
+            });
+
+            expect(result.competencies[0].isCurrent).toBe(false);
+        });
+
+        it("computes expiresAt as checkedAt plus frequency months", async () => {
+            // person1+skill2: checked 2025-10-15, freq=6 → expires 2026-04-15
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                personId: T.person1,
+                skillId: T.skill2,
+            });
+
+            const expected = new Date("2025-10-15T00:00:00.000Z");
+            expected.setMonth(expected.getMonth() + 6);
+            expect(result.competencies[0].expiresAt).toBe(expected.toISOString());
+        });
+    });
+
+    describe("input validation", () => {
+        it("rejects input with both teamId and personId", async () => {
+            await expect(
+                makeCaller().getCompetencyMatrix({
+                    organizationId: T.org,
+                    teamId: T.team1,
+                    personId: T.person1,
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
+
+        it("rejects input with both skillId and skillGroupId", async () => {
+            await expect(
+                makeCaller().getCompetencyMatrix({
+                    organizationId: T.org,
+                    skillId: T.skill1,
+                    skillGroupId: T.grp1,
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
+
+        it("rejects input with both skillGroupId and skillPackageId", async () => {
+            await expect(
+                makeCaller().getCompetencyMatrix({
+                    organizationId: T.org,
+                    skillGroupId: T.grp1,
+                    skillPackageId: T.pkg1,
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
+    });
+});

@@ -28,13 +28,7 @@ import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-const RESULT_LABELS: Record<string, string> = {
-    NotAssessed: "Not Assessed",
-    NotTaught: "Not Taught",
-    NotYetCompetent: "Not Yet Competent",
-    Competent: "Competent",
-    HighlyConfident: "Highly Confident",
-};
+import { SKILL_CHECK_RESULT_LABELS } from "@/lib/schemas/skill-check";
 
 export default function SkillsModule_ChecksList() {
     const organization = useOrganization();
@@ -66,16 +60,18 @@ export default function SkillsModule_ChecksList() {
                 }),
                 col.accessor("result", {
                     header: "Result",
-                    cell: (ctx) => RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    cell: (ctx) => SKILL_CHECK_RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
                     enableSorting: false,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
                     filterFn: Kaga.filterFns.oneOf,
                     meta: {
-                        columnOptions: Object.entries(RESULT_LABELS).map(([value, label]) => ({
-                            label,
-                            value,
-                        })),
+                        columnOptions: Object.entries(SKILL_CHECK_RESULT_LABELS).map(
+                            ([value, label]) => ({
+                                label,
+                                value,
+                            }),
+                        ),
                     },
                 }),
                 col.accessor((row) => (row.session ? row.session.name || row.session.id : null), {

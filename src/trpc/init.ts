@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { headers as nextHeaders } from "next/headers";
-import { cache } from "react";
 import superjson from "superjson";
 import * as z from "zod";
 
@@ -14,7 +12,8 @@ import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { auth, AuthSession } from "@/server/auth";
+import type { AuthSession } from "@/server/auth";
+// NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import prisma from "@/server/prisma";
 import { FieldConflictError } from "./errors";
 import { UserId } from "@/lib/schemas/user";
@@ -42,40 +41,7 @@ export function createInnerTrpcContext({
     };
 }
 
-export const createTrpcContext = cache(async () => {
-    const headers = await nextHeaders();
-
-    // Get the current auth session
-    const authSession = await auth.api.getSession({
-        headers,
-    });
-
-    return createInnerTrpcContext({
-        auth: authSession,
-        hasPermission: async (organizationId: OrganizationId, requiredPermissions: Permissions) => {
-            try {
-                await auth.api.hasPermission({
-                    headers,
-                    body: {
-                        organizationId,
-                        permissions: requiredPermissions,
-                    },
-                });
-            } catch (error) {
-                throw new TRPCError({
-                    code: "FORBIDDEN",
-                    message:
-                        "Insufficient permissions. Action requires: " +
-                        JSON.stringify(requiredPermissions),
-                    cause: error,
-                });
-            }
-        },
-        headers,
-    });
-});
-
-type Context = Awaited<ReturnType<typeof createTrpcContext>>;
+type Context = ReturnType<typeof createInnerTrpcContext>;
 
 const t = initTRPC.context<Context>().create({
     transformer: superjson,

@@ -8,6 +8,11 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator dmmf {
+  provider = "prisma-mock"
+  output   = "../src/generated/dmmf.ts"
+}
+
 datasource db {
   provider = "postgresql"
 }

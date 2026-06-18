@@ -6,39 +6,32 @@
 import { addDays } from "date-fns";
 import { beforeEach, vi } from "vitest";
 
-import { Permissions } from "@/lib/permissions";
-import { AuthSession } from "@/server/auth";
-import { createInnerTrpcContext } from "@/trpc/init";
-import { nanoId16 } from "@/lib/id";
 import { TRPCError } from "@trpc/server";
+
+import type { AuthSession } from "@/server/auth";
+import { PrismaClient } from "@/generated/prisma/client";
+import { nanoId16 } from "@/lib/id";
+import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 const mockDate = new Date("2020-01-01T00:00:00.000Z");
 const nowDate = new Date();
 
-// Create a fresh instance for each test
-export const createMockContext = () => {
-    return {
-        auth: null,
-        getClerkClient: () => {
-            throw new Error("Not implemented in test");
-        },
-        getTeamById: vi.fn().mockResolvedValue(null),
-    };
-};
-
 interface CreateAuthenticatedMockContextOverrides {
     user: Partial<AuthSession["user"]> & Pick<AuthSession["user"], "id">;
     session?: Partial<AuthSession["session"]>;
     permissions?: Permissions;
+    prisma: PrismaClient;
 }
 
 export const createAuthenticatedMockContext = ({
     user,
     session = {},
     permissions = {},
+    prisma,
 }: CreateAuthenticatedMockContextOverrides) => {
-    return createInnerTrpcContext({
+    return {
+        prisma,
         auth: {
             user: {
                 createdAt: mockDate,
@@ -58,14 +51,10 @@ export const createAuthenticatedMockContext = ({
                 ...session,
             } satisfies AuthSession["session"],
         },
-        hasPermission: async (
-            organizationId: OrganizationId,
-            requiredPermissions: Permissions,
-        ) => {
+        hasPermission: async (organizationId: OrganizationId, requiredPermissions: Permissions) => {
             for (const key in requiredPermissions) {
                 const permKey = key as keyof Permissions;
-                const requiredPermValue: string[] =
-                    requiredPermissions[permKey] || [];
+                const requiredPermValue: string[] = requiredPermissions[permKey] || [];
                 const userPermValues: string[] = permissions[permKey] || [];
 
                 for (const value of requiredPermValue) {
@@ -81,7 +70,7 @@ export const createAuthenticatedMockContext = ({
             }
         },
         headers: new Headers(),
-    });
+    };
 };
 
 // Reset all mocks before each test

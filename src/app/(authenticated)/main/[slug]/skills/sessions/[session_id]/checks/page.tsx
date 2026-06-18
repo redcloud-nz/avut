@@ -32,19 +32,7 @@ import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck } from "@/lib/schemas/skill-check";
 import { trpc } from "@/trpc/client";
 
-const RESULT_LABELS: Record<string, string> = {
-    NotAssessed: "Not Assessed",
-    NotTaught: "Not Taught",
-    NotYetCompetent: "Not Yet Competent",
-    Competent: "Competent",
-    HighlyConfident: "Highly Confident",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-    Draft: "Draft",
-    Include: "Approved",
-    Exclude: "Excluded",
-};
+import { SKILL_CHECK_RESULT_LABELS, SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 
 export default function SkillsModule_SessionChecks_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]/checks">,
@@ -123,17 +111,19 @@ export default function SkillsModule_SessionChecks_Page(
                 }),
                 col.accessor("result", {
                     header: "Result",
-                    cell: (ctx) => RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    cell: (ctx) => SKILL_CHECK_RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableHiding: false,
                     enableSorting: false,
                     filterFn: Kaga.filterFns.oneOf,
                     meta: {
-                        columnOptions: Object.entries(RESULT_LABELS).map(([value, label]) => ({
-                            label,
-                            value,
-                        })),
+                        columnOptions: Object.entries(SKILL_CHECK_RESULT_LABELS).map(
+                            ([value, label]) => ({
+                                label,
+                                value,
+                            }),
+                        ),
                     },
                 }),
                 col.accessor((row) => assessorById.get(row.assessorId)?.name ?? row.assessorId, {
@@ -146,7 +136,7 @@ export default function SkillsModule_SessionChecks_Page(
                 }),
                 col.accessor("status", {
                     header: "Status",
-                    cell: (ctx) => STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableHiding: true,

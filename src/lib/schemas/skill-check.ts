@@ -45,3 +45,17 @@ export const SkillCheck = {
 } as const;
 
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
+
+export const SKILL_CHECK_RESULT_LABELS: Record<string, string> = {
+    NotAssessed: "Not Assessed",
+    NotTaught: "Not Taught",
+    NotYetCompetent: "Not Yet Competent",
+    Competent: "Competent",
+    HighlyConfident: "Highly Confident",
+};
+
+export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
+    Draft: "Draft",
+    Include: "Approved",
+    Exclude: "Excluded",
+};

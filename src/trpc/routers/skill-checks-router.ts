@@ -9,8 +9,11 @@ import { TRPCError } from "@trpc/server";
 
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import { TeamId } from "@/lib/schemas/team";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -142,6 +145,238 @@ export const skillChecksRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                 },
             });
+        }),
+
+    /**
+     * Returns the competency matrix for the given scope. Personnel scope: teamId, personId, or
+     * all active org personnel. Skill scope: skillId, skillGroupId, skillPackageId, or all active
+     * subscribed skills. Competencies contain only the most recent Include-status check per
+     * (assessee, skill) pair, with expiry computed from the skill's frequency (months).
+     */
+    getCompetencyMatrix: organizationProcedure({ skillCheck: ["view"] })
+        .input(
+            z
+                .object({
+                    teamId: TeamId.schema.optional(),
+                    personId: PersonId.schema.optional(),
+                    skillId: SkillId.schema.optional(),
+                    skillGroupId: SkillGroupId.schema.optional(),
+                    skillPackageId: SkillPackageId.schema.optional(),
+                })
+                .refine(
+                    (d) => !d.teamId || !d.personId,
+                    "Provide at most one of teamId or personId",
+                )
+                .refine(
+                    (d) =>
+                        [d.skillId, d.skillGroupId, d.skillPackageId].filter(Boolean).length <= 1,
+                    "Provide at most one of skillId, skillGroupId, skillPackageId",
+                ),
+        )
+        .output(
+            z.object({
+                personnel: z.array(PersonRef.schema),
+                skills: z.array(
+                    z.object({
+                        id: SkillId.schema,
+                        name: z.string(),
+                        frequency: z.number(),
+                        skillGroup: z.object({ id: SkillGroupId.schema, name: z.string() }),
+                        skillPackage: z.object({ id: SkillPackageId.schema, name: z.string() }),
+                    }),
+                ),
+                competencies: z.array(
+                    z.object({
+                        assesseeId: PersonId.schema,
+                        skillId: SkillId.schema,
+                        checkId: SkillCheckId.schema,
+                        result: z.string(),
+                        checkedAt: z.iso.datetime(),
+                        expiresAt: z.iso.datetime(),
+                        isCurrent: z.boolean(),
+                    }),
+                ),
+            }),
+        )
+        .query(async ({ ctx, input }) => {
+            // Step 1: Resolve personnel scope
+            let personnel: PersonRef[];
+
+            if (input.teamId) {
+                const memberships = await ctx.prisma.teamMembership.findMany({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        teamId: input.teamId,
+                        person: { status: "Active" },
+                    },
+                    include: { person: { select: { id: true, name: true } } },
+                });
+                personnel = memberships.map((m) => PersonRef.schema.parse(m.person));
+            } else if (input.personId) {
+                const person = await ctx.prisma.person.findFirst({
+                    where: {
+                        id: input.personId,
+                        organizationId: ctx.organizationId,
+                        status: "Active",
+                    },
+                    select: { id: true, name: true },
+                });
+                personnel = person ? [PersonRef.schema.parse(person)] : [];
+            } else {
+                const persons = await ctx.prisma.person.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Active" },
+                    select: { id: true, name: true },
+                });
+                personnel = persons.map((p) => PersonRef.schema.parse(p));
+            }
+
+            const personnelIds = new Set(personnel.map((p) => p.id));
+
+            // Step 2: Resolve skill scope — active skills from active, published subscribed packages
+            const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
+                where: { organizationId: ctx.organizationId },
+                include: {
+                    skillPackage: {
+                        include: {
+                            skills: {
+                                include: { skillGroup: { select: { id: true, name: true } } },
+                            },
+                        },
+                    },
+                },
+            });
+
+            type SkillEntry = {
+                id: SkillId;
+                name: string;
+                frequency: number;
+                skillGroupId: SkillGroupId;
+                skillGroupName: string;
+                skillPackageId: SkillPackageId;
+                skillPackageName: string;
+            };
+
+            const skillMap = new Map<string, SkillEntry>();
+            for (const sub of subscriptions) {
+                const pkg = sub.skillPackage;
+                if (pkg.status !== "Active" || !pkg.published) continue;
+                for (const skill of pkg.skills) {
+                    if (skill.status !== "Active" || skillMap.has(skill.id)) continue;
+                    skillMap.set(skill.id, {
+                        id: skill.id as SkillId,
+                        name: skill.name,
+                        frequency: skill.frequency,
+                        skillGroupId: skill.skillGroupId as SkillGroupId,
+                        skillGroupName: skill.skillGroup.name,
+                        skillPackageId: skill.skillPackageId as SkillPackageId,
+                        skillPackageName: pkg.name,
+                    });
+                }
+            }
+
+            let skills: SkillEntry[];
+            if (input.skillId) {
+                skills = [...skillMap.values()].filter((s) => s.id === input.skillId);
+            } else if (input.skillGroupId) {
+                skills = [...skillMap.values()].filter(
+                    (s) => s.skillGroupId === input.skillGroupId,
+                );
+            } else if (input.skillPackageId) {
+                skills = [...skillMap.values()].filter(
+                    (s) => s.skillPackageId === input.skillPackageId,
+                );
+            } else {
+                skills = [...skillMap.values()];
+            }
+
+            const skillIds = new Set(skills.map((s) => s.id));
+
+            if (personnelIds.size === 0 || skillIds.size === 0) {
+                return {
+                    personnel,
+                    skills: skills.map(
+                        ({
+                            id,
+                            name,
+                            frequency,
+                            skillGroupId,
+                            skillGroupName,
+                            skillPackageId,
+                            skillPackageName,
+                        }) => ({
+                            id,
+                            name,
+                            frequency,
+                            skillGroup: { id: skillGroupId, name: skillGroupName },
+                            skillPackage: { id: skillPackageId, name: skillPackageName },
+                        }),
+                    ),
+                    competencies: [],
+                };
+            }
+
+            // Step 3: Most recent Include check per (assessee, skill)
+            const allChecks = await ctx.prisma.skillCheck.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    status: "Include",
+                    assesseeId: { in: [...personnelIds] },
+                    skillId: { in: [...skillIds] },
+                },
+                select: {
+                    id: true,
+                    assesseeId: true,
+                    skillId: true,
+                    result: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+            });
+
+            const latestByKey = new Map<string, (typeof allChecks)[number]>();
+            for (const check of allChecks) {
+                const key = `${check.assesseeId}:${check.skillId}`;
+                if (!latestByKey.has(key)) latestByKey.set(key, check);
+            }
+
+            // Step 4: Compute expiry from skill frequency
+            const now = new Date();
+            const competencies = [...latestByKey.values()].map((check) => {
+                const skill = skillMap.get(check.skillId)!;
+                const expiresAt = new Date(check.createdAt);
+                expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+                return {
+                    assesseeId: check.assesseeId as PersonId,
+                    skillId: check.skillId as SkillId,
+                    checkId: check.id as SkillCheckId,
+                    result: check.result,
+                    checkedAt: check.createdAt.toISOString(),
+                    expiresAt: expiresAt.toISOString(),
+                    isCurrent: expiresAt > now,
+                };
+            });
+
+            return {
+                personnel,
+                skills: skills.map(
+                    ({
+                        id,
+                        name,
+                        frequency,
+                        skillGroupId,
+                        skillGroupName,
+                        skillPackageId,
+                        skillPackageName,
+                    }) => ({
+                        id,
+                        name,
+                        frequency,
+                        skillGroup: { id: skillGroupId, name: skillGroupName },
+                        skillPackage: { id: skillPackageId, name: skillPackageName },
+                    }),
+                ),
+                competencies,
+            };
         }),
 
     /**

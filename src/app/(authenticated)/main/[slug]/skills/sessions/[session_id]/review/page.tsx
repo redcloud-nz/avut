@@ -44,13 +44,7 @@ import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { trpc } from "@/trpc/client";
 
-const RESULT_LABELS: Record<string, string> = {
-    NotAssessed: "Not Assessed",
-    NotTaught: "Not Taught",
-    NotYetCompetent: "Not Yet Competent",
-    Competent: "Competent",
-    HighlyConfident: "Highly Confident",
-};
+import { SKILL_CHECK_RESULT_LABELS } from "@/lib/schemas/skill-check";
 
 export default function SkillsModule_SessionReview_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]/review">,
@@ -317,7 +311,9 @@ function AssesseeChecks({
                         </TableCell>
                         <TableCell></TableCell>
                         <TableCell>{skill?.name ?? check.skillId}</TableCell>
-                        <TableCell>{RESULT_LABELS[check.result] ?? check.result}</TableCell>
+                        <TableCell>
+                            {SKILL_CHECK_RESULT_LABELS[check.result] ?? check.result}
+                        </TableCell>
                     </TableRow>
                 );
             })}
