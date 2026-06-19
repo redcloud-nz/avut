@@ -20,6 +20,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -143,21 +144,21 @@ export function AdminModule_CreateTeam_Dialog() {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="create-team-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Create",
-                                    pending: "Creating",
-                                    success: "Created",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="create-team-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

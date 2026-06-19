@@ -31,6 +31,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -303,23 +304,21 @@ function AddTeamMemberDialog({
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="add-person-to-team-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Add",
-                                    pending: "Adding",
-                                    success: "Added",
-                                }}
-                            />
-                            <DialogCloseButton type="button" variant="outline">
-                                Cancel
-                            </DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="add-person-to-team-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Add",
+                            pending: "Adding",
+                            success: "Added",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
@@ -472,26 +471,24 @@ function SyncD4HTeamDialog({ team, ...props }: ComponentProps<typeof Dialog> & {
                         to proceed?
                     </DialogDescription>
                 </DialogHeader>
-                <FieldGroup>
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            status={syncMutation.status}
-                            text={{
-                                idle: "Synchronize",
-                                pending: "Synchronizing",
-                                success: "Synchronized",
-                            }}
-                            onClick={() =>
-                                syncMutation.mutate({
-                                    teamId: team.id,
-                                    organizationId: team.organizationId,
-                                })
-                            }
-                        />
-                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    </Field>
-                </FieldGroup>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="button"
+                        status={syncMutation.status}
+                        text={{
+                            idle: "Synchronize",
+                            pending: "Synchronizing",
+                            success: "Synchronized",
+                        }}
+                        onClick={() =>
+                            syncMutation.mutate({
+                                teamId: team.id,
+                                organizationId: team.organizationId,
+                            })
+                        }
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

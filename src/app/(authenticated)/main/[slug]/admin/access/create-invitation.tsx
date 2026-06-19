@@ -21,6 +21,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -359,22 +360,21 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                 </CollapsibleContent>
                             </Collapsible>
                         </Show>
-
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="create-invitation-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Send",
-                                    pending: "Sending",
-                                    success: "Sent",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="create-invitation-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Send",
+                            pending: "Sending",
+                            success: "Sent",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

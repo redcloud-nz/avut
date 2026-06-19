@@ -18,6 +18,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -242,21 +243,21 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="create-skill-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Create",
-                                    pending: "Creating",
-                                    success: "Created",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="create-skill-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

@@ -23,12 +23,12 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Field } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -165,27 +165,26 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                             })}
                         </div>
                     </DragDropProvider>
-
-                    <Field orientation="horizontal">
-                        <MutationButton
-                            type="button"
-                            onClick={() =>
-                                mutation.mutate({
-                                    organizationId: organization.id,
-                                    skillPackageId: skillPackage.id,
-                                    newOrder: order,
-                                })
-                            }
-                            status={mutation.status}
-                            text={{
-                                idle: "Save",
-                                pending: "Saving",
-                                success: "Saved",
-                            }}
-                        />
-                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    </Field>
                 </Show>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="button"
+                        onClick={() =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillPackageId: skillPackage.id,
+                                newOrder: order,
+                            })
+                        }
+                        status={mutation.status}
+                        text={{
+                            idle: "Save",
+                            pending: "Saving",
+                            success: "Saved",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

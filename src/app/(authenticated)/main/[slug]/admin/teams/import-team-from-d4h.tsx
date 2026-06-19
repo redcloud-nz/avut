@@ -20,6 +20,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -217,22 +218,24 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                                     </Field>
                                 )}
                             />
-                            <Field orientation="horizontal">
-                                <MutationButton
-                                    type="submit"
-                                    form="import-d4h-team-form"
-                                    status={mutation.status}
-                                    text={{
-                                        idle: "Import",
-                                        pending: "Importing",
-                                        success: "Imported",
-                                    }}
-                                />
-                                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                            </Field>
                         </Show>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    {selectedTeamId != null && (
+                        <MutationButton
+                            type="submit"
+                            form="import-d4h-team-form"
+                            status={mutation.status}
+                            text={{
+                                idle: "Import",
+                                pending: "Importing",
+                                success: "Imported",
+                            }}
+                        />
+                    )}
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

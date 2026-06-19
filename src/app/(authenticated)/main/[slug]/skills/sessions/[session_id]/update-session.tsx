@@ -12,15 +12,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DatePicker } from "@/components/controls/date-picker";
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -83,6 +86,11 @@ export function SkillsModule_UpdateSession_Dialog({
 
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Update session</DialogTitle>
@@ -136,21 +144,21 @@ export function SkillsModule_UpdateSession_Dialog({
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="update-session-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Update",
-                                    pending: "Updating...",
-                                    success: "Updated",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-session-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating...",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

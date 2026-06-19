@@ -13,11 +13,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -264,27 +266,21 @@ export function AdminModule_UpdateRoles_Dialog({
                                 />
                             )}
                         </Show>
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="update-roles-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Update",
-                                    pending: "Updating",
-                                    success: "Updated",
-                                }}
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => handleOpenChange(false)}
-                            >
-                                Cancel
-                            </Button>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-roles-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

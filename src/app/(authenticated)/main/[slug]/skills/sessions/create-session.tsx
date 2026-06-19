@@ -19,6 +19,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -144,21 +145,21 @@ export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="new-session-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Create",
-                                    pending: "Creating...",
-                                    success: "Created",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="new-session-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating...",
+                            success: "Created",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

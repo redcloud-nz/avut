@@ -39,6 +39,7 @@ import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
 import { SkillsModule_Session_Contents_Card } from "./session-contents";
 import { SkillsModule_SessionMenu } from "./session-menu";
+import { SkillsModule_UpdateSession_Dialog } from "./update-session";
 
 export default async function SkillsModule_Session_Page(
     props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
@@ -113,9 +114,7 @@ export default async function SkillsModule_Session_Page(
                                 <CardHeader>
                                     <CardTitle>Session Details</CardTitle>
                                     <CardAction>
-                                        <Button variant="ghost" size="icon">
-                                            <ObjectIcons.Edit />
-                                        </Button>
+                                        <SkillsModule_UpdateSession_Dialog session={session} />
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>

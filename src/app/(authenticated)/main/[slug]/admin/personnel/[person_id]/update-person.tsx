@@ -17,6 +17,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -131,22 +132,21 @@ export function AdminModule_UpdatePerson_Dialog({
                                 </Field>
                             )}
                         />
-
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="update-person-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Update",
-                                    pending: "Updating...",
-                                    success: "Updated",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-person-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating...",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

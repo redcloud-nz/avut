@@ -263,7 +263,6 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal"></Field>
                     </FieldGroup>
                 </form>
                 <DialogFooter>

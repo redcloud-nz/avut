@@ -18,6 +18,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -133,21 +134,21 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="update-team-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Update",
-                                    pending: "Updating...",
-                                    success: "Updated",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-team-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating...",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

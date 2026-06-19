@@ -12,12 +12,13 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Show } from "@/components/show";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogProps,
     DialogTitle,
@@ -87,11 +88,6 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
         });
     });
 
-    function handleCancel() {
-        form.reset();
-        props.onOpenChange?.(false);
-    }
-
     return (
         <Dialog {...props}>
             <DialogContent>
@@ -134,25 +130,23 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="create-skill-package-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Create",
-                                    pending: "Creating",
-                                    success: "Created",
-                                }}
-                            />
-                            <Show when={mutation.isIdle}>
-                                <Button type="button" variant="outline" onClick={handleCancel}>
-                                    Cancel
-                                </Button>
-                            </Show>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline" onClick={() => form.reset()}>
+                        Cancel
+                    </DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="create-skill-package-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

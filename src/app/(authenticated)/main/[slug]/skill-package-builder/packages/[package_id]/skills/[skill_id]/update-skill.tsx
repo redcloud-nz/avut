@@ -18,6 +18,7 @@ import {
     DialogCloseButton,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -233,21 +234,21 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="submit"
-                                form="update-skill-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Update",
-                                    pending: "Updating...",
-                                    success: "Updated",
-                                }}
-                            />
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                        </Field>
                     </FieldGroup>
                 </form>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-skill-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating...",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
