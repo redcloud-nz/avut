@@ -100,7 +100,7 @@ function CardLoadingFallback({
     return (
         <div
             className={cn(
-                "w-full aspect-2/1 flex items-center justify-center p-4 border rounded-lg",
+                "w-full aspect-2/1 flex items-center justify-center bg-card p-4 border rounded-lg",
                 className,
             )}
             {...props}
