@@ -9,6 +9,7 @@ export function AVUTLogo() {
                 width={150}
                 height={50}
                 className="dark:invert"
+                loading="eager"
             />
         </div>
     );
