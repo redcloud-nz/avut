@@ -6,19 +6,19 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { authClient } from "@/client/auth-client";
+
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-
-import { authClient } from "@/client/auth-client";
 
 export function ResetPassword_Card({ email }: { email: string }) {
     const router = useRouter();
@@ -32,32 +32,20 @@ export function ResetPassword_Card({ email }: { email: string }) {
         ),
     });
 
-    const [state, setState] = useState<
-        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
-    >({ status: "Ready" });
-
-    const handleSubmit = form.handleSubmit(async (formData) => {
-        setState({ status: "InProgress" });
-        try {
-            const { data, error } = await authClient.emailOtp.resetPassword({
-                email,
-                otp: formData.code,
-                password: formData.newPassword,
-            });
-
-            if (error) {
-                console.error("Reset password error", error);
-                setState({ status: "Error", error });
-            } else {
-                console.log("Reset password successful", data);
-                router.push(`/auth/sign-in?email=${encodeURIComponent(email)}`);
-            }
-        } catch (error) {
-            setState({
-                status: "Error",
-                error: { message: "Failed to reset password" },
-            });
-        }
+    const mutation = useMutation({
+        async mutationFn(formData: { code: string; newPassword: string }) {
+            return await authClient.emailOtp.resetPassword(
+                {
+                    email,
+                    otp: formData.code,
+                    password: formData.newPassword,
+                },
+                { throw: true },
+            );
+        },
+        onSuccess() {
+            router.push(`/auth/sign-in?email=${encodeURIComponent(email)}`);
+        },
     });
 
     return (
@@ -70,7 +58,10 @@ export function ResetPassword_Card({ email }: { email: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form id="reset-password-form" onSubmit={handleSubmit}>
+                <form
+                    id="reset-password-form"
+                    onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+                >
                     <FieldGroup>
                         <Controller
                             name="code"
@@ -86,7 +77,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                         value={field.value}
                                         onChange={field.onChange}
                                         pattern={REGEXP_ONLY_DIGITS}
-                                        disabled={state.status === "InProgress"}
+                                        disabled={mutation.isPending}
                                         aria-invalid={fieldState.invalid}
                                     >
                                         <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
@@ -124,13 +115,20 @@ export function ResetPassword_Card({ email }: { email: string }) {
                             )}
                         />
                         <Field>
-                            <Button type="submit" onClick={handleSubmit}>
-                                {state.status === "InProgress"
-                                    ? "Updating Password..."
-                                    : "Update Password"}
-                            </Button>
+                            <MutationButton
+                                type="submit"
+                                form="reset-password-form"
+                                status={mutation.status}
+                                text={{
+                                    idle: "Update Password",
+                                    pending: "Updating Password...",
+                                    success: "Password updated!",
+                                }}
+                            />
                         </Field>
-                        {state.status === "Error" && <FieldError errors={[state.error]} />}
+                        {mutation.isError && (
+                            <FieldError errors={[mutation.error as { message?: string }]} />
+                        )}
                     </FieldGroup>
                 </form>
             </CardContent>

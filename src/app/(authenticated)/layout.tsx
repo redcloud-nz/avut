@@ -7,16 +7,11 @@
 
 import { ReactNode } from "react";
 
-import { CommonProviders } from "@/components/providers";
-
-export default function AuthenticatedLayout(props: {
-    modal: ReactNode;
-    children: ReactNode;
-}) {
+export default function AuthenticatedLayout(props: { modal: ReactNode; children: ReactNode }) {
     return (
-        <CommonProviders>
+        <>
             {props.modal}
             {props.children}
-        </CommonProviders>
+        </>
     );
 }

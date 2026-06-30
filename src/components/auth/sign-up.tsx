@@ -6,14 +6,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Field,
@@ -80,36 +79,17 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
         },
     });
 
-    const [inProgress, setInProgress] = useState<boolean>(false);
-    const [submitError, setSubmitError] = useState<{ message?: string } | null>(null);
-
-    const handleSignUp = form.handleSubmit(async (formData) => {
-        setSubmitError(null);
-        setInProgress(true);
-
-        try {
-            const { data, error } = await authClient.signUp.email(formData);
-
-            if (error) {
-                // We're assuming this is an expected error (like email already in use)
-                console.log("Sign up error", error);
-                setSubmitError(error);
-            } else {
-                // Successful signup. BetterAuth automatically sends a verification email.
-                console.log("Sign up successful", data);
-                router.push(`/auth/verify-email/${encodeURIComponent(formData.email)}`);
-            }
-        } catch (error) {
-            // We're assuming this is an unexpected error
-            console.error("Sign up error", error);
-            toast.error("An error occured during sign up. Please try again.");
-        }
-
-        setInProgress(false);
+    const mutation = useMutation({
+        async mutationFn(formData: { name: string; email: string; password: string }) {
+            return await authClient.signUp.email(formData, { throw: true });
+        },
+        onSuccess(_, variables) {
+            router.push(`/auth/verify-email/${encodeURIComponent(variables.email)}`);
+        },
     });
 
     return (
-        <form id="sign-up-form" onSubmit={handleSignUp}>
+        <form id="sign-up-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
             <FieldGroup>
                 <Controller
                     name="name"
@@ -121,7 +101,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                                 id="sign-up-name"
                                 placeholder="Your full name"
                                 aria-invalid={fieldState.invalid}
-                                disabled={inProgress}
+                                disabled={mutation.isPending}
                                 {...field}
                             />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -139,7 +119,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                                 type="email"
                                 placeholder="Your email address"
                                 aria-invalid={fieldState.invalid}
-                                disabled={inProgress}
+                                disabled={mutation.isPending}
                                 {...field}
                             />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -157,7 +137,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                                 type="password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
-                                disabled={inProgress}
+                                disabled={mutation.isPending}
                                 {...field}
                             />
                             <FieldDescription>Must be at least 8 characters long.</FieldDescription>
@@ -166,10 +146,17 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                     )}
                 />
                 <Field>
-                    <Button type="submit" form="sign-up-form" disabled={inProgress}>
-                        {inProgress ? "Creating account..." : "Sign Up"}
-                    </Button>
-                    {submitError && <FieldError errors={[submitError]} />}
+                    <MutationButton
+                        type="submit"
+                        form="sign-up-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Sign Up",
+                            pending: "Creating account...",
+                            success: "Account created!",
+                        }}
+                    />
+                    {mutation.isError && <FieldError errors={[mutation.error]} />}
                 </Field>
             </FieldGroup>
         </form>

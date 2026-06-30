@@ -7,7 +7,7 @@
 
 import { Argus } from "@/components/blocks/argus";
 
-import { SignIn_Card } from "@/components/cards/sign-in";
+import { SignIn_Card } from "@/components/auth/sign-in";
 
 export const metadata = { title: "Sign In" };
 

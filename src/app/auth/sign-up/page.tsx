@@ -9,7 +9,7 @@ import Link from "next/link";
 
 import { Argus } from "@/components/blocks/argus";
 
-import { SignUp_Card } from "@/components/cards/sign-up";
+import { SignUp_Card } from "@/components/auth/sign-up";
 
 export const metadata = { title: "Sign Up" };
 

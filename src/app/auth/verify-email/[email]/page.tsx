@@ -7,7 +7,7 @@
 
 import { Argus } from "@/components/blocks/argus";
 
-import { VerifyEmail_Card } from "@/components/cards/verify-email";
+import { VerifyEmail_Card } from "@/components/auth/verify-email";
 
 export const metadata = { title: "Verify Email" };
 

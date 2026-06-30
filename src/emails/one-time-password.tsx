@@ -51,7 +51,10 @@ export default function OneTimePasswordTemplate({
                             />
                         </Section>
                         <Heading className="max-0 mt-[30px] p-0 text-center font-normal text-[24px] text-black">
-                            {type == "email-verification" && "Your account verification code"}
+                            {type == "email-verification" && "Your email verification code"}
+                            {type == "sign-in" && "Your sign-in code"}
+                            {type == "forget-password" && "Your password reset code"}
+                            {type == "change-email" && "Your email change code"}
                         </Heading>
                         <Text className="my-8 text-center font-semibold text-[32px] text-black tracking-widest">
                             {otp}

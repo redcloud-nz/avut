@@ -9,7 +9,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { useMutation } from "@tanstack/react-query";
+
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -25,30 +27,14 @@ export function VerifyEmail_Card({ email }: { email: string }) {
 
     const [code, setCode] = useState<string>("");
 
-    const [state, setState] = useState<
-        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
-    >({ status: "Ready" });
-
-    async function handleVerify() {
-        try {
-            setState({ status: "InProgress" });
-            const { data, error } = await authClient.emailOtp.verifyEmail({
-                email: email,
-                otp: code,
-            });
-            if (error) {
-                setState({ status: "Error", error });
-                console.log("Email verification error", error);
-            } else {
-                console.log("Email verified successfully", data);
-                router.push("/auth/post-sign-in");
-            }
-        } catch (error) {
-            console.log("Email verification error", error);
-            toast.error("An error occured during email verification. Please try again.");
-            setState({ status: "Ready" });
-        }
-    }
+    const mutation = useMutation({
+        async mutationFn(otp: string) {
+            return await authClient.emailOtp.verifyEmail({ email, otp }, { throw: true });
+        },
+        onSuccess() {
+            router.push("/auth/post-sign-in");
+        },
+    });
 
     function handleResend() {
         authClient.emailOtp.sendVerificationOtp({
@@ -73,7 +59,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                             value={code}
                             onChange={setCode}
                             pattern={REGEXP_ONLY_DIGITS}
-                            disabled={state.status === "InProgress"}
+                            disabled={mutation.isPending}
                         >
                             <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
                                 <InputOTPSlot index={0} />
@@ -89,15 +75,15 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                         </FieldDescription>
                     </Field>
                     <Field>
-                        <Button
-                            type="submit"
-                            onClick={handleVerify}
-                            disabled={code.length < 6 || state.status === "InProgress"}
-                        >
-                            {state.status === "InProgress" ? "Verifying..." : "Verify"}
-                        </Button>
+                        <MutationButton
+                            type="button"
+                            onClick={() => mutation.mutate(code)}
+                            disabled={code.length < 6}
+                            status={mutation.status}
+                            text={{ idle: "Verify", pending: "Verifying...", success: "Verified!" }}
+                        />
                     </Field>
-                    {state.status === "Error" && <FieldError errors={[state.error]} />}
+                    {mutation.isError && <FieldError errors={[mutation.error]} />}
                     <FieldDescription className="text-center">
                         Didn't receive the code? <a onClick={handleResend}>Resend</a>
                     </FieldDescription>

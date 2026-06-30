@@ -8,10 +8,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Jersey_10, Inter } from "next/font/google";
+import { Toaster } from "sonner";
+
+import { CommonProviders } from "@/components/providers";
+import { cn } from "@/lib/utils";
 
 import "./globals.css";
-import { Toaster } from "sonner";
-import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -47,7 +49,7 @@ export default async function Root_Layout(props: LayoutProps<"/">) {
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
-                {props.children}
+                <CommonProviders>{props.children}</CommonProviders>
                 <Toaster richColors />
             </body>
         </html>

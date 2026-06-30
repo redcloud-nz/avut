@@ -6,17 +6,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import { authClient } from "@/client/auth-client";
 
-import { Button } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -80,41 +80,22 @@ function EmailPasswordSignIn_Form({ email }: { email?: string }) {
         },
     });
 
-    const [state, setState] = useState<
-        { status: "Ready" | "InProgress" } | { status: "Error"; error: { message?: string } }
-    >({ status: "Ready" });
-
-    // Handler for the sign-in form submission.
-    const handleSignIn = form.handleSubmit(async (formData) => {
-        setState({ status: "InProgress" });
-        try {
-            const { data, error } = await authClient.signIn.email(formData);
-
-            if (error) {
-                console.error("Sign in error", error);
-                setState({ status: "Error", error });
+    const mutation = useMutation({
+        async mutationFn(formData: { email: string; password: string; rememberMe: boolean }) {
+            return await authClient.signIn.email(formData, { throw: true });
+        },
+        onSuccess(data, variables) {
+            if (data.user.emailVerified) {
+                router.push("/auth/post-sign-in");
             } else {
-                console.log("Sign in successful", data);
-
-                if (data.user.emailVerified) {
-                    // Email is verfified
-                    router.push("/auth/post-sign-in");
-                } else {
-                    form.reset();
-                    setState({ status: "Ready" });
-
-                    router.push(`/auth/verify-email/${encodeURIComponent(formData.email)}`);
-                }
+                form.reset();
+                router.push(`/auth/verify-email/${encodeURIComponent(variables.email)}`);
             }
-        } catch (error) {
-            console.error("Sign in error", error);
-            toast.error("An error occured during sign in. Please try again.");
-            setState({ status: "Ready" });
-        }
+        },
     });
 
     return (
-        <form id="sign-in-form" onSubmit={handleSignIn}>
+        <form id="sign-in-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
             <FieldGroup>
                 <Controller
                     name="email"
@@ -176,15 +157,16 @@ function EmailPasswordSignIn_Form({ email }: { email?: string }) {
                     )}
                 />
                 <Field>
-                    <Button
+                    <MutationButton
                         type="submit"
                         form="sign-in-form"
-                        disabled={state.status == "InProgress"}
-                    >
-                        {state.status == "InProgress" ? "Signing in..." : "Login"}
-                    </Button>
+                        status={mutation.status}
+                        text={{ idle: "Login", pending: "Signing in...", success: "Signing in..." }}
+                    />
                 </Field>
-                {state.status == "Error" && <FieldError errors={[state.error]} />}
+                {mutation.isError && (
+                    <FieldError errors={[mutation.error as { message?: string }]} />
+                )}
             </FieldGroup>
         </form>
     );

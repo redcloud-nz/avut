@@ -6,7 +6,7 @@
  */
 
 import { Argus } from "@/components/blocks/argus";
-import { Auth_ForgotPassword_Card } from "@/components/cards/forgot-password";
+import { Auth_ForgotPassword_Card } from "@/components/auth/forgot-password";
 
 export const metadata = { title: "Forgot Password" };
 
