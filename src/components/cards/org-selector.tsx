@@ -51,7 +51,7 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
                             <Link
-                                href={route("/main/[slug]", { slug: membership.organization.slug })}
+                                href={route("/orgs/[slug]", { slug: membership.organization.slug })}
                             >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
@@ -74,22 +74,16 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
 
                     {invitations.map((invitation) => (
                         <Item key={invitation.id} asChild>
-                            <Link
-                                href={route("/personal/invitations/[invitation_id]", {
-                                    invitation_id: invitation.id,
-                                })}
-                            >
-                                <ItemMedia>
-                                    <SendIcon className="size-5" />
-                                </ItemMedia>
-                                <ItemContent>
-                                    <ItemTitle>{invitation.organization.name}</ItemTitle>
-                                    <ItemDescription>Invitation</ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
+                            <ItemMedia>
+                                <SendIcon className="size-5" />
+                            </ItemMedia>
+                            <ItemContent>
+                                <ItemTitle>{invitation.organization.name}</ItemTitle>
+                                <ItemDescription>Invitation</ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
                         </Item>
                     ))}
                 </Show>
