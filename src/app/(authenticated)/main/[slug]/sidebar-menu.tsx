@@ -140,30 +140,6 @@ export async function MainApp_Sidebar_Menu({
                         icon={<ModuleIcons.SkillPackageBuilder />}
                     />
                 </Show>
-                <Show when={modules.skills.enabled}>
-                    <NavCollapsible
-                        label="Skills"
-                        href={route("/main/[slug]/skills", { slug })}
-                        icon={<ModuleIcons.Skills />}
-                    >
-                        <NavSubItem
-                            label="Catalogue"
-                            href={route("/main/[slug]/skills/catalogue", { slug })}
-                        />
-                        <NavSubItem
-                            label="Checks"
-                            href={route("/main/[slug]/skills/checks", { slug })}
-                        />
-                        <NavSubItem
-                            label="Sessions"
-                            href={route("/main/[slug]/skills/sessions", { slug })}
-                        />
-                        <NavSubItem
-                            label="Reports"
-                            href={route("/main/[slug]/skills/reports", { slug })}
-                        />
-                    </NavCollapsible>
-                </Show>
             </SidebarMenu>
         </SidebarGroup>
     );
