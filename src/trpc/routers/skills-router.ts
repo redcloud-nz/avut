@@ -61,7 +61,7 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
-     * Delete a skill check session. Requires "assess" permission on "Skills" module.
+     * Delete a skill check session. Requires the "delete" action on "skillCheckSession".
      * @param skillCheckSessionId The ID of the skill check session to delete.
      * @returns The deleted skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.

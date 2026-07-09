@@ -30,7 +30,6 @@ Role assignments:
 | `admin`                | view, create, update, delete, publish |
 | `skill-package-author` | view, create, update, delete, publish |
 | `member`               | —                                     |
-| `skills-admin`         | —                                     |
 | `skills-assessor`      | —                                     |
 
 ---

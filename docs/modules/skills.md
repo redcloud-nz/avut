@@ -16,19 +16,18 @@ Three permission subjects are used by this module:
 
 | Subject             | Actions                      |
 | ------------------- | ---------------------------- |
-| `skills`            | view, subscribe, assess      |
+| `skills`            | view, subscribe              |
 | `skillCheckSession` | view, create, update, delete |
 | `skillCheck`        | view, create, update, delete |
 
-Role assignments:
+Role assignments (the ability to assess is gated by `skillCheck` create):
 
-| Role              | `skills`                | `skillCheckSession`          | `skillCheck`                 |
-| ----------------- | ----------------------- | ---------------------------- | ---------------------------- |
-| `owner`           | view, subscribe, assess | view, create, update, delete | view, create, update, delete |
-| `admin`           | view, subscribe, assess | view, create, update, delete | view, create, update, delete |
-| `member`          | view                    | —                            | —                            |
-| `skills-admin`    | view, subscribe, assess | view, create, update, delete | view, create, update, delete |
-| `skills-assessor` | view, assess            | view, create, update, delete | view, create                 |
+| Role              | `skills`        | `skillCheckSession`          | `skillCheck`                 |
+| ----------------- | --------------- | ---------------------------- | ---------------------------- |
+| `owner`           | view, subscribe | view, create, update, delete | view, create, update, delete |
+| `admin`           | view, subscribe | view, create, update, delete | view, create, update, delete |
+| `member`          | view            | —                            | —                            |
+| `skills-assessor` | view            | view, create, update, delete | view, create                 |
 
 ---
 

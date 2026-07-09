@@ -4,12 +4,7 @@
  */
 
 import { createAccessControl } from "better-auth/plugins/access";
-import {
-    defaultStatements,
-    adminAc,
-    ownerAc,
-    memberAc,
-} from "better-auth/plugins/organization/access";
+import { defaultStatements, memberAc } from "better-auth/plugins/organization/access";
 
 const statement = {
     ...defaultStatements,
@@ -21,7 +16,7 @@ const statement = {
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
     person: ["view", "create", "update", "delete", "archive", "restore"],
-    skillPackageSubscription: ["view", "subscribe", "assess"],
+    skillPackageSubscription: ["view", "subscribe"],
     skillCheck: ["view", "create", "update", "delete"],
     skillCheckSession: ["view", "create", "update", "delete"],
     skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
@@ -30,39 +25,19 @@ const statement = {
 
 export const ac = createAccessControl(statement);
 
+/**
+ * Every action of every resource in `statement`. Derived once so the "god"
+ * roles can never drift from the matrix as resources are added.
+ */
+const all = Object.fromEntries(
+    Object.entries(statement).map(([resource, actions]) => [resource, [...actions]]),
+) as { [K in keyof typeof statement]: (typeof statement)[K][number][] };
+
 export const Roles = {
-    owner: ac.newRole({
-        ...ownerAc.statements,
-        d4hAccessToken: ["view", "create", "update", "delete"],
-        d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return"],
-        i3Template: ["view", "create", "update", "delete"],
-        invitation: ["view", "create", "update", "cancel"],
-        member: ["view", "create", "update", "delete"],
-        organization: ["view", "update", "delete"],
-        person: ["view", "create", "update", "delete", "archive", "restore"],
-        skillPackageSubscription: ["view", "subscribe", "assess"],
-        skillCheck: ["view", "create", "update", "delete"],
-        skillCheckSession: ["view", "create", "update", "delete"],
-        skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
-        team: ["view", "create", "update", "delete"],
-    }),
-    admin: ac.newRole({
-        ...adminAc.statements,
-        d4hAccessToken: ["view", "create", "update", "delete"],
-        d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return"],
-        i3Template: ["view", "create", "update", "delete"],
-        invitation: ["view", "create", "update", "cancel"],
-        member: ["view", "create", "update", "delete"],
-        organization: ["view", "update"],
-        person: ["view", "create", "update", "delete", "archive", "restore"],
-        skillPackageSubscription: ["view", "subscribe", "assess"],
-        skillCheck: ["view", "create", "update", "delete"],
-        skillCheckSession: ["view", "create", "update", "delete"],
-        skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
-        team: ["view", "create", "update", "delete"],
-    }),
+    // Owner: full access, including deleting the organization.
+    owner: ac.newRole(all),
+    // Admin: same as owner but cannot delete the organization.
+    admin: ac.newRole({ ...all, organization: ["view", "update"] }),
     member: ac.newRole({
         ...memberAc.statements,
         d4hEquipment: ["view"],
@@ -72,30 +47,16 @@ export const Roles = {
         skillPackageSubscription: ["view"],
         team: ["view"],
     }),
-    "i3-admin": ac.newRole({
-        d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return"],
-        i3Template: ["view", "create", "update", "delete"],
-        organization: ["view"],
-        person: ["view"],
-    }),
-    "i3-user": ac.newRole({
+    "i3-editor": ac.newRole({
         d4hEquipment: ["view"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view"],
         organization: ["view"],
         person: ["view"],
     }),
-    "skills-admin": ac.newRole({
-        organization: ["view"],
-        person: ["view"],
-        skillPackageSubscription: ["view", "subscribe", "assess"],
-        skillCheck: ["view", "create", "update", "delete"],
-        skillCheckSession: ["view", "create", "update", "delete"],
-    }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
-        skillPackageSubscription: ["view", "assess"],
+        skillPackageSubscription: ["view"],
         skillCheck: ["view", "create"],
         skillCheckSession: ["view", "create", "update", "delete"],
     }),

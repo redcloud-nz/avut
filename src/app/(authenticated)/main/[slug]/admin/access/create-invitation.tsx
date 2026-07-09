@@ -15,6 +15,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     Dialog,
@@ -46,8 +47,8 @@ const schema = z.object({
     personId: z.string().min(1, "Please select a person."),
     email: z.email({ message: "Please enter a valid email address." }),
     primaryRole: z.enum(["owner", "admin", "member"]),
-    i3Role: z.enum(["i3-admin", "i3-user"]).nullable(),
-    skillsRole: z.enum(["skills-admin", "skills-assessor"]).nullable(),
+    i3Role: z.enum(["i3-editor"]).nullable(),
+    skillsRole: z.enum(["skills-assessor"]).nullable(),
     skillPackageRole: z.enum(["skill-package-author"]).nullable(),
 });
 
@@ -224,37 +225,26 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                                 control={form.control}
                                                 render={({ field, fieldState }) => (
                                                     <Field
-                                                        orientation="responsive"
+                                                        orientation="horizontal"
                                                         data-invalid={fieldState.invalid}
                                                     >
-                                                        <FieldLabel>I3 Module</FieldLabel>
-                                                        <Select
-                                                            value={field.value ?? "NONE"}
-                                                            onValueChange={(newValue) =>
+                                                        <Checkbox
+                                                            id="create-invitation-i3"
+                                                            checked={field.value === "i3-editor"}
+                                                            onCheckedChange={(checked) =>
                                                                 field.onChange(
-                                                                    newValue === "NONE"
-                                                                        ? null
-                                                                        : newValue,
+                                                                    checked ? "i3-editor" : null,
                                                                 )
                                                             }
-                                                        >
-                                                            <SelectTrigger
-                                                                aria-invalid={fieldState.invalid}
-                                                            >
-                                                                <SelectValue placeholder="Select I3 module role" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="NONE">
-                                                                    None
-                                                                </SelectItem>
-                                                                <SelectItem value="i3-admin">
-                                                                    I3 Admin
-                                                                </SelectItem>
-                                                                <SelectItem value="i3-user">
-                                                                    I3 User
-                                                                </SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                        <FieldLabel htmlFor="create-invitation-i3">
+                                                            {
+                                                                OrganizationRole.displayNames[
+                                                                    "i3-editor"
+                                                                ]
+                                                            }
+                                                        </FieldLabel>
                                                         {fieldState.error && (
                                                             <FieldError
                                                                 errors={[fieldState.error]}
@@ -270,37 +260,30 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                                 control={form.control}
                                                 render={({ field, fieldState }) => (
                                                     <Field
-                                                        orientation="responsive"
+                                                        orientation="horizontal"
                                                         data-invalid={fieldState.invalid}
                                                     >
-                                                        <FieldLabel>Skills Module</FieldLabel>
-                                                        <Select
-                                                            value={field.value ?? "NONE"}
-                                                            onValueChange={(newValue) =>
+                                                        <Checkbox
+                                                            id="create-invitation-skills"
+                                                            checked={
+                                                                field.value === "skills-assessor"
+                                                            }
+                                                            onCheckedChange={(checked) =>
                                                                 field.onChange(
-                                                                    newValue === "NONE"
-                                                                        ? null
-                                                                        : newValue,
+                                                                    checked
+                                                                        ? "skills-assessor"
+                                                                        : null,
                                                                 )
                                                             }
-                                                        >
-                                                            <SelectTrigger
-                                                                aria-invalid={fieldState.invalid}
-                                                            >
-                                                                <SelectValue placeholder="Select Skills module role" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="NONE">
-                                                                    None
-                                                                </SelectItem>
-                                                                <SelectItem value="skills-admin">
-                                                                    Skills Admin
-                                                                </SelectItem>
-                                                                <SelectItem value="skills-assessor">
-                                                                    Skills Assessor
-                                                                </SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                        <FieldLabel htmlFor="create-invitation-skills">
+                                                            {
+                                                                OrganizationRole.displayNames[
+                                                                    "skills-assessor"
+                                                                ]
+                                                            }
+                                                        </FieldLabel>
                                                         {fieldState.error && (
                                                             <FieldError
                                                                 errors={[fieldState.error]}
@@ -317,36 +300,31 @@ export function AdminModule_CreateInvitation_Dialog(props: DialogProps) {
                                                 control={form.control}
                                                 render={({ field, fieldState }) => (
                                                     <Field
-                                                        orientation="responsive"
+                                                        orientation="horizontal"
                                                         data-invalid={fieldState.invalid}
                                                     >
-                                                        <FieldLabel>
-                                                            Skill Package Builder Module
-                                                        </FieldLabel>
-                                                        <Select
-                                                            value={field.value ?? "NONE"}
-                                                            onValueChange={(newValue) =>
+                                                        <Checkbox
+                                                            id="create-invitation-skill-package"
+                                                            checked={
+                                                                field.value ===
+                                                                "skill-package-author"
+                                                            }
+                                                            onCheckedChange={(checked) =>
                                                                 field.onChange(
-                                                                    newValue === "NONE"
-                                                                        ? null
-                                                                        : newValue,
+                                                                    checked
+                                                                        ? "skill-package-author"
+                                                                        : null,
                                                                 )
                                                             }
-                                                        >
-                                                            <SelectTrigger
-                                                                aria-invalid={fieldState.invalid}
-                                                            >
-                                                                <SelectValue placeholder="Select Skill Package module role" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="NONE">
-                                                                    None
-                                                                </SelectItem>
-                                                                <SelectItem value="skill-package-author">
-                                                                    Skill Package Author
-                                                                </SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                        <FieldLabel htmlFor="create-invitation-skill-package">
+                                                            {
+                                                                OrganizationRole.displayNames[
+                                                                    "skill-package-author"
+                                                                ]
+                                                            }
+                                                        </FieldLabel>
                                                         {fieldState.error && (
                                                             <FieldError
                                                                 errors={[fieldState.error]}

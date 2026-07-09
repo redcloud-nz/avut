@@ -69,7 +69,7 @@ src/
 
 ### Permissions
 
-Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `d4h-ppe-admin`, `skills-admin`, `skills-assessor`, `skills-author`.
+Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`.
 
 **Server-side** (tRPC): pass a permissions object to `organizationProcedure`:
 
@@ -221,7 +221,7 @@ Typical page layout:
 | `skills`              | `/orgs/[slug]/skills`                | Skill checks, sessions, reports                       |
 | `skillPackageBuilder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                              |
 | `d4HViews`            | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                           |
-| `d4HPPE`              | `/orgs/[slug]/d4h-ppe`               | D4H PPE template management                           |
+| `i3`                  | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates   |
 | `notes`               | `/orgs/[slug]/notes`                 | Rich-text notes                                       |
 | `availability`        | `/orgs/[slug]/availability`          | (in progress)                                         |
 | `fog`                 | `/orgs/[slug]/fog`                   | Field Operations Guide                                |

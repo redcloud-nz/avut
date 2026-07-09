@@ -14,6 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogCloseButton,
@@ -49,8 +50,8 @@ interface AdminModule_UpdateRoles_DialogProps extends Omit<DialogProps, "childre
 
 const schema = z.object({
     primaryRole: z.enum(["owner", "admin", "member"]),
-    i3Role: z.enum(["i3-admin", "i3-user"]).nullable(),
-    skillsRole: z.enum(["skills-admin", "skills-assessor"]).nullable(),
+    i3Role: z.enum(["i3-editor"]).nullable(),
+    skillsRole: z.enum(["skills-assessor"]).nullable(),
     skillPackageRole: z.enum(["skill-package-author"]).nullable(),
 });
 
@@ -73,9 +74,8 @@ export function AdminModule_UpdateRoles_Dialog({
             primaryRole: defaultRoles.find(
                 (v) => v === "owner" || v === "admin" || v === "member",
             )!,
-            i3Role: defaultRoles.find((v) => v === "i3-admin" || v === "i3-user") ?? null,
-            skillsRole:
-                defaultRoles.find((v) => v === "skills-admin" || v === "skills-assessor") ?? null,
+            i3Role: defaultRoles.find((v) => v === "i3-editor") ?? null,
+            skillsRole: defaultRoles.find((v) => v === "skills-assessor") ?? null,
             skillPackageRole: defaultRoles.find((v) => v === "skill-package-author") ?? null,
         },
     });
@@ -170,27 +170,21 @@ export function AdminModule_UpdateRoles_Dialog({
                                     name="i3Role"
                                     control={form.control}
                                     render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>I3 Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
-                                                    field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
-                                                    )
+                                        <Field
+                                            orientation="horizontal"
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <Checkbox
+                                                id="update-roles-i3"
+                                                checked={field.value === "i3-editor"}
+                                                onCheckedChange={(checked) =>
+                                                    field.onChange(checked ? "i3-editor" : null)
                                                 }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select I3 module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="i3-admin">
-                                                        I3 Admin
-                                                    </SelectItem>
-                                                    <SelectItem value="i3-user">I3 User</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            <FieldLabel htmlFor="update-roles-i3">
+                                                {OrganizationRole.displayNames["i3-editor"]}
+                                            </FieldLabel>
                                             {fieldState.error && (
                                                 <FieldError errors={[fieldState.error]} />
                                             )}
@@ -203,29 +197,23 @@ export function AdminModule_UpdateRoles_Dialog({
                                     name="skillsRole"
                                     control={form.control}
                                     render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Skills Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
+                                        <Field
+                                            orientation="horizontal"
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <Checkbox
+                                                id="update-roles-skills"
+                                                checked={field.value === "skills-assessor"}
+                                                onCheckedChange={(checked) =>
                                                     field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
+                                                        checked ? "skills-assessor" : null,
                                                     )
                                                 }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select Skills module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="skills-admin">
-                                                        Skills Admin
-                                                    </SelectItem>
-                                                    <SelectItem value="skills-assessor">
-                                                        Skills Assessor
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            <FieldLabel htmlFor="update-roles-skills">
+                                                {OrganizationRole.displayNames["skills-assessor"]}
+                                            </FieldLabel>
                                             {fieldState.error && (
                                                 <FieldError errors={[fieldState.error]} />
                                             )}
@@ -238,26 +226,27 @@ export function AdminModule_UpdateRoles_Dialog({
                                     name="skillPackageRole"
                                     control={form.control}
                                     render={({ field, fieldState }) => (
-                                        <Field orientation="responsive">
-                                            <FieldLabel>Skill Package Builder Module</FieldLabel>
-                                            <Select
-                                                value={field.value ?? "NONE"}
-                                                onValueChange={(newValue) =>
+                                        <Field
+                                            orientation="horizontal"
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <Checkbox
+                                                id="update-roles-skill-package"
+                                                checked={field.value === "skill-package-author"}
+                                                onCheckedChange={(checked) =>
                                                     field.onChange(
-                                                        newValue === "NONE" ? null : newValue,
+                                                        checked ? "skill-package-author" : null,
                                                     )
                                                 }
-                                            >
-                                                <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                    <SelectValue placeholder="Select Skill Package module role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="skill-package-author">
-                                                        Skill Package Author
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            <FieldLabel htmlFor="update-roles-skill-package">
+                                                {
+                                                    OrganizationRole.displayNames[
+                                                        "skill-package-author"
+                                                    ]
+                                                }
+                                            </FieldLabel>
                                             {fieldState.error && (
                                                 <FieldError errors={[fieldState.error]} />
                                             )}
