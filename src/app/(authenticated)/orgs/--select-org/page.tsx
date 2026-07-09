@@ -5,26 +5,33 @@
  * Path: /orgs/--select-org
  */
 
+import { Route } from "next";
 import { redirect } from "next/navigation";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Argus } from "@/components/blocks/argus";
 import { OrgSelector_Card } from "@/components/cards/org-selector";
 import { getEntryControl } from "@/server/entry-control";
-import { route } from "@/lib/routes";
 
-export default async function SelectOrg_Page() {
+export default async function SelectOrg_Page(props: PageProps<"/orgs/--select-org">) {
+    let params = await props.searchParams;
+    const app = Array.isArray(params.app) ? params.app[0] : params.app;
+
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {
-        redirect(route(`/orgs/[slug]`, { slug: entryControl.slug }));
+        if (app) {
+            redirect(`/orgs/${entryControl.slug}/${app}` as Route);
+        } else {
+            redirect(`/orgs/${entryControl.slug}` as Route);
+        }
     }
 
     return (
         <Argus.Root>
             <Argus.Column>
                 <AVUTLogo />
-                <OrgSelector_Card entryControl={entryControl} />
+                <OrgSelector_Card entryControl={entryControl} app={app} />
             </Argus.Column>
         </Argus.Root>
     );

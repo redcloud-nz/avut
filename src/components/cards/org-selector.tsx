@@ -22,7 +22,13 @@ import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { EntryControlSelect } from "@/server/entry-control";
 
-export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlSelect }) {
+export function OrgSelector_Card({
+    entryControl,
+    app,
+}: {
+    entryControl: EntryControlSelect;
+    app?: string;
+}) {
     const { session, memberships, invitations } = entryControl.data;
 
     return (
@@ -51,7 +57,7 @@ export function OrgSelector_Card({ entryControl }: { entryControl: EntryControlS
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
                             <Link
-                                href={route("/orgs/[slug]", { slug: membership.organization.slug })}
+                                href={`/orgs/${membership.organization.slug}${app ? `/${app}` : ""}`}
                             >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />

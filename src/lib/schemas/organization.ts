@@ -27,6 +27,7 @@ const organizationSchema = z.object({
         .max(50)
         .regex(/^[a-z0-9-_]+$/),
     createdAt: z.iso.datetime(),
+    logo: z.url().nullable(),
 });
 
 export const OrganizationData = {

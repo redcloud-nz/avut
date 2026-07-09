@@ -308,6 +308,9 @@ export const accessControlRouter = createTrpcRouter({
             });
         }),
 
+    /**
+     * Lists the pending invitations for the authenticated user across all organizations.
+     */
     listUserInvitations: authenticatedProcedure
         .output(
             z.array(
@@ -344,6 +347,35 @@ export const accessControlRouter = createTrpcRouter({
             }));
         }),
 
+    /**
+     * Lists the organizations that the authenticated user is a member of, along with their roles in each organization.
+     */
+    listUserMemberships: authenticatedProcedure
+        .output(
+            z.array(
+                OrganizationUser.schema.extend({
+                    organization: OrganizationData.schema.pick({
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                    }),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const memberships = await ctx.prisma.organizationUser.findMany({
+                where: {
+                    userId: ctx.auth.user.id,
+                },
+                include: { organization: true, user: true },
+            });
+
+            return memberships.map((membership) => ({
+                ...OrganizationUser.fromRecord(membership.user, membership),
+                organization: OrganizationData.fromRecord(membership.organization),
+            }));
+        }),
     /**
      * Reject an organization invitation.
      *

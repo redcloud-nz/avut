@@ -12,9 +12,9 @@ import { AVUTLogo } from "@/components/art/avut-logo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { auth } from "@/server/auth";
 
-import { AccountSettings } from "./account-settings";
-import { OrganizationsSettings } from "./organizations-settings";
-import { SecuritySettings } from "./security-settings";
+import { UserAccountSettings } from "./user-account-settings";
+import { UserOrganizationsSettings } from "./user-organizations-settings";
+import { UserSecuritySettings } from "./user-security-settings";
 import { Settings_TabsList } from "./settings-tabs-list";
 
 export const metadata = {
@@ -43,13 +43,13 @@ export default async function Settings_Page(props: PageProps<"/settings/[path]">
             <Tabs value={path} className="space-y-4">
                 <Settings_TabsList />
                 <TabsContent value="account">
-                    <AccountSettings />
+                    <UserAccountSettings />
                 </TabsContent>
                 <TabsContent value="security">
-                    <SecuritySettings />
+                    <UserSecuritySettings />
                 </TabsContent>
                 <TabsContent value="organizations">
-                    <OrganizationsSettings />
+                    <UserOrganizationsSettings />
                 </TabsContent>
             </Tabs>
         </div>

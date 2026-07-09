@@ -33,10 +33,9 @@ import {
 } from "@/components/ui/sidebar";
 
 import { authClient } from "@/client/auth-client";
-import { route } from "@/lib/routes";
 import { getUserInitials } from "@/lib/utils";
 
-export function UserMenu({ slug }: { slug: string }) {
+export function UserMenu() {
     const router = useRouter();
 
     const { isMobile } = useSidebar();
@@ -102,13 +101,7 @@ export function UserMenu({ slug }: { slug: string }) {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href={route("/main/[slug]/account/profile", { slug })}>
-                                    <PersonalProfileIcon />
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href={route("/main/[slug]/account/settings", { slug })}>
+                                <Link href="/settings/account">
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>

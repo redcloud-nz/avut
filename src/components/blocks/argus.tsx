@@ -6,8 +6,9 @@
  */
 
 import Image from "next/image";
-import { ComponentProps } from "react";
+import { ComponentProps, ReactNode } from "react";
 
+import { AVUTLogo } from "@/components/art/avut-logo";
 import { cn } from "@/lib/utils";
 
 function ArgusRoot({ className, ...props }: ComponentProps<"div">) {
@@ -56,6 +57,19 @@ function ArgusAppLogo() {
     );
 }
 
+function ArgusHeader({
+    className,
+    title,
+    ...props
+}: Omit<ComponentProps<"div">, "children"> & { title: string }) {
+    return (
+        <div className={cn("flex flex-col items-center gap-4", className)} {...props}>
+            <AVUTLogo />
+            <div className="font-semibold">{title}</div>
+        </div>
+    );
+}
+
 function ArgusFooter({ className, ...props }: ComponentProps<"p">) {
     return (
         <p
@@ -75,5 +89,6 @@ export const Argus = {
     Root: ArgusRoot,
     Column: ArgusColumn,
     AppLogo: ArgusAppLogo,
+    Header: ArgusHeader,
     Footer: ArgusFooter,
 };

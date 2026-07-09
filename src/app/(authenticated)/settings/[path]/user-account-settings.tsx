@@ -23,7 +23,7 @@ import { RainbowSpinner } from "@/components/ui/loading";
 import { getUserInitials } from "@/lib/utils";
 import { type AuthSession } from "@/server/auth";
 
-export function AccountSettings() {
+export function UserAccountSettings() {
     const sessionQuery = authClient.useSession();
     // const [isMounted, setIsMounted] = useState(true);
 

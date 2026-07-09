@@ -4,6 +4,7 @@
  */
 
 import Image from "next/image";
+import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 
 import {
@@ -13,26 +14,30 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
+import { route } from "@/lib/routes";
 
 import { ModeToggle } from "./mode-toggle";
 import { NavSkeleton } from "./nav-skeleton";
 import { NotificationsMenu } from "./notifications-menu";
 import { UserMenu } from "./user-menu";
 
-export function AppSidebar({ children, slug }: { children?: ReactNode; slug: string }) {
+export function AppSidebar({ children, slug }: { children?: ReactNode; slug?: string }) {
     return (
         <Sidebar>
             <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                <div className="w-[100px]">
-                    <Image
-                        src="/avut-logo.svg"
-                        alt="A.V.U.T. Logo"
-                        width={150}
-                        height={50}
-                        loading="eager"
-                        className="dark:invert"
-                    />
-                </div>
+                <Link href={slug ? route("/orgs/[slug]", { slug }) : "/apps"}>
+                    <div className="w-[100px]">
+                        <Image
+                            src="/avut-logo.svg"
+                            alt="A.V.U.T. Logo"
+                            width={150}
+                            height={50}
+                            loading="eager"
+                            className="dark:invert"
+                        />
+                    </div>
+                </Link>
+
                 <div>
                     <NotificationsMenu />
                     <ModeToggle />
@@ -44,7 +49,7 @@ export function AppSidebar({ children, slug }: { children?: ReactNode; slug: str
             </SidebarContent>
             <SidebarFooter>
                 <AppVersion />
-                <UserMenu slug={slug} />
+                <UserMenu />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

@@ -10,6 +10,7 @@ import Link from "next/link";
 
 import { headers as nextHeaders } from "next/headers";
 
+import { AVUTLogo } from "@/components/art/avut-logo";
 import { Argus } from "@/components/blocks/argus";
 import { Button } from "@/components/ui/button";
 import { CopyrightString } from "@/components/ui/copyright";
@@ -21,7 +22,7 @@ export default async function HomePage() {
     return (
         <Argus.Root>
             <Argus.Column className="gap-8">
-                <Argus.AppLogo />
+                <AVUTLogo />
                 <div className="flex items-center justify-center gap-2">
                     {hasSession ? (
                         <>

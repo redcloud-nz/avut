@@ -54,7 +54,7 @@ function IndexPage({
     ...props
 }: ComponentProps<"div"> & { title: string }) {
     return (
-        <div className={cn("w-full sm:w-lg sm:mx-auto ${className}", className)} {...props}>
+        <div className={cn("w-full sm:w-lg sm:mx-auto", className)} {...props}>
             <div className="flex flex-col items-center my-4 gap-4">
                 <AVUTLogo />
                 <div className="font-semibold">{title}</div>

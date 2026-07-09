@@ -30,23 +30,17 @@ import {
 import { RainbowSpinner } from "@/components/ui/loading";
 import { PasswordInput } from "@/components/ui/password-input";
 
-import { getUserInitials } from "@/lib/utils";
-
 const socialProviders = ["github", "google"];
 
-export function SecuritySettings() {
+export function UserSecuritySettings() {
     const accountsQuery = useQuery({
-        queryFn: async () => {
-            const { data, error } = await authClient.listAccounts();
-            if (error) throw error;
-            return data;
-        },
+        queryFn: () => authClient.listAccounts({}, { throw: true }),
         queryKey: ["user", "linkedAccounts"],
     });
 
     if (accountsQuery.isPending) {
         return (
-            <div className="mx-auto">
+            <div className="p-4">
                 <RainbowSpinner className="mx-auto" />
             </div>
         );
@@ -66,9 +60,9 @@ export function SecuritySettings() {
     return (
         <div className="space-y-4">
             {hasCredentialAccount ? <ChangePassword_Card /> : <SetPassword_Card />}
-            <LinkedAccounts_Card
+            {/* <LinkedAccounts_Card
                 linkedAccounts={accountsQuery.data.map((account) => account.providerId)}
-            />
+            /> */}
         </div>
     );
 }
