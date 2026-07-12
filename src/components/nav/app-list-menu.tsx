@@ -15,22 +15,31 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { ModuleIcons } from "../icons";
 import { useOrganization } from "@/hooks/use-organization";
 import { Show } from "../show";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { route } from "@/lib/routes";
 
-export function AppListMenu({ scope }: { scope: "personal" | "organization" }) {
-    const { isMobile } = useSidebar();
+const APP_LABELS: Record<string, string> = {
+    admin: "Admin",
+    "d4h-views": "D4H Views",
+    i3: "I3",
+    notes: "Notes",
+    "skill-track": "Skill Track",
+    "skill-package-builder": "Skill Package Builder",
+};
 
-    const organization = useOrganization();
+function useCurrentAppLabel() {
+    // Paths are /orgs/<slug>/<app>/... or /main/<slug>/<app>/...
+    const segment = usePathname().split("/")[3];
+    return (segment && APP_LABELS[segment]) ?? "Dashboard";
+}
+
+export function AppListMenu({ scope }: { scope: "personal" | "organization" }) {
+    const appLabel = useCurrentAppLabel();
 
     return (
         <SidebarMenu>
@@ -41,7 +50,7 @@ export function AppListMenu({ scope }: { scope: "personal" | "organization" }) {
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <div className="font-semibold text-md">Skill Package Builder</div>
+                            <div className="font-semibold text-md">{appLabel}</div>
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
