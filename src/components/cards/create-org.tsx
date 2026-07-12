@@ -93,7 +93,7 @@ export function CreateOrganization_Card() {
             } else {
                 console.log("Organization created", data);
                 toast.success("Organization created successfully.");
-                router.push(route("/main/[slug]", { slug: data.slug }));
+                router.push(route("/orgs/[slug]", { slug: data.slug }));
             }
         } catch (error) {
             console.error("Organization creation error:", error);

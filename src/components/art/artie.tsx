@@ -54,12 +54,7 @@ const poseToImage: Record<ArtiePose, string> = {
 /**
  * Component to render Artie illustrations.
  */
-export default function Artie({
-    pose,
-    alt,
-    className,
-    size = "md",
-}: ArtieProps) {
+export default function Artie({ pose, alt, className, size = "md" }: ArtieProps) {
     const imageSrc = poseToImage[pose];
     const altText = alt || `Artie the mascot - ${pose}`;
 
@@ -80,6 +75,7 @@ export default function Artie({
                 height={864}
                 priority={false}
                 className={cn("object-contain select-none")}
+                loading="eager"
             />
         </div>
     );

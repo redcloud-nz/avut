@@ -38,7 +38,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                 <Std.IndexPage title="Dashboard">
                     <ItemGroup>
                         <Item asChild>
-                            <Link href={route("/main/[slug]/admin", { slug })}>
+                            <Link href={route("/orgs/[slug]/admin", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Admin Module</ItemTitle>
                                     <ItemDescription>
@@ -52,7 +52,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Item>
                         <Show when={modules["d4h-views"].enabled}>
                             <Item asChild>
-                                <Link href={route("/main/[slug]/d4h-views", { slug })}>
+                                <Link href={route("/orgs/[slug]/d4h-views", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>D4H Views Module</ItemTitle>
                                         <ItemDescription>View and manage D4H data</ItemDescription>
@@ -65,7 +65,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Show>
                         <Show when={modules.i3.enabled}>
                             <Item asChild>
-                                <Link href={route("/main/[slug]/i3", { slug })}>
+                                <Link href={route("/orgs/[slug]/i3", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>I3</ItemTitle>
                                         <ItemDescription>
@@ -96,7 +96,7 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                         </Show>
                         <Show when={modules["skill-package-builder"].enabled}>
                             <Item asChild>
-                                <Link href={route("/main/[slug]/skill-package-builder", { slug })}>
+                                <Link href={route("/orgs/[slug]/skill-package-builder", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Skill Package Builder</ItemTitle>
                                         <ItemDescription>

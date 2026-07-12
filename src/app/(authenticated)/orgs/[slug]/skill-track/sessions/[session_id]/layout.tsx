@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /main/[slug]/skills/sessions/[session_id]
+ * Path: /orgs/[slug]/skill-track/sessions/[session_id]
  */
 
 import { Metadata } from "next";
@@ -13,7 +13,7 @@ import { getOrganizationBySlug } from "@/server/organization";
 import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
 export async function generateMetadata(
-    props: LayoutProps<"/main/[slug]/skills/sessions/[session_id]">,
+    props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ): Promise<Metadata> {
     const { slug, session_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -26,7 +26,7 @@ export async function generateMetadata(
 }
 
 export default async function SkillsModule_Session_Layout(
-    props: LayoutProps<"/main/[slug]/skills/sessions/[session_id]">,
+    props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
     return <>{props.children}</>;
 }

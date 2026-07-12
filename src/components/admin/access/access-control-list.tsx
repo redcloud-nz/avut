@@ -48,7 +48,7 @@ export function AccessControl_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/main/[slug]/admin/access/[person_id]", {
+                            href={route("/orgs/[slug]/admin/access/[person_id]", {
                                 slug: organization.slug,
                                 person_id: ctx.row.original.id,
                             })}
@@ -64,7 +64,7 @@ export function AccessControl_List() {
                     header: "Email",
                     cell: (ctx) => (
                         <Link
-                            href={route("/main/[slug]/admin/access/[person_id]", {
+                            href={route("/orgs/[slug]/admin/access/[person_id]", {
                                 slug: organization.slug,
                                 person_id: ctx.row.original.id,
                             })}

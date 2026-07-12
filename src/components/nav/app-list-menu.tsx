@@ -74,6 +74,14 @@ function OrganizationAppOptions() {
                     Admin
                 </Link>
             </DropdownMenuItem>
+            <Show when={modules["d4h-views"].enabled}>
+                <DropdownMenuItem asChild>
+                    <Link href={route("/orgs/[slug]/d4h-views", { slug: organization.slug })}>
+                        <ModuleIcons.D4HViews />
+                        D4H Views
+                    </Link>
+                </DropdownMenuItem>
+            </Show>
             <Show when={modules.i3.enabled}>
                 <DropdownMenuItem asChild>
                     <Link href={route("/orgs/[slug]/i3", { slug: organization.slug })}>

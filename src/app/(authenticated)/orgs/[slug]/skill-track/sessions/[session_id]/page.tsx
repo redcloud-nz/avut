@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /main/[slug]/skills/sessions/[session_id]
+ * Path: /orgs/[slug]/skill-track/sessions/[session_id]
  */
 
 import { ChevronDownIcon } from "lucide-react";
@@ -42,7 +42,7 @@ import { SkillsModule_SessionMenu } from "./session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "./update-session";
 
 export default async function SkillsModule_Session_Page(
-    props: PageProps<"/main/[slug]/skills/sessions/[session_id]">,
+    props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
     const { slug, session_id } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -53,8 +53,11 @@ export default async function SkillsModule_Session_Page(
         <Std.SidebarInset>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "Skills", href: route("/main/[slug]/skills", { slug }) },
-                    { label: "Sessions", href: route("/main/[slug]/skills/sessions", { slug }) },
+                    { label: "Skills", href: route("/orgs/[slug]/skill-track", { slug }) },
+                    {
+                        label: "Sessions",
+                        href: route("/orgs/[slug]/skill-track/sessions", { slug }),
+                    },
                     { label: session.name || session.id },
                 ]}
             />
@@ -75,7 +78,7 @@ export default async function SkillsModule_Session_Page(
                                         <DropdownMenuItem asChild>
                                             <Link
                                                 href={route(
-                                                    "/main/[slug]/skills/sessions/[session_id]/by-person",
+                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
                                                     { slug, session_id },
                                                 )}
                                             >
@@ -85,7 +88,7 @@ export default async function SkillsModule_Session_Page(
                                         <DropdownMenuItem asChild>
                                             <Link
                                                 href={route(
-                                                    "/main/[slug]/skills/sessions/[session_id]/by-skill",
+                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
                                                     { slug, session_id },
                                                 )}
                                             >
@@ -98,7 +101,7 @@ export default async function SkillsModule_Session_Page(
                             <Button variant="outline" asChild>
                                 <Link
                                     href={route(
-                                        "/main/[slug]/skills/sessions/[session_id]/review",
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
                                         { slug, session_id },
                                     )}
                                 >
