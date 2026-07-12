@@ -50,7 +50,7 @@ export default async function MainApp_Layout(props: LayoutProps<"/main/[slug]">)
 
     return (
         <OrganizationProvider organization={organization} settings={organizationSettings}>
-            <AppSidebar slug={slug}>
+            <AppSidebar scope="organization">
                 <MainApp_Sidebar_Menu organization={organization} settings={organizationSettings} />
             </AppSidebar>
             {props.children}

@@ -27,11 +27,13 @@ import { route } from "@/lib/routes";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_DeleteUser_Dialog({
+export function AccessControl_DeleteUser_Dialog({
     user,
+    onSuccess,
     ...props
 }: AlertDialogProps & {
     user: OrganizationUser;
+    onSuccess?: () => void;
 }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();

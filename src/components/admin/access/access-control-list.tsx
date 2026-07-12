@@ -30,7 +30,7 @@ import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
-export function AdminModule_AccessControl_List() {
+export function AccessControl_List() {
     const organization = useOrganization();
 
     const { data: personnel } = useSuspenseQuery(

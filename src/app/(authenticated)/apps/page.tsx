@@ -31,7 +31,7 @@ export default async function Organization_Index_Page() {
                     <Item variant="outline" className="bg-background" asChild>
                         <Link href="/orgs/--select-org?app=skill-track">
                             <ItemMedia>
-                                <ModuleIcons.Skills />
+                                <ModuleIcons.SkillTrack />
                             </ItemMedia>
                             <ItemContent>
                                 <ItemTitle>Skill Track</ItemTitle>

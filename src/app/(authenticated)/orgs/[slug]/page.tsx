@@ -38,7 +38,7 @@ export default async function Organization_Index_Page(props: LayoutProps<"/orgs/
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track", { slug })}>
                                     <ItemMedia>
-                                        <ModuleIcons.Skills />
+                                        <ModuleIcons.SkillTrack />
                                     </ItemMedia>
                                     <ItemContent>
                                         <ItemTitle>Skill Track</ItemTitle>

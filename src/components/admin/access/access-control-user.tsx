@@ -34,16 +34,12 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc, trpcClient } from "@/trpc/client";
 
-import { AdminModule_DeleteUser_Dialog } from "./delete-user";
+import { AccessControl_DeleteUser_Dialog } from "./delete-user";
 import { AdminModule_ResendInvitation_Dialog } from "./resend-invitation";
 import { AdminModule_RevokeInvitation_Dialog } from "./revoke-invitation";
 import { AdminModule_UpdateRoles_Dialog } from "./update-roles";
 
-export function AdminModule_AccessControl_PersonAccessControl_Card({
-    personId,
-}: {
-    personId: PersonId;
-}) {
+export function AccessControl_Person({ personId }: { personId: PersonId }) {
     const organization = useOrganization();
 
     const { data: session } = authClient.useSession();
@@ -331,7 +327,7 @@ export function AdminModule_AccessControl_PersonAccessControl_Card({
                     open={dialogOpen === "update"}
                     onOpenChange={(open) => setDialogOpen(open ? "update" : false)}
                 />
-                <AdminModule_DeleteUser_Dialog
+                <AccessControl_DeleteUser_Dialog
                     user={user}
                     open={dialogOpen === "delete"}
                     onOpenChange={(open) => setDialogOpen(open ? "delete" : false)}

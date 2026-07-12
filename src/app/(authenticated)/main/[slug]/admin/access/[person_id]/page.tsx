@@ -11,7 +11,7 @@ import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getPersonById } from "@/server/person";
 
-import { AdminModule_AccessControl_PersonAccessControl_Card } from "./person-access-control";
+import { AccessControl_Person } from "@/components/admin/access/access-control-user";
 
 export default async function AdminModule_AccessControl_PersonPage(
     props: PageProps<"/main/[slug]/admin/access/[person_id]">,
@@ -32,7 +32,7 @@ export default async function AdminModule_AccessControl_PersonPage(
             />
             <Std.ScrollContainer>
                 <Suspense fallback={<CardLoadingFallback />}>
-                    <AdminModule_AccessControl_PersonAccessControl_Card personId={person.id} />
+                    <AccessControl_Person personId={person.id} />
                 </Suspense>
             </Std.ScrollContainer>
         </Std.SidebarInset>

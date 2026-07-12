@@ -97,7 +97,7 @@ export const ModuleIcons = {
     I3: ShirtIcon,
     D4HViews: CableIcon,
     Notes: NotebookPenIcon,
-    Skills: PocketKnifeIcon,
+    SkillTrack: PocketKnifeIcon,
     SkillPackageBuilder: PackageIcon,
     Admin: WrenchIcon,
 };

@@ -109,21 +109,6 @@ export default async function MainApp_Index_Page(props: PageProps<`/main/[slug]`
                                 </Link>
                             </Item>
                         </Show>
-                        <Show when={modules.skills.enabled}>
-                            <Item asChild>
-                                <Link href={route("/main/[slug]/skills", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Skills</ItemTitle>
-                                        <ItemDescription>
-                                            Manage skills and record skill-checks.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Show>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

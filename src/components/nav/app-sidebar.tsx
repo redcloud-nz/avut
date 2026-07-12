@@ -16,35 +16,39 @@ import {
 } from "@/components/ui/sidebar";
 import { route } from "@/lib/routes";
 
+import { AppListMenu } from "./app-list-menu";
 import { ModeToggle } from "./mode-toggle";
 import { NavSkeleton } from "./nav-skeleton";
 import { NotificationsMenu } from "./notifications-menu";
 import { UserMenu } from "./user-menu";
 
-export function AppSidebar({ children, slug }: { children?: ReactNode; slug?: string }) {
+export function AppSidebar({
+    children,
+    scope,
+}: {
+    children?: ReactNode;
+    scope: "personal" | "organization";
+}) {
     return (
         <Sidebar>
             <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                <Link href={slug ? route("/orgs/[slug]", { slug }) : "/apps"}>
-                    <div className="w-[100px]">
-                        <Image
-                            src="/avut-logo.svg"
-                            alt="A.V.U.T. Logo"
-                            width={150}
-                            height={50}
-                            loading="eager"
-                            className="dark:invert"
-                        />
-                    </div>
-                </Link>
-
+                <div className="w-[100px]">
+                    <Image
+                        src="/avut-logo.svg"
+                        alt="A.V.U.T. Logo"
+                        width={100}
+                        height={100 / 3}
+                        loading="eager"
+                        className="dark:invert"
+                    />
+                </div>
                 <div>
                     <NotificationsMenu />
                     <ModeToggle />
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <div className="flex items-center justify-end gap-2 px-2 py-1"></div>
+                <AppListMenu scope={scope} />
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </SidebarContent>
             <SidebarFooter>

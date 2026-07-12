@@ -9,7 +9,7 @@ import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
-import { AdminModule_AccessControl_List } from "./access-control-list";
+import { AccessControl_List } from "@/components/admin/access/access-control-list";
 
 export const metadata = {
     title: `Access Control`,
@@ -29,7 +29,7 @@ export default async function AdminModule_AccessControl_Page(
                 ]}
             />
             <Std.ScrollContainer>
-                <AdminModule_AccessControl_List />
+                <AccessControl_List />
             </Std.ScrollContainer>
         </Std.SidebarInset>
     );

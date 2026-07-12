@@ -14,7 +14,7 @@ export default async function SkillTrack_Layout(props: LayoutProps<"/orgs/[slug]
 
     return (
         <>
-            <AppSidebar slug={slug}>
+            <AppSidebar scope="organization">
                 <SkillTrack_Sidebar_Menu />
             </AppSidebar>
             {props.children}
