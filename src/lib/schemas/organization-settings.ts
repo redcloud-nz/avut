@@ -8,6 +8,7 @@ import * as z from "zod";
 
 import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
+import { configurableModuleIds } from "@/lib/modules";
 
 const organizationSettingsSchema = z.object({
     general: z.object({
@@ -40,7 +41,7 @@ const organizationSettingsSchema = z.object({
         notes: z.object({
             enabled: z.boolean().default(false),
         }),
-        skills: z.object({
+        "skill-track": z.object({
             enabled: z.boolean().default(false),
         }),
         "skill-package-builder": z.object({
@@ -53,7 +54,7 @@ export const OrganizationSettings = {
     schema: organizationSettingsSchema,
 
     integrationKeys: ["d4h", "email"],
-    moduleKeys: ["d4h-views", "forms", "i3", "notes", "skills", "skill-package-builder"],
+    moduleKeys: configurableModuleIds,
 
     default(): OrganizationSettings {
         return organizationSettingsSchema.parse({
@@ -67,7 +68,7 @@ export const OrganizationSettings = {
                 forms: {},
                 i3: {},
                 notes: {},
-                skills: {},
+                "skill-track": {},
                 "skill-package-builder": {},
             },
         });

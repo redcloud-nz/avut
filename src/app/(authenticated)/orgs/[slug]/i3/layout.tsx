@@ -5,7 +5,7 @@
  * Path: /orgs/[slug]/i3
  */
 
-import { AppSidebar } from "@/components/nav/app-sidebar";
+import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -22,9 +22,9 @@ export default async function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
 
     return (
         <>
-            <AppSidebar scope="organization">
+            <ModuleSidebar scope="organization">
                 <I3_Sidebar_Menu />
-            </AppSidebar>
+            </ModuleSidebar>
             {props.children}
         </>
     );

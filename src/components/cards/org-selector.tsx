@@ -24,10 +24,10 @@ import { EntryControlSelect } from "@/server/entry-control";
 
 export function OrgSelector_Card({
     entryControl,
-    app,
+    module,
 }: {
     entryControl: EntryControlSelect;
-    app?: string;
+    module?: string;
 }) {
     const { session, memberships, invitations } = entryControl.data;
 
@@ -57,7 +57,7 @@ export function OrgSelector_Card({
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
                             <Link
-                                href={`/orgs/${membership.organization.slug}${app ? `/${app}` : ""}`}
+                                href={`/orgs/${membership.organization.slug}${module ? `/${module}` : ""}`}
                             >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />

@@ -5,7 +5,6 @@
 
 "use client";
 
-import { OrgDashboardIcon } from "@/components/icons";
 import { NavItem } from "@/components/nav/nav-section";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
@@ -19,11 +18,6 @@ export function D4HViews_Sidebar_Menu() {
     return (
         <SidebarGroup>
             <SidebarMenu>
-                <NavItem
-                    label="Dashboard"
-                    href={route("/orgs/[slug]/d4h-views", { slug })}
-                    icon={<OrgDashboardIcon />}
-                />
                 <NavItem
                     label="Equipment"
                     href={route("/orgs/[slug]/d4h-views/equipment", { slug })}

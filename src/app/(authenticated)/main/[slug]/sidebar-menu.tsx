@@ -3,11 +3,12 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { ModuleIcons, OrgDashboardIcon } from "@/components/icons";
+import { OrgDashboardIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { NavItem } from "@/components/nav/nav-section";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
+import { Modules } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -22,6 +23,8 @@ export async function MainApp_Sidebar_Menu({
     const { slug } = organization;
     const { modules } = settings;
 
+    const NotesIcon = Modules.notes.icon;
+
     return (
         <SidebarGroup>
             <SidebarMenu>
@@ -34,7 +37,7 @@ export async function MainApp_Sidebar_Menu({
                     <NavItem
                         label="Notes"
                         href={route("/main/[slug]/notes", { slug })}
-                        icon={<ModuleIcons.Notes />}
+                        icon={<NotesIcon />}
                     />
                 </Show>
             </SidebarMenu>

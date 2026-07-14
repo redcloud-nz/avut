@@ -5,7 +5,7 @@
  * Path: /pub/[slug]
  */
 
-import { AppSidebar } from "@/components/nav/app-sidebar";
+import { ModuleSidebar } from "@/components/nav/module-sidebar";
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -25,20 +25,15 @@ export async function generateMetadata(props: LayoutProps<`/pub/orgs/[slug]`>) {
     };
 }
 
-export default async function Pub_Organization_Layout(
-    props: LayoutProps<`/pub/orgs/[slug]`>,
-) {
+export default async function Pub_Organization_Layout(props: LayoutProps<`/pub/orgs/[slug]`>) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const organizationSettings = await getOrganizationSettings(organization.id);
 
     return (
         <CommonProviders>
-            <OrganizationProvider
-                organization={organization}
-                settings={organizationSettings}
-            >
-                <AppSidebar slug={slug}></AppSidebar>
+            <OrganizationProvider organization={organization} settings={organizationSettings}>
+                <ModuleSidebar slug={slug}></ModuleSidebar>
                 {props.children}
             </OrganizationProvider>
         </CommonProviders>

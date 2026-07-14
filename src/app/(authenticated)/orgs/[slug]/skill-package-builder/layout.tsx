@@ -5,7 +5,7 @@
  * Paths: /orgs/[slug]/skill-package-builder
  */
 
-import { AppSidebar } from "@/components/nav/app-sidebar";
+import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -29,9 +29,9 @@ export default async function SkillPackageBuilder_Layout(
 
     return (
         <>
-            <AppSidebar scope="organization">
+            <ModuleSidebar scope="organization">
                 <SkillPackageBuilder_Sidebar_Menu />
-            </AppSidebar>
+            </ModuleSidebar>
             {props.children}
         </>
     );

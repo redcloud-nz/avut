@@ -150,9 +150,12 @@ export default function AdminModule_Settings_Page(
                             {/* <FormsModule_SettingsCard lens={lens.focus("modules.forms")} /> */}
                             <I3Module_SettingsCard lens={lens.focus("modules.i3")} />
                             {/* <NotesModule_SettingsCard lens={lens.focus("modules.notes")} /> */}
-                            <SkillsModule_SettingsCard lens={lens.focus("modules.skills")} />
+
                             <SkillPackageBuilderModule_SettingsCard
                                 lens={lens.focus("modules.skill-package-builder")}
+                            />
+                            <SkillTrackModule_SettingsCard
+                                lens={lens.focus("modules.skill-track")}
                             />
                         </div>
 
@@ -607,41 +610,6 @@ function NotesModule_SettingsCard({
     );
 }
 
-function SkillsModule_SettingsCard({
-    lens,
-}: {
-    lens: Lens<Partial<OrganizationSettings["modules"]["skills"]>>;
-}) {
-    const enabled = useWatch(lens.focus("enabled").interop());
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Skills Module</CardTitle>
-                <CardDescription>
-                    The skills module provides functionality for managing skills and competencies
-                    within your organization.
-                </CardDescription>
-                <CardAction>
-                    <Controller
-                        {...lens.focus("enabled").interop()}
-                        render={({ field }) => (
-                            <Switch
-                                id="skills-module-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <FieldGroup></FieldGroup>
-            </CardContent>
-        </Card>
-    );
-}
-
 function SkillPackageBuilderModule_SettingsCard({
     lens,
 }: {
@@ -663,6 +631,41 @@ function SkillPackageBuilderModule_SettingsCard({
                         render={({ field }) => (
                             <Switch
                                 id="skill-package-builder-module-enabled"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+                <FieldGroup></FieldGroup>
+            </CardContent>
+        </Card>
+    );
+}
+
+function SkillTrackModule_SettingsCard({
+    lens,
+}: {
+    lens: Lens<Partial<OrganizationSettings["modules"]["skill-track"]>>;
+}) {
+    const enabled = useWatch(lens.focus("enabled").interop());
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Skill Track Module</CardTitle>
+                <CardDescription>
+                    The Skill Track module provides functionality for managing skills and
+                    competencies within your organization.
+                </CardDescription>
+                <CardAction>
+                    <Controller
+                        {...lens.focus("enabled").interop()}
+                        render={({ field }) => (
+                            <Switch
+                                id="skill-track-module-enabled"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                             />

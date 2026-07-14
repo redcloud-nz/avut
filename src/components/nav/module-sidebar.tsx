@@ -16,13 +16,13 @@ import {
 } from "@/components/ui/sidebar";
 import { route } from "@/lib/routes";
 
-import { AppListMenu } from "./app-list-menu";
+import { ModuleListMenu } from "./module-list-menu";
 import { ModeToggle } from "./mode-toggle";
 import { NavSkeleton } from "./nav-skeleton";
 import { NotificationsMenu } from "./notifications-menu";
 import { UserMenu } from "./user-menu";
 
-export function AppSidebar({
+export function ModuleSidebar({
     children,
     scope,
 }: {
@@ -48,7 +48,7 @@ export function AppSidebar({
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <AppListMenu scope={scope} />
+                <ModuleListMenu scope={scope} />
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </SidebarContent>
             <SidebarFooter>

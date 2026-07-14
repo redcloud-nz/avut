@@ -5,7 +5,6 @@
 
 "use client";
 
-import { OrgDashboardIcon } from "@/components/icons";
 import { NavItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
@@ -21,11 +20,6 @@ export function Admin_Sidebar_Menu() {
     return (
         <SidebarGroup>
             <SidebarMenu>
-                <NavItem
-                    label="Dashboard"
-                    href={route("/orgs/[slug]/admin", { slug })}
-                    icon={<OrgDashboardIcon />}
-                />
                 <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
                     <NavItem
                         label="Access Control"

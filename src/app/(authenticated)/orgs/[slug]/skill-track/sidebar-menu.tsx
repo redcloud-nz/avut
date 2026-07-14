@@ -22,7 +22,6 @@ export function SkillTrack_Sidebar_Menu() {
                 <NavItem
                     label="Dashboard"
                     href={route("/orgs/[slug]/skill-track", { slug: organization.slug })}
-                    icon={<OrgDashboardIcon />}
                 />
 
                 <NavItem

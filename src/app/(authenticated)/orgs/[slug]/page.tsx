@@ -8,8 +8,6 @@
 import { ChevronRightIcon } from "lucide-react";
 
 import { Argus } from "@/components/blocks/argus";
-import { ModuleIcons } from "@/components/icons";
-import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Item,
@@ -20,7 +18,7 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import Link from "next/link";
-import { route } from "@/lib/routes";
+import { orgModules } from "@/lib/modules";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 
@@ -30,91 +28,39 @@ export default async function Organization_Index_Page(props: LayoutProps<"/orgs/
     const settings = await getOrganizationSettings(organization.id);
     const { modules } = settings;
 
+    const availableModules = orgModules.filter(
+        (mod) => mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled),
+    );
+
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.Header title={organization.name} />
                 <Card>
                     <CardHeader>
-                        <CardTitle>Available Apps</CardTitle>
+                        <CardTitle>Available Modules</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ItemGroup>
-                            <Item asChild>
-                                <Link href={route("/orgs/[slug]/admin", { slug })}>
-                                    <ItemMedia>
-                                        <ModuleIcons.Admin />
-                                    </ItemMedia>
-                                    <ItemContent>
-                                        <ItemTitle>Admin</ItemTitle>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                            <Show when={modules["d4h-views"].enabled}>
-                                <Item asChild>
-                                    <Link href={route("/orgs/[slug]/d4h-views", { slug })}>
-                                        <ItemMedia>
-                                            <ModuleIcons.D4HViews />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>D4H Views</ItemTitle>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </Show>
-                            <Show when={modules.i3.enabled}>
-                                <Item asChild>
-                                    <Link href={route("/orgs/[slug]/i3", { slug })}>
-                                        <ItemMedia>
-                                            <ModuleIcons.I3 />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>I3</ItemTitle>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </Show>
-                            <Show when={modules.skills.enabled}>
-                                <Item asChild>
-                                    <Link href={route("/orgs/[slug]/skill-track", { slug })}>
-                                        <ItemMedia>
-                                            <ModuleIcons.SkillTrack />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>Skill Track</ItemTitle>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </Show>
-                            <Show when={modules["skill-package-builder"].enabled}>
-                                <Item asChild>
-                                    <Link
-                                        href={route("/orgs/[slug]/skill-package-builder", { slug })}
-                                    >
-                                        <ItemMedia>
-                                            <ModuleIcons.SkillPackageBuilder />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>Skill Package Builder</ItemTitle>
-                                        </ItemContent>
-                                        <ItemActions>
-                                            <ChevronRightIcon className="size-4" />
-                                        </ItemActions>
-                                    </Link>
-                                </Item>
-                            </Show>
+                            {availableModules.map((mod) => {
+                                const Icon = mod.icon;
+
+                                return (
+                                    <Item key={mod.id} asChild>
+                                        <Link href={mod.href(slug)}>
+                                            <ItemMedia>
+                                                <Icon />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>{mod.label}</ItemTitle>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <ChevronRightIcon className="size-4" />
+                                            </ItemActions>
+                                        </Link>
+                                    </Item>
+                                );
+                            })}
                         </ItemGroup>
                     </CardContent>
                 </Card>

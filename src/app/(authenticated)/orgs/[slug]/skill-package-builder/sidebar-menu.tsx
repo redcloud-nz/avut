@@ -20,9 +20,8 @@ export function SkillPackageBuilder_Sidebar_Menu() {
         <SidebarGroup>
             <SidebarMenu>
                 <NavItem
-                    label="Dashboard"
+                    label="Skill Packages"
                     href={route("/orgs/[slug]/skill-package-builder", { slug })}
-                    icon={<OrgDashboardIcon />}
                 />
             </SidebarMenu>
         </SidebarGroup>

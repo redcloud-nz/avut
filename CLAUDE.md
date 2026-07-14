@@ -213,7 +213,7 @@ Typical page layout:
 </Lexington.Root>
 ```
 
-## App Modules (per org)
+## Modules (per org)
 
 | Module                | Path prefix                          | Description                                           |
 | --------------------- | ------------------------------------ | ----------------------------------------------------- |

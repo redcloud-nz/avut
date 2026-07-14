@@ -21,11 +21,6 @@ export function I3_Sidebar_Menu() {
     return (
         <SidebarGroup>
             <SidebarMenu>
-                <NavItem
-                    label="Dashboard"
-                    href={route("/orgs/[slug]/i3", { slug })}
-                    icon={<OrgDashboardIcon />}
-                />
                 <Protect orgId={organization.id} permissions={{ i3Item: ["view"] }}>
                     <NavItem
                         label="By Equipment Kind"

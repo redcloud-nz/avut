@@ -10,7 +10,7 @@ import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Argus } from "@/components/blocks/argus";
-import { ModuleIcons } from "@/components/icons";
+import { Modules } from "@/lib/modules";
 import {
     Item,
     ItemActions,
@@ -22,16 +22,18 @@ import {
 } from "@/components/ui/item";
 
 export default async function Organization_Index_Page() {
+    const SkillTrackIcon = Modules.skills.icon;
+
     return (
         <Argus.Root>
             <Argus.Column>
                 <AVUTLogo />
-                <h1 className="text-2xl font-bold">Apps</h1>
+                <h1 className="text-2xl font-bold">Modules</h1>
                 <ItemGroup>
                     <Item variant="outline" className="bg-background" asChild>
-                        <Link href="/orgs/--select-org?app=skill-track">
+                        <Link href="/orgs/--select-org?module=skill-track">
                             <ItemMedia>
-                                <ModuleIcons.SkillTrack />
+                                <SkillTrackIcon />
                             </ItemMedia>
                             <ItemContent>
                                 <ItemTitle>Skill Track</ItemTitle>

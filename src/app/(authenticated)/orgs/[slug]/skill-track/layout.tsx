@@ -5,7 +5,7 @@
  * Path: /orgs/[slug]/skill-track
  */
 
-import { AppSidebar } from "@/components/nav/app-sidebar";
+import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { SkillTrack_Sidebar_Menu } from "./sidebar-menu";
 
@@ -14,9 +14,9 @@ export default async function SkillTrack_Layout(props: LayoutProps<"/orgs/[slug]
 
     return (
         <>
-            <AppSidebar scope="organization">
+            <ModuleSidebar scope="organization">
                 <SkillTrack_Sidebar_Menu />
-            </AppSidebar>
+            </ModuleSidebar>
             {props.children}
         </>
     );

@@ -5,7 +5,7 @@
  * Path: /orgs/[slug]/d4h-views
  */
 
-import { AppSidebar } from "@/components/nav/app-sidebar";
+import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -22,9 +22,9 @@ export default async function D4HViews_Layout(props: LayoutProps<"/orgs/[slug]/d
 
     return (
         <>
-            <AppSidebar scope="organization">
+            <ModuleSidebar scope="organization">
                 <D4HViews_Sidebar_Menu />
-            </AppSidebar>
+            </ModuleSidebar>
             {props.children}
         </>
     );

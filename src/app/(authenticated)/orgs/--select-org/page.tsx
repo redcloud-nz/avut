@@ -15,13 +15,13 @@ import { getEntryControl } from "@/server/entry-control";
 
 export default async function SelectOrg_Page(props: PageProps<"/orgs/--select-org">) {
     let params = await props.searchParams;
-    const app = Array.isArray(params.app) ? params.app[0] : params.app;
+    const module = Array.isArray(params.module) ? params.module[0] : params.module;
 
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {
-        if (app) {
-            redirect(`/orgs/${entryControl.slug}/${app}` as Route);
+        if (module) {
+            redirect(`/orgs/${entryControl.slug}/${module}` as Route);
         } else {
             redirect(`/orgs/${entryControl.slug}` as Route);
         }
@@ -31,7 +31,7 @@ export default async function SelectOrg_Page(props: PageProps<"/orgs/--select-or
         <Argus.Root>
             <Argus.Column>
                 <AVUTLogo />
-                <OrgSelector_Card entryControl={entryControl} app={app} />
+                <OrgSelector_Card entryControl={entryControl} module={module} />
             </Argus.Column>
         </Argus.Root>
     );

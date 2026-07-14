@@ -11,7 +11,6 @@ import {
     ArrowLeftIcon,
     BellIcon,
     BookOpenIcon,
-    CableIcon,
     CheckCheckIcon,
     CheckIcon,
     ChevronRightIcon,
@@ -27,12 +26,9 @@ import {
     KeyRoundIcon,
     LayoutDashboardIcon,
     MoreVerticalIcon,
-    NotebookPenIcon,
-    PackageIcon,
     PencilIcon,
     PencilRulerIcon,
     PlusIcon,
-    PocketKnifeIcon,
     ScanEyeIcon,
     SendIcon,
     SettingsIcon,
@@ -41,12 +37,10 @@ import {
     TrashIcon,
     TriangleAlertIcon,
     UsersIcon,
-    WrenchIcon,
     XIcon,
     BookUpIcon,
     BookXIcon,
     MoveIcon,
-    ShirtIcon,
     CircleSlashedIcon,
     MessageSquarePlusIcon,
 } from "lucide-react";
@@ -91,15 +85,6 @@ export {
     ArrowRightLeftIcon as SwitchOrganizationIcon,
     ShieldHalfIcon as TeamsIcon,
     SendIcon as InvitationsIcon,
-};
-
-export const ModuleIcons = {
-    I3: ShirtIcon,
-    D4HViews: CableIcon,
-    Notes: NotebookPenIcon,
-    SkillTrack: PocketKnifeIcon,
-    SkillPackageBuilder: PackageIcon,
-    Admin: WrenchIcon,
 };
 
 export const ObjectIcons = {
