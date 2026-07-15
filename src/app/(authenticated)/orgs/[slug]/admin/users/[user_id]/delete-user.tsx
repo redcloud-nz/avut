@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,43 +24,46 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { trpc } from "@/trpc/client";
+import { route } from "@/lib/routes";
+import { AuthOrganizationMember } from "@/server/auth";
 
-export function AdminModule_RevokeInvitation_Dialog({
-    invitation,
-    personName,
+export function AdminModule_DeleteUser_Dialog({
+    organizationUser,
+    onSuccess,
     ...props
 }: AlertDialogProps & {
-    invitation: OrganizationInvitationData;
-    personName: string;
+    organizationUser: AuthOrganizationMember;
+    onSuccess?: () => void;
 }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const mutation = useMutation({
-        mutationFn: async () => {
-            await authClient.organization.cancelInvitation({
-                invitationId: invitation.id,
-            });
+        async mutationFn() {
+            await authClient.organization.removeMember(
+                { organizationId: organization.id, memberIdOrEmail: organizationUser.id },
+                { throw: true },
+            );
         },
         onError(error) {
-            console.error("Error revoking invitation:", error);
-            toast.error("Failed to revoke invitation.");
+            console.error("Failed to remove user from organization:", error);
+            toast.error(`Failed to remove user from organization: ${error.message}`);
         },
         async onSuccess() {
             toast.success(
                 <>
-                    Invitation for <ObjectName>{invitation.email}</ObjectName> revoked.
+                    User <ObjectName>{organizationUser.user.name}</ObjectName> removed from
+                    organisation.
                 </>,
             );
             props.onOpenChange?.(false);
 
-            await queryClient.invalidateQueries(
-                trpc.accessControl.listPersonnelWithAccess.queryFilter({
-                    organizationId: organization.id,
-                }),
-            );
+            router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
+
+            await queryClient.invalidateQueries({
+                queryKey: ["auth", "organization-users", organization.id],
+            });
 
             mutation.reset();
         },
@@ -69,11 +73,11 @@ export function AdminModule_RevokeInvitation_Dialog({
         <AlertDialog {...props}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+                    <AlertDialogTitle>Delete User</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Revoke the invitation for <ObjectName>{personName}</ObjectName> (
-                        <ObjectName>{invitation.email}</ObjectName>)? They will no longer be able to
-                        use the invitation link.
+                        Confirm removal of user{" "}
+                        <ObjectName>{organizationUser.user.name}</ObjectName> from organisation{" "}
+                        <ObjectName>{organization.name}</ObjectName>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -83,9 +87,9 @@ export function AdminModule_RevokeInvitation_Dialog({
                         onClick={() => mutation.mutate()}
                         status={mutation.status}
                         text={{
-                            idle: "Revoke",
-                            pending: "Revoking",
-                            success: "Revoked",
+                            idle: "Delete",
+                            pending: "Deleting",
+                            success: "Deleted",
                         }}
                     />
                     <AlertDialogCancel>Cancel</AlertDialogCancel>

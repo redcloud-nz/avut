@@ -32,23 +32,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
-                        <Protect permissions={{ member: ["view"] }} orgId={organization.id}>
-                            <Item asChild>
-                                <Link href={route("/orgs/[slug]/admin/access", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Access Control</ItemTitle>
-                                        <ItemDescription>
-                                            Manage permissions and access control for your
-                                            organisation.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                        <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
+                        {/* <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
                             <Item asChild>
                                 <Link
                                     href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
@@ -58,6 +42,21 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                         <ItemDescription>
                                             Manage the shared D4H access tokens for your
                                             organisation.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect> */}
+                        <Protect orgId={organization.id} permissions={{ invitation: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/admin/invitations", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Invitations</ItemTitle>
+                                        <ItemDescription>
+                                            Manage your organisation's invitations.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -97,17 +96,13 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ organization: ["update"] }}>
+                        <Protect orgId={organization.id} permissions={{ team: ["view"] }}>
                             <Item asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/admin/organization/settings", {
-                                        slug,
-                                    })}
-                                >
+                                <Link href={route("/orgs/[slug]/admin/teams", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Settings</ItemTitle>
+                                        <ItemTitle>Teams</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's settings.
+                                            Manage your organisation's teams.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -116,13 +111,13 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ team: ["view"] }}>
+                        <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
                             <Item asChild>
-                                <Link href={route("/orgs/[slug]/admin/teams", { slug })}>
+                                <Link href={route("/orgs/[slug]/admin/users", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Teams</ItemTitle>
+                                        <ItemTitle>Users</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's teams.
+                                            Manage your organisation's users.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

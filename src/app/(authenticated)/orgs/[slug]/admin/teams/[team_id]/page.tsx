@@ -65,7 +65,7 @@ export default async function AdminModule_Team_Page(
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Team ID</DLTerm>
-                                        <DLDetails>{team.id}</DLDetails>
+                                        <DLDetails className="font-mono">{team.id}</DLDetails>
                                         <DLTerm>Name</DLTerm>
                                         <DLDetails>{team.name}</DLDetails>
                                         <DLTerm>Description</DLTerm>

@@ -2,22 +2,19 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/access
+ * Paths: /orgs/[slug]/admin/users
  */
 
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-
-import { AccessControl_List } from "@/components/admin/access/access-control-list";
+import { AdminModule_Users_List } from "./users-list";
 
 export const metadata = {
-    title: `Access Control`,
+    title: `Users`,
 };
 
-export default async function AdminModule_AccessControl_Page(
-    props: PageProps<"/orgs/[slug]/admin/access">,
-) {
+export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[slug]/admin/users">) {
     const { slug } = await props.params;
 
     return (
@@ -25,11 +22,11 @@ export default async function AdminModule_AccessControl_Page(
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Access Control", href: route("/orgs/[slug]/admin/access", { slug }) },
+                    { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                 ]}
             />
             <Std.ScrollContainer>
-                <AccessControl_List />
+                <AdminModule_Users_List />
             </Std.ScrollContainer>
         </Std.SidebarInset>
     );
