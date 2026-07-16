@@ -14,8 +14,8 @@ import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/client/auth-client";
 import { Alert } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MutationButton } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button, MutationButton } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { RainbowSpinner } from "@/components/ui/loading";
@@ -103,21 +103,24 @@ function UserProfile_Card({ session }: { session: AuthSession }) {
                                 </Field>
                             )}
                         />
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                form="update-profile-form"
-                                status={mutation.status}
-                                text={{
-                                    idle: "Save",
-                                    pending: "Saving...",
-                                    success: "Saved!",
-                                }}
-                                disabled={mutation.status !== "idle"}
-                            />
-                        </Field>
                     </FieldGroup>
                 </form>
             </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => form.reset()}>
+                    Cancel
+                </Button>
+                <MutationButton
+                    form="update-profile-form"
+                    status={mutation.status}
+                    text={{
+                        idle: "Save",
+                        pending: "Saving...",
+                        success: "Saved!",
+                    }}
+                    disabled={mutation.status !== "idle"}
+                />
+            </CardFooter>
         </Card>
     );
 }
