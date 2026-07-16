@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserSettings_PageContent } from "@/components/user-settings/settings-page";
 
-export default function Settings_DialogLayout() {
+export default function UserSettings_Dialog() {
     const router = useRouter();
 
     return (
@@ -35,7 +35,7 @@ export default function Settings_DialogLayout() {
                         Manage your account, security, and organizations settings.
                     </DialogDescription>
                 </DialogHeader>
-                <UserSettings_PageContent />;
+                <UserSettings_PageContent />
             </DialogContent>
         </Dialog>
     );

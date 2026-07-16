@@ -9,10 +9,11 @@ import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
-import { AdminModule_TeamsList } from "./teams-list";
+import { AdminModule_CreateTeam_Dialog } from "@/components/admin/teams/create-team";
+import { AdminModule_TeamsList } from "@/components/admin/teams/teams-list";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-import { AdminModule_CreateTeam_Dialog } from "./create-team";
+
 import { getOrganizationBySlug } from "@/server/organization";
 
 export const metadata = {

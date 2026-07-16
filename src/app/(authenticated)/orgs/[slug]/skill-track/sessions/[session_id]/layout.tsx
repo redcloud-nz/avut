@@ -25,7 +25,7 @@ export async function generateMetadata(
     };
 }
 
-export default async function SkillsModule_Session_Layout(
+export default async function SkillTrack_Session_Layout(
     props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
     return <>{props.children}</>;

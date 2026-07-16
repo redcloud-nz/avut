@@ -5,6 +5,9 @@
  * Paths: /orgs/[slug]/admin/teams/[team_id]
  */
 
+import { AdminModule_TeamLinks_Card } from "@/components/admin/teams/team-links";
+import { AdminModule_TeamMenu } from "@/components/admin/teams/team-menu";
+import { AdminModule_UpdateTeam_Dialog } from "@/components/admin/teams/update-team";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
@@ -17,10 +20,6 @@ import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getTeamById } from "@/server/team";
-
-import { AdminModule_TeamLinks_Card } from "./team-links";
-import { AdminModule_TeamMenu } from "./team-menu";
-import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export default async function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,

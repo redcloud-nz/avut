@@ -12,7 +12,10 @@ import { Suspense } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
+import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
+import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
+import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
+
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -37,11 +40,7 @@ import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
-import { SkillsModule_Session_Contents_Card } from "./session-contents";
-import { SkillsModule_SessionMenu } from "./session-menu";
-import { SkillsModule_UpdateSession_Dialog } from "./update-session";
-
-export default async function SkillsModule_Session_Page(
+export default async function SkillTrack_Session_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
     const { slug, session_id } = await props.params;
@@ -53,7 +52,7 @@ export default async function SkillsModule_Session_Page(
         <Std.SidebarInset>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "Skills", href: route("/orgs/[slug]/skill-track", { slug }) },
+                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                     {
                         label: "Sessions",
                         href: route("/orgs/[slug]/skill-track/sessions", { slug }),

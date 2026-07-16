@@ -6,10 +6,9 @@
  */
 
 import { Std } from "@/components/blocks/std";
-
+import SkillTrack_Sessions_List from "@/components/skill-track/sessions-list";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
-import SkillTrack_Sessions_List from "./sessions-list";
 
 export const metadata = {
     title: `Skill Check Sessions ${TITLE_SEPARATOR} Skills Module`,

@@ -5,10 +5,10 @@
  * Paths: /orgs/[slug]/admin/users
  */
 
+import { AdminModule_Users_List } from "@/components/admin/users/users-list";
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-import { AdminModule_Users_List } from "./users-list";
 
 export const metadata = {
     title: `Users`,

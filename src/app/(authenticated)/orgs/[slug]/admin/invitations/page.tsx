@@ -7,8 +7,8 @@
 
 import { Std } from "@/components/blocks/std";
 
+import { AdminModule_Invitations_List } from "@/components/admin/invitations/invitations-list";
 import { route } from "@/lib/routes";
-import { AdminModule_Invitations_List } from "./invitations-list";
 
 export const metadata = {
     title: `Invitations`,

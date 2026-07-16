@@ -10,7 +10,7 @@ import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/organization";
 
-import { AdminModule_PersonnelList } from "./personnel-list";
+import { AdminModule_PersonnelList } from "../../../../../../components/admin/personnel/personnel-list";
 
 export const metadata = {
     title: `Personnel`,

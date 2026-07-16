@@ -19,11 +19,9 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
-import { Button } from "@/components/ui/button";
 
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
@@ -31,7 +29,7 @@ import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-import { SkillsModule_CreateSession_Dialog } from "./create-session";
+import { SkillTrack_CreateSession_Dialog } from "./create-session";
 
 export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
@@ -103,17 +101,12 @@ export default function SkillTrack_Sessions_List() {
         },
     });
 
-    const [createSessionDialogOpen, setCreateSessionDialogOpen] = useState(false);
-
     return (
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Skill Check Sessions</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Button variant="outline" onClick={() => setCreateSessionDialogOpen(true)}>
-                        <ObjectIcons.Create />
-                        <span className="hidden sm:inline">New Session</span>
-                    </Button>
+                    <SkillTrack_CreateSession_Dialog />
                 </Saratoga.Actions>
             </Saratoga.Header>
             <Show
@@ -124,11 +117,6 @@ export default function SkillTrack_Sessions_List() {
                         <EmptyDescription>
                             No skill check sessions have been created yet.
                         </EmptyDescription>
-                        <EmptyContent>
-                            <Button onClick={() => setCreateSessionDialogOpen(true)}>
-                                New Session
-                            </Button>
-                        </EmptyContent>
                     </Empty>
                 }
             >
@@ -138,10 +126,6 @@ export default function SkillTrack_Sessions_List() {
                     <Kaga.TablePagination table={table} />
                 </div>
             </Show>
-            <SkillsModule_CreateSession_Dialog
-                open={createSessionDialogOpen}
-                onOpenChange={setCreateSessionDialogOpen}
-            />
         </Saratoga.Root>
     );
 }

@@ -12,6 +12,8 @@ import { use, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
+import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
@@ -31,9 +33,6 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-
-import { AdminModule_DeleteUser_Dialog } from "./delete-user";
-import { AdminModule_UpdateUser_Dialog } from "./update-user";
 
 export default function AdminModule_User_Page(
     props: PageProps<"/orgs/[slug]/admin/users/[user_id]">,

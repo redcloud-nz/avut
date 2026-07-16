@@ -6,14 +6,16 @@
  */
 "use client";
 
-import Link from "next/link";
 import { Suspense, use, useState } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
+import { AdminModule_PersonMenu } from "@/components/admin/personnel/person-menu";
+import { AdminModule_Person_TeamMemberships_Card } from "@/components/admin/personnel/team-memberships";
+import { AdminModule_UpdatePerson_Dialog } from "@/components/admin/personnel/update-person";
 import { Std } from "@/components/blocks/std";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,17 +27,12 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
-
-import { AdminModule_PersonMenu } from "./person-menu";
-import { AdminModule_UpdatePerson_Dialog } from "./update-person";
-import { PersonId } from "@/lib/schemas/person";
 
 export default function AdminModule_Person_Page(
     props: PageProps<`/orgs/[slug]/admin/personnel/[person_id]`>,
@@ -174,43 +171,5 @@ export default function AdminModule_Person_Page(
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>
-    );
-}
-
-function AdminModule_Person_TeamMemberships_Card({ personId }: { personId: PersonId }) {
-    const organization = useOrganization();
-
-    const { data: teamMemberships } = useSuspenseQuery(
-        trpc.teams.listTeamMemberships.queryOptions({
-            organizationId: organization.id,
-            personId: personId,
-        }),
-    );
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Teams</CardTitle>
-            </CardHeader>
-            <CardContent className="px-2 -my-2">
-                {teamMemberships.map((membership) => (
-                    <Item key={membership.teamId} className="px-2" asChild>
-                        <Link
-                            href={route("/orgs/[slug]/admin/teams/[team_id]", {
-                                slug: organization.slug,
-                                team_id: membership.teamId,
-                            })}
-                        >
-                            <ItemContent>
-                                <ItemTitle>{membership.team.name}</ItemTitle>
-                            </ItemContent>
-                            <ItemActions>
-                                <ItemLinkActionIcon className="size-4" />
-                            </ItemActions>
-                        </Link>
-                    </Item>
-                ))}
-            </CardContent>
-        </Card>
     );
 }

@@ -8,6 +8,7 @@
 
 import { use, useState } from "react";
 
+import { AdminModule_Team_PersonnelList } from "@/components/admin/teams/team-personnel-list";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
@@ -18,10 +19,8 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useTeam } from "@/hooks/use-team";
 import { route } from "@/lib/routes";
 
-import { AdminModule_Team_PersonnelList } from "./team-personnel-list";
-
-export default function AdminModule_Team_Page(
-    props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
+export default function AdminModule_Team_Personnel_Page(
+    props: PageProps<`/orgs/[slug]/admin/teams/[team_id]/personnel`>,
 ) {
     const { slug, team_id } = use(props.params);
     const organization = useOrganization();

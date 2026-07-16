@@ -6,6 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -13,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { DatePicker } from "@/components/controls/date-picker";
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,8 +23,8 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -33,10 +35,12 @@ import { route } from "@/lib/routes";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
+export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
+
+    const [open, setOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
@@ -84,11 +88,17 @@ export function SkillsModule_CreateSession_Dialog({ ...props }: DialogProps) {
             mutation.reset();
         }
 
-        props.onOpenChange?.(open);
+        setOpen(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ObjectIcons.Create />
+                    <span className="hidden sm:inline">New Session</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Session</DialogTitle>

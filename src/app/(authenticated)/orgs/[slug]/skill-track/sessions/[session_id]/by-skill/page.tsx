@@ -18,6 +18,8 @@ import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
+import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -37,8 +39,6 @@ import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
-
-import { SkillTrack_AssessmentRow } from "../assessment-row";
 
 export default function SkillTrack_SessionBySkill_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]/by-skill">,
