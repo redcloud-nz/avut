@@ -84,41 +84,6 @@ export function SkillTrack_AssessmentRow({ title, value, onValueChange }: Assess
                             <SkillsIcons.HighlyConfident className="text-blue-500" />
                         </ToggleGroupItem>
                     </ToggleGroup>
-                    {/* <Select
-                        value={value.result}
-                        onValueChange={(newValue) => {
-                            if (newValue === "NotAssessed") {
-                                onValueChange({ result: newValue, notes: "" });
-                            } else {
-                                onValueChange({ ...value, result: newValue });
-                            }
-                        }}
-                    >
-                        <SelectTrigger className="grow">
-                            <SelectValue placeholder="Not Assessed" />
-                        </SelectTrigger>
-                        <SelectContent position="item-aligned">
-                            <SelectItem value="NotAssessed">
-                                <SkillsIcons.NotAssessed className="text-gray-500" />
-                                Not Assessed
-                            </SelectItem>
-                            <SelectSeparator />
-                            <SelectItem value="NotTaught">
-                                <SkillsIcons.NotTaught className="text-gray-500" /> Not Taught
-                            </SelectItem>
-                            <SelectItem value="NotYetCompetent">
-                                <SkillsIcons.NotCompetent className="text-orange-500" /> Not Yet
-                                Competent
-                            </SelectItem>
-                            <SelectItem value="Competent">
-                                <SkillsIcons.Competent className="text-green-500" /> Competent
-                            </SelectItem>
-                            <SelectItem value="HighlyConfident">
-                                <SkillsIcons.HighlyConfident className="text-blue-500" /> Highly
-                                Confident
-                            </SelectItem>
-                        </SelectContent>
-                    </Select> */}
                     <Show
                         when={value.result !== "NotAssessed"}
                         fallback={<div className="w-[38px]" />}

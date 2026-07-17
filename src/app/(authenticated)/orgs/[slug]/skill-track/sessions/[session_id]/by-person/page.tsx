@@ -11,6 +11,7 @@ import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { use, useState } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
+import { match } from "ts-pattern";
 
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-ro
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { RainbowSpinner } from "@/components/ui/loading";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import {
@@ -128,7 +130,16 @@ export default function SkillTrack_SessionByPerson_Page(
 
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
-    const [selectedPersonId, setSelectedPersonId] = useState<PersonId | null>(null);
+    type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
+    const [selected, setSelected] = useState<Selected>(null);
+
+    async function handleSwitchPerson(personId: PersonId) {
+        mutation.reset();
+        setSelected({ personId, status: "Loading" });
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        setSelected({ personId, status: "Selected" });
+    }
 
     // Keyed by `${personId}::${skillId}` — scoping by person prevents cross-person contamination
     // when switching between assessees while changes are pending.
@@ -139,7 +150,7 @@ export default function SkillTrack_SessionByPerson_Page(
     function handleChange(skillId: SkillId, newValue: { result: string; notes: string }) {
         if (mutation.status === "success") mutation.reset();
 
-        const key = `${selectedPersonId!}::${skillId}`;
+        const key = `${selected!.personId}::${skillId}`;
         const updatedChanges: typeof changes = { ...changes, [key]: newValue };
         setChanges(updatedChanges);
 
@@ -216,10 +227,9 @@ export default function SkillTrack_SessionByPerson_Page(
                                     <Field>
                                         <FieldLabel>Person</FieldLabel>
                                         <Select
-                                            value={selectedPersonId ?? "undefined"}
+                                            value={selected?.personId ?? undefined}
                                             onValueChange={(value) => {
-                                                mutation.reset();
-                                                setSelectedPersonId(value as PersonId);
+                                                handleSwitchPerson(value as PersonId);
                                             }}
                                         >
                                             <SelectTrigger>
@@ -241,15 +251,14 @@ export default function SkillTrack_SessionByPerson_Page(
                                             key={person.id}
                                             asChild
                                             variant={
-                                                person.id === selectedPersonId
+                                                person.id === selected?.personId
                                                     ? "outline"
                                                     : "default"
                                             }
                                         >
                                             <a
                                                 onClick={() => {
-                                                    mutation.reset();
-                                                    setSelectedPersonId(person.id);
+                                                    handleSwitchPerson(person.id);
                                                 }}
                                             >
                                                 <ItemContent>
@@ -268,9 +277,8 @@ export default function SkillTrack_SessionByPerson_Page(
                             <Separator orientation="horizontal" className="block lg:hidden" />
                             <div>
                                 <FieldGroup>
-                                    <Show
-                                        when={selectedPersonId !== null}
-                                        fallback={
+                                    {match(selected)
+                                        .with(null, () => (
                                             <Empty>
                                                 <EmptyMedia>
                                                     <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
@@ -280,19 +288,27 @@ export default function SkillTrack_SessionByPerson_Page(
                                                     Select a person to assess their skills.
                                                 </EmptyDescription>
                                             </Empty>
-                                        }
-                                    >
-                                        {sessionSkills.map((skill) => (
-                                            <SkillTrack_AssessmentRow
-                                                key={skill.id}
-                                                title={skill.name}
-                                                value={getCurrentValue(selectedPersonId!, skill.id)}
-                                                onValueChange={(newValue) =>
-                                                    handleChange(skill.id, newValue)
-                                                }
-                                            />
-                                        ))}
-                                    </Show>
+                                        ))
+                                        .with({ status: "Loading" }, () => (
+                                            <div className="flex justify-center items-center my-8">
+                                                <RainbowSpinner />
+                                            </div>
+                                        ))
+                                        .with({ status: "Selected" }, ({ personId }) => (
+                                            <>
+                                                {sessionSkills.map((skill) => (
+                                                    <SkillTrack_AssessmentRow
+                                                        key={skill.id}
+                                                        title={skill.name}
+                                                        value={getCurrentValue(personId, skill.id)}
+                                                        onValueChange={(newValue) =>
+                                                            handleChange(skill.id, newValue)
+                                                        }
+                                                    />
+                                                ))}
+                                            </>
+                                        ))
+                                        .exhaustive()}
                                 </FieldGroup>
                             </div>
                         </div>
