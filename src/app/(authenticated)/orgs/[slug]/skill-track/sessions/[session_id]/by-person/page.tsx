@@ -7,7 +7,13 @@
 
 "use client";
 
-import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
+import {
+    ArrowDownAZIcon,
+    ArrowLeftIcon,
+    ArrowUpIcon,
+    ChevronRightIcon,
+    ListTreeIcon,
+} from "lucide-react";
 import { use, useState } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
@@ -18,10 +24,23 @@ import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { RainbowSpinner } from "@/components/ui/loading";
@@ -62,6 +81,9 @@ export default function SkillTrack_SessionByPerson_Page(
         { data: skillChecks },
         { data: sessionSkills },
         { data: personSelf },
+        {
+            data: { skills: assessableSkills, skillGroups, skillPackages },
+        },
     ] = useSuspenseQueries({
         queries: [
             trpc.skills.getSession.queryOptions({
@@ -80,6 +102,9 @@ export default function SkillTrack_SessionByPerson_Page(
                 scope: "assigned",
             }),
             trpc.personnel.getPersonSelf.queryOptions({
+                organizationId: organization.id,
+            }),
+            trpc.skills.listAssessableSkills.queryOptions({
                 organizationId: organization.id,
             }),
         ],
@@ -177,6 +202,40 @@ export default function SkillTrack_SessionByPerson_Page(
         };
     }
 
+    const [skillOrder, setSkillOrder] = useState<"alphabetical" | "by-package-group">(
+        "alphabetical",
+    );
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
+
+    // Group the session skills by skill package and group (for the "by-package-group" order).
+    // Packages are sorted by name, groups by sequence; skills keep the alphabetical order of
+    // `sessionSkills`. Packages/groups with no session skills are omitted.
+    const assessableSkillById = new Map(assessableSkills.map((skill) => [skill.id, skill]));
+    const packageSections = R.pipe(
+        skillPackages,
+        R.sortBy((skillPackage) => skillPackage.name),
+        R.map((skillPackage) => ({
+            skillPackage,
+            groups: R.pipe(
+                skillGroups,
+                R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
+                R.sortBy((skillGroup) => skillGroup.sequence),
+                R.map((skillGroup) => ({
+                    skillGroup,
+                    skills: sessionSkills.filter(
+                        (skill) =>
+                            assessableSkillById.get(skill.id)?.skillGroupId === skillGroup.id,
+                    ),
+                })),
+                R.filter(({ skills }) => skills.length > 0),
+            ),
+        })),
+        R.filter(({ groups }) => groups.length > 0),
+    );
+
+    // Session skills that are no longer in the assessable set (e.g. subscription removed).
+    const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
+
     return (
         <Std.SidebarInset>
             <Std.Navbar>
@@ -205,6 +264,45 @@ export default function SkillTrack_SessionByPerson_Page(
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Assess by Person</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost">
+                                        <DropdownMenuTriggerIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end">
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Skill Order</DropdownMenuLabel>
+                                        <DropdownMenuRadioGroup
+                                            value={skillOrder}
+                                            onValueChange={(value) =>
+                                                setSkillOrder(value as typeof skillOrder)
+                                            }
+                                        >
+                                            <DropdownMenuRadioItem value="alphabetical">
+                                                <ArrowDownAZIcon />
+                                                <span>Alphabetical</span>
+                                            </DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="by-package-group">
+                                                <ListTreeIcon />
+                                                <span>By Package/Group</span>
+                                            </DropdownMenuRadioItem>
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuGroup>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                        <DropdownMenuCheckboxItem
+                                            checked={showSkillDescription}
+                                            onCheckedChange={setShowSkillDescription}
+                                        >
+                                            <span>Skill Description</span>
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     {/* <Card>
                         <CardContent> */}
@@ -275,41 +373,85 @@ export default function SkillTrack_SessionByPerson_Page(
                             </div>
                             <Separator orientation="vertical" className="hidden lg:block" />
                             <Separator orientation="horizontal" className="block lg:hidden" />
-                            <div>
-                                <FieldGroup>
-                                    {match(selected)
-                                        .with(null, () => (
-                                            <Empty>
-                                                <EmptyMedia>
-                                                    <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
-                                                    <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
-                                                </EmptyMedia>
-                                                <EmptyDescription>
-                                                    Select a person to assess their skills.
-                                                </EmptyDescription>
-                                            </Empty>
-                                        ))
-                                        .with({ status: "Loading" }, () => (
-                                            <div className="flex justify-center items-center my-8">
-                                                <RainbowSpinner />
-                                            </div>
-                                        ))
-                                        .with({ status: "Selected" }, ({ personId }) => (
-                                            <>
-                                                {sessionSkills.map((skill) => (
-                                                    <SkillTrack_AssessmentRow
-                                                        key={skill.id}
-                                                        title={skill.name}
-                                                        value={getCurrentValue(personId, skill.id)}
-                                                        onValueChange={(newValue) =>
-                                                            handleChange(skill.id, newValue)
-                                                        }
-                                                    />
-                                                ))}
-                                            </>
-                                        ))
-                                        .exhaustive()}
-                                </FieldGroup>
+                            <div className="w-full flex flex-col gap-2">
+                                {match(selected)
+                                    .with(null, () => (
+                                        <Empty>
+                                            <EmptyMedia>
+                                                <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
+                                                <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
+                                            </EmptyMedia>
+                                            <EmptyDescription>
+                                                Select a person to assess their skills.
+                                            </EmptyDescription>
+                                        </Empty>
+                                    ))
+                                    .with({ status: "Loading" }, () => (
+                                        <div className="flex justify-center items-center my-8">
+                                            <RainbowSpinner />
+                                        </div>
+                                    ))
+                                    .with({ status: "Selected" }, ({ personId }) => {
+                                        const renderRow = (
+                                            skill: (typeof sessionSkills)[number],
+                                        ) => (
+                                            <SkillTrack_AssessmentRow
+                                                key={skill.id}
+                                                title={skill.name}
+                                                description={
+                                                    showSkillDescription
+                                                        ? assessableSkillById.get(skill.id)
+                                                              ?.description || undefined
+                                                        : undefined
+                                                }
+                                                value={getCurrentValue(personId, skill.id)}
+                                                onValueChange={(newValue) =>
+                                                    handleChange(skill.id, newValue)
+                                                }
+                                            />
+                                        );
+
+                                        return match(skillOrder)
+                                            .with("alphabetical", () => (
+                                                <>{sessionSkills.map(renderRow)}</>
+                                            ))
+                                            .with("by-package-group", () => (
+                                                <div className="space-y-4">
+                                                    {packageSections.map(
+                                                        ({ skillPackage, groups }) => (
+                                                            <div
+                                                                key={skillPackage.id}
+                                                                className="space-y-4"
+                                                            >
+                                                                <div className="font-semibold border-b pb-1">
+                                                                    {skillPackage.name}
+                                                                </div>
+                                                                {groups.map(
+                                                                    ({ skillGroup, skills }) => (
+                                                                        <div key={skillGroup.id}>
+                                                                            <div className="text-sm font-medium text-muted-foreground">
+                                                                                {skillGroup.name}
+                                                                            </div>
+                                                                            {skills.map(renderRow)}
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                    {ungroupedSkills.length > 0 && (
+                                                        <div className="space-y-4">
+                                                            <div className="font-semibold border-b pb-1">
+                                                                Other
+                                                            </div>
+                                                            {ungroupedSkills.map(renderRow)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                            .exhaustive();
+                                    })
+                                    .exhaustive()}
                             </div>
                         </div>
                     </Show>

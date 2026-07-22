@@ -5,28 +5,20 @@
 
 "use client";
 
-import { MessageSquareIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, MessageSquarePlusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { SkillsIcons } from "@/components/icons";
-import { Field, FieldLabel } from "@/components/ui/field";
-
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectSeparator,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Show } from "@/components/show";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface AssessmentRowProps {
     title: string;
+    description?: string;
     value: { result: string; notes: string };
     onValueChange: (newValue: { result: string; notes: string }) => void;
 }
@@ -35,13 +27,26 @@ interface AssessmentRowProps {
  * Row component for displaying and editing an assessment for a specific assessee/skill combination.
  * Allows selecting a result and adding optional notes.
  */
-export function SkillTrack_AssessmentRow({ title, value, onValueChange }: AssessmentRowProps) {
+export function SkillTrack_AssessmentRow({
+    title,
+    description,
+    value,
+    onValueChange,
+}: AssessmentRowProps) {
     const [showNotes, setShowNotes] = useState(false);
 
     return (
-        <div className="space-y-2">
+        <Collapsible className="flex flex-col gap-2" open={showNotes} onOpenChange={setShowNotes}>
             <div className="flex items-center gap-2">
-                <FieldLabel className="grow">{title}</FieldLabel>
+                {description ? (
+                    <FieldContent className="grow">
+                        <FieldLabel>{title}</FieldLabel>
+                        <FieldDescription>{description}</FieldDescription>
+                    </FieldContent>
+                ) : (
+                    <FieldLabel className="grow">{title}</FieldLabel>
+                )}
+
                 <div className="flex gap-2">
                     <ToggleGroup
                         type="single"
@@ -84,7 +89,21 @@ export function SkillTrack_AssessmentRow({ title, value, onValueChange }: Assess
                             <SkillsIcons.HighlyConfident className="text-blue-500" />
                         </ToggleGroupItem>
                     </ToggleGroup>
-                    <Show
+                    <Show when={value.result != "NotAssessed"} fallback={<div className="w-8" />}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                {showNotes ? (
+                                    <ChevronUpIcon />
+                                ) : value.notes ? (
+                                    <ChevronDownIcon />
+                                ) : (
+                                    <MessageSquarePlusIcon />
+                                )}
+                            </Button>
+                        </CollapsibleTrigger>
+                    </Show>
+
+                    {/* <Show
                         when={value.result !== "NotAssessed"}
                         fallback={<div className="w-[38px]" />}
                     >
@@ -101,17 +120,17 @@ export function SkillTrack_AssessmentRow({ title, value, onValueChange }: Assess
                             </TooltipTrigger>
                             <TooltipContent>Add notes to assessment</TooltipContent>
                         </Tooltip>
-                    </Show>
+                    </Show> */}
                 </div>
             </div>
-            {(value.notes || showNotes) && (
+            <CollapsibleContent>
                 <Textarea
                     className="w-full col-span-full"
                     placeholder="Notes..."
                     value={value.notes}
                     onChange={(e) => onValueChange({ ...value, notes: e.target.value })}
                 />
-            )}
-        </div>
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
