@@ -42,7 +42,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { RainbowSpinner } from "@/components/ui/loading";
 import {
     Item,
@@ -381,16 +381,7 @@ export default function SkillTrack_SessionBySkill_Page(
                                                                 key={skill.id}
                                                                 value={skill.id}
                                                             >
-                                                                <div className="flex flex-col">
-                                                                    <span>{skill.name}</span>
-                                                                    {skillDescription(skill.id) && (
-                                                                        <span className="text-muted-foreground text-xs">
-                                                                            {skillDescription(
-                                                                                skill.id,
-                                                                            )}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
+                                                                {skill.name}
                                                             </SelectItem>
                                                         )),
                                                     )
@@ -425,22 +416,9 @@ export default function SkillTrack_SessionBySkill_Page(
                                                                                                 skill.id
                                                                                             }
                                                                                         >
-                                                                                            <div className="flex flex-col">
-                                                                                                <span>
-                                                                                                    {
-                                                                                                        skill.name
-                                                                                                    }
-                                                                                                </span>
-                                                                                                {skillDescription(
-                                                                                                    skill.id,
-                                                                                                ) && (
-                                                                                                    <span className="text-muted-foreground text-xs">
-                                                                                                        {skillDescription(
-                                                                                                            skill.id,
-                                                                                                        )}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                            </div>
+                                                                                            {
+                                                                                                skill.name
+                                                                                            }
                                                                                         </SelectItem>
                                                                                     ),
                                                                                 )}
@@ -468,6 +446,11 @@ export default function SkillTrack_SessionBySkill_Page(
                                                     .exhaustive()}
                                             </SelectContent>
                                         </Select>
+                                        {selected && skillDescription(selected.skillId) && (
+                                            <FieldDescription>
+                                                {skillDescription(selected.skillId)}
+                                            </FieldDescription>
+                                        )}
                                     </Field>
                                 </FieldGroup>
                                 <ItemGroup className="hidden lg:block">
