@@ -25,6 +25,8 @@ import {
     InfoIcon,
     KeyRoundIcon,
     LayoutDashboardIcon,
+    LinkIcon,
+    Link2OffIcon,
     MoreVerticalIcon,
     PencilIcon,
     PencilRulerIcon,
@@ -94,9 +96,11 @@ export const ObjectIcons = {
     Duplicate: CopyIcon,
     Edit: PencilIcon,
     History: HistoryIcon,
+    Link: LinkIcon,
     Move: MoveIcon,
     Publish: BookUpIcon,
     Restore: ArchiveRestoreIcon,
+    Unlink: Link2OffIcon,
     Unpublish: BookXIcon,
 };
 

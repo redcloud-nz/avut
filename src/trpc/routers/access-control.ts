@@ -210,7 +210,6 @@ export const accessControlRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                     userId: input.userId,
-                    personId: { not: null },
                 },
                 include: { person: true },
             });
@@ -221,7 +220,98 @@ export const accessControlRouter = createTrpcRouter({
                     message: Messages.userNotFound(input.userId),
                 });
 
-            return user?.person ? PersonData.fromRecord(user.person) : null;
+            return user.person ? PersonData.fromRecord(user.person) : null;
+        }),
+
+    /**
+     * Links a personnel record to a user account within the organization.
+     *
+     * @param ctx The authenticated organization context.
+     * @param input The user ID and person ID to link.
+     * @throws TRPCError(NOT_FOUND) if the user is not part of the organization.
+     * @throws TRPCError(NOT_FOUND) if the person does not exist in the organization.
+     * @throws TRPCError(CONFLICT) if the person is already linked to a different user.
+     */
+    linkPerson: organizationProcedure({ member: ["update"], person: ["update"] })
+        .input(z.object({ userId: UserId.schema, personId: PersonId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const orgUser = await ctx.prisma.organizationUser.findUnique({
+                where: {
+                    organizationId_userId: {
+                        organizationId: ctx.organizationId,
+                        userId: input.userId,
+                    },
+                },
+            });
+
+            if (!orgUser)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.userNotFound(input.userId),
+                });
+
+            const person = await ctx.prisma.person.findUnique({
+                where: { id: input.personId, organizationId: ctx.organizationId },
+                include: { organizationUser: true },
+            });
+
+            if (!person)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(input.personId),
+                });
+
+            if (person.organizationUser && person.organizationUser.userId !== input.userId)
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    cause: new FieldConflictError(
+                        "person",
+                        "This person is already linked to another user.",
+                    ),
+                });
+
+            await ctx.prisma.organizationUser.update({
+                where: {
+                    organizationId_userId: {
+                        organizationId: ctx.organizationId,
+                        userId: input.userId,
+                    },
+                },
+                data: { personId: input.personId },
+            });
+
+            await ctx.logEvent({
+                action: "Update",
+                objectType: "OrganizationMembership",
+                objectId: orgUser.id,
+                description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
+            });
+        }),
+
+    /**
+     * Lists the user-to-person links in the organization.
+     * Used to display the linked person alongside each user in the user list.
+     *
+     * @param ctx The authenticated organization context.
+     * @returns An array of `{ userId, person }` pairs for every linked user.
+     */
+    listPersonLinks: organizationProcedure({ member: ["view"], person: ["view"] })
+        .output(z.array(z.object({ userId: UserId.schema, person: PersonData.schema })))
+        .query(async ({ ctx }) => {
+            const links = await ctx.prisma.organizationUser.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    personId: { not: null },
+                },
+                include: { person: true },
+            });
+
+            return links
+                .filter((link) => link.person !== null)
+                .map((link) => ({
+                    userId: UserId.schema.parse(link.userId),
+                    person: PersonData.fromRecord(link.person!),
+                }));
         }),
 
     /**
@@ -306,6 +396,28 @@ export const accessControlRouter = createTrpcRouter({
                     invitation: null,
                 };
             });
+        }),
+
+    /**
+     * Lists the active personnel in the organization that are not yet linked to a user account.
+     * Used to populate the "link person" picker on the user detail page.
+     *
+     * @param ctx The authenticated organization context.
+     * @returns An array of unlinked personnel records.
+     */
+    listUnlinkedPersonnel: organizationProcedure({ person: ["view"] })
+        .output(z.array(PersonData.schema))
+        .query(async ({ ctx }) => {
+            const personnel = await ctx.prisma.person.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    status: "Active",
+                    organizationUser: { is: null },
+                },
+                orderBy: { name: "asc" },
+            });
+
+            return personnel.map(PersonData.fromRecord);
         }),
 
     /**
@@ -496,6 +608,49 @@ export const accessControlRouter = createTrpcRouter({
                     cause: error,
                 });
             }
+        }),
+
+    /**
+     * Unlinks the personnel record currently associated with a user account.
+     *
+     * @param ctx The authenticated organization context.
+     * @param input The user ID to unlink.
+     * @throws TRPCError(NOT_FOUND) if the user is not part of the organization.
+     */
+    unlinkPerson: organizationProcedure({ member: ["update"], person: ["update"] })
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const orgUser = await ctx.prisma.organizationUser.findUnique({
+                where: {
+                    organizationId_userId: {
+                        organizationId: ctx.organizationId,
+                        userId: input.userId,
+                    },
+                },
+            });
+
+            if (!orgUser)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.userNotFound(input.userId),
+                });
+
+            await ctx.prisma.organizationUser.update({
+                where: {
+                    organizationId_userId: {
+                        organizationId: ctx.organizationId,
+                        userId: input.userId,
+                    },
+                },
+                data: { personId: null },
+            });
+
+            await ctx.logEvent({
+                action: "Update",
+                objectType: "OrganizationMembership",
+                objectId: orgUser.id,
+                description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
+            });
         }),
 
     /**

@@ -23,6 +23,8 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { type PersonData } from "@/lib/schemas/person";
+import { trpc } from "@/trpc/client";
 
 export function AdminModule_Users_List() {
     const organization = useOrganization();
@@ -37,6 +39,15 @@ export function AdminModule_Users_List() {
                 { throw: true },
             ),
     });
+
+    const { data: personLinks } = useSuspenseQuery(
+        trpc.accessControl.listPersonLinks.queryOptions({ organizationId: organization.id }),
+    );
+
+    const personByUserId = useMemo(
+        () => new Map<string, PersonData>(personLinks.map((link) => [link.userId, link.person])),
+        [personLinks],
+    );
 
     const columns = useMemo(
         () =>
@@ -68,6 +79,30 @@ export function AdminModule_Users_List() {
                     enableColumnFilter: false,
                     enableHiding: false,
                 }),
+                columnHelper.accessor((row) => personByUserId.get(row.user.id)?.name ?? "", {
+                    id: "person",
+                    header: "Person",
+                    cell: (ctx) => {
+                        const person = personByUserId.get(ctx.row.original.user.id);
+
+                        if (!person) return <span className="text-muted-foreground">&mdash;</span>;
+
+                        return (
+                            <Link
+                                href={route("/orgs/[slug]/admin/personnel/[person_id]", {
+                                    slug: organization.slug,
+                                    person_id: person.id,
+                                })}
+                            >
+                                {person.name}
+                            </Link>
+                        );
+                    },
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                    enableHiding: false,
+                }),
                 columnHelper.accessor("role", {
                     header: "Roles",
                     cell: (ctx) => OrganizationRole.formatList(ctx.getValue()),
@@ -77,7 +112,7 @@ export function AdminModule_Users_List() {
                     enableHiding: false,
                 }),
             ]),
-        [organization.id],
+        [organization.id, organization.slug, personByUserId],
     );
 
     const table = useReactTable({

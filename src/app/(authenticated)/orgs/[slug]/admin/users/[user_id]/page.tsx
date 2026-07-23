@@ -7,12 +7,15 @@
 
 "use client";
 
+import Link from "next/link";
 import { use, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
+import { AdminModule_LinkPerson_Dialog } from "@/components/admin/users/link-person";
+import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/users/unlink-person";
 import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -33,6 +36,8 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { UserId } from "@/lib/schemas/user";
+import { trpc } from "@/trpc/client";
 
 export default function AdminModule_User_Page(
     props: PageProps<"/orgs/[slug]/admin/users/[user_id]">,
@@ -56,7 +61,18 @@ export default function AdminModule_User_Page(
     if (!member)
         throw new Error(`User with ID ${user_id} not found in organization ${organization.id}`);
 
+    const userId = UserId.schema.parse(user_id);
+
+    const { data: linkedPerson } = useSuspenseQuery(
+        trpc.accessControl.getLinkedPerson.queryOptions({
+            organizationId: organization.id,
+            userId,
+        }),
+    );
+
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [linkPersonDialogOpen, setLinkPersonDialogOpen] = useState(false);
+    const [unlinkPersonDialogOpen, setUnlinkPersonDialogOpen] = useState(false);
 
     return (
         <Std.SidebarInset>
@@ -135,6 +151,65 @@ export default function AdminModule_User_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Linked Person</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            orgId={organization.id}
+                                            permissions={{ member: ["update"] }}
+                                        >
+                                            {linkedPerson ? (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setUnlinkPersonDialogOpen(true)}
+                                                >
+                                                    <ObjectIcons.Unlink />
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setLinkPersonDialogOpen(true)}
+                                                >
+                                                    <ObjectIcons.Link />
+                                                </Button>
+                                            )}
+                                        </Protect>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent>
+                                    {linkedPerson ? (
+                                        <DL>
+                                            <DLTerm>Person ID</DLTerm>
+                                            <DLDetails className="font-mono">
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/admin/personnel/[person_id]",
+                                                        {
+                                                            slug,
+                                                            person_id: linkedPerson.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    {linkedPerson.id}
+                                                </Link>
+                                            </DLDetails>
+                                            <DLTerm>Name</DLTerm>
+                                            <DLDetails>{linkedPerson.name}</DLDetails>
+                                            <DLTerm>Email</DLTerm>
+                                            <DLDetails>{linkedPerson.email}</DLDetails>
+                                            <DLTerm>Status</DLTerm>
+                                            <DLDetails>{linkedPerson.status}</DLDetails>
+                                        </DL>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">
+                                            No linked person.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
@@ -154,6 +229,21 @@ export default function AdminModule_User_Page(
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
             />
+            <AdminModule_LinkPerson_Dialog
+                userId={userId}
+                userName={member.user.name}
+                open={linkPersonDialogOpen}
+                onOpenChange={setLinkPersonDialogOpen}
+            />
+            {linkedPerson && (
+                <AdminModule_UnlinkPerson_Dialog
+                    userId={userId}
+                    userName={member.user.name}
+                    personName={linkedPerson.name}
+                    open={unlinkPersonDialogOpen}
+                    onOpenChange={setUnlinkPersonDialogOpen}
+                />
+            )}
         </Std.SidebarInset>
     );
 }
