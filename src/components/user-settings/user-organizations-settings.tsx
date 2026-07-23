@@ -39,14 +39,14 @@ export function UserOrganizationsSettings() {
     const queryClient = useQueryClient();
     const sessionQuery = authClient.useSession();
 
-    const membershipsQuery = useQuery(trpc.accessControl.listUserMemberships.queryOptions());
+    const membershipsQuery = useQuery(trpc.users.listMemberships.queryOptions());
 
     const leaveMutation = useMutation({
         mutationFn: async (organizationId: string) => {
             await authClient.organization.leave({ organizationId });
         },
         onSuccess() {
-            queryClient.invalidateQueries(trpc.accessControl.listUserMemberships.queryFilter());
+            queryClient.invalidateQueries(trpc.users.listMemberships.queryFilter());
         },
     });
 

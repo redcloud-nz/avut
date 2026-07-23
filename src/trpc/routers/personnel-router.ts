@@ -285,6 +285,27 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Lists the active personnel in the organization that are not yet linked to a user account.
+     * Used to populate the "link person" picker on the user detail page.
+     * @param ctx The authenticated organization context.
+     * @returns An array of unlinked personnel records.
+     */
+    listUnlinkedPersonnel: organizationProcedure({ person: ["view"] })
+        .output(z.array(PersonData.schema))
+        .query(async ({ ctx }) => {
+            const personnel = await ctx.prisma.person.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    status: "Active",
+                    organizationUser: { is: null },
+                },
+                orderBy: { name: "asc" },
+            });
+
+            return personnel.map(PersonData.fromRecord);
+        }),
+
+    /**
      * Restores an archived or deleted person in the organization.
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.

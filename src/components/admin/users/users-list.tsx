@@ -41,7 +41,7 @@ export function AdminModule_Users_List() {
     });
 
     const { data: personLinks } = useSuspenseQuery(
-        trpc.accessControl.listPersonLinks.queryOptions({ organizationId: organization.id }),
+        trpc.users.listPersonLinks.queryOptions({ organizationId: organization.id }),
     );
 
     const personByUserId = useMemo(

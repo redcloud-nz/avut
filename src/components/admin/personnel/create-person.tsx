@@ -66,7 +66,7 @@ export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dia
                         }),
                     ),
                     queryClient.invalidateQueries(
-                        trpc.accessControl.listPersonnelWithAccess.queryFilter({
+                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
                             organizationId: organization.id,
                         }),
                     ),

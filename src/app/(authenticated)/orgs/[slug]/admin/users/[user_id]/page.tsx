@@ -64,7 +64,7 @@ export default function AdminModule_User_Page(
     const userId = UserId.schema.parse(user_id);
 
     const { data: linkedPerson } = useSuspenseQuery(
-        trpc.accessControl.getLinkedPerson.queryOptions({
+        trpc.users.getLinkedPerson.queryOptions({
             organizationId: organization.id,
             userId,
         }),
@@ -239,6 +239,7 @@ export default function AdminModule_User_Page(
                 <AdminModule_UnlinkPerson_Dialog
                     userId={userId}
                     userName={member.user.name}
+                    personId={linkedPerson.id}
                     personName={linkedPerson.name}
                     open={unlinkPersonDialogOpen}
                     onOpenChange={setUnlinkPersonDialogOpen}

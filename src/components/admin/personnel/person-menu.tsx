@@ -30,7 +30,6 @@ import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
-import { AdminModule_LinkUser_Dialog } from "./link-user";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
@@ -41,7 +40,6 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
     const queryClient = useQueryClient();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [linkUserDialogOpen, setLinkUserDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -160,11 +158,6 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                     Delete
                                 </DropdownMenuItem>
                             )}
-                            {/* {person.status == "Active" && (
-                                <DropdownMenuItem onClick={() => setLinkUserDialogOpen(true)}>
-                                    <UserIcon /> Link User
-                                </DropdownMenuItem>
-                            )} */}
                             {person.status != "Active" && (
                                 <DropdownMenuItem onClick={handleRestore}>
                                     <ObjectIcons.Restore /> Restore
@@ -180,11 +173,6 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                 person={person}
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
-            />
-            <AdminModule_LinkUser_Dialog
-                person={person}
-                open={linkUserDialogOpen}
-                onOpenChange={setLinkUserDialogOpen}
             />
         </>
     );

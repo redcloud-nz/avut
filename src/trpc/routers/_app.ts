@@ -6,7 +6,6 @@
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTrpcRouter } from "../init";
 
-import { accessControlRouter } from "./access-control";
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
 import { formsRouter } from "./forms-router";
@@ -19,9 +18,9 @@ import { skillChecksRouter } from "./skill-checks-router";
 import { skillsRouter } from "./skills-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { teamsRouter } from "./teams-router";
+import { usersRouter } from "./users-router";
 
 export const appRouter = createTrpcRouter({
-    accessControl: accessControlRouter,
     d4hAccessTokens: d4hAccessTokensRouter,
     d4hApi: d4hApiRouter,
     forms: formsRouter,
@@ -34,6 +33,7 @@ export const appRouter = createTrpcRouter({
     skillPackageBuilder: skillPackageBuilderRouter,
     skills: skillsRouter,
     teams: teamsRouter,
+    users: usersRouter,
 });
 
 export type AppRouter = typeof appRouter;

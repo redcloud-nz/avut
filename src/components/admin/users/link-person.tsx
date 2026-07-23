@@ -40,16 +40,16 @@ export function AdminModule_LinkPerson_Dialog({
     const [personId, setPersonId] = useState<string | null>(null);
 
     const { data: unlinkedPersonnel } = useSuspenseQuery(
-        trpc.accessControl.listUnlinkedPersonnel.queryOptions({ organizationId: organization.id }),
+        trpc.personnel.listUnlinkedPersonnel.queryOptions({ organizationId: organization.id }),
     );
 
     const mutation = useMutation(
-        trpc.accessControl.linkPerson.mutationOptions({
+        trpc.users.linkPerson.mutationOptions({
             onError(error) {
                 console.error("Failed to link person:", error);
                 toast.error(`Failed to link person: ${error.message}`);
             },
-            async onSuccess() {
+            async onSuccess(_data, variables) {
                 toast.success(
                     <>
                         Person linked to user <ObjectName>{userName}</ObjectName>.
@@ -60,12 +60,28 @@ export function AdminModule_LinkPerson_Dialog({
                     queryClient.invalidateQueries({
                         queryKey: ["auth", "organization-users", organization.id],
                     }),
-                    queryClient.invalidateQueries(trpc.accessControl.getLinkedPerson.queryFilter()),
-                    queryClient.invalidateQueries(trpc.accessControl.listPersonLinks.queryFilter()),
                     queryClient.invalidateQueries(
-                        trpc.accessControl.listUnlinkedPersonnel.queryFilter(),
+                        trpc.users.getLinkedPerson.queryFilter({
+                            organizationId: organization.id,
+                            userId,
+                        }),
                     ),
-                    queryClient.invalidateQueries(trpc.personnel.getLinkedUser.queryFilter()),
+                    queryClient.invalidateQueries(
+                        trpc.users.listPersonLinks.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.personnel.getLinkedUser.queryFilter({
+                            organizationId: organization.id,
+                            personId: variables.personId,
+                        }),
+                    ),
                 ]);
 
                 handleOpenChange(false);

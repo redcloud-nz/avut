@@ -5,12 +5,11 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// access-control.ts imports these server-only modules at the top level. The
-// procedures under test use ctx.prisma (the injected mock) and never touch
-// `auth`, so empty stubs are enough to let the module import in jsdom.
+// personnel-router imports @/server/person (server-only) at the top level. The
+// procedures under test use ctx.prisma (the injected mock) and never call
+// revalidatePerson, so an empty stub is enough to let the module import in jsdom.
 vi.mock("server-only", () => ({}));
-vi.mock("@/server/auth", () => ({ auth: {} }));
-vi.mock("@/server/prisma", () => ({ default: {} }));
+vi.mock("@/server/person", () => ({ revalidatePerson: () => {} }));
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -19,9 +18,10 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
-import { accessControlRouter } from "./access-control";
+import { personnelRouter } from "./personnel-router";
+import { usersRouter } from "./users-router";
 
-describe("accessControl user↔person linking", () => {
+describe("user↔person linking", () => {
     // Dataset:
     //   user1 → org member, initially unlinked
     //   user2 → org member, already linked to person2
@@ -81,12 +81,7 @@ describe("accessControl user↔person linking", () => {
         });
 
         await db.organizationUser.create({
-            data: {
-                id: T.orgUser1,
-                organizationId: T.org,
-                userId: T.user1,
-                role: "member",
-            },
+            data: { id: T.orgUser1, organizationId: T.org, userId: T.user1, role: "member" },
         });
         await db.organizationUser.create({
             data: {
@@ -99,38 +94,34 @@ describe("accessControl user↔person linking", () => {
         });
     });
 
-    function makeCaller() {
-        return accessControlRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: T.user1 },
-                permissions: {
-                    organization: ["view"],
-                    member: ["view", "update"],
-                    person: ["view", "update"],
-                },
-                prisma: db,
-            }),
-        );
+    function makeContext() {
+        return createAuthenticatedMockContext({
+            user: { id: T.user1 },
+            permissions: {
+                organization: ["view"],
+                member: ["view", "update"],
+                person: ["view", "update"],
+            },
+            prisma: db,
+        });
     }
 
+    const users = () => usersRouter.createCaller(makeContext());
+    const personnel = () => personnelRouter.createCaller(makeContext());
+
     it("links a person to a user and reflects it in getLinkedPerson", async () => {
-        const caller = makeCaller();
+        expect(
+            await users().getLinkedPerson({ organizationId: T.org, userId: T.user1 }),
+        ).toBeNull();
 
-        expect(await caller.getLinkedPerson({ organizationId: T.org, userId: T.user1 })).toBeNull();
+        await users().linkPerson({ organizationId: T.org, userId: T.user1, personId: T.person1 });
 
-        await caller.linkPerson({
-            organizationId: T.org,
-            userId: T.user1,
-            personId: T.person1,
-        });
-
-        const linked = await caller.getLinkedPerson({ organizationId: T.org, userId: T.user1 });
+        const linked = await users().getLinkedPerson({ organizationId: T.org, userId: T.user1 });
         expect(linked?.id).toBe(T.person1);
     });
 
-    it("no longer lists a linked person in listUnlinkedPersonnel", async () => {
-        const caller = makeCaller();
-        const unlinked = await caller.listUnlinkedPersonnel({ organizationId: T.org });
+    it("no longer lists a linked person in personnel.listUnlinkedPersonnel", async () => {
+        const unlinked = await personnel().listUnlinkedPersonnel({ organizationId: T.org });
         const ids = unlinked.map((p) => p.id);
 
         // person1 now linked (to user1), person2 linked (to user2), person3 archived
@@ -140,8 +131,7 @@ describe("accessControl user↔person linking", () => {
     });
 
     it("returns every link from listPersonLinks", async () => {
-        const caller = makeCaller();
-        const links = await caller.listPersonLinks({ organizationId: T.org });
+        const links = await users().listPersonLinks({ organizationId: T.org });
 
         expect(links).toEqual(
             expect.arrayContaining([
@@ -159,22 +149,20 @@ describe("accessControl user↔person linking", () => {
     });
 
     it("rejects linking a person already linked to another user", async () => {
-        const caller = makeCaller();
-
         await expect(
-            caller.linkPerson({ organizationId: T.org, userId: T.user1, personId: T.person2 }),
+            users().linkPerson({ organizationId: T.org, userId: T.user1, personId: T.person2 }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 
     it("unlinks a person and returns null from getLinkedPerson", async () => {
-        const caller = makeCaller();
+        await users().unlinkPerson({ organizationId: T.org, userId: T.user1 });
 
-        await caller.unlinkPerson({ organizationId: T.org, userId: T.user1 });
-
-        expect(await caller.getLinkedPerson({ organizationId: T.org, userId: T.user1 })).toBeNull();
+        expect(
+            await users().getLinkedPerson({ organizationId: T.org, userId: T.user1 }),
+        ).toBeNull();
 
         // person1 is now available to link again
-        const unlinked = await caller.listUnlinkedPersonnel({ organizationId: T.org });
+        const unlinked = await personnel().listUnlinkedPersonnel({ organizationId: T.org });
         expect(unlinked.map((p) => p.id)).toContain(T.person1);
     });
 });

@@ -22,20 +22,27 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UnlinkPerson_Dialog({
     userId,
     userName,
+    personId,
     personName,
     ...props
-}: AlertDialogProps & { userId: UserId; userName: string; personName: string }) {
+}: AlertDialogProps & {
+    userId: UserId;
+    userName: string;
+    personId: PersonId;
+    personName: string;
+}) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
     const mutation = useMutation(
-        trpc.accessControl.unlinkPerson.mutationOptions({
+        trpc.users.unlinkPerson.mutationOptions({
             onError(error) {
                 console.error("Failed to unlink person:", error);
                 toast.error(`Failed to unlink person: ${error.message}`);
@@ -51,12 +58,28 @@ export function AdminModule_UnlinkPerson_Dialog({
                     queryClient.invalidateQueries({
                         queryKey: ["auth", "organization-users", organization.id],
                     }),
-                    queryClient.invalidateQueries(trpc.accessControl.getLinkedPerson.queryFilter()),
-                    queryClient.invalidateQueries(trpc.accessControl.listPersonLinks.queryFilter()),
                     queryClient.invalidateQueries(
-                        trpc.accessControl.listUnlinkedPersonnel.queryFilter(),
+                        trpc.users.getLinkedPerson.queryFilter({
+                            organizationId: organization.id,
+                            userId,
+                        }),
                     ),
-                    queryClient.invalidateQueries(trpc.personnel.getLinkedUser.queryFilter()),
+                    queryClient.invalidateQueries(
+                        trpc.users.listPersonLinks.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.personnel.getLinkedUser.queryFilter({
+                            organizationId: organization.id,
+                            personId,
+                        }),
+                    ),
                 ]);
 
                 props.onOpenChange?.(false);
