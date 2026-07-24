@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/item";
 
 export default async function Organization_Index_Page() {
-    const SkillTrackIcon = Modules.skills.icon;
+    const SkillTrackIcon = Modules["skill-track"].icon;
 
     return (
         <Argus.Root>

@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { SkillPackage as SkillPackageRecord } from "@prisma/client";
+import { SkillPackageSubscription as SkillPackageSubscriptionRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
@@ -19,8 +19,7 @@ export const SkillPackageSubscriptionId = {
     create: () => SkillPackageSubscriptionId.schema.parse(nanoId16()),
 } as const;
 
-export type SkillPackageSubscriptionId = string &
-    z.BRAND<"SkillPackageSubscriptionId">;
+export type SkillPackageSubscriptionId = string & z.BRAND<"SkillPackageSubscriptionId">;
 
 const skillPackageSubscriptionSchema = z.object({
     id: SkillPackageSubscriptionId.schema,
@@ -32,7 +31,7 @@ const skillPackageSubscriptionSchema = z.object({
 export const SkillPackageSubscription = {
     schema: skillPackageSubscriptionSchema,
 
-    fromRecord: (record: SkillPackageRecord) =>
+    fromRecord: (record: SkillPackageSubscriptionRecord) =>
         skillPackageSubscriptionSchema.parse({
             ...record,
             createdAt: record?.createdAt?.toISOString(),
@@ -40,6 +39,4 @@ export const SkillPackageSubscription = {
         }),
 };
 
-export type SkillPackageSubscription = z.infer<
-    typeof skillPackageSubscriptionSchema
->;
+export type SkillPackageSubscription = z.infer<typeof skillPackageSubscriptionSchema>;

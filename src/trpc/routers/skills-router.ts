@@ -212,6 +212,7 @@ export const skillsRouter = createTrpcRouter({
                     updatedAt: true,
                     createdAt: true,
                     status: true,
+                    organizationId: true,
                     organization: {
                         select: {
                             id: true,

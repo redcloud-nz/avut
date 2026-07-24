@@ -33,7 +33,7 @@ export default async function Pub_Organization_Layout(props: LayoutProps<`/pub/o
     return (
         <CommonProviders>
             <OrganizationProvider organization={organization} settings={organizationSettings}>
-                <ModuleSidebar slug={slug}></ModuleSidebar>
+                <ModuleSidebar scope="organization" />
                 {props.children}
             </OrganizationProvider>
         </CommonProviders>

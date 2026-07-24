@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { Skill as SkillRecord } from "@prisma/client";
+import { Skill as SkillRecord } from "@/generated/prisma/client";
 
 import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 import { nanoId16 } from "../id";
