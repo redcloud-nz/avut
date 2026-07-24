@@ -14,14 +14,14 @@ import { OrgSelector_Card } from "@/components/cards/org-selector";
 import { getEntryControl } from "@/server/entry-control";
 
 export default async function SelectOrg_Page(props: PageProps<"/orgs/--select-org">) {
-    let params = await props.searchParams;
-    const module = Array.isArray(params.module) ? params.module[0] : params.module;
+    const params = await props.searchParams;
+    const moduleId = Array.isArray(params.module) ? params.module[0] : params.module;
 
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {
-        if (module) {
-            redirect(`/orgs/${entryControl.slug}/${module}` as Route);
+        if (moduleId) {
+            redirect(`/orgs/${entryControl.slug}/${moduleId}` as Route);
         } else {
             redirect(`/orgs/${entryControl.slug}` as Route);
         }
@@ -31,7 +31,7 @@ export default async function SelectOrg_Page(props: PageProps<"/orgs/--select-or
         <Argus.Root>
             <Argus.Column>
                 <AVUTLogo />
-                <OrgSelector_Card entryControl={entryControl} module={module} />
+                <OrgSelector_Card entryControl={entryControl} module={moduleId} />
             </Argus.Column>
         </Argus.Root>
     );

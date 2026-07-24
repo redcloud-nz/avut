@@ -49,7 +49,7 @@ export function SignIn_Card({ email }: { email?: string }) {
                     </FieldSeparator>
                     <SocialSignInButtons_Field />
                     <FieldDescription className="text-center">
-                        Don't have an account? <Link href="/auth/sign-up">Sign Up</Link>
+                        Don&apos;t have an account? <Link href="/auth/sign-up">Sign Up</Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>

@@ -104,7 +104,7 @@ export function SkillTrack_CreateSession_Dialog() {
                     <DialogTitle>New Session</DialogTitle>
                     <DialogDescription>
                         Create a new skill check session. You can add skill checks to the session
-                        after it's created.
+                        after it&apos;s created.
                     </DialogDescription>
                 </DialogHeader>
                 <form

@@ -56,7 +56,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     <ItemContent>
                                         <ItemTitle>Invitations</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's invitations.
+                                            Manage your organisation&apos;s invitations.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -71,7 +71,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     <ItemContent>
                                         <ItemTitle>Organization</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's details.
+                                            Manage your organisation&apos;s details.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -87,7 +87,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     <ItemContent>
                                         <ItemTitle>Personnel</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's personnel.
+                                            Manage your organisation&apos;s personnel.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -102,7 +102,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     <ItemContent>
                                         <ItemTitle>Teams</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's teams.
+                                            Manage your organisation&apos;s teams.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -117,7 +117,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     <ItemContent>
                                         <ItemTitle>Users</ItemTitle>
                                         <ItemDescription>
-                                            Manage your organisation's users.
+                                            Manage your organisation&apos;s users.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

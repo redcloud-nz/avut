@@ -85,7 +85,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                     </Field>
                     {mutation.isError && <FieldError errors={[mutation.error]} />}
                     <FieldDescription className="text-center">
-                        Didn't receive the code? <a onClick={handleResend}>Resend</a>
+                        Didn&apos;t receive the code? <a onClick={handleResend}>Resend</a>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>

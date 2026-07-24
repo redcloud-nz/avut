@@ -109,9 +109,7 @@ export function UserD4HAccess_Card() {
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Server</FieldLabel>
-                                    <FieldValue
-                                        value={getD4HServer(accessToken.serverCode)?.name!}
-                                    />
+                                    <FieldValue value={getD4HServer(accessToken.serverCode).name} />
                                 </Field>
                                 <Field orientation="responsive">
                                     <FieldLabel>Label</FieldLabel>

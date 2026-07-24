@@ -48,7 +48,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
 
             const items = ctx.formData.items.map((item) => {
                 // Ensure that the specified template exists
-                let template = templates.find((t) => t.id === item.template.id);
+                const template = templates.find((t) => t.id === item.template.id);
                 if (!template)
                     throw new Error(
                         `Template with ID ${item.template.id} not found for organization`,

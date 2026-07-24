@@ -74,8 +74,8 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         },
     });
 
-    const originPackage = skillPackages.find((pkg) => pkg.id === skill.skillPackageId);
-    const originGroup = skillGroups.find((group) => group.id === skill.skillGroupId);
+    const originPackage = skillPackages.find((pkg) => pkg.id === skill.skillPackageId)!;
+    const originGroup = skillGroups.find((group) => group.id === skill.skillGroupId)!;
 
     const [destinationPackageId, setDestinationPackageId] = useState<string>(skill.skillPackageId);
     const [destinationGroupId, setDestinationGroupId] = useState<SkillGroupId | null>(null);
@@ -209,11 +209,11 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                     <FieldGroup>
                         <Field>
                             <FieldLabel>Origin Package</FieldLabel>
-                            <FieldValue value={originPackage?.name!} />
+                            <FieldValue value={originPackage.name} />
                         </Field>
                         <Field>
                             <FieldLabel>Origin Group</FieldLabel>
-                            <FieldValue value={originGroup?.name!} />
+                            <FieldValue value={originGroup.name} />
                         </Field>
                         <Field>
                             <FieldLabel>Destination Package</FieldLabel>

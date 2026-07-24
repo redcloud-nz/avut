@@ -102,7 +102,7 @@ export default async function Admin_D4hAccessToken_EquipmentItems_Page(
                         </Saratoga.Title>
                     </Saratoga.Header>
                     {items.map((item) => (
-                        <div className="grid grid-cols-2 border-b py-2">
+                        <div key={item.raw.id} className="grid grid-cols-2 border-b py-2">
                             <div className="col-span-full py-2 font-semibold text-center">
                                 {item.raw.id}
                             </div>

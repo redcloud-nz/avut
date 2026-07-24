@@ -446,7 +446,6 @@ function getColumnDisplayName<TData extends RowData>(column: ColumnDef<TData>): 
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function defineColumns<TData extends RowData>(
     factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData, any> | null)[],
 ): ColumnDef<TData>[] {

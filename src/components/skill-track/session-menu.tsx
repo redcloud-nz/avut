@@ -46,7 +46,7 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                                 <EmptyHeader>
                                     <EmptyTitle>No Actions Available</EmptyTitle>
                                     <EmptyDescription>
-                                        You don't have permission to delete this session.
+                                        You don&apos;t have permission to delete this session.
                                     </EmptyDescription>
                                 </EmptyHeader>
                             </Empty>

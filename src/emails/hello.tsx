@@ -19,9 +19,7 @@ interface HelloEmailProps {
     firstName: string;
 }
 
-export default function HelloEmail({
-    firstName = "John Smith",
-}: HelloEmailProps) {
+export default function HelloEmail({ firstName = "John Smith" }: HelloEmailProps) {
     return (
         <Html lang="en">
             <Head />
@@ -33,8 +31,7 @@ export default function HelloEmail({
                             Hello, {firstName}!
                         </Heading>
                         <Text className="text-[14px] text-black leading-6">
-                            Welcome to our service. We're glad to have you on
-                            board.
+                            Welcome to our service. We&apos;re glad to have you on board.
                         </Text>
                         <p></p>
                     </Container>

@@ -60,7 +60,7 @@ export default function OrganizationInviteTemplate({
         <Html lang="en">
             <Tailwind config={{ presets: [pixelBasedPreset] }}>
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
-                    <Preview>You're invited to join {organization.name} on AVUT</Preview>
+                    <Preview>You&apos;re invited to join {organization.name} on AVUT</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
