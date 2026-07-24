@@ -54,6 +54,20 @@ export const SKILL_CHECK_RESULT_LABELS: Record<string, string> = {
     HighlyConfident: "Highly Confident",
 };
 
+/**
+ * The results that demonstrate competency. Any other result — including "Not Yet Competent" and
+ * "Not Taught" — means the person is not competent in that skill.
+ */
+export const COMPETENT_SKILL_CHECK_RESULTS = ["Competent", "HighlyConfident"];
+
+/**
+ * Whether a skill check result demonstrates competency in the skill.
+ * @param result The result of the skill check.
+ */
+export function isCompetentResult(result: string): boolean {
+    return COMPETENT_SKILL_CHECK_RESULTS.includes(result);
+}
+
 export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Draft: "Draft",
     Include: "Approved",

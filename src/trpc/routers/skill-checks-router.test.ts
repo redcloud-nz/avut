@@ -131,6 +131,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 organizationId: T.org,
                 name: "First Aid",
                 description: "",
+                properties: {},
                 published: true,
             },
         });
@@ -140,19 +141,38 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 organizationId: T.org,
                 name: "Advanced",
                 description: "",
+                properties: {},
                 published: false,
             },
         });
 
         // Skill groups
         await db.skillGroup.create({
-            data: { id: T.grp1, skillPackageId: T.pkg1, name: "Basic Skills", description: "" },
+            data: {
+                id: T.grp1,
+                skillPackageId: T.pkg1,
+                name: "Basic Skills",
+                description: "",
+                properties: {},
+            },
         });
         await db.skillGroup.create({
-            data: { id: T.grp2, skillPackageId: T.pkg1, name: "Advanced Skills", description: "" },
+            data: {
+                id: T.grp2,
+                skillPackageId: T.pkg1,
+                name: "Advanced Skills",
+                description: "",
+                properties: {},
+            },
         });
         await db.skillGroup.create({
-            data: { id: T.grp3, skillPackageId: T.pkg2, name: "Special", description: "" },
+            data: {
+                id: T.grp3,
+                skillPackageId: T.pkg2,
+                name: "Special",
+                description: "",
+                properties: {},
+            },
         });
 
         // Skills
@@ -163,6 +183,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 skillGroupId: T.grp1,
                 name: "CPR",
                 description: "",
+                properties: {},
                 frequency: 12,
             },
         });
@@ -173,6 +194,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 skillGroupId: T.grp1,
                 name: "Bandaging",
                 description: "",
+                properties: {},
                 frequency: 6,
             },
         });
@@ -183,6 +205,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 skillGroupId: T.grp2,
                 name: "Airway",
                 description: "",
+                properties: {},
                 frequency: 12,
             },
         });
@@ -193,6 +216,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 skillGroupId: T.grp3,
                 name: "Defibrillation",
                 description: "",
+                properties: {},
             },
         });
         await db.skill.create({
@@ -202,6 +226,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 skillGroupId: T.grp1,
                 name: "Deprecated",
                 description: "",
+                properties: {},
                 status: "Archived" as never,
             },
         });
@@ -399,7 +424,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
             expect(result.skills).toHaveLength(3);
         });
 
-        it("includes skill group and package hierarchy in each skill", async () => {
+        it("returns each skill with its group and package ids", async () => {
             const result = await makeCaller().getCompetencyMatrix({
                 organizationId: T.org,
                 skillId: T.skill1,
@@ -408,9 +433,28 @@ describe("skillChecks.getCompetencyMatrix", () => {
             expect(result.skills[0]).toMatchObject({
                 id: T.skill1,
                 name: "CPR",
-                skillGroup: { id: T.grp1, name: "Basic Skills" },
-                skillPackage: { id: T.pkg1, name: "First Aid" },
+                skillGroupId: T.grp1,
+                skillPackageId: T.pkg1,
             });
+        });
+
+        it("returns only the groups and packages containing an in-scope skill", async () => {
+            // skill1 lives in grp1/pkg1; grp2 and pkg2 must not come along for the ride.
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                skillId: T.skill1,
+            });
+
+            expect(result.skillGroups.map((g) => g.id)).toEqual([T.grp1]);
+            expect(result.skillPackages.map((p) => p.id)).toEqual([T.pkg1]);
+        });
+
+        it("returns every group of a subscribed package that has active skills", async () => {
+            // pkg1 has grp1 (skill1, skill2) and grp2 (skill3); pkg2 is not published.
+            const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
+
+            expect(result.skillGroups.map((g) => g.id).sort()).toEqual([T.grp1, T.grp2].sort());
+            expect(result.skillPackages.map((p) => p.id)).toEqual([T.pkg1]);
         });
     });
 

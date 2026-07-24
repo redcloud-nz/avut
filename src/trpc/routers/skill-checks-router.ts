@@ -3,15 +3,16 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import * as R from "remeda";
 import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
-import { SkillId, SkillRef } from "@/lib/schemas/skill";
+import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { TeamId } from "@/lib/schemas/team";
 
@@ -150,7 +151,9 @@ export const skillChecksRouter = createTrpcRouter({
     /**
      * Returns the competency matrix for the given scope. Personnel scope: teamId, personId, or
      * all active org personnel. Skill scope: skillId, skillGroupId, skillPackageId, or all active
-     * subscribed skills. Competencies contain only the most recent Include-status check per
+     * subscribed skills. Skills, groups and packages are returned as flat sibling arrays in the
+     * same shape as `skills.listAssessableSkills`, with only the groups and packages that contain
+     * an in-scope skill. Competencies contain only the most recent Include-status check per
      * (assessee, skill) pair, with expiry computed from the skill's frequency (months).
      */
     getCompetencyMatrix: organizationProcedure({ skillCheck: ["view"] })
@@ -176,15 +179,9 @@ export const skillChecksRouter = createTrpcRouter({
         .output(
             z.object({
                 personnel: z.array(PersonRef.schema),
-                skills: z.array(
-                    z.object({
-                        id: SkillId.schema,
-                        name: z.string(),
-                        frequency: z.number(),
-                        skillGroup: z.object({ id: SkillGroupId.schema, name: z.string() }),
-                        skillPackage: z.object({ id: SkillPackageId.schema, name: z.string() }),
-                    }),
-                ),
+                skillPackages: z.array(SkillPackage.schema),
+                skillGroups: z.array(SkillGroup.schema),
+                skills: z.array(Skill.schema),
                 competencies: z.array(
                     z.object({
                         assesseeId: PersonId.schema,
@@ -238,43 +235,32 @@ export const skillChecksRouter = createTrpcRouter({
                 include: {
                     skillPackage: {
                         include: {
-                            skills: {
-                                include: { skillGroup: { select: { id: true, name: true } } },
-                            },
+                            skills: true,
+                            groups: true,
                         },
                     },
                 },
             });
 
-            type SkillEntry = {
-                id: SkillId;
-                name: string;
-                frequency: number;
-                skillGroupId: SkillGroupId;
-                skillGroupName: string;
-                skillPackageId: SkillPackageId;
-                skillPackageName: string;
-            };
+            const packageMap = new Map<string, SkillPackage>();
+            const groupMap = new Map<string, SkillGroup>();
+            const skillMap = new Map<string, Skill>();
 
-            const skillMap = new Map<string, SkillEntry>();
             for (const sub of subscriptions) {
                 const pkg = sub.skillPackage;
-                if (pkg.status !== "Active" || !pkg.published) continue;
+                if (pkg.status !== "Active" || !pkg.published || packageMap.has(pkg.id)) continue;
+
+                packageMap.set(pkg.id, SkillPackage.fromRecord(pkg));
+                for (const group of pkg.groups) {
+                    groupMap.set(group.id, SkillGroup.fromRecord(group));
+                }
                 for (const skill of pkg.skills) {
-                    if (skill.status !== "Active" || skillMap.has(skill.id)) continue;
-                    skillMap.set(skill.id, {
-                        id: skill.id as SkillId,
-                        name: skill.name,
-                        frequency: skill.frequency,
-                        skillGroupId: skill.skillGroupId as SkillGroupId,
-                        skillGroupName: skill.skillGroup.name,
-                        skillPackageId: skill.skillPackageId as SkillPackageId,
-                        skillPackageName: pkg.name,
-                    });
+                    if (skill.status !== "Active") continue;
+                    skillMap.set(skill.id, Skill.fromRecord(skill));
                 }
             }
 
-            let skills: SkillEntry[];
+            let skills: Skill[];
             if (input.skillId) {
                 skills = [...skillMap.values()].filter((s) => s.id === input.skillId);
             } else if (input.skillGroupId) {
@@ -289,30 +275,25 @@ export const skillChecksRouter = createTrpcRouter({
                 skills = [...skillMap.values()];
             }
 
+            // Only return the groups and packages that still contain an in-scope skill, so the
+            // client can render the hierarchy without pruning empty sections itself.
+            const skillGroups = R.pipe(
+                skills,
+                R.map((skill) => groupMap.get(skill.skillGroupId)),
+                R.filter((group): group is SkillGroup => group !== undefined),
+                R.uniqueBy((group) => group.id),
+            );
+            const skillPackages = R.pipe(
+                skills,
+                R.map((skill) => packageMap.get(skill.skillPackageId)),
+                R.filter((pkg): pkg is SkillPackage => pkg !== undefined),
+                R.uniqueBy((pkg) => pkg.id),
+            );
+
             const skillIds = new Set(skills.map((s) => s.id));
 
             if (personnelIds.size === 0 || skillIds.size === 0) {
-                return {
-                    personnel,
-                    skills: skills.map(
-                        ({
-                            id,
-                            name,
-                            frequency,
-                            skillGroupId,
-                            skillGroupName,
-                            skillPackageId,
-                            skillPackageName,
-                        }) => ({
-                            id,
-                            name,
-                            frequency,
-                            skillGroup: { id: skillGroupId, name: skillGroupName },
-                            skillPackage: { id: skillPackageId, name: skillPackageName },
-                        }),
-                    ),
-                    competencies: [],
-                };
+                return { personnel, skillPackages, skillGroups, skills, competencies: [] };
             }
 
             // Step 3: Most recent Include check per (assessee, skill)
@@ -356,27 +337,7 @@ export const skillChecksRouter = createTrpcRouter({
                 };
             });
 
-            return {
-                personnel,
-                skills: skills.map(
-                    ({
-                        id,
-                        name,
-                        frequency,
-                        skillGroupId,
-                        skillGroupName,
-                        skillPackageId,
-                        skillPackageName,
-                    }) => ({
-                        id,
-                        name,
-                        frequency,
-                        skillGroup: { id: skillGroupId, name: skillGroupName },
-                        skillPackage: { id: skillPackageId, name: skillPackageName },
-                    }),
-                ),
-                competencies,
-            };
+            return { personnel, skillPackages, skillGroups, skills, competencies };
         }),
 
     /**

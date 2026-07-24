@@ -39,7 +39,27 @@ export default async function SkillsTrack_Reports_Page(
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skills Reports">
-                    <ItemGroup></ItemGroup>
+                    <ItemGroup>
+                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/person", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Personnel Competency</ItemTitle>
+                                        <ItemDescription>
+                                            Competency and currency for an individual person.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                    </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
         </Std.SidebarInset>
