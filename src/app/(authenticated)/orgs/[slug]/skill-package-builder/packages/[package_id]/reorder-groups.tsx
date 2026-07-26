@@ -67,7 +67,7 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
         if (groupsQuery.isSuccess) {
             setOrder(skillGroups.map((group) => group.id));
         }
-    }, [groupsQuery.isSuccess]);
+    }, [groupsQuery.isSuccess, skillGroups]);
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.reorderGroups.mutationOptions({
@@ -90,15 +90,16 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
         }),
     );
 
-    useEffect(() => {
-        if (!props.open) {
+    function handleOpenChange(open: boolean) {
+        if (!open) {
             mutation.reset();
             setOrder(skillGroups.map((group) => group.id));
         }
-    }, [props.open]);
+        props.onOpenChange?.(open);
+    }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Reorder Groups</DialogTitle>

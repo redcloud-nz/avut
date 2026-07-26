@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 import { Lens, useLens } from "@hookform/lenses";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -26,20 +26,11 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
     SelectItem,
-    SelectSeparator,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -183,7 +174,7 @@ export default function AdminModule_Settings_Page(
     );
 }
 
-function General_SettingsCard({ lens }: { lens: Lens<Partial<OrganizationSettings["general"]>> }) {
+function General_SettingsCard({}: { lens: Lens<Partial<OrganizationSettings["general"]>> }) {
     return (
         <Card>
             <CardHeader>
@@ -233,16 +224,15 @@ function General_SettingsCard({ lens }: { lens: Lens<Partial<OrganizationSetting
 
 function D4hIntegration_SettingsCard({
     lens,
-    organizationId,
 }: {
     lens: Lens<Partial<OrganizationSettings["integrations"]["d4h"]>>;
     organizationId: OrganizationId;
 }) {
-    const { data: d4hAccessTokens } = useQuery(
-        trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
-            organizationId,
-        }),
-    );
+    // const { data: d4hAccessTokens } = useQuery(
+    //     trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
+    //         organizationId,
+    //     }),
+    // );
 
     const integrationEnabled = useWatch(lens.focus("enabled").interop());
 
@@ -418,7 +408,7 @@ function EmailIntegration_SettingsCard({
 }: {
     lens: Lens<Partial<OrganizationSettings["integrations"]["email"]>>;
 }) {
-    const integrationEnabled = useWatch(lens.focus("enabled").interop());
+    //const integrationEnabled = useWatch(lens.focus("enabled").interop());
 
     return (
         <Card>
@@ -478,41 +468,41 @@ function D4HViewsModule_SettingsCard({
     );
 }
 
-function FormsModule_SettingsCard({
-    lens,
-}: {
-    lens: Lens<Partial<OrganizationSettings["modules"]["forms"]>>;
-}) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Forms Module</CardTitle>
-                <CardAction>
-                    <Controller
-                        {...lens.focus("enabled").interop()}
-                        render={({ field }) => (
-                            <Switch
-                                id="forms-module-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <FieldGroup></FieldGroup>
-            </CardContent>
-        </Card>
-    );
-}
+// function FormsModule_SettingsCard({
+//     lens,
+// }: {
+//     lens: Lens<Partial<OrganizationSettings["modules"]["forms"]>>;
+// }) {
+//     return (
+//         <Card>
+//             <CardHeader>
+//                 <CardTitle>Forms Module</CardTitle>
+//                 <CardAction>
+//                     <Controller
+//                         {...lens.focus("enabled").interop()}
+//                         render={({ field }) => (
+//                             <Switch
+//                                 id="forms-module-enabled"
+//                                 checked={field.value}
+//                                 onCheckedChange={field.onChange}
+//                             />
+//                         )}
+//                     />
+//                 </CardAction>
+//             </CardHeader>
+//             <CardContent>
+//                 <FieldGroup></FieldGroup>
+//             </CardContent>
+//         </Card>
+//     );
+// }
 
 function I3Module_SettingsCard({
     lens,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["i3"]>>;
 }) {
-    const enabled = useWatch(lens.focus("enabled").interop());
+    //const enabled = useWatch(lens.focus("enabled").interop());
 
     return (
         <Card>
@@ -579,43 +569,43 @@ function I3Module_SettingsCard({
     );
 }
 
-function NotesModule_SettingsCard({
-    lens,
-}: {
-    lens: Lens<Partial<OrganizationSettings["modules"]["notes"]>>;
-}) {
-    const enabled = useWatch(lens.focus("enabled").interop());
+// function NotesModule_SettingsCard({
+//     lens,
+// }: {
+//     lens: Lens<Partial<OrganizationSettings["modules"]["notes"]>>;
+// }) {
+//     const enabled = useWatch(lens.focus("enabled").interop());
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Notes Module</CardTitle>
-                <CardAction>
-                    <Controller
-                        {...lens.focus("enabled").interop()}
-                        render={({ field }) => (
-                            <Switch
-                                id="notes-module-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <FieldGroup></FieldGroup>
-            </CardContent>
-        </Card>
-    );
-}
+//     return (
+//         <Card>
+//             <CardHeader>
+//                 <CardTitle>Notes Module</CardTitle>
+//                 <CardAction>
+//                     <Controller
+//                         {...lens.focus("enabled").interop()}
+//                         render={({ field }) => (
+//                             <Switch
+//                                 id="notes-module-enabled"
+//                                 checked={field.value}
+//                                 onCheckedChange={field.onChange}
+//                             />
+//                         )}
+//                     />
+//                 </CardAction>
+//             </CardHeader>
+//             <CardContent>
+//                 <FieldGroup></FieldGroup>
+//             </CardContent>
+//         </Card>
+//     );
+// }
 
 function SkillPackageBuilderModule_SettingsCard({
     lens,
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["skill-package-builder"]>>;
 }) {
-    const enabled = useWatch(lens.focus("enabled").interop());
+    //const enabled = useWatch(lens.focus("enabled").interop());
 
     return (
         <Card>
@@ -650,7 +640,7 @@ function SkillTrackModule_SettingsCard({
 }: {
     lens: Lens<Partial<OrganizationSettings["modules"]["skill-track"]>>;
 }) {
-    const enabled = useWatch(lens.focus("enabled").interop());
+    //const enabled = useWatch(lens.focus("enabled").interop());
 
     return (
         <Card>

@@ -73,6 +73,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 type AkagiTableHeadCellProps<TData extends RowData> = Omit<ComponentProps<"th">, "align"> &
     Pick<HeaderContext<TData, unknown>, "header"> & {
         align?: "start" | "center" | "end";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         filterOptions?: (string | { value: any; label: string })[];
         showAbove?: "sm" | "md" | "lg" | "xl" | "2xl";
     };
@@ -567,7 +568,7 @@ function AkagiTableToolbar<TData extends RowData>({ table }: { table: TanstackTa
 }
 
 function defineColumns<TData extends RowData>(
-    factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData, any> | null)[],
+    factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData> | null)[],
 ): ColumnDef<TData>[] {
     const columnHelper = createColumnHelper<TData>();
     const columns = factory(columnHelper);

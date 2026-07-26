@@ -27,9 +27,7 @@ import { getD4HEquipmentBrandsCollection } from "@/lib/collections/equipment-bra
 import { route } from "@/lib/routes";
 import { getD4HEquipmentModelsCollection } from "@/lib/collections/equipment-models";
 
-export default function D4HViewsModule_EquipmentBrands_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/brands">,
-) {
+export default function D4HViewsModule_EquipmentBrands_Page() {
     const organization = useOrganization();
 
     const { data: brands } = useLiveSuspenseQuery((q) => {

@@ -30,8 +30,6 @@ import {
 import { RainbowSpinner } from "@/components/ui/loading";
 import { PasswordInput } from "@/components/ui/password-input";
 
-const socialProviders = ["github", "google"];
-
 export function UserSecuritySettings() {
     const accountsQuery = useQuery({
         queryFn: () => authClient.listAccounts({}, { throw: true }),
@@ -220,6 +218,7 @@ function ChangePassword_Card() {
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function LinkedAccounts_Card({ linkedAccounts }: { linkedAccounts: string[] }) {
     return (
         <Card>

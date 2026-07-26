@@ -33,7 +33,6 @@ import {
 } from "./toolbar";
 
 export default function InitializedMDXEditor({
-    className,
     contentEditableClassName,
     editorRef,
     ...props
@@ -57,9 +56,7 @@ export default function InitializedMDXEditor({
                     toolbarPosition: "bottom",
                     toolbarContents: () => (
                         <>
-                            <FormatTextToggleGroup
-                                options={["bold", "italic", "underline"]}
-                            />
+                            <FormatTextToggleGroup options={["bold", "italic", "underline"]} />
                             <Separator />
                             <ListStyleToggleGroup />
                             <Separator />

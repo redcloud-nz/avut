@@ -12,7 +12,7 @@ import { UnderConstruction } from "@/components/under-construction";
 import { route } from "@/lib/routes";
 import { useOrganization } from "@/hooks/use-organization";
 
-export default function I3_Return_Page(props: PageProps<"/orgs/[slug]/i3/forms/return-items">) {
+export default function I3_Return_Page() {
     const organization = useOrganization();
 
     return (

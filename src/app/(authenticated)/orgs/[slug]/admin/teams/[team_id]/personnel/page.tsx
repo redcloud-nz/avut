@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 
 import { AdminModule_Team_PersonnelList } from "@/components/admin/teams/team-personnel-list";
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -26,7 +26,6 @@ export default function AdminModule_Team_Personnel_Page(
     const organization = useOrganization();
 
     const team = useTeam(team_id);
-    const [newMemberDialogOpen, setNewMemberDialogOpen] = useState(false);
 
     return (
         <>
@@ -48,10 +47,7 @@ export default function AdminModule_Team_Personnel_Page(
                             <Saratoga.Title>Members of {team.name}</Saratoga.Title>
                             <Saratoga.Actions>
                                 <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setNewMemberDialogOpen(true)}
-                                    >
+                                    <Button variant="outline">
                                         <ObjectIcons.Create />{" "}
                                         <span className="hidden md:inline">New Member</span>
                                     </Button>

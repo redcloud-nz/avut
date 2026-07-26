@@ -28,7 +28,7 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
         <Suspense
             fallback={
                 <main
-                    className="flex items-center justify-center flex-1 p-4"
+                    className={cn("flex items-center justify-center flex-1 p-4", className)}
                     data-slot="scroll-container"
                     {...props}
                 >
@@ -37,7 +37,10 @@ function ScrollContainer({ children, className, ...props }: ComponentProps<"main
             }
         >
             <main
-                className="relative flex-1 p-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]"
+                className={cn(
+                    "relative flex-1 p-4 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]",
+                    className,
+                )}
                 data-slot="scroll-container"
                 {...props}
             >

@@ -6,7 +6,7 @@
 "use client";
 
 import { formatISO, parseISO } from "date-fns";
-import { CalendarIcon, XIcon } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { ComponentProps } from "react";
 
 import { formatDate } from "@/lib/datetime";
@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "../ui/button";
 
 export interface DatePickerProps {
     className?: string;
@@ -52,8 +51,8 @@ export function DatePicker({
     const selected = value ? parseISO(value) : undefined;
 
     const {
-        calendar: calendarProps = {},
-        popover: popoverProps = {},
+        //calendar: calendarProps = {},
+        //popover: popoverProps = {},
         popoverContent: { className: popoverContentClassName, ...popoverContentProps } = {},
         popoverTrigger: { className: popoverTriggerClassName, ...popoverTriggerProps } = {},
     } = slotProps;

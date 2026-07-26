@@ -3,13 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-    encryptValue,
-    decryptValue,
-    encryptDBValue,
-    decryptDBValue,
-} from "./encrypt";
+import { describe, it, expect, beforeEach } from "vitest";
+import { encryptValue, decryptValue, encryptDBValue, decryptDBValue } from "./encrypt";
 
 describe("encrypt", () => {
     const validSecret = "a".repeat(32); // 32 characters for AES-256
@@ -84,29 +79,21 @@ describe("encrypt", () => {
 
     describe("encryptValue validation", () => {
         it("should throw error for missing secret", () => {
-            expect(() => encryptValue("text", "")).toThrow(
-                "Invalid encryption secret",
-            );
+            expect(() => encryptValue("text", "")).toThrow("Invalid encryption secret");
         });
 
         it("should throw error for secret with incorrect length", () => {
-            expect(() => encryptValue("text", "short")).toThrow(
-                "Invalid encryption secret",
-            );
+            expect(() => encryptValue("text", "short")).toThrow("Invalid encryption secret");
         });
     });
 
     describe("decryptValue validation", () => {
         it("should throw error for missing secret", () => {
-            expect(() => decryptValue("ciphertext", "")).toThrow(
-                "Invalid encryption secret",
-            );
+            expect(() => decryptValue("ciphertext", "")).toThrow("Invalid encryption secret");
         });
 
         it("should throw error for secret with incorrect length", () => {
-            expect(() => decryptValue("ciphertext", "short")).toThrow(
-                "Invalid encryption secret",
-            );
+            expect(() => decryptValue("ciphertext", "short")).toThrow("Invalid encryption secret");
         });
 
         it("should throw error for invalid ciphertext", () => {
@@ -120,9 +107,7 @@ describe("encrypt", () => {
             tampered[0] ^= 0xff; // Flip bits in first byte
             const tamperedEncrypted = tampered.toString("base64");
 
-            expect(() =>
-                decryptValue(tamperedEncrypted, validSecret),
-            ).toThrow();
+            expect(() => decryptValue(tamperedEncrypted, validSecret)).toThrow();
         });
     });
 

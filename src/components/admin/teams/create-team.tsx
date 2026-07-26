@@ -22,7 +22,6 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";

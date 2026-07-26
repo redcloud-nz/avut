@@ -5,7 +5,6 @@
 
 "use client";
 
-import { OrgDashboardIcon } from "@/components/icons";
 import { NavItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";

@@ -55,7 +55,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                     );
 
                 // Ensure that the template has a d4h configuration.
-                const { d4h: templateD4H, variants, ...templateRest } = template;
+                const { d4h: templateD4H, ...templateRest } = template;
                 if (templateD4H == null)
                     throw new Error(
                         `Template with ID ${item.template.id} does not have D4H configuration`,
@@ -108,7 +108,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
             const fetchClient = getD4HFetchClient(accessToken);
 
             // For each item being issued, create a corresponding equipment record in D4H if the user has permission to do so.
-            const createdEquipmentIds: number[] = [];
+            //const createdEquipmentIds: number[] = [];
             for (const item of items) {
                 await fetchClient.POST("/v3/{context}/{contextId}/equipment", {
                     params: {

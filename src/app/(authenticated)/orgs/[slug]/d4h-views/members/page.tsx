@@ -26,9 +26,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { getD4HMembersCollection } from "@/lib/collections/d4h-members";
 import { route } from "@/lib/routes";
 
-export default function D4HViewsModule_Members_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/members">,
-) {
+export default function D4HViewsModule_Members_Page() {
     const organization = useOrganization();
 
     const { data: members } = useLiveSuspenseQuery((q) =>

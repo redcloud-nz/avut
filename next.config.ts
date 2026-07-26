@@ -17,8 +17,6 @@ interface PackageData {
         repositoryUrl: string;
         version: string;
         versionName: string;
-
-        [key: string]: any;
     };
 }
 

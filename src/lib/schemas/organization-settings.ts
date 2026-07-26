@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
@@ -77,12 +78,12 @@ export const OrganizationSettings = {
     flatten(settings: OrganizationSettings) {
         const result: Record<string, any> = {};
 
-        function recurse(obj: any, prefix: string) {
+        function recurse(obj: Record<string, any>, prefix: string) {
             for (const key in obj) {
                 const value = obj[key];
                 const newKey = prefix ? `${prefix}.${key}` : key;
                 if (value && typeof value === "object" && !Array.isArray(value)) {
-                    recurse(value, newKey);
+                    recurse(value as Record<string, any>, newKey);
                 } else {
                     result[newKey] = value;
                 }

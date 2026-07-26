@@ -12,7 +12,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,12 +20,11 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
+
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_DeleteSkillGroup_Dialog } from "./delete-group";

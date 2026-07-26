@@ -206,7 +206,7 @@ function PersonalD4HAccessToken_Add_Dialog(props: DialogProps) {
                 logger.error("Error creating D4H access token:", error);
                 toast.error(`Failed to create D4H access token: ${error.message}`);
             },
-            async onSuccess({ created }) {
+            async onSuccess() {
                 await queryClient.invalidateQueries(
                     trpc.d4hAccessTokens.getPersonalAccessToken.queryFilter({
                         organizationId: organization.id,

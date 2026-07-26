@@ -4,7 +4,6 @@
  */
 
 import Image from "next/image";
-import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 
 import {
@@ -14,7 +13,6 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { route } from "@/lib/routes";
 
 import { ModuleListMenu } from "./module-list-menu";
 import { ModeToggle } from "./mode-toggle";

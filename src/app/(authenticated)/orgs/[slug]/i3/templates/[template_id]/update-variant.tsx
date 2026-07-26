@@ -8,7 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { D4HEquipmentBrandSelect } from "@/components/controls/d4h-equipment-brand-select";
 import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-model-select";

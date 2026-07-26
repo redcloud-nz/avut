@@ -12,7 +12,7 @@ import Link from "next/link";
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { UserSettings_PageContent } from "@/components/user-settings/settings-page";
 
-export default function Settings_Page(props: PageProps<"/user-settings">) {
+export default function Settings_Page() {
     return (
         <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
             <div>

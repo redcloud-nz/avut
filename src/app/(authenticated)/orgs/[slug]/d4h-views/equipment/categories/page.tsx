@@ -27,9 +27,7 @@ import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
 import { route } from "@/lib/routes";
 
-export default function D4HViewsModule_EquipmentCategories_Page(
-    props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories">,
-) {
+export default function D4HViewsModule_EquipmentCategories_Page() {
     const organization = useOrganization();
 
     const { data: categories } = useLiveSuspenseQuery((q) => {

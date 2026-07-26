@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -142,7 +142,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                     </>,
                 );
 
-                props.onOpenChange?.(false);
+                handleOpenChange(false);
 
                 router.replace(
                     route(
@@ -176,17 +176,19 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         }),
     );
 
-    useEffect(() => {
-        if (!props.open) {
+    function handleOpenChange(open: boolean) {
+        if (!open) {
             // Reset state when dialog is closed.
             setDestinationPackageId(skill.skillPackageId);
             setDestinationGroupId(null);
             mutation.reset();
         }
-    }, [props.open]);
+
+        props.onOpenChange?.(open);
+    }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Move Skill</DialogTitle>

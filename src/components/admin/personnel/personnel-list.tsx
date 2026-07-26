@@ -87,7 +87,7 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
                     },
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
     const table = useReactTable<RowData>({

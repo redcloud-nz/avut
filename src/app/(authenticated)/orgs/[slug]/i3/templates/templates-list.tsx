@@ -19,7 +19,6 @@ import { Kaga } from "@/components/blocks/kaga";
 import Link from "next/link";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { I3Template } from "@/lib/schemas/i3-template";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 

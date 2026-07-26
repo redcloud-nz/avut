@@ -26,10 +26,7 @@ interface D4HViewsModules_Personnel_ListProps {
     teams: D4HTeamRef[];
 }
 
-export function D4HViewsModules_Personnel_List({
-    members,
-    teams,
-}: D4HViewsModules_Personnel_ListProps) {
+export function D4HViewsModules_Personnel_List({ members }: D4HViewsModules_Personnel_ListProps) {
     const columns = useMemo(
         () =>
             Kaga.defineColumns<D4HMember & { team: D4HTeamRef }>((columnHelper) => [

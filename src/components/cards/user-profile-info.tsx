@@ -7,8 +7,6 @@ import { headers as nextHeaders } from "next/headers";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { FieldValue } from "@/components/ui/field-value";
 
 import { auth } from "@/server/auth";
 

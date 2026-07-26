@@ -29,7 +29,6 @@ import { AuthOrganizationMember } from "@/server/auth";
 
 export function AdminModule_DeleteUser_Dialog({
     organizationUser,
-    onSuccess,
     ...props
 }: AlertDialogProps & {
     organizationUser: AuthOrganizationMember;

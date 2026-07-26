@@ -275,6 +275,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     // Try to decrypt the token to determine if we can use it
                     decryptDBValue(record.token);
                 } catch (error) {
+                    console.log("Error decrypting personal D4H access token:", error);
                     status = "Decrypt Error";
                 }
             }

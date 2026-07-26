@@ -6,7 +6,7 @@
  */
 
 import Image from "next/image";
-import { ComponentProps, ReactNode } from "react";
+import { ComponentProps } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { cn } from "@/lib/utils";

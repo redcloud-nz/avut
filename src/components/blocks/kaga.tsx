@@ -13,10 +13,8 @@ import {
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    EllipsisIcon,
     EyeIcon,
     FunnelIcon,
-    MoreVerticalIcon,
     SearchIcon,
 } from "lucide-react";
 import { ComponentProps, Fragment } from "react";
@@ -38,7 +36,6 @@ import {
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
@@ -105,15 +102,14 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
 
 function KagaTableHeadCell<TData extends RowData>({
     header,
-    table,
 }: ComponentProps<typeof TableHeadCell> & {
     header: Header<TData, unknown>;
     table: TanstackTable<TData>;
 }) {
     const { columnDef } = header.column;
 
-    const canFilter = header.column.getCanFilter();
-    const canSort = header.column.getCanSort();
+    //const canFilter = header.column.getCanFilter();
+    //const canSort = header.column.getCanSort();
     const isSorted = header.column.getIsSorted();
     return (
         <TableHeadCell
@@ -183,7 +179,7 @@ function KagaTableHeadCell<TData extends RowData>({
 }
 
 function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
-    const columns = table.getAllColumns();
+    //const columns = table.getAllColumns();
 
     return (
         <div
@@ -311,7 +307,7 @@ function KagaColumnFilterControl<TData extends RowData>({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-50" align="end">
                 {filterableColumns.map((column) => {
-                    const current = (column.getFilterValue() ?? []) as any[];
+                    const current = (column.getFilterValue() ?? []) as unknown[];
                     return (
                         <DropdownMenuGroup key={column.id}>
                             <DropdownMenuLabel>
@@ -461,7 +457,7 @@ const oneOfFilterFn = <TData extends RowData>(
     filterValue: any[],
 ) => filterValue.includes(row.getValue<any>(columnId));
 
-oneOfFilterFn.autoRemove = (val: any[]) => false;
+oneOfFilterFn.autoRemove = () => false;
 
 oneOfFilterFn.resolveFilterValue = (filterValue: any) =>
     Array.isArray(filterValue) ? filterValue : [filterValue];

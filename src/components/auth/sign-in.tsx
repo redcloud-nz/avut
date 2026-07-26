@@ -12,7 +12,7 @@ import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
+import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import { authClient } from "@/client/auth-client";
 
@@ -178,7 +178,7 @@ function EmailPasswordSignIn_Form({ email }: { email?: string }) {
 export function SocialSignInButtons_Field() {
     async function handleSignIn(provider: "apple" | "google" | "github") {
         try {
-            const { data, error } = await authClient.signIn.social({
+            const { error } = await authClient.signIn.social({
                 provider,
                 callbackURL: "/auth/post-sign-in",
             });

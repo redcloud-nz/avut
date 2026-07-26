@@ -3,10 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { InvitationsIcon, PersonalDashboardIcon } from "@/components/icons";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
-
-import { NavItem, NavSubItem } from "./nav-section";
 
 export function NavPersonalMenu({}) {
     return (

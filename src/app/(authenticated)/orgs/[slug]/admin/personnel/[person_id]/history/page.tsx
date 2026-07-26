@@ -11,7 +11,6 @@ import { use } from "react";
 import { Std } from "@/components/blocks/std";
 import { NotImplemented } from "@/components/nav/errors";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { usePerson } from "@/hooks/use-person";
 import { route } from "@/lib/routes";
 
@@ -19,7 +18,7 @@ export default function AdminModule_PersonHistory_Page(
     props: PageProps<`/orgs/[slug]/admin/personnel/[person_id]/history`>,
 ) {
     const { slug, person_id } = use(props.params);
-    const organization = useOrganization();
+    //const organization = useOrganization();
 
     const person = usePerson(person_id);
 

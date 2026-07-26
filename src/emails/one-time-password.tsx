@@ -3,16 +3,13 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { User } from "better-auth";
 import {
     Body,
-    Button,
     Container,
     Heading,
     Hr,
     Html,
     Img,
-    Link,
     pixelBasedPreset,
     Preview,
     Section,

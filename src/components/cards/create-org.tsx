@@ -74,7 +74,8 @@ export function CreateOrganization_Card() {
                 }
             }
         } catch (error) {
-            toast.error("Failed to check slug availability.");
+            console.error("Failed to check slug availability:", error);
+            toast.error("Failed to check slug availability: " + (error as Error).message);
             setSlugCheckStatus("Ready");
             return;
         }

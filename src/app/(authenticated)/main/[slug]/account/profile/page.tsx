@@ -14,7 +14,7 @@ import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { UserLinkedAccounts_Card } from "@/components/cards/user-linked-accounts";
 import { auth } from "@/server/auth";
-import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
+import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
 import { ChevronRightIcon } from "lucide-react";
 
 export default async function Account_Profile_Page() {

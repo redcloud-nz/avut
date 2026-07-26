@@ -14,7 +14,7 @@ export const NoReplyEmailAddress = process.env.NOREPLY_EMAIL || "no-reply@mx.avu
 
 export async function sendEmail(payload: CreateEmailOptions): Promise<void> {
     try {
-        const { data, error } = await getResend().emails.send(payload);
+        const { error } = await getResend().emails.send(payload);
 
         if (error) console.error("Error sending email:", error);
     } catch (error) {

@@ -5,6 +5,6 @@
  * Path: /main/[slug]/notes
  */
 
-export default async function NotesModule_Index_Page(props: PageProps<`/main/[slug]/notes`>) {
+export default async function NotesModule_Index_Page() {
     return <div>Notes Module Index Page</div>;
 }

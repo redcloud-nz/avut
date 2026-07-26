@@ -10,12 +10,7 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import {
-    DropdownMenuTriggerIcon,
-    FilterColumnValuesIcon,
-    ObjectIcons,
-    ReorderIcon,
-} from "@/components/icons";
+import { FilterColumnValuesIcon, ObjectIcons, ReorderIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
@@ -25,9 +20,7 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -49,7 +42,6 @@ import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
 import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
-import { Checkbox } from "@/components/ui/checkbox";
 
 /**
  * Component to display a list of skills within a skill group.

@@ -9,7 +9,7 @@ import { Lexington } from "@/components/blocks/lexington";
 import { route } from "@/lib/routes";
 
 import { Pub_PPEIssue_Form } from "./ppe-issue-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import prisma from "@/server/prisma";
 import { getOrganizationBySlug } from "@/server/organization";
 import { OrganizationId } from "@/lib/schemas/organization";

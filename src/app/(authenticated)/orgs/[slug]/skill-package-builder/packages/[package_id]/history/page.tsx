@@ -11,7 +11,7 @@ import { use } from "react";
 import { Std } from "@/components/blocks/std";
 import { NotImplemented } from "@/components/nav/errors";
 
-import { useOrganization } from "@/hooks/use-organization";
+//import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
 import { useSkillPackage } from "@/hooks/use-skill-package";
@@ -20,7 +20,7 @@ export default function SkillPackageBuilder_Package_History_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>,
 ) {
     const { slug, package_id } = use(props.params);
-    const organization = useOrganization();
+    //const organization = useOrganization();
 
     const skillPackage = useSkillPackage(package_id);
 

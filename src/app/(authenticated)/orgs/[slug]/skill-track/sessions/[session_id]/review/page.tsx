@@ -262,7 +262,7 @@ function AssesseeChecks({
     assessee,
     assesseeChecks,
     skillById,
-    assessorById,
+
     selected,
     toggleCheck,
     toggleGroup,
@@ -302,7 +302,7 @@ function AssesseeChecks({
             </TableRow>
             {assesseeChecks.map((check) => {
                 const skill = skillById.get(check.skillId);
-                const assessor = assessorById.get(check.assessorId);
+                //const assessor = assessorById.get(check.assessorId);
                 return (
                     <TableRow key={check.id}>
                         <TableCell>

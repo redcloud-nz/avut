@@ -109,8 +109,7 @@ export function AdminModule_Invitations_List() {
                                     Rejected
                                 </Badge>
                             ))
-                            .with("canceled", () => <Badge variant="secondary">Cancelled</Badge>)
-                            .exhaustive(),
+                            .with("canceled", () => <Badge variant="secondary">Cancelled</Badge>),
                     enableSorting: false,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -147,7 +146,7 @@ export function AdminModule_Invitations_List() {
                 }),
             ]),
 
-        [organization.id],
+        [],
     );
 
     const table = useReactTable({

@@ -12,7 +12,7 @@ import { Argus } from "@/components/blocks/argus";
 import { OrgSelector_Card } from "@/components/cards/org-selector";
 import { getEntryControl } from "@/server/entry-control";
 
-export default async function Main_SelectOrg_Page(props: PageProps<"/main/--select-org">) {
+export default async function Main_SelectOrg_Page() {
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {

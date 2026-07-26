@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -139,6 +139,8 @@ function AddTeamMemberDialog({
     organizationId: OrganizationId;
     team: TeamData;
 } & ComponentProps<typeof Dialog>) {
+    const queryClient = useQueryClient();
+
     const personnelQuery = useQuery(
         trpc.personnel.listPersonnel.queryOptions({
             organizationId,
@@ -166,7 +168,7 @@ function AddTeamMemberDialog({
 
     const mutation = useMutation(
         trpc.teams.createTeamMembership.mutationOptions({
-            async onMutate(data, context) {
+            async onMutate(data) {
                 const person = personnel.find((p) => p.id === data.personId);
                 if (!person) {
                     throw new Error("Selected person not found");
@@ -177,7 +179,7 @@ function AddTeamMemberDialog({
                     teamId: team.id,
                 });
 
-                await context.client.cancelQueries({ queryKey });
+                await queryClient.cancelQueries({ queryKey });
 
                 const optimisticMembership = {
                     id: TeamMembershipId.create(),
@@ -199,39 +201,39 @@ function AddTeamMemberDialog({
                 } satisfies TeamMembershipData & { person: PersonRef; team: TeamRef };
 
                 const previousData =
-                    context.client.getQueryData<
+                    queryClient.getQueryData<
                         (TeamMembershipData & { person: PersonRef; team: TeamRef })[]
                     >(queryKey);
 
-                context.client.setQueryData(queryKey, (old = []) => [...old, optimisticMembership]);
+                queryClient.setQueryData(queryKey, (old = []) => [...old, optimisticMembership]);
 
                 return { previousData };
             },
-            onError(error, _variables, onMutateResult, context) {
+            onError(error, _variables, onMutateResult) {
                 if (onMutateResult?.previousData) {
                     const queryKey = trpc.teams.listTeamMemberships.queryKey({
                         organizationId,
                         teamId: team.id,
                     });
-                    context.client.setQueryData(queryKey, onMutateResult.previousData);
+                    queryClient.setQueryData(queryKey, onMutateResult.previousData);
                 }
 
                 console.error("Failed to add team member:", error);
                 toast.error(`Failed to add team member: ${error.message}`);
             },
-            onSuccess({ created }, _variables, _onMutateResult, context) {
+            onSuccess({ created }) {
                 toast.success(`${created.person.name} added to team ${created.team.name}`);
 
                 handleOpenChange(false);
             },
-            onSettled(_result, _error, data, _onMutateResult, context) {
-                context.client.invalidateQueries(
+            onSettled(_result, _error, data) {
+                queryClient.invalidateQueries(
                     trpc.teams.listTeamMemberships.queryFilter({
                         organizationId,
                         teamId: data.teamId,
                     }),
                 );
-                context.client.invalidateQueries(
+                queryClient.invalidateQueries(
                     trpc.teams.listTeamMemberships.queryFilter({
                         organizationId,
                         personId: data.personId,
@@ -429,6 +431,7 @@ function RemoveTeamMemberDialog({
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SyncD4HTeamDialog({ team, ...props }: ComponentProps<typeof Dialog> & { team: TeamData }) {
     const syncMutation = useMutation(
         trpc.teams.syncronizeD4HTeam.mutationOptions({
