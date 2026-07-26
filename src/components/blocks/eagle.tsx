@@ -29,8 +29,8 @@ function EagleTitle({ className, ...props }: ComponentProps<"h4">) {
 }
 
 type EagleContentProps = Omit<ComponentProps<"div">, "children"> & {
-    raw: any;
-    parsed: ZodSafeParseResult<any>;
+    raw: unknown;
+    parsed: ZodSafeParseResult<unknown>;
 };
 
 function EagleContent({ className, raw, parsed, ...props }: EagleContentProps) {

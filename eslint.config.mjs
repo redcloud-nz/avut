@@ -8,7 +8,7 @@ import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
 
 /** @type {import("eslint").Linter.Config[]} */
-export default [
+const config = [
   {
     ignores: [".next/**", "next-env.d.ts", "src/generated/**"],
   },
@@ -29,3 +29,5 @@ export default [
     },
   },
 ];
+
+export default config;

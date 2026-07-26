@@ -443,6 +443,8 @@ function getColumnDisplayName<TData extends RowData>(column: ColumnDef<TData>): 
 }
 
 function defineColumns<TData extends RowData>(
+    // Column value types are heterogeneous per column, so `any` is required here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     factory: (columnHelper: ColumnHelper<TData>) => (ColumnDef<TData, any> | null)[],
 ): ColumnDef<TData>[] {
     const columnHelper = createColumnHelper<TData>();
@@ -454,12 +456,12 @@ function defineColumns<TData extends RowData>(
 const oneOfFilterFn = <TData extends RowData>(
     row: Row<TData>,
     columnId: string,
-    filterValue: any[],
-) => filterValue.includes(row.getValue<any>(columnId));
+    filterValue: unknown[],
+) => filterValue.includes(row.getValue<unknown>(columnId));
 
 oneOfFilterFn.autoRemove = () => false;
 
-oneOfFilterFn.resolveFilterValue = (filterValue: any) =>
+oneOfFilterFn.resolveFilterValue = (filterValue: unknown) =>
     Array.isArray(filterValue) ? filterValue : [filterValue];
 
 export const Kaga = {

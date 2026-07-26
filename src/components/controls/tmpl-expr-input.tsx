@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 
 import { cn } from "@/lib/utils";
 
-interface TmplExprInputProps extends ComponentProps<typeof Input> {}
+type TmplExprInputProps = ComponentProps<typeof Input>;
 
 export function TmplExprInput({ className, ...props }: TmplExprInputProps) {
     return <Input className={cn("font-mono", className)} {...props} />;
