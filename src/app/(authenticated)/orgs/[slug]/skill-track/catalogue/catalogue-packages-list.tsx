@@ -83,6 +83,7 @@ export function SkillTrack_CataloguePackages_List() {
         [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: packages,
         columns,

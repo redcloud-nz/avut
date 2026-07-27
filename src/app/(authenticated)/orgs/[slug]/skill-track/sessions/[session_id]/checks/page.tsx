@@ -154,6 +154,7 @@ export default function SkillTrack_SessionChecks_Page(
         [assesseeById, assessorById, skillById],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: skillChecks,
         columns,

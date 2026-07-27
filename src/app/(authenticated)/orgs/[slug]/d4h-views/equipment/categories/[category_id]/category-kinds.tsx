@@ -96,6 +96,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
         [organization.slug, categoryId],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: kinds,
         columns,

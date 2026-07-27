@@ -69,6 +69,7 @@ export function AdminModule_TeamsList() {
         [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: teams,
         columns,

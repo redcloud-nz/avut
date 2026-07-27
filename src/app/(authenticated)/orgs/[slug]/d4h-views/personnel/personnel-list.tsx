@@ -67,6 +67,7 @@ export function D4HViewsModules_Personnel_List({ members }: D4HViewsModules_Pers
         [],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: members,
         columns,

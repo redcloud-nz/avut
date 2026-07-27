@@ -96,6 +96,7 @@ export function I3Module_TemplateList() {
         [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: templates,
         columns,

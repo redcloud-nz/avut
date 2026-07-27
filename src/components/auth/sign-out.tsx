@@ -23,7 +23,7 @@ export function SignOut() {
         authClient.signOut().then(() => {
             router.push("/auth/sign-in");
         });
-    }, []);
+    }, [router, session]);
 
     return <RainbowSpinner />;
 }

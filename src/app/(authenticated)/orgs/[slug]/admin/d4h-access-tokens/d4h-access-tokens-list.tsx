@@ -82,9 +82,10 @@ export function AdminModule_D4hAccessTokensList({
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: d4hAccessTokens,
         columns,

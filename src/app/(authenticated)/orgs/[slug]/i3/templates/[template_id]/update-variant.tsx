@@ -99,6 +99,7 @@ export function I3Module_UpdateVariant_Dialog({
         },
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable values
     const selectedBrandId = form.watch("d4h.brandId");
 
     return (

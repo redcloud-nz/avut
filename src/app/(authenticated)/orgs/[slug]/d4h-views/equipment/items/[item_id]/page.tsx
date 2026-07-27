@@ -110,6 +110,7 @@ export default function D4HViewsModule_EquipmentItem_Page(
         [],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: contents,
         columns,

@@ -57,6 +57,7 @@ export function D4HViewsModule_EquipmentBrand_Models_List({ brandId }: { brandId
         [],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: models,
         columns,

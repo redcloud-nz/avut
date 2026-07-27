@@ -112,9 +112,10 @@ export function AdminModule_Users_List() {
                     enableHiding: false,
                 }),
             ]),
-        [organization.id, organization.slug, personByUserId],
+        [organization.slug, personByUserId],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         columns,
         data: members,

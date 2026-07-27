@@ -90,6 +90,7 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
         [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable<RowData>({
         columns,
         data: personnel,

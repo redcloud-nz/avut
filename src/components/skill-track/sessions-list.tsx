@@ -84,9 +84,10 @@ export default function SkillTrack_Sessions_List() {
                     },
                 }),
             ]),
-        [],
+        [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: sessions,
         columns,

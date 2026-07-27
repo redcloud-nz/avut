@@ -5,7 +5,7 @@
 "use client";
 
 import { ChevronDownIcon } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -51,12 +51,15 @@ export function SearchableSelect({
 
     const selectedLabel = options.find((o) => o.value === value)?.label;
 
+    const id = useId();
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <button
                     type="button"
                     role="combobox"
+                    aria-controls={`searchable-select-${id}-content`}
                     aria-expanded={open}
                     aria-invalid={ariaInvalid}
                     disabled={disabled}
@@ -76,7 +79,11 @@ export function SearchableSelect({
                     <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0" />
                 </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="min-w-(--radix-popover-trigger-width) p-0">
+            <PopoverContent
+                align="start"
+                className="min-w-(--radix-popover-trigger-width) p-0"
+                id={`searchable-select-${id}-content`}
+            >
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
                     <CommandList>

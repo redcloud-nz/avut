@@ -149,6 +149,7 @@ export function AdminModule_Invitations_List() {
         [],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: invitations,
         columns,

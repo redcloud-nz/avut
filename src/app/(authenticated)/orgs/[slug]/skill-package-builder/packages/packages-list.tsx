@@ -114,6 +114,7 @@ export function SkillPackageBuilder_Packages_List({
         [organization.slug],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         data: skillPackages,
         columns,
