@@ -6,14 +6,14 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
 import { RestrictToElement } from "@dnd-kit/dom/modifiers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -50,22 +50,24 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const skillsQuery = useQuery(
+    const skillsQuery = useSuspenseQuery(
         trpc.skillPackageBuilder.listSkills.queryOptions({
             organizationId: organization.id,
             skillPackageId: skillGroup.skillPackageId,
         }),
     );
-    const skills = (skillsQuery.data ?? [])
+    const skills = skillsQuery.data
         .filter((s) => s.skillGroupId === skillGroup.id)
         .sort((a, b) => a.sequence - b.sequence);
 
-    const [order, setOrder] = useState<SkillId[]>([]);
+    const [order, setOrder] = useState<SkillId[]>(() => skills.map((skill) => skill.id));
 
-    useEffect(() => {
-        // Set the initial order of skills based on their current sequence in the database once the data is ready.
-        if (skillsQuery.isSuccess) setOrder(skills.map((skill) => skill.id));
-    }, [skillsQuery.isSuccess]);
+    // Re-seed the drag order each time the dialog opens.
+    const [wasOpen, setWasOpen] = useState(props.open);
+    if (props.open !== wasOpen) {
+        setWasOpen(props.open);
+        if (props.open) setOrder(skills.map((skill) => skill.id));
+    }
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.reorderGroupSkills.mutationOptions({
@@ -81,22 +83,18 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                     }),
                 );
 
-                // Close the dialog and reset the mutation state after successfully saving the new order.
-                props.onOpenChange?.(false);
-                mutation.reset();
+                handleOpenChange(false);
             },
         }),
     );
 
-    useEffect(() => {
-        if (!props.open) {
-            mutation.reset();
-            setOrder(skills.map((skill) => skill.id));
-        }
-    }, [props.open]);
+    function handleOpenChange(open: boolean) {
+        if (!open) mutation.reset();
+        props.onOpenChange?.(open);
+    }
 
     return (
-        <Dialog {...props}>
+        <Dialog {...props} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Reorder Skills</DialogTitle>
