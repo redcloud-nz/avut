@@ -47,7 +47,7 @@ export async function populateTeamsAction(organizationId: string) {
     // Find the teams that are in D4H but not in our database, and create them.
     for (const d4hTeam of d4hTeams) {
         let team = teams.find((t) => {
-            const props = t.properties as Record<string, any>;
+            const props = t.properties as Record<string, unknown>;
             return props.d4hTeamId === d4hTeam.id;
         });
 
@@ -83,7 +83,7 @@ export async function populateTeamsAction(organizationId: string) {
                 }
 
                 const teamMembership = teamMemberships.find((tm) => {
-                    const props = tm.properties as Record<string, any>;
+                    const props = tm.properties as Record<string, unknown>;
                     return props.d4hTeamMemberId === d4hTeamMember.id;
                 });
 

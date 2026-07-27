@@ -51,7 +51,7 @@ export default async function Admin_D4hAccessToken_Members_Page(
                     },
                 });
 
-                return (data as { results: any[] }).results.map((member) => ({
+                return (data as { results: { id: number }[] }).results.map((member) => ({
                     raw: member,
                     parsed: D4HMember.schema.safeParse(member),
                 }));

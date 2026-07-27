@@ -50,7 +50,7 @@ export function AdminModule_UpdateOrganization_Form({
 
     const mutation = useMutation(
         trpc.organizations.updateOrganization.mutationOptions({
-            async onError(error: any) {
+            async onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableOrganizationData, {
                         message: error.message,

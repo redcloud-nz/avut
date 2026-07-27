@@ -42,7 +42,7 @@ async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
                     },
                 );
 
-                return (data as { results: any[] }).results;
+                return (data as { results: { id: number }[] }).results;
             }),
         )
     ).flat();

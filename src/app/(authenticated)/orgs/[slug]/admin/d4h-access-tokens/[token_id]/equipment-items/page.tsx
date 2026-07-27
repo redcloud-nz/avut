@@ -39,10 +39,10 @@ async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
 
                 console.log(
                     `Fetched equipment for team ${team.title}:`,
-                    omit(data as { results: any[] }, ["results"]),
+                    omit(data as { results: { id: number }[] }, ["results"]),
                 );
 
-                return (data as { results: any[] }).results;
+                return (data as { results: { id: number }[] }).results;
             }),
         )
     ).flat();
