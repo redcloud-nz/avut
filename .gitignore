@@ -46,3 +46,6 @@ next-env.d.ts
 src/app/system/scratch/
 # Ideas
 .ideas/
+
+# claude code — personal overrides (.claude/settings.json IS shared)
+.claude/settings.local.json
