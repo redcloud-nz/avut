@@ -10,10 +10,11 @@
       "Bash(npx tsc *)",
       "Bash(git add *)",
       "Bash(npx next *)",
-      "Bash(npm run *)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:fix)",
+      "Bash(npm run test:run)",
       "Bash(npx eslint *)",
-      "Bash(npx prettier *)",
-      "Bash(git commit -m ' *)"
+      "Bash(npx prettier *)"
     ]
   }
 }
