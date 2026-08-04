@@ -10,50 +10,66 @@ A Next.js web application providing organizational management tools with optiona
 - **Auth**: better-auth with organization plugin
 - **UI**: Tailwind CSS 4, shadcn/ui primitives, lucide-react icons, radix-ui
 - **Forms**: react-hook-form + zod 4
-- **D4H API**: openapi-fetch with a generated OpenAPI schema (`src/lib/d4h-api/schema.d.ts`)
+- **D4H API**: openapi-fetch with a generated OpenAPI schema (`src/server/d4h-api/schema.d.ts`)
 - **Package manager**: npm
 
 ## Commands
 
 ```bash
 npm run dev                  # Start dev server (with Node inspector)
+npm run dev-email            # React Email preview server (src/emails, port 3001)
 npm run build                # Run migrations + build
 npm run lint                 # ESLint
+npm run lint:fix             # ESLint with --fix
 npm run test                 # Vitest (watch mode)
 npm run test:run             # Vitest (single run)
 npx tsc --noEmit             # Type check
+npx next typegen             # Regenerate typed routes — required after adding a page
 
 # Prisma (always uses .env.local)
 npm run prisma migrate dev   # Create and apply migration
 npm run prisma studio        # Open Prisma Studio
 ```
 
+- After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
+- Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
+
 ## Project Structure
 
 ```
 src/
   app/                        # Next.js App Router pages
-    (authenticated)/orgs/[slug]/   # Org-scoped authenticated pages
-    pub/orgs/[slug]/          # Public-facing forms (no auth)
+    (authenticated)/orgs/[slug]/   # Org-scoped module pages (admin, i3, skill-track, …)
+    (authenticated)/main/[slug]/   # Org-scoped non-module pages (account, notes, skills)
+    (public)/policies/        # Privacy / terms pages (no auth)
     api/                      # API routes (auth)
     trpc/[trpc]/              # tRPC HTTP handler
+  client/                     # Browser-side auth client + query helpers
   components/
     blocks/                   # Named high-level layout blocks (see below)
     ui/                       # shadcn/ui primitives + custom UI
     nav/                      # Navigation components
+  emails/                     # React Email templates (preview: npm run dev-email)
+  forms/                      # Form definitions for the forms/i3 flows
+  hooks/                      # Shared React hooks (use-organization, use-person, …)
   lib/
-    d4h-api/                  # D4H API client, resource types, fetch helpers
     collections/              # TanStack DB collection factories (experimental)
-    schemas/                  # Zod schemas used across client and server
+    schemas/                  # Zod schemas used across client and server (incl. schemas/d4h/)
+    modules.ts                # Single source of truth for org modules (ids, labels, routes)
+    permissions.ts            # Role definitions and permission statements
+    routes.ts                 # route() helper for dynamic typed routes
   server/                     # Server-only utilities (auth, prisma, etc.)
+    d4h-api/                  # D4H API client + generated OpenAPI schema
+  test/                       # Test helpers (create-prisma-mock, trpc-helpers, setup)
   trpc/
     init.ts                   # tRPC init, context, procedure factories
     routers/                  # One file per domain router
     routers/_app.ts           # Root app router
   generated/prisma/           # Auto-generated Prisma client — DO NOT EDIT
-  paths.ts                    # Centralised typed route helpers — always use this for hrefs
-  lib/permissions.ts          # Role definitions and permission statements
+  proxy.ts                    # Request proxy / middleware entry
 ```
+
+Note there are two org-scoped trees: modules live under `/orgs/[slug]/…`, while `main/[slug]/…` holds the account and non-module pages. Check which one a route belongs to before writing an href.
 
 ## Key Conventions
 
@@ -105,9 +121,10 @@ Use `nanoId16()` from `src/lib/id.ts` for new record IDs.
 ### D4H Integration
 
 - D4H is an optional feature — code that depends on a D4H access token must handle the case where none is configured
-- D4H API client: `src/lib/d4h-api/client.ts` — use `getD4hFetchClient(token)`
+- D4H API client: `src/server/d4h-api/client.ts` — use `getD4HFetchClient(token)` (note the capital `H`)
+- The client is server-only; it takes a `D4HAccessToken_ServerOnly`. Never import it from a client component
 - Cached D4H fetches use the standard Next.js 16 `"use cache"` directive with `cacheLife` + `cacheTag`
-- D4H resource schemas validated with Zod live in `src/lib/d4h-api/`
+- D4H resource schemas validated with Zod live in `src/lib/schemas/d4h/`
 
 ### Internal URLs
 
@@ -117,11 +134,11 @@ Next.js typed routes are enabled, so static route strings are type-checked autom
 import { route } from "@/lib/routes";
 
 // Static route — plain string is fine
-href = "/main/acme/admin";
+href = "/orgs/acme/admin";
 
 // Dynamic route — use route() to substitute params
-route("/main/[slug]/admin", { slug: organization.slug });
-route("/main/[slug]/personnel/[person_id]", { slug, person_id: id });
+route("/orgs/[slug]/admin", { slug: organization.slug });
+route("/orgs/[slug]/admin/personnel/[person_id]", { slug, person_id: id });
 ```
 
 - Route patterns must match the actual file-system path under `src/app/` (minus route group segments like `(authenticated)`)
@@ -130,7 +147,7 @@ route("/main/[slug]/personnel/[person_id]", { slug, person_id: id });
 
 ## Testing
 
-Vitest with jsdom environment. Tests live alongside source files as `*.test.ts`.
+Vitest with jsdom environment. Tests live alongside source files; the include glob is `**/*.{test,spec}.{ts,tsx}`.
 
 ### In-memory Prisma
 
@@ -188,40 +205,58 @@ describe("myRouter.someQuery", () => {
 
 Reusable layout systems in `src/components/blocks/`:
 
-| Block       | Purpose                                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Lexington` | Outer page shell — `Lexington.Root`, `Lexington.Header` (breadcrumbs), `Lexington.Page`, `Lexington.Column`                                     |
-| `Hermes`    | Content section within a Lexington column — `Hermes.Header`, `Hermes.Title`, `Hermes.BackButton`, `Hermes.Search`                               |
-| `Akagi`     | Data table system wrapping TanStack Table — `Akagi.Table`, `Akagi.TableSearch`, `Akagi.TableHeadCell`, `Akagi.TableCell`, `Akagi.defineColumns` |
-| `Argus`     | Centered card layout for auth/form pages                                                                                                        |
-| `Eagle`     | JSON diff/parse comparison display (used in dev/import tooling)                                                                                 |
+| Block      | Purpose                                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                  |
+| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`      |
+| `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns` |
+| `Argus`    | Centered card layout for auth/form pages                                                                                                      |
+| `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                               |
 
-Typical page layout:
+Typical page layout — shell in `page.tsx`, content in the client component:
 
 ```tsx
-<Lexington.Root>
-  <Lexington.Header breadcrumbs={[...]} />
-  <Lexington.Page>
-    <Lexington.Column width="xl">
-      <Hermes.Header>
-        <Hermes.BackButton to={...} />
-        <Hermes.Title>Title</Hermes.Title>
-      </Hermes.Header>
-      {/* content */}
-    </Lexington.Column>
-  </Lexington.Page>
-</Lexington.Root>
+// page.tsx
+<Std.SidebarInset>
+    <Std.Navbar breadcrumbs={[...]} />
+    <Std.ScrollContainer>
+        <ClientComponent />
+    </Std.ScrollContainer>
+</Std.SidebarInset>
+
+// client component — list page
+<Saratoga.Root>
+    <Saratoga.Header>
+        <Saratoga.Title>Title</Saratoga.Title>
+        <Saratoga.Actions>{/* buttons */}</Saratoga.Actions>
+    </Saratoga.Header>
+    <div>
+        <Kaga.TableToolbar table={table} />
+        <Kaga.Table table={table} />
+        <Kaga.TablePagination table={table} />
+    </div>
+</Saratoga.Root>
 ```
+
+For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and `slot="secondary"` (2/3 + 1/3 responsive grid). Index pages (nav-list only, no client component) wrap their content in `Std.IndexPage`, which supplies its own logo/title header — `title` is a **required** prop.
+
+`Saratoga.Root` is a fixed `max-w-5xl`; it has no width variants. Constrain narrower content with `className` on a case-by-case basis.
 
 ## Modules (per org)
 
-| Module                | Path prefix                          | Description                                           |
-| --------------------- | ------------------------------------ | ----------------------------------------------------- |
-| `admin`               | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations |
-| `skills`              | `/orgs/[slug]/skills`                | Skill checks, sessions, reports                       |
-| `skillPackageBuilder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                              |
-| `d4HViews`            | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                           |
-| `i3`                  | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates   |
-| `notes`               | `/orgs/[slug]/notes`                 | Rich-text notes                                       |
-| `availability`        | `/orgs/[slug]/availability`          | (in progress)                                         |
-| `fog`                 | `/orgs/[slug]/fog`                   | Field Operations Guide                                |
+`src/lib/modules.ts` is the single source of truth — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
+
+| `ModuleId`              | Path                                 | Description                                                      |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------- |
+| `admin`                 | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations. Always on |
+| `d4h-views`             | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
+| `forms`                 | —                                    | Vestigial — form machinery lives under the `i3` module           |
+| `i3`                    | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates              |
+| `notes`                 | `/main/[slug]/notes`                 | Rich-text notes; no `/orgs` page yet                             |
+| `skill-track`           | `/orgs/[slug]/skill-track`           | Skill checks, sessions, catalogue, reports                       |
+| `skill-package-builder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |
+
+- A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry
+- All modules except `admin` are gated by org settings (`OrganizationSettings.modules`, keyed by `ModuleId`); `admin` is `alwaysOn`
+- Only modules with an `href` appear in the nav switcher and dashboard (`orgModules`), which is why `forms` and `notes` are absent from those
+- The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `i3`. It's retained only because it's a settings-gated key
