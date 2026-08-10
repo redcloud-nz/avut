@@ -47,6 +47,10 @@ export const auth = betterAuth({
 
     plugins: [
         emailOTP({
+            changeEmail: {
+                enabled: true,
+                verifyCurrentEmail: true,
+            },
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
