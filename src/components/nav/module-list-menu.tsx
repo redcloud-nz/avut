@@ -23,7 +23,7 @@ import { usePathname } from "next/navigation";
 import { moduleBySegment, orgModules } from "@/lib/modules";
 
 function useCurrentModule() {
-    // Paths are /orgs/<slug>/<module>/... or /main/<slug>/<module>/...
+    // Paths are /orgs/<slug>/<module>/...
     const segment = usePathname().split("/")[3];
     return segment ? moduleBySegment[segment] : undefined;
 }

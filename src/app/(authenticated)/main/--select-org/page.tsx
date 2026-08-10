@@ -16,7 +16,7 @@ export default async function Main_SelectOrg_Page() {
     const entryControl = await getEntryControl();
 
     if (entryControl.status == "Proceed") {
-        redirect(`/main/${entryControl.slug}`);
+        redirect(`/orgs/${entryControl.slug}`);
     }
 
     return (

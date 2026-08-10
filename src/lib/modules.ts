@@ -83,6 +83,7 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "Notes",
         icon: NotebookPenIcon,
         segment: "notes",
+        href: (slug) => route("/orgs/[slug]/notes", { slug }),
     },
     "skill-track": {
         id: "skill-track",
