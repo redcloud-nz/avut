@@ -9,14 +9,15 @@
 import { useState } from "react";
 
 import { UserAccountSettings } from "@/components/user-settings/user-account-settings";
+import { UserIntegrationsSettings } from "@/components/user-settings/user-integrations-settings";
 import { UserOrganizationsSettings } from "@/components/user-settings/user-organizations-settings";
 import { UserSecuritySettings } from "@/components/user-settings/user-security-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function UserSettings_PageContent() {
-    const [currentTab, setCurrentTab] = useState<"account" | "security" | "organizations">(
-        "account",
-    );
+    const [currentTab, setCurrentTab] = useState<
+        "account" | "security" | "organizations" | "integrations"
+    >("account");
 
     return (
         <Tabs
@@ -28,6 +29,7 @@ export function UserSettings_PageContent() {
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="security">Security</TabsTrigger>
                 <TabsTrigger value="organizations">Organizations</TabsTrigger>
+                <TabsTrigger value="integrations">Integrations</TabsTrigger>
             </TabsList>
             <TabsContent value="account">
                 <UserAccountSettings />
@@ -37,6 +39,9 @@ export function UserSettings_PageContent() {
             </TabsContent>
             <TabsContent value="organizations">
                 <UserOrganizationsSettings />
+            </TabsContent>
+            <TabsContent value="integrations">
+                <UserIntegrationsSettings />
             </TabsContent>
         </Tabs>
     );

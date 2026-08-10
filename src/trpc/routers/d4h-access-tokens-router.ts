@@ -22,9 +22,10 @@ import { D4HServerCode } from "@/lib/d4h-servers";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, authenticatedProcedure, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 import { revalidatePersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import { OrganizationData } from "@/lib/schemas/organization";
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -298,6 +299,33 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             });
 
             return records.map(D4HAccessToken.fromRecord);
+        }),
+
+    /**
+     * List all personal D4H access tokens belonging to the current user, across every organization they are a member of.
+     */
+    listPersonalAccessTokens: authenticatedProcedure
+        .output(
+            z.array(
+                D4HAccessToken.schema.extend({
+                    organization: OrganizationData.schema.pick({
+                        id: true,
+                        name: true,
+                        slug: true,
+                    }),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const records = await ctx.prisma.d4hAccessToken.findMany({
+                where: { userId: ctx.auth.user.id },
+                include: { organization: true },
+            });
+
+            return records.map((record) => ({
+                ...D4HAccessToken.fromRecord(record),
+                organization: OrganizationData.fromRecord(record.organization!),
+            }));
         }),
 
     refreshToken: organizationProcedure({

@@ -8,7 +8,6 @@
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 
-import { UserD4HAccess_Card } from "@/components/cards/user-d4h-access";
 import { UserSettings_Card } from "@/components/cards/user-settings";
 
 export default function Account_Settings_Page() {
@@ -21,7 +20,6 @@ export default function Account_Settings_Page() {
                         <Saratoga.Title>User Settings</Saratoga.Title>
                     </Saratoga.Header>
                     <UserSettings_Card />
-                    <UserD4HAccess_Card />
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>
