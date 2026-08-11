@@ -3,17 +3,13 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { headers as nextHeaders } from "next/headers";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { auth } from "@/server/auth";
+import { requireSession } from "@/server/session";
 
 export async function UserProfileInfo_Card() {
-    const headers = await nextHeaders();
-    const session = await auth.api.getSession({ headers });
-    if (!session) throw new Error("User is not authenticated");
+    const session = await requireSession();
 
     return (
         <Card>

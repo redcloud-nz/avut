@@ -4,3 +4,12 @@
  */
 
 export const TITLE_SEPARATOR = "•";
+
+/**
+ * Request header carrying the current path + query, injected by the proxy.
+ *
+ * Next.js exposes no stable request-path header during render, and `cookies().set()` is
+ * not permitted there, so this is how server components learn where the user was trying
+ * to go in order to build a `?redirectTo=` sign-in URL.
+ */
+export const CURRENT_PATH_HEADER = "x-avut-pathname";

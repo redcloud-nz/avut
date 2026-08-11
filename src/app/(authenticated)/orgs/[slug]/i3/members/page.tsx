@@ -6,7 +6,6 @@
  */
 
 import Link from "next/link";
-import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -18,22 +17,18 @@ import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
-import { auth } from "@/server/auth";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function I3Module_MembersList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/i3/members">,
 ) {
     const { slug } = await props.params;
 
-    const headers = await nextHeaders();
-    const session = await auth.api.getSession({ headers });
-
-    const organization = await getOrganizationBySlug(slug);
+    const { session, organization } = await requireOrganization(slug);
 
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
-        session!.user.id as UserId,
+        session.user.id as UserId,
     );
 
     const { d4HTeams } = await getD4HTokenMetadata(accessToken);

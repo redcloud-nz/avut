@@ -4,14 +4,13 @@
  *
  */
 
-import { headers as nextHeaders } from "next/headers";
-
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 
-import { auth, AuthSession } from "@/server/auth";
+import { AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
+import { requireSession } from "@/server/session";
 
 export interface EntryControlProceed {
     status: "Proceed";
@@ -35,10 +34,7 @@ export interface EntryControlSelect {
 export type EntryControl = EntryControlProceed | EntryControlSelect;
 
 export async function getEntryControl(): Promise<EntryControl> {
-    const headers = await nextHeaders();
-    const session = await auth.api.getSession({ headers });
-
-    if (!session) throw new Error("User is not authenticated");
+    const session = await requireSession();
 
     const [memberships, invitations] = await Promise.all([
         await prisma.organizationUser.findMany({

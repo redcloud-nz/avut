@@ -8,18 +8,23 @@
 import { Argus } from "@/components/blocks/argus";
 
 import { SignIn_Card } from "@/components/auth/sign-in";
+import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Sign In" };
 
 export default async function SignIn_Page(props: PageProps<"/auth/sign-in">) {
     const params = await props.searchParams;
     const email = Array.isArray(params.email) ? params.email[0] : params.email;
+    const redirectTo = Array.isArray(params.redirectTo) ? params.redirectTo[0] : params.redirectTo;
 
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <SignIn_Card email={email ? decodeURIComponent(email) : undefined} />
+                <SignIn_Card
+                    email={email ? decodeURIComponent(email) : undefined}
+                    redirectTo={safeRedirectPath(redirectTo) ?? undefined}
+                />
             </Argus.Column>
         </Argus.Root>
     );

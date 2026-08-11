@@ -15,6 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import { authClient } from "@/client/auth-client";
+import { postSignInUrl } from "@/lib/auth-redirect";
 
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,8 +34,9 @@ import { Input } from "@/components/ui/input";
  * Card for a user to sign in to the application.
  *
  * @param email Optional email to pre-fill in the form.
+ * @param redirectTo Optional path to return to once signed in.
  */
-export function SignIn_Card({ email }: { email?: string }) {
+export function SignIn_Card({ email, redirectTo }: { email?: string; redirectTo?: string }) {
     return (
         <Card>
             <CardHeader>
@@ -43,11 +45,11 @@ export function SignIn_Card({ email }: { email?: string }) {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <EmailPasswordSignIn_Form email={email} />
+                    <EmailPasswordSignIn_Form email={email} redirectTo={redirectTo} />
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
-                    <SocialSignInButtons_Field />
+                    <SocialSignInButtons_Field redirectTo={redirectTo} />
                     <FieldDescription className="text-center">
                         Don&apos;t have an account? <Link href="/auth/sign-up">Sign Up</Link>
                     </FieldDescription>
@@ -61,8 +63,9 @@ export function SignIn_Card({ email }: { email?: string }) {
  * Sign in form using email and password.
  *
  * @param email Optional email to pre-fill in the form.
+ * @param redirectTo Optional path to return to once signed in.
  */
-function EmailPasswordSignIn_Form({ email }: { email?: string }) {
+function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redirectTo?: string }) {
     const router = useRouter();
 
     const form = useForm({
@@ -86,7 +89,7 @@ function EmailPasswordSignIn_Form({ email }: { email?: string }) {
         },
         onSuccess(data, variables) {
             if (data.user.emailVerified) {
-                router.push("/auth/post-sign-in");
+                router.push(postSignInUrl(redirectTo));
             } else {
                 form.reset();
                 router.push(`/auth/verify-email/${encodeURIComponent(variables.email)}`);
@@ -174,13 +177,15 @@ function EmailPasswordSignIn_Form({ email }: { email?: string }) {
 
 /**
  * Social sign-In buttons field
+ *
+ * @param redirectTo Optional path to return to once signed in.
  */
-export function SocialSignInButtons_Field() {
+export function SocialSignInButtons_Field({ redirectTo }: { redirectTo?: string } = {}) {
     async function handleSignIn(provider: "apple" | "google" | "github") {
         try {
             const { error } = await authClient.signIn.social({
                 provider,
-                callbackURL: "/auth/post-sign-in",
+                callbackURL: postSignInUrl(redirectTo),
             });
 
             if (error) {

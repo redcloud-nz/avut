@@ -6,12 +6,10 @@
  */
 
 import { Metadata } from "next";
-import { headers as nextHeaders } from "next/headers";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { auth } from "@/server/auth";
+import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 import { OrganizationProvider } from "@/hooks/use-organization";
 
 export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Promise<Metadata> {
@@ -28,24 +26,10 @@ export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Prom
 
 export default async function Organization_Layout(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const organizationSettings = await getOrganizationSettings(organization.id);
-
-    const res = await auth.api.hasPermission({
-        headers: await nextHeaders(),
-        body: {
-            permissions: {
-                organization: ["view"],
-            },
-            organizationId: organization.id,
-        },
-    });
-    if (!res.success) {
-        throw new Error("You do not have permission to access this organization.");
-    }
+    const { organization, settings } = await requireOrganization(slug);
 
     return (
-        <OrganizationProvider organization={organization} settings={organizationSettings}>
+        <OrganizationProvider organization={organization} settings={settings}>
             {props.children}
         </OrganizationProvider>
     );

@@ -8,14 +8,16 @@
 import { cookies as nextCookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { safeRedirectPath } from "@/lib/auth-redirect";
 import { auth } from "@/server/auth";
 import prisma from "@/server/prisma";
 
 export async function GET(request: NextRequest) {
-    // Check for a redirect cookie set by the sign-in page, and if it exists, redirect to that and clear the cookie
     const cookies = await nextCookies();
 
-    const redirectPath = cookies.get("avut.post_sign_in_redirect")?.value;
+    // `redirectTo` is user-controllable, so it must be validated before it is followed —
+    // otherwise this is an open redirect.
+    const redirectPath = safeRedirectPath(request.nextUrl.searchParams.get("redirectTo"));
     const invitationId = cookies.get("avut.invitation_to_accept")?.value;
 
     if (invitationId) {
@@ -29,12 +31,11 @@ export async function GET(request: NextRequest) {
                 headers: request.headers,
             });
         }
+        cookies.delete("avut.invitation_to_accept");
     }
 
     if (redirectPath) {
-        const redirectUrl = new URL(redirectPath, request.url);
-        cookies.delete("avut.post_sign_in_redirect");
-        return NextResponse.redirect(redirectUrl);
+        return NextResponse.redirect(new URL(redirectPath, request.url));
     }
 
     // Default redirect to the dashboard page.

@@ -6,8 +6,20 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
 
+import { SIGN_IN_PATH } from "@/lib/auth-redirect";
+import { CURRENT_PATH_HEADER } from "@/lib/constants";
+
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
+    const currentPath = pathname + request.nextUrl.search;
+
+    // Expose the current path to server components so `requireSession()` can build a
+    // sign-in URL that returns the user here. `set` (never `append`) so a client-supplied
+    // header of the same name is always overwritten.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(CURRENT_PATH_HEADER, currentPath);
+
+    const proceed = () => NextResponse.next({ request: { headers: requestHeaders } });
 
     if (
         pathname == "/" ||
@@ -16,29 +28,23 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith("/public")
     ) {
         // Public routes that don't require authentication, allow through
-        return NextResponse.next();
+        return proceed();
     } else {
-        // Secure routes
+        // Secure routes.
+        //
+        // NOTE: this is a cookie *presence* check only — it does not validate the session.
+        // It is an optimistic gate to save a round trip; the real check is `requireSession()`
+        // in the layouts and pages themselves.
         const sessionCookie = getSessionCookie(request);
 
         if (sessionCookie) {
-            // Session exists
-            return NextResponse.next();
+            // Session cookie exists
+            return proceed();
         } else {
-            // No session
-
-            const signInUrl = new URL("/auth/sign-in", request.url);
-
-            // Set the redirect cookie so that after signing in, the user is redirected back to the page they were trying to access
-            const response = NextResponse.redirect(signInUrl);
-            response.cookies.set({
-                name: "avut.post_sign_in_redirect",
-                value: pathname,
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 60 * 60, // 1 hour
-            });
-            return response;
+            // No session — send them to sign in, preserving where they were headed.
+            const signInUrl = new URL(SIGN_IN_PATH, request.url);
+            signInUrl.searchParams.set("redirectTo", currentPath);
+            return NextResponse.redirect(signInUrl);
         }
     }
 }
