@@ -1534,12 +1534,13 @@ The last conversion, and the last server module deletion.
 
 - [ ] **Step 1: Move the page body into a client component**
 
-Create `content.tsx` in the same directory, holding the current `page.tsx` body from the `Std.SidebarInset` tree onwards, with:
+Create `content.tsx` in the same directory. Copy the `return (…);` block from `page.tsx` — lines 51–161, the whole `Std.SidebarInset` tree — and paste it as the new component's return, with these changes:
 
 - `"use client";` after the copyright header.
 - Props `{ slug, skillCheckSessionId }: { slug: string; skillCheckSessionId: SkillCheckSessionId }`.
 - The `await getSkillCheckSessionById(...) ?? notFound()` replaced by a suspense query — the procedure already throws `NOT_FOUND`, so the `notFound()` fallback and the `next/navigation` import both go.
-- `useOrganization()` in place of `requireOrganization`, if the body references `organization`.
+- `useOrganization()` in place of `requireOrganization` — `organization.id` is needed for the query input.
+- **The body's `route()` calls pass `{ slug, session_id }`** (lines 81, 91, 104 and any others). There is no longer a `session_id` binding, so each becomes `{ slug, session_id: skillCheckSessionId }`. The branded id is a string, so it satisfies the route param type. Grep the pasted body for `session_id` and fix every occurrence — a missed one is a compile error, not a silent bug.
 - Every other import the original body used, carried over unchanged.
 
 ```tsx
