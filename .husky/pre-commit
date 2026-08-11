@@ -1,1 +1,9 @@
 npx lint-staged
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+if echo "$staged_files" | grep -q '^src/components/ui/.*\.tsx$' \
+  && ! echo "$staged_files" | grep -q '^src/components/ui/README\.md$'; then
+  echo "warning: src/components/ui/*.tsx changed but src/components/ui/README.md was not updated"
+  echo "         run /update-ui-readme in Claude Code to regenerate the component catalogue"
+fi

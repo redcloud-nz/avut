@@ -39,15 +39,15 @@ npm run prisma studio        # Open Prisma Studio
 ```
 src/
   app/                        # Next.js App Router pages
-    (authenticated)/orgs/[slug]/   # Org-scoped module pages (admin, i3, skill-track, …)
-    (authenticated)/main/[slug]/   # Org-scoped non-module pages (account, notes, skills)
+    (authenticated)/orgs/[slug]/   # Org-scoped pages (admin, i3, skill-track, notes, …)
+    (authenticated)/user-settings/ # Account settings (not org-scoped)
     (public)/policies/        # Privacy / terms pages (no auth)
     api/                      # API routes (auth)
     trpc/[trpc]/              # tRPC HTTP handler
   client/                     # Browser-side auth client + query helpers
   components/
     blocks/                   # Named high-level layout blocks (see below)
-    ui/                       # shadcn/ui primitives + custom UI
+    ui/                       # shadcn/ui primitives + custom UI (see ui/README.md for a catalogue)
     nav/                      # Navigation components
   emails/                     # React Email templates (preview: npm run dev-email)
   forms/                      # Form definitions for the forms/i3 flows
@@ -69,7 +69,7 @@ src/
   proxy.ts                    # Request proxy / middleware entry
 ```
 
-Note there are two org-scoped trees: modules live under `/orgs/[slug]/…`, while `main/[slug]/…` holds the account and non-module pages. Check which one a route belongs to before writing an href.
+All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 
 ## Key Conventions
 
@@ -252,11 +252,11 @@ For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and
 | `d4h-views`             | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
 | `forms`                 | —                                    | Vestigial — form machinery lives under the `i3` module           |
 | `i3`                    | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates              |
-| `notes`                 | `/main/[slug]/notes`                 | Rich-text notes; no `/orgs` page yet                             |
+| `notes`                 | `/orgs/[slug]/notes`                 | Rich-text notes                                                  |
 | `skill-track`           | `/orgs/[slug]/skill-track`           | Skill checks, sessions, catalogue, reports                       |
 | `skill-package-builder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry
 - All modules except `admin` are gated by org settings (`OrganizationSettings.modules`, keyed by `ModuleId`); `admin` is `alwaysOn`
-- Only modules with an `href` appear in the nav switcher and dashboard (`orgModules`), which is why `forms` and `notes` are absent from those
+- Only modules with an `href` appear in the nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
 - The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `i3`. It's retained only because it's a settings-gated key
