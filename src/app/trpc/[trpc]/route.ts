@@ -11,6 +11,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { auth } from "@/server/auth";
 import { createInnerTrpcContext } from "@/trpc/init";
+import { assertHasPermissionResult } from "@/trpc/permissions";
 import { appRouter } from "@/trpc/routers/_app";
 
 const createTrpcContext = cache(async () => {
@@ -21,20 +22,25 @@ const createTrpcContext = cache(async () => {
     return createInnerTrpcContext({
         auth: authSession,
         hasPermission: async (organizationId, requiredPermissions) => {
+            let result;
             try {
-                await auth.api.hasPermission({
+                result = await auth.api.hasPermission({
                     headers,
                     body: { organizationId, permissions: requiredPermissions },
                 });
             } catch (error) {
+                // Better Auth throws UNAUTHORIZED when the user is not a member of the
+                // organization at all.
                 throw new TRPCError({
                     code: "FORBIDDEN",
-                    message:
-                        "Insufficient permissions. Action requires: " +
-                        JSON.stringify(requiredPermissions),
+                    message: "You are not a member of this organization.",
                     cause: error,
                 });
             }
+
+            // ...and returns `{ success: false }` when they are a member but lack the
+            // permission. Both have to be checked.
+            assertHasPermissionResult(result, requiredPermissions);
         },
         headers,
     });
