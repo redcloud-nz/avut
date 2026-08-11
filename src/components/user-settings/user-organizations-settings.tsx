@@ -13,6 +13,7 @@ import { authClient } from "@/client/auth-client";
 import { Alert } from "@/components/ui/alert";
 import {
     AlertDialog,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogFooter,
     AlertDialogHeader,
@@ -108,6 +109,7 @@ export function UserOrganizationsSettings() {
                                             <AlertDialogTitle>Leave Organization</AlertDialogTitle>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
                                             <MutationButton
                                                 type="button"
                                                 variant="destructive"
