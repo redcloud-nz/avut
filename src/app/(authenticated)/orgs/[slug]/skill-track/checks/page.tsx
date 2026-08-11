@@ -7,6 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 
+import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
 
 import SkillTrack_ChecksList from "./checks-list";
@@ -19,6 +20,7 @@ export default async function SkillTrack_Checks_Page(
     props: PageProps<"/orgs/[slug]/skill-track/checks">,
 ) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

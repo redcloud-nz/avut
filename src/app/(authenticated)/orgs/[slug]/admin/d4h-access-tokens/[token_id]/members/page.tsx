@@ -12,9 +12,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { route } from "@/lib/routes";
 
 import { D4HMember } from "@/lib/schemas/d4h/member";
+import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
 
 /**
  * DEVELOPMENT ONLY PAGE
@@ -23,7 +23,7 @@ export default async function Admin_D4hAccessToken_Members_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members`>,
 ) {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

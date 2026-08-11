@@ -8,10 +8,13 @@
 import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 import { OrganizationProvider } from "@/hooks/use-organization";
 
+// NOTE: metadata generation deliberately uses the plain cached lookup rather than
+// `requireOrganization` — `generateMetadata` must not redirect. The access check lives in
+// the layout below, which is what actually gates rendering.
 export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Promise<Metadata> {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);

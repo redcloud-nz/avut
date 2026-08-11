@@ -7,6 +7,11 @@
 
 import { redirect } from "next/navigation";
 
+import { requireSession } from "@/server/session";
+
 export async function GET() {
+    // Route handlers do not render layouts, so the group-level guard does not apply here.
+    await requireSession();
+
     redirect("/orgs/--select-org");
 }

@@ -7,6 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 import SkillTrack_Sessions_List from "@/components/skill-track/sessions-list";
+import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
 
@@ -18,6 +19,7 @@ export default async function SkillTrack_Sessions_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions">,
 ) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

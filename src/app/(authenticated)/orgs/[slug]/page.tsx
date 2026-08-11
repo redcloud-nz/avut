@@ -19,13 +19,11 @@ import {
 } from "@/components/ui/item";
 import Link from "next/link";
 import { orgModules } from "@/lib/modules";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
+    const { organization, settings } = await requireOrganization(slug);
     const { modules } = settings;
 
     const availableModules = orgModules.filter(

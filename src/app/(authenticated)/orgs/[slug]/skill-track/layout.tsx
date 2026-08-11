@@ -7,9 +7,14 @@
 
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
+import { requireOrganization } from "@/server/organization-access";
+
 import { SkillTrack_Sidebar_Menu } from "./sidebar-menu";
 
 export default async function SkillTrack_Layout(props: LayoutProps<"/orgs/[slug]/skill-track">) {
+    const { slug } = await props.params;
+    await requireOrganization(slug);
+
     return (
         <>
             <ModuleSidebar scope="organization">

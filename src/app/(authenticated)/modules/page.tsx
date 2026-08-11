@@ -20,8 +20,11 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
+import { requireSession } from "@/server/session";
 
 export default async function Organization_Index_Page() {
+    await requireSession();
+
     const SkillTrackIcon = Modules["skill-track"].icon;
 
     return (

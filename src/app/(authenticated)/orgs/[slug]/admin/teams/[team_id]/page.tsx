@@ -18,14 +18,14 @@ import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/descriptio
 
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 import { getTeamById } from "@/server/team";
 
 export default async function AdminModule_Team_Page(
     props: PageProps<`/orgs/[slug]/admin/teams/[team_id]`>,
 ) {
     const { slug, team_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const team = await getTeamById(organization.id, team_id);
 

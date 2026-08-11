@@ -8,6 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { SkillTrack_PersonPicker } from "@/components/skill-track/reports/person-picker";
 
+import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
 
 export const metadata = {
@@ -18,6 +19,7 @@ export default async function SkillTrack_ReportsPersonPicker_Page(
     props: PageProps<"/orgs/[slug]/skill-track/reports/person">,
 ) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

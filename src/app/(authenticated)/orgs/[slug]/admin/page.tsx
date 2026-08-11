@@ -20,11 +20,11 @@ import {
 } from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

@@ -7,11 +7,10 @@
 
 import { Std } from "@/components/blocks/std";
 
+import { requireOrganization } from "@/server/organization-access";
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 import prisma from "@/server/prisma";
 
 import { D4HViewsModule_Teams_List } from "./d4h-teams-list";
@@ -20,8 +19,7 @@ export default async function D4HViewsModule_Teams_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/teams`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
+    const { organization, settings } = await requireOrganization(slug);
 
     if (settings.modules["d4h-views"].enabled === false)
         throw new Error("D4H Views module is not enabled for this organization.");

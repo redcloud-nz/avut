@@ -37,14 +37,14 @@ import {
 
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
 export default async function SkillTrack_Session_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
     const { slug, session_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const session = (await getSkillCheckSessionById(organization.id, session_id)) ?? notFound();
 

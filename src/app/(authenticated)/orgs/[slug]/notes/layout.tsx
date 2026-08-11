@@ -6,9 +6,7 @@
  */
 
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
-
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
+import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: "Notes",
@@ -16,8 +14,7 @@ export const metadata = {
 
 export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/notes`>) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
+    const { settings } = await requireOrganization(slug);
 
     if (!settings.modules.notes.enabled) {
         throw new Error("Notes module is not enabled for this organization.");

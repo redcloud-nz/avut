@@ -13,9 +13,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
@@ -57,7 +57,7 @@ export default async function Admin_D4hAccessToken_EquipmentItems_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-items`>,
 ) {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

@@ -9,8 +9,11 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 import { getTeamById } from "@/server/team";
 
+// NOTE: `generateMetadata` must not redirect, so it uses the plain cached lookup. Access
+// is gated by the ancestor organization and admin layouts.
 export async function generateMetadata(
     props: LayoutProps<`/orgs/[slug]/admin/teams/[team_id]`>,
 ): Promise<Metadata> {
@@ -26,5 +29,8 @@ export async function generateMetadata(
 export default async function AdminModule_Team_Layout(
     props: LayoutProps<`/orgs/[slug]/admin/teams/[team_id]`>,
 ) {
+    const { slug } = await props.params;
+    await requireOrganization(slug);
+
     return <>{props.children}</>;
 }

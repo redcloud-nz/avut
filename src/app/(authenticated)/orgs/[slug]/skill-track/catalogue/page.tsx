@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 
 import { route } from "@/lib/routes";
@@ -20,6 +21,7 @@ export default async function SkillTrack_Catalogue_Page(
     props: PageProps<"/orgs/[slug]/skill-track/catalogue">,
 ) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

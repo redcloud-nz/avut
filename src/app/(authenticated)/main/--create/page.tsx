@@ -7,10 +7,13 @@
 
 import { Argus } from "@/components/blocks/argus";
 import { CreateOrganization_Card } from "@/components/cards/create-org";
+import { requireSession } from "@/server/session";
 
 export const metadata = { title: "Create Organization" };
 
 export default async function OrganizationCreate_Page() {
+    await requireSession();
+
     return (
         <Argus.Root>
             <Argus.Column>

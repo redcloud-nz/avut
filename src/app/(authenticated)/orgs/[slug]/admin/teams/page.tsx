@@ -13,8 +13,7 @@ import { AdminModule_CreateTeam_Dialog } from "@/components/admin/teams/create-t
 import { AdminModule_TeamsList } from "@/components/admin/teams/teams-list";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
-
-import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: `Teams`,
@@ -24,7 +23,7 @@ export default async function AdminModule_TeamsList_Page(
     props: PageProps<"/orgs/[slug]/admin/teams">,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

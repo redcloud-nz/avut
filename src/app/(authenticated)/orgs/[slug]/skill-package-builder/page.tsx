@@ -9,14 +9,14 @@ import { AVUTLogo } from "@/components/art/avut-logo";
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
 import { SkillPackageBuilder_Packages_List } from "./packages/packages-list";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function SkillPackageBuilder_Index_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
     return (
         <Std.SidebarInset>
             <Std.Navbar

@@ -10,8 +10,11 @@ import { notFound } from "next/navigation";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 import { getSkillCheckSessionById } from "@/server/skill-check-session";
 
+// NOTE: `generateMetadata` must not redirect, so it uses the plain cached lookup. Access
+// is gated by the ancestor organization and skill-track layouts.
 export async function generateMetadata(
     props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ): Promise<Metadata> {
@@ -28,5 +31,8 @@ export async function generateMetadata(
 export default async function SkillTrack_Session_Layout(
     props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ) {
+    const { slug } = await props.params;
+    await requireOrganization(slug);
+
     return <>{props.children}</>;
 }

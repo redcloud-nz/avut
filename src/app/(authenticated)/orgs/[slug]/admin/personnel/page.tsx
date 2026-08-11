@@ -8,9 +8,9 @@
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
 
 import { AdminModule_PersonnelList } from "../../../../../../components/admin/personnel/personnel-list";
+import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: `Personnel`,
@@ -20,7 +20,7 @@ export default async function AdminModule_PersonnelList_Page(
     props: PageProps<"/orgs/[slug]/admin/personnel">,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

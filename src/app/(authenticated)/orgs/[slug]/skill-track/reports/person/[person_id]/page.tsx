@@ -10,6 +10,7 @@ import { SkillTrack_PersonCompetencyReport } from "@/components/skill-track/repo
 
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
+import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: `Personnel Competency`,
@@ -19,6 +20,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
     props: PageProps<"/orgs/[slug]/skill-track/reports/person/[person_id]">,
 ) {
     const { slug, person_id } = await props.params;
+    await requireOrganization(slug);
 
     // `?synthetic` replaces the recorded competencies with generated ones — see
     // synthetic-competency-data.

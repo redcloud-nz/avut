@@ -15,13 +15,13 @@ import { route } from "@/lib/routes";
 
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import {
     getD4HFetchClient,
     fetchD4HWhoamiCached,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
@@ -54,7 +54,7 @@ export default async function Admin_D4hAccessToken_Organisation_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/organisation`>,
 ) {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

@@ -8,6 +8,7 @@
 import { AdminModule_Users_List } from "@/components/admin/users/users-list";
 import { Std } from "@/components/blocks/std";
 
+import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export const metadata = {
 
 export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[slug]/admin/users">) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

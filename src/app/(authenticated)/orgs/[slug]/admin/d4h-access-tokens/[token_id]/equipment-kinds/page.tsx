@@ -13,9 +13,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { route } from "@/lib/routes";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { requireOrganization } from "@/server/organization-access";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
     "use cache";
@@ -57,7 +57,7 @@ export default async function Admin_D4hAccessToken_EquipmentKinds_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-kinds`>,
 ) {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

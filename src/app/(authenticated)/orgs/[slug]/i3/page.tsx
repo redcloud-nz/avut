@@ -20,12 +20,12 @@ import {
 } from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>) {
     const { slug } = await props.params;
 
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>

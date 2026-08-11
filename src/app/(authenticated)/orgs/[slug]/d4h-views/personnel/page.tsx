@@ -7,11 +7,10 @@
 
 import { Std } from "@/components/blocks/std";
 
+import { requireOrganization } from "@/server/organization-access";
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { route } from "@/lib/routes";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 
 import { D4HViewsModules_Personnel_List } from "./personnel-list";
 
@@ -19,8 +18,7 @@ export default async function D4HViewsModules_Personnel_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/personnel`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
+    const { organization, settings } = await requireOrganization(slug);
 
     if (settings.modules["d4h-views"].enabled === false)
         throw new Error("D4H Views module is not enabled for this organization.");

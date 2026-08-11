@@ -7,7 +7,12 @@
 
 import { Std } from "@/components/blocks/std";
 
-export default async function Notes_Index_Page() {
+import { requireOrganization } from "@/server/organization-access";
+
+export default async function Notes_Index_Page(props: PageProps<"/orgs/[slug]/notes">) {
+    const { slug } = await props.params;
+    await requireOrganization(slug);
+
     return (
         <Std.SidebarInset>
             <Std.Navbar breadcrumbs={["Notes"]} />

@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/item";
 import Link from "next/link";
 
+import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
 
 export default async function D4HViewsModule_Equipment_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/equipment`>,
 ) {
     const { slug } = await props.params;
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>
