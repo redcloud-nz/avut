@@ -51,16 +51,24 @@ export const Roles = {
         d4hEquipment: ["view"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view"],
+        // Paired with `person: ["view"]` — the user↔person link procedures require both.
+        member: ["view"],
         organization: ["view"],
         person: ["view"],
     }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
         skillPackageSubscription: ["view"],
-        skillCheck: ["view", "create"],
+        // Mirrors the session grant below: an assessor who can record a check must also be
+        // able to amend it, and `approveSession` requires `skillCheck: ["update"]` alongside
+        // `skillCheckSession: ["update"]`.
+        skillCheck: ["view", "create", "update", "delete"],
         skillCheckSession: ["view", "create", "update", "delete"],
     }),
     "skill-package-author": ac.newRole({
+        // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
+        // the org layout gates on it too — without this the role cannot reach anything.
+        organization: ["view"],
         skillPackageBuilder: ["view", "create", "update", "delete", "publish"],
     }),
 } as const;
