@@ -22,7 +22,8 @@
 | No `caller` export; server-side reads use `fetchQuery`                             | `fetchQuery` populates the request-scoped cache, so the page's later `prefetch` of the same key is a hit. `createCaller` is not. |
 | Direct router access (`{ ctx, router }`), not an HTTP link                         | The HTTP path cannot forward cookies and is the cause of the earlier prerender auth failures.                                    |
 | Session seeded once at `(authenticated)/layout.tsx`; `HydrateClient` used by pages | Fewest wrappers. `SessionHydration` disappears from seven module layouts.                                                        |
-| tRPC error codes translated by a shared error component                            | One place holds the wording for both server-thrown `ForbiddenError` and client-side `TRPCClientError`.                           |
+| tRPC error codes translated by a shared error component                            | One place holds the wording for both the server `forbidden()` boundary and client-side `TRPCClientError`.                        |
+| Server permission failures use Next's `forbidden()` interrupt                      | Server-thrown errors lose their class and message across the RSC boundary (finding 4), so a thrown error cannot carry the copy.  |
 | Scope: machinery plus three pilot pages                                            | Proves the pattern against the pages that force the server-module deletions, before it spreads to the other ~70 routes.          |
 
 ## Prior findings
@@ -38,6 +39,11 @@ Three defects in the current code that this work depends on:
 3. **`errorFormatter` clobbers `data`.** `src/trpc/init.ts` sets `data: { ...shape, conflict }`,
    so on the client `error.data.code` is tRPC's numeric code and the string `"FORBIDDEN"`
    is buried at `error.data.data.code`.
+4. **Server-thrown errors do not survive the RSC boundary.** Next serialises them to the
+   client error boundary with the class lost and, in production, the message replaced by
+   "An error occurred in the Server Components render" plus a digest. `app/error.tsx`
+   rendering `error.name` / `error.message` therefore only works in development, and an
+   `error instanceof ForbiddenError` check on the client can never be true.
 
 ## A. Foundations
 
@@ -133,22 +139,44 @@ This restores `error.data.code === "FORBIDDEN"` on the client while preserving
 
 ### 2. `src/components/errors/app-error.tsx` — new (client)
 
-Exports a pure `describeError(error)` returning `{ title, description, pose }`, and the
-`Empty`/`Artie` panel that `app/error.tsx` renders today.
+Exports three things:
 
-`describeError` recognises:
+- `ErrorDescription` — `{ title, description, pose }`, where `pose` is an `ArtiePose`.
+- `ErrorDescriptions` — the fixed descriptions for `Forbidden`, `NotFound` and
+  `Unauthorized`, so the server boundaries and the client mapper share one copy of the wording.
+- `describeError(error)` — maps a _client-side_ error to an `ErrorDescription`.
+- `AppErrorPanel({ title, description, pose })` — the `Empty`/`Artie` panel that
+  `app/error.tsx` renders today.
 
-- `ForbiddenError` (thrown server-side by `requireOrganization` / `assertPermission`)
-- `TRPCClientError` with `data.code` of `FORBIDDEN`, `NOT_FOUND`, or `UNAUTHORIZED`
+`describeError` handles `TRPCClientError` only, keyed off `data.code` (`FORBIDDEN`,
+`NOT_FOUND`, `UNAUTHORIZED`). It deliberately does **not** test for `ForbiddenError`: per
+prior finding 4, that check is unreachable on the client. Everything else falls back to
+`error.name` + `error.message`, as today.
 
-`FORBIDDEN` from either source maps to the same title and copy. Unknown errors keep
-today's `error.name` + `error.message` fallback.
+`ArtiePose` in `src/components/art/artie.tsx` is currently declared but not exported; it
+needs exporting.
 
-### 3. Error boundaries
+### 3. Server-side interrupts
 
-`src/app/error.tsx` becomes a thin wrapper around `<AppError/>`. A new
-`src/app/(authenticated)/orgs/[slug]/error.tsx` renders the same component, so a failure
-inside a module does not replace the whole page shell.
+Enable `experimental.authInterrupts` in `next.config.ts`. `assertPermission` in
+`src/server/organization-access.ts` calls `forbidden()` from `next/navigation` instead of
+throwing `ForbiddenError`, so the failure reaches a real boundary rather than a stripped
+error object.
+
+`src/app/forbidden.tsx` renders `<AppErrorPanel {...ErrorDescriptions.Forbidden}/>`, giving
+the server path the same panel the client path produces.
+
+`requireSession` is left alone — it already redirects to sign-in with a return path, which
+is better UX than `unauthorized()`. That interrupt is not adopted.
+
+`ForbiddenError` in `src/lib/errors.ts` becomes unused once `assertPermission` stops
+throwing it; delete it.
+
+### 4. Error boundaries
+
+`src/app/error.tsx` becomes a thin wrapper around `<AppError/>` (which calls `describeError`
+then renders `AppErrorPanel`). A new `src/app/(authenticated)/orgs/[slug]/error.tsx` renders
+the same component, so a failure inside a module does not replace the whole page shell.
 
 ## D. Pilot
 
@@ -189,7 +217,9 @@ The `"use cache"` + `cacheTag` layer these modules provided is dropped. React Qu
 
 ## E. Testing
 
-- `describeError` is pure — unit tests for each recognised code and the fallback.
+- `describeError` is pure — unit tests for each recognised code and the fallback. Build
+  fixtures with `TRPCClientError.from({ error: { message, code: -32603, data: { code } } })`,
+  which is verified to produce `error.data.code === "FORBIDDEN"`.
 - `errorFormatter` — a test asserting both `data.code === "FORBIDDEN"` and that
   `data.conflict` survives.
 - `src/trpc/server.tsx` is not unit-testable under jsdom: it imports `server-only`, and
@@ -202,3 +232,11 @@ The `"use cache"` + `cacheTag` layer these modules provided is dropped. React Qu
 - Converting the other ~70 pages. They keep working unchanged; convert opportunistically.
 - Normalising tRPC errors at the client link. Rejected in favour of the shared component.
 - Restoring a `"use cache"` layer for tRPC procedures.
+- Adopting `unauthorized()` / `unauthorized.tsx`. `requireSession`'s sign-in redirect is
+  better UX and stays.
+
+## Risks
+
+- `experimental.authInterrupts` is an unstable Next flag. If it is removed or changes
+  shape, `assertPermission` reverts to throwing and the server path degrades to the generic
+  production message — the status quo, not a regression.
