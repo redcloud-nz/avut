@@ -3,7 +3,11 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { defaultShouldDehydrateQuery, isServer, QueryClient } from "@tanstack/react-query";
+import {
+    defaultShouldDehydrateQuery,
+    environmentManager,
+    QueryClient,
+} from "@tanstack/react-query";
 import superjson from "superjson";
 
 import { authQueryKeys, authQueryRetryOptions } from "@/lib/auth-query-keys";
@@ -49,7 +53,7 @@ let clientQueryClientSingleton: QueryClient;
  * `"use client"` module.
  */
 export function getQueryClient() {
-    if (isServer) {
+    if (environmentManager.isServer()) {
         // Server, always make a new query client
         return makeQueryClient();
     } else {
