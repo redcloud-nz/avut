@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/d4h-views
  */
 
+import { SessionHydration } from "@/components/auth/session-hydration";
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { D4HViews_Sidebar_Menu } from "./sidebar-menu";
@@ -18,11 +19,11 @@ export default async function D4HViews_Layout(props: LayoutProps<"/orgs/[slug]/d
         throw new Error("D4H Views module is not enabled for this organization.");
 
     return (
-        <>
+        <SessionHydration>
             <ModuleSidebar scope="organization">
                 <D4HViews_Sidebar_Menu />
             </ModuleSidebar>
             {props.children}
-        </>
+        </SessionHydration>
     );
 }

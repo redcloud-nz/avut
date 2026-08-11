@@ -28,6 +28,46 @@ const config = [
       ],
     },
   },
+  {
+    // Pages and components must go through the session helpers rather than reaching for
+    // `auth.api` directly — that is how pages ended up unguarded, and how the two i3 pages
+    // ended up with `session!` non-null assertions.
+    //
+    // Restricting only the `auth` binding keeps `import type { AuthSession }` working.
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    ignores: ["src/app/trpc/**", "src/app/auth/**", "src/app/api/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/server/auth",
+              importNames: ["auth"],
+              message:
+                "Use requireSession() from @/server/session or requireOrganization() from @/server/organization-access instead of calling auth.api directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Better Auth's own `useSession` keeps a nanostore cache with no relationship to React
+    // Query: a second copy of the session that goes stale independently, cannot be hydrated
+    // from the server, and survives sign-out.
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.name='authClient'][property.name='useSession']",
+          message:
+            "Use useSession() from @/client/auth-queries instead of authClient.useSession().",
+        },
+      ],
+    },
+  },
 ];
 
 export default config;

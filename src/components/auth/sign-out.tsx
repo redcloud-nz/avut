@@ -5,25 +5,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
+import { useSignOut } from "@/client/use-sign-out";
 import { RainbowSpinner } from "@/components/ui/loading";
 
 export function SignOut() {
-    const { data: session } = authClient.useSession();
+    const { data: session, isPending } = useSession();
+    const signOut = useSignOut();
     const router = useRouter();
 
+    // The session flips to null as part of signing out, which would otherwise re-enter this
+    // effect and fire a second sign-out.
+    const startedRef = useRef(false);
+
     useEffect(() => {
+        if (isPending || startedRef.current) return;
+
         if (!session) {
-            router.push("/auth/sign-in");
+            router.replace("/auth/sign-in");
             return;
         }
 
-        authClient.signOut().then(() => {
-            router.push("/auth/sign-in");
-        });
-    }, [router, session]);
+        startedRef.current = true;
+        void signOut();
+    }, [isPending, router, session, signOut]);
 
     return <RainbowSpinner />;
 }

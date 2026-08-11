@@ -14,9 +14,9 @@ import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDebouncer } from "@tanstack/react-pacer";
-import { useMutation, useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
-import { authQueries } from "@/client/auth-queries";
+import { useSession } from "@/client/auth-queries";
 import {
     deleteDraftFormInstanceMutation,
     saveDraftFormInstanceMutation,
@@ -296,7 +296,7 @@ export default function I3Module_Issue_FormInstance_Page(
 }
 
 function UserNameFieldValue() {
-    const { data, error, isPending } = useQuery(authQueries.session);
+    const { data, error, isPending } = useSession();
 
     if (isPending) {
         return <Skeleton className="min-w-1/2 h-8" />;

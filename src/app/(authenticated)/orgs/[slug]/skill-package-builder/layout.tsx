@@ -5,6 +5,7 @@
  * Paths: /orgs/[slug]/skill-package-builder
  */
 
+import { SessionHydration } from "@/components/auth/session-hydration";
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { SkillPackageBuilder_Sidebar_Menu } from "./sidebar-menu";
@@ -25,11 +26,11 @@ export default async function SkillPackageBuilder_Layout(
     }
 
     return (
-        <>
+        <SessionHydration>
             <ModuleSidebar scope="organization">
                 <SkillPackageBuilder_Sidebar_Menu />
             </ModuleSidebar>
             {props.children}
-        </>
+        </SessionHydration>
     );
 }

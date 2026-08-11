@@ -5,14 +5,14 @@
 
 "use client";
 
-import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
 import { Alert } from "@/components/ui/alert";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { UserEmail_Card } from "@/components/user-settings/user-email-card";
 import { UserProfile_Card } from "@/components/user-settings/user-profile-card";
 
 export function UserAccountSettings() {
-    const sessionQuery = authClient.useSession();
+    const sessionQuery = useSession();
 
     if (sessionQuery.isPending) {
         return <RainbowSpinner className="mx-auto" />;
@@ -25,7 +25,12 @@ export function UserAccountSettings() {
     return (
         <div className="space-y-4">
             <UserProfile_Card session={sessionQuery.data} />
-            <UserEmail_Card session={sessionQuery.data} refetchSession={sessionQuery.refetch} />
+            <UserEmail_Card
+                session={sessionQuery.data}
+                refetchSession={async () => {
+                    await sessionQuery.refetch();
+                }}
+            />
         </div>
     );
 }

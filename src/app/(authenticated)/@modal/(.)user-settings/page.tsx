@@ -5,38 +5,17 @@
  * Path: /user-settings
  */
 
-"use client";
+import { SessionHydration } from "@/components/auth/session-hydration";
+import { requireSession } from "@/server/session";
 
-import { useRouter } from "next/navigation";
+import { UserSettings_Dialog } from "./user-settings-dialog";
 
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { UserSettings_PageContent } from "@/components/user-settings/settings-page";
-
-export default function UserSettings_Dialog() {
-    const router = useRouter();
+export default async function UserSettings_Modal_Page() {
+    await requireSession();
 
     return (
-        <Dialog
-            open={true}
-            onOpenChange={(open) => {
-                if (!open) router.back();
-            }}
-        >
-            <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>User Settings</DialogTitle>
-                    <DialogDescription>
-                        Manage your account, security, and organizations settings.
-                    </DialogDescription>
-                </DialogHeader>
-                <UserSettings_PageContent />
-            </DialogContent>
-        </Dialog>
+        <SessionHydration>
+            <UserSettings_Dialog />
+        </SessionHydration>
     );
 }

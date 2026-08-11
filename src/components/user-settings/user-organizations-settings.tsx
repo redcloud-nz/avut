@@ -10,6 +10,7 @@ import { Building2Icon } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
 import { Alert } from "@/components/ui/alert";
 import {
     AlertDialog,
@@ -38,7 +39,7 @@ import { trpc } from "@/trpc/client";
 
 export function UserOrganizationsSettings() {
     const queryClient = useQueryClient();
-    const sessionQuery = authClient.useSession();
+    const sessionQuery = useSession();
 
     const membershipsQuery = useQuery(trpc.users.listMemberships.queryOptions());
 

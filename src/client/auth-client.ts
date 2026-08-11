@@ -22,15 +22,3 @@ export const authClient = createAuthClient({
 });
 
 export type AuthClientSession = typeof authClient.$Infer.Session;
-
-export const sessionQueryOptions = {
-    queryKey: ["auth", "session"] as const,
-    queryFn: async () => {
-        const { data, error } = await authClient.getSession();
-        if (error) {
-            throw error;
-        }
-        return data;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-};

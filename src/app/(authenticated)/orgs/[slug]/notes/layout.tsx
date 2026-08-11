@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/notes
  */
 
+import { SessionHydration } from "@/components/auth/session-hydration";
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 import { requireOrganization } from "@/server/organization-access";
 
@@ -20,5 +21,9 @@ export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/note
         throw new Error("Notes module is not enabled for this organization.");
     }
 
-    return <ModuleSidebar scope="organization">{props.children}</ModuleSidebar>;
+    return (
+        <SessionHydration>
+            <ModuleSidebar scope="organization">{props.children}</ModuleSidebar>
+        </SessionHydration>
+    );
 }

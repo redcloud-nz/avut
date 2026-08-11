@@ -5,22 +5,26 @@
  * Path: /user-settings
  */
 
-"use client";
-
 import Link from "next/link";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { SessionHydration } from "@/components/auth/session-hydration";
 import { UserSettings_PageContent } from "@/components/user-settings/settings-page";
+import { requireSession } from "@/server/session";
 
-export default function Settings_Page() {
+export default async function Settings_Page() {
+    await requireSession();
+
     return (
-        <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
-            <div>
-                <Link href="/orgs/--select-org">
-                    <AVUTLogo />
-                </Link>
+        <SessionHydration>
+            <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
+                <div>
+                    <Link href="/orgs/--select-org">
+                        <AVUTLogo />
+                    </Link>
+                </div>
+                <UserSettings_PageContent />
             </div>
-            <UserSettings_PageContent />
-        </div>
+        </SessionHydration>
     );
 }

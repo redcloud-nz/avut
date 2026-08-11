@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/admin
  */
 
+import { SessionHydration } from "@/components/auth/session-hydration";
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { requireOrganization } from "@/server/organization-access";
@@ -16,11 +17,11 @@ export default async function Admin_Layout(props: LayoutProps<"/orgs/[slug]/admi
     await requireOrganization(slug);
 
     return (
-        <>
+        <SessionHydration>
             <ModuleSidebar scope="organization">
                 <Admin_Sidebar_Menu />
             </ModuleSidebar>
             {props.children}
-        </>
+        </SessionHydration>
     );
 }

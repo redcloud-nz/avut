@@ -7,7 +7,6 @@
 
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { PersonalSettingsIcon, SwitchOrganizationIcon } from "@/components/icons";
@@ -28,15 +27,16 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 
-import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
+import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
-    const router = useRouter();
-
     const { isMobile } = useSidebar();
 
-    const { data: session } = authClient.useSession();
+    const { data: session } = useSession();
+    const signOut = useSignOut();
+
     if (!session) return null;
 
     const user = session.user;
@@ -44,13 +44,11 @@ export function UserMenu() {
     const initials = getUserInitials(user.name);
 
     function handleSignOut() {
-        toast.promise(authClient.signOut(), {
+        toast.promise(signOut(), {
             loading: "Signing out...",
             success: "Signed out successfully",
             error: (error) => `Error signing out: ${error.message}`,
         });
-
-        router.push("/auth/sign-in");
     }
 
     return (

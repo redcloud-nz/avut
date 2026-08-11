@@ -13,6 +13,7 @@ import { use, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
 import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
 import { AdminModule_LinkPerson_Dialog } from "@/components/admin/users/link-person";
 import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/users/unlink-person";
@@ -45,7 +46,7 @@ export default function AdminModule_User_Page(
     const { slug, user_id } = use(props.params);
 
     const organization = useOrganization();
-    const { data: session } = authClient.useSession();
+    const { data: session } = useSession();
 
     const {
         data: { members },
