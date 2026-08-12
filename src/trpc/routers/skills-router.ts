@@ -18,8 +18,6 @@ import {
     SkillPackageSubscription,
     SkillPackageSubscriptionId,
 } from "@/lib/schemas/skill-package-subscription";
-import { revalidateSkillCheckSession } from "@/server/skill-check-session";
-
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
@@ -661,8 +659,6 @@ export const skillsRouter = createTrpcRouter({
                     status: update.status,
                 },
             });
-
-            await revalidateSkillCheckSession(skillCheckSessionId);
 
             return { updated: SkillCheckSession.fromRecord(updated) };
         }),

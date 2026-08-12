@@ -6,22 +6,27 @@
  */
 
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { getOrganizationBySlug } from "@/server/organization";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { requireOrganization } from "@/server/organization-access";
-import { getSkillCheckSessionById } from "@/server/skill-check-session";
+import { getServerQueryClient, trpc } from "@/trpc/server";
 
-// NOTE: `generateMetadata` must not redirect, so it uses the plain cached lookup. Access
-// is gated by the ancestor organization and skill-track layouts.
+// Reads through the same query options the page prefetches, so metadata and the page cost
+// one database round trip between them. The procedure throws NOT_FOUND itself, so the
+// explicit notFound() fallback is gone.
 export async function generateMetadata(
     props: LayoutProps<"/orgs/[slug]/skill-track/sessions/[session_id]">,
 ): Promise<Metadata> {
     const { slug, session_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganization(slug);
 
-    const session = (await getSkillCheckSessionById(organization.id, session_id)) ?? notFound();
+    const session = await getServerQueryClient().fetchQuery(
+        trpc.skills.getSession.queryOptions({
+            organizationId: organization.id,
+            skillCheckSessionId: SkillCheckSessionId.schema.parse(session_id),
+        }),
+    );
 
     return {
         title: `${session.name || `Session ${session.id}`} ${TITLE_SEPARATOR} Skills Module`,
