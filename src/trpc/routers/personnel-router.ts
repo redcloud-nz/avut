@@ -12,8 +12,6 @@ import { OrganizationUser } from "@/lib/schemas/organization-user";
 
 import { PersonData, PersonId } from "@/lib/schemas/person";
 
-import { revalidatePerson } from "@/server/person";
-
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -61,9 +59,6 @@ export const personnelRouter = createTrpcRouter({
                 objectType: "Person",
                 objectId: personId,
             });
-
-            // Clear cached data
-            revalidatePerson(personId);
 
             return { updated: PersonData.fromRecord(updated) };
         }),
@@ -345,9 +340,6 @@ export const personnelRouter = createTrpcRouter({
                 objectId: personId,
             });
 
-            // Clear cached data
-            revalidatePerson(personId);
-
             return { updated: PersonData.fromRecord(updated) };
         }),
 
@@ -408,9 +400,6 @@ export const personnelRouter = createTrpcRouter({
                 objectId: personId,
                 changes,
             });
-
-            // Clear cached data
-            revalidatePerson(personId);
 
             return {
                 updated: PersonData.fromRecord(updated),

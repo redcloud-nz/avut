@@ -5,11 +5,10 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// personnel-router imports @/server/person (server-only) at the top level. The
-// procedures under test use ctx.prisma (the injected mock) and never call
-// revalidatePerson, so an empty stub is enough to let the module import in jsdom.
+// The routers under test reach server-only modules at import time. The procedures
+// exercised here use ctx.prisma (the injected mock), so an empty stub is enough to let
+// them import in jsdom.
 vi.mock("server-only", () => ({}));
-vi.mock("@/server/person", () => ({ revalidatePerson: () => {} }));
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
