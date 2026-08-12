@@ -4,6 +4,7 @@
  */
 import "server-only";
 
+import { forbidden, notFound } from "next/navigation";
 import { cache, type ReactNode } from "react";
 
 import {
@@ -12,6 +13,7 @@ import {
     type FetchQueryOptions,
     type QueryKey,
 } from "@tanstack/react-query";
+import { TRPCError } from "@trpc/server";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import { createTrpcContext } from "@/server/trpc-context";
@@ -59,6 +61,31 @@ export function prefetch<TQueryFnData, TError, TData, TQueryKey extends QueryKey
     queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
 ) {
     void getServerQueryClient().prefetchQuery(queryOptions);
+}
+
+/**
+ * Await a query on the server, translating tRPC's error codes into Next's interrupts.
+ *
+ * Use this rather than `getServerQueryClient().fetchQuery(...)` directly. A `TRPCError`
+ * thrown from a server component reaches the client error boundary with its class dropped
+ * and, in production, its message replaced — so a NOT_FOUND would render as a generic
+ * failure instead of the 404 page. Interrupts survive that boundary intact.
+ *
+ * The result lands in the request-scoped cache, so a later `prefetch` of the same key is a
+ * hit rather than a second round trip.
+ */
+export async function fetchQuery<TQueryFnData, TError, TData, TQueryKey extends QueryKey>(
+    queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+): Promise<TData> {
+    try {
+        return await getServerQueryClient().fetchQuery(queryOptions);
+    } catch (error) {
+        if (error instanceof TRPCError) {
+            if (error.code === "NOT_FOUND") notFound();
+            if (error.code === "FORBIDDEN") forbidden();
+        }
+        throw error;
+    }
 }
 
 /**

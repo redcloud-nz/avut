@@ -10,19 +10,19 @@ import { Metadata } from "next";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
-import { getServerQueryClient, trpc } from "@/trpc/server";
+import { fetchQuery, trpc } from "@/trpc/server";
 
 // Reads through the same query options the page prefetches, so metadata and the page cost
 // one database round trip between them. Unlike the previous unchecked lookup this runs the
-// procedure's permission check and can therefore raise `forbidden()` — which is correct,
-// and renders the same panel the layout's own guard would.
+// procedure's permission check, and `fetchQuery` maps its FORBIDDEN and NOT_FOUND onto the
+// matching Next interrupts.
 export async function generateMetadata(
     props: LayoutProps<`/orgs/[slug]/admin/teams/[team_id]`>,
 ): Promise<Metadata> {
     const { slug, team_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
-    const team = await getServerQueryClient().fetchQuery(
+    const team = await fetchQuery(
         trpc.teams.getTeam.queryOptions({
             organizationId: organization.id,
             teamId: TeamId.schema.parse(team_id),
