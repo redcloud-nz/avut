@@ -15,7 +15,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import prisma from "@/server/prisma";
-import { FieldConflictError } from "./errors";
+import { formatTrpcError } from "./error-formatter";
 import { UserId } from "@/lib/schemas/user";
 
 // Artificial delay in development to simulate real-world conditions
@@ -45,22 +45,7 @@ type Context = ReturnType<typeof createInnerTrpcContext>;
 
 const t = initTRPC.context<Context>().create({
     transformer: superjson,
-    errorFormatter({ shape, error }) {
-        return {
-            ...shape,
-            cause: error.cause,
-            data: {
-                ...shape,
-                conflict:
-                    error.code == "CONFLICT" && error.cause instanceof FieldConflictError
-                        ? {
-                              fieldName: error.cause.fieldName,
-                              message: error.cause.message,
-                          }
-                        : undefined,
-            },
-        };
-    },
+    errorFormatter: ({ shape, error }) => formatTrpcError({ shape, error }),
 });
 
 // Base router
