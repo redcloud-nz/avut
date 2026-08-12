@@ -26,8 +26,8 @@ export function formatTrpcError<TShape extends TrpcErrorShape>({
     error,
 }: {
     shape: TShape;
-    error: { code?: string; cause?: any };
-}): any {
+    error: { code?: string; cause?: unknown };
+}) {
     const conflict =
         error.code == "CONFLICT" && error.cause instanceof FieldConflictError
             ? { fieldName: error.cause.fieldName, message: error.cause.message }
@@ -35,7 +35,7 @@ export function formatTrpcError<TShape extends TrpcErrorShape>({
 
     return {
         ...shape,
-        cause: error.cause,
+        cause: error.cause as Error | undefined,
         data: {
             ...shape.data,
             conflict,
