@@ -14,6 +14,7 @@ import { AdminModule_TeamsList } from "@/components/admin/teams/teams-list";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { requireOrganization } from "@/server/organization-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Teams`,
@@ -25,28 +26,32 @@ export default async function AdminModule_TeamsList_Page(
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
 
-    return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Teams</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <Protect orgId={organization.id} permissions={{ team: ["create"] }}>
-                                <AdminModule_CreateTeam_Dialog />
-                            </Protect>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+    prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
 
-                    <AdminModule_TeamsList />
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+    return (
+        <HydrateClient>
+            <Std.SidebarInset>
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
+                        { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
+                    ]}
+                />
+                <Std.ScrollContainer>
+                    <Saratoga.Root>
+                        <Saratoga.Header>
+                            <Saratoga.Title>Teams</Saratoga.Title>
+                            <Saratoga.Actions>
+                                <Protect orgId={organization.id} permissions={{ team: ["create"] }}>
+                                    <AdminModule_CreateTeam_Dialog />
+                                </Protect>
+                            </Saratoga.Actions>
+                        </Saratoga.Header>
+
+                        <AdminModule_TeamsList />
+                    </Saratoga.Root>
+                </Std.ScrollContainer>
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }
