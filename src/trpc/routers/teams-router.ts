@@ -276,6 +276,30 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a team by ID.
+     * @param teamId The ID of the team to retrieve.
+     * @returns The team.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     */
+    getTeam: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(TeamData.schema)
+        .query(async ({ ctx, input: { teamId } }) => {
+            // `getTeam` here is the module-scoped helper below, not this procedure —
+            // object keys are not in lexical scope.
+            const team = await getTeam(ctx, teamId);
+
+            if (!team) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
+                });
+            }
+
+            return team;
+        }),
+
+    /**
      * Import a team from D4H, creating a new team in the organization that is linked to an existing team in D4H.
      * @deprecated
      */
