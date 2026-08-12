@@ -8,10 +8,7 @@ import { ChevronDownIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
-
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
@@ -35,137 +32,112 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { trpc } from "@/trpc/client";
+import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 export function SkillTrack_Session_Content({
     slug,
-    skillCheckSessionId,
+    session,
 }: {
     slug: string;
-    skillCheckSessionId: SkillCheckSessionId;
+    session: SkillCheckSession;
 }) {
-    const organization = useOrganization();
-
-    const { data: session } = useSuspenseQuery(
-        trpc.skills.getSession.queryOptions({
-            organizationId: organization.id,
-            skillCheckSessionId,
-        }),
-    );
-
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", { slug }),
-                    },
-                    { label: session.name || session.id },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{session.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
-                                        Record <ChevronDownIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-40" align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
-                                                    { slug, session_id: skillCheckSessionId },
-                                                )}
-                                            >
-                                                By Person
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
-                                                    { slug, session_id: skillCheckSessionId },
-                                                )}
-                                            >
-                                                By Skill
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
-                                        { slug, session_id: skillCheckSessionId },
-                                    )}
-                                >
-                                    Review
-                                </Link>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>{session.name}</Saratoga.Title>
+                <Saratoga.Actions>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Record <ChevronDownIcon />
                             </Button>
-                            <SkillsModule_SessionMenu session={session} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Session Details</CardTitle>
-                                    <CardAction>
-                                        <SkillsModule_UpdateSession_Dialog session={session} />
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    <DL>
-                                        <DLTerm>Session ID</DLTerm>
-                                        <DLDetails className="font-mono">{session.id}</DLDetails>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-40" align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                            { slug, session_id: session.id },
+                                        )}
+                                    >
+                                        By Person
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                            { slug, session_id: session.id },
+                                        )}
+                                    >
+                                        By Skill
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="outline" asChild>
+                        <Link
+                            href={route("/orgs/[slug]/skill-track/sessions/[session_id]/review", {
+                                slug,
+                                session_id: session.id,
+                            })}
+                        >
+                            Review
+                        </Link>
+                    </Button>
+                    <SkillsModule_SessionMenu session={session} />
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <Saratoga.Columns>
+                <Saratoga.Column slot="main">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Session Details</CardTitle>
+                            <CardAction>
+                                <SkillsModule_UpdateSession_Dialog session={session} />
+                            </CardAction>
+                        </CardHeader>
+                        <CardContent>
+                            <DL>
+                                <DLTerm>Session ID</DLTerm>
+                                <DLDetails className="font-mono">{session.id}</DLDetails>
 
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{session.name}</DLDetails>
+                                <DLTerm>Name</DLTerm>
+                                <DLDetails>{session.name}</DLDetails>
 
-                                        <DLTerm>Date</DLTerm>
-                                        <DLDetails>{formatDate(session.date)}</DLDetails>
+                                <DLTerm>Date</DLTerm>
+                                <DLDetails>{formatDate(session.date)}</DLDetails>
 
-                                        <DLTerm>Notes</DLTerm>
-                                        <DLDetails>{session.notes}</DLDetails>
+                                <DLTerm>Notes</DLTerm>
+                                <DLDetails>{session.notes}</DLDetails>
 
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{session.status}</DLDetails>
-                                    </DL>
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Suspense fallback={<CardLoadingFallback />}>
-                                <SkillsModule_Session_Contents_Card sessionId={session.id} />
-                            </Suspense>
-                            <Card>
-                                <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={session.createdAt} />
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDateDetails date={session.updatedAt} />
-                                    </DL>
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+                                <DLTerm>Status</DLTerm>
+                                <DLDetails>{session.status}</DLDetails>
+                            </DL>
+                        </CardContent>
+                    </Card>
+                </Saratoga.Column>
+                <Saratoga.Column slot="secondary">
+                    <Suspense fallback={<CardLoadingFallback />}>
+                        <SkillsModule_Session_Contents_Card sessionId={session.id} />
+                    </Suspense>
+                    <Card>
+                        <CardContent>
+                            <DL>
+                                <DLTerm>Created</DLTerm>
+                                <DLDateDetails date={session.createdAt} />
+                                <DLTerm>Updated</DLTerm>
+                                <DLDateDetails date={session.updatedAt} />
+                            </DL>
+                        </CardContent>
+                    </Card>
+                </Saratoga.Column>
+            </Saratoga.Columns>
+        </Saratoga.Root>
     );
 }

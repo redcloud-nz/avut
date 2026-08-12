@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ComponentProps } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ export function AdminModule_UpdatePerson_Dialog({
 }: ComponentProps<typeof Dialog> & { person: PersonData }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -66,6 +68,10 @@ export function AdminModule_UpdatePerson_Dialog({
                         organizationId: organization.id,
                     }),
                 );
+
+                // The detail page renders a server-fetched person, so the cache writes
+                // above do not reach it — only a server re-render does.
+                router.refresh();
             },
         }),
     );

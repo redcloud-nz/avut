@@ -5,27 +5,67 @@
  * Paths: /orgs/[slug]/admin/personnel/[person_id]
  */
 
+import { Metadata } from "next";
+
+import { Std } from "@/components/blocks/std";
+
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { requireOrganization } from "@/server/organization-access";
-import { HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, trpc } from "@/trpc/server";
 
 import { AdminModule_Person_Content } from "./content";
 
-export default async function AdminModule_Person_Page(
-    props: PageProps<`/orgs/[slug]/admin/personnel/[person_id]`>,
-) {
+type Props = PageProps<`/orgs/[slug]/admin/personnel/[person_id]`>;
+
+/**
+ * Resolve the route's person and their linked user account.
+ *
+ * `generateMetadata` and the page body both call this, but it costs a single round trip:
+ * `requireOrganization` is React-`cache`d and `fetchQuery` writes into the request-scoped
+ * query client, so the second call is a cache hit.
+ */
+async function resolvePerson(props: Props) {
     const { slug, person_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
-    const personId = PersonId.schema.parse(person_id);
-    const input = { organizationId: organization.id, personId };
+    const input = {
+        organizationId: organization.id,
+        personId: PersonId.schema.parse(person_id),
+    };
 
-    prefetch(trpc.personnel.getPerson.queryOptions(input));
-    prefetch(trpc.personnel.getLinkedUser.queryOptions(input));
+    const [person, linkedUser] = await Promise.all([
+        fetchQuery(trpc.personnel.getPerson.queryOptions(input)),
+        fetchQuery(trpc.personnel.getLinkedUser.queryOptions(input)),
+    ]);
+
+    return { slug, person, linkedUser };
+}
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { person } = await resolvePerson(props);
+
+    return {
+        title: `${person.name} ${TITLE_SEPARATOR} Personnel`,
+    };
+}
+
+export default async function AdminModule_Person_Page(props: Props) {
+    const { slug, person, linkedUser } = await resolvePerson(props);
 
     return (
-        <HydrateClient>
-            <AdminModule_Person_Content slug={slug} personId={personId} />
-        </HydrateClient>
+        <Std.SidebarInset>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
+                    { label: "Personnel", href: route("/orgs/[slug]/admin/personnel", { slug }) },
+                    person.name,
+                ]}
+            />
+            <Std.ScrollContainer>
+                <AdminModule_Person_Content person={person} linkedUser={linkedUser} />
+            </Std.ScrollContainer>
+        </Std.SidebarInset>
     );
 }

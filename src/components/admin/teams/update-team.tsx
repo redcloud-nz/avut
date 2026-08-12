@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -65,6 +67,10 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                         organizationId: organization.id,
                     }),
                 );
+
+                // The detail page renders a server-fetched team, so the cache invalidation
+                // above does not reach it — only a server re-render does.
+                router.refresh();
             },
         }),
     );

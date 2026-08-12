@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export function SkillsModule_UpdateSession_Dialog({
 }: DialogProps & { session: SkillCheckSession }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
@@ -71,6 +73,10 @@ export function SkillsModule_UpdateSession_Dialog({
                     trpc.skills.getSession.queryKey({ skillCheckSessionId: session.id }),
                     updated,
                 );
+
+                // The detail page renders a server-fetched session, so the cache writes
+                // above do not reach it — only a server re-render does.
+                router.refresh();
             },
         }),
     );
