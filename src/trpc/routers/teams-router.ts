@@ -17,7 +17,6 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { auth } from "@/server/auth";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
-import { revalidateTeam } from "@/server/team";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -652,9 +651,6 @@ export const teamsRouter = createTrpcRouter({
                     changes: diff,
                 }),
             ]);
-
-            // Clear cached data
-            await revalidateTeam(teamId);
 
             return { updated: TeamData.fromRecord(updated) };
         }),

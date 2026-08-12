@@ -5,11 +5,10 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// teams-router reaches @/server/auth and @/server/team at import time. The procedures
-// under test only touch ctx.prisma (the injected mock), so stubbing is enough to let the
-// module load under jsdom.
+// teams-router reaches @/server/auth at import time. The procedures under test only touch
+// ctx.prisma (the injected mock), so stubbing server-only is enough to let the module load
+// under jsdom.
 vi.mock("server-only", () => ({}));
-vi.mock("@/server/team", () => ({ revalidateTeam: () => {} }));
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
