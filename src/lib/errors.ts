@@ -19,13 +19,3 @@ export class InvalidD4HAccessTokenError extends Error {
         this.name = "InvalidD4HAccessTokenError";
     }
 }
-
-/**
- * Error thrown when the user is authenticated but lacks the permissions required for the requested resource.
- */
-export class ForbiddenError extends Error {
-    constructor(message = "You do not have permission to perform this action.") {
-        super(message);
-        this.name = "ForbiddenError";
-    }
-}

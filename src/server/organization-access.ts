@@ -5,9 +5,9 @@
 import "server-only";
 
 import { headers as nextHeaders } from "next/headers";
+import { forbidden } from "next/navigation";
 import { cache } from "react";
 
-import { ForbiddenError } from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -30,6 +30,11 @@ export interface OrganizationAccess {
  * UNAUTHORIZED when the user is not a member of the organization at all, and it *returns*
  * `{ success: false }` when they are a member but lack the permission. Checking only the
  * throw silently grants every permission to every member.
+ *
+ * Denial raises Next's `forbidden()` interrupt rather than throwing. A thrown error would
+ * reach the client error boundary with its class dropped and, in production, its message
+ * replaced — so the reason would never be shown. Note that `forbidden()` signals by
+ * throwing a sentinel, so it must stay outside the `try` that wraps the Better Auth call.
  */
 export async function assertPermission(
     organizationId: OrganizationId,
@@ -44,14 +49,11 @@ export async function assertPermission(
         });
         granted = result.success;
     } catch {
-        throw new ForbiddenError("You are not a member of this organization.");
+        // Not a member of the organization at all.
+        forbidden();
     }
 
-    if (!granted) {
-        throw new ForbiddenError(
-            `Insufficient permissions. Requires: ${JSON.stringify(permissions)}`,
-        );
-    }
+    if (!granted) forbidden();
 }
 
 /**

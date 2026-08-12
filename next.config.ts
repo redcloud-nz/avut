@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata?.displayName,
         NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata?.repositoryUrl,
     },
+    experimental: {
+        // Enables `forbidden()` / `forbidden.tsx`. Server-thrown errors lose their class
+        // and message across the RSC boundary, so an interrupt is the only way a
+        // permission failure can carry its own copy into production.
+        authInterrupts: true,
+    },
     typedRoutes: true,
 };
 
