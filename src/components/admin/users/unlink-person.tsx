@@ -6,7 +6,7 @@
 
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -21,66 +21,36 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { usersInvalidations } from "@/client/users-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
-import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UnlinkPerson_Dialog({
     userId,
     userName,
-    personId,
     personName,
     ...props
 }: AlertDialogProps & {
     userId: UserId;
     userName: string;
-    personId: PersonId;
     personName: string;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const mutation = useMutation(
         trpc.users.unlinkPerson.mutationOptions({
+            meta: { invalidates: usersInvalidations.unlinkPerson },
             onError(error) {
                 console.error("Failed to unlink person:", error);
                 toast.error(`Failed to unlink person: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Person unlinked from user <ObjectName>{userName}</ObjectName>.
                     </>,
                 );
-
-                await Promise.all([
-                    queryClient.invalidateQueries({
-                        queryKey: ["auth", "organization-users", organization.id],
-                    }),
-                    queryClient.invalidateQueries(
-                        trpc.users.getLinkedPerson.queryFilter({
-                            organizationId: organization.id,
-                            userId,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.users.listPersonLinks.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.personnel.getLinkedUser.queryFilter({
-                            organizationId: organization.id,
-                            personId,
-                        }),
-                    ),
-                ]);
 
                 props.onOpenChange?.(false);
                 mutation.reset();

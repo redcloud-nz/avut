@@ -154,7 +154,11 @@ describe("user↔person linking", () => {
     });
 
     it("unlinks a person and returns null from getLinkedPerson", async () => {
-        await users().unlinkPerson({ organizationId: T.org, userId: T.user1 });
+        const { personId } = await users().unlinkPerson({
+            organizationId: T.org,
+            userId: T.user1,
+        });
+        expect(personId).toBe(T.person1);
 
         expect(
             await users().getLinkedPerson({ organizationId: T.org, userId: T.user1 }),

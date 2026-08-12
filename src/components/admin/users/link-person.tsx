@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { MutationButton } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
 
+import { usersInvalidations } from "@/client/users-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
@@ -35,7 +36,6 @@ export function AdminModule_LinkPerson_Dialog({
     ...props
 }: DialogProps & { userId: UserId; userName: string }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [personId, setPersonId] = useState<string | null>(null);
 
@@ -45,44 +45,17 @@ export function AdminModule_LinkPerson_Dialog({
 
     const mutation = useMutation(
         trpc.users.linkPerson.mutationOptions({
+            meta: { invalidates: usersInvalidations.linkPerson },
             onError(error) {
                 console.error("Failed to link person:", error);
                 toast.error(`Failed to link person: ${error.message}`);
             },
-            async onSuccess(_data, variables) {
+            onSuccess() {
                 toast.success(
                     <>
                         Person linked to user <ObjectName>{userName}</ObjectName>.
                     </>,
                 );
-
-                await Promise.all([
-                    queryClient.invalidateQueries({
-                        queryKey: ["auth", "organization-users", organization.id],
-                    }),
-                    queryClient.invalidateQueries(
-                        trpc.users.getLinkedPerson.queryFilter({
-                            organizationId: organization.id,
-                            userId,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.users.listPersonLinks.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.personnel.getLinkedUser.queryFilter({
-                            organizationId: organization.id,
-                            personId: variables.personId,
-                        }),
-                    ),
-                ]);
 
                 handleOpenChange(false);
             },

@@ -175,10 +175,12 @@ export const usersRouter = createTrpcRouter({
      *
      * @param ctx The authenticated organization context.
      * @param input The user ID to unlink.
+     * @returns The ID of the personnel record that was unlinked, or null if none was linked.
      * @throws TRPCError(NOT_FOUND) if the user is not part of the organization.
      */
     unlinkPerson: organizationProcedure({ member: ["update"], person: ["update"] })
         .input(z.object({ userId: UserId.schema }))
+        .output(z.object({ personId: PersonId.schema.nullable() }))
         .mutation(async ({ ctx, input }) => {
             const orgUser = await ctx.prisma.organizationUser.findUnique({
                 where: {
@@ -211,5 +213,7 @@ export const usersRouter = createTrpcRouter({
                 objectId: orgUser.id,
                 description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
             });
+
+            return { personId: orgUser.personId as PersonId | null };
         }),
 });

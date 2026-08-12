@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
+import { personnelInvalidations } from "@/client/personnel-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -37,37 +38,24 @@ interface AdminModule_PersonMenuProps {
 
 export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
+            meta: { invalidates: personnelInvalidations.archivePerson },
             onError(error) {
                 toast.error(`Failed to archive person: ${error.message}`);
                 console.error("Failed to archive person:", error);
-            },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
             },
         }),
     );
     const restoreMutation = useMutation(
         trpc.personnel.restorePerson.mutationOptions({
+            meta: { invalidates: personnelInvalidations.restorePerson },
             onError(error) {
                 toast.error(`Failed to restore person: ${error.message}`);
                 console.error("Failed to restore person:", error);
-            },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
             },
         }),
     );

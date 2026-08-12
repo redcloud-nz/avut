@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { ComponentProps } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -22,6 +22,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { personnelInvalidations } from "@/client/personnel-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -32,16 +33,16 @@ export function AdminModule_DeletePerson_Dialog({
     ...props
 }: ComponentProps<typeof AlertDialog> & { person: PersonData }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
+            meta: { invalidates: personnelInvalidations.deletePerson },
             onError(error) {
                 console.error("Failed to delete person:", error);
                 toast.error(`Failed to delete person: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Person <ObjectName>{person.name}</ObjectName> deleted.
@@ -53,12 +54,6 @@ export function AdminModule_DeletePerson_Dialog({
                 router.push(
                     route("/orgs/[slug]/admin/personnel", {
                         slug: organization.slug,
-                    }),
-                );
-
-                await queryClient.invalidateQueries(
-                    trpc.personnel.listPersonnel.queryFilter({
-                        organizationId: organization.id,
                     }),
                 );
 

@@ -240,7 +240,6 @@ export default function AdminModule_User_Page(
                 <AdminModule_UnlinkPerson_Dialog
                     userId={userId}
                     userName={member.user.name}
-                    personId={linkedPerson.id}
                     personName={linkedPerson.name}
                     open={unlinkPersonDialogOpen}
                     onOpenChange={setUnlinkPersonDialogOpen}

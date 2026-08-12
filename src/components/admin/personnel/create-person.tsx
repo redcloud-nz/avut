@@ -12,7 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -26,6 +26,7 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+import { personnelInvalidations } from "@/client/personnel-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
@@ -33,7 +34,6 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dialog>) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
@@ -48,6 +48,7 @@ export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dia
 
     const mutation = useMutation(
         trpc.personnel.createPerson.mutationOptions({
+            meta: { invalidates: personnelInvalidations.createPerson },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {
@@ -58,20 +59,7 @@ export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dia
                     console.error("Failed to create person:", error);
                 }
             },
-            async onSuccess({ created }) {
-                await Promise.all([
-                    queryClient.invalidateQueries(
-                        trpc.personnel.listPersonnel.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.personnel.listUnlinkedPersonnel.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                ]);
-
+            onSuccess({ created }) {
                 handleOpenChange(false);
 
                 router.push(
