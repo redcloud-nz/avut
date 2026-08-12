@@ -5,7 +5,6 @@
  * Path: /orgs/[slug]/i3
  */
 
-import { SessionHydration } from "@/components/auth/session-hydration";
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
 
 import { I3_Sidebar_Menu } from "./sidebar-menu";
@@ -19,11 +18,11 @@ export default async function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
         throw new Error("I3 module is not enabled for this organization.");
 
     return (
-        <SessionHydration>
+        <>
             <ModuleSidebar scope="organization">
                 <I3_Sidebar_Menu />
             </ModuleSidebar>
             {props.children}
-        </SessionHydration>
+        </>
     );
 }

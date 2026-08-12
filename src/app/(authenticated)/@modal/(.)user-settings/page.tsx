@@ -5,7 +5,6 @@
  * Path: /user-settings
  */
 
-import { SessionHydration } from "@/components/auth/session-hydration";
 import { requireSession } from "@/server/session";
 
 import { UserSettings_Dialog } from "./user-settings-dialog";
@@ -13,9 +12,5 @@ import { UserSettings_Dialog } from "./user-settings-dialog";
 export default async function UserSettings_Modal_Page() {
     await requireSession();
 
-    return (
-        <SessionHydration>
-            <UserSettings_Dialog />
-        </SessionHydration>
-    );
+    return <UserSettings_Dialog />;
 }

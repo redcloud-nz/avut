@@ -7,7 +7,9 @@
 
 import { ReactNode } from "react";
 
+import { ensureSession } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
+import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 
 export default async function AuthenticatedLayout(props: {
     modal: ReactNode;
@@ -17,10 +19,14 @@ export default async function AuthenticatedLayout(props: {
     // cookie is *present*; this is the check that actually validates it.
     await requireSession();
 
+    // Seed the session into the request-scoped cache once, here, so every client
+    // `useSession()` below renders it on first paint with no fetch on mount.
+    await ensureSession(getServerQueryClient());
+
     return (
-        <>
+        <HydrateClient>
             {props.modal}
             {props.children}
-        </>
+        </HydrateClient>
     );
 }
