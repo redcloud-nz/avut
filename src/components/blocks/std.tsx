@@ -21,7 +21,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { RainbowSpinner } from "@/components/ui/loading";
+import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ function SidebarInset({ children }: { children: ReactNode }) {
             data-component="StdSidebarInset"
             className="relative flex w-full h-svh flex-1 flex-col bg-background"
         >
-            {children}
+            <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
     );
 }

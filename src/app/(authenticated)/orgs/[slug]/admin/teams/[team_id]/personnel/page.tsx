@@ -2,64 +2,51 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/teams/[team_id]
+ * Paths: /orgs/[slug]/admin/teams/[team_id]/personnel
  */
-"use client";
 
-import { use } from "react";
+import { Metadata } from "next";
 
-import { AdminModule_Team_PersonnelList } from "@/components/admin/teams/team-personnel-list";
-import { Saratoga } from "@/components/blocks/saratoga";
+import { AdminModule_Team_Personnel_Content } from "@/components/admin/teams/team-personnel-content";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { useTeam } from "@/hooks/use-team";
-import { route } from "@/lib/routes";
+import { TeamId } from "@/lib/schemas/team";
+import { requireOrganization } from "@/server/organization-access";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default function AdminModule_Team_Personnel_Page(
-    props: PageProps<`/orgs/[slug]/admin/teams/[team_id]/personnel`>,
-) {
-    const { slug, team_id } = use(props.params);
-    const organization = useOrganization();
+type Props = PageProps<`/orgs/[slug]/admin/teams/[team_id]/personnel`>;
 
-    const team = useTeam(team_id);
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { slug, team_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const teamId = TeamId.schema.parse(team_id);
+    const team = await fetchQuery(
+        trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }),
+    );
+
+    return {
+        title: `Members of Team: ${team.name}`,
+        description: `View and manage the members of the team "${team.name}" in the organization "${organization.name}".`,
+    };
+}
+
+export default async function AdminModule_Team_Personnel_Page(props: Props) {
+    const { slug, team_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const teamId = TeamId.schema.parse(team_id);
+
+    prefetch(trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }));
+    prefetch(
+        trpc.teams.listTeamMemberships.queryOptions({ organizationId: organization.id, teamId }),
+    );
 
     return (
-        <>
+        <HydrateClient>
             <Std.SidebarInset>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                        { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
-                        {
-                            label: team.name,
-                            href: route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id }),
-                        },
-                        "Personnel",
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <Saratoga.Root>
-                        <Saratoga.Header>
-                            <Saratoga.Title>Members of {team.name}</Saratoga.Title>
-                            <Saratoga.Actions>
-                                <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
-                                    <Button variant="outline">
-                                        <ObjectIcons.Create />{" "}
-                                        <span className="hidden md:inline">New Member</span>
-                                    </Button>
-                                </Protect>
-                            </Saratoga.Actions>
-                        </Saratoga.Header>
-                        <div>
-                            <AdminModule_Team_PersonnelList team={team} />
-                        </div>
-                    </Saratoga.Root>
-                </Std.ScrollContainer>
+                <AdminModule_Team_Personnel_Content teamId={teamId} />
             </Std.SidebarInset>
-        </>
+        </HydrateClient>
     );
 }

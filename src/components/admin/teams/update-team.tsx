@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,6 +28,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { teamsInvalidations } from "@/client/teams-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
@@ -36,7 +36,6 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
-    const router = useRouter();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -47,6 +46,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     const mutation = useMutation(
         trpc.teams.updateTeam.mutationOptions({
+            meta: { invalidates: teamsInvalidations.updateTeam },
             async onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {
@@ -57,20 +57,18 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                     toast.error(`Failed to update team: ${error.message}`);
                 }
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
                 toast.success("Team updated");
 
                 handleOpenChange(false);
 
-                await queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
+                queryClient.setQueryData(
+                    trpc.teams.getTeam.queryKey({
                         organizationId: organization.id,
+                        teamId: team.id,
                     }),
+                    updated,
                 );
-
-                // The detail page renders a server-fetched team, so the cache invalidation
-                // above does not reach it — only a server re-render does.
-                router.refresh();
             },
         }),
     );

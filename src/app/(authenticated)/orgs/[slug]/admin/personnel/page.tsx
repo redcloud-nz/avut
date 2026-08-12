@@ -9,7 +9,7 @@ import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
-import { AdminModule_PersonnelList } from "../../../../../../components/admin/personnel/personnel-list";
+import { AdminModule_PersonnelList } from "@/components/admin/personnel/personnel-list";
 import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {

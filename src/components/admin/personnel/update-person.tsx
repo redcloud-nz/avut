@@ -4,15 +4,15 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,6 +21,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
@@ -31,13 +32,10 @@ import { useOrganization } from "@/hooks/use-organization";
 import { ModifiablePersonData, PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdatePerson_Dialog({
-    person,
-    ...props
-}: ComponentProps<typeof Dialog> & { person: PersonData }) {
+export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -57,17 +55,9 @@ export function AdminModule_UpdatePerson_Dialog({
                     toast.error(`Failed to update person: ${error.message}`);
                 }
             },
-            async onSuccess({ updated }) {
+            async onSuccess() {
                 toast.success("Person updated");
-
-                queryClient.setQueryData(
-                    trpc.personnel.getPerson.queryKey({ personId: person.id }),
-                    updated,
-                );
-
-                // The detail page renders a server-fetched person, so the cache writes
-                // above do not reach it — only a server re-render does.
-                router.refresh();
+                handleOpenChange(false);
             },
         }),
     );
@@ -77,11 +67,16 @@ export function AdminModule_UpdatePerson_Dialog({
             form.reset();
             mutation.reset();
         }
-        props.onOpenChange?.(open);
+        setDialogOpen(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Update person</DialogTitle>

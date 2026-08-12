@@ -7,44 +7,24 @@
 
 import { Metadata } from "next";
 
+import { AdminModule_Person_Content } from "@/components/admin/personnel/person-content";
 import { Std } from "@/components/blocks/std";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { requireOrganization } from "@/server/organization-access";
-import { fetchQuery, trpc } from "@/trpc/server";
-
-import { AdminModule_Person_Content } from "./content";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/admin/personnel/[person_id]`>;
 
-/**
- * Resolve the route's person and their linked user account.
- *
- * `generateMetadata` and the page body both call this, but it costs a single round trip:
- * `requireOrganization` is React-`cache`d and `fetchQuery` writes into the request-scoped
- * query client, so the second call is a cache hit.
- */
-async function resolvePerson(props: Props) {
+export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, person_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
-    const input = {
-        organizationId: organization.id,
-        personId: PersonId.schema.parse(person_id),
-    };
-
-    const [person, linkedUser] = await Promise.all([
-        fetchQuery(trpc.personnel.getPerson.queryOptions(input)),
-        fetchQuery(trpc.personnel.getLinkedUser.queryOptions(input)),
-    ]);
-
-    return { slug, person, linkedUser };
-}
-
-export async function generateMetadata(props: Props): Promise<Metadata> {
-    const { person } = await resolvePerson(props);
+    const personId = PersonId.schema.parse(person_id);
+    const person = await fetchQuery(
+        trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }),
+    );
 
     return {
         title: `${person.name} ${TITLE_SEPARATOR} Personnel`,
@@ -52,20 +32,24 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function AdminModule_Person_Page(props: Props) {
-    const { slug, person, linkedUser } = await resolvePerson(props);
+    const { slug, person_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const personId = PersonId.schema.parse(person_id);
+
+    prefetch(trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }));
+    prefetch(
+        trpc.personnel.getLinkedUser.queryOptions({ organizationId: organization.id, personId }),
+    );
+    prefetch(
+        trpc.teams.listTeamMemberships.queryOptions({ organizationId: organization.id, personId }),
+    );
 
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Personnel", href: route("/orgs/[slug]/admin/personnel", { slug }) },
-                    person.name,
-                ]}
-            />
-            <Std.ScrollContainer>
-                <AdminModule_Person_Content person={person} linkedUser={linkedUser} />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Std.SidebarInset>
+                <AdminModule_Person_Content personId={personId} />
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }
