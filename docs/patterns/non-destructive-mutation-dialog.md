@@ -1,8 +1,9 @@
 # Pattern: non-destructive mutation dialog
 
-Shape for a dialog that creates or updates a record (as opposed to deleting one — see
-`AdminModule_DeletePerson_Dialog` for that shape). Examples: `AdminModule_AddTeamMember_Dialog`,
-`AdminModule_RemoveTeamMember_Dialog`'s sibling `AdminModule_UpdateTeam_Dialog`.
+Shape for a dialog that creates or updates a record — the counterpart to
+[destructive-mutation-dialog.md](destructive-mutation-dialog.md). Examples:
+`AdminModule_AddTeamMember_Dialog`, `AdminModule_UpdateTeam_Dialog`,
+`AdminModule_CreatePerson_Dialog`.
 
 ```tsx
 export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
@@ -63,6 +64,14 @@ Key points:
   and its `dialogOpen` state. Callers just render `<AdminModule_X_Dialog record={record} />`
   wrapped in `<Protect>` if permission-gated — no open-state or trigger-button plumbing
   at the call site.
+  - **Caveat**: this only works when the trigger is a primary, standalone button on the
+    page (a card action, a page-header action). If the action instead lives inside a
+    `DropdownMenu` (e.g. an "Edit" item in `AdminModule_TeamMenu`), the dialog can't own
+    a `DialogTrigger` — closing the dropdown on select would tear down the trigger before
+    the dialog opens. There, fall back to the controlled shape from
+    [destructive-mutation-dialog.md](destructive-mutation-dialog.md): the dialog takes
+    `open`/`onOpenChange`, and the menu's own `useState` plus its `DropdownMenuItem`'s
+    `onSelect={() => setOpen(true)}` drive it instead.
 - **No optimistic updates.** `meta: { invalidates: ... }` (see
   `src/client/<domain>-invalidations.ts` and `src/trpc/mutation-invalidator.tsx`) is
   enough — the UI updates on refetch after the mutation settles. Reach for
