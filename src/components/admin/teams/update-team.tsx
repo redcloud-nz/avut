@@ -95,12 +95,16 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                 </DialogHeader>
                 <form
                     id="update-team-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            teamId: team.id,
-                            update: formData,
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (formData) =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                teamId: team.id,
+                                update: formData,
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>

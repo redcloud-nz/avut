@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { teamsInvalidations } from "@/client/teams-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
@@ -36,7 +37,6 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_CreateTeam_Dialog() {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,6 +53,7 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const mutation = useMutation(
         trpc.teams.createTeam.mutationOptions({
+            meta: { invalidates: teamsInvalidations.createTeam },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {
@@ -63,13 +64,7 @@ export function AdminModule_CreateTeam_Dialog() {
                     console.error("Failed to create team:", error);
                 }
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
+            onSuccess({ created }) {
                 handleOpenChange(false);
 
                 router.push(
@@ -82,12 +77,17 @@ export function AdminModule_CreateTeam_Dialog() {
         }),
     );
 
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId: organization.id,
-            create: formData,
-        });
-    });
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            mutation.mutate({
+                organizationId: organization.id,
+                create: formData,
+            });
+        },
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
 
     function handleOpenChange(open: boolean) {
         if (!open) {

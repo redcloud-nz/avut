@@ -6,9 +6,6 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { AdminModule_TeamLinks_Card } from "@/components/admin/teams/team-links";
-import { AdminModule_TeamMenu } from "@/components/admin/teams/team-menu";
-import { AdminModule_UpdateTeam_Dialog } from "@/components/admin/teams/update-team";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
@@ -22,6 +19,10 @@ import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_TeamLinks_Card } from "./team-links";
+import { AdminModule_TeamMenu } from "./team-menu";
+import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();

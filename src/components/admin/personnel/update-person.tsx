@@ -84,12 +84,16 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                 </DialogHeader>
                 <form
                     id="update-person-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            personId: person.id,
-                            update: formData,
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (formData) =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                personId: person.id,
+                                update: formData,
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>

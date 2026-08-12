@@ -29,6 +29,10 @@ export const personnelInvalidations = {
         trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
     ],
     updatePerson: (vars: RouterInput["personnel"]["updatePerson"]) => [
+        trpc.personnel.getPerson.queryFilter({
+            organizationId: vars.organizationId,
+            personId: vars.personId,
+        }),
         trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
     ],
 };

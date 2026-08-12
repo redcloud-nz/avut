@@ -27,17 +27,25 @@ describe("personnelInvalidations", () => {
         ]);
     });
 
-    it("updatePerson, deletePerson, archivePerson, and restorePerson each invalidate only the personnel list", () => {
+    it("updatePerson invalidates the person and the personnel list", () => {
         const vars = { organizationId, personId };
-        const expected = [
-            [["personnel", "listPersonnel"], { input: { organizationId }, type: "query" }],
-        ];
 
         expect(
             personnelInvalidations
                 .updatePerson({ ...vars, update: {} } as never)
                 .map((f) => f.queryKey),
-        ).toEqual(expected);
+        ).toEqual([
+            [["personnel", "getPerson"], { input: { organizationId, personId }, type: "query" }],
+            [["personnel", "listPersonnel"], { input: { organizationId }, type: "query" }],
+        ]);
+    });
+
+    it("deletePerson, archivePerson, and restorePerson each invalidate only the personnel list", () => {
+        const vars = { organizationId, personId };
+        const expected = [
+            [["personnel", "listPersonnel"], { input: { organizationId }, type: "query" }],
+        ];
+
         expect(personnelInvalidations.deletePerson(vars as never).map((f) => f.queryKey)).toEqual(
             expected,
         );

@@ -8,9 +8,6 @@ import { Suspense } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { AdminModule_PersonMenu } from "@/components/admin/personnel/person-menu";
-import { AdminModule_Person_TeamMemberships_Card } from "@/components/admin/personnel/team-memberships";
-import { AdminModule_UpdatePerson_Dialog } from "@/components/admin/personnel/update-person";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
@@ -30,6 +27,10 @@ import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_PersonMenu } from "./person-menu";
+import { AdminModule_Person_TeamMemberships_Card } from "./team-memberships";
+import { AdminModule_UpdatePerson_Dialog } from "./update-person";
 
 export function AdminModule_Person_Content({ personId }: { personId: PersonId }) {
     const organization = useOrganization();

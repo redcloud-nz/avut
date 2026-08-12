@@ -1,4 +1,3 @@
-// filepath: /Users/awestphal/projects/avut/src/app/(authenticated)/orgs/[slug]/admin/personnel/create-person.tsx
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
@@ -7,13 +6,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { MutationButton } from "@/components/ui/button";
+import { CreateNewIcon } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -22,6 +22,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,11 @@ import { route } from "@/lib/routes";
 import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dialog>) {
+export function AdminModule_CreatePerson_Dialog() {
     const organization = useOrganization();
     const router = useRouter();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -72,24 +75,34 @@ export function AdminModule_CreatePerson_Dialog(props: ComponentProps<typeof Dia
         }),
     );
 
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId: organization.id,
-            personId: PersonId.create(),
-            create: formData,
-        });
-    });
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            mutation.mutate({
+                organizationId: organization.id,
+                personId: PersonId.create(),
+                create: formData,
+            });
+        },
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
 
     function handleOpenChange(open: boolean) {
         if (!open) {
             form.reset();
             mutation.reset();
         }
-        props.onOpenChange?.(open);
+        setDialogOpen(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <CreateNewIcon /> <span className="hidden md:inline">New Person</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Person</DialogTitle>

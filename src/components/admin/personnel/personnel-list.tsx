@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -18,10 +18,7 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-
-import { Button } from "@/components/ui/button";
 
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
@@ -105,17 +102,13 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
         },
     });
 
-    const [createPersonDialogOpen, setCreatePersonDialogOpen] = useState(false);
-
     return (
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Personnel</Saratoga.Title>
                 <Saratoga.Actions>
                     <Protect orgId={organization.id} permissions={{ person: ["create"] }}>
-                        <Button variant="outline" onClick={() => setCreatePersonDialogOpen(true)}>
-                            <CreateNewIcon /> <span className="hidden md:inline">New Person</span>
-                        </Button>
+                        <AdminModule_CreatePerson_Dialog />
                     </Protect>
                 </Saratoga.Actions>
             </Saratoga.Header>
@@ -125,11 +118,6 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
             </div>
-
-            <AdminModule_CreatePerson_Dialog
-                open={createPersonDialogOpen}
-                onOpenChange={setCreatePersonDialogOpen}
-            />
         </Saratoga.Root>
     );
 }
