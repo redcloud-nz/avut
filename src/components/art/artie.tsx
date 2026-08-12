@@ -7,7 +7,7 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-type ArtiePose =
+export type ArtiePose =
     | "CheckThisOut"
     | "Empty"
     | "Error"
