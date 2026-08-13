@@ -40,7 +40,7 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-import { SkillPackageBuilder_CreateSkill_Dialog } from "../../skills/create-skill";
+import { SkillPackageBuilder_CreateSkill_Dialog } from "./create-skill";
 import { SkillPackageBuilder_ReorderSkills_Dialog } from "./reorder-skills";
 
 /**

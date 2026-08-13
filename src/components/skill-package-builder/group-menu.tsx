@@ -46,7 +46,14 @@ export function SkillPackageBuilder_Group_Menu({
             onError(error) {
                 console.error("Failed to archive skill group:", error);
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getGroup.queryKey({
+                        organizationId: organization.id,
+                        skillGroupId: skillGroup.id,
+                    }),
+                    { ...updated, skillPackage: skillGroup.skillPackage },
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,
@@ -60,7 +67,14 @@ export function SkillPackageBuilder_Group_Menu({
             onError(error) {
                 console.error("Failed to restore skill group:", error);
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getGroup.queryKey({
+                        organizationId: organization.id,
+                        skillGroupId: skillGroup.id,
+                    }),
+                    { ...updated, skillPackage: skillGroup.skillPackage },
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listGroups.queryFilter({
                         organizationId: organization.id,

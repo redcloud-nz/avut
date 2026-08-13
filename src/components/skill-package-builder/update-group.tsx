@@ -65,6 +65,16 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
 
                 handleOpenChange(false);
 
+                const merged = { ...updated, skillPackage: skillGroup.skillPackage };
+
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getGroup.queryKey({
+                        organizationId: organization.id,
+                        skillGroupId: skillGroup.id,
+                    }),
+                    merged,
+                );
+
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.listGroups.queryKey({
                         organizationId: organization.id,
