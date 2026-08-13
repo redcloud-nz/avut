@@ -131,6 +131,21 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 const destinationGroup = skillGroups.find(
                     (group) => group.id === updated.skillGroupId,
                 );
+
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getSkill.queryKey({
+                        organizationId: organization.id,
+                        skillId: updated.id,
+                    }),
+                    destinationPackage && destinationGroup
+                        ? {
+                              ...updated,
+                              skillGroup: destinationGroup,
+                              skillPackage: destinationPackage,
+                          }
+                        : undefined,
+                );
+
                 toast.success(
                     <>
                         Skill moved from <ObjectName>{originPackage?.name}</ObjectName>

@@ -87,6 +87,14 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                 handleOpenChange(false);
 
                 queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getSkill.queryKey({
+                        organizationId: organization.id,
+                        skillId: skill.id,
+                    }),
+                    { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
+                );
+
+                queryClient.setQueryData(
                     trpc.skillPackageBuilder.listSkills.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skill.skillPackageId,
