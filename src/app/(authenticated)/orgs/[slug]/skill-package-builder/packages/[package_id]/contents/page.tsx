@@ -34,10 +34,11 @@ export default function SkillPackageBuilder_PackageContents_Page(
     const { slug, package_id } = use(props.params);
     const organization = useOrganization();
 
-    const [{ data: skillPackages }, { data: groups }, { data: skills }] = useSuspenseQueries({
+    const [{ data: skillPackage }, { data: groups }, { data: skills }] = useSuspenseQueries({
         queries: [
-            trpc.skillPackageBuilder.listPackages.queryOptions({
+            trpc.skillPackageBuilder.getPackage.queryOptions({
                 organizationId: organization.id,
+                skillPackageId: package_id,
             }),
             trpc.skillPackageBuilder.listGroups.queryOptions({
                 organizationId: organization.id,
@@ -49,9 +50,6 @@ export default function SkillPackageBuilder_PackageContents_Page(
             }),
         ],
     });
-
-    const skillPackage = skillPackages.find((pkg) => pkg.id === package_id);
-    if (!skillPackage) throw new Error(`SkillPackage(${package_id}) not found`);
 
     return (
         <Std.SidebarInset>
