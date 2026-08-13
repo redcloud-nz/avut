@@ -17,14 +17,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
 
 import { I3Module_DeleteTemplate_Dialog } from "./delete-template";
 
 export function I3Module_Template_Menu({ template }: { template: I3Template }) {
-    const organization = useOrganization();
-
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     return (
@@ -38,7 +35,6 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
-                        orgId={organization.id}
                         permissions={{ i3Template: ["delete"] }}
                         render={(allowed) => (
                             <DropdownMenuItem

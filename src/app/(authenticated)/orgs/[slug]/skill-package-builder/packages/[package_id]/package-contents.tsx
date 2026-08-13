@@ -90,10 +90,7 @@ export function SkillPackageBuilder_Package_Contents_List({
             <CardHeader>
                 <CardTitle>Package Contents</CardTitle>
                 <CardAction>
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["update"] }}
-                    >
+                    <Protect permissions={{ skillPackageBuilder: ["update"] }}>
                         <ButtonGroup>
                             <Button
                                 variant="ghost"

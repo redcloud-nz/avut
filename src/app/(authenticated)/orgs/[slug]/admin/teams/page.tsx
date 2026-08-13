@@ -42,7 +42,7 @@ export default async function AdminModule_TeamsList_Page(
                         <Saratoga.Header>
                             <Saratoga.Title>Teams</Saratoga.Title>
                             <Saratoga.Actions>
-                                <Protect orgId={organization.id} permissions={{ team: ["create"] }}>
+                                <Protect permissions={{ team: ["create"] }}>
                                     <AdminModule_CreateTeam_Dialog />
                                 </Protect>
                             </Saratoga.Actions>

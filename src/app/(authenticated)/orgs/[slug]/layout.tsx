@@ -29,10 +29,10 @@ export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Prom
 
 export default async function Organization_Layout(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
+    const { organization, settings, roles } = await requireOrganization(slug);
 
     return (
-        <OrganizationProvider organization={organization} settings={settings}>
+        <OrganizationProvider organization={organization} settings={settings} roles={roles}>
             {props.children}
         </OrganizationProvider>
     );

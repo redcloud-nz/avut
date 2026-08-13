@@ -61,10 +61,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                 <CardHeader>
                                     <CardTitle>Team Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ team: ["update"] }}
-                                        >
+                                        <Protect permissions={{ team: ["update"] }}>
                                             <AdminModule_UpdateTeam_Dialog team={team} />
                                         </Protect>
                                     </CardAction>
@@ -86,10 +83,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                     <CardHeader>
                                         <CardTitle>D4H Integration</CardTitle>
                                         <CardAction>
-                                            <Protect
-                                                orgId={organization.id}
-                                                permissions={{ team: ["update"] }}
-                                            >
+                                            <Protect permissions={{ team: ["update"] }}>
                                                 <Button variant="ghost">
                                                     <ObjectIcons.Edit />
                                                 </Button>

@@ -18,14 +18,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
-    const organization = useOrganization();
-
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     return (
@@ -39,7 +36,6 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
-                        orgId={organization.id}
                         permissions={{ skillCheckSession: ["update"] }}
                         fallback={
                             <Empty size="sm">

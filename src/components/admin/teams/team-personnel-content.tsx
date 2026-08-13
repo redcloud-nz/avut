@@ -83,7 +83,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                     <Saratoga.Header>
                         <Saratoga.Title>Members of {team.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect orgId={organization.id} permissions={{ team: ["update"] }}>
+                            <Protect permissions={{ team: ["update"] }}>
                                 <AdminModule_AddTeamMember_Dialog team={team} />
                             </Protect>
                         </Saratoga.Actions>
@@ -103,10 +103,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                                         <TableRow key={teamMembership.personId}>
                                             <TableCell>{person.name}</TableCell>
                                             <TableCell className="w-9 p-0">
-                                                <Protect
-                                                    orgId={organization.id}
-                                                    permissions={{ team: ["update"] }}
-                                                >
+                                                <Protect permissions={{ team: ["update"] }}>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"

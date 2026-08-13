@@ -75,10 +75,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                 <CardHeader>
                                     <CardTitle>Person Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ person: ["update"] }}
-                                        >
+                                        <Protect permissions={{ person: ["update"] }}>
                                             <AdminModule_UpdatePerson_Dialog person={person} />
                                         </Protect>
                                     </CardAction>

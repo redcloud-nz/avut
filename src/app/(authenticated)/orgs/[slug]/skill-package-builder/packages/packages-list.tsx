@@ -139,10 +139,7 @@ export function SkillPackageBuilder_Packages_List({
             <Saratoga.Header>
                 <Saratoga.Title>Skill Packages</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect
-                        orgId={organization.id}
-                        permissions={{ skillPackageBuilder: ["create"] }}
-                    >
+                    <Protect permissions={{ skillPackageBuilder: ["create"] }}>
                         <Button variant="outline" onClick={() => setCreatePackageDialogOpen(true)}>
                             <CreateNewIcon /> New
                         </Button>
@@ -164,7 +161,6 @@ export function SkillPackageBuilder_Packages_List({
                         </EmptyHeader>
                         <EmptyContent>
                             <Protect
-                                orgId={organization.id}
                                 permissions={{
                                     skillPackageBuilder: ["create"],
                                 }}

@@ -99,7 +99,7 @@ export function AdminModule_D4hAccessTokensList({
             <Saratoga.Header>
                 <Saratoga.Title>D4H Access Tokens</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect orgId={organization.id} permissions={{ d4hAccessToken: ["create"] }}>
+                    <Protect permissions={{ d4hAccessToken: ["create"] }}>
                         <Button variant="outline" asChild>
                             <Link
                                 href={route("/orgs/[slug]/admin/d4h-access-tokens/--create", {

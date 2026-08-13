@@ -24,7 +24,7 @@ import { requireOrganization } from "@/server/organization-access";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>
@@ -32,7 +32,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
-                        {/* <Protect permissions={{ d4hAccessToken: ["view"] }} orgId={organization.id}>
+                        {/* <Protect permissions={{ d4hAccessToken: ["view"] }}>
                             <Item asChild>
                                 <Link
                                     href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
@@ -50,7 +50,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect> */}
-                        <Protect orgId={organization.id} permissions={{ invitation: ["view"] }}>
+                        <Protect permissions={{ invitation: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/invitations", { slug })}>
                                     <ItemContent>
@@ -65,7 +65,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ organization: ["view"] }}>
+                        <Protect permissions={{ organization: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/organization", { slug })}>
                                     <ItemContent>
@@ -81,7 +81,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
 
-                        <Protect orgId={organization.id} permissions={{ person: ["view"] }}>
+                        <Protect permissions={{ person: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/personnel", { slug })}>
                                     <ItemContent>
@@ -96,7 +96,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ team: ["view"] }}>
+                        <Protect permissions={{ team: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/teams", { slug })}>
                                     <ItemContent>
@@ -111,7 +111,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ member: ["view"] }}>
+                        <Protect permissions={{ member: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/users", { slug })}>
                                     <ItemContent>

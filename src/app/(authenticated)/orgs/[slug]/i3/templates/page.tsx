@@ -23,7 +23,7 @@ export default async function I3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    await requireOrganization(slug);
 
     return (
         <>
@@ -39,10 +39,7 @@ export default async function I3Module_TemplateList_Page(
                         <Saratoga.Header>
                             <Saratoga.Title>I3 Templates</Saratoga.Title>
                             <Saratoga.Actions>
-                                <Protect
-                                    orgId={organization.id}
-                                    permissions={{ i3Template: ["create"] }}
-                                >
+                                <Protect permissions={{ i3Template: ["create"] }}>
                                     <I3Module_CreateTemplate_Dialog />
                                 </Protect>
                             </Saratoga.Actions>

@@ -18,7 +18,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
@@ -28,8 +27,6 @@ interface AdminModule_TeamMenuProps {
 }
 
 export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
-    const organization = useOrganization();
-
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     return (
@@ -43,7 +40,6 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
-                        orgId={organization.id}
                         permissions={{ team: ["update"] }}
                         render={(allowed) => (
                             <DropdownMenuItem disabled={!allowed}>
@@ -52,7 +48,6 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                         )}
                     />
                     <Protect
-                        orgId={organization.id}
                         permissions={{ team: ["delete"] }}
                         render={(allowed) => (
                             <DropdownMenuItem

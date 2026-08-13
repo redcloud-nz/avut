@@ -9,8 +9,10 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { auth } from "@/server/auth";
 import { revalidateOrganization } from "@/server/organization";
+import { getOrganizationUserById } from "@/server/organization-user";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -37,6 +39,17 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             return OrganizationData.fromRecord(organization);
+        }),
+
+    /**
+     * Retrieves the calling user's role(s) within the organization, for client-side
+     * permission checks (see `Protect`, `useOrganization`).
+     */
+    getOrganizationUserSelf: organizationProcedure({ organization: ["view"] })
+        .output(z.array(OrganizationRole.schema))
+        .query(async ({ ctx }) => {
+            const orgUser = await getOrganizationUserById(ctx.organizationId, ctx.userId);
+            return orgUser.roles;
         }),
 
     /**

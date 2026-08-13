@@ -15,7 +15,6 @@ import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { useSkillGroup } from "@/hooks/use-skill-group";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -29,7 +28,6 @@ export default function SkillPackageBuilder_Group_Page(
 ) {
     const { slug, package_id, group_id } = use(props.params);
 
-    const organization = useOrganization();
     const skillGroup = useSkillGroup({
         skillPackageId: package_id,
         skillGroupId: group_id,
@@ -68,10 +66,7 @@ export default function SkillPackageBuilder_Group_Page(
                                 <CardHeader>
                                     <CardTitle>Skill Group Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ skillPackageBuilder: ["update"] }}
-                                        >
+                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
                                             <SkillPackageBuilder_UpdateGroup_Dialog
                                                 skillGroup={skillGroup}
                                             />

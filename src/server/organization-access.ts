@@ -10,17 +10,20 @@ import { cache } from "react";
 
 import { Permissions } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { auth, AuthSession } from "./auth";
 import { getOrganizationBySlug } from "./organization";
 import { getOrganizationSettings } from "./organization-settings";
+import { getOrganizationUserById } from "./organization-user";
 import { requireSession } from "./session";
 
 export interface OrganizationAccess {
     session: AuthSession;
     organization: OrganizationData;
     settings: OrganizationSettings;
+    roles: OrganizationRole[];
 }
 
 /**
@@ -75,7 +78,9 @@ export const requireOrganization = cache(async (slug: string): Promise<Organizat
 
     await assertPermission(organization.id, { organization: ["view"] });
 
-    return { session, organization, settings };
+    const orgUser = await getOrganizationUserById(organization.id, session.user.id);
+
+    return { session, organization, settings, roles: orgUser.roles };
 });
 
 /** As `requireOrganization`, additionally requiring `permissions`. */

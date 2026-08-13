@@ -107,7 +107,7 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
             <Saratoga.Header>
                 <Saratoga.Title>Personnel</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect orgId={organization.id} permissions={{ person: ["create"] }}>
+                    <Protect permissions={{ person: ["create"] }}>
                         <AdminModule_CreatePerson_Dialog />
                     </Protect>
                 </Saratoga.Actions>

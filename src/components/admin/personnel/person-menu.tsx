@@ -116,7 +116,6 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <Protect
-                            orgId={organization.id}
                             permissions={{ person: ["update"] }}
                             fallback={
                                 <Empty size="sm">

@@ -15,7 +15,6 @@ import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { useSkill } from "@/hooks/use-skill";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -28,7 +27,6 @@ export default function SkillPackageBuilder_Skill_Page(
 ) {
     const { slug, package_id, skill_id } = use(props.params);
 
-    const organization = useOrganization();
     const skill = useSkill({
         skillPackageId: package_id,
         skillId: skill_id,
@@ -67,10 +65,7 @@ export default function SkillPackageBuilder_Skill_Page(
                                 <CardHeader>
                                     <CardTitle>Skill Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ skillPackageBuilder: ["update"] }}
-                                        >
+                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
                                             <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
                                         </Protect>
                                     </CardAction>

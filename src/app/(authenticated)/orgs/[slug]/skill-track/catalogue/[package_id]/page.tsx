@@ -91,10 +91,7 @@ export default function SkillTrack_CataloguePackage_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ skillPackageSubscription: ["subscribe"] }}
-                            >
+                            <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
                                     <MutationButton
                                         status={unsubscribeMutation.status}

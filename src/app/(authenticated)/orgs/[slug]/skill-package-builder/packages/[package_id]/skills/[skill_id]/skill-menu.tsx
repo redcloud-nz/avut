@@ -116,7 +116,6 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
 
                     <DropdownMenuGroup>
                         <Protect
-                            orgId={organization.id}
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <>
@@ -148,7 +147,6 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             )}
                         />
                         <Protect
-                            orgId={organization.id}
                             permissions={{ skillPackageBuilder: ["delete"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem

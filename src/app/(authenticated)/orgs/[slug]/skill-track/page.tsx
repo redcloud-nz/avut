@@ -25,7 +25,7 @@ import { requireOrganization } from "@/server/organization-access";
 
 export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slug]/skill-track`>) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>
@@ -37,10 +37,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">
                     <ItemGroup>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skillPackageSubscription: ["view"] }}
-                        >
+                        <Protect permissions={{ skillPackageSubscription: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/catalogue", { slug })}>
                                     <ItemContent>
@@ -55,7 +52,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                        <Protect permissions={{ skillCheck: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/checks", { slug })}>
                                     <ItemContent>
@@ -70,10 +67,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect
-                            orgId={organization.id}
-                            permissions={{ skillCheckSession: ["view"] }}
-                        >
+                        <Protect permissions={{ skillCheckSession: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/sessions", { slug })}>
                                     <ItemContent>
@@ -88,7 +82,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                        <Protect permissions={{ skillCheck: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/reports", { slug })}>
                                     <ItemContent>

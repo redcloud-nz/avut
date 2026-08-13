@@ -99,7 +99,6 @@ export default function AdminModule_User_Page(
                                     <DropdownMenuGroup>
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <Protect
-                                            orgId={organization.id}
                                             permissions={{ member: ["delete"] }}
                                             render={(allowed) => (
                                                 <DropdownMenuItem
@@ -125,10 +124,7 @@ export default function AdminModule_User_Page(
                                 <CardHeader>
                                     <CardTitle>User Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ member: ["update"] }}
-                                        >
+                                        <Protect permissions={{ member: ["update"] }}>
                                             <AdminModule_UpdateUser_Dialog
                                                 organizationUser={member}
                                             />
@@ -156,10 +152,7 @@ export default function AdminModule_User_Page(
                                 <CardHeader>
                                     <CardTitle>Linked Person</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ member: ["update"] }}
-                                        >
+                                        <Protect permissions={{ member: ["update"] }}>
                                             {linkedPerson ? (
                                                 <Button
                                                     variant="ghost"

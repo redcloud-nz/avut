@@ -39,10 +39,7 @@ export default async function AdminModule_Organization_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Organization</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ organization: ["update"] }}
-                            >
+                            <Protect permissions={{ organization: ["update"] }}>
                                 <Button variant="ghost" size="icon" asChild>
                                     <Link
                                         href={route("/orgs/[slug]/admin/organization/--update", {
@@ -53,10 +50,7 @@ export default async function AdminModule_Organization_Page(
                                     </Link>
                                 </Button>
                             </Protect>
-                            <Protect
-                                orgId={organization.id}
-                                permissions={{ organization: ["update"] }}
-                            >
+                            <Protect permissions={{ organization: ["update"] }}>
                                 <Button variant="outline" size="icon" asChild>
                                     <Link
                                         href={route("/orgs/[slug]/admin/organization/settings", {

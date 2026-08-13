@@ -172,7 +172,7 @@ export function AdminModule_Invitations_List() {
             <Saratoga.Header>
                 <Saratoga.Title>Invitations</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect orgId={organization.id} permissions={{ invitation: ["create"] }}>
+                    <Protect permissions={{ invitation: ["create"] }}>
                         <AdminModule_CreateInvitation_Dialog />
                     </Protect>
                 </Saratoga.Actions>
@@ -245,7 +245,6 @@ function InvitationActions({ invitation }: { invitation: AuthInvitation }) {
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
-                        orgId={invitation.organizationId}
                         permissions={{ invitation: ["create"] }}
                         render={(allowed) => (
                             <DropdownMenuItem
@@ -261,7 +260,6 @@ function InvitationActions({ invitation }: { invitation: AuthInvitation }) {
                         )}
                     />
                     <Protect
-                        orgId={invitation.organizationId}
                         permissions={{ invitation: ["cancel"] }}
                         render={(allowed) => (
                             <DropdownMenuItem

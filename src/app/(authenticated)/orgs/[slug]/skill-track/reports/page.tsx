@@ -27,7 +27,7 @@ export default async function SkillsTrack_Reports_Page(
     props: PageProps<`/orgs/[slug]/skill-track/reports`>,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>
@@ -40,7 +40,7 @@ export default async function SkillsTrack_Reports_Page(
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skills Reports">
                     <ItemGroup>
-                        <Protect orgId={organization.id} permissions={{ skillCheck: ["view"] }}>
+                        <Protect permissions={{ skillCheck: ["view"] }}>
                             <Item asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/person", {

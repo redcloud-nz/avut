@@ -14,7 +14,6 @@ import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
-import { useOrganization } from "@/hooks/use-organization";
 import { useI3Template } from "@/hooks/use-i3-template";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -27,7 +26,6 @@ export default function I3Module_Template_Page(
     props: PageProps<"/orgs/[slug]/i3/templates/[template_id]">,
 ) {
     const { slug, template_id } = use(props.params);
-    const organization = useOrganization();
     const template = useI3Template(template_id);
 
     return (
@@ -54,10 +52,7 @@ export default function I3Module_Template_Page(
                                 <CardHeader>
                                     <CardTitle>Template Details</CardTitle>
                                     <CardAction>
-                                        <Protect
-                                            orgId={organization.id}
-                                            permissions={{ i3Template: ["update"] }}
-                                        >
+                                        <Protect permissions={{ i3Template: ["update"] }}>
                                             <I3Module_UpdateTemplate_Dialog template={template} />
                                         </Protect>
                                     </CardAction>

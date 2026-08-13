@@ -25,7 +25,7 @@ import { requireOrganization } from "@/server/organization-access";
 export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>) {
     const { slug } = await props.params;
 
-    const { organization } = await requireOrganization(slug);
+    await requireOrganization(slug);
 
     return (
         <Std.SidebarInset>
@@ -85,7 +85,7 @@ export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>)
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Protect orgId={organization.id} permissions={{ i3Template: ["view"] }}>
+                        <Protect permissions={{ i3Template: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/i3/templates", { slug })}>
                                     <ItemContent>

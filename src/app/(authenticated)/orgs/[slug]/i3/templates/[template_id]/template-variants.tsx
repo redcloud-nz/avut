@@ -53,7 +53,7 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
             <CardHeader>
                 <CardTitle>Variants</CardTitle>
                 <CardAction>
-                    <Protect orgId={organization.id} permissions={{ i3Template: ["update"] }}>
+                    <Protect permissions={{ i3Template: ["update"] }}>
                         <I3Module_Template_AddVariant_Dialog template={template} />
                     </Protect>
                 </CardAction>
