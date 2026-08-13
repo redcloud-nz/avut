@@ -291,6 +291,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                         </Field>
                     </FieldGroup>
                     <DialogFooter>
+                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         <MutationButton
                             onClick={() =>
                                 mutation.mutateAsync({
@@ -308,7 +309,6 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                                 success: "Moved",
                             }}
                         />
-                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     </DialogFooter>
                 </Show>
             </DialogContent>
