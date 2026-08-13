@@ -42,7 +42,14 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             onError(error) {
                 console.error("Failed to archive skill package:", error);
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    updated,
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
@@ -57,7 +64,14 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             onError(error) {
                 console.error("Failed to publish skill package:", error);
             },
-            async onSuccess() {
+            async onSuccess({ published }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    published,
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
@@ -72,7 +86,14 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             onError(error) {
                 console.error("Failed to restore skill package:", error);
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    updated,
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,
@@ -87,7 +108,14 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             onError(error) {
                 console.error("Failed to unpublish skill package:", error);
             },
-            async onSuccess() {
+            async onSuccess({ unpublished }) {
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    unpublished,
+                );
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listPackages.queryFilter({
                         organizationId: organization.id,

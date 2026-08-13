@@ -59,10 +59,18 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     console.error("Failed to update skill package:", error);
                 }
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
                 toast.success("Skill package updated");
 
                 handleOpenChange(false);
+
+                queryClient.setQueryData(
+                    trpc.skillPackageBuilder.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    updated,
+                );
 
                 await queryClient.invalidateQueries(
                     trpc.skillPackageBuilder.listPackages.queryFilter({

@@ -41,7 +41,7 @@ import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
-import { SkillPackageBuilder_CreateGroup_Dialog } from "./groups/create-group";
+import { SkillPackageBuilder_CreateGroup_Dialog } from "./create-group";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 interface SkillPackageBuilder_Package_Groups_ListProps {

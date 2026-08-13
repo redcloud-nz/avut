@@ -9,7 +9,7 @@ import { AVUTLogo } from "@/components/art/avut-logo";
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-import { SkillPackageBuilder_Packages_List } from "./packages/packages-list";
+import { SkillPackageBuilder_Packages_List } from "@/components/skill-package-builder/packages-list";
 import { requireOrganization } from "@/server/organization-access";
 
 export default async function SkillPackageBuilder_Index_Page(
