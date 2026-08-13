@@ -129,7 +129,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template-name">Name</FieldLabel>
                                     <Input
                                         id="template-name"
@@ -144,7 +144,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                             name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template-description">
                                         Description
                                     </FieldLabel>
@@ -161,7 +161,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                             name="d4h.categoryId"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template-category">
                                         D4H Category
                                     </FieldLabel>
@@ -201,7 +201,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                             name="d4h.kindId"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template-kind">D4H Kind</FieldLabel>
                                     <Select
                                         value={field.value ? field.value.toString() : ""}

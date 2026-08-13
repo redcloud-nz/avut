@@ -107,11 +107,11 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                     )}
                 >
                     <FieldGroup>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Group ID</FieldLabel>
                             <FieldValue value={skillGroup.id} format="id" />
                         </Field>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Package</FieldLabel>
                             <FieldValue value={skillGroup.skillPackage.name} />
                         </Field>
@@ -119,7 +119,7 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="group-name">Name</FieldLabel>
                                     <Input
                                         id="group-name"
@@ -136,7 +136,7 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                             name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="group-description">Description</FieldLabel>
                                     <Textarea
                                         id="group-description"

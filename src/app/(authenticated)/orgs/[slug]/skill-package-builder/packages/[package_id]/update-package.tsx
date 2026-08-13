@@ -104,7 +104,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     )}
                 >
                     <FieldGroup>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Package ID</FieldLabel>
                             <FieldValue value={skillPackage.id} format="id" />
                         </Field>
@@ -112,7 +112,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="package-name">Name</FieldLabel>
                                     <Input
                                         id="package-name"
@@ -128,7 +128,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                             name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="package-description">
                                         Description
                                     </FieldLabel>

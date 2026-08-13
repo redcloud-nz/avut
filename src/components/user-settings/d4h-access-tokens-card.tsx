@@ -276,7 +276,7 @@ function PersonalD4HAccessToken_Add_Dialog() {
                             name="organizationId"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="access-token-organization">
                                         Organization
                                     </FieldLabel>
@@ -306,7 +306,7 @@ function PersonalD4HAccessToken_Add_Dialog() {
                             name="serverCode"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="access-token-server-code">
                                         D4H Server
                                     </FieldLabel>

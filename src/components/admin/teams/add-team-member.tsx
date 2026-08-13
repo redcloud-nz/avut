@@ -135,7 +135,7 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
                             control={form.control}
                             name="personId"
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Person</FieldLabel>
                                     <Select
                                         value={field.value ?? ""}

@@ -202,7 +202,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                 onChange={handleChange}
                             >
                                 <FieldGroup>
-                                    <Field orientation="responsive">
+                                    <Field>
                                         <FieldLabel>Issuer</FieldLabel>
                                         <UserNameFieldValue />
                                     </Field>
@@ -210,10 +210,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                         control={form.control}
                                         name="recipient"
                                         render={({ field, fieldState }) => (
-                                            <Field
-                                                orientation="responsive"
-                                                data-invalid={fieldState.invalid}
-                                            >
+                                            <Field data-invalid={fieldState.invalid}>
                                                 <FieldLabel htmlFor="recipient">
                                                     Recipient
                                                 </FieldLabel>
@@ -251,10 +248,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                         control={form.control}
                                         name="comments"
                                         render={({ field, fieldState }) => (
-                                            <Field
-                                                orientation="responsive"
-                                                data-invalid={fieldState.invalid}
-                                            >
+                                            <Field data-invalid={fieldState.invalid}>
                                                 <FieldLabel htmlFor="comments">Comments</FieldLabel>
                                                 <Textarea
                                                     id="comments"
@@ -486,7 +480,7 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                         control={form.control}
                         name="template"
                         render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                            <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel htmlFor="template">Template</FieldLabel>
                                 <Select
                                     value={field.value.id ?? ""}
@@ -530,7 +524,7 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                                 : [];
 
                             return (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
                                     <Select
@@ -574,7 +568,7 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                         control={form.control}
                         name="serialNumber"
                         render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                            <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
 
                                 <Input
@@ -648,7 +642,7 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                         control={form.control}
                         name="template"
                         render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                            <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel htmlFor="template">Template</FieldLabel>
                                 <Select
                                     value={field.value.id ?? ""}
@@ -692,7 +686,7 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                                 : [];
 
                             return (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
                                     <Select
@@ -736,7 +730,7 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                         control={form.control}
                         name="serialNumber"
                         render={({ field, fieldState }) => (
-                            <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                            <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
 
                                 <Input

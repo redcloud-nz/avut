@@ -184,7 +184,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                             name="defaultRequired"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor="default-required">Required</FieldLabel>
                                         <FieldDescription>
@@ -214,7 +214,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                             name="frequency"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor="frequency">
                                             Revalidation Frequency

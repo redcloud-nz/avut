@@ -108,7 +108,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                     )}
                 >
                     <FieldGroup>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Team ID</FieldLabel>
                             <FieldValue value={team.id} format="id" />
                         </Field>
@@ -116,7 +116,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="team-name">Name</FieldLabel>
                                     <Input
                                         id="team-name"
@@ -131,7 +131,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                             name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="team-description">Description</FieldLabel>
                                     <Textarea
                                         id="team-description"

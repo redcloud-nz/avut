@@ -128,15 +128,15 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                     )}
                 >
                     <FieldGroup>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Skill ID</FieldLabel>
                             <FieldValue value={skill.id} format="id" />
                         </Field>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Package</FieldLabel>
                             <FieldValue value={skill.skillPackage.name} />
                         </Field>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Group</FieldLabel>
                             <FieldValue value={skill.skillGroup.name} />
                         </Field>
@@ -144,7 +144,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="skill-name">Name</FieldLabel>
                                     <Input
                                         id="skill-name"
@@ -161,7 +161,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                             name="description"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="skill-description">Description</FieldLabel>
                                     <Textarea
                                         id="skill-description"
@@ -176,7 +176,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                             name="defaultRequired"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor="default-required">Required</FieldLabel>
                                         <FieldDescription>
@@ -206,7 +206,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                             name="frequency"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor="frequency">
                                             Revalidation Frequency

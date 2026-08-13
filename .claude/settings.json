@@ -15,7 +15,9 @@
       "Bash(npm run lint:fix)",
       "Bash(npm run test:run)",
       "Bash(npx eslint *)",
-      "Bash(npx prettier *)"
+      "Bash(npx prettier *)",
+      "Bash(pgrep *)",
+      "Bash(curl -s http://localhost:*)"
     ]
   }
 }

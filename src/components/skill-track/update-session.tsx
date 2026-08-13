@@ -117,7 +117,7 @@ export function SkillsModule_UpdateSession_Dialog({
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Name</FieldLabel>
                                     <Input {...field} placeholder="Session Name" />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
@@ -128,7 +128,7 @@ export function SkillsModule_UpdateSession_Dialog({
                             name="date"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Date</FieldLabel>
                                     <DatePicker
                                         value={field.value}
@@ -143,7 +143,7 @@ export function SkillsModule_UpdateSession_Dialog({
                             name="notes"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Notes</FieldLabel>
                                     <Textarea {...field} placeholder="Session Notes" />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}

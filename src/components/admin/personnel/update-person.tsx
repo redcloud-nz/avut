@@ -97,7 +97,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                     )}
                 >
                     <FieldGroup>
-                        <Field orientation="responsive">
+                        <Field>
                             <FieldLabel>Person ID</FieldLabel>
                             <FieldValue value={person.id} format="id" />
                         </Field>
@@ -105,7 +105,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                             name="name"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="person-name">Name</FieldLabel>
                                     <Input
                                         id="person-name"
@@ -120,7 +120,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                             name="email"
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} orientation="responsive">
+                                <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="person-email">Email</FieldLabel>
                                     <Input
                                         id="person-email"
