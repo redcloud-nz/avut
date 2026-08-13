@@ -373,6 +373,87 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a single skill group by ID, including its parent skill package.
+     * @param skillGroupId The ID of the skill group to retrieve.
+     * @returns The skill group with its parent skill package.
+     * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
+     */
+    getGroup: organizationProcedure({ skillPackageBuilder: ["view"] })
+        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(SkillGroup.schema.extend({ skillPackage: SkillPackage.schema }))
+        .query(async ({ ctx, input: { organizationId, skillGroupId } }) => {
+            const group = await ctx.prisma.skillGroup.findUnique({
+                where: {
+                    id: skillGroupId,
+                    skillPackage: { organizationId },
+                },
+                include: { skillPackage: true },
+            });
+
+            if (!group) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillGroupNotFound(skillGroupId),
+                });
+            }
+
+            return {
+                ...SkillGroup.fromRecord(group),
+                skillPackage: SkillPackage.fromRecord(group.skillPackage),
+            };
+        }),
+
+    /**
+     * Get a single skill package by ID.
+     * @param skillPackageId The ID of the skill package to retrieve.
+     * @returns The skill package.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
+     */
+    getPackage: organizationProcedure({ skillPackageBuilder: ["view"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(SkillPackage.schema)
+        .query(async ({ ctx, input: { skillPackageId } }) =>
+            getSkillPackageOrThrow(ctx, skillPackageId),
+        ),
+
+    /**
+     * Get a single skill by ID, including its parent skill group and skill package.
+     * @param skillId The ID of the skill to retrieve.
+     * @returns The skill with its parent skill group and skill package.
+     * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
+     */
+    getSkill: organizationProcedure({ skillPackageBuilder: ["view"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(
+            Skill.schema.extend({
+                skillGroup: SkillGroup.schema,
+                skillPackage: SkillPackage.schema,
+            }),
+        )
+        .query(async ({ ctx, input: { organizationId, skillId } }) => {
+            const skill = await ctx.prisma.skill.findUnique({
+                where: {
+                    id: skillId,
+                    skillPackage: { organizationId },
+                },
+                include: { skillGroup: true, skillPackage: true },
+            });
+
+            if (!skill) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillNotFound(skillId),
+                });
+            }
+
+            return {
+                ...Skill.fromRecord(skill),
+                skillGroup: SkillGroup.fromRecord(skill.skillGroup),
+                skillPackage: SkillPackage.fromRecord(skill.skillPackage),
+            };
+        }),
+
+    /**
      * List all skill groups within the organization, optionally filtered by skill package.
      * @param skillPackageId Skill package ID to filter groups by.
      * @returns An array of skill groups.
