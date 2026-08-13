@@ -23,6 +23,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -48,42 +49,34 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archiveSkill.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.archiveSkill },
             onError(error) {
                 console.error("Failed to archive skill:", error);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getSkill.queryKey({
                         organizationId: organization.id,
                         skillId: skill.id,
                     }),
                     { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
-                );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listSkills.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
             },
         }),
     );
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restoreSkill.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.restoreSkill },
             onError(error) {
                 console.error("Failed to restore skill:", error);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getSkill.queryKey({
                         organizationId: organization.id,
                         skillId: skill.id,
                     }),
                     { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
-                );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listSkills.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
             },
         }),

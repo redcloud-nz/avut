@@ -6,7 +6,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -21,6 +21,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -38,16 +39,16 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
     ...props
 }: SkillPackageBuilder_DeleteSkill_DialogProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deleteSkill.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.deleteSkill },
             onError(error) {
                 console.error("Failed to delete skill:", error);
                 toast.error(`Failed to delete skill: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Skill <ObjectName>{skill.name}</ObjectName> deleted.
@@ -67,14 +68,6 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
                         },
                     ),
                 );
-
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listSkills.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
-                mutation.reset();
             },
         }),
     );

@@ -35,6 +35,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -82,6 +83,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.moveSkill.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.moveSkill },
             onMutate(data) {
                 const parsed = z
                     .object({
@@ -171,14 +173,12 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 );
             },
             async onSettled() {
+                // The destination package's skills list is covered by `meta.invalidates`
+                // above (derivable from the mutation variables); the origin list and the
+                // skill's own detail query are not, since neither the pre-move package id
+                // nor "resync the detail query" can be expressed as a function of the
+                // mutation's variables and result alone.
                 await Promise.all([
-                    // Destination package skills list
-                    queryClient.invalidateQueries(
-                        trpc.skillPackageBuilder.listSkills.queryFilter({
-                            organizationId: organization.id,
-                            skillPackageId: destinationPackageId,
-                        }),
-                    ),
                     // Origin package skills list
                     queryClient.invalidateQueries(
                         trpc.skillPackageBuilder.listSkills.queryFilter({

@@ -28,6 +28,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillPackage, SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -49,6 +50,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.updatePackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.updatePackage },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {
@@ -59,7 +61,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     console.error("Failed to update skill package:", error);
                 }
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 toast.success("Skill package updated");
 
                 handleOpenChange(false);
@@ -70,12 +72,6 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                         skillPackageId: skillPackage.id,
                     }),
                     updated,
-                );
-
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
             },
         }),

@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -22,6 +22,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
@@ -32,16 +33,16 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
     ...props
 }: AlertDialogProps & { skillPackage: SkillPackage }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deletePackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.deletePackage },
             onError(error) {
                 console.error("Failed to delete skill package:", error);
                 toast.error(`Failed to delete skill package: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Skill Package <ObjectName>{skillPackage.name}</ObjectName> deleted.
@@ -54,14 +55,6 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
                 router.push(
                     route("/orgs/[slug]/skill-package-builder", { slug: organization.slug }),
                 );
-
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
-                mutation.reset();
             },
         }),
     );

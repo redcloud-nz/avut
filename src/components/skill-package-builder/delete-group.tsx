@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -22,6 +22,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -37,16 +38,16 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
     ...props
 }: SkillPackageBuilder_DeleteSkillGroup_DialogProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deleteGroup.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.deleteGroup },
             onError(error) {
                 console.error("Failed to delete skill group:", error);
                 toast.error(`Failed to delete skill group: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Skill Group <ObjectName>{skillGroup.name}</ObjectName> deleted.
@@ -61,14 +62,6 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
                         package_id: skillGroup.skillPackageId,
                     }),
                 );
-
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listGroups.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
-                mutation.reset();
             },
         }),
     );

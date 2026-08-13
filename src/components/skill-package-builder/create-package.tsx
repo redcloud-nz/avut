@@ -5,14 +5,16 @@
 
 "use client";
 
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { CreateNewIcon } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -20,22 +22,24 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillPackage, SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
+export function SkillPackageBuilder_CreatePackage_Dialog() {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(SkillPackage.modifiableSchema),
@@ -49,6 +53,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createPackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.createPackage },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {
@@ -59,37 +64,47 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                     console.error("Failed to create skill package:", error);
                 }
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+            onSuccess({ created }) {
+                handleOpenChange(false);
 
-                props.onOpenChange?.(false);
-                form.reset();
                 router.push(
                     route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
                         slug: organization.slug,
                         package_id: created.id,
                     }),
                 );
-
-                mutation.reset();
             },
         }),
     );
 
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId: organization.id,
-            skillPackageId: SkillPackageId.create(),
-            create: formData,
-        });
-    });
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            mutation.mutate({
+                organizationId: organization.id,
+                skillPackageId: SkillPackageId.create(),
+                create: formData,
+            });
+        },
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
+
+    function handleOpenChange(open: boolean) {
+        if (!open) {
+            form.reset();
+            mutation.reset();
+        }
+        setDialogOpen(open);
+    }
 
     return (
-        <Dialog {...props}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <CreateNewIcon /> <span className="hidden md:inline">New</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Package</DialogTitle>
@@ -133,9 +148,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog(props: DialogProps) {
                     </FieldGroup>
                 </form>
                 <DialogFooter>
-                    <DialogCloseButton variant="outline" onClick={() => form.reset()}>
-                        Cancel
-                    </DialogCloseButton>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
                         form="create-skill-package-form"

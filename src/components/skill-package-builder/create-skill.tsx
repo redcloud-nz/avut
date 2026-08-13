@@ -5,14 +5,16 @@
 
 "use client";
 
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -20,8 +22,8 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     Field,
@@ -48,6 +50,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkill, Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -58,11 +61,14 @@ import { trpc } from "@/trpc/client";
 export function SkillPackageBuilder_CreateSkill_Dialog({
     skillGroup,
     skillPackage,
-    ...props
-}: DialogProps & { skillGroup: SkillGroup; skillPackage: SkillPackage }) {
+}: {
+    skillGroup: SkillGroup;
+    skillPackage: SkillPackage;
+}) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),
@@ -78,6 +84,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createSkill.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.createSkill },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkill, {
@@ -88,7 +95,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                     console.error("Failed to create skill:", error);
                 }
             },
-            async onSuccess({ created }) {
+            onSuccess({ created }) {
                 toast.success(
                     <>
                         Skill <ObjectName>{created.name}</ObjectName> created successfully!
@@ -96,14 +103,6 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                 );
 
                 handleOpenChange(false);
-
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.listSkills.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillGroup.skillPackageId,
-                    }),
-                    (old = []) => [...old, created],
-                );
 
                 router.push(
                     route(
@@ -119,26 +118,36 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
         }),
     );
 
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId: organization.id,
-            skillPackageId: skillGroup.skillPackageId,
-            skillGroupId: skillGroup.id,
-            skillId: SkillId.create(),
-            create: formData,
-        });
-    });
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            mutation.mutate({
+                organizationId: organization.id,
+                skillPackageId: skillGroup.skillPackageId,
+                skillGroupId: skillGroup.id,
+                skillId: SkillId.create(),
+                create: formData,
+            });
+        },
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
 
     function handleOpenChange(open: boolean) {
         if (!open) {
             form.reset();
             mutation.reset();
         }
-        props.onOpenChange?.(open);
+        setDialogOpen(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <ObjectIcons.Create />
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Skill</DialogTitle>

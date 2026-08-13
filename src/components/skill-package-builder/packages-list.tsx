@@ -6,7 +6,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -20,14 +20,11 @@ import {
 import Artie from "@/components/art/artie";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Show } from "@/components/show";
 
 import {
     Empty,
-    EmptyContent,
     EmptyDescription,
     EmptyHeader,
     EmptyMedia,
@@ -132,17 +129,13 @@ export function SkillPackageBuilder_Packages_List({
         },
     });
 
-    const [createPackageDialogOpen, setCreatePackageDialogOpen] = useState(false);
-
     return (
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Skill Packages</Saratoga.Title>
                 <Saratoga.Actions>
                     <Protect permissions={{ skillPackageBuilder: ["create"] }}>
-                        <Button variant="outline" onClick={() => setCreatePackageDialogOpen(true)}>
-                            <CreateNewIcon /> New
-                        </Button>
+                        <SkillPackageBuilder_CreatePackage_Dialog />
                     </Protect>
                 </Saratoga.Actions>
             </Saratoga.Header>
@@ -159,17 +152,6 @@ export function SkillPackageBuilder_Packages_List({
                                 Your organization does not have any skill packages yet.
                             </EmptyDescription>
                         </EmptyHeader>
-                        <EmptyContent>
-                            <Protect
-                                permissions={{
-                                    skillPackageBuilder: ["create"],
-                                }}
-                            >
-                                <Button onClick={() => setCreatePackageDialogOpen(true)}>
-                                    Create Package
-                                </Button>
-                            </Protect>
-                        </EmptyContent>
                     </Empty>
                 }
             >
@@ -179,10 +161,6 @@ export function SkillPackageBuilder_Packages_List({
                     <Kaga.TablePagination table={table} />
                 </div>
             </Show>
-            <SkillPackageBuilder_CreatePackage_Dialog
-                open={createPackageDialogOpen}
-                onOpenChange={setCreatePackageDialogOpen}
-            />
         </Saratoga.Root>
     );
 }

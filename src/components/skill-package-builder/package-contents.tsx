@@ -72,7 +72,6 @@ export function SkillPackageBuilder_Package_Contents_List({
         ],
     });
 
-    const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
     const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
 
@@ -92,13 +91,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                 <CardAction>
                     <Protect permissions={{ skillPackageBuilder: ["update"] }}>
                         <ButtonGroup>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setCreateGroupDialogOpen(true)}
-                            >
-                                <ObjectIcons.Create />
-                            </Button>
+                            <SkillPackageBuilder_CreateGroup_Dialog skillPackage={skillPackage} />
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -232,11 +225,6 @@ export function SkillPackageBuilder_Package_Contents_List({
                     </Show>
                 </Show>
             </CardContent>
-            <SkillPackageBuilder_CreateGroup_Dialog
-                skillPackage={skillPackage}
-                open={createGroupDialogOpen}
-                onOpenChange={setCreateGroupDialogOpen}
-            />
             <SkillPackageBuilder_ReorderGroups_Dialog
                 skillPackage={skillPackage}
                 open={reorderDialogOpen}

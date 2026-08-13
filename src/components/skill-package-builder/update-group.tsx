@@ -28,6 +28,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillGroup, SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -50,6 +51,7 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.updateGroup.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.updateGroup },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {
@@ -60,27 +62,17 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                     console.error("Failed to update skill group:", error);
                 }
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 toast.success("Skill group updated");
 
                 handleOpenChange(false);
-
-                const merged = { ...updated, skillPackage: skillGroup.skillPackage };
 
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getGroup.queryKey({
                         organizationId: organization.id,
                         skillGroupId: skillGroup.id,
                     }),
-                    merged,
-                );
-
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.listGroups.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillGroup.skillPackageId,
-                    }),
-                    (old = []) => old.map((group) => (group.id === updated.id ? updated : group)),
+                    { ...updated, skillPackage: skillGroup.skillPackage },
                 );
             },
         }),

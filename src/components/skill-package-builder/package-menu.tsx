@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
@@ -39,21 +40,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archivePackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.archivePackage },
             onError(error) {
                 console.error("Failed to archive skill package:", error);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getPackage.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skillPackage.id,
                     }),
                     updated,
-                );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
             },
         }),
@@ -61,10 +58,11 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const publishMutation = useMutation(
         trpc.skillPackageBuilder.publishPackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.publishPackage },
             onError(error) {
                 console.error("Failed to publish skill package:", error);
             },
-            async onSuccess({ published }) {
+            onSuccess({ published }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getPackage.queryKey({
                         organizationId: organization.id,
@@ -72,21 +70,17 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                     }),
                     published,
                 );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
             },
         }),
     );
 
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restorePackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.restorePackage },
             onError(error) {
                 console.error("Failed to restore skill package:", error);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getPackage.queryKey({
                         organizationId: organization.id,
@@ -94,32 +88,23 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                     }),
                     updated,
                 );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
             },
         }),
     );
 
     const unpublishMutation = useMutation(
         trpc.skillPackageBuilder.unpublishPackage.mutationOptions({
+            meta: { invalidates: skillPackageBuilderInvalidations.unpublishPackage },
             onError(error) {
                 console.error("Failed to unpublish skill package:", error);
             },
-            async onSuccess({ unpublished }) {
+            onSuccess({ unpublished }) {
                 queryClient.setQueryData(
                     trpc.skillPackageBuilder.getPackage.queryKey({
                         organizationId: organization.id,
                         skillPackageId: skillPackage.id,
                     }),
                     unpublished,
-                );
-                await queryClient.invalidateQueries(
-                    trpc.skillPackageBuilder.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
             },
         }),
