@@ -44,7 +44,8 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
-src/app/system/scratch/
+src/app/(authenticated)/orgs/\[slug\]/system/scratch/*
+!src/app/(authenticated)/orgs/\[slug\]/system/scratch/README.md
 # Ideas
 .ideas/
 
