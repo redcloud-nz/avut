@@ -104,18 +104,36 @@ export const skillChecksRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId, sessionId, create } = input;
 
-            // Validate session exists if sessionId is provided
+            // Validate session exists if sessionId is provided, and that the caller is one of
+            // its assigned assessors — only assessors on a session may record checks against it.
             if (sessionId) {
                 const session = await ctx.prisma.skillCheckSession.findUnique({
                     where: {
                         id: sessionId,
                         organizationId: ctx.organizationId,
                     },
+                    include: {
+                        assessors: { select: { id: true } },
+                    },
                 });
                 if (!session) {
                     throw new TRPCError({
                         code: "NOT_FOUND",
                         message: Messages.skillCheckSessionNotFound(sessionId),
+                    });
+                }
+
+                const orgUser = await ctx.prisma.organizationUser.findFirst({
+                    where: { organizationId: ctx.organizationId, userId: ctx.userId },
+                    select: { personId: true },
+                });
+                if (
+                    !orgUser?.personId ||
+                    !session.assessors.some((assessor) => assessor.id === orgUser.personId)
+                ) {
+                    throw new TRPCError({
+                        code: "FORBIDDEN",
+                        message: Messages.notSessionAssessor(sessionId),
                     });
                 }
             }
@@ -579,6 +597,28 @@ export const skillChecksRouter = createTrpcRouter({
         .output(SkillCheck.schema)
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId, update } = input;
+
+            const existing = await ctx.prisma.skillCheck.findUnique({
+                where: { id: skillCheckId, organizationId: ctx.organizationId },
+                select: { assessorId: true },
+            });
+            if (!existing) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckNotFound(skillCheckId),
+                });
+            }
+
+            const orgUser = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: ctx.organizationId, userId: ctx.userId },
+                select: { personId: true },
+            });
+            if (orgUser?.personId !== existing.assessorId) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: Messages.notCheckAssessor(skillCheckId),
+                });
+            }
 
             const record = await ctx.prisma.skillCheck.update({
                 where: {

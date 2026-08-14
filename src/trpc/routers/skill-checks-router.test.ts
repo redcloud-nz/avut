@@ -599,6 +599,8 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
         pkg: SkillPackageId.create(),
         grp: SkillGroupId.create(),
         skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        skill3: SkillId.create(),
         session: SkillCheckSessionId.create(),
         unscopedSession: SkillCheckSessionId.create(),
     };
@@ -683,6 +685,26 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                 properties: {},
             },
         });
+        await db.skill.create({
+            data: {
+                id: T.skill2,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Skill 2",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill3,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Skill 3",
+                description: "",
+                properties: {},
+            },
+        });
 
         await db.skillCheckSession.create({
             data: {
@@ -711,7 +733,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
         return skillChecksRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
-                permissions: { organization: ["view"], skillCheck: ["update"] },
+                permissions: { organization: ["view"], skillCheck: ["create", "update"] },
                 prisma: db,
             }),
         );
@@ -752,5 +774,115 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                 ],
             }),
         ).rejects.toThrow(TRPCError);
+    });
+
+    describe("createSkillCheck", () => {
+        it("allows an assigned assessor to create a check on the session", async () => {
+            const result = await makeCaller(T.assessorUser).createSkillCheck({
+                organizationId: T.org,
+                skillCheckId: nanoId16() as never,
+                sessionId: T.session,
+                create: {
+                    assesseeId: T.assessee,
+                    assessorId: T.assessorPerson,
+                    skillId: T.skill2,
+                    result: "Competent",
+                    notes: "",
+                },
+            });
+
+            expect(result.sessionId).toBe(T.session);
+        });
+
+        it("rejects a person who is not an assigned assessor for the session", async () => {
+            await expect(
+                makeCaller(T.otherUser).createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: nanoId16() as never,
+                    sessionId: T.session,
+                    create: {
+                        assesseeId: T.assessee,
+                        assessorId: T.otherPerson,
+                        skillId: T.skill1,
+                        result: "Competent",
+                        notes: "",
+                    },
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
+
+        it("rejects creating on a session with no assigned assessors at all", async () => {
+            await expect(
+                makeCaller(T.assessorUser).createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: nanoId16() as never,
+                    sessionId: T.unscopedSession,
+                    create: {
+                        assesseeId: T.assessee,
+                        assessorId: T.assessorPerson,
+                        skillId: T.skill1,
+                        result: "Competent",
+                        notes: "",
+                    },
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
+
+        it("allows creating a check with no session at all", async () => {
+            const result = await makeCaller(T.otherUser).createSkillCheck({
+                organizationId: T.org,
+                skillCheckId: nanoId16() as never,
+                sessionId: null,
+                create: {
+                    assesseeId: T.assessee,
+                    assessorId: T.otherPerson,
+                    skillId: T.skill1,
+                    result: "Competent",
+                    notes: "",
+                },
+            });
+
+            expect(result.sessionId).toBeNull();
+        });
+    });
+
+    describe("updateSkillCheck", () => {
+        const check = nanoId16() as never;
+
+        beforeAll(async () => {
+            await db.skillCheck.create({
+                data: {
+                    id: check,
+                    organizationId: T.org,
+                    sessionId: T.session,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessorPerson,
+                    skillId: T.skill3,
+                    result: "Competent",
+                    notes: "original",
+                    status: "Draft",
+                },
+            });
+        });
+
+        it("allows the recording assessor to update their own check", async () => {
+            const result = await makeCaller(T.assessorUser).updateSkillCheck({
+                organizationId: T.org,
+                skillCheckId: check,
+                update: { result: "HighlyConfident", notes: "updated" },
+            });
+
+            expect(result.notes).toBe("updated");
+        });
+
+        it("rejects a different assessor updating someone else's check", async () => {
+            await expect(
+                makeCaller(T.otherUser).updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: check,
+                    update: { result: "NotYetCompetent", notes: "hijacked" },
+                }),
+            ).rejects.toThrow(TRPCError);
+        });
     });
 });

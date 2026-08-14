@@ -21,6 +21,9 @@ export const Messages = {
 
     noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,
 
+    notCheckAssessor: (skillCheckId: string) =>
+        `You are not the assessor who recorded SkillCheck(id=${skillCheckId}).`,
+
     notSessionAssessor: (sessionId: string) =>
         `You are not an assigned assessor for SkillCheckSession(id=${sessionId}).`,
 
@@ -30,6 +33,8 @@ export const Messages = {
     personNotAUser: (personId: string) => `Person(id=${personId}) is not configured as a user.`,
 
     personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
+
+    skillCheckNotFound: (skillCheckId: string) => `SkillCheck(id=${skillCheckId}) not found.`,
 
     skillCheckSessionNotFound: (sessionId: string) =>
         `SkillCheckSession(id=${sessionId}) not found.`,
