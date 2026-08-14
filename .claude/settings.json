@@ -11,6 +11,7 @@
       "Bash(git add *)",
       "Bash(npx next *)",
       "Bash(npm run dev)",
+      "Bash(npm run clean)",
       "Bash(npm run lint)",
       "Bash(npm run lint:fix)",
       "Bash(npm run test:run)",
