@@ -153,6 +153,9 @@ export default function SkillTrack_SessionByPerson_Page(
         }),
     );
 
+    const isAssignedAssessor =
+        !!personSelf && session.assessors.some((assessor) => assessor.id === personSelf.id);
+
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
@@ -319,141 +322,166 @@ export default function SkillTrack_SessionByPerson_Page(
                             </Alert>
                         }
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
-                            <div>
-                                <FieldGroup className="block lg:hidden">
-                                    <Field>
-                                        <FieldLabel>Person</FieldLabel>
-                                        <Select
-                                            value={selected?.personId ?? undefined}
-                                            onValueChange={(value) => {
-                                                handleSwitchPerson(value as PersonId);
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a person" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {assignedPersonnel.map((person) => (
-                                                    <SelectItem key={person.id} value={person.id}>
-                                                        {person.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                </FieldGroup>
-                                <ItemGroup className="hidden lg:block">
-                                    {assignedPersonnel.map((person) => (
-                                        <Item
-                                            key={person.id}
-                                            asChild
-                                            variant={
-                                                person.id === selected?.personId
-                                                    ? "outline"
-                                                    : "default"
-                                            }
-                                        >
-                                            <a
-                                                onClick={() => {
-                                                    handleSwitchPerson(person.id);
+                        <Show
+                            when={isAssignedAssessor}
+                            fallback={
+                                <Alert variant="warning">
+                                    <AlertTitle>Not an assigned assessor</AlertTitle>
+                                    <AlertDescription>
+                                        You are not an assigned assessor for this session, so you
+                                        cannot record skill checks here.
+                                    </AlertDescription>
+                                </Alert>
+                            }
+                        >
+                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
+                                <div>
+                                    <FieldGroup className="block lg:hidden">
+                                        <Field>
+                                            <FieldLabel>Person</FieldLabel>
+                                            <Select
+                                                value={selected?.personId ?? undefined}
+                                                onValueChange={(value) => {
+                                                    handleSwitchPerson(value as PersonId);
                                                 }}
                                             >
-                                                <ItemContent>
-                                                    <ItemTitle>{person.name}</ItemTitle>
-                                                </ItemContent>
-
-                                                <ItemActions>
-                                                    <ChevronRightIcon className="size-4 text-muted-foreground" />
-                                                </ItemActions>
-                                            </a>
-                                        </Item>
-                                    ))}
-                                </ItemGroup>
-                            </div>
-                            <Separator orientation="vertical" className="hidden lg:block" />
-                            <Separator orientation="horizontal" className="block lg:hidden" />
-                            <div className="w-full flex flex-col gap-2">
-                                {match(selected)
-                                    .with(null, () => (
-                                        <Empty>
-                                            <EmptyMedia>
-                                                <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
-                                                <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
-                                            </EmptyMedia>
-                                            <EmptyDescription>
-                                                Select a person to assess their skills.
-                                            </EmptyDescription>
-                                        </Empty>
-                                    ))
-                                    .with({ status: "Loading" }, () => (
-                                        <div className="flex justify-center items-center my-8">
-                                            <RainbowSpinner />
-                                        </div>
-                                    ))
-                                    .with({ status: "Selected" }, ({ personId }) => {
-                                        const renderRow = (
-                                            skill: (typeof sessionSkills)[number],
-                                        ) => (
-                                            <SkillTrack_AssessmentRow
-                                                key={skill.id}
-                                                title={skill.name}
-                                                description={
-                                                    showSkillDescription
-                                                        ? assessableSkillById.get(skill.id)
-                                                              ?.description || undefined
-                                                        : undefined
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a person" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {assignedPersonnel.map((person) => (
+                                                        <SelectItem
+                                                            key={person.id}
+                                                            value={person.id}
+                                                        >
+                                                            {person.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </Field>
+                                    </FieldGroup>
+                                    <ItemGroup className="hidden lg:block">
+                                        {assignedPersonnel.map((person) => (
+                                            <Item
+                                                key={person.id}
+                                                asChild
+                                                variant={
+                                                    person.id === selected?.personId
+                                                        ? "outline"
+                                                        : "default"
                                                 }
-                                                value={getCurrentValue(personId, skill.id)}
-                                                onValueChange={(newValue) =>
-                                                    handleChange(skill.id, newValue)
-                                                }
-                                            />
-                                        );
+                                            >
+                                                <a
+                                                    onClick={() => {
+                                                        handleSwitchPerson(person.id);
+                                                    }}
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>{person.name}</ItemTitle>
+                                                    </ItemContent>
 
-                                        return match(skillOrder)
-                                            .with("alphabetical", () => (
-                                                <>{sessionSkills.map(renderRow)}</>
-                                            ))
-                                            .with("by-package-group", () => (
-                                                <div className="space-y-4">
-                                                    {packageSections.map(
-                                                        ({ skillPackage, groups }) => (
-                                                            <div
-                                                                key={skillPackage.id}
-                                                                className="space-y-4"
-                                                            >
-                                                                <div className="font-semibold border-b pb-1">
-                                                                    {skillPackage.name}
-                                                                </div>
-                                                                {groups.map(
-                                                                    ({ skillGroup, skills }) => (
-                                                                        <div key={skillGroup.id}>
-                                                                            <div className="text-sm font-medium text-muted-foreground">
-                                                                                {skillGroup.name}
+                                                    <ItemActions>
+                                                        <ChevronRightIcon className="size-4 text-muted-foreground" />
+                                                    </ItemActions>
+                                                </a>
+                                            </Item>
+                                        ))}
+                                    </ItemGroup>
+                                </div>
+                                <Separator orientation="vertical" className="hidden lg:block" />
+                                <Separator orientation="horizontal" className="block lg:hidden" />
+                                <div className="w-full flex flex-col gap-2">
+                                    {match(selected)
+                                        .with(null, () => (
+                                            <Empty>
+                                                <EmptyMedia>
+                                                    <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
+                                                    <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
+                                                </EmptyMedia>
+                                                <EmptyDescription>
+                                                    Select a person to assess their skills.
+                                                </EmptyDescription>
+                                            </Empty>
+                                        ))
+                                        .with({ status: "Loading" }, () => (
+                                            <div className="flex justify-center items-center my-8">
+                                                <RainbowSpinner />
+                                            </div>
+                                        ))
+                                        .with({ status: "Selected" }, ({ personId }) => {
+                                            const renderRow = (
+                                                skill: (typeof sessionSkills)[number],
+                                            ) => (
+                                                <SkillTrack_AssessmentRow
+                                                    key={skill.id}
+                                                    title={skill.name}
+                                                    description={
+                                                        showSkillDescription
+                                                            ? assessableSkillById.get(skill.id)
+                                                                  ?.description || undefined
+                                                            : undefined
+                                                    }
+                                                    value={getCurrentValue(personId, skill.id)}
+                                                    onValueChange={(newValue) =>
+                                                        handleChange(skill.id, newValue)
+                                                    }
+                                                />
+                                            );
+
+                                            return match(skillOrder)
+                                                .with("alphabetical", () => (
+                                                    <>{sessionSkills.map(renderRow)}</>
+                                                ))
+                                                .with("by-package-group", () => (
+                                                    <div className="space-y-4">
+                                                        {packageSections.map(
+                                                            ({ skillPackage, groups }) => (
+                                                                <div
+                                                                    key={skillPackage.id}
+                                                                    className="space-y-4"
+                                                                >
+                                                                    <div className="font-semibold border-b pb-1">
+                                                                        {skillPackage.name}
+                                                                    </div>
+                                                                    {groups.map(
+                                                                        ({
+                                                                            skillGroup,
+                                                                            skills,
+                                                                        }) => (
+                                                                            <div
+                                                                                key={skillGroup.id}
+                                                                            >
+                                                                                <div className="text-sm font-medium text-muted-foreground">
+                                                                                    {
+                                                                                        skillGroup.name
+                                                                                    }
+                                                                                </div>
+                                                                                {skills.map(
+                                                                                    renderRow,
+                                                                                )}
                                                                             </div>
-                                                                            {skills.map(renderRow)}
-                                                                        </div>
-                                                                    ),
-                                                                )}
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                        {ungroupedSkills.length > 0 && (
+                                                            <div className="space-y-4">
+                                                                <div className="font-semibold border-b pb-1">
+                                                                    Other
+                                                                </div>
+                                                                {ungroupedSkills.map(renderRow)}
                                                             </div>
-                                                        ),
-                                                    )}
-                                                    {ungroupedSkills.length > 0 && (
-                                                        <div className="space-y-4">
-                                                            <div className="font-semibold border-b pb-1">
-                                                                Other
-                                                            </div>
-                                                            {ungroupedSkills.map(renderRow)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))
-                                            .exhaustive();
-                                    })
-                                    .exhaustive()}
+                                                        )}
+                                                    </div>
+                                                ))
+                                                .exhaustive();
+                                        })
+                                        .exhaustive()}
+                                </div>
                             </div>
-                        </div>
+                        </Show>
                     </Show>
                     {/* </CardContent>
                     </Card> */}

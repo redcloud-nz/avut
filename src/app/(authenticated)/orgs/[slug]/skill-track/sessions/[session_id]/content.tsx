@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { formatDate } from "@/lib/datetime";
+import { PersonRef } from "@/lib/schemas/person";
 import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
@@ -41,7 +42,7 @@ export function SkillTrack_Session_Content({
     session,
 }: {
     slug: string;
-    session: SkillCheckSession;
+    session: SkillCheckSession & { assessors: PersonRef[] };
 }) {
     return (
         <Saratoga.Root>
@@ -118,6 +119,11 @@ export function SkillTrack_Session_Content({
 
                                 <DLTerm>Status</DLTerm>
                                 <DLDetails>{session.status}</DLDetails>
+
+                                <DLTerm>Assessor</DLTerm>
+                                <DLDetails>
+                                    {session.assessors.map((a) => a.name).join(", ") || "—"}
+                                </DLDetails>
                             </DL>
                         </CardContent>
                     </Card>

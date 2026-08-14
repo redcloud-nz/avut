@@ -17,7 +17,12 @@ export const Messages = {
     i3TemplateVariantNotFound: (variantId: string) =>
         `I3TemplateVariant(id=${variantId}) not found.`,
 
+    noLinkedPersonRecord: () => `You must have a linked person record to perform this action.`,
+
     noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,
+
+    notSessionAssessor: (sessionId: string) =>
+        `You are not an assigned assessor for SkillCheckSession(id=${sessionId}).`,
 
     organizationNotFound: (organizationId: string) =>
         `Organization(id=${organizationId}) not found.`,

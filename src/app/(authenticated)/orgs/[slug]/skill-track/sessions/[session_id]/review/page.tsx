@@ -109,7 +109,7 @@ export default function SkillTrack_SessionReview_Page(
                         organizationId: organization.id,
                         skillCheckSessionId: session_id,
                     }),
-                    updated,
+                    (old) => (old ? { ...old, ...updated } : old),
                 );
             },
         }),

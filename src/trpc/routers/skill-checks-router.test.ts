@@ -10,10 +10,12 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
+import { UserId } from "@/lib/schemas/user";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { skillChecksRouter } from "./skill-checks-router";
@@ -578,5 +580,177 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 }),
             ).rejects.toThrow(TRPCError);
         });
+    });
+});
+
+describe("skillChecks.upsertSessionSkillChecks", () => {
+    // Dataset:
+    //   assessorUser  → org member, linked to assessorPerson, assigned as the session's assessor
+    //   otherUser     → org member, linked to otherPerson, NOT assigned to the session
+    //   session       → has one skill (skill1) and assessorPerson as its sole assessor
+    //   unscopedSession → has no assessors at all (nobody may record on it)
+    const T = {
+        org: OrganizationId.create(),
+        assessorUser: UserId.create(),
+        otherUser: UserId.create(),
+        assessorPerson: PersonId.create(),
+        otherPerson: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        unscopedSession: SkillCheckSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        await db.person.create({
+            data: {
+                id: T.assessorPerson,
+                organizationId: T.org,
+                name: "Assessor Assigned",
+                email: `${T.assessorPerson}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.otherPerson,
+                organizationId: T.org,
+                name: "Assessor Other",
+                email: `${T.otherPerson}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessee,
+                organizationId: T.org,
+                name: "Assessee",
+                email: `${T.assessee}@example.com`,
+            },
+        });
+
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.assessorUser,
+                role: "member",
+                personId: T.assessorPerson,
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.otherUser,
+                role: "member",
+                personId: T.otherPerson,
+            },
+        });
+
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill1,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Skill 1",
+                description: "",
+                properties: {},
+            },
+        });
+
+        await db.skillCheckSession.create({
+            data: {
+                id: T.session,
+                organizationId: T.org,
+                name: "Scoped Session",
+                startsAt: new Date(),
+                endsAt: new Date(),
+                notes: "",
+                assessors: { connect: [{ id: T.assessorPerson }] },
+            },
+        });
+        await db.skillCheckSession.create({
+            data: {
+                id: T.unscopedSession,
+                organizationId: T.org,
+                name: "Unscoped Session",
+                startsAt: new Date(),
+                endsAt: new Date(),
+                notes: "",
+            },
+        });
+    });
+
+    function makeCaller(userId: UserId) {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: userId },
+                permissions: { organization: ["view"], skillCheck: ["update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("allows the assigned assessor to record checks", async () => {
+        const result = await makeCaller(T.assessorUser).upsertSessionSkillChecks({
+            organizationId: T.org,
+            sessionId: T.session,
+            updates: [
+                { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
+            ],
+        });
+
+        expect(result.created).toHaveLength(1);
+        expect(result.created[0].assessorId).toBe(T.assessorPerson);
+    });
+
+    it("rejects a person who is not an assigned assessor for the session", async () => {
+        await expect(
+            makeCaller(T.otherUser).upsertSessionSkillChecks({
+                organizationId: T.org,
+                sessionId: T.session,
+                updates: [
+                    { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
+                ],
+            }),
+        ).rejects.toThrow(TRPCError);
+    });
+
+    it("rejects recording on a session with no assigned assessors at all", async () => {
+        await expect(
+            makeCaller(T.assessorUser).upsertSessionSkillChecks({
+                organizationId: T.org,
+                sessionId: T.unscopedSession,
+                updates: [
+                    { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
+                ],
+            }),
+        ).rejects.toThrow(TRPCError);
     });
 });

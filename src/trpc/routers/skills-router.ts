@@ -26,13 +26,15 @@ import { Messages } from "../messages";
  */
 export const skillsRouter = createTrpcRouter({
     /**
-     * Create a new skill check session for the organization.
+     * Create a new skill check session for the organization. The caller is assigned as the
+     * session's sole assessor, so they must have a linked person record.
      * @param name The name of the session.
      * @param startsAt Optional start datetime for the session.
      * @param endsAt Optional end datetime for the session.
      * @param notes Optional notes for the session.
      * @param status The status of the session.
      * @returns The created skill check session.
+     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record.
      */
     createSession: organizationProcedure({ skillCheckSession: ["create"] })
         .input(
@@ -41,21 +43,47 @@ export const skillsRouter = createTrpcRouter({
                 create: SkillCheckSession.modifiableSchema,
             }),
         )
-        .output(z.object({ created: SkillCheckSession.schema }))
+        .output(
+            z.object({
+                created: SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) }),
+            }),
+        )
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, create } }) => {
+            const orgUser = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId, userId: ctx.userId },
+                select: { personId: true },
+            });
+            if (!orgUser?.personId) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.noLinkedPersonRecord(),
+                });
+            }
+
             const session = await ctx.prisma.skillCheckSession.create({
                 data: {
                     id: skillCheckSessionId,
                     organizationId,
                     name: create.name,
-                    startsAt: create.date,
-                    endsAt: create.date,
+                    startsAt: new Date(create.date),
+                    endsAt: new Date(create.date),
                     notes: create.notes,
                     status: create.status,
+                    assessors: { connect: [{ id: orgUser.personId }] },
+                },
+                include: {
+                    assessors: {
+                        select: { id: true, name: true },
+                    },
                 },
             });
 
-            return { created: SkillCheckSession.fromRecord(session) };
+            return {
+                created: {
+                    ...SkillCheckSession.fromRecord(session),
+                    assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
+                },
+            };
         }),
 
     /**
@@ -88,11 +116,25 @@ export const skillsRouter = createTrpcRouter({
      */
     getSession: organizationProcedure({ skillCheckSession: ["view"] })
         .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
-        .output(SkillCheckSession.schema)
+        .output(SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) }))
         .query(async ({ ctx, input: { skillCheckSessionId } }) => {
-            const session = await getSessionOrThrow(ctx, skillCheckSessionId);
+            const session =
+                (await ctx.prisma.skillCheckSession.findUnique({
+                    where: {
+                        id: skillCheckSessionId,
+                        organizationId: ctx.organizationId,
+                    },
+                    include: {
+                        assessors: {
+                            select: { id: true, name: true },
+                        },
+                    },
+                })) ?? sessionNotFound(skillCheckSessionId);
 
-            return session;
+            return {
+                ...SkillCheckSession.fromRecord(session),
+                assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
+            };
         }),
 
     /**
@@ -452,15 +494,23 @@ export const skillsRouter = createTrpcRouter({
     listSessions: organizationProcedure({
         skillPackageSubscription: ["view"],
     })
-        .output(z.array(SkillCheckSession.schema))
+        .output(z.array(SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) })))
         .query(async ({ ctx, input: { organizationId } }) => {
             const sessions = await ctx.prisma.skillCheckSession.findMany({
                 where: {
                     organizationId,
                 },
+                include: {
+                    assessors: {
+                        select: { id: true, name: true },
+                    },
+                },
             });
 
-            return sessions.map((session) => SkillCheckSession.fromRecord(session));
+            return sessions.map((session) => ({
+                ...SkillCheckSession.fromRecord(session),
+                assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
+            }));
         }),
 
     /**

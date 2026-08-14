@@ -469,6 +469,11 @@ export const skillChecksRouter = createTrpcRouter({
                     id: sessionId,
                     organizationId: ctx.organizationId,
                 },
+                include: {
+                    assessors: {
+                        select: { id: true },
+                    },
+                },
             });
             if (!session) {
                 throw new TRPCError({
@@ -484,10 +489,17 @@ export const skillChecksRouter = createTrpcRouter({
             if (!orgUser?.personId) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
-                    message: "You must have a linked person record to record skill checks.",
+                    message: Messages.noLinkedPersonRecord(),
                 });
             }
             const assessorId = orgUser.personId;
+
+            if (!session.assessors.some((assessor) => assessor.id === assessorId)) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: Messages.notSessionAssessor(sessionId),
+                });
+            }
 
             const created: SkillCheck[] = [];
             const updated: SkillCheck[] = [];

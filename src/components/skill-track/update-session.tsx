@@ -71,7 +71,7 @@ export function SkillsModule_UpdateSession_Dialog({
 
                 queryClient.setQueryData(
                     trpc.skills.getSession.queryKey({ skillCheckSessionId: session.id }),
-                    updated,
+                    (old) => (old ? { ...old, ...updated } : old),
                 );
 
                 // The detail page renders a server-fetched session, so the cache writes

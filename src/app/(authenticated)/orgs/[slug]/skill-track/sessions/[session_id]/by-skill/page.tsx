@@ -162,6 +162,9 @@ export default function SkillTrack_SessionBySkill_Page(
         }),
     );
 
+    const isAssignedAssessor =
+        !!personSelf && session.assessors.some((assessor) => assessor.id === personSelf.id);
+
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
@@ -359,175 +362,198 @@ export default function SkillTrack_SessionBySkill_Page(
                             </Alert>
                         }
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
-                            <div>
-                                <FieldGroup className="block lg:hidden">
-                                    <Field>
-                                        <FieldLabel>Skill</FieldLabel>
-                                        <Select
-                                            value={selected?.skillId ?? undefined}
-                                            onValueChange={(value) => {
-                                                handleSwitchSkill(value as SkillId);
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a skill" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {match(skillOrder)
-                                                    .with("alphabetical", () =>
-                                                        sessionSkills.map((skill) => (
-                                                            <SelectItem
-                                                                key={skill.id}
-                                                                value={skill.id}
-                                                            >
-                                                                {skill.name}
-                                                            </SelectItem>
-                                                        )),
-                                                    )
-                                                    .with("by-package-group", () => (
-                                                        <>
-                                                            {packageSections.flatMap(
-                                                                ({ skillPackage, groups }) =>
-                                                                    groups.map(
-                                                                        ({
-                                                                            skillGroup,
-                                                                            skills,
-                                                                        }) => (
-                                                                            <SelectGroup
-                                                                                key={skillGroup.id}
-                                                                            >
-                                                                                <SelectLabel>
-                                                                                    {
-                                                                                        skillPackage.name
-                                                                                    }{" "}
-                                                                                    ·{" "}
-                                                                                    {
-                                                                                        skillGroup.name
+                        <Show
+                            when={isAssignedAssessor}
+                            fallback={
+                                <Alert variant="warning">
+                                    <AlertTitle>Not an assigned assessor</AlertTitle>
+                                    <AlertDescription>
+                                        You are not an assigned assessor for this session, so you
+                                        cannot record skill checks here.
+                                    </AlertDescription>
+                                </Alert>
+                            }
+                        >
+                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
+                                <div>
+                                    <FieldGroup className="block lg:hidden">
+                                        <Field>
+                                            <FieldLabel>Skill</FieldLabel>
+                                            <Select
+                                                value={selected?.skillId ?? undefined}
+                                                onValueChange={(value) => {
+                                                    handleSwitchSkill(value as SkillId);
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a skill" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {match(skillOrder)
+                                                        .with("alphabetical", () =>
+                                                            sessionSkills.map((skill) => (
+                                                                <SelectItem
+                                                                    key={skill.id}
+                                                                    value={skill.id}
+                                                                >
+                                                                    {skill.name}
+                                                                </SelectItem>
+                                                            )),
+                                                        )
+                                                        .with("by-package-group", () => (
+                                                            <>
+                                                                {packageSections.flatMap(
+                                                                    ({ skillPackage, groups }) =>
+                                                                        groups.map(
+                                                                            ({
+                                                                                skillGroup,
+                                                                                skills,
+                                                                            }) => (
+                                                                                <SelectGroup
+                                                                                    key={
+                                                                                        skillGroup.id
                                                                                     }
-                                                                                </SelectLabel>
-                                                                                {skills.map(
-                                                                                    (skill) => (
-                                                                                        <SelectItem
-                                                                                            key={
-                                                                                                skill.id
-                                                                                            }
-                                                                                            value={
-                                                                                                skill.id
-                                                                                            }
-                                                                                        >
-                                                                                            {
-                                                                                                skill.name
-                                                                                            }
-                                                                                        </SelectItem>
-                                                                                    ),
-                                                                                )}
-                                                                            </SelectGroup>
+                                                                                >
+                                                                                    <SelectLabel>
+                                                                                        {
+                                                                                            skillPackage.name
+                                                                                        }{" "}
+                                                                                        ·{" "}
+                                                                                        {
+                                                                                            skillGroup.name
+                                                                                        }
+                                                                                    </SelectLabel>
+                                                                                    {skills.map(
+                                                                                        (skill) => (
+                                                                                            <SelectItem
+                                                                                                key={
+                                                                                                    skill.id
+                                                                                                }
+                                                                                                value={
+                                                                                                    skill.id
+                                                                                                }
+                                                                                            >
+                                                                                                {
+                                                                                                    skill.name
+                                                                                                }
+                                                                                            </SelectItem>
+                                                                                        ),
+                                                                                    )}
+                                                                                </SelectGroup>
+                                                                            ),
                                                                         ),
-                                                                    ),
-                                                            )}
-                                                            {ungroupedSkills.length > 0 && (
-                                                                <SelectGroup>
-                                                                    <SelectLabel>Other</SelectLabel>
-                                                                    {ungroupedSkills.map(
-                                                                        (skill) => (
-                                                                            <SelectItem
-                                                                                key={skill.id}
-                                                                                value={skill.id}
-                                                                            >
-                                                                                {skill.name}
-                                                                            </SelectItem>
-                                                                        ),
-                                                                    )}
-                                                                </SelectGroup>
-                                                            )}
-                                                        </>
-                                                    ))
-                                                    .exhaustive()}
-                                            </SelectContent>
-                                        </Select>
-                                        {selected && skillDescription(selected.skillId) && (
-                                            <FieldDescription>
-                                                {skillDescription(selected.skillId)}
-                                            </FieldDescription>
-                                        )}
-                                    </Field>
-                                </FieldGroup>
-                                <ItemGroup className="hidden lg:block">
-                                    {match(skillOrder)
-                                        .with("alphabetical", () =>
-                                            sessionSkills.map(renderSkillItem),
-                                        )
-                                        .with("by-package-group", () => (
-                                            <div className="space-y-4">
-                                                {packageSections.map(({ skillPackage, groups }) => (
-                                                    <div
-                                                        key={skillPackage.id}
-                                                        className="space-y-4"
-                                                    >
-                                                        <div className="font-semibold border-b pb-1">
-                                                            {skillPackage.name}
-                                                        </div>
-                                                        {groups.map(({ skillGroup, skills }) => (
-                                                            <div key={skillGroup.id}>
-                                                                <div className="text-sm font-medium text-muted-foreground">
-                                                                    {skillGroup.name}
+                                                                )}
+                                                                {ungroupedSkills.length > 0 && (
+                                                                    <SelectGroup>
+                                                                        <SelectLabel>
+                                                                            Other
+                                                                        </SelectLabel>
+                                                                        {ungroupedSkills.map(
+                                                                            (skill) => (
+                                                                                <SelectItem
+                                                                                    key={skill.id}
+                                                                                    value={skill.id}
+                                                                                >
+                                                                                    {skill.name}
+                                                                                </SelectItem>
+                                                                            ),
+                                                                        )}
+                                                                    </SelectGroup>
+                                                                )}
+                                                            </>
+                                                        ))
+                                                        .exhaustive()}
+                                                </SelectContent>
+                                            </Select>
+                                            {selected && skillDescription(selected.skillId) && (
+                                                <FieldDescription>
+                                                    {skillDescription(selected.skillId)}
+                                                </FieldDescription>
+                                            )}
+                                        </Field>
+                                    </FieldGroup>
+                                    <ItemGroup className="hidden lg:block">
+                                        {match(skillOrder)
+                                            .with("alphabetical", () =>
+                                                sessionSkills.map(renderSkillItem),
+                                            )
+                                            .with("by-package-group", () => (
+                                                <div className="space-y-4">
+                                                    {packageSections.map(
+                                                        ({ skillPackage, groups }) => (
+                                                            <div
+                                                                key={skillPackage.id}
+                                                                className="space-y-4"
+                                                            >
+                                                                <div className="font-semibold border-b pb-1">
+                                                                    {skillPackage.name}
                                                                 </div>
-                                                                {skills.map(renderSkillItem)}
+                                                                {groups.map(
+                                                                    ({ skillGroup, skills }) => (
+                                                                        <div key={skillGroup.id}>
+                                                                            <div className="text-sm font-medium text-muted-foreground">
+                                                                                {skillGroup.name}
+                                                                            </div>
+                                                                            {skills.map(
+                                                                                renderSkillItem,
+                                                                            )}
+                                                                        </div>
+                                                                    ),
+                                                                )}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                ))}
-                                                {ungroupedSkills.length > 0 && (
-                                                    <div>
-                                                        <div className="px-2 pt-2 font-semibold border-b">
-                                                            Other
+                                                        ),
+                                                    )}
+                                                    {ungroupedSkills.length > 0 && (
+                                                        <div>
+                                                            <div className="px-2 pt-2 font-semibold border-b">
+                                                                Other
+                                                            </div>
+                                                            {ungroupedSkills.map(renderSkillItem)}
                                                         </div>
-                                                        {ungroupedSkills.map(renderSkillItem)}
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
+                                            ))
+                                            .exhaustive()}
+                                    </ItemGroup>
+                                </div>
+                                <Separator orientation="vertical" className="hidden lg:block" />
+                                <Separator orientation="horizontal" className="block lg:hidden" />
+                                <div className="flex flex-col gap-2">
+                                    {match(selected)
+                                        .with(null, () => (
+                                            <Empty>
+                                                <EmptyMedia>
+                                                    <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
+                                                    <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
+                                                </EmptyMedia>
+                                                <EmptyDescription>
+                                                    Select a skill to assess.
+                                                </EmptyDescription>
+                                            </Empty>
+                                        ))
+                                        .with({ status: "Loading" }, () => (
+                                            <div className="flex justify-center items-center my-8">
+                                                <RainbowSpinner />
                                             </div>
                                         ))
+                                        .with({ status: "Selected" }, ({ skillId }) => (
+                                            <>
+                                                {assignedPersonnel.map((person) => (
+                                                    <SkillTrack_AssessmentRow
+                                                        key={person.id}
+                                                        title={person.name}
+                                                        value={getCurrentValue(person.id, skillId)}
+                                                        onValueChange={(newValue) =>
+                                                            handleChange(person.id, newValue)
+                                                        }
+                                                    />
+                                                ))}
+                                            </>
+                                        ))
                                         .exhaustive()}
-                                </ItemGroup>
+                                </div>
                             </div>
-                            <Separator orientation="vertical" className="hidden lg:block" />
-                            <Separator orientation="horizontal" className="block lg:hidden" />
-                            <div className="flex flex-col gap-2">
-                                {match(selected)
-                                    .with(null, () => (
-                                        <Empty>
-                                            <EmptyMedia>
-                                                <ArrowLeftIcon className="hidden lg:block size-12 text-muted-foreground" />
-                                                <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
-                                            </EmptyMedia>
-                                            <EmptyDescription>
-                                                Select a skill to assess.
-                                            </EmptyDescription>
-                                        </Empty>
-                                    ))
-                                    .with({ status: "Loading" }, () => (
-                                        <div className="flex justify-center items-center my-8">
-                                            <RainbowSpinner />
-                                        </div>
-                                    ))
-                                    .with({ status: "Selected" }, ({ skillId }) => (
-                                        <>
-                                            {assignedPersonnel.map((person) => (
-                                                <SkillTrack_AssessmentRow
-                                                    key={person.id}
-                                                    title={person.name}
-                                                    value={getCurrentValue(person.id, skillId)}
-                                                    onValueChange={(newValue) =>
-                                                        handleChange(person.id, newValue)
-                                                    }
-                                                />
-                                            ))}
-                                        </>
-                                    ))
-                                    .exhaustive()}
-                            </div>
-                        </div>
+                        </Show>
                     </Show>
                     {/* </CardContent>
                     </Card> */}

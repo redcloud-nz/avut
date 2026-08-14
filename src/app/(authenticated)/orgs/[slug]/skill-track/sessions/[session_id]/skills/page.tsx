@@ -93,7 +93,7 @@ export default function SkillTrack_SessionSkills_Page(
                         organizationId: organization.id,
                         skillCheckSessionId: session_id,
                     }),
-                    updatedSession,
+                    (old) => (old ? { ...old, ...updatedSession } : old),
                 );
 
                 context.client.invalidateQueries(

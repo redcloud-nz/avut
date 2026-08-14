@@ -25,6 +25,7 @@ import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
+import { PersonRef } from "@/lib/schemas/person";
 import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -40,7 +41,7 @@ export default function SkillTrack_Sessions_List() {
         }),
     );
 
-    type RowData = SkillCheckSession;
+    type RowData = SkillCheckSession & { assessors: PersonRef[] };
 
     const columns = useMemo(
         () =>
@@ -59,6 +60,14 @@ export default function SkillTrack_Sessions_List() {
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor((row) => row.assessors.map((a) => a.name).join(", "), {
+                    id: "assessor",
+                    header: "Assessor",
+                    cell: (ctx) => ctx.getValue() || "—",
+                    enableSorting: false,
+                    enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor("updatedAt", {
