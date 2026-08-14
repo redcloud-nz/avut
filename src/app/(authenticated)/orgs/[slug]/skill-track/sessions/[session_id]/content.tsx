@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Protect } from "@/components/protect";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
@@ -100,7 +101,9 @@ export function SkillTrack_Session_Content({
                         <CardHeader>
                             <CardTitle>Session Details</CardTitle>
                             <CardAction>
-                                <SkillsModule_UpdateSession_Dialog session={session} />
+                                <Protect permissions={{ skillCheckSession: ["update"] }}>
+                                    <SkillsModule_UpdateSession_Dialog session={session} />
+                                </Protect>
                             </CardAction>
                         </CardHeader>
                         <CardContent>

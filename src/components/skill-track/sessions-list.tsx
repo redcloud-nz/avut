@@ -18,6 +18,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Kaga } from "@/components/blocks/kaga";
+import { Protect } from "@/components/protect";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Show } from "@/components/show";
 
@@ -116,7 +117,9 @@ export default function SkillTrack_Sessions_List() {
             <Saratoga.Header>
                 <Saratoga.Title>Skill Check Sessions</Saratoga.Title>
                 <Saratoga.Actions>
-                    <SkillTrack_CreateSession_Dialog />
+                    <Protect permissions={{ skillCheckSession: ["create"] }}>
+                        <SkillTrack_CreateSession_Dialog />
+                    </Protect>
                 </Saratoga.Actions>
             </Saratoga.Header>
             <Show

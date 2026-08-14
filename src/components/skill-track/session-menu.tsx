@@ -36,7 +36,7 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
-                        permissions={{ skillCheckSession: ["update"] }}
+                        permissions={{ skillCheckSession: ["delete"] }}
                         fallback={
                             <Empty size="sm">
                                 <EmptyHeader>
