@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
@@ -11,11 +11,18 @@ import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { skillsRouter } from "./skills-router";
+
+// skills-router reaches @/server/auth at import time via ../init. The procedure
+// under test only touches ctx.prisma (the injected mock), so stubbing server-only
+// is enough to let the module load under jsdom.
+vi.mock("server-only", () => ({}));
 
 describe("skills.createSession", () => {
     // Dataset:
@@ -96,5 +103,117 @@ describe("skills.createSession", () => {
                 },
             }),
         ).rejects.toThrow(TRPCError);
+    });
+});
+
+describe("skillsRouter.getPackage", () => {
+    const T = {
+        org: OrganizationId.create(),
+        publisherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        pkg: SkillPackageId.create(),
+        unpublishedPkg: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: {
+                id: T.publisherOrg,
+                name: "Publisher",
+                slug: "publisher",
+                createdAt: new Date(),
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.publisherOrg,
+                name: "Rescue Skills",
+                description: "",
+                properties: {},
+                tags: [],
+                published: true,
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.unpublishedPkg,
+                organizationId: T.publisherOrg,
+                name: "Draft Skills",
+                description: "",
+                properties: {},
+                tags: [],
+                published: false,
+            },
+        });
+        await db.skillPackageSubscription.create({
+            data: {
+                id: SkillPackageSubscriptionId.create(),
+                organizationId: T.org,
+                skillPackageId: T.pkg,
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillPackageSubscription: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns the package with subscription and counts for the caller's org", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.pkg,
+        });
+        expect(result.id).toBe(T.pkg);
+        expect(result.name).toBe("Rescue Skills");
+        expect(result.organization.id).toBe(T.publisherOrg);
+        expect(result.subscription).not.toBeNull();
+        expect(result.subscriptionCount).toBe(1);
+    });
+
+    it("returns subscription: null when the org isn't subscribed", async () => {
+        // A second org, never subscribed, requesting the same published package.
+        const otherOrg = OrganizationId.create();
+        await db.organization.create({
+            data: { id: otherOrg, name: "Other", slug: "other", createdAt: new Date() },
+        });
+        const caller = skillsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillPackageSubscription: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+        const result = await caller.getPackage({
+            organizationId: otherOrg,
+            skillPackageId: T.pkg,
+        });
+        expect(result.subscription).toBeNull();
+    });
+
+    it("throws NOT_FOUND for an unpublished package", async () => {
+        await expect(
+            makeCaller().getPackage({ organizationId: T.org, skillPackageId: T.unpublishedPkg }),
+        ).rejects.toThrow(/not found/i);
+    });
+
+    it("throws NOT_FOUND for an unknown package", async () => {
+        await expect(
+            makeCaller().getPackage({
+                organizationId: T.org,
+                skillPackageId: SkillPackageId.create(),
+            }),
+        ).rejects.toThrow(/not found/i);
     });
 });

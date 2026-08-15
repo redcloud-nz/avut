@@ -109,6 +109,89 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a single published skill package by ID, including this organization's subscription
+     * status and package-level counts.
+     * @param skillPackageId The ID of the skill package to retrieve.
+     * @returns The skill package with organization, subscription, skillCount, subscriptionCount.
+     * @throws TRPCError(NOT_FOUND) if the package doesn't exist or isn't published.
+     */
+    getPackage: organizationProcedure({ skillPackageSubscription: ["view"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(
+            SkillPackage.schema.extend({
+                organization: z.object({
+                    id: z.string(),
+                    name: z.string(),
+                }),
+                subscription: SkillPackageSubscription.schema.nullable(),
+                skillCount: z.number(),
+                subscriptionCount: z.number(),
+            }),
+        )
+        .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
+            const pkg = await ctx.prisma.skillPackage.findUnique({
+                where: {
+                    id: skillPackageId,
+                    published: true,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    tags: true,
+                    properties: true,
+                    published: true,
+                    updatedAt: true,
+                    createdAt: true,
+                    status: true,
+                    organizationId: true,
+                    organization: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    subscriptions: {
+                        where: {
+                            organizationId,
+                        },
+                    },
+                    _count: {
+                        select: {
+                            subscriptions: true,
+                            skills: {
+                                where: {
+                                    status: "Active",
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!pkg) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillPackageNotFound(skillPackageId),
+                });
+            }
+
+            return {
+                ...SkillPackage.fromRecord(pkg),
+                organization: {
+                    id: pkg.organization.id,
+                    name: pkg.organization.name,
+                },
+                skillCount: pkg._count.skills,
+                subscriptionCount: pkg._count.subscriptions,
+                subscription:
+                    pkg.subscriptions.length > 0
+                        ? SkillPackageSubscription.fromRecord(pkg.subscriptions[0])
+                        : null,
+            };
+        }),
+
+    /**
      * Get a skill check session by ID.
      * @param skillCheckSessionId The ID of the skill check session to retrieve.
      * @returns The skill check session.
