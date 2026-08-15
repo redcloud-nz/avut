@@ -8,40 +8,26 @@
 import { Metadata } from "next";
 
 import { Std } from "@/components/blocks/std";
+import { SkillTrack_Session_Content } from "@/components/skill-track/session-content";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { requireOrganization } from "@/server/organization-access";
-import { fetchQuery, trpc } from "@/trpc/server";
-
-import { SkillTrack_Session_Content } from "./content";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]">;
 
-/**
- * Resolve the route's skill check session.
- *
- * `generateMetadata` and the page body both call this, but it costs a single round trip:
- * `requireOrganization` is React-`cache`d and `fetchQuery` writes into the request-scoped
- * query client, so the second call is a cache hit.
- */
-async function resolveSession(props: Props) {
+export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, session_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
+    const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
     const session = await fetchQuery(
         trpc.skills.getSession.queryOptions({
             organizationId: organization.id,
-            skillCheckSessionId: SkillCheckSessionId.schema.parse(session_id),
+            skillCheckSessionId,
         }),
     );
-
-    return { slug, session };
-}
-
-export async function generateMetadata(props: Props): Promise<Metadata> {
-    const { session } = await resolveSession(props);
 
     return {
         title: `${session.name || `Session ${session.id}`} ${TITLE_SEPARATOR} Skills Module`,
@@ -49,23 +35,23 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function SkillTrack_Session_Page(props: Props) {
-    const { slug, session } = await resolveSession(props);
+    const { slug, session_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
+
+    prefetch(
+        trpc.skills.getSession.queryOptions({
+            organizationId: organization.id,
+            skillCheckSessionId,
+        }),
+    );
 
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", { slug }),
-                    },
-                    { label: session.name || session.id },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <SkillTrack_Session_Content slug={slug} session={session} />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Std.SidebarInset>
+                <SkillTrack_Session_Content sessionId={skillCheckSessionId} />
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }
