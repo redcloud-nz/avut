@@ -59,7 +59,7 @@ describe("skillsInvalidations", () => {
         ).toEqual(expected);
     });
 
-    it("updateSessionSkills invalidates the session list and the all-assessees list", () => {
+    it("updateSessionSkills invalidates only the all-skills list", () => {
         const filters = skillsInvalidations.updateSessionSkills({
             organizationId,
             skillCheckSessionId,
@@ -68,9 +68,8 @@ describe("skillsInvalidations", () => {
         } as never);
 
         expect(filters.map((f) => f.queryKey)).toEqual([
-            [["skills", "listSessions"], { input: { organizationId }, type: "query" }],
             [
-                ["skills", "listSessionAssessees"],
+                ["skills", "listSessionSkills"],
                 {
                     input: {
                         organizationId,
@@ -83,7 +82,7 @@ describe("skillsInvalidations", () => {
         ]);
     });
 
-    it("updateSessionAssessees invalidates the session list and the all-assessees list", () => {
+    it("updateSessionAssessees invalidates only the all-assessees list", () => {
         const filters = skillsInvalidations.updateSessionAssessees({
             organizationId,
             skillCheckSessionId,
@@ -92,7 +91,6 @@ describe("skillsInvalidations", () => {
         } as never);
 
         expect(filters.map((f) => f.queryKey)).toEqual([
-            [["skills", "listSessions"], { input: { organizationId }, type: "query" }],
             [
                 ["skills", "listSessionAssessees"],
                 {
