@@ -8,22 +8,13 @@
 
 import { use } from "react";
 
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { Button, MutationButton } from "@/components/ui/button";
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { SkillTrack_SubscribeToPackage_Dialog } from "@/components/skill-track/subscribe-package";
+import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/components/skill-track/unsubscribe-package";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
@@ -37,7 +28,6 @@ export default function SkillTrack_CataloguePackage_Page(
 ) {
     const { slug, package_id } = use(props.params);
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const { data: packages } = useSuspenseQuery(
         trpc.skills.listPackages.queryOptions({
@@ -47,41 +37,6 @@ export default function SkillTrack_CataloguePackage_Page(
 
     const skillPackage = packages.find((p) => p.id === package_id);
     if (!skillPackage) throw new Error(`Skill Package(${package_id}) not found`);
-
-    const subscribeMutation = useMutation(
-        trpc.skills.subscribeToPackage.mutationOptions({
-            onError(error) {
-                console.error("Failed to subscribe to skill package", error);
-                toast.error("Failed to subscribe to skill package.");
-            },
-            onSuccess() {
-                toast.success(`Successfully subscribed to skill package "${skillPackage.name}".`);
-                queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-            },
-        }),
-    );
-    const unsubscribeMutation = useMutation(
-        trpc.skills.unsubscribeFromPackage.mutationOptions({
-            onError(error) {
-                console.error("Failed to unsubscribe from skill package", error);
-                toast.error("Failed to unsubscribe from skill package.");
-            },
-            onSuccess() {
-                toast.success(
-                    `Successfully unsubscribed from skill package "${skillPackage.name}".`,
-                );
-                queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-            },
-        }),
-    );
 
     return (
         <Std.SidebarInset>
@@ -102,75 +57,13 @@ export default function SkillTrack_CataloguePackage_Page(
                         <Saratoga.Actions>
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="outline">Unsubscribe</Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Unsubscribe from Package</AlertDialogTitle>
-                                            </AlertDialogHeader>
-                                            <p>
-                                                You will be unsubscribed from{" "}
-                                                <strong>{skillPackage.name}</strong>. Skills from this
-                                                package will no longer be available to your organization.
-                                            </p>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <MutationButton
-                                                    type="button"
-                                                    variant="destructive"
-                                                    status={unsubscribeMutation.status}
-                                                    text={{
-                                                        idle: "Unsubscribe",
-                                                        pending: "Unsubscribing...",
-                                                        success: "Unsubscribed",
-                                                    }}
-                                                    onClick={() =>
-                                                        unsubscribeMutation.mutate({
-                                                            organizationId: organization.id,
-                                                            skillPackageId: skillPackage.id,
-                                                        })
-                                                    }
-                                                />
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <SkillTrack_UnsubscribeFromPackage_Dialog
+                                        skillPackage={skillPackage}
+                                    />
                                 ) : (
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="outline">Subscribe</Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Subscribe to Package</AlertDialogTitle>
-                                            </AlertDialogHeader>
-                                            <p>
-                                                You will be subscribed to{" "}
-                                                <strong>{skillPackage.name}</strong>. Skills from this
-                                                package will become available to your organization.
-                                            </p>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <MutationButton
-                                                    type="button"
-                                                    variant="default"
-                                                    status={subscribeMutation.status}
-                                                    text={{
-                                                        idle: "Subscribe",
-                                                        pending: "Subscribing...",
-                                                        success: "Subscribed",
-                                                    }}
-                                                    onClick={() =>
-                                                        subscribeMutation.mutate({
-                                                            organizationId: organization.id,
-                                                            skillPackageId: skillPackage.id,
-                                                        })
-                                                    }
-                                                />
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <SkillTrack_SubscribeToPackage_Dialog
+                                        skillPackage={skillPackage}
+                                    />
                                 )}
                             </Protect>
                         </Saratoga.Actions>
