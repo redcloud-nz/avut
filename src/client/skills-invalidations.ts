@@ -32,7 +32,6 @@ export const skillsInvalidations = {
         trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId }),
     ],
     updateSessionAssessees: (vars: RouterInput["skills"]["updateSessionAssessees"]) => [
-        trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId }),
         trpc.skills.listSessionAssessees.queryFilter({
             organizationId: vars.organizationId,
             sessionId: vars.skillCheckSessionId,
@@ -40,8 +39,7 @@ export const skillsInvalidations = {
         }),
     ],
     updateSessionSkills: (vars: RouterInput["skills"]["updateSessionSkills"]) => [
-        trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId }),
-        trpc.skills.listSessionAssessees.queryFilter({
+        trpc.skills.listSessionSkills.queryFilter({
             organizationId: vars.organizationId,
             sessionId: vars.skillCheckSessionId,
             scope: "all",
