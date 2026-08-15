@@ -32,7 +32,12 @@ npm run prisma studio        # Open Prisma Studio
 ```
 
 - After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
+- If `npx tsc --noEmit` fails with `.next/types/routes` "Cannot find module" errors unrelated to your change, `.next/types` is just stale/missing (e.g. no dev server has run recently) — run `npx next typegen` to regenerate before investigating further
 - Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
+
+## Git
+
+- When you judge it's a good point to commit, stage the relevant changes and show the proposed commit message — wait for a yes/no before running `git commit`.
 
 ## Project Structure
 
@@ -82,6 +87,7 @@ All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints
 - Always call `ctx.logEvent(...)` after state-changing operations on org records
+- Files in `src/client/<domain>-invalidations.ts` (the `meta.invalidates` targets for mutations) have paired `*-invalidations.test.ts` files asserting the exact `queryFilter` shape per mutation — update the test when you change what a mutation invalidates
 
 ### Permissions
 
