@@ -30,6 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -54,6 +55,7 @@ export function SkillsModule_UpdateSession_Dialog({
 
     const mutation = useMutation(
         trpc.skills.updateSession.mutationOptions({
+            meta: { invalidates: skillsInvalidations.updateSession },
             onError(error) {
                 console.error("Failed to update session", error);
                 toast.error(`Failed to update session ${error.message}`);
@@ -63,11 +65,6 @@ export function SkillsModule_UpdateSession_Dialog({
                 toast.success("Session updated");
 
                 handleOpenChange(false);
-
-                // Invalidate session list to reflect changes in the list view
-                queryClient.invalidateQueries(
-                    trpc.skills.listSessions.queryFilter({ organizationId: organization.id }),
-                );
 
                 queryClient.setQueryData(
                     trpc.skills.getSession.queryKey({ skillCheckSessionId: session.id }),

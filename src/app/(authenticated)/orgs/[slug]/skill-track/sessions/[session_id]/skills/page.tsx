@@ -29,6 +29,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
+import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { Skill, SkillId } from "@/lib/schemas/skill";
@@ -73,6 +74,7 @@ export default function SkillTrack_SessionSkills_Page(
 
     const mutation = useMutation(
         trpc.skills.updateSessionSkills.mutationOptions({
+            meta: { invalidates: skillsInvalidations.updateSessionSkills },
             onError(error) {
                 console.error("Failed to update session skills:", error);
                 toast.error(`Failed to update session skills. ${error.message}`);
@@ -94,19 +96,6 @@ export default function SkillTrack_SessionSkills_Page(
                         skillCheckSessionId: session_id,
                     }),
                     (old) => (old ? { ...old, ...updatedSession } : old),
-                );
-
-                context.client.invalidateQueries(
-                    trpc.skills.listSessions.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-                context.client.invalidateQueries(
-                    trpc.skills.listSessionAssessees.queryFilter({
-                        organizationId: organization.id,
-                        sessionId: session_id,
-                        scope: "all",
-                    }),
                 );
             },
         }),

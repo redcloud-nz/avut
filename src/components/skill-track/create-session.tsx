@@ -30,6 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -54,6 +55,7 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const mutation = useMutation(
         trpc.skills.createSession.mutationOptions({
+            meta: { invalidates: skillsInvalidations.createSession },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);
@@ -62,10 +64,6 @@ export function SkillTrack_CreateSession_Dialog() {
                 toast.success("Session created");
 
                 handleOpenChange(false);
-
-                queryClient.invalidateQueries(
-                    trpc.skills.listSessions.queryFilter({ organizationId: organization.id }),
-                );
 
                 queryClient.setQueryData(
                     trpc.skills.getSession.queryKey({ skillCheckSessionId: created.id }),

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     Dialog,
@@ -22,6 +22,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
+import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -32,12 +33,12 @@ export function SkillTrack_SubscribeToPackage_Dialog({
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const mutation = useMutation(
         trpc.skills.subscribeToPackage.mutationOptions({
+            meta: { invalidates: skillsInvalidations.subscribeToPackage },
             onError(error) {
                 console.error("Failed to subscribe to skill package:", error);
                 toast.error(`Failed to subscribe to skill package: ${error.message}`);
@@ -49,9 +50,6 @@ export function SkillTrack_SubscribeToPackage_Dialog({
                     </>,
                 );
                 handleOpenChange(false);
-                queryClient.invalidateQueries(
-                    trpc.skills.listPackages.queryFilter({ organizationId: organization.id }),
-                );
             },
         }),
     );
