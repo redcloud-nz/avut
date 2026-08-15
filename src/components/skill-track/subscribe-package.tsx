@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
     Dialog,
@@ -33,6 +33,7 @@ export function SkillTrack_SubscribeToPackage_Dialog({
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -43,11 +44,25 @@ export function SkillTrack_SubscribeToPackage_Dialog({
                 console.error("Failed to subscribe to skill package:", error);
                 toast.error(`Failed to subscribe to skill package: ${error.message}`);
             },
-            onSuccess() {
+            onSuccess({ created }) {
                 toast.success(
                     <>
                         Subscribed to <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
+                );
+                queryClient.setQueryData(
+                    trpc.skills.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    (old) =>
+                        old
+                            ? {
+                                  ...old,
+                                  subscription: created,
+                                  subscriptionCount: old.subscriptionCount + 1,
+                              }
+                            : old,
                 );
                 handleOpenChange(false);
             },

@@ -6,7 +6,7 @@
 
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -32,6 +32,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
 
     const mutation = useMutation(
         trpc.skills.unsubscribeFromPackage.mutationOptions({
@@ -45,6 +46,20 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                     <>
                         Unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
+                );
+                queryClient.setQueryData(
+                    trpc.skills.getPackage.queryKey({
+                        organizationId: organization.id,
+                        skillPackageId: skillPackage.id,
+                    }),
+                    (old) =>
+                        old
+                            ? {
+                                  ...old,
+                                  subscription: null,
+                                  subscriptionCount: old.subscriptionCount - 1,
+                              }
+                            : old,
                 );
             },
         }),
