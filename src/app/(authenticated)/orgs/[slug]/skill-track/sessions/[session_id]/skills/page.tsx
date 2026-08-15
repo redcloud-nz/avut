@@ -17,9 +17,25 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+} from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
 import { skillsInvalidations } from "@/client/skills-invalidations";
@@ -96,6 +112,7 @@ export default function SkillTrack_SessionSkills_Page(
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     const [changes, setChanges] = useState<Record<SkillId, boolean>>({});
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     const assignedSkillIds = assignedSkills.map((s) => s.id);
 
@@ -186,6 +203,26 @@ export default function SkillTrack_SessionSkills_Page(
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Session Skills</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost">
+                                        <DropdownMenuTriggerIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end">
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                        <DropdownMenuCheckboxItem
+                                            checked={showSkillDescription}
+                                            onCheckedChange={setShowSkillDescription}
+                                        >
+                                            <span>Skill Description</span>
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="mt-6 space-y-6">
                         {packageSections.map(({ skillPackage, groups }) => {
@@ -229,11 +266,19 @@ export default function SkillTrack_SessionSkills_Page(
                                                                         )
                                                                     }
                                                                 />
-                                                                <FieldLabel
-                                                                    htmlFor={`skill-${skill.id}`}
-                                                                >
-                                                                    {skill.name}
-                                                                </FieldLabel>
+                                                                <FieldContent>
+                                                                    <FieldLabel
+                                                                        htmlFor={`skill-${skill.id}`}
+                                                                    >
+                                                                        {skill.name}
+                                                                    </FieldLabel>
+                                                                    {showSkillDescription &&
+                                                                        skill.description && (
+                                                                            <FieldDescription>
+                                                                                {skill.description}
+                                                                            </FieldDescription>
+                                                                        )}
+                                                                </FieldContent>
                                                             </Field>
                                                         ))}
                                                     </FieldGroup>

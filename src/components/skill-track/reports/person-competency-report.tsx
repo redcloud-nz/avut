@@ -27,7 +27,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
@@ -61,6 +61,7 @@ export function SkillTrack_PersonCompetencyReport({
     );
 
     const [gapsOnly, setGapsOnly] = useState(false);
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
     const [syntheticConfig, setSyntheticConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
 
     const person = personnel[0];
@@ -163,6 +164,12 @@ export function SkillTrack_PersonCompetencyReport({
                                 >
                                     <span>Only Gaps</span>
                                 </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showSkillDescription}
+                                    onCheckedChange={setShowSkillDescription}
+                                >
+                                    <span>Skill Description</span>
+                                </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -211,6 +218,12 @@ export function SkillTrack_PersonCompetencyReport({
                                                 <Item key={skill.id}>
                                                     <ItemContent>
                                                         <ItemTitle>{skill.name}</ItemTitle>
+                                                        {showSkillDescription &&
+                                                            skill.description && (
+                                                                <ItemDescription>
+                                                                    {skill.description}
+                                                                </ItemDescription>
+                                                            )}
                                                     </ItemContent>
                                                     <ItemActions>
                                                         <span className="hidden sm:inline text-sm text-muted-foreground tabular-nums">
