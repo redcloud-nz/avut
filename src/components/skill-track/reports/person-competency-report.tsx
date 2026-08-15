@@ -14,6 +14,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronDownIcon, UserXIcon } from "lucide-react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
+import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { isCompetentResult } from "@/lib/schemas/skill-check";
 import {
@@ -125,125 +127,181 @@ export function SkillTrack_PersonCompetencyReport({
 
     if (!person) {
         return (
-            <Saratoga.Root>
-                <Empty>
-                    <EmptyMedia>
-                        <UserXIcon className="size-12 text-muted-foreground" />
-                    </EmptyMedia>
-                    <EmptyDescription>
-                        This person is not an active member of the organization.
-                    </EmptyDescription>
-                </Empty>
-            </Saratoga.Root>
+            <>
+                <Std.Navbar
+                    breadcrumbs={[
+                        {
+                            label: "Skill Track",
+                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                        },
+                        {
+                            label: "Reports",
+                            href: route("/orgs/[slug]/skill-track/reports", {
+                                slug: organization.slug,
+                            }),
+                        },
+                        {
+                            label: "Personnel Competency",
+                            href: route("/orgs/[slug]/skill-track/reports/person", {
+                                slug: organization.slug,
+                            }),
+                        },
+                        "Report",
+                    ]}
+                />
+                <Std.ScrollContainer>
+                    <Saratoga.Root>
+                        <Empty>
+                            <EmptyMedia>
+                                <UserXIcon className="size-12 text-muted-foreground" />
+                            </EmptyMedia>
+                            <EmptyDescription>
+                                This person is not an active member of the organization.
+                            </EmptyDescription>
+                        </Empty>
+                    </Saratoga.Root>
+                </Std.ScrollContainer>
+            </>
         );
     }
 
     return (
-        <Saratoga.Root>
-            <Saratoga.Header>
-                <Saratoga.Title>{person.name}</Saratoga.Title>
-                <Saratoga.Actions>
-                    {synthetic && (
-                        <SyntheticDataDialog
-                            config={syntheticConfig}
-                            onConfigChange={setSyntheticConfig}
-                        />
-                    )}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
-                                <DropdownMenuTriggerIcon />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end">
-                            <DropdownMenuGroup>
-                                <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                <DropdownMenuCheckboxItem
-                                    checked={gapsOnly}
-                                    onCheckedChange={setGapsOnly}
-                                >
-                                    <span>Only Gaps</span>
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    checked={showSkillDescription}
-                                    onCheckedChange={setShowSkillDescription}
-                                >
-                                    <span>Skill Description</span>
-                                </DropdownMenuCheckboxItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </Saratoga.Actions>
-            </Saratoga.Header>
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    {
+                        label: "Skill Track",
+                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Reports",
+                        href: route("/orgs/[slug]/skill-track/reports", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: "Personnel Competency",
+                        href: route("/orgs/[slug]/skill-track/reports/person", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    "Report",
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>{person.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            {synthetic && (
+                                <SyntheticDataDialog
+                                    config={syntheticConfig}
+                                    onConfigChange={setSyntheticConfig}
+                                />
+                            )}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost">
+                                        <DropdownMenuTriggerIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end">
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                        <DropdownMenuCheckboxItem
+                                            checked={gapsOnly}
+                                            onCheckedChange={setGapsOnly}
+                                        >
+                                            <span>Only Gaps</span>
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            checked={showSkillDescription}
+                                            onCheckedChange={setShowSkillDescription}
+                                        >
+                                            <span>Skill Description</span>
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
 
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-                <StatusBadge status="current" />
-                <span className="text-sm text-muted-foreground">{counts.current} current</span>
-                <StatusBadge status="expired" />
-                <span className="text-sm text-muted-foreground">{counts.expired} expired</span>
-                <StatusBadge status="not-competent" />
-                <span className="text-sm text-muted-foreground">
-                    {counts.notCompetent} not competent
-                </span>
-                <StatusBadge status="not-assessed" />
-                <span className="text-sm text-muted-foreground">
-                    {counts.notAssessed} not assessed
-                </span>
-            </div>
+                    <div className="mt-6 flex flex-wrap items-center gap-2">
+                        <StatusBadge status="current" />
+                        <span className="text-sm text-muted-foreground">
+                            {counts.current} current
+                        </span>
+                        <StatusBadge status="expired" />
+                        <span className="text-sm text-muted-foreground">
+                            {counts.expired} expired
+                        </span>
+                        <StatusBadge status="not-competent" />
+                        <span className="text-sm text-muted-foreground">
+                            {counts.notCompetent} not competent
+                        </span>
+                        <StatusBadge status="not-assessed" />
+                        <span className="text-sm text-muted-foreground">
+                            {counts.notAssessed} not assessed
+                        </span>
+                    </div>
 
-            {packageSections.length === 0 ? (
-                <Empty>
-                    <EmptyDescription>
-                        {gapsOnly
-                            ? "Every assessable skill is current for this person."
-                            : "This organization is not subscribed to any skill packages."}
-                    </EmptyDescription>
-                </Empty>
-            ) : (
-                <div className="mt-6 space-y-6">
-                    {packageSections.map(({ skillPackage, groups }) => (
-                        <Collapsible key={skillPackage.id} defaultOpen>
-                            <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
-                                <span>{skillPackage.name}</span>
-                                <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                                <div className="space-y-6 pt-4">
-                                    {groups.map(({ skillGroup, rows }) => (
-                                        <div key={skillGroup.id}>
-                                            <div className="text-sm font-medium text-muted-foreground mb-2">
-                                                {skillGroup.name}
-                                            </div>
-                                            {rows.map(({ skill, competency, status }) => (
-                                                <Item key={skill.id}>
-                                                    <ItemContent>
-                                                        <ItemTitle>{skill.name}</ItemTitle>
-                                                        {showSkillDescription &&
-                                                            skill.description && (
-                                                                <ItemDescription>
-                                                                    {skill.description}
-                                                                </ItemDescription>
-                                                            )}
-                                                    </ItemContent>
-                                                    <ItemActions>
-                                                        <span className="hidden sm:inline text-sm text-muted-foreground tabular-nums">
-                                                            {competency
-                                                                ? formatDate(competency.checkedAt)
-                                                                : null}
-                                                        </span>
-                                                        <StatusBadge status={status} />
-                                                    </ItemActions>
-                                                </Item>
+                    {packageSections.length === 0 ? (
+                        <Empty>
+                            <EmptyDescription>
+                                {gapsOnly
+                                    ? "Every assessable skill is current for this person."
+                                    : "This organization is not subscribed to any skill packages."}
+                            </EmptyDescription>
+                        </Empty>
+                    ) : (
+                        <div className="mt-6 space-y-6">
+                            {packageSections.map(({ skillPackage, groups }) => (
+                                <Collapsible key={skillPackage.id} defaultOpen>
+                                    <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
+                                        <span>{skillPackage.name}</span>
+                                        <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <div className="space-y-6 pt-4">
+                                            {groups.map(({ skillGroup, rows }) => (
+                                                <div key={skillGroup.id}>
+                                                    <div className="text-sm font-medium text-muted-foreground mb-2">
+                                                        {skillGroup.name}
+                                                    </div>
+                                                    {rows.map(({ skill, competency, status }) => (
+                                                        <Item key={skill.id}>
+                                                            <ItemContent>
+                                                                <ItemTitle>{skill.name}</ItemTitle>
+                                                                {showSkillDescription &&
+                                                                    skill.description && (
+                                                                        <ItemDescription>
+                                                                            {skill.description}
+                                                                        </ItemDescription>
+                                                                    )}
+                                                            </ItemContent>
+                                                            <ItemActions>
+                                                                <span className="hidden sm:inline text-sm text-muted-foreground tabular-nums">
+                                                                    {competency
+                                                                        ? formatDate(
+                                                                              competency.checkedAt,
+                                                                          )
+                                                                        : null}
+                                                                </span>
+                                                                <StatusBadge status={status} />
+                                                            </ItemActions>
+                                                        </Item>
+                                                    ))}
+                                                </div>
                                             ))}
                                         </div>
-                                    ))}
-                                </div>
-                            </CollapsibleContent>
-                        </Collapsible>
-                    ))}
-                </div>
-            )}
-        </Saratoga.Root>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            ))}
+                        </div>
+                    )}
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
     );
 }
 
