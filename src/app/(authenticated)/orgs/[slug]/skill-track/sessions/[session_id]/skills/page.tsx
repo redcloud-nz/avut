@@ -9,6 +9,7 @@
 
 import { ChevronDownIcon } from "lucide-react";
 import { use, useState } from "react";
+import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useDebouncer } from "@tanstack/react-pacer";
@@ -16,31 +17,22 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
 import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { Skill, SkillId } from "@/lib/schemas/skill";
-import { SkillGroup } from "@/lib/schemas/skill-group";
-import { SkillPackage } from "@/lib/schemas/skill-package";
+import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
 
 /**
  * Page for selecting skills to be assessed in a skill check session.
- * Displays a list of skill packages, each containing skill groups, which in turn contain skills. Each skill has a checkbox to select/deselect it for the session.
- * Changes are saved automatically with a debounce, and the UI indicates pending changes and errors.
+ * Displays a list of skill packages, each collapsible and containing skill groups and skills.
+ * Each skill has a checkbox to select/deselect it for the session. Changes are saved
+ * automatically with a debounce, and the UI indicates pending changes and errors.
  */
 export default function SkillTrack_SessionSkills_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]/skills">,
@@ -107,6 +99,10 @@ export default function SkillTrack_SessionSkills_Page(
 
     const assignedSkillIds = assignedSkills.map((s) => s.id);
 
+    function isSelected(skillId: SkillId): boolean {
+        return changes[skillId] ?? assignedSkillIds.includes(skillId);
+    }
+
     function handleChangeChecked(skillId: SkillId, newValue: boolean) {
         if (mutation.status == "success") {
             mutation.reset();
@@ -138,6 +134,30 @@ export default function SkillTrack_SessionSkills_Page(
         });
     }
 
+    // Package -> group -> skills. Packages are ordered by name, groups and skills by their
+    // authored sequence. Groups and packages left with no skills are dropped.
+    const packageSections = R.pipe(
+        skillPackages,
+        R.sortBy((skillPackage) => skillPackage.name),
+        R.map((skillPackage) => ({
+            skillPackage,
+            groups: R.pipe(
+                skillGroups,
+                R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
+                R.sortBy((skillGroup) => skillGroup.sequence),
+                R.map((skillGroup) => ({
+                    skillGroup,
+                    skills: R.pipe(
+                        skills.filter((skill) => skill.skillGroupId === skillGroup.id),
+                        R.sortBy((skill) => skill.name),
+                    ),
+                })),
+                R.filter(({ skills }) => skills.length > 0),
+            ),
+        })),
+        R.filter(({ groups }) => groups.length > 0),
+    );
+
     return (
         <Std.SidebarInset>
             <Std.Navbar>
@@ -167,171 +187,66 @@ export default function SkillTrack_SessionSkills_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Session Skills</Saratoga.Title>
                     </Saratoga.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Skills to assess</CardTitle>
-                            <CardDescription>
-                                Select the skills you want to assess in this skill check session.
-                                Your changes will be saved automatically.
-                            </CardDescription>
-                            <CardAction className="flex flex-col items-center">
-                                <div className="text-lg font-medium">{assignedSkillIds.length}</div>
-                                <div className="text-muted-foreground">selected</div>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldSet>
-                                {skillPackages
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((skillPackage) => (
-                                        <SkillPackageSection
-                                            key={skillPackage.id}
-                                            assignedSkillIds={assignedSkillIds}
-                                            changes={changes}
-                                            skillPackage={skillPackage}
-                                            skillGroups={skillGroups}
-                                            skills={skills}
-                                            onChangeChecked={handleChangeChecked}
-                                        />
-                                    ))}
-                            </FieldSet>
-                        </CardContent>
-                    </Card>
+                    <div className="mt-6 space-y-6">
+                        {packageSections.map(({ skillPackage, groups }) => {
+                            const skillsInPackage = groups.flatMap(({ skills }) => skills);
+                            const packageSelectedCount = skillsInPackage.filter((s) =>
+                                isSelected(s.id),
+                            ).length;
+
+                            return (
+                                <Collapsible key={skillPackage.id} defaultOpen>
+                                    <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
+                                        <span>{skillPackage.name}</span>
+                                        <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                                            <span>
+                                                {packageSelectedCount} of {skillsInPackage.length}{" "}
+                                                selected
+                                            </span>
+                                            <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                                        </span>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <div className="space-y-6 pt-4">
+                                            {groups.map(({ skillGroup, skills }) => (
+                                                <div key={skillGroup.id}>
+                                                    <div className="text-sm font-medium text-muted-foreground mb-2">
+                                                        {skillGroup.name}
+                                                    </div>
+                                                    <FieldGroup>
+                                                        {skills.map((skill) => (
+                                                            <Field
+                                                                orientation="horizontal"
+                                                                key={skill.id}
+                                                            >
+                                                                <Checkbox
+                                                                    id={`skill-${skill.id}`}
+                                                                    checked={isSelected(skill.id)}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleChangeChecked(
+                                                                            skill.id,
+                                                                            !!checked,
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <FieldLabel
+                                                                    htmlFor={`skill-${skill.id}`}
+                                                                >
+                                                                    {skill.name}
+                                                                </FieldLabel>
+                                                            </Field>
+                                                        ))}
+                                                    </FieldGroup>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            );
+                        })}
+                    </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>
-    );
-}
-
-interface SkillPackageSectionProps {
-    assignedSkillIds: SkillId[];
-    changes: Record<SkillId, boolean>;
-    skillPackage: SkillPackage;
-    skillGroups: SkillGroup[];
-    skills: Skill[];
-    onChangeChecked: (skillId: SkillId, newValue: boolean) => void;
-}
-
-/**
- * Skill package section of the session skills page.
- * Displays a collapsible section for a skill package, showing its skill groups and skills with checkboxes to select/deselect them for the skill check session.
- */
-function SkillPackageSection({
-    assignedSkillIds,
-    changes,
-    onChangeChecked,
-    skillPackage,
-    skillGroups,
-    skills,
-}: SkillPackageSectionProps) {
-    function isSelected(skillId: SkillId): boolean {
-        return changes[skillId] ?? assignedSkillIds.includes(skillId);
-    }
-
-    const skillsInPackage = skills.filter((s) => s.skillPackageId === skillPackage.id);
-    const skillGroupsInPackage = skillGroups.filter((g) => g.skillPackageId === skillPackage.id);
-
-    const packageSelectedCount = skillsInPackage.filter((s) => isSelected(s.id)).length;
-
-    if (skillsInPackage.length == 0) return null;
-
-    return (
-        <Collapsible key={skillPackage.id}>
-            <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
-                <div className="font-medium">{skillPackage.name}</div>
-                <div className="flex item-center gap-2">
-                    <div className="flex gap-1 text-muted-foreground">
-                        <span>
-                            {packageSelectedCount} of {skillsInPackage.length}
-                        </span>
-                        <span className="hidden md:inline">selected</span>
-                    </div>
-                    <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <FieldGroup className="py-4 pl-2">
-                    {skillGroupsInPackage
-                        .sort((a, b) => a.sequence - b.sequence)
-                        .map((skillGroup) => (
-                            <SkillGroupSection
-                                key={skillGroup.id}
-                                assignedSkillIds={assignedSkillIds}
-                                changes={changes}
-                                skillGroup={skillGroup}
-                                skills={skills}
-                                onChangeChecked={onChangeChecked}
-                            />
-                        ))}
-                </FieldGroup>
-            </CollapsibleContent>
-        </Collapsible>
-    );
-}
-
-interface SkillGroupSectionProps {
-    assignedSkillIds: SkillId[];
-    changes: Record<SkillId, boolean>;
-    skillGroup: SkillGroup;
-    skills: Skill[];
-    onChangeChecked: (skillId: SkillId, newValue: boolean) => void;
-}
-
-function SkillGroupSection({
-    assignedSkillIds,
-    changes,
-    skillGroup,
-    skills,
-    onChangeChecked,
-}: SkillGroupSectionProps) {
-    function isSelected(skillId: SkillId) {
-        return changes[skillId] ?? assignedSkillIds.includes(skillId);
-    }
-
-    const skillsInGroup = skills.filter((s) => s.skillGroupId === skillGroup.id);
-
-    const groupSelectedCount = skillsInGroup.filter((s) => isSelected(s.id)).length;
-
-    if (skillsInGroup.length == 0) return null;
-
-    return (
-        <Collapsible key={skillGroup.id}>
-            <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
-                <div className="font-medium">{skillGroup.name}</div>
-                <div className="flex item-center gap-2">
-                    <div className="flex gap-1 text-muted-foreground">
-                        <span>
-                            {groupSelectedCount}/{skillsInGroup.length}
-                        </span>
-                        <span className="hidden md:inline">selected</span>
-                    </div>
-                    <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <FieldGroup className="py-4 px-2">
-                    {skillsInGroup
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((skill) => (
-                            <Field orientation="horizontal" key={skill.id}>
-                                <Checkbox
-                                    id={`skill-${skill.id}`}
-                                    checked={isSelected(skill.id)}
-                                    onCheckedChange={(checked) => {
-                                        onChangeChecked(skill.id, !!checked);
-                                    }}
-                                />
-                                <FieldLabel htmlFor={`skill-${skill.id}`}>{skill.name}</FieldLabel>
-                                {changes[skill.id] === true && (
-                                    <div className="leading-snug text-green-500">+1</div>
-                                )}
-                                {changes[skill.id] === false && (
-                                    <div className="leading-snug text-red-500">-1</div>
-                                )}
-                            </Field>
-                        ))}
-                </FieldGroup>
-            </CollapsibleContent>
-        </Collapsible>
     );
 }

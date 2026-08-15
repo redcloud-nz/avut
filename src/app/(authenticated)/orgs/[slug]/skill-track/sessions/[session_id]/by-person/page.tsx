@@ -391,7 +391,7 @@ export default function SkillTrack_SessionByPerson_Page(
                                 </div>
                                 <Separator orientation="vertical" className="hidden lg:block" />
                                 <Separator orientation="horizontal" className="block lg:hidden" />
-                                <div className="w-full flex flex-col gap-2">
+                                <div className="w-full flex flex-col gap-5">
                                     {match(selected)
                                         .with(null, () => (
                                             <Empty>
@@ -434,12 +434,12 @@ export default function SkillTrack_SessionByPerson_Page(
                                                     <>{sessionSkills.map(renderRow)}</>
                                                 ))
                                                 .with("by-package-group", () => (
-                                                    <div className="space-y-4">
+                                                    <div className="space-y-6">
                                                         {packageSections.map(
                                                             ({ skillPackage, groups }) => (
                                                                 <div
                                                                     key={skillPackage.id}
-                                                                    className="space-y-4"
+                                                                    className="space-y-6"
                                                                 >
                                                                     <div className="font-semibold border-b pb-1">
                                                                         {skillPackage.name}
@@ -452,14 +452,16 @@ export default function SkillTrack_SessionByPerson_Page(
                                                                             <div
                                                                                 key={skillGroup.id}
                                                                             >
-                                                                                <div className="text-sm font-medium text-muted-foreground">
+                                                                                <div className="text-sm font-medium text-muted-foreground mb-2">
                                                                                     {
                                                                                         skillGroup.name
                                                                                     }
                                                                                 </div>
-                                                                                {skills.map(
-                                                                                    renderRow,
-                                                                                )}
+                                                                                <div className="flex flex-col gap-5">
+                                                                                    {skills.map(
+                                                                                        renderRow,
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         ),
                                                                     )}
@@ -467,11 +469,13 @@ export default function SkillTrack_SessionByPerson_Page(
                                                             ),
                                                         )}
                                                         {ungroupedSkills.length > 0 && (
-                                                            <div className="space-y-4">
+                                                            <div className="space-y-6">
                                                                 <div className="font-semibold border-b pb-1">
                                                                     Other
                                                                 </div>
-                                                                {ungroupedSkills.map(renderRow)}
+                                                                <div className="flex flex-col gap-5">
+                                                                    {ungroupedSkills.map(renderRow)}
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>

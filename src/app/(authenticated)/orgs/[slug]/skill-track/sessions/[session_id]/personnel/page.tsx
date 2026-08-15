@@ -9,6 +9,7 @@
 
 import { ChevronDownIcon } from "lucide-react";
 import { use, useState } from "react";
+import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useDebouncer } from "@tanstack/react-pacer";
@@ -16,31 +17,22 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
 import { skillsInvalidations } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { PersonId, PersonRef } from "@/lib/schemas/person";
-import { TeamData } from "@/lib/schemas/team";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
 /**
  * Page for selecting personnel to be assessed in a skill check session.
- * Displays a list of teams, each containing its members with checkboxes to select/deselect them for the session.
- * Changes are saved automatically with a debounce, and the UI indicates pending changes and errors.
+ * Displays a collapsible section per team, each showing its members with checkboxes to
+ * select/deselect them for the session. Changes are saved automatically with a debounce,
+ * and the UI indicates pending changes and errors.
  */
 export default function SkillTrack_SessionPersonnel_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]/personnel">,
@@ -112,6 +104,10 @@ export default function SkillTrack_SessionPersonnel_Page(
     // The IDs of the personnel currently assigned to the session, used as the baseline for tracking changes.
     const assignedPersonIds = assignedPersonnel.map((p) => p.id);
 
+    function isSelected(personId: PersonId) {
+        return changes[personId] ?? assignedPersonIds.includes(personId);
+    }
+
     function handleChangeChecked(personId: PersonId, newValue: boolean) {
         if (mutation.status == "success") {
             mutation.reset();
@@ -139,6 +135,21 @@ export default function SkillTrack_SessionPersonnel_Page(
                 .map(([id, _]) => id as PersonId),
         });
     }
+
+    // Team -> members. Teams are ordered by name, members by name. Teams left with no members
+    // are dropped.
+    const teamSections = R.pipe(
+        teams,
+        R.sortBy((team) => team.name),
+        R.map((team) => ({
+            team,
+            members: R.pipe(
+                teamMemberships.filter((m) => m.teamId === team.id),
+                R.sortBy((m) => m.person.name),
+            ),
+        })),
+        R.filter(({ members }) => members.length > 0),
+    );
 
     return (
         <Std.SidebarInset>
@@ -169,111 +180,52 @@ export default function SkillTrack_SessionPersonnel_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Session Personnel</Saratoga.Title>
                     </Saratoga.Header>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Personnel to assess</CardTitle>
-                            <CardDescription>
-                                Select the personnel you want to assess in this skill check session.
-                                Changes will be saved automatically.
-                            </CardDescription>
-                            <CardAction className="flex flex-col items-center">
-                                <div className="text-lg font-medium">
-                                    {assignedPersonIds.length}
-                                </div>
-                                <div className="text-muted-foreground">selected</div>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent>
-                            <FieldSet>
-                                {teams
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((team) => (
-                                        <TeamSection
-                                            key={team.id}
-                                            team={team}
-                                            members={teamMemberships.filter(
-                                                (m) => m.teamId === team.id,
-                                            )}
-                                            assignedPersonIds={assignedPersonIds}
-                                            changes={changes}
-                                            onChangeChecked={handleChangeChecked}
-                                        />
-                                    ))}
-                            </FieldSet>
-                        </CardContent>
-                    </Card>
+                    <div className="mt-6 space-y-6">
+                        {teamSections.map(({ team, members }) => {
+                            const teamSelectedCount = members.filter((m) =>
+                                isSelected(m.person.id),
+                            ).length;
+
+                            return (
+                                <Collapsible key={team.id} defaultOpen>
+                                    <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
+                                        <span>{team.name}</span>
+                                        <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                                            <span>
+                                                {teamSelectedCount} of {members.length} selected
+                                            </span>
+                                            <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                                        </span>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <FieldGroup className="pt-4">
+                                            {members.map((membership) => (
+                                                <Field orientation="horizontal" key={membership.id}>
+                                                    <Checkbox
+                                                        id={`membership-${membership.id}`}
+                                                        checked={isSelected(membership.person.id)}
+                                                        onCheckedChange={(checked) =>
+                                                            handleChangeChecked(
+                                                                membership.person.id,
+                                                                !!checked,
+                                                            )
+                                                        }
+                                                    />
+                                                    <FieldLabel
+                                                        htmlFor={`membership-${membership.id}`}
+                                                    >
+                                                        {membership.person.name}
+                                                    </FieldLabel>
+                                                </Field>
+                                            ))}
+                                        </FieldGroup>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            );
+                        })}
+                    </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </Std.SidebarInset>
-    );
-}
-
-interface TeamSectionProps {
-    assignedPersonIds: PersonId[];
-    changes: Record<PersonId, boolean>;
-    members: (TeamMembershipData & { person: PersonRef })[];
-    team: TeamData;
-    onChangeChecked: (personId: PersonId, newValue: boolean) => void;
-}
-
-/**
- * Team section of the personnel selection page.
- * Displays a collapsible section for a team, showing its members with checkboxes to select/deselect them for the skill check session.
- * Also shows the count of selected members in the team and indicates changes with +1/-1.
- */
-function TeamSection({
-    assignedPersonIds,
-    changes,
-    onChangeChecked,
-    members,
-    team,
-}: TeamSectionProps) {
-    function isSelected(personId: PersonId) {
-        return changes[personId] ?? assignedPersonIds.includes(personId);
-    }
-
-    const teamSelectedCount = members.filter((m) => isSelected(m.person.id)).length;
-
-    return (
-        <Collapsible key={team.id}>
-            <CollapsibleTrigger className="group w-full flex items-center px-2 py-1 justify-between transition-none hover:bg-accent hover:text-accent-foreground border-b">
-                <div className="font-medium">{team.name}</div>
-                <div className="flex item-center gap-2">
-                    <div className="flex gap-1 text-muted-foreground">
-                        <span>
-                            {teamSelectedCount} of {members.length}
-                        </span>
-                        <span className="hidden md:inline">selected</span>
-                    </div>
-                    <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <FieldGroup className="py-4 px-2">
-                    {members
-                        .sort((a, b) => a.person.name.localeCompare(b.person.name))
-                        .map((membership) => (
-                            <Field orientation="horizontal" key={membership.id}>
-                                <Checkbox
-                                    id={`membership-${membership.id}`}
-                                    checked={isSelected(membership.person.id)}
-                                    onCheckedChange={(checked) =>
-                                        onChangeChecked(membership.person.id, !!checked)
-                                    }
-                                />
-                                <FieldLabel htmlFor={`membership-${membership.id}`}>
-                                    {membership.person.name}
-                                </FieldLabel>
-                                {changes[membership.person.id] === true && (
-                                    <div className="leading-snug text-green-500">+1</div>
-                                )}
-                                {changes[membership.person.id] === false && (
-                                    <div className="leading-snug text-red-500">-1</div>
-                                )}
-                            </Field>
-                        ))}
-                </FieldGroup>
-            </CollapsibleContent>
-        </Collapsible>
     );
 }

@@ -478,12 +478,12 @@ export default function SkillTrack_SessionBySkill_Page(
                                                 sessionSkills.map(renderSkillItem),
                                             )
                                             .with("by-package-group", () => (
-                                                <div className="space-y-4">
+                                                <div className="space-y-6">
                                                     {packageSections.map(
                                                         ({ skillPackage, groups }) => (
                                                             <div
                                                                 key={skillPackage.id}
-                                                                className="space-y-4"
+                                                                className="space-y-6"
                                                             >
                                                                 <div className="font-semibold border-b pb-1">
                                                                     {skillPackage.name}
@@ -491,7 +491,7 @@ export default function SkillTrack_SessionBySkill_Page(
                                                                 {groups.map(
                                                                     ({ skillGroup, skills }) => (
                                                                         <div key={skillGroup.id}>
-                                                                            <div className="text-sm font-medium text-muted-foreground">
+                                                                            <div className="text-sm font-medium text-muted-foreground mb-2">
                                                                                 {skillGroup.name}
                                                                             </div>
                                                                             {skills.map(
@@ -518,7 +518,7 @@ export default function SkillTrack_SessionBySkill_Page(
                                 </div>
                                 <Separator orientation="vertical" className="hidden lg:block" />
                                 <Separator orientation="horizontal" className="block lg:hidden" />
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-5">
                                     {match(selected)
                                         .with(null, () => (
                                             <Empty>

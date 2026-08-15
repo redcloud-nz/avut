@@ -11,12 +11,13 @@ import { match } from "ts-pattern";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { UserXIcon } from "lucide-react";
+import { ChevronDownIcon, UserXIcon } from "lucide-react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -168,7 +169,7 @@ export function SkillTrack_PersonCompetencyReport({
                 </Saratoga.Actions>
             </Saratoga.Header>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
                 <StatusBadge status="current" />
                 <span className="text-sm text-muted-foreground">{counts.current} current</span>
                 <StatusBadge status="expired" />
@@ -192,33 +193,40 @@ export function SkillTrack_PersonCompetencyReport({
                     </EmptyDescription>
                 </Empty>
             ) : (
-                <div className="space-y-4">
+                <div className="mt-6 space-y-6">
                     {packageSections.map(({ skillPackage, groups }) => (
-                        <div key={skillPackage.id} className="space-y-4">
-                            <div className="font-semibold border-b pb-1">{skillPackage.name}</div>
-                            {groups.map(({ skillGroup, rows }) => (
-                                <div key={skillGroup.id}>
-                                    <div className="text-sm font-medium text-muted-foreground">
-                                        {skillGroup.name}
-                                    </div>
-                                    {rows.map(({ skill, competency, status }) => (
-                                        <Item key={skill.id}>
-                                            <ItemContent>
-                                                <ItemTitle>{skill.name}</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <span className="hidden sm:inline text-sm text-muted-foreground tabular-nums">
-                                                    {competency
-                                                        ? formatDate(competency.checkedAt)
-                                                        : null}
-                                                </span>
-                                                <StatusBadge status={status} />
-                                            </ItemActions>
-                                        </Item>
+                        <Collapsible key={skillPackage.id} defaultOpen>
+                            <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
+                                <span>{skillPackage.name}</span>
+                                <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="space-y-6 pt-4">
+                                    {groups.map(({ skillGroup, rows }) => (
+                                        <div key={skillGroup.id}>
+                                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                                                {skillGroup.name}
+                                            </div>
+                                            {rows.map(({ skill, competency, status }) => (
+                                                <Item key={skill.id}>
+                                                    <ItemContent>
+                                                        <ItemTitle>{skill.name}</ItemTitle>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <span className="hidden sm:inline text-sm text-muted-foreground tabular-nums">
+                                                            {competency
+                                                                ? formatDate(competency.checkedAt)
+                                                                : null}
+                                                        </span>
+                                                        <StatusBadge status={status} />
+                                                    </ItemActions>
+                                                </Item>
+                                            ))}
+                                        </div>
                                     ))}
                                 </div>
-                            ))}
-                        </div>
+                            </CollapsibleContent>
+                        </Collapsible>
                     ))}
                 </div>
             )}
