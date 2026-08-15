@@ -20,14 +20,25 @@ export type SkillCheckSessionModel =
 
 export type AggregateSkillCheckSession = {
     _count: SkillCheckSessionCountAggregateOutputType | null;
+    _avg: SkillCheckSessionAvgAggregateOutputType | null;
+    _sum: SkillCheckSessionSumAggregateOutputType | null;
     _min: SkillCheckSessionMinAggregateOutputType | null;
     _max: SkillCheckSessionMaxAggregateOutputType | null;
+};
+
+export type SkillCheckSessionAvgAggregateOutputType = {
+    sessionNumber: number | null;
+};
+
+export type SkillCheckSessionSumAggregateOutputType = {
+    sessionNumber: number | null;
 };
 
 export type SkillCheckSessionMinAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     name: string | null;
+    sessionNumber: number | null;
     startsAt: Date | null;
     endsAt: Date | null;
     notes: string | null;
@@ -40,6 +51,7 @@ export type SkillCheckSessionMaxAggregateOutputType = {
     id: string | null;
     organizationId: string | null;
     name: string | null;
+    sessionNumber: number | null;
     startsAt: Date | null;
     endsAt: Date | null;
     notes: string | null;
@@ -52,6 +64,7 @@ export type SkillCheckSessionCountAggregateOutputType = {
     id: number;
     organizationId: number;
     name: number;
+    sessionNumber: number;
     startsAt: number;
     endsAt: number;
     notes: number;
@@ -61,10 +74,19 @@ export type SkillCheckSessionCountAggregateOutputType = {
     _all: number;
 };
 
+export type SkillCheckSessionAvgAggregateInputType = {
+    sessionNumber?: true;
+};
+
+export type SkillCheckSessionSumAggregateInputType = {
+    sessionNumber?: true;
+};
+
 export type SkillCheckSessionMinAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
+    sessionNumber?: true;
     startsAt?: true;
     endsAt?: true;
     notes?: true;
@@ -77,6 +99,7 @@ export type SkillCheckSessionMaxAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
+    sessionNumber?: true;
     startsAt?: true;
     endsAt?: true;
     notes?: true;
@@ -89,6 +112,7 @@ export type SkillCheckSessionCountAggregateInputType = {
     id?: true;
     organizationId?: true;
     name?: true;
+    sessionNumber?: true;
     startsAt?: true;
     endsAt?: true;
     notes?: true;
@@ -140,6 +164,18 @@ export type SkillCheckSessionAggregateArgs<
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
+     * Select which fields to average
+     **/
+    _avg?: SkillCheckSessionAvgAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to sum
+     **/
+    _sum?: SkillCheckSessionSumAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
      * Select which fields to find the minimum value
      **/
     _min?: SkillCheckSessionMinAggregateInputType;
@@ -171,6 +207,8 @@ export type SkillCheckSessionGroupByArgs<
     take?: number;
     skip?: number;
     _count?: SkillCheckSessionCountAggregateInputType | true;
+    _avg?: SkillCheckSessionAvgAggregateInputType;
+    _sum?: SkillCheckSessionSumAggregateInputType;
     _min?: SkillCheckSessionMinAggregateInputType;
     _max?: SkillCheckSessionMaxAggregateInputType;
 };
@@ -179,6 +217,7 @@ export type SkillCheckSessionGroupByOutputType = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt: Date | null;
     endsAt: Date | null;
     notes: string | null;
@@ -186,6 +225,8 @@ export type SkillCheckSessionGroupByOutputType = {
     createdAt: Date;
     updatedAt: Date;
     _count: SkillCheckSessionCountAggregateOutputType | null;
+    _avg: SkillCheckSessionAvgAggregateOutputType | null;
+    _sum: SkillCheckSessionSumAggregateOutputType | null;
     _min: SkillCheckSessionMinAggregateOutputType | null;
     _max: SkillCheckSessionMaxAggregateOutputType | null;
 };
@@ -210,6 +251,7 @@ export type SkillCheckSessionWhereInput = {
     id?: Prisma.StringFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
     name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+    sessionNumber?: Prisma.IntFilter<"SkillCheckSession"> | number;
     startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
@@ -230,6 +272,7 @@ export type SkillCheckSessionOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
+    sessionNumber?: Prisma.SortOrder;
     startsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     endsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -246,11 +289,13 @@ export type SkillCheckSessionOrderByWithRelationInput = {
 export type SkillCheckSessionWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        organizationId_sessionNumber?: Prisma.SkillCheckSessionOrganizationIdSessionNumberCompoundUniqueInput;
         AND?: Prisma.SkillCheckSessionWhereInput | Prisma.SkillCheckSessionWhereInput[];
         OR?: Prisma.SkillCheckSessionWhereInput[];
         NOT?: Prisma.SkillCheckSessionWhereInput | Prisma.SkillCheckSessionWhereInput[];
         organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
         name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+        sessionNumber?: Prisma.IntFilter<"SkillCheckSession"> | number;
         startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
         endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
         notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
@@ -266,13 +311,14 @@ export type SkillCheckSessionWhereUniqueInput = Prisma.AtLeast<
         skills?: Prisma.SkillListRelationFilter;
         skillChecks?: Prisma.SkillCheckListRelationFilter;
     },
-    "id"
+    "id" | "organizationId_sessionNumber"
 >;
 
 export type SkillCheckSessionOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
+    sessionNumber?: Prisma.SortOrder;
     startsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     endsAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     notes?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -280,8 +326,10 @@ export type SkillCheckSessionOrderByWithAggregationInput = {
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.SkillCheckSessionCountOrderByAggregateInput;
+    _avg?: Prisma.SkillCheckSessionAvgOrderByAggregateInput;
     _max?: Prisma.SkillCheckSessionMaxOrderByAggregateInput;
     _min?: Prisma.SkillCheckSessionMinOrderByAggregateInput;
+    _sum?: Prisma.SkillCheckSessionSumOrderByAggregateInput;
 };
 
 export type SkillCheckSessionScalarWhereWithAggregatesInput = {
@@ -295,6 +343,7 @@ export type SkillCheckSessionScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
     name?: Prisma.StringWithAggregatesFilter<"SkillCheckSession"> | string;
+    sessionNumber?: Prisma.IntWithAggregatesFilter<"SkillCheckSession"> | number;
     startsAt?:
         | Prisma.DateTimeNullableWithAggregatesFilter<"SkillCheckSession">
         | Date
@@ -316,6 +365,7 @@ export type SkillCheckSessionScalarWhereWithAggregatesInput = {
 export type SkillCheckSessionCreateInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -333,6 +383,7 @@ export type SkillCheckSessionUncheckedCreateInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -348,6 +399,7 @@ export type SkillCheckSessionUncheckedCreateInput = {
 export type SkillCheckSessionUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -365,6 +417,7 @@ export type SkillCheckSessionUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -381,6 +434,7 @@ export type SkillCheckSessionCreateManyInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -392,6 +446,7 @@ export type SkillCheckSessionCreateManyInput = {
 export type SkillCheckSessionUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -404,6 +459,7 @@ export type SkillCheckSessionUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -422,10 +478,16 @@ export type SkillCheckSessionOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
 
+export type SkillCheckSessionOrganizationIdSessionNumberCompoundUniqueInput = {
+    organizationId: string;
+    sessionNumber: number;
+};
+
 export type SkillCheckSessionCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
+    sessionNumber?: Prisma.SortOrder;
     startsAt?: Prisma.SortOrder;
     endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
@@ -434,10 +496,15 @@ export type SkillCheckSessionCountOrderByAggregateInput = {
     updatedAt?: Prisma.SortOrder;
 };
 
+export type SkillCheckSessionAvgOrderByAggregateInput = {
+    sessionNumber?: Prisma.SortOrder;
+};
+
 export type SkillCheckSessionMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
+    sessionNumber?: Prisma.SortOrder;
     startsAt?: Prisma.SortOrder;
     endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
@@ -450,12 +517,17 @@ export type SkillCheckSessionMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
+    sessionNumber?: Prisma.SortOrder;
     startsAt?: Prisma.SortOrder;
     endsAt?: Prisma.SortOrder;
     notes?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+};
+
+export type SkillCheckSessionSumOrderByAggregateInput = {
+    sessionNumber?: Prisma.SortOrder;
 };
 
 export type SkillCheckSessionNullableScalarRelationFilter = {
@@ -862,6 +934,7 @@ export type SkillCheckSessionUpdateOneWithoutSkillChecksNestedInput = {
 export type SkillCheckSessionCreateWithoutOrganizationInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -877,6 +950,7 @@ export type SkillCheckSessionCreateWithoutOrganizationInput = {
 export type SkillCheckSessionUncheckedCreateWithoutOrganizationInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -939,6 +1013,7 @@ export type SkillCheckSessionScalarWhereInput = {
     id?: Prisma.StringFilter<"SkillCheckSession"> | string;
     organizationId?: Prisma.StringFilter<"SkillCheckSession"> | string;
     name?: Prisma.StringFilter<"SkillCheckSession"> | string;
+    sessionNumber?: Prisma.IntFilter<"SkillCheckSession"> | number;
     startsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     endsAt?: Prisma.DateTimeNullableFilter<"SkillCheckSession"> | Date | string | null;
     notes?: Prisma.StringNullableFilter<"SkillCheckSession"> | string | null;
@@ -950,6 +1025,7 @@ export type SkillCheckSessionScalarWhereInput = {
 export type SkillCheckSessionCreateWithoutAssesseesInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -966,6 +1042,7 @@ export type SkillCheckSessionUncheckedCreateWithoutAssesseesInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -988,6 +1065,7 @@ export type SkillCheckSessionCreateOrConnectWithoutAssesseesInput = {
 export type SkillCheckSessionCreateWithoutAssessorsInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1004,6 +1082,7 @@ export type SkillCheckSessionUncheckedCreateWithoutAssessorsInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1082,6 +1161,7 @@ export type SkillCheckSessionUpdateManyWithWhereWithoutAssessorsInput = {
 export type SkillCheckSessionCreateWithoutSkillsInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1098,6 +1178,7 @@ export type SkillCheckSessionUncheckedCreateWithoutSkillsInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1148,6 +1229,7 @@ export type SkillCheckSessionUpdateManyWithWhereWithoutSkillsInput = {
 export type SkillCheckSessionCreateWithoutSkillChecksInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1164,6 +1246,7 @@ export type SkillCheckSessionUncheckedCreateWithoutSkillChecksInput = {
     id: string;
     organizationId: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1206,6 +1289,7 @@ export type SkillCheckSessionUpdateToOneWithWhereWithoutSkillChecksInput = {
 export type SkillCheckSessionUpdateWithoutSkillChecksInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1222,6 +1306,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutSkillChecksInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1236,6 +1321,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutSkillChecksInput = {
 export type SkillCheckSessionCreateManyOrganizationInput = {
     id: string;
     name: string;
+    sessionNumber: number;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     notes?: string | null;
@@ -1247,6 +1333,7 @@ export type SkillCheckSessionCreateManyOrganizationInput = {
 export type SkillCheckSessionUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1262,6 +1349,7 @@ export type SkillCheckSessionUpdateWithoutOrganizationInput = {
 export type SkillCheckSessionUncheckedUpdateWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1277,6 +1365,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutOrganizationInput = {
 export type SkillCheckSessionUncheckedUpdateManyWithoutOrganizationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1288,6 +1377,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutOrganizationInput = {
 export type SkillCheckSessionUpdateWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1304,6 +1394,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1319,6 +1410,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssesseesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1330,6 +1422,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssesseesInput = {
 export type SkillCheckSessionUpdateWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1346,6 +1439,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1361,6 +1455,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssessorsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1372,6 +1467,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutAssessorsInput = {
 export type SkillCheckSessionUpdateWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1388,6 +1484,7 @@ export type SkillCheckSessionUncheckedUpdateWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1403,6 +1500,7 @@ export type SkillCheckSessionUncheckedUpdateManyWithoutSkillsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
+    sessionNumber?: Prisma.IntFieldUpdateOperationsInput | number;
     startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1486,6 +1584,7 @@ export type SkillCheckSessionSelect<
         id?: boolean;
         organizationId?: boolean;
         name?: boolean;
+        sessionNumber?: boolean;
         startsAt?: boolean;
         endsAt?: boolean;
         notes?: boolean;
@@ -1509,6 +1608,7 @@ export type SkillCheckSessionSelectCreateManyAndReturn<
         id?: boolean;
         organizationId?: boolean;
         name?: boolean;
+        sessionNumber?: boolean;
         startsAt?: boolean;
         endsAt?: boolean;
         notes?: boolean;
@@ -1527,6 +1627,7 @@ export type SkillCheckSessionSelectUpdateManyAndReturn<
         id?: boolean;
         organizationId?: boolean;
         name?: boolean;
+        sessionNumber?: boolean;
         startsAt?: boolean;
         endsAt?: boolean;
         notes?: boolean;
@@ -1542,6 +1643,7 @@ export type SkillCheckSessionSelectScalar = {
     id?: boolean;
     organizationId?: boolean;
     name?: boolean;
+    sessionNumber?: boolean;
     startsAt?: boolean;
     endsAt?: boolean;
     notes?: boolean;
@@ -1556,6 +1658,7 @@ export type SkillCheckSessionOmit<
     | "id"
     | "organizationId"
     | "name"
+    | "sessionNumber"
     | "startsAt"
     | "endsAt"
     | "notes"
@@ -1601,6 +1704,7 @@ export type $SkillCheckSessionPayload<
             id: string;
             organizationId: string;
             name: string;
+            sessionNumber: number;
             startsAt: Date | null;
             endsAt: Date | null;
             notes: string | null;
@@ -2240,6 +2344,7 @@ export interface SkillCheckSessionFieldRefs {
     readonly id: Prisma.FieldRef<"SkillCheckSession", "String">;
     readonly organizationId: Prisma.FieldRef<"SkillCheckSession", "String">;
     readonly name: Prisma.FieldRef<"SkillCheckSession", "String">;
+    readonly sessionNumber: Prisma.FieldRef<"SkillCheckSession", "Int">;
     readonly startsAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
     readonly endsAt: Prisma.FieldRef<"SkillCheckSession", "DateTime">;
     readonly notes: Prisma.FieldRef<"SkillCheckSession", "String">;

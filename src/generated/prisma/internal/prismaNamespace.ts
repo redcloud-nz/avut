@@ -3216,6 +3216,7 @@ export const SkillCheckSessionScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     name: "name",
+    sessionNumber: "sessionNumber",
     startsAt: "startsAt",
     endsAt: "endsAt",
     notes: "notes",

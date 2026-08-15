@@ -24,6 +24,7 @@ const skillCheckSessionSchema = z.object({
     id: SkillCheckSessionId.schema,
     organizationId: OrganizationId.schema,
     name: z.string().max(100),
+    sessionNumber: z.number().int(),
     date: z.iso.datetime(),
     notes: z.string(),
     status: z.enum(["Draft", "Include", "Exclude"]),

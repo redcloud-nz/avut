@@ -429,6 +429,7 @@ model SkillCheckSession {
   assessors      Person[]         @relation("skill_check_session_assessors")
   skills         Skill[]          @relation("skill_check_session_skills")
   name           String
+  sessionNumber  Int
   startsAt       DateTime?
   endsAt         DateTime?
   notes          String?
@@ -438,6 +439,7 @@ model SkillCheckSession {
 
   skillChecks    SkillCheck[]     @relation("skill_check_session_checks")
 
+  @@unique([organizationId, sessionNumber])
   @@index([organizationId])
   @@map("skill_check_sessions")
 }

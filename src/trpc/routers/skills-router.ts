@@ -8,7 +8,8 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { OrganizationRef } from "@/lib/schemas/organization";
+import type { Prisma } from "@/generated/prisma/client";
+import { OrganizationId, OrganizationRef } from "@/lib/schemas/organization";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
@@ -59,24 +60,23 @@ export const skillsRouter = createTrpcRouter({
                     message: Messages.noLinkedPersonRecord(),
                 });
             }
+            const assessorPersonId = orgUser.personId;
 
-            const session = await ctx.prisma.skillCheckSession.create({
-                data: {
+            const session = await createSessionWithNextNumber(
+                ctx,
+                organizationId,
+                (sessionNumber) => ({
                     id: skillCheckSessionId,
                     organizationId,
-                    name: create.name,
+                    name: create.name.trim() || `Session #${sessionNumber}`,
+                    sessionNumber,
                     startsAt: new Date(create.date),
                     endsAt: new Date(create.date),
                     notes: create.notes,
                     status: create.status,
-                    assessors: { connect: [{ id: orgUser.personId }] },
-                },
-                include: {
-                    assessors: {
-                        select: { id: true, name: true },
-                    },
-                },
-            });
+                    assessors: { connect: [{ id: assessorPersonId }] },
+                }),
+            );
 
             return {
                 created: {
@@ -636,6 +636,18 @@ export const skillsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get the next available session number for the organization, for use as a display default
+     * when creating a new session. Advisory only — the number actually assigned at creation may
+     * differ if another session is created concurrently.
+     * @returns The next available session number.
+     */
+    nextSessionNumber: organizationProcedure({ skillCheckSession: ["view"] })
+        .output(z.object({ nextSessionNumber: z.number().int() }))
+        .query(async ({ ctx, input: { organizationId } }) => ({
+            nextSessionNumber: await getNextSessionNumber(ctx, organizationId),
+        })),
+
+    /**
      * Subscribe the organization to the specified skill package, allowing access to the skills within the package. The package must be published and not already subscribed to by the organization.
      * @param skillPackageId The ID of the skill package to subscribe to.
      * @returns The created skill package subscription.
@@ -927,4 +939,64 @@ function sessionNotFound(sessionId: SkillCheckSessionId): never {
         code: "NOT_FOUND",
         message: Messages.skillCheckSessionNotFound(sessionId),
     });
+}
+
+const MAX_SESSION_NUMBER_ATTEMPTS = 5;
+
+/**
+ * Determine the next available session number for an organization, i.e. one greater than the
+ * highest `sessionNumber` currently in use (or 1 if the organization has no sessions yet).
+ */
+async function getNextSessionNumber(
+    ctx: AuthenticatedOrganizationContext,
+    organizationId: OrganizationId,
+): Promise<number> {
+    const { _max } = await ctx.prisma.skillCheckSession.aggregate({
+        where: { organizationId },
+        _max: { sessionNumber: true },
+    });
+    return (_max.sessionNumber ?? 0) + 1;
+}
+
+/**
+ * Create a skill check session, assigning it the next available `sessionNumber` for the
+ * organization. Two concurrent creates can race for the same number; if the unique constraint on
+ * `[organizationId, sessionNumber]` is violated, retries with the next number instead.
+ * @param ctx The TRPC context.
+ * @param organizationId The organization to create the session in.
+ * @param buildData Builds the full create payload given the session number assigned to it.
+ * @returns The created session, including its assessors.
+ */
+async function createSessionWithNextNumber(
+    ctx: AuthenticatedOrganizationContext,
+    organizationId: OrganizationId,
+    buildData: (sessionNumber: number) => Prisma.SkillCheckSessionUncheckedCreateInput,
+): Promise<
+    Prisma.SkillCheckSessionGetPayload<{
+        include: { assessors: { select: { id: true; name: true } } };
+    }>
+> {
+    let sessionNumber = await getNextSessionNumber(ctx, organizationId);
+
+    for (let attempt = 1; attempt <= MAX_SESSION_NUMBER_ATTEMPTS; attempt++) {
+        try {
+            return await ctx.prisma.skillCheckSession.create({
+                data: buildData(sessionNumber),
+                include: {
+                    assessors: {
+                        select: { id: true, name: true },
+                    },
+                },
+            });
+        } catch (error) {
+            const isConflict =
+                error instanceof Object &&
+                "code" in error &&
+                error.code === "P2002" &&
+                attempt < MAX_SESSION_NUMBER_ATTEMPTS;
+            if (!isConflict) throw error;
+            sessionNumber++;
+        }
+    }
+    throw new Error("unreachable");
 }

@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
@@ -42,6 +42,16 @@ export function SkillTrack_CreateSession_Dialog() {
     const router = useRouter();
 
     const [open, setOpen] = useState(false);
+
+    const nextSessionNumberQuery = useQuery(
+        trpc.skills.nextSessionNumber.queryOptions(
+            { organizationId: organization.id },
+            { enabled: open },
+        ),
+    );
+    const namePlaceholder = nextSessionNumberQuery.data
+        ? `Session #${nextSessionNumberQuery.data.nextSessionNumber}`
+        : "Session Name";
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
@@ -122,7 +132,7 @@ export function SkillTrack_CreateSession_Dialog() {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Name</FieldLabel>
-                                    <Input {...field} placeholder="Session Name" />
+                                    <Input {...field} placeholder={namePlaceholder} />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}

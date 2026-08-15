@@ -69,7 +69,7 @@ describe("skills.createSession", () => {
         return skillsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
-                permissions: { organization: ["view"], skillCheckSession: ["create"] },
+                permissions: { organization: ["view"], skillCheckSession: ["create", "view"] },
                 prisma: db,
             }),
         );
@@ -103,6 +103,76 @@ describe("skills.createSession", () => {
                 },
             }),
         ).rejects.toThrow(TRPCError);
+    });
+
+    it("assigns sequential session numbers within the organization", async () => {
+        const { created: first } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: SkillCheckSessionId.create(),
+            create: {
+                name: "Session C",
+                date: new Date().toISOString(),
+                notes: "",
+                status: "Draft",
+            },
+        });
+        const { created: second } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: SkillCheckSessionId.create(),
+            create: {
+                name: "Session D",
+                date: new Date().toISOString(),
+                notes: "",
+                status: "Draft",
+            },
+        });
+
+        expect(second.sessionNumber).toBe(first.sessionNumber + 1);
+    });
+
+    it("defaults the name to Session #N when no name is given", async () => {
+        const { nextSessionNumber } = await makeCaller(T.linkedUser).nextSessionNumber({
+            organizationId: T.org,
+        });
+
+        const { created } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: SkillCheckSessionId.create(),
+            create: { name: "", date: new Date().toISOString(), notes: "", status: "Draft" },
+        });
+
+        expect(created.name).toBe(`Session #${nextSessionNumber}`);
+        expect(created.sessionNumber).toBe(nextSessionNumber);
+    });
+
+    it("assigns the next available number when a race leaves the computed number taken", async () => {
+        const { nextSessionNumber } = await makeCaller(T.linkedUser).nextSessionNumber({
+            organizationId: T.org,
+        });
+
+        // Simulate a concurrent create claiming the number that would otherwise be computed next.
+        await db.skillCheckSession.create({
+            data: {
+                id: SkillCheckSessionId.create(),
+                organizationId: T.org,
+                name: "Snuck in first",
+                sessionNumber: nextSessionNumber,
+                status: "Draft",
+            },
+        });
+
+        const { created } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: SkillCheckSessionId.create(),
+            create: {
+                name: "Session E",
+                date: new Date().toISOString(),
+                notes: "",
+                status: "Draft",
+            },
+        });
+
+        expect(created.sessionNumber).toBe(nextSessionNumber + 1);
     });
 });
 

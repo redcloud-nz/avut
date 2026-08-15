@@ -4090,6 +4090,20 @@ export const models = [
                 isUpdatedAt: false,
             },
             {
+                name: "sessionNumber",
+                kind: "scalar",
+                isList: false,
+                isRequired: true,
+                isUnique: false,
+                isId: false,
+                isReadOnly: false,
+                hasDefaultValue: false,
+                type: "Int",
+                nativeType: null,
+                isGenerated: false,
+                isUpdatedAt: false,
+            },
+            {
                 name: "startsAt",
                 kind: "scalar",
                 isList: false,
@@ -4197,8 +4211,13 @@ export const models = [
             },
         ],
         primaryKey: null,
-        uniqueFields: [],
-        uniqueIndexes: [],
+        uniqueFields: [["organizationId", "sessionNumber"]],
+        uniqueIndexes: [
+            {
+                name: null,
+                fields: ["organizationId", "sessionNumber"],
+            },
+        ],
         isGenerated: false,
     },
     {
@@ -6383,6 +6402,19 @@ export const indexes = [
         fields: [
             {
                 name: "organizationId",
+            },
+        ],
+    },
+    {
+        model: "SkillCheckSession",
+        type: "unique",
+        isDefinedOnField: false,
+        fields: [
+            {
+                name: "organizationId",
+            },
+            {
+                name: "sessionNumber",
             },
         ],
     },
