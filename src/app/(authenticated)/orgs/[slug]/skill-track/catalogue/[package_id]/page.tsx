@@ -14,7 +14,16 @@ import { toast } from "sonner";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { MutationButton } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
@@ -96,35 +105,75 @@ export default function SkillTrack_CataloguePackage_Page(
                                 permissions={{ skillPackageSubscription: ["subscribe"] }}
                             >
                                 {skillPackage.subscription ? (
-                                    <MutationButton
-                                        status={unsubscribeMutation.status}
-                                        text={{
-                                            idle: "Unsubscribe",
-                                            pending: "Unsubscribing...",
-                                            success: "Unsubscribed",
-                                        }}
-                                        onClick={() =>
-                                            unsubscribeMutation.mutate({
-                                                organizationId: organization.id,
-                                                skillPackageId: skillPackage.id,
-                                            })
-                                        }
-                                    />
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline">Unsubscribe</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Unsubscribe from Package</AlertDialogTitle>
+                                            </AlertDialogHeader>
+                                            <p>
+                                                You will be unsubscribed from{" "}
+                                                <strong>{skillPackage.name}</strong>. Skills from this
+                                                package will no longer be available to your organization.
+                                            </p>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <MutationButton
+                                                    type="button"
+                                                    variant="destructive"
+                                                    status={unsubscribeMutation.status}
+                                                    text={{
+                                                        idle: "Unsubscribe",
+                                                        pending: "Unsubscribing...",
+                                                        success: "Unsubscribed",
+                                                    }}
+                                                    onClick={() =>
+                                                        unsubscribeMutation.mutate({
+                                                            organizationId: organization.id,
+                                                            skillPackageId: skillPackage.id,
+                                                        })
+                                                    }
+                                                />
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 ) : (
-                                    <MutationButton
-                                        status={subscribeMutation.status}
-                                        text={{
-                                            idle: "Subscribe",
-                                            pending: "Subscribing...",
-                                            success: "Subscribed",
-                                        }}
-                                        onClick={() =>
-                                            subscribeMutation.mutate({
-                                                organizationId: organization.id,
-                                                skillPackageId: skillPackage.id,
-                                            })
-                                        }
-                                    />
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline">Subscribe</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Subscribe to Package</AlertDialogTitle>
+                                            </AlertDialogHeader>
+                                            <p>
+                                                You will be subscribed to{" "}
+                                                <strong>{skillPackage.name}</strong>. Skills from this
+                                                package will become available to your organization.
+                                            </p>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <MutationButton
+                                                    type="button"
+                                                    variant="default"
+                                                    status={subscribeMutation.status}
+                                                    text={{
+                                                        idle: "Subscribe",
+                                                        pending: "Subscribing...",
+                                                        success: "Subscribed",
+                                                    }}
+                                                    onClick={() =>
+                                                        subscribeMutation.mutate({
+                                                            organizationId: organization.id,
+                                                            skillPackageId: skillPackage.id,
+                                                        })
+                                                    }
+                                                />
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 )}
                             </Protect>
                         </Saratoga.Actions>
