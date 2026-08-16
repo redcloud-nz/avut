@@ -13,7 +13,7 @@ import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-chec
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { TeamId } from "@/lib/schemas/team";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -205,7 +205,7 @@ export const skillChecksRouter = createTrpcRouter({
                         assesseeId: PersonId.schema,
                         skillId: SkillId.schema,
                         checkId: SkillCheckId.schema,
-                        result: z.string(),
+                        result: SkillCheckResultValue.schema,
                         checkedAt: z.iso.datetime(),
                         expiresAt: z.iso.datetime(),
                         isCurrent: z.boolean(),
@@ -451,7 +451,7 @@ export const skillChecksRouter = createTrpcRouter({
      * Create, update, or delete multiple skill checks for a session. All skill checks must belong to the organization.
      *
      * For each provided skill check update:
-     * - If the provided result is "NotAssessed", the skill check will be deleted if it exists.
+     * - If the provided result is null, the skill check will be deleted if it exists.
      * - If there is an existing skill check for the assessee, skill, and session, it will be updated with the provided result and notes.
      * - If there is no existing skill check for the assessee, skill, and session, a new skill check will be created with the provided result and notes.
      */
@@ -460,12 +460,13 @@ export const skillChecksRouter = createTrpcRouter({
             z.object({
                 sessionId: SkillCheckSessionId.schema,
                 updates: z.array(
-                    SkillCheck.schema.pick({
-                        assesseeId: true,
-                        skillId: true,
-                        result: true,
-                        notes: true,
-                    }),
+                    SkillCheck.schema
+                        .pick({
+                            assesseeId: true,
+                            skillId: true,
+                            notes: true,
+                        })
+                        .extend({ result: SkillCheckResultValue.schema.nullable() }),
                 ),
             }),
         )
@@ -524,9 +525,9 @@ export const skillChecksRouter = createTrpcRouter({
             const deleted: { assesseeId: PersonId; skillId: SkillId }[] = [];
 
             for (const update of updates) {
-                if (update.result == "NotAssessed") {
+                if (update.result === null) {
                     // If there is an existing skill check, delete it. If there isn't, do nothing.
-                    // This allows the client to "clear" a skill check by setting its result to NotAssessed.
+                    // This allows the client to "clear" a skill check by setting its result to null.
                     await ctx.prisma.skillCheck.deleteMany({
                         where: {
                             organizationId: ctx.organizationId,

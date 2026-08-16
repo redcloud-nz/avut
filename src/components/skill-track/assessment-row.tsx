@@ -16,11 +16,13 @@ import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/fiel
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
+
 interface AssessmentRowProps {
     title: string;
     description?: string;
-    value: { result: string; notes: string };
-    onValueChange: (newValue: { result: string; notes: string }) => void;
+    value: { result: SkillCheckResultValue | null; notes: string };
+    onValueChange: (newValue: { result: SkillCheckResultValue | null; notes: string }) => void;
 }
 
 /**
@@ -51,12 +53,15 @@ export function SkillTrack_AssessmentRow({
                     <ToggleGroup
                         type="single"
                         className="gap-0"
-                        value={value.result === "NotAssessed" ? "" : value.result}
+                        value={value.result ?? ""}
                         onValueChange={(newValue) => {
                             if (newValue === "") {
-                                onValueChange({ result: "NotAssessed", notes: "" });
+                                onValueChange({ result: null, notes: "" });
                             } else {
-                                onValueChange({ ...value, result: newValue });
+                                onValueChange({
+                                    ...value,
+                                    result: newValue as SkillCheckResultValue,
+                                });
                             }
                         }}
                     >
@@ -68,28 +73,28 @@ export function SkillTrack_AssessmentRow({
                             <SkillsIcons.NotTaught className="text-gray-500" />
                         </ToggleGroupItem>
                         <ToggleGroupItem
-                            value="NotYetCompetent"
+                            value="Fail"
                             aria-label="Not Yet Competent"
                             className="data-[state=on]:[&>_svg]:size-6 data-[state=on]:[&>_svg]:-m-1"
                         >
-                            <SkillsIcons.NotCompetent className="text-orange-500" />
+                            <SkillsIcons.Fail className="text-orange-500" />
                         </ToggleGroupItem>
                         <ToggleGroupItem
-                            value="Competent"
+                            value="Pass"
                             aria-label="Competent"
                             className="data-[state=on]:[&>_svg]:size-6 data-[state=on]:[&>_svg]:-m-1"
                         >
-                            <SkillsIcons.Competent className="text-green-500" />
+                            <SkillsIcons.Pass className="text-green-500" />
                         </ToggleGroupItem>
                         <ToggleGroupItem
-                            value="HighlyConfident"
+                            value="StrongPass"
                             aria-label="Highly Confident"
                             className="data-[state=on]:[&>_svg]:size-6 data-[state=on]:[&>_svg]:-m-1"
                         >
-                            <SkillsIcons.HighlyConfident className="text-blue-500" />
+                            <SkillsIcons.StrongPass className="text-blue-500" />
                         </ToggleGroupItem>
                     </ToggleGroup>
-                    <Show when={value.result != "NotAssessed"} fallback={<div className="w-8" />}>
+                    <Show when={value.result !== null} fallback={<div className="w-8" />}>
                         <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="icon">
                                 {showNotes ? (

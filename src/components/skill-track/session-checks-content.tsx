@@ -27,10 +27,13 @@ import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck } from "@/lib/schemas/skill-check";
+import {
+    getEnabledSkillCheckResultOptions,
+    getSkillCheckResultLabel,
+    SkillCheck,
+    SKILL_CHECK_STATUS_LABELS,
+} from "@/lib/schemas/skill-check";
 import { trpc } from "@/trpc/client";
-
-import { SKILL_CHECK_RESULT_LABELS, SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 
 export function SkillTrack_SessionChecks_Content({
     sessionId,
@@ -86,6 +89,11 @@ export function SkillTrack_SessionChecks_Content({
         [skills],
     );
 
+    const resultOptions = useMemo(
+        () => getEnabledSkillCheckResultOptions(organization.settings),
+        [organization.settings],
+    );
+
     type Row = SkillCheck;
 
     const columns = useMemo(
@@ -109,19 +117,14 @@ export function SkillTrack_SessionChecks_Content({
                 }),
                 col.accessor("result", {
                     header: "Result",
-                    cell: (ctx) => SKILL_CHECK_RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    cell: (ctx) => getSkillCheckResultLabel(organization.settings, ctx.getValue()),
                     enableColumnFilter: true,
                     enableGlobalFilter: false,
                     enableHiding: false,
                     enableSorting: false,
                     filterFn: Kaga.filterFns.oneOf,
                     meta: {
-                        columnOptions: Object.entries(SKILL_CHECK_RESULT_LABELS).map(
-                            ([value, label]) => ({
-                                label,
-                                value,
-                            }),
-                        ),
+                        columnOptions: resultOptions,
                     },
                 }),
                 col.accessor((row) => assessorById.get(row.assessorId)?.name ?? row.assessorId, {
@@ -149,7 +152,7 @@ export function SkillTrack_SessionChecks_Content({
                     },
                 }),
             ]),
-        [assesseeById, assessorById, skillById],
+        [assesseeById, assessorById, skillById, organization.settings, resultOptions],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

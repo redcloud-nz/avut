@@ -32,11 +32,11 @@ describe("skillChecks.getCompetencyMatrix", () => {
     //                                        → grp2 "Advanced Skills" → skill3 Airway freq=12 (Active)
     //            pkg2 "Advanced" (not published) → grp3 → skill4 (Active but unreachable)
     //   Checks (fake now = 2026-01-01 for isCurrent tests):
-    //     person1+skill1+assessor1: Include 2025-01-01 "NotYetCompetent" (old, expired → de-duped away)
-    //     person1+skill1+assessor2: Include 2025-06-01 "Competent"       (newer, current → kept)
-    //     person1+skill2+assessor1: Include 2025-10-15 "Competent"       (freq=6, expires 2026-04-15)
-    //     person2+skill1+assessor1: Include 2024-12-01 "Competent"       (13 months ago → expired)
-    //     person2+skill2+assessor1: Draft  2025-06-01  "HighlyConfident" (excluded by status filter)
+    //     person1+skill1+assessor1: Include 2025-01-01 "Fail" (old, expired → de-duped away)
+    //     person1+skill1+assessor2: Include 2025-06-01 "Pass"       (newer, current → kept)
+    //     person1+skill2+assessor1: Include 2025-10-15 "Pass"       (freq=6, expires 2026-04-15)
+    //     person2+skill1+assessor1: Include 2024-12-01 "Pass"       (13 months ago → expired)
+    //     person2+skill2+assessor1: Draft  2025-06-01  "StrongPass" (excluded by status filter)
 
     const T = {
         org: OrganizationId.create(),
@@ -250,7 +250,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 assesseeId: T.person1,
                 assessorId: T.assessor1,
                 skillId: T.skill1,
-                result: "NotYetCompetent",
+                result: "Fail",
                 notes: "",
                 status: "Include",
                 createdAt: new Date("2025-01-01"),
@@ -263,7 +263,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 assesseeId: T.person1,
                 assessorId: T.assessor2,
                 skillId: T.skill1,
-                result: "Competent",
+                result: "Pass",
                 notes: "",
                 status: "Include",
                 createdAt: new Date("2025-06-01"),
@@ -276,7 +276,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 assesseeId: T.person1,
                 assessorId: T.assessor1,
                 skillId: T.skill2,
-                result: "Competent",
+                result: "Pass",
                 notes: "",
                 status: "Include",
                 createdAt: new Date("2025-10-15"),
@@ -289,7 +289,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 assesseeId: T.person2,
                 assessorId: T.assessor1,
                 skillId: T.skill1,
-                result: "Competent",
+                result: "Pass",
                 notes: "",
                 status: "Include",
                 createdAt: new Date("2024-12-01"),
@@ -302,7 +302,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 assesseeId: T.person2,
                 assessorId: T.assessor1,
                 skillId: T.skill2,
-                result: "HighlyConfident",
+                result: "StrongPass",
                 notes: "",
                 status: "Draft",
                 createdAt: new Date("2025-06-01"),
@@ -493,7 +493,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
             });
 
             expect(result.competencies).toHaveLength(1);
-            expect(result.competencies[0].result).toBe("Competent");
+            expect(result.competencies[0].result).toBe("Pass");
         });
 
         it("returns a separate entry for each (assessee, skill) pair", async () => {
@@ -745,9 +745,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
         const result = await makeCaller(T.assessorUser).upsertSessionSkillChecks({
             organizationId: T.org,
             sessionId: T.session,
-            updates: [
-                { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
-            ],
+            updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
         });
 
         expect(result.created).toHaveLength(1);
@@ -759,9 +757,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
             makeCaller(T.otherUser).upsertSessionSkillChecks({
                 organizationId: T.org,
                 sessionId: T.session,
-                updates: [
-                    { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
-                ],
+                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
             }),
         ).rejects.toThrow(TRPCError);
     });
@@ -771,11 +767,39 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
             makeCaller(T.assessorUser).upsertSessionSkillChecks({
                 organizationId: T.org,
                 sessionId: T.unscopedSession,
-                updates: [
-                    { assesseeId: T.assessee, skillId: T.skill1, result: "Competent", notes: "" },
-                ],
+                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
             }),
         ).rejects.toThrow(TRPCError);
+    });
+
+    it("deletes an existing check when result is null, and does nothing if none exists", async () => {
+        const caller = makeCaller(T.assessorUser);
+
+        const created = await caller.upsertSessionSkillChecks({
+            organizationId: T.org,
+            sessionId: T.session,
+            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: "Pass", notes: "" }],
+        });
+        expect(created.created).toHaveLength(1);
+
+        const cleared = await caller.upsertSessionSkillChecks({
+            organizationId: T.org,
+            sessionId: T.session,
+            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: null, notes: "" }],
+        });
+        expect(cleared.deleted).toEqual([{ assesseeId: T.assessee, skillId: T.skill2 }]);
+
+        const remaining = await db.skillCheck.findMany({
+            where: { organizationId: T.org, assesseeId: T.assessee, skillId: T.skill2 },
+        });
+        expect(remaining).toHaveLength(0);
+
+        const noOp = await caller.upsertSessionSkillChecks({
+            organizationId: T.org,
+            sessionId: T.session,
+            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: null, notes: "" }],
+        });
+        expect(noOp.deleted).toEqual([{ assesseeId: T.assessee, skillId: T.skill2 }]);
     });
 
     describe("createSkillCheck", () => {
@@ -788,7 +812,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                     assesseeId: T.assessee,
                     assessorId: T.assessorPerson,
                     skillId: T.skill2,
-                    result: "Competent",
+                    result: "Pass",
                     notes: "",
                 },
             });
@@ -806,7 +830,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                         assesseeId: T.assessee,
                         assessorId: T.otherPerson,
                         skillId: T.skill1,
-                        result: "Competent",
+                        result: "Pass",
                         notes: "",
                     },
                 }),
@@ -823,7 +847,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                         assesseeId: T.assessee,
                         assessorId: T.assessorPerson,
                         skillId: T.skill1,
-                        result: "Competent",
+                        result: "Pass",
                         notes: "",
                     },
                 }),
@@ -839,7 +863,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                     assesseeId: T.assessee,
                     assessorId: T.otherPerson,
                     skillId: T.skill1,
-                    result: "Competent",
+                    result: "Pass",
                     notes: "",
                 },
             });
@@ -860,7 +884,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                     assesseeId: T.assessee,
                     assessorId: T.assessorPerson,
                     skillId: T.skill3,
-                    result: "Competent",
+                    result: "Pass",
                     notes: "original",
                     status: "Draft",
                 },
@@ -871,7 +895,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
             const result = await makeCaller(T.assessorUser).updateSkillCheck({
                 organizationId: T.org,
                 skillCheckId: check,
-                update: { result: "HighlyConfident", notes: "updated" },
+                update: { result: "StrongPass", notes: "updated" },
             });
 
             expect(result.notes).toBe("updated");
@@ -882,7 +906,7 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
                 makeCaller(T.otherUser).updateSkillCheck({
                     organizationId: T.org,
                     skillCheckId: check,
-                    update: { result: "NotYetCompetent", notes: "hijacked" },
+                    update: { result: "Fail", notes: "hijacked" },
                 }),
             ).rejects.toThrow(TRPCError);
         });

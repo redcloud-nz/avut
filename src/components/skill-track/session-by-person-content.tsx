@@ -55,6 +55,7 @@ import { Separator } from "@/components/ui/separator";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
@@ -170,10 +171,13 @@ export function SkillTrack_SessionByPerson_Content({
     // Keyed by `${personId}::${skillId}` — scoping by person prevents cross-person contamination
     // when switching between assessees while changes are pending.
     const [changes, setChanges] = useState<
-        Record<`${PersonId}::${SkillId}`, { result: string; notes: string }>
+        Record<`${PersonId}::${SkillId}`, { result: SkillCheckResultValue | null; notes: string }>
     >({});
 
-    function handleChange(skillId: SkillId, newValue: { result: string; notes: string }) {
+    function handleChange(
+        skillId: SkillId,
+        newValue: { result: SkillCheckResultValue | null; notes: string },
+    ) {
         if (mutation.status === "success") mutation.reset();
 
         const key = `${selected!.personId}::${skillId}`;
@@ -198,7 +202,7 @@ export function SkillTrack_SessionByPerson_Content({
             (check) => check.skillId == skillId && check.assesseeId == assesseeId,
         );
         return {
-            result: savedCheck?.result ?? "NotAssessed",
+            result: savedCheck?.result ?? null,
             notes: savedCheck?.notes ?? "",
         };
     }

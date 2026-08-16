@@ -34,7 +34,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
-import { isCompetentResult } from "@/lib/schemas/skill-check";
+import { getEnabledSkillCheckResultOptions, isCompetentResult } from "@/lib/schemas/skill-check";
 import {
     DEFAULT_SYNTHETIC_CONFIG,
     generateSyntheticCompetencies,
@@ -197,6 +197,9 @@ export function SkillTrack_PersonCompetencyReport({
                                 <SyntheticDataDialog
                                     config={syntheticConfig}
                                     onConfigChange={setSyntheticConfig}
+                                    resultOptions={getEnabledSkillCheckResultOptions(
+                                        organization.settings,
+                                    )}
                                 />
                             )}
                             <DropdownMenu>

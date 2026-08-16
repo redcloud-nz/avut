@@ -24,17 +24,12 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
 
-import { SKILL_CHECK_RESULT_LABELS } from "@/lib/schemas/skill-check";
+import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { RouterOutput } from "@/trpc/client";
 
 type CompetencyMatrix = RouterOutput["skillChecks"]["getCompetencyMatrix"];
 type MatrixSkill = CompetencyMatrix["skills"][number];
 type Competency = CompetencyMatrix["competencies"][number];
-
-/** The results a recorded check can hold — "NotAssessed" deletes a check rather than storing one. */
-const SYNTHETIC_RESULTS = ["NotTaught", "NotYetCompetent", "Competent", "HighlyConfident"] as const;
-
-type SyntheticResult = (typeof SYNTHETIC_RESULTS)[number];
 
 export type SyntheticConfig = {
     /** Percentage of skills that have been assessed at all. */
@@ -42,7 +37,7 @@ export type SyntheticConfig = {
     /** Checks are spread evenly between now and this many months ago. */
     maxAgeMonths: number;
     /** Relative likelihood of each result. Normalised at generation time. */
-    weights: Record<SyntheticResult, number>;
+    weights: Record<SkillCheckResultValue, number>;
     /** Changing this reshuffles the generated data without changing the distribution. */
     seed: number;
 };
@@ -52,9 +47,15 @@ export const DEFAULT_SYNTHETIC_CONFIG: SyntheticConfig = {
     maxAgeMonths: 24,
     weights: {
         NotTaught: 5,
-        NotYetCompetent: 15,
-        Competent: 60,
-        HighlyConfident: 20,
+        LowFail: 0,
+        Fail: 15,
+        HighFail: 0,
+        WeakPass: 0,
+        Pass: 60,
+        StrongPass: 20,
+        Exempt: 0,
+        Expired: 0,
+        Provisional: 0,
     },
     seed: 1,
 };
@@ -72,7 +73,10 @@ export function generateSyntheticCompetencies(
     const random = mulberry32(config.seed);
     const now = new Date();
 
-    const totalWeight = SYNTHETIC_RESULTS.reduce((sum, result) => sum + config.weights[result], 0);
+    const totalWeight = SKILL_CHECK_RESULT_VALUES.reduce(
+        (sum, result) => sum + config.weights[result],
+        0,
+    );
 
     return skills.flatMap((skill) => {
         const assessedRoll = random();
@@ -81,8 +85,7 @@ export function generateSyntheticCompetencies(
 
         if (assessedRoll * 100 >= config.coverage) return [];
 
-        const result =
-            totalWeight === 0 ? "Competent" : pickResult(resultRoll * totalWeight, config);
+        const result = totalWeight === 0 ? "Pass" : pickResult(resultRoll * totalWeight, config);
 
         const checkedAt = new Date(now);
         checkedAt.setDate(checkedAt.getDate() - Math.floor(ageRoll * config.maxAgeMonths * 30));
@@ -104,13 +107,13 @@ export function generateSyntheticCompetencies(
     });
 }
 
-function pickResult(roll: number, config: SyntheticConfig): SyntheticResult {
+function pickResult(roll: number, config: SyntheticConfig): SkillCheckResultValue {
     let remaining = roll;
-    for (const result of SYNTHETIC_RESULTS) {
+    for (const result of SKILL_CHECK_RESULT_VALUES) {
         remaining -= config.weights[result];
         if (remaining < 0) return result;
     }
-    return SYNTHETIC_RESULTS[SYNTHETIC_RESULTS.length - 1];
+    return SKILL_CHECK_RESULT_VALUES[SKILL_CHECK_RESULT_VALUES.length - 1];
 }
 
 /** Small seeded PRNG — we only need repeatable noise, not statistical rigour. */
@@ -131,9 +134,12 @@ function mulberry32(seed: number): () => number {
 export function SyntheticDataDialog({
     config,
     onConfigChange,
+    resultOptions,
 }: {
     config: SyntheticConfig;
     onConfigChange: (config: SyntheticConfig) => void;
+    /** The org's enabled result values, in fixed order, with their configured labels. */
+    resultOptions: { value: SkillCheckResultValue; label: string }[];
 }) {
     return (
         <Dialog>
@@ -176,21 +182,20 @@ export function SyntheticDataDialog({
                         />
                     </Field>
 
-                    {SYNTHETIC_RESULTS.map((result) => (
-                        <Field key={result}>
+                    {resultOptions.map(({ value, label }) => (
+                        <Field key={value}>
                             <FieldLabel>
-                                {SKILL_CHECK_RESULT_LABELS[result] ?? result} —{" "}
-                                {config.weights[result]}
+                                {label} — {config.weights[value]}
                             </FieldLabel>
                             <Slider
-                                value={[config.weights[result]]}
+                                value={[config.weights[value]]}
                                 min={0}
                                 max={100}
                                 step={5}
                                 onValueChange={([weight]) =>
                                     onConfigChange({
                                         ...config,
-                                        weights: { ...config.weights, [result]: weight },
+                                        weights: { ...config.weights, [value]: weight },
                                     })
                                 }
                             />

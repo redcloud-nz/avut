@@ -26,7 +26,8 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -41,7 +42,14 @@ import { D4HServerList } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { countDirtyFields } from "@/lib/utils";
+
+// Exempt, Expired, and Provisional exist in the fixed vocabulary but aren't offered to
+// organizations yet — their semantics aren't settled. Remove from this list to enable them.
+const SKILL_TRACK_CONFIGURABLE_RESULT_VALUES = SKILL_CHECK_RESULT_VALUES.filter(
+    (value) => value !== "Exempt" && value !== "Expired" && value !== "Provisional",
+);
 
 import { trpc } from "@/trpc/client";
 
@@ -664,8 +672,68 @@ function SkillTrackModule_SettingsCard({
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <FieldGroup></FieldGroup>
+                <FieldGroup>
+                    <h4 className="text-sm font-medium">Result Values</h4>
+                    <p className="text-sm text-muted-foreground">
+                        Choose which skill check result values are available and what they&apos;re
+                        called.
+                    </p>
+                    {SKILL_TRACK_CONFIGURABLE_RESULT_VALUES.map((value) => (
+                        <SkillCheckResult_SettingsRow
+                            key={value}
+                            value={value}
+                            lens={lens.focus(`results.${value}`)}
+                        />
+                    ))}
+                </FieldGroup>
             </CardContent>
         </Card>
+    );
+}
+
+function SkillCheckResult_SettingsRow({
+    value,
+    lens,
+}: {
+    value: SkillCheckResultValue;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamically focused per result value
+    lens: any;
+}) {
+    const enabled = useWatch(lens.focus("enabled").interop());
+
+    return (
+        <Field orientation="responsive">
+            <FieldContent>
+                <Controller
+                    {...lens.focus("enabled").interop()}
+                    render={({ field }) => (
+                        <Switch
+                            id={`skill-check-result-${value}-enabled`}
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                        />
+                    )}
+                />
+            </FieldContent>
+            <FieldContent>
+                <FieldLabel htmlFor={`skill-check-result-${value}-label`}>{value}</FieldLabel>
+            </FieldContent>
+            <Controller
+                {...lens.focus("label").interop()}
+                render={({ field, fieldState }) => (
+                    <FieldContent>
+                        <Input
+                            id={`skill-check-result-${value}-label`}
+                            className="min-w-1/2"
+                            aria-invalid={fieldState.invalid}
+                            disabled={!enabled}
+                            value={field.value}
+                            onChange={field.onChange}
+                        />
+                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                    </FieldContent>
+                )}
+            />
+        </Field>
     );
 }

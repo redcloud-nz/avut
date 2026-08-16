@@ -421,6 +421,19 @@ enum SkillCheckStatus {
   Exclude
 }
 
+enum SkillCheckResult {
+  NotTaught
+  LowFail
+  Fail
+  HighFail
+  WeakPass
+  Pass
+  StrongPass
+  Exempt
+  Expired
+  Provisional
+}
+
 model SkillCheckSession {
   id             String           @id
   organizationId String
@@ -456,7 +469,7 @@ model SkillCheck {
   assessor       Person             @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
   skillId        String
   skill          Skill              @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
-  result         String
+  result         SkillCheckResult
   notes          String
   status         SkillCheckStatus   @default(Draft)
   createdAt      DateTime           @default(now())

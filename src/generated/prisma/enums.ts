@@ -30,3 +30,18 @@ export const SkillCheckStatus = {
 } as const;
 
 export type SkillCheckStatus = (typeof SkillCheckStatus)[keyof typeof SkillCheckStatus];
+
+export const SkillCheckResult = {
+    NotTaught: "NotTaught",
+    LowFail: "LowFail",
+    Fail: "Fail",
+    HighFail: "HighFail",
+    WeakPass: "WeakPass",
+    Pass: "Pass",
+    StrongPass: "StrongPass",
+    Exempt: "Exempt",
+    Expired: "Expired",
+    Provisional: "Provisional",
+} as const;
+
+export type SkillCheckResult = (typeof SkillCheckResult)[keyof typeof SkillCheckResult];

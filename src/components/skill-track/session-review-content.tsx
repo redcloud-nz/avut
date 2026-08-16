@@ -39,10 +39,8 @@ import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import { getSkillCheckResultLabel, SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { trpc } from "@/trpc/client";
-
-import { SKILL_CHECK_RESULT_LABELS } from "@/lib/schemas/skill-check";
 
 export function SkillTrack_SessionReview_Content({
     sessionId,
@@ -270,6 +268,7 @@ function AssesseeChecks({
     toggleCheck,
     toggleGroup,
 }: AssesseeChecksProps) {
+    const organization = useOrganization();
     const selectedCount = assesseeChecks.filter((check) => selected.has(check.id)).length;
 
     const hasChecks = assesseeChecks.length > 0;
@@ -317,7 +316,7 @@ function AssesseeChecks({
                         <TableCell></TableCell>
                         <TableCell>{skill?.name ?? check.skillId}</TableCell>
                         <TableCell>
-                            {SKILL_CHECK_RESULT_LABELS[check.result] ?? check.result}
+                            {getSkillCheckResultLabel(organization.settings, check.result)}
                         </TableCell>
                     </TableRow>
                 );

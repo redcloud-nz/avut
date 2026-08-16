@@ -3481,6 +3481,22 @@ export type ListEnumSkillCheckStatusFieldRefInput<$PrismaModel> = FieldRefInputT
 >;
 
 /**
+ * Reference to a field of type 'SkillCheckResult'
+ */
+export type EnumSkillCheckResultFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    "SkillCheckResult"
+>;
+
+/**
+ * Reference to a field of type 'SkillCheckResult[]'
+ */
+export type ListEnumSkillCheckResultFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    "SkillCheckResult[]"
+>;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;

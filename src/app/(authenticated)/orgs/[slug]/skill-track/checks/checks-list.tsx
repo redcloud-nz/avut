@@ -26,9 +26,11 @@ import { ClipboardCheckIcon } from "lucide-react";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
+import {
+    getEnabledSkillCheckResultOptions,
+    getSkillCheckResultLabel,
+} from "@/lib/schemas/skill-check";
 import { trpc } from "@/trpc/client";
-
-import { SKILL_CHECK_RESULT_LABELS } from "@/lib/schemas/skill-check";
 
 export default function SkillTrack_ChecksList() {
     const organization = useOrganization();
@@ -60,18 +62,13 @@ export default function SkillTrack_ChecksList() {
                 }),
                 col.accessor("result", {
                     header: "Result",
-                    cell: (ctx) => SKILL_CHECK_RESULT_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    cell: (ctx) => getSkillCheckResultLabel(organization.settings, ctx.getValue()),
                     enableSorting: false,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
                     filterFn: Kaga.filterFns.oneOf,
                     meta: {
-                        columnOptions: Object.entries(SKILL_CHECK_RESULT_LABELS).map(
-                            ([value, label]) => ({
-                                label,
-                                value,
-                            }),
-                        ),
+                        columnOptions: getEnabledSkillCheckResultOptions(organization.settings),
                     },
                 }),
                 col.accessor((row) => (row.session ? row.session.name || row.session.id : null), {
@@ -111,7 +108,7 @@ export default function SkillTrack_ChecksList() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug],
+        [organization.slug, organization.settings],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

@@ -4,12 +4,53 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import * as R from "remeda";
 import * as z from "zod";
 
 import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
-import { configurableModuleIds } from "@/lib/modules";
+
+import {
+    defaultSkillCheckResultLabel,
+    SKILL_CHECK_RESULT_VALUES,
+    SkillCheckResultValue,
+} from "./skill-check-result";
+
+const SKILL_TRACK_DEFAULT_ENABLED_RESULTS: readonly SkillCheckResultValue[] = [
+    "NotTaught",
+    "Fail",
+    "Pass",
+    "StrongPass",
+];
+
+const skillCheckResultConfigSchema = z.object({
+    enabled: z.boolean(),
+    label: z.string().min(1),
+});
+
+const DEFAULT_SKILL_TRACK_RESULTS_CONFIG = Object.fromEntries(
+    SKILL_CHECK_RESULT_VALUES.map((value) => [
+        value,
+        {
+            enabled: SKILL_TRACK_DEFAULT_ENABLED_RESULTS.includes(value),
+            label: defaultSkillCheckResultLabel(value),
+        },
+    ]),
+) as Record<SkillCheckResultValue, { enabled: boolean; label: string }>;
+
+const skillCheckResultsConfigSchema = z
+    .object({
+        NotTaught: skillCheckResultConfigSchema,
+        LowFail: skillCheckResultConfigSchema,
+        Fail: skillCheckResultConfigSchema,
+        HighFail: skillCheckResultConfigSchema,
+        WeakPass: skillCheckResultConfigSchema,
+        Pass: skillCheckResultConfigSchema,
+        StrongPass: skillCheckResultConfigSchema,
+        Exempt: skillCheckResultConfigSchema,
+        Expired: skillCheckResultConfigSchema,
+        Provisional: skillCheckResultConfigSchema,
+    })
+    .default(DEFAULT_SKILL_TRACK_RESULTS_CONFIG);
 
 const organizationSettingsSchema = z.object({
     general: z.object({
@@ -44,6 +85,7 @@ const organizationSettingsSchema = z.object({
         }),
         "skill-track": z.object({
             enabled: z.boolean().default(false),
+            results: skillCheckResultsConfigSchema,
         }),
         "skill-package-builder": z.object({
             enabled: z.boolean().default(false),
@@ -53,9 +95,6 @@ const organizationSettingsSchema = z.object({
 
 export const OrganizationSettings = {
     schema: organizationSettingsSchema,
-
-    integrationKeys: ["d4h", "email"],
-    moduleKeys: configurableModuleIds,
 
     default(): OrganizationSettings {
         return organizationSettingsSchema.parse({
@@ -95,13 +134,11 @@ export const OrganizationSettings = {
     },
 
     fromRecords(records: OrganizationConfigRecord[]): OrganizationSettings {
-        const settings = {
-            general: {},
-            integrations: R.fromEntries(
-                OrganizationSettings.integrationKeys.map((key) => [key, {}]),
-            ),
-            modules: R.fromEntries(OrganizationSettings.moduleKeys.map((key) => [key, {}])),
-        } as any;
+        // Start from a fully-defaulted settings object rather than an empty skeleton — some
+        // fields (e.g. modules["skill-track"].results) only have a default at the object level,
+        // not per-leaf, so reconstructing from a handful of changed leaf keys on top of `{}` would
+        // leave the rest of that object undefined instead of falling back to its default.
+        const settings = structuredClone(OrganizationSettings.default()) as any;
 
         for (const record of records) {
             const parts = record.key.split(".");

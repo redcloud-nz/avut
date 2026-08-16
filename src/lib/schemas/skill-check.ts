@@ -11,6 +11,12 @@ import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
 import { OrganizationId } from "./organization";
+import { OrganizationSettings } from "./organization-settings";
+import {
+    defaultSkillCheckResultLabel,
+    SKILL_CHECK_RESULT_VALUES,
+    SkillCheckResultValue,
+} from "./skill-check-result";
 import { SkillCheckSessionId } from "./skill-check-session";
 import { PersonId } from "./person";
 import { SkillId } from "./skill";
@@ -23,6 +29,15 @@ export const SkillCheckId = {
 
 export type SkillCheckId = string & z.BRAND<"SkillCheckId">;
 
+export {
+    COMPETENT_SKILL_CHECK_RESULTS,
+    DEFAULT_SKILL_CHECK_RESULT_LABELS,
+    defaultSkillCheckResultLabel,
+    isCompetentResult,
+    SKILL_CHECK_RESULT_VALUES,
+    SkillCheckResultValue,
+} from "./skill-check-result";
+
 export const SkillCheck = {
     schema: z.object({
         id: SkillCheckId.schema,
@@ -31,7 +46,7 @@ export const SkillCheck = {
         assesseeId: PersonId.schema,
         assessorId: PersonId.schema,
         skillId: SkillId.schema,
-        result: z.string(),
+        result: SkillCheckResultValue.schema,
         notes: z.string(),
         status: z.enum(["Draft", "Include", "Exclude"]),
         createdAt: z.iso.datetime(),
@@ -46,30 +61,33 @@ export const SkillCheck = {
 
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
 
-export const SKILL_CHECK_RESULT_LABELS: Record<string, string> = {
-    NotAssessed: "Not Assessed",
-    NotTaught: "Not Taught",
-    NotYetCompetent: "Not Yet Competent",
-    Competent: "Competent",
-    HighlyConfident: "Highly Confident",
-};
-
-/**
- * The results that demonstrate competency. Any other result — including "Not Yet Competent" and
- * "Not Taught" — means the person is not competent in that skill.
- */
-export const COMPETENT_SKILL_CHECK_RESULTS = ["Competent", "HighlyConfident"];
-
-/**
- * Whether a skill check result demonstrates competency in the skill.
- * @param result The result of the skill check.
- */
-export function isCompetentResult(result: string): boolean {
-    return COMPETENT_SKILL_CHECK_RESULTS.includes(result);
-}
-
 export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Draft: "Draft",
     Include: "Approved",
     Exclude: "Excluded",
 };
+
+/**
+ * The org's enabled result values, in fixed app-wide order, with their configured labels.
+ */
+export function getEnabledSkillCheckResultOptions(
+    settings: OrganizationSettings,
+): { value: SkillCheckResultValue; label: string }[] {
+    const results = settings.modules["skill-track"].results;
+    return SKILL_CHECK_RESULT_VALUES.filter((value) => results[value].enabled).map((value) => ({
+        value,
+        label: results[value].label,
+    }));
+}
+
+/**
+ * The org-configured label for a result value, falling back to the default readable name.
+ */
+export function getSkillCheckResultLabel(
+    settings: OrganizationSettings,
+    value: SkillCheckResultValue,
+): string {
+    return (
+        settings.modules["skill-track"].results[value]?.label ?? defaultSkillCheckResultLabel(value)
+    );
+}

@@ -49,6 +49,52 @@ export const enums = [
         ],
         dbName: null,
     },
+    {
+        name: "SkillCheckResult",
+        values: [
+            {
+                name: "NotTaught",
+                dbName: null,
+            },
+            {
+                name: "LowFail",
+                dbName: null,
+            },
+            {
+                name: "Fail",
+                dbName: null,
+            },
+            {
+                name: "HighFail",
+                dbName: null,
+            },
+            {
+                name: "WeakPass",
+                dbName: null,
+            },
+            {
+                name: "Pass",
+                dbName: null,
+            },
+            {
+                name: "StrongPass",
+                dbName: null,
+            },
+            {
+                name: "Exempt",
+                dbName: null,
+            },
+            {
+                name: "Expired",
+                dbName: null,
+            },
+            {
+                name: "Provisional",
+                dbName: null,
+            },
+        ],
+        dbName: null,
+    },
 ];
 
 export const models = [
@@ -4401,14 +4447,14 @@ export const models = [
             },
             {
                 name: "result",
-                kind: "scalar",
+                kind: "enum",
                 isList: false,
                 isRequired: true,
                 isUnique: false,
                 isId: false,
                 isReadOnly: false,
                 hasDefaultValue: false,
-                type: "String",
+                type: "SkillCheckResult",
                 nativeType: null,
                 isGenerated: false,
                 isUpdatedAt: false,

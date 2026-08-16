@@ -278,6 +278,25 @@ export type EnumSkillCheckStatusWithAggregatesFilter<$PrismaModel = never> = {
     _max?: Prisma.NestedEnumSkillCheckStatusFilter<$PrismaModel>;
 };
 
+export type EnumSkillCheckResultFilter<$PrismaModel = never> = {
+    equals?: $Enums.SkillCheckResult | Prisma.EnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    in?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel> | $Enums.SkillCheckResult;
+};
+
+export type EnumSkillCheckResultWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SkillCheckResult | Prisma.EnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    in?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    not?:
+        | Prisma.NestedEnumSkillCheckResultWithAggregatesFilter<$PrismaModel>
+        | $Enums.SkillCheckResult;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel>;
+};
+
 export type IntNullableFilter<$PrismaModel = never> = {
     equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null;
     in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel> | null;
@@ -546,6 +565,25 @@ export type NestedEnumSkillCheckStatusWithAggregatesFilter<$PrismaModel = never>
     _count?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedEnumSkillCheckStatusFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumSkillCheckStatusFilter<$PrismaModel>;
+};
+
+export type NestedEnumSkillCheckResultFilter<$PrismaModel = never> = {
+    equals?: $Enums.SkillCheckResult | Prisma.EnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    in?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel> | $Enums.SkillCheckResult;
+};
+
+export type NestedEnumSkillCheckResultWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SkillCheckResult | Prisma.EnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    in?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.SkillCheckResult[] | Prisma.ListEnumSkillCheckResultFieldRefInput<$PrismaModel>;
+    not?:
+        | Prisma.NestedEnumSkillCheckResultWithAggregatesFilter<$PrismaModel>
+        | $Enums.SkillCheckResult;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumSkillCheckResultFilter<$PrismaModel>;
 };
 
 export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
