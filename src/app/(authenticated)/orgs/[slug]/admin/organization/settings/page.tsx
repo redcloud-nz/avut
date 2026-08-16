@@ -55,11 +55,11 @@ export default function AdminModule_Settings_Page(
                         <Saratoga.Title>Organization Settings</Saratoga.Title>
                     </Saratoga.Header>
 
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         <General_SettingsCard />
                     </div>
 
-                    <div className="space-y-2 pt-6">
+                    <div className="space-y-4 pt-6">
                         <h3 className="text-lg font-semibold tracking-tight">Integrations</h3>
                         <D4hIntegration_SettingsCard
                             organizationId={organization.id}
@@ -71,7 +71,7 @@ export default function AdminModule_Settings_Page(
                         />
                     </div>
 
-                    <div className="space-y-2 pt-6">
+                    <div className="space-y-4 pt-6">
                         <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
                         <D4HViewsModule_SettingsCard
                             organizationId={organization.id}

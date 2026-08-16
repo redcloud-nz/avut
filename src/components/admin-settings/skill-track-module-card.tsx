@@ -21,7 +21,16 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
@@ -97,20 +106,23 @@ export function SkillTrackModule_SettingsCard({
             </CardHeader>
             <CardContent>
                 <form id="skill-track-module-settings-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <h4 className="text-sm font-medium">Result Values</h4>
-                        <p className="text-sm text-muted-foreground">
-                            Choose which skill check result values are available and what
-                            they&apos;re called.
-                        </p>
-                        {SKILL_TRACK_CONFIGURABLE_RESULT_VALUES.map((value) => (
-                            <SkillCheckResult_SettingsRow
-                                key={value}
-                                value={value}
-                                control={form.control}
-                            />
-                        ))}
-                    </FieldGroup>
+                    <FieldSet className="w-xl">
+                        <FieldLegend>Skill Check Result Options</FieldLegend>
+                        <FieldDescription>
+                            Configure which skill check result options are available for use in your
+                            organization. You can enable or disable each option and customize its
+                            label.
+                        </FieldDescription>
+                        <FieldGroup>
+                            {SKILL_TRACK_CONFIGURABLE_RESULT_VALUES.map((value) => (
+                                <SkillCheckResult_SettingsRow
+                                    key={value}
+                                    value={value}
+                                    control={form.control}
+                                />
+                            ))}
+                        </FieldGroup>
+                    </FieldSet>
                 </form>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
@@ -141,40 +153,39 @@ function SkillCheckResult_SettingsRow({
     const enabled = useWatch({ control, name: `results.${value}.enabled` });
 
     return (
-        <Field orientation="responsive">
-            <FieldContent>
-                <Controller
-                    control={control}
-                    name={`results.${value}.enabled`}
-                    render={({ field }) => (
-                        <Switch
-                            id={`skill-check-result-${value}-enabled`}
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
-            </FieldContent>
-            <FieldContent>
-                <FieldLabel htmlFor={`skill-check-result-${value}-label`}>{value}</FieldLabel>
-            </FieldContent>
+        <div className="flex gap-4">
             <Controller
                 control={control}
-                name={`results.${value}.label`}
-                render={({ field, fieldState }) => (
-                    <FieldContent>
-                        <Input
-                            id={`skill-check-result-${value}-label`}
-                            className="min-w-1/2"
-                            aria-invalid={fieldState.invalid}
-                            disabled={!enabled}
-                            value={field.value}
-                            onChange={field.onChange}
-                        />
-                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                    </FieldContent>
+                name={`results.${value}.enabled`}
+                render={({ field }) => (
+                    <Switch
+                        id={`skill-check-result-${value}-enabled`}
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                    />
                 )}
             />
-        </Field>
+            <Field>
+                <FieldLabel htmlFor={`skill-check-result-${value}-label`}>{value}</FieldLabel>
+
+                <Controller
+                    control={control}
+                    name={`results.${value}.label`}
+                    render={({ field, fieldState }) => (
+                        <FieldContent>
+                            <Input
+                                id={`skill-check-result-${value}-label`}
+                                className="min-w-1/2"
+                                aria-invalid={fieldState.invalid}
+                                disabled={!enabled}
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
+                            {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                        </FieldContent>
+                    )}
+                />
+            </Field>
+        </div>
     );
 }
