@@ -79,9 +79,11 @@ export function UserProfile_Card({ session }: { session: AuthSession }) {
                 </form>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => form.reset()}>
-                    Cancel
-                </Button>
+                {form.formState.isDirty && (
+                    <Button variant="ghost" onClick={() => form.reset()}>
+                        Reset
+                    </Button>
+                )}
                 <MutationButton
                     form="update-profile-form"
                     status={mutation.status}
