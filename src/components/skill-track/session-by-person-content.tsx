@@ -55,7 +55,10 @@ import { Separator } from "@/components/ui/separator";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
-import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import {
+    getEnabledSkillCheckResultOptions,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
@@ -67,6 +70,8 @@ export function SkillTrack_SessionByPerson_Content({
 }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
+
+    const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
     const skillChecksQueryOptions = trpc.skillChecks.listSkillChecks.queryOptions({
         organizationId: organization.id,
@@ -208,7 +213,7 @@ export function SkillTrack_SessionByPerson_Content({
     }
 
     const [skillOrder, setSkillOrder] = useState<"alphabetical" | "by-package-group">(
-        "alphabetical",
+        "by-package-group",
     );
     const [showSkillDescription, setShowSkillDescription] = useState(false);
 
@@ -277,7 +282,7 @@ export function SkillTrack_SessionByPerson_Content({
                         <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost">
+                                    <Button variant="ghost" size="icon">
                                         <DropdownMenuTriggerIcon />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -431,6 +436,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                     onValueChange={(newValue) =>
                                                         handleChange(skill.id, newValue)
                                                     }
+                                                    resultOptions={resultOptions}
                                                 />
                                             );
 

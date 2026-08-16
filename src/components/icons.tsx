@@ -13,6 +13,7 @@ import {
     BookOpenIcon,
     CheckCheckIcon,
     CheckIcon,
+    CheckLineIcon,
     ChevronRightIcon,
     CircleCheckIcon,
     CircleUserRoundIcon,
@@ -38,11 +39,13 @@ import {
     TriangleAlertIcon,
     UsersIcon,
     XIcon,
+    XLineTopIcon,
     BookUpIcon,
     BookXIcon,
     MoveIcon,
     CircleSlashedIcon,
     MessageSquarePlusIcon,
+    OctagonXIcon,
 } from "lucide-react";
 
 export {
@@ -99,8 +102,11 @@ export const ObjectIcons = {
 
 export const SkillsIcons = {
     AddNotes: MessageSquarePlusIcon,
+    WeakPass: CheckLineIcon,
     Pass: CheckIcon,
     StrongPass: CheckCheckIcon,
+    HighFail: XLineTopIcon,
     Fail: XIcon,
+    LowFail: OctagonXIcon,
     NotTaught: CircleSlashedIcon,
 };
