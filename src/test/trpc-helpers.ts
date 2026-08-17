@@ -39,6 +39,7 @@ export const createAuthenticatedMockContext = ({
                 name: "Test User",
                 email: "test-user@example.com",
                 emailVerified: true,
+                banned: false,
                 ...user,
             } satisfies AuthSession["user"],
             session: {

@@ -6,6 +6,7 @@
 import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
 
 import OneTimePasswordTemplate from "@/emails/one-time-password";
@@ -46,6 +47,7 @@ export const auth = betterAuth({
     },
 
     plugins: [
+        admin(),
         emailOTP({
             changeEmail: {
                 enabled: true,
