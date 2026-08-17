@@ -109,7 +109,8 @@ export function AdminModule_Invitations_List() {
                                     Rejected
                                 </Badge>
                             ))
-                            .with("canceled", () => <Badge variant="secondary">Cancelled</Badge>),
+                            .with("canceled", () => <Badge variant="secondary">Cancelled</Badge>)
+                            .exhaustive(),
                     enableSorting: false,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
