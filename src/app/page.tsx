@@ -27,7 +27,7 @@ export default async function HomePage() {
                     {hasSession ? (
                         <>
                             <Button asChild>
-                                <Link href="/main/--select-org">Enter</Link>
+                                <Link href="/orgs/--select-org">Enter</Link>
                             </Button>
                         </>
                     ) : (
