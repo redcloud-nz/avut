@@ -650,24 +650,30 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: Messages.skillPackageNotFound(skillPackageId),
                 });
 
-            const toUpdate: { id: SkillGroupId; sequence: number }[] = [];
+            const toUpdate: { id: SkillGroupId; prevSequence: number; sequence: number }[] = [];
 
             newOrder.forEach((groupId, index) => {
                 const group = skillPackage.groups.find((g) => g.id === groupId);
 
                 if (group && group.sequence != index + 1) {
-                    toUpdate.push({ id: groupId, sequence: index + 1 });
+                    toUpdate.push({ id: groupId, prevSequence: group.sequence, sequence: index + 1 });
                 }
             });
 
             if (toUpdate.length > 0) {
                 await Promise.all(
-                    toUpdate.map(({ id, sequence }) =>
+                    toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skillGroup.update({
                             where: { id },
                             data: { sequence },
                         }),
-                    ),
+                        ctx.logEvent({
+                            action: "Update",
+                            objectType: "SkillGroup",
+                            objectId: id,
+                            changes: diffObject({ sequence: prevSequence }, { sequence }),
+                        }),
+                    ]),
                 );
             }
 
@@ -711,24 +717,30 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: Messages.skillGroupNotFound(skillGroupId),
                 });
 
-            const toUpdate: { id: SkillId; sequence: number }[] = [];
+            const toUpdate: { id: SkillId; prevSequence: number; sequence: number }[] = [];
 
             newOrder.forEach((skillId, index) => {
                 const skill = group.skills.find((s) => s.id === skillId);
 
                 if (skill && skill.sequence != index + 1) {
-                    toUpdate.push({ id: skillId, sequence: index + 1 });
+                    toUpdate.push({ id: skillId, prevSequence: skill.sequence, sequence: index + 1 });
                 }
             });
 
             if (toUpdate.length > 0) {
                 await Promise.all(
-                    toUpdate.map(({ id, sequence }) =>
+                    toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skill.update({
                             where: { id },
                             data: { sequence },
                         }),
-                    ),
+                        ctx.logEvent({
+                            action: "Update",
+                            objectType: "Skill",
+                            objectId: id,
+                            changes: diffObject({ sequence: prevSequence }, { sequence }),
+                        }),
+                    ]),
                 );
             }
 
