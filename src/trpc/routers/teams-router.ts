@@ -591,15 +591,28 @@ export const teamsRouter = createTrpcRouter({
             }
 
             // Update the last sync time
-            await ctx.prisma.team.update({
-                where: { organizationId: ctx.organizationId, id: teamId },
-                data: {
-                    properties: {
-                        ...team.properties,
-                        d4hLastSync: new Date().toISOString(),
+            const syncedAt = new Date().toISOString();
+            await Promise.all([
+                ctx.prisma.team.update({
+                    where: { organizationId: ctx.organizationId, id: teamId },
+                    data: {
+                        properties: {
+                            ...team.properties,
+                            d4hLastSync: syncedAt,
+                        },
                     },
-                },
-            });
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "Team",
+                    objectId: teamId,
+                    changes: diffObject(
+                        { d4hLastSync: team.properties.d4hLastSync ?? null },
+                        { d4hLastSync: syncedAt },
+                    ),
+                    description: "Synchronized team membership from linked D4H team.",
+                }),
+            ]);
         }),
 
     /**
