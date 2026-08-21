@@ -106,7 +106,7 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId } }) => {
             const session = await getSessionOrThrow(ctx, skillCheckSessionId);
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.skillCheckSession.delete({
                     where: {
                         id: skillCheckSessionId,
@@ -809,7 +809,7 @@ export const skillsRouter = createTrpcRouter({
 
             if (changes.length == 0) return { updated: existing }; // No changes
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillCheckSession.update({
                     where: {
                         id: skillCheckSessionId,
@@ -873,7 +873,7 @@ export const skillsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [updated] = await Promise.all([
+                const [updated] = await ctx.prisma.$transaction([
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: skillCheckSessionId,
@@ -946,7 +946,7 @@ export const skillsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [updated] = await Promise.all([
+                const [updated] = await ctx.prisma.$transaction([
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: skillCheckSessionId,

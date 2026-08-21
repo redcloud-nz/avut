@@ -661,7 +661,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             });
 
             if (toUpdate.length > 0) {
-                await Promise.all(
+                await ctx.prisma.$transaction(
                     toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skillGroup.update({
                             where: { id },
@@ -728,7 +728,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             });
 
             if (toUpdate.length > 0) {
-                await Promise.all(
+                await ctx.prisma.$transaction(
                     toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skill.update({
                             where: { id },

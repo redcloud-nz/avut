@@ -592,7 +592,7 @@ export const teamsRouter = createTrpcRouter({
 
             // Update the last sync time
             const syncedAt = new Date().toISOString();
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: teamId },
                     data: {
