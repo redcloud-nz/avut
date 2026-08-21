@@ -361,7 +361,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganisations: [] };
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.update({
                     where: { id: input.tokenId },
                     data: {
