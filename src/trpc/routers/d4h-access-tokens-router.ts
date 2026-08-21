@@ -69,7 +69,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             const changes = diffObject({}, create);
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.create({
                     data: {
                         ...token,
@@ -125,7 +125,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             const changes = diffObject({}, create);
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.create({
                     data: {
                         ...token,
@@ -171,7 +171,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 });
             }
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.delete({
                     where: { id: input.tokenId },
                 }),
@@ -190,9 +190,11 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         value: { equals: input.tokenId },
                     },
                 }),
-                // Revalidate organization settings in case this token was being used.
-                revalidateOrganizationSettings(ctx.organizationId),
             ]);
+
+            // Revalidate organization settings in case this token was being used.
+            // Not a Prisma operation, so it can't join the $transaction above.
+            await revalidateOrganizationSettings(ctx.organizationId);
         }),
 
     deletePersonalAccessToken: organizationProcedure({
@@ -212,7 +214,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             });
         }
 
-        await Promise.all([
+        await ctx.prisma.$transaction([
             ctx.prisma.d4hAccessToken.delete({
                 where: { id: existing.id },
             }),

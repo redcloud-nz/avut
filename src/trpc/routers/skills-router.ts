@@ -709,7 +709,7 @@ export const skillsRouter = createTrpcRouter({
             }
 
             // Create subscription
-            const [subscription] = await Promise.all([
+            const [subscription] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackageSubscription.create({
                     data: {
                         id: SkillPackageSubscriptionId.create(),
@@ -769,7 +769,7 @@ export const skillsRouter = createTrpcRouter({
             }
 
             // Delete subscription
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.skillPackageSubscription.delete({
                     where: {
                         id: existingSubscription.id,
