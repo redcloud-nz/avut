@@ -4,7 +4,7 @@
  */
 
 import { trpc } from "@/trpc/client";
-import type { RouterInput } from "@/trpc/routers/_app";
+import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache invalidations for `personnel` router mutations, keyed by procedure name.
@@ -29,10 +29,52 @@ export const personnelInvalidations = {
         trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
     ],
     updatePerson: (vars: RouterInput["personnel"]["updatePerson"]) => [
-        trpc.personnel.getPerson.queryFilter({
-            organizationId: vars.organizationId,
-            personId: vars.personId,
-        }),
         trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
+    ],
+};
+
+/**
+ * Direct cache writes for `personnel` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.writes` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Covers single-entity detail queries the mutation's response fully determines the new value of
+ * (`getPerson`); list-level effects still belong in `personnelInvalidations`.
+ */
+export const personnelWrites = {
+    archivePerson: (
+        vars: RouterInput["personnel"]["archivePerson"],
+        { updated }: RouterOutput["personnel"]["archivePerson"],
+    ) => [
+        {
+            queryKey: trpc.personnel.getPerson.queryKey({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+            data: updated,
+        },
+    ],
+    restorePerson: (
+        vars: RouterInput["personnel"]["restorePerson"],
+        { updated }: RouterOutput["personnel"]["restorePerson"],
+    ) => [
+        {
+            queryKey: trpc.personnel.getPerson.queryKey({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+            data: updated,
+        },
+    ],
+    updatePerson: (
+        vars: RouterInput["personnel"]["updatePerson"],
+        { updated }: RouterOutput["personnel"]["updatePerson"],
+    ) => [
+        {
+            queryKey: trpc.personnel.getPerson.queryKey({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+            data: updated,
+        },
     ],
 };

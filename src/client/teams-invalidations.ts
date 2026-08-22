@@ -4,7 +4,7 @@
  */
 
 import { trpc } from "@/trpc/client";
-import type { RouterInput } from "@/trpc/routers/_app";
+import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache invalidations for `teams` router mutations, keyed by procedure name.
@@ -38,5 +38,27 @@ export const teamsInvalidations = {
     ],
     updateTeam: (vars: RouterInput["teams"]["updateTeam"]) => [
         trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId }),
+    ],
+};
+
+/**
+ * Direct cache writes for `teams` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.writes` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Covers single-entity detail queries the mutation's response fully determines the new value of;
+ * list-level effects still belong in `teamsInvalidations`.
+ */
+export const teamsWrites = {
+    updateTeam: (
+        vars: RouterInput["teams"]["updateTeam"],
+        { updated }: RouterOutput["teams"]["updateTeam"],
+    ) => [
+        {
+            queryKey: trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            data: updated,
+        },
     ],
 };

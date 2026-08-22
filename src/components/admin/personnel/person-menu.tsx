@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
-import { personnelInvalidations } from "@/client/personnel-invalidations";
+import { personnelInvalidations, personnelWrites } from "@/client/personnel-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -43,7 +43,10 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
-            meta: { invalidates: personnelInvalidations.archivePerson },
+            meta: {
+                invalidates: personnelInvalidations.archivePerson,
+                writes: personnelWrites.archivePerson,
+            },
             onError(error) {
                 toast.error(`Failed to archive person: ${error.message}`);
                 console.error("Failed to archive person:", error);
@@ -52,7 +55,10 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
     );
     const restoreMutation = useMutation(
         trpc.personnel.restorePerson.mutationOptions({
-            meta: { invalidates: personnelInvalidations.restorePerson },
+            meta: {
+                invalidates: personnelInvalidations.restorePerson,
+                writes: personnelWrites.restorePerson,
+            },
             onError(error) {
                 toast.error(`Failed to restore person: ${error.message}`);
                 console.error("Failed to restore person:", error);

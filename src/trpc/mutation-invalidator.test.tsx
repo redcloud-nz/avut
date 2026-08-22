@@ -76,6 +76,86 @@ describe("MutationInvalidator", () => {
         expect(queryFn).not.toHaveBeenCalled();
     });
 
+    it("writes the mutation response directly into the cache entries declared in meta.writes", async () => {
+        const queryClient = makeClient();
+        queryClient.setQueryData(["thing", "1"], "stale");
+
+        function Harness() {
+            const { data } = useQuery({
+                queryKey: ["thing", "1"],
+                queryFn: () => Promise.resolve("stale"),
+                staleTime: Infinity,
+            });
+            const mutation = useMutation({
+                mutationFn: () => Promise.resolve({ id: "1", value: "fresh" }),
+                meta: {
+                    writes: (_vars: unknown, data: { id: string; value: string }) => [
+                        { queryKey: ["thing", data.id], data: data.value },
+                    ],
+                },
+            });
+            return (
+                <>
+                    <span data-testid="value">{data}</span>
+                    <button onClick={() => mutation.mutate()}>mutate</button>
+                </>
+            );
+        }
+
+        render(
+            <QueryClientProvider client={queryClient}>
+                <MutationInvalidator />
+                <Harness />
+            </QueryClientProvider>,
+        );
+
+        expect(screen.getByTestId("value").textContent).toBe("stale");
+
+        fireEvent.click(screen.getByRole("button"));
+
+        await waitFor(() => expect(screen.getByTestId("value").textContent).toBe("fresh"));
+    });
+
+    it("applies meta.writes before triggering the meta.invalidates refetch", async () => {
+        const queryClient = makeClient();
+        let resolveNetwork!: (value: string) => void;
+        const queryFn = vi.fn(() => new Promise<string>((resolve) => (resolveNetwork = resolve)));
+        queryClient.setQueryData(["thing", "1"], "stale");
+
+        function Harness() {
+            useQuery({ queryKey: ["thing", "1"], queryFn, staleTime: Infinity });
+            const mutation = useMutation({
+                mutationFn: () => Promise.resolve({ id: "1", value: "from-write" }),
+                meta: {
+                    writes: (_vars: unknown, data: { id: string; value: string }) => [
+                        { queryKey: ["thing", data.id], data: data.value },
+                    ],
+                    invalidates: (_vars: unknown, data: { id: string }) => [
+                        { queryKey: ["thing", data.id] },
+                    ],
+                },
+            });
+            return <button onClick={() => mutation.mutate()}>mutate</button>;
+        }
+
+        render(
+            <QueryClientProvider client={queryClient}>
+                <MutationInvalidator />
+                <Harness />
+            </QueryClientProvider>,
+        );
+
+        fireEvent.click(screen.getByRole("button"));
+
+        // By the time invalidation has kicked off the (still-pending) refetch, the write has
+        // already landed in the cache.
+        await waitFor(() => expect(queryFn).toHaveBeenCalledTimes(1));
+        expect(queryClient.getQueryData(["thing", "1"])).toBe("from-write");
+
+        resolveNetwork("from-network");
+        await waitFor(() => expect(queryClient.getQueryData(["thing", "1"])).toBe("from-network"));
+    });
+
     it("chains a previously-installed mutationCache.onSuccess handler instead of replacing it", async () => {
         const queryClient = makeClient();
         const previousOnSuccess = vi.fn();
