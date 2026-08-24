@@ -27,7 +27,7 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { personnelInvalidations } from "@/client/personnel-invalidations";
+import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
@@ -51,7 +51,7 @@ export function AdminModule_CreatePerson_Dialog() {
 
     const mutation = useMutation(
         trpc.personnel.createPerson.mutationOptions({
-            meta: { invalidates: personnelInvalidations.createPerson },
+            meta: { effects: personnelEffects.createPerson },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {

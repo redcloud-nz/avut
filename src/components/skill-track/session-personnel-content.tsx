@@ -19,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
-import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -66,10 +66,7 @@ export function SkillTrack_SessionPersonnel_Content({
 
     const mutation = useMutation(
         trpc.skills.updateSessionAssessees.mutationOptions({
-            meta: {
-                invalidates: skillsInvalidations.updateSessionAssessees,
-                writes: skillsWrites.updateSessionAssessees,
-            },
+            meta: { effects: skillsEffects.updateSessionAssessees },
             onError(error) {
                 console.error("Failed to update session assessees:", error);
                 toast.error(`Failed to update session assessees. ${error.message}`);

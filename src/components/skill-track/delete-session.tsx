@@ -22,7 +22,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
@@ -38,7 +38,7 @@ export function SkillsModule_DeleteSession_Dialog({
 
     const mutation = useMutation(
         trpc.skills.deleteSession.mutationOptions({
-            meta: { invalidates: skillsInvalidations.deleteSession },
+            meta: { effects: skillsEffects.deleteSession },
             onError(error) {
                 console.error("Failed to delete session:", error);
                 toast.error("Failed to delete session: " + error.message);

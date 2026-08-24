@@ -28,10 +28,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import {
-    skillPackageBuilderInvalidations,
-    skillPackageBuilderWrites,
-} from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillPackage, SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -52,10 +49,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.updatePackage.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.updatePackage,
-                writes: skillPackageBuilderWrites.updatePackage,
-            },
+            meta: { effects: skillPackageBuilderEffects.updatePackage },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {

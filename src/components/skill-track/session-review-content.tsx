@@ -34,7 +34,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-import { skillChecksWrites } from "@/client/skill-checks-writes";
+import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
@@ -94,7 +94,7 @@ export function SkillTrack_SessionReview_Content({
 
     const mutation = useMutation(
         trpc.skillChecks.approveSession.mutationOptions({
-            meta: { writes: skillChecksWrites.approveSession },
+            meta: { effects: skillChecksEffects.approveSession },
             onError(error) {
                 toast.error(`Failed to approve session: ${error.message}`);
             },

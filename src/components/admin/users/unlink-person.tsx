@@ -21,7 +21,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { usersInvalidations } from "@/client/users-invalidations";
+import { usersEffects } from "@/client/users-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
@@ -40,7 +40,7 @@ export function AdminModule_UnlinkPerson_Dialog({
 
     const mutation = useMutation(
         trpc.users.unlinkPerson.mutationOptions({
-            meta: { invalidates: usersInvalidations.unlinkPerson },
+            meta: { effects: usersEffects.unlinkPerson },
             onError(error) {
                 console.error("Failed to unlink person:", error);
                 toast.error(`Failed to unlink person: ${error.message}`);

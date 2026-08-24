@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
-import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -80,10 +80,7 @@ export function SkillTrack_SessionSkills_Content({
 
     const mutation = useMutation(
         trpc.skills.updateSessionSkills.mutationOptions({
-            meta: {
-                invalidates: skillsInvalidations.updateSessionSkills,
-                writes: skillsWrites.updateSessionSkills,
-            },
+            meta: { effects: skillsEffects.updateSessionSkills },
             onError(error) {
                 console.error("Failed to update session skills:", error);
                 toast.error(`Failed to update session skills. ${error.message}`);

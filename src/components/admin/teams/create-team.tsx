@@ -29,7 +29,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { teamsInvalidations } from "@/client/teams-invalidations";
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
@@ -53,7 +53,7 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const mutation = useMutation(
         trpc.teams.createTeam.mutationOptions({
-            meta: { invalidates: teamsInvalidations.createTeam },
+            meta: { effects: teamsEffects.createTeam },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {

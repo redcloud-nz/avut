@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
 
-import { MutationInvalidator } from "./mutation-invalidator";
+import { invalidate, MutationInvalidator, write } from "./mutation-invalidator";
 
 function makeClient() {
     return new QueryClient({
@@ -17,7 +17,7 @@ function makeClient() {
 }
 
 describe("MutationInvalidator", () => {
-    it("invalidates the queries declared in meta.invalidates after a mutation succeeds", async () => {
+    it("invalidates queries declared with invalidate() in meta.effects after a mutation succeeds", async () => {
         const queryClient = makeClient();
         const queryFn = vi.fn().mockResolvedValue("value");
         queryClient.setQueryData(["thing", "1"], "stale");
@@ -27,8 +27,8 @@ describe("MutationInvalidator", () => {
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1" }),
                 meta: {
-                    invalidates: (_vars: unknown, data: { id: string }) => [
-                        { queryKey: ["thing", data.id] },
+                    effects: (_vars: unknown, data: { id: string }) => [
+                        invalidate({ queryKey: ["thing", data.id] }),
                     ],
                 },
             });
@@ -49,7 +49,7 @@ describe("MutationInvalidator", () => {
         await waitFor(() => expect(queryFn).toHaveBeenCalledTimes(1));
     });
 
-    it("does nothing for mutations without meta.invalidates", async () => {
+    it("does nothing for mutations without meta.effects", async () => {
         const queryClient = makeClient();
         const queryFn = vi.fn().mockResolvedValue("value");
         queryClient.setQueryData(["other"], "stale");
@@ -76,7 +76,7 @@ describe("MutationInvalidator", () => {
         expect(queryFn).not.toHaveBeenCalled();
     });
 
-    it("writes the mutation response directly into the cache entries declared in meta.writes", async () => {
+    it("writes the mutation response directly into the cache entries declared with write() in meta.effects", async () => {
         const queryClient = makeClient();
         queryClient.setQueryData(["thing", "1"], "stale");
 
@@ -89,8 +89,8 @@ describe("MutationInvalidator", () => {
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1", value: "fresh" }),
                 meta: {
-                    writes: (_vars: unknown, data: { id: string; value: string }) => [
-                        { queryKey: ["thing", data.id], data: data.value },
+                    effects: (_vars: unknown, data: { id: string; value: string }) => [
+                        write(["thing", data.id], data.value),
                     ],
                 },
             });
@@ -116,7 +116,7 @@ describe("MutationInvalidator", () => {
         await waitFor(() => expect(screen.getByTestId("value").textContent).toBe("fresh"));
     });
 
-    it("accepts an updater function in meta.writes to merge into the existing cache entry", async () => {
+    it("accepts an updater function in write() to merge into the existing cache entry", async () => {
         const queryClient = makeClient();
         queryClient.setQueryData(["thing", "1"], { name: "Alice", role: "admin" });
 
@@ -129,12 +129,12 @@ describe("MutationInvalidator", () => {
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1", updated: { role: "owner" } }),
                 meta: {
-                    writes: (_vars: unknown, data: { id: string; updated: { role: string } }) => [
-                        {
-                            queryKey: ["thing", data.id],
-                            data: (old: { name: string; role: string } | undefined) =>
+                    effects: (_vars: unknown, data: { id: string; updated: { role: string } }) => [
+                        write(
+                            ["thing", data.id],
+                            (old: { name: string; role: string } | undefined) =>
                                 old ? { ...old, ...data.updated } : old,
-                        },
+                        ),
                     ],
                 },
             });
@@ -162,7 +162,7 @@ describe("MutationInvalidator", () => {
         expect(screen.getByTestId("name").textContent).toBe("Alice");
     });
 
-    it("applies meta.writes before triggering the meta.invalidates refetch", async () => {
+    it("applies write() effects before triggering the invalidate() refetch, regardless of array order", async () => {
         const queryClient = makeClient();
         let resolveNetwork!: (value: string) => void;
         const queryFn = vi.fn(() => new Promise<string>((resolve) => (resolveNetwork = resolve)));
@@ -173,11 +173,10 @@ describe("MutationInvalidator", () => {
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1", value: "from-write" }),
                 meta: {
-                    writes: (_vars: unknown, data: { id: string; value: string }) => [
-                        { queryKey: ["thing", data.id], data: data.value },
-                    ],
-                    invalidates: (_vars: unknown, data: { id: string }) => [
-                        { queryKey: ["thing", data.id] },
+                    // invalidate() listed before write() — order in the array must not matter.
+                    effects: (_vars: unknown, data: { id: string; value: string }) => [
+                        invalidate({ queryKey: ["thing", data.id] }),
+                        write(["thing", data.id], data.value),
                     ],
                 },
             });

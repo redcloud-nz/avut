@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { ObjectName } from "@/components/ui/typography";
 
-import { teamsInvalidations } from "@/client/teams-invalidations";
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
@@ -72,7 +72,7 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
 
     const mutation = useMutation(
         trpc.teams.createTeamMembership.mutationOptions({
-            meta: { invalidates: teamsInvalidations.createTeamMembership },
+            meta: { effects: teamsEffects.createTeamMembership },
             onError(error) {
                 console.error("Failed to add team member:", error);
                 toast.error(`Failed to add team member: ${error.message}`);

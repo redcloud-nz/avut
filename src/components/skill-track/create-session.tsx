@@ -30,7 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -64,10 +64,7 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const mutation = useMutation(
         trpc.skills.createSession.mutationOptions({
-            meta: {
-                invalidates: skillsInvalidations.createSession,
-                writes: skillsWrites.createSession,
-            },
+            meta: { effects: skillsEffects.createSession },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);

@@ -30,7 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -54,10 +54,7 @@ export function SkillsModule_UpdateSession_Dialog({
 
     const mutation = useMutation(
         trpc.skills.updateSession.mutationOptions({
-            meta: {
-                invalidates: skillsInvalidations.updateSession,
-                writes: skillsWrites.updateSession,
-            },
+            meta: { effects: skillsEffects.updateSession },
             onError(error) {
                 console.error("Failed to update session", error);
                 toast.error(`Failed to update session ${error.message}`);
@@ -69,7 +66,7 @@ export function SkillsModule_UpdateSession_Dialog({
                 handleOpenChange(false);
 
                 // The detail page renders a server-fetched session, so the cache write from
-                // meta.writes does not reach it — only a server re-render does.
+                // meta.effects does not reach it — only a server re-render does.
                 router.refresh();
             },
         }),

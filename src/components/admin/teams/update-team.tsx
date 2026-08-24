@@ -28,7 +28,7 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { teamsInvalidations, teamsWrites } from "@/client/teams-invalidations";
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
@@ -45,10 +45,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     const mutation = useMutation(
         trpc.teams.updateTeam.mutationOptions({
-            meta: {
-                invalidates: teamsInvalidations.updateTeam,
-                writes: teamsWrites.updateTeam,
-            },
+            meta: { effects: teamsEffects.updateTeam },
             async onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {

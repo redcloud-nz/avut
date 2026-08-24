@@ -21,10 +21,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-    skillPackageBuilderInvalidations,
-    skillPackageBuilderWrites,
-} from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -46,10 +43,7 @@ export function SkillPackageBuilder_Group_Menu({
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archiveGroup.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.archiveGroup,
-                writes: skillPackageBuilderWrites.archiveGroup,
-            },
+            meta: { effects: skillPackageBuilderEffects.archiveGroup },
             onError(error) {
                 console.error("Failed to archive skill group:", error);
             },
@@ -57,10 +51,7 @@ export function SkillPackageBuilder_Group_Menu({
     );
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restoreGroup.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.restoreGroup,
-                writes: skillPackageBuilderWrites.restoreGroup,
-            },
+            meta: { effects: skillPackageBuilderEffects.restoreGroup },
             onError(error) {
                 console.error("Failed to restore skill group:", error);
             },

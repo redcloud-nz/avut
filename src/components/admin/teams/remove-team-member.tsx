@@ -21,7 +21,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { teamsInvalidations } from "@/client/teams-invalidations";
+import { teamsEffects } from "@/client/teams-effects";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonRef } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
@@ -39,7 +39,7 @@ export function AdminModule_RemoveTeamMember_Dialog({
 } & ComponentProps<typeof AlertDialog>) {
     const mutation = useMutation(
         trpc.teams.deleteTeamMembership.mutationOptions({
-            meta: { invalidates: teamsInvalidations.deleteTeamMembership },
+            meta: { effects: teamsEffects.deleteTeamMembership },
             onError(error) {
                 console.error("Failed to remove team member:", error);
                 toast.error(`Failed to remove team member: ${error.message}`);

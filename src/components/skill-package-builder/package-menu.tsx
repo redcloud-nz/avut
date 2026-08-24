@@ -24,10 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ObjectName } from "@/components/ui/typography";
 
-import {
-    skillPackageBuilderInvalidations,
-    skillPackageBuilderWrites,
-} from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
@@ -42,10 +39,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archivePackage.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.archivePackage,
-                writes: skillPackageBuilderWrites.archivePackage,
-            },
+            meta: { effects: skillPackageBuilderEffects.archivePackage },
             onError(error) {
                 console.error("Failed to archive skill package:", error);
             },
@@ -54,10 +48,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const publishMutation = useMutation(
         trpc.skillPackageBuilder.publishPackage.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.publishPackage,
-                writes: skillPackageBuilderWrites.publishPackage,
-            },
+            meta: { effects: skillPackageBuilderEffects.publishPackage },
             onError(error) {
                 console.error("Failed to publish skill package:", error);
             },
@@ -66,10 +57,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restorePackage.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.restorePackage,
-                writes: skillPackageBuilderWrites.restorePackage,
-            },
+            meta: { effects: skillPackageBuilderEffects.restorePackage },
             onError(error) {
                 console.error("Failed to restore skill package:", error);
             },
@@ -78,10 +66,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const unpublishMutation = useMutation(
         trpc.skillPackageBuilder.unpublishPackage.mutationOptions({
-            meta: {
-                invalidates: skillPackageBuilderInvalidations.unpublishPackage,
-                writes: skillPackageBuilderWrites.unpublishPackage,
-            },
+            meta: { effects: skillPackageBuilderEffects.unpublishPackage },
             onError(error) {
                 console.error("Failed to unpublish skill package:", error);
             },
