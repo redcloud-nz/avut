@@ -7,9 +7,6 @@ import { invalidate, write } from "@/trpc/mutation-invalidator";
 import { trpc } from "@/trpc/client";
 import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
-type Group = RouterOutput["skillPackageBuilder"]["getGroup"];
-type SkillDetail = RouterOutput["skillPackageBuilder"]["getSkill"];
-
 /**
  * Cache effects for `skillPackageBuilder` router mutations, keyed by procedure name.
  *
@@ -28,7 +25,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillGroupId: vars.skillGroupId,
             }),
-            (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listGroups.queryFilter({
@@ -62,7 +59,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillId: vars.skillId,
             }),
-            (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({
@@ -148,7 +145,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillGroupId: vars.skillGroupId,
             }),
-            (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listGroups.queryFilter({
@@ -182,7 +179,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillId: vars.skillId,
             }),
-            (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({
@@ -216,7 +213,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillGroupId: vars.skillGroupId,
             }),
-            (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listGroups.queryFilter({
@@ -250,7 +247,7 @@ export const skillPackageBuilderEffects = {
                 organizationId: vars.organizationId,
                 skillId: vars.skillId,
             }),
-            (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({

@@ -7,8 +7,6 @@ import { invalidate, write } from "@/trpc/mutation-invalidator";
 import { trpc } from "@/trpc/client";
 import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
-type Session = RouterOutput["skills"]["getSession"];
-
 /**
  * Cache effects for `skills` router mutations, keyed by procedure name.
  *
@@ -50,7 +48,7 @@ export const skillsEffects = {
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
-            (old: Session | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
@@ -71,7 +69,7 @@ export const skillsEffects = {
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
-            (old: Session | undefined) => (old ? { ...old, ...updatedSession } : old),
+            (old) => (old ? { ...old, ...updatedSession } : old),
         ),
         invalidate(
             trpc.skills.listSessionAssessees.queryFilter({
@@ -98,7 +96,7 @@ export const skillsEffects = {
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
-            (old: Session | undefined) => (old ? { ...old, ...updatedSession } : old),
+            (old) => (old ? { ...old, ...updatedSession } : old),
         ),
         invalidate(
             trpc.skills.listSessionSkills.queryFilter({

@@ -7,8 +7,6 @@ import { write } from "@/trpc/mutation-invalidator";
 import { trpc } from "@/trpc/client";
 import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
-type Session = RouterOutput["skills"]["getSession"];
-
 /**
  * Cache effects for `skillChecks` router mutations, keyed by procedure name.
  *
@@ -26,7 +24,7 @@ export const skillChecksEffects = {
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.sessionId,
             }),
-            (old: Session | undefined) => (old ? { ...old, ...updated } : old),
+            (old) => (old ? { ...old, ...updated } : old),
         ),
     ],
 } as const;

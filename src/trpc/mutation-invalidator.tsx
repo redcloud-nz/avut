@@ -6,7 +6,13 @@
 
 import { useEffect } from "react";
 
-import { useQueryClient, type QueryFilters, type QueryKey } from "@tanstack/react-query";
+import {
+    useQueryClient,
+    type InferDataFromTag,
+    type QueryFilters,
+    type QueryKey,
+    type Updater,
+} from "@tanstack/react-query";
 
 /**
  * A single cache side-effect to apply after a mutation succeeds — either an exact-key write or a
@@ -21,7 +27,10 @@ export type MutationEffect =
  * Declares an exact query cache entry to overwrite with data from a mutation's response.
  *
  * Unlike `invalidate()`, this targets one specific cached query (e.g. a `getX` detail query) with
- * an exact `queryKey`, not a fuzzy filter. `data` is either:
+ * an exact `queryKey`, not a fuzzy filter. `queryKey` must come from a tRPC `.queryKey(...)` call
+ * (or anything else `DataTag`-branded) — that's what lets `data` type-check against the query's
+ * *actual* data type here, the same way it would for a direct `queryClient.setQueryData(...)`
+ * call. `data` is either:
  * - a plain value, replacing the cached entry wholesale — correct when the mutation's response
  *   carries the *full* value the query would otherwise fetch; or
  * - an updater `(old) => new`, for a query whose shape the response only partially covers (e.g. a
@@ -29,10 +38,20 @@ export type MutationEffect =
  *   sub-mutation doesn't touch) — mirrors `queryClient.setQueryData`'s own updater overload, and
  *   runs against whatever is currently cached (typically `undefined` if the query was never
  *   fetched).
+ *
+ * The `MutationEffect` this returns still erases `data` back to `unknown` — a `meta.effects` array
+ * mixes writes to unrelated queries, so it can't carry a single non-`unknown` element type — but
+ * that erasure happens *after* this call's arguments are checked against each other.
  */
-export function write(
-    queryKey: QueryKey,
-    data: unknown | ((old: unknown) => unknown),
+export function write<
+    TTaggedQueryKey extends QueryKey,
+    TData = InferDataFromTag<unknown, TTaggedQueryKey>,
+>(
+    queryKey: TTaggedQueryKey,
+    // NoInfer here matches `setQueryData`'s own signature and matters for the same reason: without
+    // it, TS would infer TData from whatever `data` happens to be, defeating the check entirely —
+    // TData needs to come solely from `queryKey`'s tag, with `data` then checked against it.
+    data: Updater<NoInfer<TData> | undefined, NoInfer<TData> | undefined>,
 ): MutationEffect {
     return { type: "write", queryKey, data };
 }
