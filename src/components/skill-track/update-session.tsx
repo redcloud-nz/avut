@@ -10,7 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
@@ -30,7 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -40,7 +40,6 @@ export function SkillsModule_UpdateSession_Dialog({
     ...props
 }: DialogProps & { session: SkillCheckSession }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
@@ -55,24 +54,22 @@ export function SkillsModule_UpdateSession_Dialog({
 
     const mutation = useMutation(
         trpc.skills.updateSession.mutationOptions({
-            meta: { invalidates: skillsInvalidations.updateSession },
+            meta: {
+                invalidates: skillsInvalidations.updateSession,
+                writes: skillsWrites.updateSession,
+            },
             onError(error) {
                 console.error("Failed to update session", error);
                 toast.error(`Failed to update session ${error.message}`);
             },
 
-            onSuccess({ updated }) {
+            onSuccess() {
                 toast.success("Session updated");
 
                 handleOpenChange(false);
 
-                queryClient.setQueryData(
-                    trpc.skills.getSession.queryKey({ skillCheckSessionId: session.id }),
-                    (old) => (old ? { ...old, ...updated } : old),
-                );
-
-                // The detail page renders a server-fetched session, so the cache writes
-                // above do not reach it — only a server re-render does.
+                // The detail page renders a server-fetched session, so the cache write from
+                // meta.writes does not reach it — only a server re-render does.
                 router.refresh();
             },
         }),

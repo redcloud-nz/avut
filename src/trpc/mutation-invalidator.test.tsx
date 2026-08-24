@@ -116,6 +116,52 @@ describe("MutationInvalidator", () => {
         await waitFor(() => expect(screen.getByTestId("value").textContent).toBe("fresh"));
     });
 
+    it("accepts an updater function in meta.writes to merge into the existing cache entry", async () => {
+        const queryClient = makeClient();
+        queryClient.setQueryData(["thing", "1"], { name: "Alice", role: "admin" });
+
+        function Harness() {
+            const { data } = useQuery<{ name: string; role: string }>({
+                queryKey: ["thing", "1"],
+                queryFn: () => Promise.resolve({ name: "Alice", role: "admin" }),
+                staleTime: Infinity,
+            });
+            const mutation = useMutation({
+                mutationFn: () => Promise.resolve({ id: "1", updated: { role: "owner" } }),
+                meta: {
+                    writes: (_vars: unknown, data: { id: string; updated: { role: string } }) => [
+                        {
+                            queryKey: ["thing", data.id],
+                            data: (old: { name: string; role: string } | undefined) =>
+                                old ? { ...old, ...data.updated } : old,
+                        },
+                    ],
+                },
+            });
+            return (
+                <>
+                    <span data-testid="name">{data?.name}</span>
+                    <span data-testid="role">{data?.role}</span>
+                    <button onClick={() => mutation.mutate()}>mutate</button>
+                </>
+            );
+        }
+
+        render(
+            <QueryClientProvider client={queryClient}>
+                <MutationInvalidator />
+                <Harness />
+            </QueryClientProvider>,
+        );
+
+        fireEvent.click(screen.getByRole("button"));
+
+        // The name survives (carried over from the existing cache entry) while only the field
+        // the mutation actually returned changes.
+        await waitFor(() => expect(screen.getByTestId("role").textContent).toBe("owner"));
+        expect(screen.getByTestId("name").textContent).toBe("Alice");
+    });
+
     it("applies meta.writes before triggering the meta.invalidates refetch", async () => {
         const queryClient = makeClient();
         let resolveNetwork!: (value: string) => void;

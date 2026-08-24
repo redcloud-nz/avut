@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -23,7 +23,10 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import {
+    skillPackageBuilderInvalidations,
+    skillPackageBuilderWrites,
+} from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -42,42 +45,29 @@ interface SkillPackageBuilder_Skill_MenuProps {
 
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archiveSkill.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.archiveSkill },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.archiveSkill,
+                writes: skillPackageBuilderWrites.archiveSkill,
+            },
             onError(error) {
                 console.error("Failed to archive skill:", error);
-            },
-            onSuccess({ updated }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getSkill.queryKey({
-                        organizationId: organization.id,
-                        skillId: skill.id,
-                    }),
-                    { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
-                );
             },
         }),
     );
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restoreSkill.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.restoreSkill },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.restoreSkill,
+                writes: skillPackageBuilderWrites.restoreSkill,
+            },
             onError(error) {
                 console.error("Failed to restore skill:", error);
-            },
-            onSuccess({ updated }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getSkill.queryKey({
-                        organizationId: organization.id,
-                        skillId: skill.id,
-                    }),
-                    { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
-                );
             },
         }),
     );

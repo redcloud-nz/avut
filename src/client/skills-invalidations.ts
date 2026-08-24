@@ -4,7 +4,7 @@
  */
 
 import { trpc } from "@/trpc/client";
-import type { RouterInput } from "@/trpc/routers/_app";
+import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache invalidations for `skills` router mutations, keyed by procedure name.
@@ -44,5 +44,82 @@ export const skillsInvalidations = {
             sessionId: vars.skillCheckSessionId,
             scope: "all",
         }),
+    ],
+} as const;
+
+type Session = RouterOutput["skills"]["getSession"];
+
+/**
+ * Direct cache writes for `skills` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.writes` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * `createSession`'s response matches `getSession` exactly, so it writes wholesale. The others
+ * return a bare `SkillCheckSession` without the `assessors` extension `getSession` carries, so
+ * they merge into whatever's already cached instead of replacing it.
+ */
+export const skillsWrites = {
+    createSession: (
+        vars: RouterInput["skills"]["createSession"],
+        { created }: RouterOutput["skills"]["createSession"],
+    ) => [
+        {
+            queryKey: trpc.skills.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            data: created,
+        },
+    ],
+    updateSession: (
+        vars: RouterInput["skills"]["updateSession"],
+        { updated }: RouterOutput["skills"]["updateSession"],
+    ) => [
+        {
+            queryKey: trpc.skills.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            data: (old: Session | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    updateSessionAssessees: (
+        vars: RouterInput["skills"]["updateSessionAssessees"],
+        { updatedAssessees, updatedSession }: RouterOutput["skills"]["updateSessionAssessees"],
+    ) => [
+        {
+            queryKey: trpc.skills.listSessionAssessees.queryKey({
+                organizationId: vars.organizationId,
+                sessionId: vars.skillCheckSessionId,
+                scope: "assigned",
+            }),
+            data: updatedAssessees,
+        },
+        {
+            queryKey: trpc.skills.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            data: (old: Session | undefined) => (old ? { ...old, ...updatedSession } : old),
+        },
+    ],
+    updateSessionSkills: (
+        vars: RouterInput["skills"]["updateSessionSkills"],
+        { updatedSkills, updatedSession }: RouterOutput["skills"]["updateSessionSkills"],
+    ) => [
+        {
+            queryKey: trpc.skills.listSessionSkills.queryKey({
+                organizationId: vars.organizationId,
+                sessionId: vars.skillCheckSessionId,
+                scope: "assigned",
+            }),
+            data: updatedSkills,
+        },
+        {
+            queryKey: trpc.skills.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            data: (old: Session | undefined) => (old ? { ...old, ...updatedSession } : old),
+        },
     ],
 } as const;

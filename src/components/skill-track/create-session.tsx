@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
@@ -30,7 +30,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -38,7 +38,6 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const [open, setOpen] = useState(false);
@@ -65,7 +64,10 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const mutation = useMutation(
         trpc.skills.createSession.mutationOptions({
-            meta: { invalidates: skillsInvalidations.createSession },
+            meta: {
+                invalidates: skillsInvalidations.createSession,
+                writes: skillsWrites.createSession,
+            },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);
@@ -74,11 +76,6 @@ export function SkillTrack_CreateSession_Dialog() {
                 toast.success("Session created");
 
                 handleOpenChange(false);
-
-                queryClient.setQueryData(
-                    trpc.skills.getSession.queryKey({ skillCheckSessionId: created.id }),
-                    created,
-                );
 
                 router.push(
                     route("/orgs/[slug]/skill-track/sessions/[session_id]", {

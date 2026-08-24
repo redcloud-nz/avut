@@ -4,7 +4,7 @@
  */
 
 import { trpc } from "@/trpc/client";
-import type { RouterInput } from "@/trpc/routers/_app";
+import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache invalidations for `skillPackageBuilder` router mutations, keyed by procedure name.
@@ -77,5 +77,151 @@ export const skillPackageBuilderInvalidations = {
     ],
     updateSkill: (vars: RouterInput["skillPackageBuilder"]["updateSkill"]) => [
         trpc.skillPackageBuilder.listSkills.queryFilter({ organizationId: vars.organizationId }),
+    ],
+} as const;
+
+type Group = RouterOutput["skillPackageBuilder"]["getGroup"];
+type SkillDetail = RouterOutput["skillPackageBuilder"]["getSkill"];
+
+/**
+ * Direct cache writes for `skillPackageBuilder` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.writes` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * `getPackage` is flat, so package mutations write their response wholesale. `getGroup`/`getSkill`
+ * are joined with their parent package/group, which group and skill mutations don't return — those
+ * use an updater that merges the response into whatever's already cached, leaving the join alone.
+ */
+export const skillPackageBuilderWrites = {
+    archiveGroup: (
+        vars: RouterInput["skillPackageBuilder"]["archiveGroup"],
+        { updated }: RouterOutput["skillPackageBuilder"]["archiveGroup"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getGroup.queryKey({
+                organizationId: vars.organizationId,
+                skillGroupId: vars.skillGroupId,
+            }),
+            data: (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    archivePackage: (
+        vars: RouterInput["skillPackageBuilder"]["archivePackage"],
+        { updated }: RouterOutput["skillPackageBuilder"]["archivePackage"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            data: updated,
+        },
+    ],
+    archiveSkill: (
+        vars: RouterInput["skillPackageBuilder"]["archiveSkill"],
+        { updated }: RouterOutput["skillPackageBuilder"]["archiveSkill"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getSkill.queryKey({
+                organizationId: vars.organizationId,
+                skillId: vars.skillId,
+            }),
+            data: (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    publishPackage: (
+        vars: RouterInput["skillPackageBuilder"]["publishPackage"],
+        { published }: RouterOutput["skillPackageBuilder"]["publishPackage"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            data: published,
+        },
+    ],
+    restoreGroup: (
+        vars: RouterInput["skillPackageBuilder"]["restoreGroup"],
+        { updated }: RouterOutput["skillPackageBuilder"]["restoreGroup"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getGroup.queryKey({
+                organizationId: vars.organizationId,
+                skillGroupId: vars.skillGroupId,
+            }),
+            data: (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    restorePackage: (
+        vars: RouterInput["skillPackageBuilder"]["restorePackage"],
+        { updated }: RouterOutput["skillPackageBuilder"]["restorePackage"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            data: updated,
+        },
+    ],
+    restoreSkill: (
+        vars: RouterInput["skillPackageBuilder"]["restoreSkill"],
+        { updated }: RouterOutput["skillPackageBuilder"]["restoreSkill"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getSkill.queryKey({
+                organizationId: vars.organizationId,
+                skillId: vars.skillId,
+            }),
+            data: (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    unpublishPackage: (
+        vars: RouterInput["skillPackageBuilder"]["unpublishPackage"],
+        { unpublished }: RouterOutput["skillPackageBuilder"]["unpublishPackage"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            data: unpublished,
+        },
+    ],
+    updateGroup: (
+        vars: RouterInput["skillPackageBuilder"]["updateGroup"],
+        { updated }: RouterOutput["skillPackageBuilder"]["updateGroup"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getGroup.queryKey({
+                organizationId: vars.organizationId,
+                skillGroupId: vars.skillGroupId,
+            }),
+            data: (old: Group | undefined) => (old ? { ...old, ...updated } : old),
+        },
+    ],
+    updatePackage: (
+        vars: RouterInput["skillPackageBuilder"]["updatePackage"],
+        { updated }: RouterOutput["skillPackageBuilder"]["updatePackage"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            data: updated,
+        },
+    ],
+    updateSkill: (
+        vars: RouterInput["skillPackageBuilder"]["updateSkill"],
+        { updated }: RouterOutput["skillPackageBuilder"]["updateSkill"],
+    ) => [
+        {
+            queryKey: trpc.skillPackageBuilder.getSkill.queryKey({
+                organizationId: vars.organizationId,
+                skillId: vars.skillId,
+            }),
+            data: (old: SkillDetail | undefined) => (old ? { ...old, ...updated } : old),
+        },
     ],
 } as const;

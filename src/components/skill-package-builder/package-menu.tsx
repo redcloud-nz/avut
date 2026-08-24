@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -24,7 +24,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import {
+    skillPackageBuilderInvalidations,
+    skillPackageBuilderWrites,
+} from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
@@ -34,78 +37,53 @@ import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
 
 export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archivePackage.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.archivePackage },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.archivePackage,
+                writes: skillPackageBuilderWrites.archivePackage,
+            },
             onError(error) {
                 console.error("Failed to archive skill package:", error);
-            },
-            onSuccess({ updated }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    updated,
-                );
             },
         }),
     );
 
     const publishMutation = useMutation(
         trpc.skillPackageBuilder.publishPackage.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.publishPackage },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.publishPackage,
+                writes: skillPackageBuilderWrites.publishPackage,
+            },
             onError(error) {
                 console.error("Failed to publish skill package:", error);
-            },
-            onSuccess({ published }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    published,
-                );
             },
         }),
     );
 
     const restoreMutation = useMutation(
         trpc.skillPackageBuilder.restorePackage.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.restorePackage },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.restorePackage,
+                writes: skillPackageBuilderWrites.restorePackage,
+            },
             onError(error) {
                 console.error("Failed to restore skill package:", error);
-            },
-            onSuccess({ updated }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    updated,
-                );
             },
         }),
     );
 
     const unpublishMutation = useMutation(
         trpc.skillPackageBuilder.unpublishPackage.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.unpublishPackage },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.unpublishPackage,
+                writes: skillPackageBuilderWrites.unpublishPackage,
+            },
             onError(error) {
                 console.error("Failed to unpublish skill package:", error);
-            },
-            onSuccess({ unpublished }) {
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    unpublished,
-                );
             },
         }),
     );

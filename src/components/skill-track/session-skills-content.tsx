@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsInvalidations, skillsWrites } from "@/client/skills-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -80,29 +80,16 @@ export function SkillTrack_SessionSkills_Content({
 
     const mutation = useMutation(
         trpc.skills.updateSessionSkills.mutationOptions({
-            meta: { invalidates: skillsInvalidations.updateSessionSkills },
+            meta: {
+                invalidates: skillsInvalidations.updateSessionSkills,
+                writes: skillsWrites.updateSessionSkills,
+            },
             onError(error) {
                 console.error("Failed to update session skills:", error);
                 toast.error(`Failed to update session skills. ${error.message}`);
             },
-            onSuccess({ updatedSkills, updatedSession }, _variables, _onMutateResult, context) {
+            onSuccess() {
                 setChanges({});
-
-                context.client.setQueryData(
-                    trpc.skills.listSessionSkills.queryKey({
-                        organizationId: organization.id,
-                        sessionId: session.id,
-                        scope: "assigned",
-                    }),
-                    updatedSkills,
-                );
-                context.client.setQueryData(
-                    trpc.skills.getSession.queryKey({
-                        organizationId: organization.id,
-                        skillCheckSessionId: sessionId,
-                    }),
-                    (old) => (old ? { ...old, ...updatedSession } : old),
-                );
             },
         }),
     );

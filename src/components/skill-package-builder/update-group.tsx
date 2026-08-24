@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -28,7 +28,10 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import {
+    skillPackageBuilderInvalidations,
+    skillPackageBuilderWrites,
+} from "@/client/skill-package-builder-invalidations";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillGroup, SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -40,7 +43,6 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
     skillGroup: SkillGroup & { skillPackage: SkillPackage };
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -51,7 +53,10 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.updateGroup.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.updateGroup },
+            meta: {
+                invalidates: skillPackageBuilderInvalidations.updateGroup,
+                writes: skillPackageBuilderWrites.updateGroup,
+            },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {
@@ -62,18 +67,9 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                     console.error("Failed to update skill group:", error);
                 }
             },
-            onSuccess({ updated }) {
+            onSuccess() {
                 toast.success("Skill group updated");
-
                 handleOpenChange(false);
-
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getGroup.queryKey({
-                        organizationId: organization.id,
-                        skillGroupId: skillGroup.id,
-                    }),
-                    { ...updated, skillPackage: skillGroup.skillPackage },
-                );
             },
         }),
     );

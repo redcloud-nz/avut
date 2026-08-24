@@ -24,16 +24,24 @@ declare module "@tanstack/react-query" {
             invalidates?: (variables: any, data: any) => QueryFilters[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 
             /**
-             * Exact query cache entries to overwrite with data from this mutation's response, as
-             * a function of its variables and result. Read and applied by `MutationInvalidator`
-             * via `queryClient.setQueryData`, before `invalidates` runs.
+             * Exact query cache entries to write with data from this mutation's response, as a
+             * function of its variables and result. Read and applied by `MutationInvalidator` via
+             * `queryClient.setQueryData`, before `invalidates` runs.
              *
              * Unlike `invalidates`, this targets one specific cached query (e.g. a `getX` detail
-             * query) with an exact `queryKey`, not a fuzzy filter — it replaces that entry's data
-             * wholesale with the mutation's response, so it's only correct when the response
-             * carries the *full* value the query would otherwise fetch.
+             * query) with an exact `queryKey`, not a fuzzy filter. `data` is either:
+             * - a plain value, replacing the cached entry wholesale — correct when the mutation's
+             *   response carries the *full* value the query would otherwise fetch; or
+             * - an updater `(old) => new`, for a query whose shape the response only partially
+             *   covers (e.g. a joined field the mutation doesn't return, or a session detail
+             *   extended with fields a sub-mutation doesn't touch) — mirrors
+             *   `queryClient.setQueryData`'s own updater overload, and runs against whatever is
+             *   currently cached (typically `undefined` if the query was never fetched).
              */
-            writes?: (variables: any, data: any) => Array<{ queryKey: QueryKey; data: unknown }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+            writes?: (
+                variables: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                data: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+            ) => Array<{ queryKey: QueryKey; data: unknown | ((old: unknown) => unknown) }>;
         };
     }
 }
