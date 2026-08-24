@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { write } from "@/trpc/mutation-invalidator";
+import { invalidate, write } from "@/trpc/mutation-invalidator";
 import { trpc } from "@/trpc/client";
 import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
@@ -11,8 +11,6 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  * Cache effects for `skillChecks` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
- * No procedure in this router currently needs a list-level `invalidate()`, so this file only
- * covers the one detail-query write.
  */
 export const skillChecksEffects = {
     approveSession: (
@@ -25,6 +23,15 @@ export const skillChecksEffects = {
                 skillCheckSessionId: vars.sessionId,
             }),
             (old) => (old ? { ...old, ...updated } : old),
+        ),
+        // approveSession updates every matching skillCheck row server-side (Include/Exclude), so
+        // any cached listSkillChecks for this session — including scoped variants like
+        // ownChecksOnly — needs to refetch rather than keep showing pre-approval statuses.
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter({
+                organizationId: vars.organizationId,
+                sessionId: vars.sessionId,
+            }),
         ),
     ],
 } as const;
