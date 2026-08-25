@@ -3,20 +3,19 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate, write } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `teams` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
  */
-export const teamsEffects = {
-    createTeam: (vars: RouterInput["teams"]["createTeam"]) => [
+export const teamsEffects = createEffects<"teams">()({
+    createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
-    createTeamMembership: (vars: RouterInput["teams"]["createTeamMembership"]) => [
+    createTeamMembership: (vars) => [
         invalidate(
             trpc.teams.listTeamMemberships.queryFilter({
                 organizationId: vars.organizationId,
@@ -30,7 +29,7 @@ export const teamsEffects = {
             }),
         ),
     ],
-    deleteTeamMembership: (vars: RouterInput["teams"]["deleteTeamMembership"]) => [
+    deleteTeamMembership: (vars) => [
         invalidate(
             trpc.teams.listTeamMemberships.queryFilter({
                 organizationId: vars.organizationId,
@@ -44,10 +43,7 @@ export const teamsEffects = {
             }),
         ),
     ],
-    updateTeam: (
-        vars: RouterInput["teams"]["updateTeam"],
-        { updated }: RouterOutput["teams"]["updateTeam"],
-    ) => [
+    updateTeam: (vars, { updated }) => [
         write(
             trpc.teams.getTeam.queryKey({
                 organizationId: vars.organizationId,
@@ -57,4 +53,4 @@ export const teamsEffects = {
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
-};
+});

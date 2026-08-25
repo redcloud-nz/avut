@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate, write } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `skills` router mutations, keyed by procedure name.
@@ -16,11 +15,8 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into
  * whatever's already cached instead of replacing it.
  */
-export const skillsEffects = {
-    createSession: (
-        vars: RouterInput["skills"]["createSession"],
-        { created }: RouterOutput["skills"]["createSession"],
-    ) => [
+export const skillsEffects = createEffects<"skills">()({
+    createSession: (vars, { created }) => [
         write(
             trpc.skills.getSession.queryKey({
                 organizationId: vars.organizationId,
@@ -30,19 +26,16 @@ export const skillsEffects = {
         ),
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
-    deleteSession: (vars: RouterInput["skills"]["deleteSession"]) => [
+    deleteSession: (vars) => [
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
-    subscribeToPackage: (vars: RouterInput["skills"]["subscribeToPackage"]) => [
+    subscribeToPackage: (vars) => [
         invalidate(trpc.skills.listPackages.queryFilter({ organizationId: vars.organizationId })),
     ],
-    unsubscribeFromPackage: (vars: RouterInput["skills"]["unsubscribeFromPackage"]) => [
+    unsubscribeFromPackage: (vars) => [
         invalidate(trpc.skills.listPackages.queryFilter({ organizationId: vars.organizationId })),
     ],
-    updateSession: (
-        vars: RouterInput["skills"]["updateSession"],
-        { updated }: RouterOutput["skills"]["updateSession"],
-    ) => [
+    updateSession: (vars, { updated }) => [
         write(
             trpc.skills.getSession.queryKey({
                 organizationId: vars.organizationId,
@@ -52,10 +45,7 @@ export const skillsEffects = {
         ),
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
-    updateSessionAssessees: (
-        vars: RouterInput["skills"]["updateSessionAssessees"],
-        { updatedAssessees, updatedSession }: RouterOutput["skills"]["updateSessionAssessees"],
-    ) => [
+    updateSessionAssessees: (vars, { updatedAssessees, updatedSession }) => [
         write(
             trpc.skills.listSessionAssessees.queryKey({
                 organizationId: vars.organizationId,
@@ -79,10 +69,7 @@ export const skillsEffects = {
             }),
         ),
     ],
-    updateSessionSkills: (
-        vars: RouterInput["skills"]["updateSessionSkills"],
-        { updatedSkills, updatedSession }: RouterOutput["skills"]["updateSessionSkills"],
-    ) => [
+    updateSessionSkills: (vars, { updatedSkills, updatedSession }) => [
         write(
             trpc.skills.listSessionSkills.queryKey({
                 organizationId: vars.organizationId,
@@ -106,4 +93,4 @@ export const skillsEffects = {
             }),
         ),
     ],
-} as const;
+});

@@ -14,6 +14,8 @@ import {
     type Updater,
 } from "@tanstack/react-query";
 
+import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
+
 /**
  * A single cache side-effect to apply after a mutation succeeds — either an exact-key write or a
  * fuzzy-filter invalidation. Build these with `write()`/`invalidate()` rather than the object
@@ -72,6 +74,35 @@ function isInvalidateEffect(
     effect: MutationEffect,
 ): effect is Extract<MutationEffect, { type: "invalidate" }> {
     return effect.type === "invalidate";
+}
+
+type EffectsFn<TVars, TData> = (vars: TVars, data: TData) => MutationEffect[];
+
+/**
+ * Builds a `<domain>Effects` object for one router's procedures, keyed by procedure name, without
+ * each `<domain>-effects.ts` file needing to import `RouterInput`/`RouterOutput` itself.
+ *
+ * `createEffects<"teams">()({ updateTeam: (vars, { updated }) => [...] })` infers `vars`/`data` for
+ * every entry from that router's actual input/output types — same as writing
+ * `(vars: RouterInput["teams"]["updateTeam"], data: RouterOutput["teams"]["updateTeam"]) => ...` by
+ * hand, just without naming either type. Only declare the procedures that need effects; the rest of
+ * the router's procedures are omitted, not required.
+ *
+ * Takes `TRouter` as its own call — `createEffects<"teams">()` — because a type parameter with
+ * nothing to infer it from a runtime argument has to be given explicitly, and a function can't take
+ * an explicit type argument for just one of its parameters while inferring the rest.
+ */
+export function createEffects<TRouter extends keyof RouterInput & keyof RouterOutput>() {
+    return function <
+        TEffects extends {
+            [K in keyof RouterInput[TRouter]]?: EffectsFn<
+                RouterInput[TRouter][K],
+                RouterOutput[TRouter][K]
+            >;
+        },
+    >(effects: TEffects): TEffects {
+        return effects;
+    };
 }
 
 // Augments `@tanstack/query-core`, where `Register` is actually declared, rather than

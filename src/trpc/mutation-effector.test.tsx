@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
 
-import { invalidate, MutationInvalidator, write } from "./mutation-invalidator";
+import { invalidate, MutationInvalidator, write } from "./mutation-effector";
 
 function makeClient() {
     return new QueryClient({

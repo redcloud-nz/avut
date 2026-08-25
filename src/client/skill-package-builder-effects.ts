@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate, write } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `skillPackageBuilder` router mutations, keyed by procedure name.
@@ -15,11 +14,8 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  * are joined with their parent package/group, which group and skill mutations don't return — those
  * use an updater that merges the response into whatever's already cached, leaving the join alone.
  */
-export const skillPackageBuilderEffects = {
-    archiveGroup: (
-        vars: RouterInput["skillPackageBuilder"]["archiveGroup"],
-        { updated }: RouterOutput["skillPackageBuilder"]["archiveGroup"],
-    ) => [
+export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()({
+    archiveGroup: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getGroup.queryKey({
                 organizationId: vars.organizationId,
@@ -33,10 +29,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    archivePackage: (
-        vars: RouterInput["skillPackageBuilder"]["archivePackage"],
-        { updated }: RouterOutput["skillPackageBuilder"]["archivePackage"],
-    ) => [
+    archivePackage: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -50,10 +43,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    archiveSkill: (
-        vars: RouterInput["skillPackageBuilder"]["archiveSkill"],
-        { updated }: RouterOutput["skillPackageBuilder"]["archiveSkill"],
-    ) => [
+    archiveSkill: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getSkill.queryKey({
                 organizationId: vars.organizationId,
@@ -67,7 +57,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    createGroup: (vars: RouterInput["skillPackageBuilder"]["createGroup"]) => [
+    createGroup: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listGroups.queryFilter({
                 organizationId: vars.organizationId,
@@ -75,14 +65,14 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    createPackage: (vars: RouterInput["skillPackageBuilder"]["createPackage"]) => [
+    createPackage: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listPackages.queryFilter({
                 organizationId: vars.organizationId,
             }),
         ),
     ],
-    createSkill: (vars: RouterInput["skillPackageBuilder"]["createSkill"]) => [
+    createSkill: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({
                 organizationId: vars.organizationId,
@@ -90,28 +80,28 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    deleteGroup: (vars: RouterInput["skillPackageBuilder"]["deleteGroup"]) => [
+    deleteGroup: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listGroups.queryFilter({
                 organizationId: vars.organizationId,
             }),
         ),
     ],
-    deletePackage: (vars: RouterInput["skillPackageBuilder"]["deletePackage"]) => [
+    deletePackage: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listPackages.queryFilter({
                 organizationId: vars.organizationId,
             }),
         ),
     ],
-    deleteSkill: (vars: RouterInput["skillPackageBuilder"]["deleteSkill"]) => [
+    deleteSkill: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({
                 organizationId: vars.organizationId,
             }),
         ),
     ],
-    moveSkill: (vars: RouterInput["skillPackageBuilder"]["moveSkill"]) => [
+    moveSkill: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({
                 organizationId: vars.organizationId,
@@ -119,10 +109,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    publishPackage: (
-        vars: RouterInput["skillPackageBuilder"]["publishPackage"],
-        { published }: RouterOutput["skillPackageBuilder"]["publishPackage"],
-    ) => [
+    publishPackage: (vars, { published }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -136,10 +123,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    restoreGroup: (
-        vars: RouterInput["skillPackageBuilder"]["restoreGroup"],
-        { updated }: RouterOutput["skillPackageBuilder"]["restoreGroup"],
-    ) => [
+    restoreGroup: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getGroup.queryKey({
                 organizationId: vars.organizationId,
@@ -153,10 +137,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    restorePackage: (
-        vars: RouterInput["skillPackageBuilder"]["restorePackage"],
-        { updated }: RouterOutput["skillPackageBuilder"]["restorePackage"],
-    ) => [
+    restorePackage: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -170,10 +151,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    restoreSkill: (
-        vars: RouterInput["skillPackageBuilder"]["restoreSkill"],
-        { updated }: RouterOutput["skillPackageBuilder"]["restoreSkill"],
-    ) => [
+    restoreSkill: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getSkill.queryKey({
                 organizationId: vars.organizationId,
@@ -187,10 +165,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    unpublishPackage: (
-        vars: RouterInput["skillPackageBuilder"]["unpublishPackage"],
-        { unpublished }: RouterOutput["skillPackageBuilder"]["unpublishPackage"],
-    ) => [
+    unpublishPackage: (vars, { unpublished }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -204,10 +179,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    updateGroup: (
-        vars: RouterInput["skillPackageBuilder"]["updateGroup"],
-        { updated }: RouterOutput["skillPackageBuilder"]["updateGroup"],
-    ) => [
+    updateGroup: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getGroup.queryKey({
                 organizationId: vars.organizationId,
@@ -221,10 +193,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    updatePackage: (
-        vars: RouterInput["skillPackageBuilder"]["updatePackage"],
-        { updated }: RouterOutput["skillPackageBuilder"]["updatePackage"],
-    ) => [
+    updatePackage: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -238,10 +207,7 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-    updateSkill: (
-        vars: RouterInput["skillPackageBuilder"]["updateSkill"],
-        { updated }: RouterOutput["skillPackageBuilder"]["updateSkill"],
-    ) => [
+    updateSkill: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getSkill.queryKey({
                 organizationId: vars.organizationId,
@@ -255,4 +221,4 @@ export const skillPackageBuilderEffects = {
             }),
         ),
     ],
-} as const;
+});

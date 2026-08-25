@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate, write } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `personnel` router mutations, keyed by procedure name.
@@ -14,11 +13,8 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  * Kept next to the mutations they cover rather than duplicated at each call site, since several
  * personnel actions (link/unlink in particular) touch queries owned by other routers.
  */
-export const personnelEffects = {
-    archivePerson: (
-        vars: RouterInput["personnel"]["archivePerson"],
-        { updated }: RouterOutput["personnel"]["archivePerson"],
-    ) => [
+export const personnelEffects = createEffects<"personnel">()({
+    archivePerson: (vars, { updated }) => [
         write(
             trpc.personnel.getPerson.queryKey({
                 organizationId: vars.organizationId,
@@ -30,7 +26,7 @@ export const personnelEffects = {
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
-    createPerson: (vars: RouterInput["personnel"]["createPerson"]) => [
+    createPerson: (vars) => [
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
@@ -40,15 +36,12 @@ export const personnelEffects = {
             }),
         ),
     ],
-    deletePerson: (vars: RouterInput["personnel"]["deletePerson"]) => [
+    deletePerson: (vars) => [
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
-    restorePerson: (
-        vars: RouterInput["personnel"]["restorePerson"],
-        { updated }: RouterOutput["personnel"]["restorePerson"],
-    ) => [
+    restorePerson: (vars, { updated }) => [
         write(
             trpc.personnel.getPerson.queryKey({
                 organizationId: vars.organizationId,
@@ -60,10 +53,7 @@ export const personnelEffects = {
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
-    updatePerson: (
-        vars: RouterInput["personnel"]["updatePerson"],
-        { updated }: RouterOutput["personnel"]["updatePerson"],
-    ) => [
+    updatePerson: (vars, { updated }) => [
         write(
             trpc.personnel.getPerson.queryKey({
                 organizationId: vars.organizationId,
@@ -75,4 +65,4 @@ export const personnelEffects = {
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
-};
+});

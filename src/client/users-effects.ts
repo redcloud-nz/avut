@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `users` router mutations, keyed by procedure name.
@@ -15,8 +14,8 @@ import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
  * this pattern is meant for: a call site adding a new place to link a person no longer needs to
  * remember all five affected queries.
  */
-export const usersEffects = {
-    linkPerson: (vars: RouterInput["users"]["linkPerson"]) => [
+export const usersEffects = createEffects<"users">()({
+    linkPerson: (vars) => [
         invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
@@ -39,10 +38,7 @@ export const usersEffects = {
     ],
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.
-    unlinkPerson: (
-        vars: RouterInput["users"]["unlinkPerson"],
-        data: RouterOutput["users"]["unlinkPerson"],
-    ) => [
+    unlinkPerson: (vars, data) => [
         invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
@@ -67,4 +63,4 @@ export const usersEffects = {
               ]
             : []),
     ],
-};
+});

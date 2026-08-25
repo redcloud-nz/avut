@@ -3,20 +3,16 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { invalidate, write } from "@/trpc/mutation-invalidator";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
-import type { RouterInput, RouterOutput } from "@/trpc/routers/_app";
 
 /**
  * Cache effects for `skillChecks` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
  */
-export const skillChecksEffects = {
-    approveSession: (
-        vars: RouterInput["skillChecks"]["approveSession"],
-        { updated }: RouterOutput["skillChecks"]["approveSession"],
-    ) => [
+export const skillChecksEffects = createEffects<"skillChecks">()({
+    approveSession: (vars, { updated }) => [
         write(
             trpc.skills.getSession.queryKey({
                 organizationId: vars.organizationId,
@@ -34,4 +30,4 @@ export const skillChecksEffects = {
             }),
         ),
     ],
-} as const;
+});
