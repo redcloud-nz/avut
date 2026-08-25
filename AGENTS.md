@@ -98,19 +98,27 @@ Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-edit
 organizationProcedure({ person: ["create", "update"] });
 ```
 
-**Client-side**: use `<Protect>` from `@/components/protect` to conditionally render UI based on the current user's permissions. It renders `children` if the user has all required permissions, or `fallback` (default: `null`) otherwise:
+**Client-side**: use `<Protect>` from `@/components/protect` to conditionally render UI based on the current user's permissions. It reads the current org's roles from `useOrganization()` itself, so it takes no `orgId` prop. It renders `children` if the user has all required permissions, or `fallback` (default: `null`) otherwise:
 
 ```tsx
 import { Protect } from "@/components/protect";
 
-<Protect orgId={organization.id} permissions={{ skillCheckSession: ["update"] }}>
+<Protect permissions={{ skillCheckSession: ["update"] }}>
     <Button>Approve</Button>
 </Protect>
 
 // With a fallback
-<Protect orgId={organization.id} permissions={{ person: ["delete"] }} fallback={<DisabledButton />}>
+<Protect permissions={{ person: ["delete"] }} fallback={<DisabledButton />}>
     <DeleteButton />
 </Protect>
+```
+
+For cases where the permission boolean needs to flow into the markup (e.g. disabling rather than hiding a control), pass `render` instead of `children`/`fallback`:
+
+```tsx
+<Protect permissions={{ person: ["delete"] }} render={(hasPermission) => (
+    <DeleteButton disabled={!hasPermission} />
+)} />
 ```
 
 ### Zod Schemas
