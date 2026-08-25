@@ -114,29 +114,26 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Protect
-                            permissions={{ person: ["update"] }}
-                            render={(allowed) => (
-                                <>
-                                    {person.status == "Active" && (
-                                        <DropdownMenuItem
-                                            onClick={handleArchive}
-                                            disabled={!allowed}
-                                        >
-                                            <ObjectIcons.Archive /> Archive
-                                        </DropdownMenuItem>
-                                    )}
-                                    {person.status != "Active" && (
-                                        <DropdownMenuItem
-                                            onClick={handleRestore}
-                                            disabled={!allowed}
-                                        >
-                                            <ObjectIcons.Restore /> Restore
-                                        </DropdownMenuItem>
-                                    )}
-                                </>
-                            )}
-                        />
+                        {person.status == "Active" && (
+                            <Protect
+                                permissions={{ person: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
+                                        <ObjectIcons.Archive /> Archive
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
+                        {person.status != "Active" && (
+                            <Protect
+                                permissions={{ person: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
+                                        <ObjectIcons.Restore /> Restore
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
                         {person.status != "Archived" && (
                             <Protect
                                 permissions={{ person: ["delete"] }}

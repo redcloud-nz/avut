@@ -103,37 +103,39 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
                     <DropdownMenuGroup>
+                        {/* Show the archive option if the skill package is active */}
+                        {skill.status == "Active" && (
+                            <Protect
+                                permissions={{ skillPackageBuilder: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
+                                        <ObjectIcons.Archive /> Archive
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
                         <Protect
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
-                                <>
-                                    {/* Show the archive option if the skill package is active */}
-                                    {skill.status == "Active" && (
-                                        <DropdownMenuItem
-                                            onClick={handleArchive}
-                                            disabled={!allowed}
-                                        >
-                                            <ObjectIcons.Archive /> Archive
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem
-                                        onClick={() => setMoveDialogOpen(true)}
-                                        disabled={!allowed}
-                                    >
-                                        <ObjectIcons.Move /> Move
-                                    </DropdownMenuItem>
-                                    {/* Show the restore option if the skill package is archived */}
-                                    {skill.status == "Archived" && (
-                                        <DropdownMenuItem
-                                            onClick={handleRestore}
-                                            disabled={!allowed}
-                                        >
-                                            <ObjectIcons.Restore /> Restore
-                                        </DropdownMenuItem>
-                                    )}
-                                </>
+                                <DropdownMenuItem
+                                    onClick={() => setMoveDialogOpen(true)}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Move /> Move
+                                </DropdownMenuItem>
                             )}
                         />
+                        {/* Show the restore option if the skill package is archived */}
+                        {skill.status == "Archived" && (
+                            <Protect
+                                permissions={{ skillPackageBuilder: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
+                                        <ObjectIcons.Restore /> Restore
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
                         <Protect
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (

@@ -98,32 +98,35 @@ export function SkillPackageBuilder_Group_Menu({
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
                     <DropdownMenuGroup>
-                        <Protect
-                            permissions={{ skillPackageBuilder: ["update"] }}
-                            render={(allowed) => (
-                                <>
-                                    {/** Show the archive option if the skill group is active */}
-                                    {skillGroup.status == "Active" && (
-                                        <DropdownMenuItem
-                                            onSelect={handleArchive}
-                                            disabled={!allowed || archiveMutation.isPending}
-                                        >
-                                            <ObjectIcons.Archive /> Archive
-                                        </DropdownMenuItem>
-                                    )}
+                        {/* Show the archive option if the skill group is active */}
+                        {skillGroup.status == "Active" && (
+                            <Protect
+                                permissions={{ skillPackageBuilder: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem
+                                        onSelect={handleArchive}
+                                        disabled={!allowed || archiveMutation.isPending}
+                                    >
+                                        <ObjectIcons.Archive /> Archive
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
 
-                                    {/* Show the restore option if the skill group is archived */}
-                                    {skillGroup.status == "Archived" && (
-                                        <DropdownMenuItem
-                                            onSelect={handleRestore}
-                                            disabled={!allowed || restoreMutation.isPending}
-                                        >
-                                            <ObjectIcons.Restore /> Restore
-                                        </DropdownMenuItem>
-                                    )}
-                                </>
-                            )}
-                        />
+                        {/* Show the restore option if the skill group is archived */}
+                        {skillGroup.status == "Archived" && (
+                            <Protect
+                                permissions={{ skillPackageBuilder: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem
+                                        onSelect={handleRestore}
+                                        disabled={!allowed || restoreMutation.isPending}
+                                    >
+                                        <ObjectIcons.Restore /> Restore
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
                         <Protect
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
