@@ -12,7 +12,7 @@ export function AdminModule_DeletePerson_Dialog({
 }: ComponentProps<typeof AlertDialog> & { person: PersonData }) {
   const mutation = useMutation(
     trpc.personnel.deletePerson.mutationOptions({
-      meta: { invalidates: personnelInvalidations.deletePerson },
+      meta: { effects: personnelEffects.deletePerson },
       onError(error) {
         console.error("Failed to delete person:", error);
         toast.error(`Failed to delete person: ${error.message}`);
@@ -66,7 +66,7 @@ Key points:
   (or spreads `ComponentProps<typeof AlertDialog>`) rather than owning a trigger.
 - **No form.** Confirmation dialogs rarely take input, so it's a plain `onClick={() =>
 mutation.mutate(...)}` on the `MutationButton` — no `handleSubmit`, no validation.
-- **`meta.invalidates`, same as the non-destructive pattern** — no optimistic removal.
+- **`meta.effects`, same as the non-destructive pattern** — no optimistic removal.
 - If deleting the record being viewed (not a list row), redirect away in `onSuccess`
   (see `AdminModule_DeletePerson_Dialog`'s `router.push` back to the list) since the
   page can't keep rendering a record that no longer exists.
