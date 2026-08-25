@@ -35,7 +35,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `Skill(${skillId}) with status ${existingSkill.status} cannot be archived. Only skills with status Active can be archived.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skill.update({
                     where: { id: skillId },
                     data: { status: "Archived" },
@@ -68,7 +68,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillGroup(${skillGroupId}) with status ${existingGroup.status} cannot be archived. Only groups with status Active can be archived.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillGroup.update({
                     where: { id: skillGroupId },
                     data: { status: "Archived" },
@@ -101,7 +101,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillPackage(${skillPackageId}) with status ${existingPackage.status} cannot be archived. Only packages with status Active can be archived.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.update({
                     where: { id: skillPackageId },
                     data: { status: "Archived" },
@@ -164,7 +164,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
                 const diff = diffObject({}, create);
 
-                const [created] = await Promise.all([
+                const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skillGroup.create({
                         data: {
                             skillPackageId,
@@ -202,7 +202,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, skillPackageId, create } }) => {
             const diff = diffObject({}, create);
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.create({
                     data: {
                         id: skillPackageId,
@@ -271,7 +271,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
                 const diff = diffObject({}, create);
 
-                const [created] = await Promise.all([
+                const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skill.create({
                         data: {
                             id: skillId,
@@ -307,7 +307,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
             // TODO Check if the group contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.skillGroup.delete({
                     where: { id: skillGroupId },
                 }),
@@ -334,7 +334,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
             // TODO Check if the package contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.delete({
                     where: { id: skillPackageId },
                 }),
@@ -359,7 +359,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             // Verify the skill exists and belongs to the organization before attempting deletion
             const skill = await getSkillOrThrow(ctx, skillId);
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.skill.delete({
                     where: { id: skillId },
                 }),
@@ -557,7 +557,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 },
             );
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skill.update({
                     where: { id: skillId },
                     data: {
@@ -603,7 +603,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillPackage(${skillPackageId}) is already published.`,
                 });
 
-            const [published] = await Promise.all([
+            const [published] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.update({
                     where: { id: skillPackageId },
                     data: { published: true },
@@ -661,7 +661,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             });
 
             if (toUpdate.length > 0) {
-                await Promise.all(
+                await ctx.prisma.$transaction(
                     toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skillGroup.update({
                             where: { id },
@@ -728,7 +728,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             });
 
             if (toUpdate.length > 0) {
-                await Promise.all(
+                await ctx.prisma.$transaction(
                     toUpdate.flatMap(({ id, prevSequence, sequence }) => [
                         ctx.prisma.skill.update({
                             where: { id },
@@ -766,7 +766,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `Skill(${skillId}) with status ${existingSkill.status} cannot be restored. Only skills with status 'Archived' or 'Deleted' can be restored.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skill.update({
                     where: { id: skillId },
                     data: { status: "Active" },
@@ -799,7 +799,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillGroup(${skillGroupId}) with status ${existingGroup.status} cannot be restored. Only groups with status 'Archived' or 'Deleted' can be restored.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillGroup.update({
                     where: { id: skillGroupId },
                     data: { status: "Active" },
@@ -832,7 +832,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillPackage(${skillPackageId}) with status ${existingPackage.status} cannot be restored. Only packages with status 'Archived' or 'Deleted' can be restored.`,
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.update({
                     where: { id: skillPackageId },
                     data: { status: "Active" },
@@ -867,7 +867,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: `SkillPackage(${skillPackageId}) is not published.`,
                 });
 
-            const [unpublished] = await Promise.all([
+            const [unpublished] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.update({
                     where: { id: skillPackageId },
                     data: { published: false },
@@ -901,7 +901,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
             const diff = diffObject(SkillGroup.modifiableSchema.parse(existingGroup), update);
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillGroup.update({
                     where: { id: skillGroupId },
                     data: update,
@@ -937,7 +937,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
             const diff = diffObject(SkillPackage.modifiableSchema.parse(existingPackage), update);
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.update({
                     where: { id: skillPackageId },
                     data: update,
@@ -973,7 +973,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
 
             const diff = diffObject(Skill.modifiableSchema.parse(existingSkill), update);
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.skill.update({
                     where: { id: skillId },
                     data: update,
