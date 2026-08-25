@@ -361,12 +361,21 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganisations: [] };
 
-            await ctx.prisma.d4hAccessToken.update({
-                where: { id: input.tokenId },
-                data: {
-                    metadata,
-                    status: response.statusText,
-                },
-            });
+            await Promise.all([
+                ctx.prisma.d4hAccessToken.update({
+                    where: { id: input.tokenId },
+                    data: {
+                        metadata,
+                        status: response.statusText,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "D4hAccessToken",
+                    objectId: input.tokenId,
+                    changes: diffObject({ status: record.status }, { status: response.statusText }),
+                    description: "Refreshed D4H access token metadata.",
+                }),
+            ]);
         }),
 });

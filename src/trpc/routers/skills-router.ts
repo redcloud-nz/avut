@@ -9,6 +9,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { diffObject } from "@/lib/diff";
 import { OrganizationId, OrganizationRef } from "@/lib/schemas/organization";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -78,6 +79,13 @@ export const skillsRouter = createTrpcRouter({
                 }),
             );
 
+            await ctx.logEvent({
+                action: "Create",
+                objectType: "SkillCheckSession",
+                objectId: skillCheckSessionId,
+                changes: diffObject({}, create),
+            });
+
             return {
                 created: {
                     ...SkillCheckSession.fromRecord(session),
@@ -98,12 +106,19 @@ export const skillsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId } }) => {
             const session = await getSessionOrThrow(ctx, skillCheckSessionId);
 
-            await ctx.prisma.skillCheckSession.delete({
-                where: {
-                    id: skillCheckSessionId,
-                    organizationId,
-                },
-            });
+            await Promise.all([
+                ctx.prisma.skillCheckSession.delete({
+                    where: {
+                        id: skillCheckSessionId,
+                        organizationId,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "SkillCheckSession",
+                    objectId: skillCheckSessionId,
+                }),
+            ]);
 
             return { deleted: session };
         }),
@@ -788,22 +803,34 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
-            await getSessionOrThrow(ctx, skillCheckSessionId);
+            const existing = await getSessionOrThrow(ctx, skillCheckSessionId);
 
-            const updated = await ctx.prisma.skillCheckSession.update({
-                where: {
-                    id: skillCheckSessionId,
-                    organizationId,
-                },
-                include: {},
-                data: {
-                    name: update.name,
-                    startsAt: update.date,
-                    endsAt: update.date,
-                    notes: update.notes,
-                    status: update.status,
-                },
-            });
+            const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
+
+            if (changes.length == 0) return { updated: existing }; // No changes
+
+            const [updated] = await Promise.all([
+                ctx.prisma.skillCheckSession.update({
+                    where: {
+                        id: skillCheckSessionId,
+                        organizationId,
+                    },
+                    include: {},
+                    data: {
+                        name: update.name,
+                        startsAt: update.date,
+                        endsAt: update.date,
+                        notes: update.notes,
+                        status: update.status,
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "SkillCheckSession",
+                    objectId: skillCheckSessionId,
+                    changes,
+                }),
+            ]);
 
             return { updated: SkillCheckSession.fromRecord(updated) };
         }),
@@ -833,26 +860,47 @@ export const skillsRouter = createTrpcRouter({
                 // Verify that the session exists and belongs to the organization.
                 await getSessionOrThrow(ctx, skillCheckSessionId);
 
-                const updated = await ctx.prisma.skillCheckSession.update({
-                    where: {
-                        id: skillCheckSessionId,
-                        organizationId: ctx.organizationId,
-                    },
-                    include: {
-                        assessees: {
-                            select: {
-                                id: true,
-                                name: true,
+                const changes = [
+                    ...addedPersonIds.map((id) => ({
+                        path: ["assessees"],
+                        type: "arr_add" as const,
+                        value: id,
+                    })),
+                    ...removedPersonIds.map((id) => ({
+                        path: ["assessees"],
+                        type: "arr_del" as const,
+                        value: id,
+                    })),
+                ];
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId: ctx.organizationId,
+                        },
+                        include: {
+                            assessees: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
                             },
                         },
-                    },
-                    data: {
-                        assessees: {
-                            connect: addedPersonIds.map((id) => ({ id })),
-                            disconnect: removedPersonIds.map((id) => ({ id })),
+                        data: {
+                            assessees: {
+                                connect: addedPersonIds.map((id) => ({ id })),
+                                disconnect: removedPersonIds.map((id) => ({ id })),
+                            },
                         },
-                    },
-                });
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        changes,
+                    }),
+                ]);
                 return {
                     updatedAssessees: updated.assessees,
                     updatedSession: SkillCheckSession.fromRecord(updated),
@@ -885,26 +933,47 @@ export const skillsRouter = createTrpcRouter({
                 // Verify that the session exists and belongs to the organization.
                 await getSessionOrThrow(ctx, skillCheckSessionId);
 
-                const updated = await ctx.prisma.skillCheckSession.update({
-                    where: {
-                        id: skillCheckSessionId,
-                        organizationId: ctx.organizationId,
-                    },
-                    include: {
-                        skills: {
-                            select: {
-                                id: true,
-                                name: true,
+                const changes = [
+                    ...addedSkillIds.map((id) => ({
+                        path: ["skills"],
+                        type: "arr_add" as const,
+                        value: id,
+                    })),
+                    ...removedSkillIds.map((id) => ({
+                        path: ["skills"],
+                        type: "arr_del" as const,
+                        value: id,
+                    })),
+                ];
+
+                const [updated] = await Promise.all([
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId: ctx.organizationId,
+                        },
+                        include: {
+                            skills: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
                             },
                         },
-                    },
-                    data: {
-                        skills: {
-                            connect: addedSkillIds.map((id) => ({ id })),
-                            disconnect: removedSkillIds.map((id) => ({ id })),
+                        data: {
+                            skills: {
+                                connect: addedSkillIds.map((id) => ({ id })),
+                                disconnect: removedSkillIds.map((id) => ({ id })),
+                            },
                         },
-                    },
-                });
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        changes,
+                    }),
+                ]);
                 return {
                     updatedSkills: updated.skills,
                     updatedSession: SkillCheckSession.fromRecord(updated),
