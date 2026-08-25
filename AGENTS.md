@@ -88,6 +88,18 @@ All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 - Use `publicProcedure` only for truly unauthenticated endpoints
 - Always call `ctx.logEvent(...)` after state-changing operations on org records
 
+### Data Fetching
+
+AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP). Never use the `@/trpc/client` one in a Server Component — its `queryFn` arrives unauthenticated.
+
+Mutations declare their cache side-effects once via `meta: { effects: ... }` (`src/trpc/mutation-effector.tsx`), not with manual `queryClient.setQueryData`/`invalidateQueries` calls at each call site.
+
+See the pattern docs for the full shapes, code, and rationale — read the relevant one before writing a new page or mutation dialog rather than inferring the pattern from a neighboring file, since these are exactly the details easy to get subtly wrong (and where they've drifted before):
+
+- [`docs/patterns/detail-page-data-fetching.md`](docs/patterns/detail-page-data-fetching.md) — `page.tsx`/`<entity>-content.tsx` split, `fetchQuery` vs `prefetch`+`HydrateClient`, `useSuspenseQuery`
+- [`docs/patterns/non-destructive-mutation-dialog.md`](docs/patterns/non-destructive-mutation-dialog.md) — create/update dialogs
+- [`docs/patterns/destructive-mutation-dialog.md`](docs/patterns/destructive-mutation-dialog.md) — delete/remove confirmation dialogs
+
 ### Permissions
 
 Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`.
@@ -98,20 +110,30 @@ Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-edit
 organizationProcedure({ person: ["create", "update"] });
 ```
 
-**Client-side**: use `<Protect>` from `@/components/protect` to conditionally render UI based on the current user's permissions. It renders `children` if the user has all required permissions, or `fallback` (default: `null`) otherwise:
+**Client-side**: use `<Protect>` from `@/components/protect` to conditionally render UI based on the current user's permissions. It reads the current org's roles from `useOrganization()` itself, so it takes no `orgId` prop. It renders `children` if the user has all required permissions, or `fallback` (default: `null`) otherwise:
 
 ```tsx
 import { Protect } from "@/components/protect";
 
-<Protect orgId={organization.id} permissions={{ skillCheckSession: ["update"] }}>
+<Protect permissions={{ skillCheckSession: ["update"] }}>
     <Button>Approve</Button>
 </Protect>
 
 // With a fallback
-<Protect orgId={organization.id} permissions={{ person: ["delete"] }} fallback={<DisabledButton />}>
+<Protect permissions={{ person: ["delete"] }} fallback={<DisabledButton />}>
     <DeleteButton />
 </Protect>
 ```
+
+For cases where the permission boolean needs to flow into the markup (e.g. disabling rather than hiding a control), pass `render` instead of `children`/`fallback`:
+
+```tsx
+<Protect permissions={{ person: ["delete"] }} render={(hasPermission) => (
+    <DeleteButton disabled={!hasPermission} />
+)} />
+```
+
+Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `permissions` actually match the mutation it guards, see [`docs/patterns/protect-permission-gating.md`](docs/patterns/protect-permission-gating.md).
 
 ### Zod Schemas
 

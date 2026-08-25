@@ -14,7 +14,7 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
 
   const mutation = useMutation(
     trpc.teams.createTeamMembership.mutationOptions({
-      meta: { invalidates: teamsInvalidations.createTeamMembership },
+      meta: { effects: teamsEffects.createTeamMembership },
       onError(error) {
         console.error("Failed to add team member:", error);
         toast.error(`Failed to add team member: ${error.message}`);
@@ -72,11 +72,12 @@ Key points:
     [destructive-mutation-dialog.md](destructive-mutation-dialog.md): the dialog takes
     `open`/`onOpenChange`, and the menu's own `useState` plus its `DropdownMenuItem`'s
     `onSelect={() => setOpen(true)}` drive it instead.
-- **No optimistic updates.** `meta: { invalidates: ... }` (see
-  `src/client/<domain>-invalidations.ts` and `src/trpc/mutation-invalidator.tsx`) is
-  enough — the UI updates on refetch after the mutation settles. Reach for
-  `onMutate`/rollback only if that latency is a genuinely reported problem, not by
-  default; it roughly triples the mutation's code for a UI difference of one round trip.
+- **No optimistic updates.** `meta: { effects: ... }` (see
+  `src/client/<domain>-effects.ts` and `src/trpc/mutation-effector.tsx`) is enough — the
+  UI updates on refetch after the mutation settles (or instantly, if the effect uses
+  `write()` rather than `invalidate()`). Reach for `onMutate`/rollback only if that
+  latency is a genuinely reported problem, not by default; it roughly triples the
+  mutation's code for a UI difference of one round trip.
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument. Silent
   validation failures (a submit that does nothing because a field is invalid, with no
   visible error) are hard to debug from a bug report; logging `onInvalid` at least

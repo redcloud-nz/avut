@@ -73,6 +73,9 @@ export default async function AdminModule_Team_Page(props: Props) {
 
 Key points:
 
+- **Both `trpc` calls here are the `@/trpc/server` one** — it calls the router
+  in-process, preserving the request's session; the `@/trpc/client` one exists for
+  Client Components only and goes out over HTTP unauthenticated if used here by mistake.
 - **`generateMetadata` and the page body each resolve independently.** No shared
   `resolveX` helper. `generateMetadata` uses `fetchQuery` (awaited) because it needs
   the value synchronously to build the title. The page body only needs the parsed id —
@@ -147,28 +150,39 @@ Key points:
 ```tsx
 const mutation = useMutation(
   trpc.teams.updateTeam.mutationOptions({
-    meta: { invalidates: teamsInvalidations.updateTeam },
-    async onSuccess({ updated }) {
+    meta: { effects: teamsEffects.updateTeam },
+    async onSuccess() {
       toast.success("Team updated");
-      queryClient.setQueryData(
-        trpc.teams.getTeam.queryKey({ organizationId: organization.id, teamId: team.id }),
-        updated,
-      );
     },
   }),
 );
 ```
 
-- `meta.invalidates` (see `src/trpc/mutation-invalidator.tsx`) covers list-level
-  queries that the mutation should invalidate (e.g. `listTeams`) — declared once in
-  `src/client/<domain>-invalidations.ts`, not repeated at each call site.
-- `queryClient.setQueryData` on the detail query's exact key (`organizationId` +
-  the entity id — organizationProcedure adds `organizationId` to the input even though
-  the procedure's own `.input()` schema only shows the rest) writes the mutation's
-  response straight into the cache the content component reads from. No
-  `router.refresh()` needed — `useSuspenseQuery` picks up the write on its own.
-- If a mutation's response doesn't carry the full updated entity, invalidate the
-  detail query instead of (or alongside) `setQueryData`, so it refetches.
+```ts
+// src/client/teams-effects.ts
+export const teamsEffects = createEffects<"teams">()({
+  updateTeam: (vars, { updated }) => [
+    write(
+      trpc.teams.getTeam.queryKey({ organizationId: vars.organizationId, teamId: vars.teamId }),
+      updated,
+    ),
+    invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+  ],
+});
+```
+
+- `meta.effects` (`src/trpc/mutation-effector.tsx`) replaces manual
+  `queryClient.setQueryData`/`invalidateQueries` calls in `onSuccess` — declared once per
+  procedure in `src/client/<domain>-effects.ts` via `createEffects<"router">()({...})`,
+  not repeated at each call site.
+- `write(queryKey, data)` writes the mutation's response straight into the cache the
+  content component reads from — use it when the response *is* the detail query's full
+  new value (as `updateTeam`'s is here). No `router.refresh()` needed — `useSuspenseQuery`
+  picks up the write on its own.
+- `invalidate(filter)` covers queries the response can't fully determine, typically
+  list-level ones (e.g. `listTeams` after an update that might affect a column shown in
+  the list). If a mutation's response doesn't carry the full updated entity, `invalidate`
+  the detail query too instead of (or alongside) `write`, so it refetches.
 
 ---
 
