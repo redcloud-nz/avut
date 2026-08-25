@@ -87,6 +87,7 @@ All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints
 - Always call `ctx.logEvent(...)` after state-changing operations on org records
+- Pair a write with `ctx.logEvent(...)` inside `ctx.prisma.$transaction([...])`, not `Promise.all([...])` — see [`docs/patterns/transactional-writes.md`](docs/patterns/transactional-writes.md) for the shape and its gotchas (non-Prisma operations can't join the array)
 
 ### Data Fetching
 
