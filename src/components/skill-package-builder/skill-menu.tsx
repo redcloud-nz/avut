@@ -135,7 +135,7 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             )}
                         />
                         <Protect
-                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem
                                     onClick={() => setDeleteDialogOpen(true)}

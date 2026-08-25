@@ -99,7 +99,7 @@ export function SkillPackageBuilder_Group_Menu({
 
                     <DropdownMenuGroup>
                         <Protect
-                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <>
                                     {/** Show the archive option if the skill group is active */}
@@ -125,7 +125,7 @@ export function SkillPackageBuilder_Group_Menu({
                             )}
                         />
                         <Protect
-                            permissions={{ skillPackageBuilder: ["delete"] }}
+                            permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem
                                     onSelect={() => setDeleteDialogOpen(true)}

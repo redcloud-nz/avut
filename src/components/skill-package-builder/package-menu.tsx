@@ -189,11 +189,11 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <Protect
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <>
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     {/* Show the archive option if the skill package is active */}
                                     {skillPackage.status == "Active" && (
                                         <DropdownMenuItem
@@ -203,15 +203,6 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                             <ObjectIcons.Archive /> Archive
                                         </DropdownMenuItem>
                                     )}
-                                    {/* Show the publish option if the skill package is not published */}
-                                    {!skillPackage.published && (
-                                        <DropdownMenuItem
-                                            onClick={handlePublish}
-                                            disabled={!allowed || publishMutation.isPending}
-                                        >
-                                            <ObjectIcons.Publish /> Publish
-                                        </DropdownMenuItem>
-                                    )}
                                     {/* Show the restore option if the skill package is archived */}
                                     {skillPackage.status == "Archived" && (
                                         <DropdownMenuItem
@@ -219,6 +210,22 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                             disabled={!allowed || restoreMutation.isPending}
                                         >
                                             <ObjectIcons.Restore /> Restore
+                                        </DropdownMenuItem>
+                                    )}
+                                </>
+                            )}
+                        />
+                        <Protect
+                            permissions={{ skillPackageBuilder: ["publish"] }}
+                            render={(allowed) => (
+                                <>
+                                    {/* Show the publish option if the skill package is not published */}
+                                    {!skillPackage.published && (
+                                        <DropdownMenuItem
+                                            onClick={handlePublish}
+                                            disabled={!allowed || publishMutation.isPending}
+                                        >
+                                            <ObjectIcons.Publish /> Publish
                                         </DropdownMenuItem>
                                     )}
                                     {/* Show the unpublish option if the skill package is published */}
