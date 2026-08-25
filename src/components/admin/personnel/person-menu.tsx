@@ -22,7 +22,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
@@ -115,42 +114,41 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Protect
-                            permissions={{ person: ["update"] }}
-                            fallback={
-                                <Empty size="sm">
-                                    <EmptyHeader>
-                                        <EmptyTitle>No Actions Available</EmptyTitle>
-                                        <EmptyDescription>
-                                            You do not have permission to perform any actions on
-                                            this person record.
-                                        </EmptyDescription>
-                                    </EmptyHeader>
-                                </Empty>
-                            }
-                        >
-                            {person.status == "Active" && (
-                                <DropdownMenuItem onClick={handleArchive}>
-                                    <ObjectIcons.Archive /> Archive
-                                </DropdownMenuItem>
-                            )}
-                            {person.status != "Archived" && (
-                                <DropdownMenuItem
-                                    onClick={() => {
-                                        setDeleteDialogOpen(true);
-                                    }}
-                                    className="text-destructive focus:text-destructive"
-                                >
-                                    <ObjectIcons.Delete />
-                                    Delete
-                                </DropdownMenuItem>
-                            )}
-                            {person.status != "Active" && (
-                                <DropdownMenuItem onClick={handleRestore}>
-                                    <ObjectIcons.Restore /> Restore
-                                </DropdownMenuItem>
-                            )}
-                        </Protect>
+                        {person.status == "Active" && (
+                            <Protect
+                                permissions={{ person: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
+                                        <ObjectIcons.Archive /> Archive
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
+                        {person.status != "Active" && (
+                            <Protect
+                                permissions={{ person: ["update"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
+                                        <ObjectIcons.Restore /> Restore
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
+                        {person.status != "Archived" && (
+                            <Protect
+                                permissions={{ person: ["delete"] }}
+                                render={(allowed) => (
+                                    <DropdownMenuItem
+                                        onClick={() => setDeleteDialogOpen(true)}
+                                        disabled={!allowed}
+                                        className="text-destructive focus:text-destructive"
+                                    >
+                                        <ObjectIcons.Delete />
+                                        Delete
+                                    </DropdownMenuItem>
+                                )}
+                            />
+                        )}
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
