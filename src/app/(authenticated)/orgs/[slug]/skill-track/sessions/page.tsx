@@ -10,6 +10,7 @@ import SkillTrack_Sessions_List from "@/components/skill-track/sessions-list";
 import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Skill Check Sessions ${TITLE_SEPARATOR} Skills Module`,
@@ -19,22 +20,29 @@ export default async function SkillTrack_Sessions_Page(
     props: PageProps<"/orgs/[slug]/skill-track/sessions">,
 ) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
+    const { organization } = await requireOrganization(slug);
+
+    prefetch(trpc.skills.listSessions.queryOptions({ organizationId: organization.id }));
 
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
-                    {
-                        label: "Sessions",
-                        href: route("/orgs/[slug]/skill-track/sessions", { slug }),
-                    },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <SkillTrack_Sessions_List />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Std.SidebarInset>
+                <Std.Navbar
+                    breadcrumbs={[
+                        {
+                            label: "Skill Track",
+                            href: route("/orgs/[slug]/skill-track", { slug }),
+                        },
+                        {
+                            label: "Sessions",
+                            href: route("/orgs/[slug]/skill-track/sessions", { slug }),
+                        },
+                    ]}
+                />
+                <Std.ScrollContainer>
+                    <SkillTrack_Sessions_List />
+                </Std.ScrollContainer>
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }

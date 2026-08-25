@@ -11,6 +11,7 @@ import { route } from "@/lib/routes";
 
 import { AdminModule_PersonnelList } from "@/components/admin/personnel/personnel-list";
 import { requireOrganization } from "@/server/organization-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Personnel`,
@@ -22,17 +23,24 @@ export default async function AdminModule_PersonnelList_Page(
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
 
+    prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
+
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
-                    { label: "Personnel", href: route("/orgs/[slug]/admin/personnel", { slug }) },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <AdminModule_PersonnelList organization={organization} />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Std.SidebarInset>
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
+                        {
+                            label: "Personnel",
+                            href: route("/orgs/[slug]/admin/personnel", { slug }),
+                        },
+                    ]}
+                />
+                <Std.ScrollContainer>
+                    <AdminModule_PersonnelList organization={organization} />
+                </Std.ScrollContainer>
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }
