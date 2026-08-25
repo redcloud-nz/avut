@@ -16,7 +16,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
@@ -37,24 +36,16 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
                         permissions={{ skillCheckSession: ["delete"] }}
-                        fallback={
-                            <Empty size="sm">
-                                <EmptyHeader>
-                                    <EmptyTitle>No Actions Available</EmptyTitle>
-                                    <EmptyDescription>
-                                        You don&apos;t have permission to delete this session.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    >
-                        <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={() => setDeleteDialogOpen(true)}
-                        >
-                            <ObjectIcons.Delete /> Delete
-                        </DropdownMenuItem>
-                    </Protect>
+                        render={(allowed) => (
+                            <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={() => setDeleteDialogOpen(true)}
+                                disabled={!allowed}
+                            >
+                                <ObjectIcons.Delete /> Delete
+                            </DropdownMenuItem>
+                        )}
+                    />
                 </DropdownMenuContent>
             </DropdownMenu>
 
