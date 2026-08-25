@@ -49,7 +49,7 @@ export const teamsRouter = createTrpcRouter({
 
             const changes = diffObject({}, create);
 
-            const [createdTeam] = await Promise.all([
+            const [createdTeam] = await ctx.prisma.$transaction([
                 // Update additional fields
                 ctx.prisma.team.update({
                     where: { organizationId: organizationId, id: data.id },
@@ -137,7 +137,7 @@ export const teamsRouter = createTrpcRouter({
 
             const teamMembershipId = TeamMembershipId.create();
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.teamMembership.create({
                     data: {
                         id: teamMembershipId,
@@ -189,19 +189,19 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            await Promise.all([
-                await auth.api.removeTeam({
-                    body: {
-                        teamId,
-                        organizationId: ctx.organizationId,
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "Team",
-                    objectId: teamId,
-                }),
-            ]);
+            // auth.api.removeTeam isn't a Prisma operation, so it can't join a $transaction with
+            // the log entry — log only after the removal succeeds.
+            await auth.api.removeTeam({
+                body: {
+                    teamId,
+                    organizationId: ctx.organizationId,
+                },
+            });
+            await ctx.logEvent({
+                action: "Delete",
+                objectType: "Team",
+                objectId: teamId,
+            });
         }),
 
     /**
@@ -256,7 +256,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.teamMembership.delete({
                     where: {
                         organizationId: ctx.organizationId,
@@ -332,7 +332,7 @@ export const teamsRouter = createTrpcRouter({
 
             const changes = diffObject({}, { ...create, properties: { d4hTeamId } });
 
-            const [createdTeam] = await Promise.all([
+            const [createdTeam] = await ctx.prisma.$transaction([
                 // Update additional fields
                 ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: data.id },
@@ -377,7 +377,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             );
 
-            await Promise.all(
+            await ctx.prisma.$transaction(
                 personnel.flatMap(({ member, person }) => {
                     const teamMembershipId = TeamMembershipId.create();
 
@@ -592,7 +592,7 @@ export const teamsRouter = createTrpcRouter({
 
             // Update the last sync time
             const syncedAt = new Date().toISOString();
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: teamId },
                     data: {
@@ -647,7 +647,7 @@ export const teamsRouter = createTrpcRouter({
 
             if (diff.length == 0) return { updated: existingTeam }; // No changes
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 // Apply the changes
                 ctx.prisma.team.update({
                     where: { organizationId: ctx.organizationId, id: teamId },
@@ -716,7 +716,7 @@ export const teamsRouter = createTrpcRouter({
 
             if (diff.length == 0) return { updated: TeamMembershipData.fromRecord(existing) };
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 // Apply the changes
                 ctx.prisma.teamMembership.update({
                     where: {
