@@ -59,7 +59,19 @@ D4H is optional per-organization — no org is guaranteed to have an access toke
   1. Find what the wrapped element actually does when activated — trace the `onClick`/`onSubmit` handler to the `useMutation(trpc.<router>.<procedure>.mutationOptions(...))` call it invokes.
   2. Look up that same `<procedure>` in `src/trpc/routers/<router>-router.ts` and read its `organizationProcedure({...})` argument.
   3. Compare: the two permission objects should match. `Protect` gating with *fewer/looser* permissions than the procedure requires is the dangerous direction — it lets someone see and click a control the server will reject; flag it even though "the mutation still enforces it" makes it look harmless, because the broken UX is the bug. `Protect` gating with permissions *stricter* than needed is lower severity (it just over-hides a control from someone who could actually use it) but still worth a note.
-  4. **Watch for one `<Protect>` wrapping several actions that call different mutations** (a dropdown menu is the common shape — e.g. one `<Protect permissions={{ person: ["update"] }}>` around an Archive item, a Delete item, and a Restore item). A single permission check only covers the loosest of the wrapped mutations' requirements; if any wrapped action's procedure requires something the group-level `permissions` doesn't grant (e.g. the Delete item's mutation is gated on `person: ["delete"]`, distinct from `["update"]`), that action is under-protected even though the others are fine. The fix is either a per-item `<Protect>` for the odd-one-out action, or the `render` form so each item can check its own permission independently — not loosening the group check to the union of everything inside it, which would just make the *other* items over-permissive instead.
+  4. **Watch for one `<Protect>` wrapping several actions that call different mutations** (a dropdown menu is the common shape — e.g. one `<Protect permissions={{ person: ["update"] }}>` around an Archive item, a Delete item, and a Restore item). A single permission check only covers the loosest of the wrapped mutations' requirements; if any wrapped action's procedure requires something the group-level `permissions` doesn't grant (e.g. the Delete item's mutation is gated on `person: ["delete"]`, distinct from `["update"]`), that action is under-protected even though the others are fine. See the dropdown-menu rule immediately below for the required fix.
+- **Every `DropdownMenuItem` gated by permissions uses `Protect`'s `render` form, per item — never `children`/`fallback`, and never one `Protect` wrapping multiple items.** This is a hard rule for menus specifically (AGENTS.md's Permissions section has the canonical example): `children`/`fallback` removes the item from the menu entirely, which makes the set of available actions look arbitrarily different from user to user with no explanation, and — per the point above — a group-level `Protect` around several items can only check one permission for all of them. The correct shape gates each item independently and disables rather than hides:
+  ```tsx
+  <Protect
+      permissions={{ person: ["delete"] }}
+      render={(hasPermission) => (
+          <DropdownMenuItem disabled={!hasPermission} onClick={handleDelete}>
+              Delete
+          </DropdownMenuItem>
+      )}
+  />
+  ```
+  A `DropdownMenuItem` (or a whole `DropdownMenuGroup`) wrapped in `children`/`fallback` — including the common "wrap the item list, show an empty-state fallback" shape — is a finding regardless of whether the permissions themselves are correct; the fix is converting it to the per-item `render` form above, not just fixing the permission mismatch in place.
 - New modules (a new top-level feature area under `/orgs/[slug]/...`) should be registered in `src/lib/modules.ts` rather than having their routes/labels/icons hardcoded elsewhere — check `src/lib/modules.ts` was updated if the diff adds a genuinely new module rather than a page within an existing one.
 
 ## Tests

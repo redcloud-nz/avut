@@ -121,6 +121,19 @@ For cases where the permission boolean needs to flow into the markup (e.g. disab
 )} />
 ```
 
+**Inside a dropdown/menu of actions, always use `render`, per item.** Hiding a menu item outright (`children`/`fallback`, whether wrapping the whole item list or one item) makes the set of available actions look different from person to person with no explanation; showing it disabled tells the user the action exists and (via a tooltip, if warranted) why they can't use it right now. Gate each `DropdownMenuItem` individually — a single `Protect` around several items only checks one permission, so it silently under- or over-protects any item whose action needs something different:
+
+```tsx
+<Protect
+    permissions={{ person: ["delete"] }}
+    render={(hasPermission) => (
+        <DropdownMenuItem disabled={!hasPermission} onClick={handleDelete}>
+            Delete
+        </DropdownMenuItem>
+    )}
+/>
+```
+
 ### Zod Schemas
 
 - Domain schemas live in `src/lib/schemas/`
