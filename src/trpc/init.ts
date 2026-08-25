@@ -8,6 +8,7 @@ import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
+import type { OrganizationLogEntry, Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
@@ -102,7 +103,19 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
 
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     organizationId: OrganizationId;
-    logEvent: (options: LogEventOptions) => Promise<void>;
+    /**
+     * Records an entry in the organization's change-log.
+     *
+     * Returns the underlying `PrismaPromise` rather than awaiting it internally, so it can be
+     * used two ways:
+     * - Standalone: `await ctx.logEvent(options)` — executes immediately, same as before.
+     * - Atomically alongside another write: pass it unawaited into `ctx.prisma.$transaction([...])`
+     *   (default `tx`), or await it with an explicit `tx` inside `ctx.prisma.$transaction(async (tx) => ...)`.
+     */
+    logEvent: (
+        options: LogEventOptions,
+        tx?: Prisma.TransactionClient,
+    ) => Prisma.PrismaPromise<OrganizationLogEntry>;
 };
 
 /**
@@ -127,14 +140,11 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
             // Check organization permissions
             await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
 
-            async function logEvent({
-                action,
-                objectType,
-                objectId,
-                changes = [],
-                description,
-            }: LogEventOptions) {
-                await opts.ctx.prisma.organizationLogEntry.create({
+            function logEvent(
+                { action, objectType, objectId, changes = [], description }: LogEventOptions,
+                tx: Prisma.TransactionClient = opts.ctx.prisma,
+            ) {
+                return tx.organizationLogEntry.create({
                     data: {
                         id: nanoId16(),
                         organizationId: opts.input.organizationId,

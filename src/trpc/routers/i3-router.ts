@@ -33,7 +33,7 @@ export const i3Router = createTrpcRouter({
         .mutation(async ({ ctx, input: { templateId, create } }) => {
             const diff = diffObject({}, create);
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.i3Template.create({
                     data: {
                         id: templateId,
@@ -85,7 +85,7 @@ export const i3Router = createTrpcRouter({
 
             const diff = diffObject({}, create);
 
-            const [created] = await Promise.all([
+            const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.i3TemplateVariant.create({
                     data: {
                         id: variantId,
@@ -123,7 +123,7 @@ export const i3Router = createTrpcRouter({
         .mutation(async ({ ctx, input: { templateId } }) => {
             const existing = await getI3TemplateOrThrow(ctx, templateId);
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.i3Template.delete({
                     where: { id: templateId },
                 }),
@@ -167,7 +167,7 @@ export const i3Router = createTrpcRouter({
                     message: Messages.i3TemplateVariantNotFound(variantId),
                 });
 
-            await Promise.all([
+            await ctx.prisma.$transaction([
                 ctx.prisma.i3TemplateVariant.delete({
                     where: { id: variantId },
                 }),
@@ -284,7 +284,7 @@ export const i3Router = createTrpcRouter({
         .mutation(async ({ ctx, input: { templateId, update } }) => {
             const existing = await getI3TemplateOrThrow(ctx, templateId);
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.i3Template.update({
                     where: { id: templateId },
                     data: {
@@ -345,7 +345,7 @@ export const i3Router = createTrpcRouter({
                     message: Messages.i3TemplateVariantNotFound(variantId),
                 });
 
-            const [updated] = await Promise.all([
+            const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.i3TemplateVariant.update({
                     where: { id: variantId },
                     data: {
