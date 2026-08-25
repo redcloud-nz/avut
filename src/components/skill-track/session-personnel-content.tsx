@@ -19,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -66,30 +66,13 @@ export function SkillTrack_SessionPersonnel_Content({
 
     const mutation = useMutation(
         trpc.skills.updateSessionAssessees.mutationOptions({
-            meta: { invalidates: skillsInvalidations.updateSessionAssessees },
+            meta: { effects: skillsEffects.updateSessionAssessees },
             onError(error) {
                 console.error("Failed to update session assessees:", error);
                 toast.error(`Failed to update session assessees. ${error.message}`);
             },
-            onSuccess({ updatedAssessees, updatedSession }, _variables, _onMutateResult, context) {
+            onSuccess() {
                 setChanges({});
-
-                // Update the cached assessees and session data with the response from the server
-                context.client.setQueryData(
-                    trpc.skills.listSessionAssessees.queryKey({
-                        sessionId: sessionId,
-                        organizationId: organization.id,
-                        scope: "assigned",
-                    }),
-                    updatedAssessees,
-                );
-                context.client.setQueryData(
-                    trpc.skills.getSession.queryKey({
-                        organizationId: organization.id,
-                        skillCheckSessionId: sessionId,
-                    }),
-                    (old) => (old ? { ...old, ...updatedSession } : old),
-                );
             },
         }),
     );

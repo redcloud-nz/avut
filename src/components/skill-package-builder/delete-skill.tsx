@@ -21,7 +21,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -43,7 +43,7 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deleteSkill.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.deleteSkill },
+            meta: { effects: skillPackageBuilderEffects.deleteSkill },
             onError(error) {
                 console.error("Failed to delete skill:", error);
                 toast.error(`Failed to delete skill: ${error.message}`);

@@ -24,7 +24,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
 
-import { usersInvalidations } from "@/client/users-invalidations";
+import { usersEffects } from "@/client/users-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
@@ -45,7 +45,7 @@ export function AdminModule_LinkPerson_Dialog({
 
     const mutation = useMutation(
         trpc.users.linkPerson.mutationOptions({
-            meta: { invalidates: usersInvalidations.linkPerson },
+            meta: { effects: usersEffects.linkPerson },
             onError(error) {
                 console.error("Failed to link person:", error);
                 toast.error(`Failed to link person: ${error.message}`);

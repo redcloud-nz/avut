@@ -35,7 +35,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -83,7 +83,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.moveSkill.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.moveSkill },
+            meta: { effects: skillPackageBuilderEffects.moveSkill },
             onMutate(data) {
                 const parsed = z
                     .object({

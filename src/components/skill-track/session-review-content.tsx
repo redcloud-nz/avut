@@ -8,7 +8,7 @@ import { ClipboardCheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -34,6 +34,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
+import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
@@ -48,7 +49,6 @@ export function SkillTrack_SessionReview_Content({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [
         { data: session },
@@ -94,19 +94,12 @@ export function SkillTrack_SessionReview_Content({
 
     const mutation = useMutation(
         trpc.skillChecks.approveSession.mutationOptions({
+            meta: { effects: skillChecksEffects.approveSession },
             onError(error) {
                 toast.error(`Failed to approve session: ${error.message}`);
             },
-            onSuccess({ updated }) {
+            onSuccess() {
                 toast.success("Session approved.");
-
-                queryClient.setQueryData(
-                    trpc.skills.getSession.queryKey({
-                        organizationId: organization.id,
-                        skillCheckSessionId: sessionId,
-                    }),
-                    (old) => (old ? { ...old, ...updated } : old),
-                );
             },
         }),
     );

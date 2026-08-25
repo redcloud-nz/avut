@@ -21,7 +21,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -36,7 +36,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
 
     const mutation = useMutation(
         trpc.skills.unsubscribeFromPackage.mutationOptions({
-            meta: { invalidates: skillsInvalidations.unsubscribeFromPackage },
+            meta: { effects: skillsEffects.unsubscribeFromPackage },
             onError(error) {
                 console.error("Failed to unsubscribe from skill package:", error);
                 toast.error(`Failed to unsubscribe from skill package: ${error.message}`);

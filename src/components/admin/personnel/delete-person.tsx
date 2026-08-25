@@ -22,7 +22,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { personnelInvalidations } from "@/client/personnel-invalidations";
+import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -37,7 +37,7 @@ export function AdminModule_DeletePerson_Dialog({
 
     const mutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
-            meta: { invalidates: personnelInvalidations.deletePerson },
+            meta: { effects: personnelEffects.deletePerson },
             onError(error) {
                 console.error("Failed to delete person:", error);
                 toast.error(`Failed to delete person: ${error.message}`);

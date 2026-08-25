@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkill, Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -61,7 +61,6 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
     skill: Skill & { skillGroup: SkillGroup; skillPackage: SkillPackage };
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -72,7 +71,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.updateSkill.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.updateSkill },
+            meta: { effects: skillPackageBuilderEffects.updateSkill },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkill, {
@@ -83,18 +82,9 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                     console.error("Failed to update skill:", error);
                 }
             },
-            onSuccess({ updated }) {
+            onSuccess() {
                 toast.success("Skill updated successfully");
-
                 handleOpenChange(false);
-
-                queryClient.setQueryData(
-                    trpc.skillPackageBuilder.getSkill.queryKey({
-                        organizationId: organization.id,
-                        skillId: skill.id,
-                    }),
-                    { ...updated, skillGroup: skill.skillGroup, skillPackage: skill.skillPackage },
-                );
             },
         }),
     );

@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillPackageBuilderInvalidations } from "@/client/skill-package-builder-invalidations";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillGroup, SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -59,7 +59,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createGroup.mutationOptions({
-            meta: { invalidates: skillPackageBuilderInvalidations.createGroup },
+            meta: { effects: skillPackageBuilderEffects.createGroup },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {

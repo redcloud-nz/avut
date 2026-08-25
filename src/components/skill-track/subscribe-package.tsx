@@ -22,7 +22,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { skillsInvalidations } from "@/client/skills-invalidations";
+import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -39,7 +39,7 @@ export function SkillTrack_SubscribeToPackage_Dialog({
 
     const mutation = useMutation(
         trpc.skills.subscribeToPackage.mutationOptions({
-            meta: { invalidates: skillsInvalidations.subscribeToPackage },
+            meta: { effects: skillsEffects.subscribeToPackage },
             onError(error) {
                 console.error("Failed to subscribe to skill package:", error);
                 toast.error(`Failed to subscribe to skill package: ${error.message}`);

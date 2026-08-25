@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -28,14 +28,13 @@ import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { teamsInvalidations } from "@/client/teams-invalidations";
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -46,7 +45,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     const mutation = useMutation(
         trpc.teams.updateTeam.mutationOptions({
-            meta: { invalidates: teamsInvalidations.updateTeam },
+            meta: { effects: teamsEffects.updateTeam },
             async onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {
@@ -57,18 +56,9 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                     toast.error(`Failed to update team: ${error.message}`);
                 }
             },
-            async onSuccess({ updated }) {
+            async onSuccess() {
                 toast.success("Team updated");
-
                 handleOpenChange(false);
-
-                queryClient.setQueryData(
-                    trpc.teams.getTeam.queryKey({
-                        organizationId: organization.id,
-                        teamId: team.id,
-                    }),
-                    updated,
-                );
             },
         }),
     );
