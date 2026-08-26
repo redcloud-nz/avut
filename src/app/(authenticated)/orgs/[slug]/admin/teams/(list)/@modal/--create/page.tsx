@@ -4,9 +4,11 @@
  *
  * Path: /orgs/[slug]/admin/teams/--create
  *
- * Renders as `children` of `../layout.tsx`, so the teams list underneath it is already on
- * screen (mounted, not refetched) whether this was reached by clicking "New Team" or by a
- * direct load/refresh of this URL — both go through the same layout + page composition.
+ * Renders in the `modal` slot of `../../layout.tsx`, so the teams list underneath it is
+ * already on screen (mounted, not refetched) whether this was reached by clicking
+ * "New Team" or by a direct load/refresh of this URL — both go through the same layout +
+ * slot composition. Not an intercepted route: there's exactly one `--create/page.tsx`,
+ * reused for both entry points, not a separate overlay-only variant.
  */
 
 "use client";

@@ -8,11 +8,13 @@
  * this layout applies to `/orgs/[slug]/admin/teams` and `.../teams/--create` (both nested
  * under it) but not to `.../teams/[team_id]` (a sibling of `(list)`, outside the group).
  *
- * `--create/page.tsx` renders as `children` here alongside the list rather than replacing
- * it, so navigating between `/teams` and `/teams/--create` never remounts this layout: the
- * list stays mounted (no refetch) and the create dialog just appears on top of it — on a
- * client-side navigation *and* on a direct load/refresh, since both go through this same
- * layout + page composition.
+ * `@modal` is a parallel slot (not intercepted — there's no `(.)` route here) holding
+ * mutation dialogs for objects in this list, starting with `--create`. Because it's a
+ * sibling slot rather than a route that replaces `children`, navigating between `/teams`
+ * and `/teams/--create` never remounts this layout: the list stays mounted (no refetch)
+ * and the dialog just appears alongside it — on a client-side navigation *and* a direct
+ * load/refresh, since both go through this same layout + slot composition. Add further
+ * team actions (`--update`, `--delete`, …) as more `@modal/--foo/page.tsx` siblings.
  */
 
 import Link from "next/link";
@@ -33,6 +35,7 @@ import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 export default async function TeamsListLayout(props: {
     params: Promise<{ slug: string }>;
     children: ReactNode;
+    modal: ReactNode;
 }) {
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
@@ -73,6 +76,7 @@ export default async function TeamsListLayout(props: {
                 </Std.ScrollContainer>
             </Std.SidebarInset>
             {props.children}
+            {props.modal}
         </HydrateClient>
     );
 }
