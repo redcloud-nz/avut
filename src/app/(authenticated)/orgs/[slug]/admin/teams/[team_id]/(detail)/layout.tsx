@@ -2,10 +2,21 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/teams/[team_id]
+ * Path: /orgs/[slug]/admin/teams/[team_id]
+ *
+ * Renders the team detail page. `(detail)` is a plain route group — it adds no path
+ * segment, so this layout applies to `/orgs/[slug]/admin/teams/[team_id]` and its
+ * `--update`/`--delete` dialogs (nested under it) but not to `.../[team_id]/personnel` (a
+ * sibling of `(detail)`, outside the group).
+ *
+ * Dialog pages render as `children` here alongside the detail content rather than
+ * replacing it, so navigating between the bare detail page and a dialog never remounts
+ * this layout: the page stays mounted (no refetch) and the dialog just appears on top of
+ * it, on a client-side navigation and a direct load/refresh alike.
  */
 
 import { Metadata } from "next";
+import { ReactNode } from "react";
 
 import { AdminModule_Team_Content } from "@/components/admin/teams/team-content";
 import { Std } from "@/components/blocks/std";
@@ -15,7 +26,10 @@ import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-type Props = PageProps<`/orgs/[slug]/admin/teams/[team_id]`>;
+type Props = {
+    params: Promise<{ slug: string; team_id: string }>;
+    children: ReactNode;
+};
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, team_id } = await props.params;
@@ -31,7 +45,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     };
 }
 
-export default async function AdminModule_Team_Page(props: Props) {
+export default async function TeamDetailLayout(props: Props) {
     const { slug, team_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
@@ -43,6 +57,7 @@ export default async function AdminModule_Team_Page(props: Props) {
         <HydrateClient>
             <Std.SidebarInset>
                 <AdminModule_Team_Content teamId={teamId} />
+                {props.children}
             </Std.SidebarInset>
         </HydrateClient>
     );

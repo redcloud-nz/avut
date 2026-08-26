@@ -5,7 +5,7 @@
 "use client";
 
 import { CableIcon } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -18,56 +18,50 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-
-import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
 
 interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
 export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const organization = useOrganization();
 
     return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <Protect
-                        permissions={{ team: ["update"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem disabled={!allowed}>
-                                <CableIcon /> Link to D4H
-                            </DropdownMenuItem>
-                        )}
-                    />
-                    <Protect
-                        permissions={{ team: ["delete"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem
-                                onSelect={() => setDeleteDialogOpen(true)}
-                                disabled={!allowed}
-                                className="text-destructive"
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <DropdownMenuTriggerIcon />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40" align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <Protect
+                    permissions={{ team: ["update"] }}
+                    render={(allowed) => (
+                        <DropdownMenuItem disabled={!allowed}>
+                            <CableIcon /> Link to D4H
+                        </DropdownMenuItem>
+                    )}
+                />
+                <Protect
+                    permissions={{ team: ["delete"] }}
+                    render={(allowed) => (
+                        <DropdownMenuItem asChild disabled={!allowed} className="text-destructive">
+                            <Link
+                                href={route("/orgs/[slug]/admin/teams/[team_id]/--delete", {
+                                    slug: organization.slug,
+                                    team_id: team.id,
+                                })}
                             >
                                 <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        )}
-                    />
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Delete Team dialog*/}
-            <AdminModule_DeleteTeam_Dialog
-                team={team}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-            />
-        </>
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
+                />
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
