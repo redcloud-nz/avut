@@ -1,6 +1,12 @@
 /*
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Path: /orgs/[slug]/admin/teams/--create
+ *
+ * Renders as `children` of `../layout.tsx`, so the teams list underneath it is already on
+ * screen (mounted, not refetched) whether this was reached by clicking "New Team" or by a
+ * direct load/refresh of this URL — both go through the same layout + page composition.
  */
 
 "use client";
@@ -11,14 +17,7 @@ import { AdminModule_CreateTeam_DialogContent } from "@/components/admin/teams/c
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
-/**
- * Renders the create-team dialog forced open, for a direct load or refresh of
- * `/orgs/[slug]/admin/teams/--create` — the case where Next's intercepting route
- * (`@modal/(.)--create`) didn't get a chance to intercept the navigation. Closing
- * navigates back to the plain teams list rather than `router.back()`, since a direct
- * load has no client-side history entry representing the list to pop back to.
- */
-export function AdminModule_CreateTeam_DirectOverlay() {
+export default function AdminModule_CreateTeam_Page() {
     const organization = useOrganization();
     const router = useRouter();
 
