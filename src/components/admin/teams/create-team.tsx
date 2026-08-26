@@ -34,9 +34,8 @@ import { trpc } from "@/trpc/client";
 
 /**
  * Controlled create-team dialog — no trigger of its own. `open`/`onOpenChange` are driven
- * by the route: the `--create` intercepted modal keeps this open and closes it via
- * `router.back()`, while the non-intercepted (direct-load) `--create` page keeps it open
- * and closes it via `router.push` back to the teams list.
+ * by the route: `(list)/--create/page.tsx` keeps this open and closes it by navigating
+ * back to the teams list via `router.push`.
  */
 export function AdminModule_CreateTeam_DialogContent({
     open,
@@ -72,8 +71,6 @@ export function AdminModule_CreateTeam_DialogContent({
                 }
             },
             onSuccess({ created }) {
-                handleDialogOpenChange(false);
-
                 router.push(
                     route("/orgs/[slug]/admin/teams/[team_id]", {
                         slug: organization.slug,
