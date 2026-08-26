@@ -6,15 +6,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -23,7 +21,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -35,11 +32,21 @@ import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_CreateTeam_Dialog() {
+/**
+ * Controlled create-team dialog — no trigger of its own. `open`/`onOpenChange` are driven
+ * by the route: the `--create` intercepted modal keeps this open and closes it via
+ * `router.back()`, while the non-intercepted (direct-load) `--create` page keeps it open
+ * and closes it via `router.push` back to the teams list.
+ */
+export function AdminModule_CreateTeam_DialogContent({
+    open,
+    onOpenChange,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
     const organization = useOrganization();
     const router = useRouter();
-
-    const [dialogOpen, setDialogOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
@@ -65,7 +72,7 @@ export function AdminModule_CreateTeam_Dialog() {
                 }
             },
             onSuccess({ created }) {
-                handleOpenChange(false);
+                handleDialogOpenChange(false);
 
                 router.push(
                     route("/orgs/[slug]/admin/teams/[team_id]", {
@@ -89,21 +96,16 @@ export function AdminModule_CreateTeam_Dialog() {
         },
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    function handleDialogOpenChange(nextOpen: boolean) {
+        if (!nextOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
+        onOpenChange(nextOpen);
     }
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Team</span>
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Team</DialogTitle>
