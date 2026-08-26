@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -45,6 +47,7 @@ export function AdminModule_UpdateTeam_DialogContent({
     onOpenChange: (open: boolean) => void;
 }) {
     const organization = useOrganization();
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
@@ -66,7 +69,12 @@ export function AdminModule_UpdateTeam_DialogContent({
             },
             async onSuccess() {
                 toast.success("Team updated");
-                handleDialogOpenChange(false);
+                router.push(
+                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: team.id,
+                    }),
+                );
             },
         }),
     );

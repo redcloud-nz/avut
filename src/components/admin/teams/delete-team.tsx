@@ -49,7 +49,6 @@ export function AdminModule_DeleteTeam_Dialog({
                         Team <ObjectName>{team.name}</ObjectName> deleted.
                     </>,
                 );
-                props.onOpenChange?.(false);
 
                 router.push(route("/orgs/[slug]/admin/teams", { slug: organization.slug }));
 
@@ -58,8 +57,6 @@ export function AdminModule_DeleteTeam_Dialog({
                         organizationId: organization.id,
                     }),
                 );
-
-                mutation.reset();
             },
         }),
     );
