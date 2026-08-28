@@ -93,37 +93,45 @@ export function SkillPackageBuilder_PackageContents_Content({
                                         (skill) => skill.skillGroupId === skillGroup.id,
                                     );
 
+                                    const groupCell = (
+                                        <TableCell rowSpan={Math.max(groupSkills.length, 1)}>
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                    {
+                                                        slug: organization.slug,
+                                                        package_id: skillPackageId,
+                                                        group_id: skillGroup.id,
+                                                    },
+                                                )}
+                                            >
+                                                {skillGroup.name}
+                                            </Link>
+                                        </TableCell>
+                                    );
+
+                                    if (groupSkills.length === 0) {
+                                        return (
+                                            <TableRow key={skillGroup.id}>
+                                                {groupCell}
+                                                <TableCell colSpan={4}>
+                                                    <em className="text-muted-foreground">
+                                                        No skills in this group
+                                                    </em>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    {skillGroup.status}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    }
+
                                     return (
                                         <Fragment key={skillGroup.id}>
-                                            <TableRow key={skillGroup.id}>
-                                                <TableCell rowSpan={groupSkills.length + 1}>
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
-                                                            {
-                                                                slug: organization.slug,
-                                                                package_id: skillPackageId,
-                                                                group_id: skillGroup.id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        {skillGroup.name}
-                                                    </Link>
-                                                </TableCell>
-                                                {groupSkills.length === 0 && (
-                                                    <>
-                                                        <TableCell>
-                                                            <em className="text-muted-foreground">
-                                                                No skills in this group
-                                                            </em>
-                                                        </TableCell>
-                                                        <TableCell>{skillGroup.status}</TableCell>
-                                                    </>
-                                                )}
-                                            </TableRow>
-                                            {groupSkills.map((skill) => (
+                                            {groupSkills.map((skill, index) => (
                                                 // Skills that belong to a group will be listed under their respective group
                                                 <TableRow key={skill.id}>
+                                                    {index === 0 && groupCell}
                                                     <TableCell>
                                                         <Link
                                                             href={route(

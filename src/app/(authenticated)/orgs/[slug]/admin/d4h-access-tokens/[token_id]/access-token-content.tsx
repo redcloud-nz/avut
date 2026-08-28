@@ -7,7 +7,7 @@
 import { RefreshCwIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -24,6 +24,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
+import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { getD4HServer } from "@/lib/d4h-servers";
@@ -34,8 +35,6 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_D4hAccessToken_Content({ tokenId }: { tokenId: D4HAccessTokenId }) {
     const organization = useOrganization();
 
-    const queryClient = useQueryClient();
-
     const { data: accessToken } = useSuspenseQuery(
         trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({
             organizationId: organization.id,
@@ -45,14 +44,7 @@ export function AdminModule_D4hAccessToken_Content({ tokenId }: { tokenId: D4HAc
 
     const refreshMutation = useMutation(
         trpc.d4hAccessTokens.refreshToken.mutationOptions({
-            onSettled() {
-                queryClient.invalidateQueries(
-                    trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
-                        organizationId: organization.id,
-                        tokenId,
-                    }),
-                );
-            },
+            meta: { effects: d4hAccessTokensEffects.refreshToken },
         }),
     );
 
