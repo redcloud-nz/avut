@@ -53,7 +53,7 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                             <DropdownMenuItem
                                 onClick={() => setAction("delete", { history: "push" })}
                                 disabled={!allowed}
-                                className="text-destructive"
+                                className="text-destructive focus:text-destructive"
                             >
                                 <ObjectIcons.Delete /> Delete
                             </DropdownMenuItem>
