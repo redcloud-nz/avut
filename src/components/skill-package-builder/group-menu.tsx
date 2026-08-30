@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -39,7 +39,7 @@ export function SkillPackageBuilder_Group_Menu({
 }: SkillPackageBuilder_Group_MenuProps) {
     const organization = useOrganization();
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archiveGroup.mutationOptions({
@@ -131,7 +131,7 @@ export function SkillPackageBuilder_Group_Menu({
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem
-                                    onSelect={() => setDeleteDialogOpen(true)}
+                                    onSelect={() => setAction("delete", { history: "push" })}
                                     className="text-destructive focus:text-destructive"
                                     disabled={!allowed}
                                 >
@@ -145,8 +145,12 @@ export function SkillPackageBuilder_Group_Menu({
 
             <SkillPackageBuilder_DeleteSkillGroup_Dialog
                 skillGroup={skillGroup}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );

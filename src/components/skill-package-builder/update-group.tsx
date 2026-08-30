@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -41,7 +41,8 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
 }) {
     const organization = useOrganization();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(SkillGroup.modifiableSchema),
@@ -69,11 +70,13 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("update", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-        setDialogOpen(open);
     }
 
     return (
