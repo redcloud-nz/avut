@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ interface SkillPackageBuilder_Skill_MenuProps {
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
     const organization = useOrganization();
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
     const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
     const archiveMutation = useMutation(
@@ -140,7 +141,7 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem
-                                    onClick={() => setDeleteDialogOpen(true)}
+                                    onClick={() => setAction("delete", { history: "push" })}
                                     className="text-destructive focus:text-destructive"
                                     disabled={!allowed}
                                 >
@@ -154,8 +155,12 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
 
             <SkillPackageBuilder_DeleteSkill_Dialog
                 skill={skill}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
             <SkillPackageBuilder_MoveSkill_Dialog
                 skill={skill}

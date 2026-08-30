@@ -5,9 +5,9 @@
 
 "use client";
 
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,7 +68,8 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
     const organization = useOrganization();
     const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),
@@ -102,8 +103,6 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                     </>,
                 );
 
-                handleOpenChange(false);
-
                 router.push(
                     route(
                         "/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]",
@@ -134,11 +133,13 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("create", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-        setDialogOpen(open);
     }
 
     return (
