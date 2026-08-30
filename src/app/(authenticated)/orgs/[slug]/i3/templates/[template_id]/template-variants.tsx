@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -28,7 +28,6 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
-import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { trpc } from "@/trpc/client";
 
 import { I3Module_Template_AddVariant_Dialog } from "./add-variant";
@@ -45,8 +44,21 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
         }),
     );
 
-    const [variantToDelete, setVariantToDelete] = useState<I3TemplateVariant | null>(null);
-    const [variantToEdit, setVariantToEdit] = useState<I3TemplateVariant | null>(null);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["update-variant", "delete-variant"] as const),
+    );
+    const [variantId, setVariantId] = useQueryState("variantId", parseAsString);
+    const activeVariant = variants.find((v) => v.id === variantId) ?? null;
+
+    function openVariantAction(next: "update-variant" | "delete-variant", id: string) {
+        void setVariantId(id, { history: "push" });
+        void setAction(next, { history: "push" });
+    }
+    function closeVariantAction() {
+        void setAction(null, { history: "replace" });
+        void setVariantId(null, { history: "replace" });
+    }
 
     return (
         <Card>
@@ -100,14 +112,18 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => setVariantToEdit(variant)}
+                                                onClick={() =>
+                                                    openVariantAction("update-variant", variant.id)
+                                                }
                                             >
                                                 <ObjectIcons.Edit />
                                             </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => setVariantToDelete(variant)}
+                                                onClick={() =>
+                                                    openVariantAction("delete-variant", variant.id)
+                                                }
                                             >
                                                 <ObjectIcons.Delete />
                                             </Button>
@@ -119,28 +135,20 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
                     </Table>
                 </Show>
             </CardContent>
-            {variantToDelete && (
-                <I3Module_DeleteVariant_Dialog
-                    template={template}
-                    variant={variantToDelete}
-                    open={true}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setVariantToDelete(null);
-                        }
-                    }}
-                />
-            )}
-            {variantToEdit && (
+            {activeVariant && (
                 <I3Module_UpdateVariant_Dialog
                     template={template}
-                    variant={variantToEdit}
-                    open={true}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setVariantToEdit(null);
-                        }
-                    }}
+                    variant={activeVariant}
+                    open={action === "update-variant"}
+                    onOpenChange={(open) => (open ? undefined : closeVariantAction())}
+                />
+            )}
+            {activeVariant && (
+                <I3Module_DeleteVariant_Dialog
+                    template={template}
+                    variant={activeVariant}
+                    open={action === "delete-variant"}
+                    onOpenChange={(open) => (open ? undefined : closeVariantAction())}
                 />
             )}
         </Card>
