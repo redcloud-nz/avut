@@ -56,21 +56,17 @@ export function AdminModule_DeleteUser_Dialog({
                     organisation.
                 </>,
             );
-            props.onOpenChange?.(false);
-
-            router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
-
             await queryClient.invalidateQueries({
                 queryKey: ["auth", "organization-users", organization.id],
             });
 
-            mutation.reset();
+            router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
         },
     });
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete User</AlertDialogTitle>
                     <AlertDialogDescription>
