@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -91,14 +92,16 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (open) {
-            void setAction("update", { history: "push" });
-        } else {
-            form.reset();
-            mutation.reset();
-            void setAction(null, { history: "replace" });
-        }
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
     }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(skill);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) =>
