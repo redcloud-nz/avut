@@ -1,182 +1,142 @@
 # Pattern: mutation dialog
 
-Shape for a dialog that creates, updates, or deletes a record. Every mutation
-dialog in AVUT gets **its own URL** — a `--create` / `--update` / `--delete`
-route nested under the list or detail page it acts on — so it can be opened from
-any entry point (a button, a menu item, a keyboard shortcut, a pasted link) and
-survives a refresh. This replaces the older "self-contained dialog owns its own
-trigger + `useState`" approach.
+Shape for a dialog that creates, updates, deletes, or confirms a state change on
+a record. Every mutation dialog in AVUT is driven by a **`dialog` search param**
+(`?dialog=create`, `?dialog=update`, `?dialog=delete`, …) managed with
+[nuqs](https://nuqs.dev), so it can be opened from any entry point (a button, a
+menu item, a keyboard shortcut, a pasted link), survives a refresh, and updates
+the URL through the History API without a server round-trip or a page remount.
 
-Examples on teams: `AdminModule_CreateTeam_DialogContent` (list `--create`),
-`AdminModule_UpdateTeam_DialogContent` and `AdminModule_DeleteTeam_Dialog`
-(detail `--update` / `--delete`).
+This replaces two earlier approaches: the original "self-contained dialog owns
+its own `<DialogTrigger>` + `useState`" components, and the `(list)` / `(detail)`
+route-group + `--create` / `--update` / `--delete` page experiment (see [what was
+tried and dropped](#what-was-tried-and-dropped)).
 
-## Route layout: route group + layout, no interception
+Examples on personnel: `AdminModule_CreatePerson_Dialog` (list),
+`AdminModule_UpdatePerson_Dialog` (detail card action + menu),
+`AdminModule_DeletePerson_Dialog` (detail menu).
 
-```
-admin/teams/
-  (list)/
-    layout.tsx           -- renders the list, then {children}
-    page.tsx             -- empty (return null), matches bare /teams
-    --create/page.tsx    -- create dialog, renders as children
-  [team_id]/
-    (detail)/
-      layout.tsx         -- renders the detail page, then {children}
-      page.tsx           -- empty (return null), matches bare /teams/[team_id]
-      --update/page.tsx  -- edit dialog, renders as children
-      --delete/page.tsx  -- delete dialog, renders as children
-    personnel/page.tsx   -- untouched, sibling outside (detail)
-```
+## Setup
 
-- `(list)` / `(detail)` are **plain route groups** — no path segment. They scope
-  the layout to the bare page and its dialogs while excluding sibling subpages
-  (`[team_id]` at the list level, `personnel` at the detail level), which must
-  not sit under the list/detail layout.
-- The layout renders the list/detail content **and then `{props.children}`**. A
-  shared ancestor layout stays mounted across a client-side navigation between
-  routes it's an ancestor of, so nesting both the bare page and the dialog pages
-  under one group's layout gives "list/detail stays mounted underneath, dialog
-  appears on top" for free — on a soft navigation **and** a direct load/refresh,
-  through ordinary layout + page composition. No intercepting routes, no
-  `@modal` parallel slots.
-- The bare `page.tsx` is intentionally empty (`return null`) — it exists only to
-  match the bare path within the group. Put `export const metadata` (or
-  `generateMetadata`) on the **layout**, not the empty page, so a dynamic title
-  (e.g. the team name) applies across the bare page and every dialog and is
-  fetched once. See `(detail)/layout.tsx`'s `generateMetadata`.
-- The old `[team_id]/page.tsx` becomes `[team_id]/(detail)/layout.tsx`; its
-  default export is renamed to `…Layout` and its props type gains
-  `children: ReactNode`.
+`NuqsAdapter` (from `nuqs/adapters/next/app`) wraps the app once in
+`src/components/providers.tsx`, inside `QueryClientProvider`. Nothing else is
+global — each dialog reads its own param.
 
-### What was tried and dropped
-
-Two earlier spike commits explored parallel routes before landing here:
-
-- **Intercepting route + `@modal` parallel slot** — worked, but duplicated the
-  list render across an intercepted page and a non-intercepted direct-load
-  fallback.
-- **Named `@modal` slot without interception** — simpler, but cost three
-  near-empty scaffolding files (a base `page.tsx` plus a `default.tsx` per slot)
-  per object to support a single dialog. Worth revisiting only once an object
-  has enough dialogs that an explicit `@modal/` folder earns back that fixed
-  cost.
-
-## The dialog page
-
-Thin client component. Holds the dialog `open` and navigates back to the parent
-route to close it.
+## The `dialog` param
 
 ```tsx
-// [team_id]/(detail)/--update/page.tsx
-"use client";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-export default function AdminModule_UpdateTeam_Page(
-  props: PageProps<"/orgs/[slug]/admin/teams/[team_id]/--update">,
-) {
-  const { team_id } = use(props.params);
-  const teamId = TeamId.schema.parse(team_id);
-
-  const organization = useOrganization();
-  const router = useRouter();
-
-  // Server Component already prefetched this via the layout's HydrateClient —
-  // useSuspenseQuery reads the hydrated cache, no waterfall.
-  const { data: team } = useSuspenseQuery(
-    trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }),
-  );
-
-  return (
-    <AdminModule_UpdateTeam_DialogContent
-      team={team}
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          router.push(
-            route("/orgs/[slug]/admin/teams/[team_id]", {
-              slug: organization.slug,
-              team_id: teamId,
-            }),
-          );
-        }
-      }}
-    />
-  );
-}
+const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
+const dialogOpen = dialog === "update";
 ```
 
-- `open` is hard-coded `true` — the route existing _is_ the open state.
-- `onOpenChange` handles only the close case, with `router.push` back to the
-  parent path. (Use `push`, not `back` — the dialog may have been reached by
-  direct load, where there's no history entry to go back to.)
-- A `--create` page needs no data fetch; `--update` / `--delete` read the record
-  with `useSuspenseQuery` against the cache the parent layout already hydrated.
+- **One param name — `dialog` — shared across the whole app.** Each component
+  parses only the literal(s) it owns (`["create"]`, `["update"]`, `["delete"]`,
+  `["archive", "restore"]`, …); an unrecognised value parses to `null`, so
+  `?dialog=delete` leaves the update dialog closed. Two dialogs cannot be
+  addressable-open at the same time — that has never been needed.
+- **`history` per transition:** push when opening, replace when closing.
 
-## The dialog content component
+  ```tsx
+  function handleDialogOpenChange(open: boolean) {
+    if (open) {
+      void setDialog("update", { history: "push" });
+    } else {
+      form.reset(); // non-destructive dialogs only
+      mutation.reset();
+      void setDialog(null, { history: "replace" });
+    }
+  }
+  ```
 
-Controlled — takes `open` / `onOpenChange`, owns **no** `DialogTrigger` and no
-`useState`. Name it `…_DialogContent` when converting from a former
-self-contained `…_Dialog` (the delete dialog was already controlled via
-`ComponentProps<typeof AlertDialog>`, so it keeps its name).
+  Push-on-open makes the browser Back button close the dialog;
+  replace-on-close means Back from the closed page doesn't reopen it (no ghost
+  history entry).
+
+- **`handleDialogOpenChange`** resets the form and the mutation on close, so
+  re-opening the dialog never shows stale field values or a stale error/success
+  banner.
+
+- A per-row / list-item dialog needs a second param to say _which_ row:
+  `?dialog=delete&personId=…`. Add `const [personId] = useQueryState("personId",
+parseAsString)` and resolve the record from the list query cache. Personnel
+  deletes from the detail page, so it needs only `?dialog=delete` — the id is
+  already in the route.
+
+- `npx next typegen` is **not** needed — no routes are added.
+
+## The dialog component
+
+Controlled by the param, keeps the `…_Dialog` name (it renders a `Dialog` /
+`AlertDialog`). It may keep its own `<DialogTrigger>` **or** be fully
+prop-driven — see [triggers](#triggers).
 
 ### Create / update (non-destructive) — `Dialog` + form
 
 ```tsx
-export function AdminModule_CreateTeam_DialogContent({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
   const organization = useOrganization();
-  const router = useRouter();
 
-  const form = useForm({ resolver: zodResolver(TeamData.modifiableSchema) });
+  const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
+  const dialogOpen = dialog === "update";
+
+  const form = useForm({
+    resolver: zodResolver(PersonData.modifiableSchema),
+    defaultValues: person,
+  });
 
   const mutation = useMutation(
-    trpc.teams.createTeam.mutationOptions({
-      meta: { effects: teamsEffects.createTeam },
+    trpc.personnel.updatePerson.mutationOptions({
+      meta: { effects: personnelEffects.updatePerson },
       onError(error) {
-        console.error("Failed to create team:", error);
-        toast.error(`Failed to create team: ${error.message}`);
+        console.error("Failed to update person", error);
+        toast.error(`Failed to update person: ${error.message}`);
       },
-      onSuccess({ created }) {
-        toast.success("Team created");
-        router.push(
-          route("/orgs/[slug]/admin/teams/[team_id]", {
-            slug: organization.slug,
-            team_id: created.id,
-          }),
-        );
+      onSuccess() {
+        toast.success("Person updated");
+        handleDialogOpenChange(false);
       },
     }),
   );
 
-  function handleDialogOpenChange(nextOpen: boolean) {
-    if (!nextOpen) {
+  function handleDialogOpenChange(open: boolean) {
+    if (open) {
+      void setDialog("update", { history: "push" });
+    } else {
       form.reset();
       mutation.reset();
+      void setDialog(null, { history: "replace" });
     }
-    onOpenChange(nextOpen);
   }
 
   const handleSubmit = form.handleSubmit(
-    (formData) => mutation.mutate({ organizationId: organization.id, ...formData }),
+    (formData) =>
+      mutation.mutate({
+        organizationId: organization.id,
+        personId: person.id,
+        update: formData,
+      }),
     (errors) => console.error("Form validation errors:", errors),
   );
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <ObjectIcons.Edit />
+        </Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Team</DialogTitle>
+          <DialogTitle>Update person</DialogTitle>
         </DialogHeader>
-        <form id="create-team-form" onSubmit={handleSubmit}>
+        <form id="update-person-form" onSubmit={handleSubmit}>
           {/* fields */}
         </form>
         <DialogFooter>
           <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-          <MutationButton type="submit" form="create-team-form" status={mutation.status} />
+          <MutationButton type="submit" form="update-person-form" status={mutation.status} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -184,42 +144,39 @@ export function AdminModule_CreateTeam_DialogContent({
 }
 ```
 
-- **`handleDialogOpenChange`** resets both the form and the mutation on close, so
-  reopening (or re-navigating to) the route doesn't show stale field values or a
-  stale error/success banner.
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument.
   A submit that silently does nothing because a field is invalid is hard to
   diagnose from a bug report; logging `onInvalid` surfaces it in the console.
-- **On success**, close by navigating: `--update` pushes back to the detail
-  page; `--create` pushes straight to the new record's detail page (not the
-  list). Don't also call `onOpenChange(false)` — the `router.push` away from the
-  dialog route unmounts it.
+- **On success**, close by clearing the param via `handleDialogOpenChange(false)`
+  — _unless_ success also navigates (create), in which case see the next rule.
 - Cancel is the visually primary (first) button — the safe default to reach for.
 
 ### Delete / remove (destructive) — `AlertDialog`, no form
 
 ```tsx
-export function AdminModule_DeleteTeam_Dialog({
-  team,
+export function AdminModule_DeletePerson_Dialog({
+  person,
   ...props
-}: ComponentProps<typeof AlertDialog> & { team: TeamData }) {
+}: ComponentProps<typeof AlertDialog> & { person: PersonData }) {
   const organization = useOrganization();
   const router = useRouter();
 
   const mutation = useMutation(
-    trpc.teams.deleteTeam.mutationOptions({
-      meta: { effects: teamsEffects.deleteTeam },
+    trpc.personnel.deletePerson.mutationOptions({
+      meta: { effects: personnelEffects.deletePerson },
       onError(error) {
-        console.error("Failed to delete team:", error);
-        toast.error(`Failed to delete team: ${error.message}`);
+        console.error("Failed to delete person:", error);
+        toast.error(`Failed to delete person: ${error.message}`);
       },
       onSuccess() {
         toast.success(
           <>
-            Team <ObjectName>{team.name}</ObjectName> deleted.
+            Person <ObjectName>{person.name}</ObjectName> deleted.
           </>,
         );
-        router.push(route("/orgs/[slug]/admin/teams", { slug: organization.slug }));
+        // Navigate away. Don't also clear the dialog param or reset the mutation
+        // here — see the rule below.
+        router.push(route("/orgs/[slug]/admin/personnel", { slug: organization.slug }));
       },
     }),
   );
@@ -228,9 +185,9 @@ export function AdminModule_DeleteTeam_Dialog({
     <AlertDialog {...props}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Team</AlertDialogTitle>
+          <AlertDialogTitle>Delete Person</AlertDialogTitle>
           <AlertDialogDescription>
-            Confirm deletion of <ObjectName>{team.name}</ObjectName>.
+            Confirm deletion of <ObjectName>{person.name}</ObjectName>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -239,7 +196,9 @@ export function AdminModule_DeleteTeam_Dialog({
             variant="destructive"
             status={mutation.status}
             text={{ idle: "Delete", pending: "Deleting", success: "Deleted" }}
-            onClick={() => mutation.mutate({ teamId: team.id, organizationId: organization.id })}
+            onClick={() =>
+              mutation.mutate({ organizationId: organization.id, personId: person.id })
+            }
           />
           <AlertDialogCancel>Cancel</AlertDialogCancel>
         </AlertDialogFooter>
@@ -250,56 +209,66 @@ export function AdminModule_DeleteTeam_Dialog({
 ```
 
 - **`AlertDialog`, not `Dialog`.** No dismiss on outside-click or Escape without
-  an explicit choice — the point for something irreversible.
+  an explicit choice — the point for something irreversible. **Only `delete` /
+  `remove` uses `AlertDialog`.** State-transition confirms (archive, restore,
+  publish, unsubscribe) use a plain `Dialog`.
 - **Button order is reversed:** destructive action first, `AlertDialogCancel`
-  second. The layout itself should read as "this is the dangerous one"; putting
-  Cancel last would make it look like the primary action and undersell the risk.
+  second. Putting Cancel last would make it look like the primary action and
+  undersell the risk.
 - **No form** — a plain `onClick={() => mutation.mutate(...)}` on the
   `MutationButton`, no `handleSubmit`, no validation.
-- **On success, redirect** — the deleted record's route (`--delete` under
-  `[team_id]`) can't keep rendering, so `router.push` back to the list. Don't
-  call `onOpenChange(false)` or `mutation.reset()` in `onSuccess`: the navigation
-  unmounts the dialog anyway, and resetting mid-navigation just flips the button
-  out of its "Deleted" state.
 
-## Trigger sites
+### Never pair a closing param-write with a navigation in `onSuccess`
 
-Triggers are `<Link>`s (usually `<Button asChild><Link href={route(...)}>` or
-`<DropdownMenuItem asChild><Link>`), not buttons wired to local state:
+If `onSuccess` calls `router.push(...)`, that is the _whole_ close. Do **not**
+also call `handleDialogOpenChange(false)` / `setDialog(null)` / `mutation.reset()`
+in the same handler:
+
+- the `router.push` unmounts the dialog anyway;
+- the param clear (`setDialog(null)`, a History `replace`) **races** the
+  `router.push` — in the pilot this left the page stranded on a now-deleted
+  detail route until a manual reload (which then 404'd).
+
+So: **create** → `onSuccess` does only `router.push` to the new record's detail
+page. **update** → `onSuccess` does only `handleDialogOpenChange(false)` (no
+navigation, stays on the page). **delete** → `onSuccess` does only `router.push`
+to the list.
+
+## Triggers
+
+A trigger is anything that sets the param. Because the dialog is param-driven,
+**one dialog can have several triggers** with no coordination — a card-action
+button and a menu item can both open the same update dialog.
+
+- **Prefer a real `<button>` that stays mounted** (`<DialogTrigger>` inside the
+  dialog component, or a sibling `<Button onClick={() => setDialog("update", {
+history: "push" })}>`). On close, Radix restores focus to it automatically.
+- **A `<Link href="?dialog=…">` also works** and is fine for a header "New X"
+  action, but the link is a navigation trigger, not a focus anchor.
+- Wrap every permission-gated trigger in `<Protect>` (or its `render` prop for
+  the disabled-item case). This only hides/disables the entry point — the tRPC
+  procedure is the real guard.
+
+### Menu-triggered dialogs and focus
+
+When the trigger is a `DropdownMenuItem`, the menu closes (and the item
+unmounts) before the dialog opens, so on dialog close Radix has nothing to
+restore focus to and it drops to `<body>`. Give the dialog an explicit
+`onCloseAutoFocus` that points at a stable element — usually the menu's own
+trigger button:
 
 ```tsx
-// list header
-<Protect permissions={{ team: ["create"] }}>
-  <Button variant="outline" asChild>
-    <Link href={route("/orgs/[slug]/admin/teams/--create", { slug })}>
-      <ObjectIcons.Create /> <span className="hidden md:inline">New Team</span>
-    </Link>
-  </Button>
-</Protect>
-
-// dropdown menu item
-<Protect
-  permissions={{ team: ["delete"] }}
-  render={(allowed) => (
-    <DropdownMenuItem asChild disabled={!allowed} className="text-destructive">
-      <Link href={route("/orgs/[slug]/admin/teams/[team_id]/--delete", { slug, team_id: team.id })}>
-        <ObjectIcons.Delete /> Delete
-      </Link>
-    </DropdownMenuItem>
-  )}
-/>
+<AlertDialogContent
+  onCloseAutoFocus={(e) => {
+    e.preventDefault();
+    menuTriggerRef.current?.focus();
+  }}
+>
 ```
 
-- Still wrap the trigger in `<Protect>` for permission-gated actions — this only
-  hides the entry point; the tRPC procedure is the real guard.
-- Because the dialog no longer owns a `DialogTrigger`, the old
-  dropdown-menu caveat (a `DialogTrigger` inside a `DropdownMenuItem` tears down
-  as the menu closes) disappears — a menu item is just a `<Link>` now.
-- A component like `AdminModule_TeamMenu` that only rendered a dialog for its
-  own `useState` loses the `useState`, the wrapping fragment, and the dialog
-  import entirely.
+This is required for any menu-triggered dialog regardless of the param mechanic.
 
-## General points (both kinds)
+## General points
 
 - **No optimistic updates.** `meta: { effects: … }` (see
   `src/client/<domain>-effects.ts` and `src/trpc/mutation-effector.tsx`) is
@@ -311,5 +280,28 @@ Triggers are `<Link>`s (usually `<Button asChild><Link href={route(...)}>` or
   the mutation.
 - Always `ctx.logEvent(...)` in the tRPC procedure inside the `$transaction`, per
   [transactional-writes.md](transactional-writes.md).
-- **After adding a `--create` / `--update` / `--delete` page, run
-  `npx next typegen`** so `route()` calls for the new path typecheck.
+- The pages themselves (`page.tsx`, `layout.tsx`, list/detail content components,
+  sibling subpages, `generateMetadata`) are **not touched** by adding a dialog —
+  no route groups, no bare `page.tsx`, no metadata moves.
+
+## What was tried and dropped
+
+- **Self-contained `useState` dialog** — the original shape. No URL, doesn't
+  survive a refresh, a `<DialogTrigger>` inside a `<DropdownMenuItem>` tears down
+  as the menu closes.
+- **`(list)` / `(detail)` route groups + `--create` / `--update` / `--delete`
+  pages** (shipped for `admin/teams` in PR #58, then reverted). Real routes, and
+  the underlying page stayed mounted under a shared layout — but: the trigger
+  `<Link>` unmounts on navigation so focus drops to `<body>` on close; `push`-on-
+  close leaves a re-openable ghost history entry; the `(detail)` layout's
+  `generateMetadata` re-runs a `fetchQuery` on every soft-nav open/close; a
+  list-triggered delete routes _through_ a full detail-page render; and each area
+  cost ~4 scaffolding files + a thin page per dialog + `npx next typegen`, plus a
+  client-page-to-`-content`-component extraction for any area whose detail page
+  was a client component. The nuqs param gets the same five goals
+  (own URL, survives refresh, page stays mounted, link-triggerable, one
+  consistent shape) for a fraction of the surface area and without the focus /
+  Back / round-trip regressions.
+- **Intercepting routes + `@modal` parallel slot** — an earlier spike; duplicated
+  the list render across intercepted and direct-load paths, or cost three
+  scaffolding files per object.

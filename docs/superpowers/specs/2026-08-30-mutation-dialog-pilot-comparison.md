@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-30
 **Branch:** `pilot/nuqs-mutation-dialogs` (commit `4bc6d59`)
+**Outcome:** nuqs `?dialog=` chosen. The pattern doc and migration spec are updated to match; `admin/teams` will be converted back off route groups. This document is kept as the rationale record.
 
 Two implementations of the same five goals, both now in the tree:
 
