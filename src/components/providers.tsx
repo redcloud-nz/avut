@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { QueryClientProvider } from "@tanstack/react-query";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { installDevTools } from "@/client/dev-tools";
@@ -32,9 +33,11 @@ export function CommonProviders({ children }: Readonly<{ children: ReactNode }>)
         >
             <QueryClientProvider client={queryClient}>
                 <MutationInvalidator />
-                <TooltipProvider>
-                    <SidebarProvider>{children}</SidebarProvider>
-                </TooltipProvider>
+                <NuqsAdapter>
+                    <TooltipProvider>
+                        <SidebarProvider>{children}</SidebarProvider>
+                    </TooltipProvider>
+                </NuqsAdapter>
             </QueryClientProvider>
         </ThemeProvider>
     );

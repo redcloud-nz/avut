@@ -98,7 +98,7 @@ Mutations declare their cache side-effects once via `meta: { effects: ... }` (`s
 See the pattern docs for the full shapes, code, and rationale — read the relevant one before writing a new page or mutation dialog rather than inferring the pattern from a neighboring file, since these are exactly the details easy to get subtly wrong (and where they've drifted before):
 
 - [`docs/patterns/detail-page-data-fetching.md`](docs/patterns/detail-page-data-fetching.md) — `page.tsx`/`<entity>-content.tsx` split, `fetchQuery` vs `prefetch`+`HydrateClient`, `useSuspenseQuery`
-- [`docs/patterns/mutation-dialog.md`](docs/patterns/mutation-dialog.md) — URL-routed create/update/delete dialogs (route group + layout, `--create`/`--update`/`--delete` pages, controlled `…_DialogContent`)
+- [`docs/patterns/mutation-dialog.md`](docs/patterns/mutation-dialog.md) — create/update/delete/confirm dialogs driven by a `?action=` search param via nuqs (`NuqsAdapter`, `useQueryState` + `parseAsStringLiteral`, `history` push-on-open/replace-on-close, controlled `…_Dialog` components)
 
 ### Permissions
 

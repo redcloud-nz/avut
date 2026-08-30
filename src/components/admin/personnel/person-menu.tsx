@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ interface AdminModule_PersonMenuProps {
 export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -139,7 +139,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                 permissions={{ person: ["delete"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={() => setDeleteDialogOpen(true)}
+                                        onClick={() => setAction("delete", { history: "push" })}
                                         disabled={!allowed}
                                         className="text-destructive focus:text-destructive"
                                     >
@@ -156,8 +156,12 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             {/* Delete Person dialog*/}
             <AdminModule_DeletePerson_Dialog
                 person={person}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );

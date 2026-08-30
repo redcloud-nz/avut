@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -37,7 +37,8 @@ export function AdminModule_CreatePerson_Dialog() {
     const organization = useOrganization();
     const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -63,8 +64,6 @@ export function AdminModule_CreatePerson_Dialog() {
                 }
             },
             onSuccess({ created }) {
-                handleOpenChange(false);
-
                 router.push(
                     route("/orgs/[slug]/admin/personnel/[person_id]", {
                         slug: organization.slug,
@@ -89,11 +88,13 @@ export function AdminModule_CreatePerson_Dialog() {
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("create", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-        setDialogOpen(open);
     }
 
     return (
