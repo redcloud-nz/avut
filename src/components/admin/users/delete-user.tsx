@@ -56,11 +56,17 @@ export function AdminModule_DeleteUser_Dialog({
                     organisation.
                 </>,
             );
-            await queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-users", organization.id],
-            });
-
+            // Navigate away first. The user detail page holds an active
+            // useSuspenseQuery on this key; awaiting an invalidate here would
+            // refetch it immediately and drop this now-removed member, throwing
+            // "user not found" before the navigation runs. refetchType "inactive"
+            // still marks it stale so the users list refetches once it mounts.
             router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
+
+            void queryClient.invalidateQueries({
+                queryKey: ["auth", "organization-users", organization.id],
+                refetchType: "inactive",
+            });
         },
     });
 

@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -54,6 +55,15 @@ export function AdminModule_UpdateUser_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
+    const roleDefaults = {
+        primaryRole: OrganizationRole.getPrimaryRole(
+            organizationUser.role.split(",") as OrganizationRole[],
+        ),
+        secondaryRoles: OrganizationRole.getSecondaryRoles(
+            organizationUser.role.split(",") as OrganizationRole[],
+        ),
+    };
+
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -61,14 +71,7 @@ export function AdminModule_UpdateUser_Dialog({
                 secondaryRoles: z.array(OrganizationRole.secondaryRoleSchema),
             }),
         ),
-        defaultValues: {
-            primaryRole: OrganizationRole.getPrimaryRole(
-                organizationUser.role.split(",") as OrganizationRole[],
-            ),
-            secondaryRoles: OrganizationRole.getSecondaryRoles(
-                organizationUser.role.split(",") as OrganizationRole[],
-            ),
-        },
+        defaultValues: roleDefaults,
     });
 
     const mutation = useMutation({
@@ -98,14 +101,16 @@ export function AdminModule_UpdateUser_Dialog({
     });
 
     function handleOpenChange(open: boolean) {
-        if (open) {
-            void setAction("update", { history: "push" });
-        } else {
-            form.reset();
-            mutation.reset();
-            void setAction(null, { history: "replace" });
-        }
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
     }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(roleDefaults);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
