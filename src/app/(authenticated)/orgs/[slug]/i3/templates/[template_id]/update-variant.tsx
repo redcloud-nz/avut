@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -76,11 +77,15 @@ export function I3Module_UpdateVariant_Dialog({
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    useEffect(() => {
+        if (props.open) {
+            form.reset(variant);
             mutation.reset();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
 
+    function handleOpenChange(open: boolean) {
         props.onOpenChange?.(open);
     }
 
