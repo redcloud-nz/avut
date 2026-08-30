@@ -5,9 +5,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +46,8 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
     const organization = useOrganization();
     const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const form = useForm({
         resolver: zodResolver(SkillGroup.modifiableSchema),
@@ -77,8 +79,6 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                     </>,
                 );
 
-                handleOpenChange(false);
-
                 router.push(
                     route(
                         "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
@@ -108,12 +108,16 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>

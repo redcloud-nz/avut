@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -35,7 +35,7 @@ import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
 export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const archiveMutation = useMutation(
         trpc.skillPackageBuilder.archivePackage.mutationOptions({
@@ -252,7 +252,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                             }}
                             render={(allowed) => (
                                 <DropdownMenuItem
-                                    onSelect={() => setDeleteDialogOpen(true)}
+                                    onSelect={() => setAction("delete", { history: "push" })}
                                     className="text-destructive focus:text-destructive"
                                     disabled={!allowed}
                                 >
@@ -265,8 +265,12 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             </DropdownMenu>
             <SkillPackageBuilder_DeletePackage_Dialog
                 skillPackage={skillPackage}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );

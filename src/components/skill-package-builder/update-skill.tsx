@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -62,7 +63,8 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
 }) {
     const organization = useOrganization();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),
@@ -90,12 +92,28 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
-            form.reset();
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(skill);
             mutation.reset();
         }
-        setDialogOpen(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    const handleSubmit = form.handleSubmit(
+        (formData) =>
+            mutation.mutate({
+                skillId: skill.id,
+                organizationId: organization.id,
+                update: formData,
+            }),
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
@@ -109,16 +127,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                     <DialogTitle>Update skill</DialogTitle>
                     <DialogDescription>Update the details of this skill.</DialogDescription>
                 </DialogHeader>
-                <form
-                    id="update-skill-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            skillId: skill.id,
-                            organizationId: organization.id,
-                            update: formData,
-                        }),
-                    )}
-                >
+                <form id="update-skill-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Field>
                             <FieldLabel>Skill ID</FieldLabel>

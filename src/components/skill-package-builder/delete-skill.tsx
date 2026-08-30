@@ -55,8 +55,6 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
                     </>,
                 );
 
-                props.onOpenChange?.(false);
-
                 // Redirect to the package list page after deletion
                 router.push(
                     route(
@@ -74,7 +72,7 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Skill</AlertDialogTitle>
                     <AlertDialogDescription>

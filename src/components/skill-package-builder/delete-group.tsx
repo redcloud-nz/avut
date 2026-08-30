@@ -53,8 +53,6 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
                         Skill Group <ObjectName>{skillGroup.name}</ObjectName> deleted.
                     </>,
                 );
-                props.onOpenChange?.(false);
-
                 // Redirect to the package list page after deletion
                 router.push(
                     route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
@@ -68,7 +66,7 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Skill Group</AlertDialogTitle>
                     <AlertDialogDescription>
