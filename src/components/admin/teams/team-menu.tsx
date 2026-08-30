@@ -5,7 +5,7 @@
 "use client";
 
 import { CableIcon } from "lucide-react";
-import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -18,50 +18,59 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
+
+import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
 
 interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
 export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
-    const organization = useOrganization();
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <DropdownMenuTriggerIcon />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-40" align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <Protect
-                    permissions={{ team: ["update"] }}
-                    render={(allowed) => (
-                        <DropdownMenuItem disabled={!allowed}>
-                            <CableIcon /> Link to D4H
-                        </DropdownMenuItem>
-                    )}
-                />
-                <Protect
-                    permissions={{ team: ["delete"] }}
-                    render={(allowed) => (
-                        <DropdownMenuItem asChild disabled={!allowed} className="text-destructive">
-                            <Link
-                                href={route("/orgs/[slug]/admin/teams/[team_id]/--delete", {
-                                    slug: organization.slug,
-                                    team_id: team.id,
-                                })}
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <DropdownMenuTriggerIcon />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40" align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <Protect
+                        permissions={{ team: ["update"] }}
+                        render={(allowed) => (
+                            <DropdownMenuItem disabled={!allowed}>
+                                <CableIcon /> Link to D4H
+                            </DropdownMenuItem>
+                        )}
+                    />
+                    <Protect
+                        permissions={{ team: ["delete"] }}
+                        render={(allowed) => (
+                            <DropdownMenuItem
+                                onClick={() => setAction("delete", { history: "push" })}
+                                disabled={!allowed}
+                                className="text-destructive focus:text-destructive"
                             >
                                 <ObjectIcons.Delete /> Delete
-                            </Link>
-                        </DropdownMenuItem>
-                    )}
-                />
-            </DropdownMenuContent>
-        </DropdownMenu>
+                            </DropdownMenuItem>
+                        )}
+                    />
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <AdminModule_DeleteTeam_Dialog
+                team={team}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    void setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+        </>
     );
 }

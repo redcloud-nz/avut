@@ -6,13 +6,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { MutationButton } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,6 +24,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -32,20 +36,12 @@ import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-/**
- * Controlled create-team dialog — no trigger of its own. `open`/`onOpenChange` are driven
- * by the route: `(list)/--create/page.tsx` keeps this open and closes it by navigating
- * back to the teams list via `router.push`.
- */
-export function AdminModule_CreateTeam_DialogContent({
-    open,
-    onOpenChange,
-}: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
+export function AdminModule_CreateTeam_Dialog() {
     const organization = useOrganization();
     const router = useRouter();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
@@ -93,16 +89,25 @@ export function AdminModule_CreateTeam_DialogContent({
         },
     );
 
-    function handleDialogOpenChange(nextOpen: boolean) {
-        if (!nextOpen) {
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        onOpenChange(nextOpen);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     return (
-        <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ObjectIcons.Create /> <span className="hidden md:inline">New Team</span>
+                </Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Team</DialogTitle>
