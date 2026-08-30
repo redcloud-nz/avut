@@ -6,6 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -22,7 +23,6 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
@@ -35,12 +35,12 @@ import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-export function SkillsModule_UpdateSession_Dialog({
-    session,
-    ...props
-}: DialogProps & { session: SkillCheckSession }) {
+export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
     const organization = useOrganization();
     const router = useRouter();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
@@ -73,16 +73,17 @@ export function SkillsModule_UpdateSession_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("update", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-
-        props.onOpenChange?.(open);
     }
 
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <ObjectIcons.Edit />
