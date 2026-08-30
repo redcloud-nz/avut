@@ -113,12 +113,16 @@ export function SkillTrack_CreateSession_Dialog() {
                 </DialogHeader>
                 <form
                     id="new-session-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            skillCheckSessionId: SkillCheckSessionId.create(),
-                            create: formData,
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (formData) =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillCheckSessionId: SkillCheckSessionId.create(),
+                                create: formData,
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>

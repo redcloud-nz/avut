@@ -5,7 +5,6 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useRef } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -25,17 +24,11 @@ import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
-    const menuTriggerRef = useRef<HTMLButtonElement>(null);
-
     return (
         <>
-            <DropdownMenu
-                onOpenChange={(open) => {
-                    if (!open) menuTriggerRef.current?.focus();
-                }}
-            >
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button ref={menuTriggerRef} variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>

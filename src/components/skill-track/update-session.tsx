@@ -96,12 +96,16 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                 </DialogHeader>
                 <form
                     id="update-session-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            skillCheckSessionId: session.id,
-                            update: formData,
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (formData) =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillCheckSessionId: session.id,
+                                update: formData,
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>
