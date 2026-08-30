@@ -4,53 +4,52 @@
  *
  * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/history
  */
-"use client";
 
-import { use } from "react";
+import { Metadata } from "next";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
-
+import { SkillPackageBuilder_PackageHistory_Content } from "@/components/skill-package-builder/package-history-content";
 import { Std } from "@/components/blocks/std";
-import { NotImplemented } from "@/components/nav/errors";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { requireOrganization } from "@/server/organization-access";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default function SkillPackageBuilder_Package_History_Page(
-    props: PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>,
-) {
-    const { slug, package_id } = use(props.params);
-    const organization = useOrganization();
+type Props = PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>;
 
-    const { data: skillPackage } = useSuspenseQuery(
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { slug, package_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const skillPackageId = SkillPackageId.schema.parse(package_id);
+    const skillPackage = await fetchQuery(
         trpc.skillPackageBuilder.getPackage.queryOptions({
             organizationId: organization.id,
-            skillPackageId: package_id,
+            skillPackageId,
+        }),
+    );
+
+    return { title: `${skillPackage.name} History ${TITLE_SEPARATOR} Skill Package Builder` };
+}
+
+export default async function SkillPackageBuilder_PackageHistory_Page(props: Props) {
+    const { slug, package_id } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    const skillPackageId = SkillPackageId.schema.parse(package_id);
+
+    prefetch(
+        trpc.skillPackageBuilder.getPackage.queryOptions({
+            organizationId: organization.id,
+            skillPackageId,
         }),
     );
 
     return (
-        <Std.SidebarInset>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Package Builder",
-                        href: route("/orgs/[slug]/skill-package-builder", { slug }),
-                    },
-                    {
-                        label: skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
-                            slug,
-                            package_id,
-                        }),
-                    },
-                    "History",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <NotImplemented />
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Std.SidebarInset>
+                <SkillPackageBuilder_PackageHistory_Content skillPackageId={skillPackageId} />
+            </Std.SidebarInset>
+        </HydrateClient>
     );
 }
