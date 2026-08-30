@@ -18,12 +18,16 @@ import {
 } from "@tanstack/react-table";
 
 import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Protect } from "@/components/protect";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
 
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_CreateTeam_Dialog } from "./create-team";
 
 /**
  * List of teams in the organization.
@@ -85,10 +89,20 @@ export function AdminModule_TeamsList() {
     });
 
     return (
-        <div>
-            <Kaga.TableToolbar table={table} />
-            <Kaga.Table table={table} />
-            <Kaga.TablePagination table={table} />
-        </div>
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Teams</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect permissions={{ team: ["create"] }}>
+                        <AdminModule_CreateTeam_Dialog />
+                    </Protect>
+                </Saratoga.Actions>
+            </Saratoga.Header>
+            <div>
+                <Kaga.TableToolbar table={table} />
+                <Kaga.Table table={table} />
+                <Kaga.TablePagination table={table} />
+            </div>
+        </Saratoga.Root>
     );
 }

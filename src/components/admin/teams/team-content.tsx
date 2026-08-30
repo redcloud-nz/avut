@@ -4,8 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
-
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -24,6 +22,7 @@ import { trpc } from "@/trpc/client";
 
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_TeamMenu } from "./team-menu";
+import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
@@ -63,16 +62,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                     <CardTitle>Team Details</CardTitle>
                                     <CardAction>
                                         <Protect permissions={{ team: ["update"] }}>
-                                            <Button variant="ghost" asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/admin/teams/[team_id]/--update",
-                                                        { slug: organization.slug, team_id: team.id },
-                                                    )}
-                                                >
-                                                    <ObjectIcons.Edit />
-                                                </Link>
-                                            </Button>
+                                            <AdminModule_UpdateTeam_Dialog team={team} />
                                         </Protect>
                                     </CardAction>
                                 </CardHeader>
