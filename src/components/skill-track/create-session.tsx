@@ -7,6 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -86,14 +87,16 @@ export function SkillTrack_CreateSession_Dialog() {
     );
 
     function handleOpenChange(open: boolean) {
-        if (open) {
-            void setAction("create", { history: "push" });
-        } else {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
-            void setAction(null, { history: "replace" });
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
