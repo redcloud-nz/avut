@@ -251,22 +251,14 @@ history: "push" })}>`). On close, Radix restores focus to it automatically.
 
 ### Menu-triggered dialogs and focus
 
-When the trigger is a `DropdownMenuItem`, the menu closes (and the item
-unmounts) before the dialog opens, so on dialog close Radix has nothing to
-restore focus to and it drops to `<body>`. Give the dialog an explicit
-`onCloseAutoFocus` that points at a stable element — usually the menu's own
-trigger button:
+When the trigger is a `DropdownMenuItem`, the menu item unmounts before the
+dialog opens, so Radix has no element to restore focus to on close and it would
+jump to `<body>` mid-interaction. Call `preventDefault()` on the dialog's
+`onCloseAutoFocus` to stop that jump:
 
 ```tsx
-<AlertDialogContent
-  onCloseAutoFocus={(e) => {
-    e.preventDefault();
-    menuTriggerRef.current?.focus();
-  }}
->
+<AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
 ```
-
-This is required for any menu-triggered dialog regardless of the param mechanic.
 
 ## General points
 
