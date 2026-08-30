@@ -49,8 +49,6 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
                     </>,
                 );
 
-                props.onOpenChange?.(false);
-
                 // Redirect to the package list page after deletion
                 router.push(
                     route("/orgs/[slug]/skill-package-builder", { slug: organization.slug }),
@@ -61,7 +59,7 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Skill Package</AlertDialogTitle>
                     <AlertDialogDescription>
