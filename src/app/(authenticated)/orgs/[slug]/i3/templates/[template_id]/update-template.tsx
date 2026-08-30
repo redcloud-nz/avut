@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -43,7 +44,8 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const { data: categories } = useQuery(
         trpc.d4hApi.listEquipmentCategories.queryOptions({
@@ -74,7 +76,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                     </>,
                 );
 
-                handleOpenChange(false);
+                handleDialogOpenChange(false);
 
                 await queryClient.invalidateQueries(
                     trpc.i3.listTemplates.queryFilter({
@@ -94,16 +96,32 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
         (k) => !selectedCategoryId || k.category.id === selectedCategoryId,
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
-            form.reset();
-            mutation.reset();
-        }
-        setDialogOpen(open);
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
     }
 
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(template);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    const handleSubmit = form.handleSubmit(
+        (formData) =>
+            mutation.mutate({
+                organizationId: organization.id,
+                templateId: template.id,
+                update: formData,
+            }),
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
+
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <ObjectIcons.Edit />
@@ -114,16 +132,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                     <DialogTitle>Update Template</DialogTitle>
                     <DialogDescription>Update the details of this template.</DialogDescription>
                 </DialogHeader>
-                <form
-                    id="update-template-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            templateId: template.id,
-                            update: formData,
-                        }),
-                    )}
-                >
+                <form id="update-template-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="name"

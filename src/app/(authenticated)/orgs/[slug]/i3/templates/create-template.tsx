@@ -5,7 +5,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -47,7 +48,8 @@ export function I3Module_CreateTemplate_Dialog() {
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const [{ data: categories }, { data: kinds }] = useQueries({
         queries: [
@@ -88,7 +90,6 @@ export function I3Module_CreateTemplate_Dialog() {
                         organizationId: organization.id,
                     }),
                 );
-                handleOpenChange(false);
                 router.push(
                     route("/orgs/[slug]/i3/templates/[template_id]", {
                         slug: organization.slug,
@@ -109,17 +110,21 @@ export function I3Module_CreateTemplate_Dialog() {
             });
         },
         (fieldErrors) => {
-            logger.warn(`Validation failed`, fieldErrors);
+            console.error("Form validation errors:", fieldErrors);
         },
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     const selectedCategoryId = useWatch({
         control: form.control,
