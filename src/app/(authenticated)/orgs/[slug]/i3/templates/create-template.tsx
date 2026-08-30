@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -47,7 +47,8 @@ export function I3Module_CreateTemplate_Dialog() {
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const [{ data: categories }, { data: kinds }] = useQueries({
         queries: [
@@ -88,7 +89,6 @@ export function I3Module_CreateTemplate_Dialog() {
                         organizationId: organization.id,
                     }),
                 );
-                handleOpenChange(false);
                 router.push(
                     route("/orgs/[slug]/i3/templates/[template_id]", {
                         slug: organization.slug,
@@ -114,11 +114,13 @@ export function I3Module_CreateTemplate_Dialog() {
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("create", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-        setDialogOpen(open);
     }
 
     const selectedCategoryId = useWatch({
