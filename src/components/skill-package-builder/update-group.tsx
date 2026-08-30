@@ -79,6 +79,18 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
         }
     }
 
+    const handleSubmit = form.handleSubmit(
+        (formData) =>
+            mutation.mutate({
+                organizationId: organization.id,
+                skillGroupId: skillGroup.id,
+                update: formData,
+            }),
+        (errors) => {
+            console.error("Form validation errors:", errors);
+        },
+    );
+
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -91,16 +103,7 @@ export function SkillPackageBuilder_UpdateGroup_Dialog({
                     <DialogTitle>Update skill group</DialogTitle>
                     <DialogDescription>Update the details of this skill group.</DialogDescription>
                 </DialogHeader>
-                <form
-                    id="update-skill-group-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            skillGroupId: skillGroup.id,
-                            update: formData,
-                        }),
-                    )}
-                >
+                <form id="update-skill-group-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Field>
                             <FieldLabel>Group ID</FieldLabel>
