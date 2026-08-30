@@ -31,7 +31,11 @@ Each function does a full navigation afterward (`signIn`/`signOut` follow the sa
    psql "$POSTGRES_URL_NON_POOLING" -c "SELECT id, email, role FROM users WHERE role = 'admin';"
    ```
    (source `.env.local` first to get `POSTGRES_URL_NON_POOLING`). If none exists, ask the user rather than promoting an account yourself.
-3. **The account's password**, stored at `DEV_ADMIN_TEST_PASSWORD` in `.env.local` for the admin test account (gitignored, local-only — this is deliberately not something to save into Claude's own memory).
+3. **The account's password**, stored at `DEV_ADMIN_TEST_PASSWORD` in `.env.local` for the admin test account (gitignored, local-only — this is deliberately not something to save into Claude's own memory). A broad `cat .env.local` / `source .env.local && echo` is blocked by the permission classifier for surfacing every other secret alongside it; retrieve just this one value with the allow-listed helper:
+   ```
+   bash .claude/skills/test-in-browser/print-test-account-password.sh
+   ```
+   It prints only the `DEV_ADMIN_TEST_PASSWORD` value. Pass it straight to `window.avut.signIn({ email: "delivered+admin-test@resend.dev", password: <value> })` — don't write it to a file, commit it, or save it to memory.
 
 ## Usage
 
