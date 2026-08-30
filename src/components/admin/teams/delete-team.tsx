@@ -40,7 +40,7 @@ export function AdminModule_DeleteTeam_Dialog({
     const mutation = useMutation(
         trpc.teams.deleteTeam.mutationOptions({
             onError(error) {
-                console.error("Failed to delete skill:", error);
+                console.error("Failed to delete team:", error);
                 toast.error("Failed to delete team: " + error.message);
             },
             async onSuccess() {

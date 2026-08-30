@@ -6,7 +6,6 @@
 
 import { CableIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useRef } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -29,13 +28,12 @@ interface AdminModule_TeamMenuProps {
 
 export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
-    const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button ref={menuTriggerRef} variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
@@ -67,12 +65,11 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
             <AdminModule_DeleteTeam_Dialog
                 team={team}
                 open={action === "delete"}
-                onOpenChange={(open) => {
+                onOpenChange={(open) =>
                     void setAction(open ? "delete" : null, {
                         history: open ? "push" : "replace",
-                    });
-                    if (!open) menuTriggerRef.current?.focus();
-                }}
+                    })
+                }
             />
         </>
     );
