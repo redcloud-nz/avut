@@ -5,7 +5,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -41,7 +42,11 @@ export function I3Module_Template_AddVariant_Dialog({ template }: { template: I3
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-variant"] as const),
+    );
+    const dialogOpen = action === "add-variant";
 
     const form = useForm({
         resolver: zodResolver(I3TemplateVariant.modifiableSchema),
@@ -100,12 +105,16 @@ export function I3Module_Template_AddVariant_Dialog({ template }: { template: I3
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "add-variant" : null, { history: open ? "push" : "replace" });
     }
 
     const handleSubmit = form.handleSubmit(
