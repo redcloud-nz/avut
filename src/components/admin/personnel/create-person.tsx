@@ -37,8 +37,8 @@ export function AdminModule_CreatePerson_Dialog() {
     const organization = useOrganization();
     const router = useRouter();
 
-    const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["create"] as const));
-    const dialogOpen = dialog === "create";
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -89,11 +89,11 @@ export function AdminModule_CreatePerson_Dialog() {
 
     function handleOpenChange(open: boolean) {
         if (open) {
-            void setDialog("create", { history: "push" });
+            void setAction("create", { history: "push" });
         } else {
             form.reset();
             mutation.reset();
-            void setDialog(null, { history: "replace" });
+            void setAction(null, { history: "replace" });
         }
     }
 

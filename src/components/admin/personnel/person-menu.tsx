@@ -38,7 +38,7 @@ interface AdminModule_PersonMenuProps {
 export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
-    const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -139,7 +139,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                 permissions={{ person: ["delete"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={() => setDialog("delete", { history: "push" })}
+                                        onClick={() => setAction("delete", { history: "push" })}
                                         disabled={!allowed}
                                         className="text-destructive focus:text-destructive"
                                     >
@@ -156,9 +156,9 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             {/* Delete Person dialog*/}
             <AdminModule_DeletePerson_Dialog
                 person={person}
-                open={dialog === "delete"}
+                open={action === "delete"}
                 onOpenChange={(open) =>
-                    setDialog(open ? "delete" : null, {
+                    setAction(open ? "delete" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

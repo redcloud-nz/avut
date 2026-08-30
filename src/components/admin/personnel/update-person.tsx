@@ -35,8 +35,8 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
     const organization = useOrganization();
 
-    const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
-    const dialogOpen = dialog === "update";
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -65,11 +65,11 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
 
     function handleOpenChange(open: boolean) {
         if (open) {
-            void setDialog("update", { history: "push" });
+            void setAction("update", { history: "push" });
         } else {
             form.reset();
             mutation.reset();
-            void setDialog(null, { history: "replace" });
+            void setAction(null, { history: "replace" });
         }
     }
 

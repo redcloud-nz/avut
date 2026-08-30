@@ -1,8 +1,8 @@
 # Pattern: mutation dialog
 
 Shape for a dialog that creates, updates, deletes, or confirms a state change on
-a record. Every mutation dialog in AVUT is driven by a **`dialog` search param**
-(`?dialog=create`, `?dialog=update`, `?dialog=delete`, …) managed with
+a record. Every mutation dialog in AVUT is driven by an **`action` search param**
+(`?action=create`, `?action=update`, `?action=delete`, …) managed with
 [nuqs](https://nuqs.dev), so it can be opened from any entry point (a button, a
 menu item, a keyboard shortcut, a pasted link), survives a refresh, and updates
 the URL through the History API without a server round-trip or a page remount.
@@ -22,30 +22,30 @@ Examples on personnel: `AdminModule_CreatePerson_Dialog` (list),
 `src/components/providers.tsx`, inside `QueryClientProvider`. Nothing else is
 global — each dialog reads its own param.
 
-## The `dialog` param
+## The `action` param
 
 ```tsx
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
-const dialogOpen = dialog === "update";
+const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+const dialogOpen = action === "update";
 ```
 
-- **One param name — `dialog` — shared across the whole app.** Each component
+- **One param name — `action` — shared across the whole app.** Each component
   parses only the literal(s) it owns (`["create"]`, `["update"]`, `["delete"]`,
   `["archive", "restore"]`, …); an unrecognised value parses to `null`, so
-  `?dialog=delete` leaves the update dialog closed. Two dialogs cannot be
+  `?action=delete` leaves the update dialog closed. Two dialogs cannot be
   addressable-open at the same time — that has never been needed.
 - **`history` per transition:** push when opening, replace when closing.
 
   ```tsx
   function handleDialogOpenChange(open: boolean) {
     if (open) {
-      void setDialog("update", { history: "push" });
+      void setAction("update", { history: "push" });
     } else {
       form.reset(); // non-destructive dialogs only
       mutation.reset();
-      void setDialog(null, { history: "replace" });
+      void setAction(null, { history: "replace" });
     }
   }
   ```
@@ -59,9 +59,9 @@ const dialogOpen = dialog === "update";
   banner.
 
 - A per-row / list-item dialog needs a second param to say _which_ row:
-  `?dialog=delete&personId=…`. Add `const [personId] = useQueryState("personId",
+  `?action=delete&personId=…`. Add `const [personId] = useQueryState("personId",
 parseAsString)` and resolve the record from the list query cache. Personnel
-  deletes from the detail page, so it needs only `?dialog=delete` — the id is
+  deletes from the detail page, so it needs only `?action=delete` — the id is
   already in the route.
 
 - `npx next typegen` is **not** needed — no routes are added.
@@ -78,8 +78,8 @@ prop-driven — see [triggers](#triggers).
 export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
   const organization = useOrganization();
 
-  const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
-  const dialogOpen = dialog === "update";
+  const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+  const dialogOpen = action === "update";
 
   const form = useForm({
     resolver: zodResolver(PersonData.modifiableSchema),
@@ -102,11 +102,11 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
 
   function handleDialogOpenChange(open: boolean) {
     if (open) {
-      void setDialog("update", { history: "push" });
+      void setAction("update", { history: "push" });
     } else {
       form.reset();
       mutation.reset();
-      void setDialog(null, { history: "replace" });
+      void setAction(null, { history: "replace" });
     }
   }
 
@@ -174,7 +174,7 @@ export function AdminModule_DeletePerson_Dialog({
             Person <ObjectName>{person.name}</ObjectName> deleted.
           </>,
         );
-        // Navigate away. Don't also clear the dialog param or reset the mutation
+        // Navigate away. Don't also clear the action param or reset the mutation
         // here — see the rule below.
         router.push(route("/orgs/[slug]/admin/personnel", { slug: organization.slug }));
       },
@@ -221,11 +221,11 @@ export function AdminModule_DeletePerson_Dialog({
 ### Never pair a closing param-write with a navigation in `onSuccess`
 
 If `onSuccess` calls `router.push(...)`, that is the _whole_ close. Do **not**
-also call `handleDialogOpenChange(false)` / `setDialog(null)` / `mutation.reset()`
+also call `handleDialogOpenChange(false)` / `setAction(null)` / `mutation.reset()`
 in the same handler:
 
 - the `router.push` unmounts the dialog anyway;
-- the param clear (`setDialog(null)`, a History `replace`) **races** the
+- the param clear (`setAction(null)`, a History `replace`) **races** the
   `router.push` — in the pilot this left the page stranded on a now-deleted
   detail route until a manual reload (which then 404'd).
 
@@ -241,9 +241,9 @@ A trigger is anything that sets the param. Because the dialog is param-driven,
 button and a menu item can both open the same update dialog.
 
 - **Prefer a real `<button>` that stays mounted** (`<DialogTrigger>` inside the
-  dialog component, or a sibling `<Button onClick={() => setDialog("update", {
+  dialog component, or a sibling `<Button onClick={() => setAction("update", {
 history: "push" })}>`). On close, Radix restores focus to it automatically.
-- **A `<Link href="?dialog=…">` also works** and is fine for a header "New X"
+- **A `<Link href="?action=…">` also works** and is fine for a header "New X"
   action, but the link is a navigation trigger, not a focus anchor.
 - Wrap every permission-gated trigger in `<Protect>` (or its `render` prop for
   the disabled-item case). This only hides/disables the entry point — the tRPC

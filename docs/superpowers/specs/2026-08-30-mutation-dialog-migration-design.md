@@ -7,8 +7,8 @@
 
 ## Goal
 
-Every mutation dialog in the app is driven by a **`dialog` search param**
-(`?dialog=create`, `?dialog=update`, …) managed with [nuqs](https://nuqs.dev), so
+Every mutation dialog in the app is driven by an **`action` search param**
+(`?action=create`, `?action=update`, …) managed with [nuqs](https://nuqs.dev), so
 that:
 
 - every create / update / delete / confirm dialog has its own URL and survives a
@@ -96,14 +96,14 @@ For each dialog in the area:
 1. **In the dialog component**, replace the open/close `useState` with the param:
 
    ```tsx
-   const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
-   const dialogOpen = dialog === "update";
+   const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+   const dialogOpen = action === "update";
    ```
 
 2. **`handleDialogOpenChange`**:
-   - open → `void setDialog("update", { history: "push" })`
+   - open → `void setAction("update", { history: "push" })`
    - close → `form.reset()` (non-destructive only) + `mutation.reset()` +
-     `void setDialog(null, { history: "replace" })`
+     `void setAction(null, { history: "replace" })`
 
 3. **Keep the component's `…_Dialog` name.** It stays a controlled component
    (drives `open` from the param, not from local state). It may keep its own
@@ -122,10 +122,10 @@ For each dialog in the area:
 5. **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument;
    log `onInvalid`.
 
-6. **Trigger sites** — a permission-gated `<Button onClick={() => setDialog(…, {
+6. **Trigger sites** — a permission-gated `<Button onClick={() => setAction(…, {
 history: "push" })}>` or `<DropdownMenuItem onClick={…}>`, still wrapped in
    `<Protect>` / its `render` prop. Prefer a real button (stays mounted → Radix
-   restores focus on close) over a `<Link href="?dialog=…">`. A menu / wrapper
+   restores focus on close) over a `<Link href="?action=…">`. A menu / wrapper
    component that existed only to hold a dialog's `useState` loses the state; if
    that was its whole purpose, delete it.
 
@@ -146,8 +146,8 @@ npm run test:run
 Then a browser click-through via the `test-in-browser` skill, for each dialog:
 
 - open from its trigger (soft) — underlying page stays visible behind the dialog,
-  URL gains `?dialog=…`;
-- direct load / refresh of the `?dialog=…` URL — dialog opens on load;
+  URL gains `?action=…`;
+- direct load / refresh of the `?action=…` URL — dialog opens on load;
 - submit / confirm — correct toast, correct post-success navigation, underlying
   data reflects the change (effects invalidation);
 - cancel — param cleared, focus returns to the trigger (for button triggers);
@@ -186,21 +186,21 @@ Each phase confirms its decision before implementation.
 
 | #   | Phase                                                                | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | --- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7   | `i3/templates` — variants                                            | **Nested entity → needs a second param.** `?dialog=add-variant` on the template detail; `?dialog=update-variant&variantId=…` / `?dialog=delete-variant&variantId=…`. The host reads `variantId` and resolves the variant from the `listTemplateVariants` cache. Close returns to the template detail page (no navigation — same page).                                                                                                                                                  |
-| 8   | `admin/teams` — add / remove member, import from D4H                 | add / remove member triggered from `teams/[team_id]/personnel`: `?dialog=add-member` / `?dialog=remove-member&memberId=…` on that subpage. import-from-D4H: `?dialog=import` on the teams list. All same-page closes.                                                                                                                                                                                                                                                                   |
-| 9   | `skill-track/catalogue` — subscribe / unsubscribe                    | `?dialog=subscribe` / `?dialog=unsubscribe` on the catalogue package detail. **Also strip** the manual `queryClient.setQueryData` in both `onSuccess` handlers — rely on `meta: { effects: skillsEffects.* }` alone.                                                                                                                                                                                                                                                                    |
-| 10  | `admin/users` — link / unlink person                                 | `?dialog=link-person` / `?dialog=unlink-person` on the user detail page.                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 11  | `skill-package-builder` — state transitions                          | **New confirm dialogs.** `?dialog=archive` / `restore` for package, group, skill; `?dialog=publish` / `unpublish` for package. Plain `Dialog` (not `AlertDialog` — none irreversible), no `react-hook-form`, body = descriptive text + a `MutationButton` with `onClick`. The menu items that currently fire `toast.promise(mutateAsync(...))` become `setDialog(…)` calls; the per-action `useMutation` + handlers move into the new dialog components. `onSuccess` stays on the page. |
-| 12  | `skill-package-builder` — move-skill, reorder-skills, reorder-groups | **Bulk-order dialogs.** `?dialog=move` on the skill; `?dialog=reorder-skills` / `reorder-groups` on the group / package. `Dialog`, not `AlertDialog`. Body is the existing sortable-list / select UI. `move-skill` keeps `react-hook-form` (target group select); reorder dialogs submit an ordered array on confirm.                                                                                                                                                                   |
+| 7   | `i3/templates` — variants                                            | **Nested entity → needs a second param.** `?action=add-variant` on the template detail; `?action=update-variant&variantId=…` / `?action=delete-variant&variantId=…`. The host reads `variantId` and resolves the variant from the `listTemplateVariants` cache. Close returns to the template detail page (no navigation — same page).                                                                                                                                                  |
+| 8   | `admin/teams` — add / remove member, import from D4H                 | add / remove member triggered from `teams/[team_id]/personnel`: `?action=add-member` / `?action=remove-member&memberId=…` on that subpage. import-from-D4H: `?action=import` on the teams list. All same-page closes.                                                                                                                                                                                                                                                                   |
+| 9   | `skill-track/catalogue` — subscribe / unsubscribe                    | `?action=subscribe` / `?action=unsubscribe` on the catalogue package detail. **Also strip** the manual `queryClient.setQueryData` in both `onSuccess` handlers — rely on `meta: { effects: skillsEffects.* }` alone.                                                                                                                                                                                                                                                                    |
+| 10  | `admin/users` — link / unlink person                                 | `?action=link-person` / `?action=unlink-person` on the user detail page.                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 11  | `skill-package-builder` — state transitions                          | **New confirm dialogs.** `?action=archive` / `restore` for package, group, skill; `?action=publish` / `unpublish` for package. Plain `Dialog` (not `AlertDialog` — none irreversible), no `react-hook-form`, body = descriptive text + a `MutationButton` with `onClick`. The menu items that currently fire `toast.promise(mutateAsync(...))` become `setAction(…)` calls; the per-action `useMutation` + handlers move into the new dialog components. `onSuccess` stays on the page. |
+| 12  | `skill-package-builder` — move-skill, reorder-skills, reorder-groups | **Bulk-order dialogs.** `?action=move` on the skill; `?action=reorder-skills` / `reorder-groups` on the group / package. `Dialog`, not `AlertDialog`. Body is the existing sortable-list / select UI. `move-skill` keeps `react-hook-form` (target group select); reorder dialogs submit an ordered array on confirm.                                                                                                                                                                   |
 
 ## Wave-2 general rules (codify in `mutation-dialog.md` at the start of wave 2)
 
-- **Nested entity (no page of its own):** a distinct `dialog` value plus a second
+- **Nested entity (no page of its own):** a distinct `action` value plus a second
   param (`&variantId=…`, `&memberId=…`) identifying the row; the hosting
   component resolves the record from the parent's list-query cache. Close is a
   same-page param clear — no navigation.
 - **Relationship / join dialog:** hosted by whichever detail/list component the
-  action is triggered from; `dialog` value names the relationship
+  action is triggered from; `action` value names the relationship
   (`link-person`, `subscribe`). Same-page close.
 - **State-transition confirm (archive, restore, publish, unpublish, subscribe,
   unsubscribe):** **`Dialog` not `AlertDialog`** (reserve `AlertDialog` strictly
@@ -230,9 +230,9 @@ Each phase confirms its decision before implementation.
 - **Menu-triggered focus** — the `onCloseAutoFocus` fix is easy to forget; it
   applies to every delete/confirm dialog opened from a `DropdownMenuItem`. Make
   it a review checklist item.
-- **`dialog` param collisions on one page** — a page hosting two dialogs (e.g. a
+- **`action` param collisions on one page** — a page hosting two dialogs (e.g. a
   detail page with update + delete) is fine because each component parses its own
-  literal set, but a page hosting two dialogs that both want `?dialog=update`
+  literal set, but a page hosting two dialogs that both want `?action=update`
   would clash. None currently do; watch for it in wave 2.
 - **nuqs + `router.push` races** — the pilot hit one (delete). The rule in step 4
   above prevents it; enforce it in review.
