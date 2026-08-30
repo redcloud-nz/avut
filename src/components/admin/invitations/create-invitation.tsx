@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -47,7 +48,8 @@ export function AdminModule_CreateInvitation_Dialog() {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [open, setOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const open = action === "create";
 
     const form = useForm({
         resolver: zodResolver(
@@ -92,12 +94,16 @@ export function AdminModule_CreateInvitation_Dialog() {
     });
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
-            form.reset();
-        }
-
-        setOpen(open);
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
     }
+
+    useEffect(() => {
+        if (open) {
+            form.reset();
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [open]);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -116,11 +122,15 @@ export function AdminModule_CreateInvitation_Dialog() {
                 </DialogHeader>
                 <form
                     id="create-invitation-form"
-                    onSubmit={form.handleSubmit((data) =>
-                        mutation.mutate({
-                            email: data.email,
-                            roles: [data.primaryRole, ...data.secondaryRoles],
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (data) =>
+                            mutation.mutate({
+                                email: data.email,
+                                roles: [data.primaryRole, ...data.secondaryRoles],
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>
