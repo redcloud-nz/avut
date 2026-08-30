@@ -60,6 +60,7 @@ export function I3Module_DeleteVariant_Dialog({
                         organizationId: organization.id,
                     }),
                 );
+                props.onOpenChange?.(false);
             },
         }),
     );
