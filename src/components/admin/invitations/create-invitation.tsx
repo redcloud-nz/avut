@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -93,14 +94,16 @@ export function AdminModule_CreateInvitation_Dialog() {
     });
 
     function handleOpenChange(open: boolean) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
         if (open) {
-            void setAction("create", { history: "push" });
-        } else {
             form.reset();
             mutation.reset();
-            void setAction(null, { history: "replace" });
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [open]);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
