@@ -63,7 +63,7 @@ export function AdminModule_DeletePerson_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Person</AlertDialogTitle>
                     <AlertDialogDescription>
