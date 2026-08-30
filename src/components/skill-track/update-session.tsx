@@ -61,10 +61,13 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                 toast.error(`Failed to update session ${error.message}`);
             },
 
-            onSuccess() {
+            async onSuccess() {
                 toast.success("Session updated");
 
-                handleOpenChange(false);
+                // Await the param clear before refreshing: setAction is async, and a
+                // router.refresh() that lands first would re-render the server component
+                // with ?action=update still in the URL and reopen the dialog.
+                await setAction(null, { history: "replace" });
 
                 // The detail page renders a server-fetched session, so the cache write from
                 // meta.effects does not reach it — only a server re-render does.

@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { ComponentProps, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -58,6 +58,13 @@ export function SkillsModule_DeleteSession_Dialog({
             },
         }),
     );
+
+    useEffect(() => {
+        // The dialog stays mounted between opens; clear any prior error/success
+        // state so a failed delete doesn't leave the button disabled on reopen.
+        if (props.open) mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
 
     return (
         <AlertDialog {...props}>
