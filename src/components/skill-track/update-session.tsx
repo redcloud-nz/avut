@@ -6,6 +6,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -22,7 +24,6 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogProps,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
@@ -35,12 +36,12 @@ import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-export function SkillsModule_UpdateSession_Dialog({
-    session,
-    ...props
-}: DialogProps & { session: SkillCheckSession }) {
+export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
     const organization = useOrganization();
     const router = useRouter();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
@@ -60,10 +61,13 @@ export function SkillsModule_UpdateSession_Dialog({
                 toast.error(`Failed to update session ${error.message}`);
             },
 
-            onSuccess() {
+            async onSuccess() {
                 toast.success("Session updated");
 
-                handleOpenChange(false);
+                // Await the param clear before refreshing: setAction is async, and a
+                // router.refresh() that lands first would re-render the server component
+                // with ?action=update still in the URL and reopen the dialog.
+                await setAction(null, { history: "replace" });
 
                 // The detail page renders a server-fetched session, so the cache write from
                 // meta.effects does not reach it — only a server re-render does.
@@ -73,16 +77,24 @@ export function SkillsModule_UpdateSession_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
-            form.reset();
-            mutation.reset();
-        }
-
-        props.onOpenChange?.(open);
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
     }
 
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset({
+                name: session.name,
+                date: session.date,
+                notes: session.notes,
+                status: session.status,
+            });
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <ObjectIcons.Edit />
@@ -95,12 +107,16 @@ export function SkillsModule_UpdateSession_Dialog({
                 </DialogHeader>
                 <form
                     id="update-session-form"
-                    onSubmit={form.handleSubmit((formData) =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            skillCheckSessionId: session.id,
-                            update: formData,
-                        }),
+                    onSubmit={form.handleSubmit(
+                        (formData) =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillCheckSessionId: session.id,
+                                update: formData,
+                            }),
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
                     )}
                 >
                     <FieldGroup>

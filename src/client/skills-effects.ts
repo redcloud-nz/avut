@@ -27,6 +27,14 @@ export const skillsEffects = createEffects<"skills">()({
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
     deleteSession: (vars) => [
+        // Mark the deleted session's detail query stale so navigating Back to its route
+        // refetches (and 404s) rather than rendering the now-deleted session from cache.
+        invalidate(
+            trpc.skills.getSession.queryFilter({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+        ),
         invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
     ],
     subscribeToPackage: (vars) => [
