@@ -40,13 +40,7 @@ const dialogOpen = action === "update";
 
   ```tsx
   function handleDialogOpenChange(open: boolean) {
-    if (open) {
-      void setAction("update", { history: "push" });
-    } else {
-      form.reset(); // non-destructive dialogs only
-      mutation.reset();
-      void setAction(null, { history: "replace" });
-    }
+    void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
   }
   ```
 
@@ -54,9 +48,26 @@ const dialogOpen = action === "update";
   replace-on-close means Back from the closed page doesn't reopen it (no ghost
   history entry).
 
-- **`handleDialogOpenChange`** resets the form and the mutation on close, so
-  re-opening the dialog never shows stale field values or a stale error/success
-  banner.
+- **Reset the form and the mutation when the dialog _opens_**, in an effect —
+  not in `handleDialogOpenChange`. A Back-button close changes `action` without
+  going through `onOpenChange` (Radix only calls it for interactions inside the
+  dialog), so a reset that lives in the close branch is skipped on a Back-button
+  close and the next open shows stale field values or a stale error/success
+  banner. An open-triggered effect covers every close path:
+
+  ```tsx
+  useEffect(() => {
+    if (dialogOpen) {
+      form.reset(person); // create dialogs: form.reset() — back to blank defaults
+      mutation.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+  }, [dialogOpen]);
+  ```
+
+  Resetting from the current `person` prop (rather than a bare `form.reset()`)
+  also picks up any change to the record since the dialog was last open —
+  react-hook-form captures `defaultValues` once and does not track prop changes.
 
 - A per-row / list-item dialog needs a second param to say _which_ row:
   `?action=delete&personId=…`. Add `const [personId] = useQueryState("personId",
@@ -101,14 +112,16 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
   );
 
   function handleDialogOpenChange(open: boolean) {
-    if (open) {
-      void setAction("update", { history: "push" });
-    } else {
-      form.reset();
-      mutation.reset();
-      void setAction(null, { history: "replace" });
-    }
+    void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
   }
+
+  useEffect(() => {
+    if (dialogOpen) {
+      form.reset(person);
+      mutation.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+  }, [dialogOpen]);
 
   const handleSubmit = form.handleSubmit(
     (formData) =>
