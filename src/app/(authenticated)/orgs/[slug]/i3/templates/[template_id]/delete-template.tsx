@@ -50,29 +50,21 @@ export function I3Module_DeleteTemplate_Dialog({
             async onSuccess() {
                 logger.info(`Template "${template.name}" deleted.`);
                 toast.success(`Template "${template.name}" deleted.`);
-                handleOpenChange(false);
-
-                router.push(route("/orgs/[slug]/i3/templates", { slug: organization.slug }));
 
                 await queryClient.invalidateQueries(
                     trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
                     }),
                 );
+
+                router.push(route("/orgs/[slug]/i3/templates", { slug: organization.slug }));
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
-            mutation.reset();
-        }
-        props.onOpenChange?.(open);
-    }
-
     return (
-        <AlertDialog {...props} onOpenChange={handleOpenChange}>
-            <AlertDialogContent>
+        <AlertDialog {...props}>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete I3 Template</AlertDialogTitle>
                     <AlertDialogDescription>

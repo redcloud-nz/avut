@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -22,7 +22,7 @@ import { I3Template } from "@/lib/schemas/i3-template";
 import { I3Module_DeleteTemplate_Dialog } from "./delete-template";
 
 export function I3Module_Template_Menu({ template }: { template: I3Template }) {
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     return (
         <>
@@ -38,7 +38,7 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
                         permissions={{ i3Template: ["delete"] }}
                         render={(allowed) => (
                             <DropdownMenuItem
-                                onClick={() => setDeleteDialogOpen(true)}
+                                onClick={() => setAction("delete", { history: "push" })}
                                 disabled={!allowed}
                             >
                                 <ObjectIcons.Delete /> Delete
@@ -50,8 +50,12 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
 
             <I3Module_DeleteTemplate_Dialog
                 template={template}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );
