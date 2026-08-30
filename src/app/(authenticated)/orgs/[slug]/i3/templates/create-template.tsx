@@ -6,6 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -114,14 +115,16 @@ export function I3Module_CreateTemplate_Dialog() {
     );
 
     function handleOpenChange(open: boolean) {
-        if (open) {
-            void setAction("create", { history: "push" });
-        } else {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
-            void setAction(null, { history: "replace" });
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     const selectedCategoryId = useWatch({
         control: form.control,

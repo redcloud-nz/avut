@@ -5,6 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,6 +62,13 @@ export function I3Module_DeleteTemplate_Dialog({
             },
         }),
     );
+
+    useEffect(() => {
+        // The dialog stays mounted between opens; clear any prior error/success
+        // state so a failed delete doesn't leave the button disabled on reopen.
+        if (props.open) mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
 
     return (
         <AlertDialog {...props}>
