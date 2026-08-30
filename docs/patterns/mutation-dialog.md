@@ -247,6 +247,78 @@ page. **update** → `onSuccess` does only `handleDialogOpenChange(false)` (no
 navigation, stays on the page). **delete** → `onSuccess` does only `router.push`
 to the list.
 
+## Wave-2 dialog kinds
+
+Beyond plain create / update / delete on a record that owns a route, four
+recurring shapes have fixed rules:
+
+- **Nested entity (no page of its own).** A child row — a template variant, a
+  team member — gets a distinct `action` value **plus a second param naming the
+  row** (`&variantId=…`, `&memberId=…`). The dialog component keeps its
+  `{...props}`-driven signature (Recipe B — no `useQueryState` inside it); the
+  **hosting** component owns both params and resolves the record from the
+  parent's list query, then renders the dialog only once that record resolves.
+  Close is a same-page clear of **both** params with `{ history: "replace" }` —
+  no navigation.
+
+  Worked example — `template-variants.tsx` hosting the update/delete variant
+  dialogs (`?action=update-variant&variantId=…`):
+
+  ```tsx
+  import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+
+  const [action, setAction] = useQueryState(
+    "action",
+    parseAsStringLiteral(["update-variant", "delete-variant"] as const),
+  );
+  const [variantId, setVariantId] = useQueryState("variantId", parseAsString);
+  const activeVariant = variants.find((v) => v.id === variantId) ?? null;
+
+  function openVariantAction(next: "update-variant" | "delete-variant", id: string) {
+    void setVariantId(id, { history: "push" });
+    void setAction(next, { history: "push" });
+  }
+  function closeVariantAction() {
+    void setAction(null, { history: "replace" });
+    void setVariantId(null, { history: "replace" });
+  }
+
+  // row buttons: onClick={() => openVariantAction("update-variant", variant.id)}
+
+  {
+    activeVariant && (
+      <I3Module_UpdateVariant_Dialog
+        template={template}
+        variant={activeVariant}
+        open={action === "update-variant"}
+        onOpenChange={(open) => (open ? undefined : closeVariantAction())}
+      />
+    );
+  }
+  ```
+
+  `setVariantId` + `setAction` are two writes; nuqs batches synchronous writes
+  into one History update. `variants` comes from a `useSuspenseQuery` (already
+  awaited), so on a cold direct-load of `?action=update-variant&variantId=xyz`
+  `activeVariant` resolves on first render. A bogus `variantId` resolves to
+  `null` → the host renders nothing, no crash.
+
+- **Relationship / join dialog** (link-person, add-team-member, subscribe). Hosted
+  by whichever detail/list component the action is triggered from; the `action`
+  value names the relationship (`link-person`, `subscribe`). Single-instance
+  (one per page) so it needs no second param. Same-page close — `onSuccess` does
+  only `handleDialogOpenChange(false)`, never a navigation.
+
+- **State-transition confirm** (archive, restore, publish, unpublish, subscribe,
+  unsubscribe). Use a plain **`Dialog`, never `AlertDialog`** — `AlertDialog` is
+  reserved strictly for delete/remove. No `react-hook-form` when there is no
+  field input: just descriptive body text and a `MutationButton` whose `onClick`
+  fires the mutation. `onSuccess` stays on the page.
+
+- **Bulk-order dialog** (reorder / bulk-assign). A plain `Dialog` with a bespoke
+  body (sortable list, target select); add a `form` only if there is genuine
+  field input.
+
 ## Triggers
 
 A trigger is anything that sets the param. Because the dialog is param-driven,
