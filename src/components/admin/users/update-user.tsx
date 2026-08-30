@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -51,7 +52,17 @@ export function AdminModule_UpdateUser_Dialog({
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
+
+    const roleDefaults = {
+        primaryRole: OrganizationRole.getPrimaryRole(
+            organizationUser.role.split(",") as OrganizationRole[],
+        ),
+        secondaryRoles: OrganizationRole.getSecondaryRoles(
+            organizationUser.role.split(",") as OrganizationRole[],
+        ),
+    };
 
     const form = useForm({
         resolver: zodResolver(
@@ -60,14 +71,7 @@ export function AdminModule_UpdateUser_Dialog({
                 secondaryRoles: z.array(OrganizationRole.secondaryRoleSchema),
             }),
         ),
-        defaultValues: {
-            primaryRole: OrganizationRole.getPrimaryRole(
-                organizationUser.role.split(",") as OrganizationRole[],
-            ),
-            secondaryRoles: OrganizationRole.getSecondaryRoles(
-                organizationUser.role.split(",") as OrganizationRole[],
-            ),
-        },
+        defaultValues: roleDefaults,
     });
 
     const mutation = useMutation({
@@ -97,13 +101,16 @@ export function AdminModule_UpdateUser_Dialog({
     });
 
     function handleOpenChange(open: boolean) {
-        setDialogOpen(open);
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
+    }
 
-        if (!open) {
-            form.reset();
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(roleDefaults);
             mutation.reset();
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
@@ -122,9 +129,14 @@ export function AdminModule_UpdateUser_Dialog({
                 </DialogHeader>
                 <form
                     id="update-user-form"
-                    onSubmit={form.handleSubmit((data) => {
-                        mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
-                    })}
+                    onSubmit={form.handleSubmit(
+                        (data) => {
+                            mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
+                        },
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
+                    )}
                 >
                     <FieldGroup>
                         <Controller

@@ -8,6 +8,7 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { use, useState } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -71,7 +72,7 @@ export default function AdminModule_User_Page(
         }),
     );
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
     const [linkPersonDialogOpen, setLinkPersonDialogOpen] = useState(false);
     const [unlinkPersonDialogOpen, setUnlinkPersonDialogOpen] = useState(false);
 
@@ -106,7 +107,9 @@ export default function AdminModule_User_Page(
                                                         !allowed ||
                                                         member.user.id === session?.user.id
                                                     }
-                                                    onClick={() => setDeleteDialogOpen(true)}
+                                                    onClick={() =>
+                                                        setAction("delete", { history: "push" })
+                                                    }
                                                     className="text-destructive"
                                                 >
                                                     <ObjectIcons.Delete /> Delete User
@@ -220,8 +223,12 @@ export default function AdminModule_User_Page(
             </Std.ScrollContainer>
             <AdminModule_DeleteUser_Dialog
                 organizationUser={member}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
             <AdminModule_LinkPerson_Dialog
                 userId={userId}
