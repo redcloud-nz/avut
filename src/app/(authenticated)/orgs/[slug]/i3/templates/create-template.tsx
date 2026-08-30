@@ -109,7 +109,7 @@ export function I3Module_CreateTemplate_Dialog() {
             });
         },
         (fieldErrors) => {
-            logger.warn(`Validation failed`, fieldErrors);
+            console.error("Form validation errors:", fieldErrors);
         },
     );
 
