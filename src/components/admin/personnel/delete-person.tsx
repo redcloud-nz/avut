@@ -48,16 +48,15 @@ export function AdminModule_DeletePerson_Dialog({
                         Person <ObjectName>{person.name}</ObjectName> deleted.
                     </>,
                 );
-                props.onOpenChange?.(false);
 
-                // Redirect to the personnel list page after deletion
+                // Redirect to the personnel list page after deletion. Don't also
+                // clear the dialog param / reset the mutation here — the navigation
+                // unmounts the dialog, and a competing URL write races the push.
                 router.push(
                     route("/orgs/[slug]/admin/personnel", {
                         slug: organization.slug,
                     }),
                 );
-
-                mutation.reset();
             },
         }),
     );

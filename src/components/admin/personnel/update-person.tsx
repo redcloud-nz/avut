@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -35,7 +35,8 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData }) {
     const organization = useOrganization();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialog, setDialog] = useQueryState("dialog", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = dialog === "update";
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),
@@ -63,11 +64,13 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setDialog("update", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setDialog(null, { history: "replace" });
         }
-        setDialogOpen(open);
     }
 
     return (
