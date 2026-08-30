@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -51,7 +51,8 @@ export function AdminModule_UpdateUser_Dialog({
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
 
     const form = useForm({
         resolver: zodResolver(
@@ -97,11 +98,12 @@ export function AdminModule_UpdateUser_Dialog({
     });
 
     function handleOpenChange(open: boolean) {
-        setDialogOpen(open);
-
-        if (!open) {
+        if (open) {
+            void setAction("update", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
     }
 
@@ -122,9 +124,14 @@ export function AdminModule_UpdateUser_Dialog({
                 </DialogHeader>
                 <form
                     id="update-user-form"
-                    onSubmit={form.handleSubmit((data) => {
-                        mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
-                    })}
+                    onSubmit={form.handleSubmit(
+                        (data) => {
+                            mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
+                        },
+                        (errors) => {
+                            console.error("Form validation errors:", errors);
+                        },
+                    )}
                 >
                     <FieldGroup>
                         <Controller
