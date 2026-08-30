@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,8 +55,6 @@ export function I3Module_DeleteVariant_Dialog({
                 toast.success(
                     `Template variant "${variant.name}" deleted from template "${template.name}".`,
                 );
-                handleOpenChange(false);
-
                 await queryClient.invalidateQueries(
                     trpc.i3.listTemplates.queryFilter({
                         organizationId: organization.id,
@@ -65,16 +64,20 @@ export function I3Module_DeleteVariant_Dialog({
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    useEffect(() => {
+        if (props.open) {
             mutation.reset();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
+
+    function handleOpenChange(open: boolean) {
         props.onOpenChange?.(open);
     }
 
     return (
         <AlertDialog {...props} onOpenChange={handleOpenChange}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete I3 Template Variant</AlertDialogTitle>
                     <AlertDialogDescription>
