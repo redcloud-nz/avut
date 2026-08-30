@@ -5,9 +5,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ComponentProps } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     AlertDialog,
@@ -16,7 +17,6 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogProps,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
@@ -31,9 +31,8 @@ import { trpc } from "@/trpc/client";
 export function SkillsModule_DeleteSession_Dialog({
     session,
     ...props
-}: AlertDialogProps & { session: SkillCheckSession }) {
+}: ComponentProps<typeof AlertDialog> & { session: SkillCheckSession }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
@@ -43,38 +42,26 @@ export function SkillsModule_DeleteSession_Dialog({
                 console.error("Failed to delete session:", error);
                 toast.error("Failed to delete session: " + error.message);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Session <ObjectName>{session.name}</ObjectName> deleted.
                     </>,
                 );
-                props.onOpenChange?.(false);
 
+                // Redirect to the sessions list page after deletion. Don't also
+                // clear the dialog param / reset the mutation here — the navigation
+                // unmounts the dialog, and a competing URL write races the push.
                 router.push(
                     route("/orgs/[slug]/skill-track/sessions", { slug: organization.slug }),
-                );
-
-                queryClient.removeQueries(
-                    trpc.skills.getSession.queryFilter({
-                        skillCheckSessionId: session.id,
-                    }),
                 );
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
-            mutation.reset();
-        }
-
-        props.onOpenChange?.(open);
-    }
-
     return (
-        <AlertDialog {...props} onOpenChange={handleOpenChange}>
-            <AlertDialogContent>
+        <AlertDialog {...props}>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Session</AlertDialogTitle>
                     <AlertDialogDescription>

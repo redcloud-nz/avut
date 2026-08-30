@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -22,13 +23,19 @@ import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+
+    const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
     return (
         <>
-            <DropdownMenu>
+            <DropdownMenu
+                onOpenChange={(open) => {
+                    if (!open) menuTriggerRef.current?.focus();
+                }}
+            >
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button ref={menuTriggerRef} variant="ghost" size="icon">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
@@ -39,7 +46,7 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                         render={(allowed) => (
                             <DropdownMenuItem
                                 className="text-destructive"
-                                onSelect={() => setDeleteDialogOpen(true)}
+                                onClick={() => setAction("delete", { history: "push" })}
                                 disabled={!allowed}
                             >
                                 <ObjectIcons.Delete /> Delete
@@ -51,8 +58,12 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
 
             <SkillsModule_DeleteSession_Dialog
                 session={session}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );
