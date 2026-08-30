@@ -4,15 +4,14 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,7 +20,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
@@ -30,13 +28,26 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
+/**
+ * Controlled update-team dialog — no trigger of its own. `open`/`onOpenChange` are driven
+ * by the route: `--update/page.tsx` keeps this open and closes it by navigating back to
+ * the team detail page.
+ */
+export function AdminModule_UpdateTeam_DialogContent({
+    team,
+    open,
+    onOpenChange,
+}: {
+    team: TeamData;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
     const organization = useOrganization();
-
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
@@ -58,26 +69,26 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
             },
             async onSuccess() {
                 toast.success("Team updated");
-                handleOpenChange(false);
+                router.push(
+                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: team.id,
+                    }),
+                );
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    function handleDialogOpenChange(nextOpen: boolean) {
+        if (!nextOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
+        onOpenChange(nextOpen);
     }
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="ghost">
-                    <ObjectIcons.Edit />
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Update team</DialogTitle>
