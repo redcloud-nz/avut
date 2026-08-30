@@ -98,8 +98,7 @@ Mutations declare their cache side-effects once via `meta: { effects: ... }` (`s
 See the pattern docs for the full shapes, code, and rationale — read the relevant one before writing a new page or mutation dialog rather than inferring the pattern from a neighboring file, since these are exactly the details easy to get subtly wrong (and where they've drifted before):
 
 - [`docs/patterns/detail-page-data-fetching.md`](docs/patterns/detail-page-data-fetching.md) — `page.tsx`/`<entity>-content.tsx` split, `fetchQuery` vs `prefetch`+`HydrateClient`, `useSuspenseQuery`
-- [`docs/patterns/non-destructive-mutation-dialog.md`](docs/patterns/non-destructive-mutation-dialog.md) — create/update dialogs
-- [`docs/patterns/destructive-mutation-dialog.md`](docs/patterns/destructive-mutation-dialog.md) — delete/remove confirmation dialogs
+- [`docs/patterns/mutation-dialog.md`](docs/patterns/mutation-dialog.md) — URL-routed create/update/delete dialogs (route group + layout, `--create`/`--update`/`--delete` pages, controlled `…_DialogContent`)
 
 ### Permissions
 
@@ -129,9 +128,10 @@ import { Protect } from "@/components/protect";
 For cases where the permission boolean needs to flow into the markup (e.g. disabling rather than hiding a control), pass `render` instead of `children`/`fallback`:
 
 ```tsx
-<Protect permissions={{ person: ["delete"] }} render={(hasPermission) => (
-    <DeleteButton disabled={!hasPermission} />
-)} />
+<Protect
+  permissions={{ person: ["delete"] }}
+  render={(hasPermission) => <DeleteButton disabled={!hasPermission} />}
+/>
 ```
 
 Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `permissions` actually match the mutation it guards, see [`docs/patterns/protect-permission-gating.md`](docs/patterns/protect-permission-gating.md).
