@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -40,12 +40,13 @@ export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
     const router = useRouter();
 
-    const [open, setOpen] = useState(false);
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
 
     const nextSessionNumberQuery = useQuery(
         trpc.skills.nextSessionNumber.queryOptions(
             { organizationId: organization.id },
-            { enabled: open },
+            { enabled: dialogOpen },
         ),
     );
     const namePlaceholder = nextSessionNumberQuery.data
@@ -72,8 +73,8 @@ export function SkillTrack_CreateSession_Dialog() {
             onSuccess({ created }) {
                 toast.success("Session created");
 
-                handleOpenChange(false);
-
+                // Don't clear the dialog param here — the navigation unmounts the
+                // dialog, and a competing URL write races the push.
                 router.push(
                     route("/orgs/[slug]/skill-track/sessions/[session_id]", {
                         slug: organization.slug,
@@ -85,16 +86,17 @@ export function SkillTrack_CreateSession_Dialog() {
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        if (open) {
+            void setAction("create", { history: "push" });
+        } else {
             form.reset();
             mutation.reset();
+            void setAction(null, { history: "replace" });
         }
-
-        setOpen(open);
     }
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <ObjectIcons.Create />
