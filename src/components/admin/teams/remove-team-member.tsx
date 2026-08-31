@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps } from "react";
+import { ComponentProps, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -47,21 +47,21 @@ export function AdminModule_RemoveTeamMember_Dialog({
             onSuccess() {
                 toast.success("Team member removed");
 
-                handleOpenChange(false);
+                props.onOpenChange?.(false);
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) {
+    useEffect(() => {
+        if (props.open) {
             mutation.reset();
         }
-        props.onOpenChange?.(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Remove Person from Team</AlertDialogTitle>
                     <AlertDialogDescription>
