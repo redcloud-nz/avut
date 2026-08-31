@@ -283,18 +283,19 @@ recurring shapes have fixed rules:
     void setVariantId(null, { history: "replace" });
   }
 
-  // row buttons: onClick={() => openVariantAction("update-variant", variant.id)}
-
-  {
-    activeVariant && (
-      <I3Module_UpdateVariant_Dialog
-        template={template}
-        variant={activeVariant}
-        open={action === "update-variant"}
-        onOpenChange={(open) => (open ? undefined : closeVariantAction())}
-      />
-    );
-  }
+  return (
+    <Card>
+      {/* row buttons: onClick={() => openVariantAction("update-variant", variant.id)} */}
+      {activeVariant && (
+        <I3Module_UpdateVariant_Dialog
+          template={template}
+          variant={activeVariant}
+          open={action === "update-variant"}
+          onOpenChange={(open) => (open ? undefined : closeVariantAction())}
+        />
+      )}
+    </Card>
+  );
   ```
 
   `setVariantId` + `setAction` are two writes; nuqs batches synchronous writes
