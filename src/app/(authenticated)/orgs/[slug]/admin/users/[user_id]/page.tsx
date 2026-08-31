@@ -156,7 +156,12 @@ export default function AdminModule_User_Page(
                                 <CardHeader>
                                     <CardTitle>Linked Person</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ member: ["update"] }}>
+                                        <Protect
+                                            permissions={{
+                                                member: ["update"],
+                                                person: ["update"],
+                                            }}
+                                        >
                                             {linkedPerson ? (
                                                 <Button
                                                     variant="ghost"
