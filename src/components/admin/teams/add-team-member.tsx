@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { useState } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -43,7 +44,11 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-member"] as const),
+    );
+    const dialogOpen = action === "add-member";
 
     const personnelQuery = useQuery(
         trpc.personnel.listPersonnel.queryOptions({
@@ -91,12 +96,16 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
