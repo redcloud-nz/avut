@@ -4,6 +4,8 @@
  */
 "use client";
 
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -11,6 +13,7 @@ import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/components/skill-track/subscribe-package";
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/components/skill-track/unsubscribe-package";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
@@ -32,6 +35,14 @@ export function SkillTrack_CataloguePackage_Content({
             organizationId: organization.id,
             skillPackageId,
         }),
+    );
+
+    // The subscribe/unsubscribe dialogs are host-driven: their own success
+    // effect flips `skillPackage.subscription`, which swaps the trigger button —
+    // if a dialog owned the param it would be clearing it from an unmounted hook.
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["subscribe", "unsubscribe"] as const),
     );
 
     return (
@@ -58,13 +69,23 @@ export function SkillTrack_CataloguePackage_Content({
                         <Saratoga.Actions>
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
-                                    <SkillTrack_UnsubscribeFromPackage_Dialog
-                                        skillPackage={skillPackage}
-                                    />
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            void setAction("unsubscribe", { history: "push" })
+                                        }
+                                    >
+                                        Unsubscribe
+                                    </Button>
                                 ) : (
-                                    <SkillTrack_SubscribeToPackage_Dialog
-                                        skillPackage={skillPackage}
-                                    />
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            void setAction("subscribe", { history: "push" })
+                                        }
+                                    >
+                                        Subscribe
+                                    </Button>
                                 )}
                             </Protect>
                         </Saratoga.Actions>
@@ -131,6 +152,25 @@ export function SkillTrack_CataloguePackage_Content({
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
+
+            <SkillTrack_SubscribeToPackage_Dialog
+                skillPackage={skillPackage}
+                open={action === "subscribe"}
+                onOpenChange={(open) =>
+                    void setAction(open ? "subscribe" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+            <SkillTrack_UnsubscribeFromPackage_Dialog
+                skillPackage={skillPackage}
+                open={action === "unsubscribe"}
+                onOpenChange={(open) =>
+                    void setAction(open ? "unsubscribe" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
         </>
     );
 }

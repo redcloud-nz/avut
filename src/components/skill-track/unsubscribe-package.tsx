@@ -4,21 +4,22 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button, MutationButton } from "@/components/ui/button";
+    Dialog,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogProps,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { skillsEffects } from "@/client/skills-effects";
@@ -28,11 +29,11 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_UnsubscribeFromPackage_Dialog({
     skillPackage,
-}: {
+    ...props
+}: DialogProps & {
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const mutation = useMutation(
         trpc.skills.unsubscribeFromPackage.mutationOptions({
@@ -47,38 +48,30 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                         Unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
                 );
-                queryClient.setQueryData(
-                    trpc.skills.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    (old) =>
-                        old
-                            ? {
-                                  ...old,
-                                  subscription: null,
-                                  subscriptionCount: old.subscriptionCount - 1,
-                              }
-                            : old,
-                );
+                props.onOpenChange?.(false);
             },
         }),
     );
 
+    useEffect(() => {
+        if (props.open) {
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
+
     return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="outline">Unsubscribe</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Unsubscribe from Package</AlertDialogTitle>
-                    <AlertDialogDescription>
+        <Dialog {...props}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Unsubscribe from Package</DialogTitle>
+                    <DialogDescription>
                         You will be unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
                         Skills from this package will no longer be available to your organization.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="button"
                         variant="destructive"
@@ -95,9 +88,8 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                             })
                         }
                     />
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

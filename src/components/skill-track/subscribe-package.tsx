@@ -4,10 +4,10 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
     Dialog,
@@ -16,10 +16,10 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
+    DialogProps,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { skillsEffects } from "@/client/skills-effects";
@@ -29,13 +29,11 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SubscribeToPackage_Dialog({
     skillPackage,
-}: {
+    ...props
+}: DialogProps & {
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
-
-    const [dialogOpen, setDialogOpen] = useState(false);
 
     const mutation = useMutation(
         trpc.skills.subscribeToPackage.mutationOptions({
@@ -44,41 +42,26 @@ export function SkillTrack_SubscribeToPackage_Dialog({
                 console.error("Failed to subscribe to skill package:", error);
                 toast.error(`Failed to subscribe to skill package: ${error.message}`);
             },
-            onSuccess({ created }) {
+            onSuccess() {
                 toast.success(
                     <>
                         Subscribed to <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
                 );
-                queryClient.setQueryData(
-                    trpc.skills.getPackage.queryKey({
-                        organizationId: organization.id,
-                        skillPackageId: skillPackage.id,
-                    }),
-                    (old) =>
-                        old
-                            ? {
-                                  ...old,
-                                  subscription: created,
-                                  subscriptionCount: old.subscriptionCount + 1,
-                              }
-                            : old,
-                );
-                handleOpenChange(false);
+                props.onOpenChange?.(false);
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        if (!open) mutation.reset();
-        setDialogOpen(open);
-    }
+    useEffect(() => {
+        if (props.open) {
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">Subscribe</Button>
-            </DialogTrigger>
+        <Dialog {...props}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Subscribe to Package</DialogTitle>
