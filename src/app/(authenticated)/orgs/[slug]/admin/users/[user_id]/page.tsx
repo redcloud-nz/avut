@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { use, useState } from "react";
+import { use } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -72,9 +72,10 @@ export default function AdminModule_User_Page(
         }),
     );
 
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
-    const [linkPersonDialogOpen, setLinkPersonDialogOpen] = useState(false);
-    const [unlinkPersonDialogOpen, setUnlinkPersonDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "link-person", "unlink-person"] as const),
+    );
 
     return (
         <Std.SidebarInset>
@@ -160,7 +161,11 @@ export default function AdminModule_User_Page(
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => setUnlinkPersonDialogOpen(true)}
+                                                    onClick={() =>
+                                                        setAction("unlink-person", {
+                                                            history: "push",
+                                                        })
+                                                    }
                                                 >
                                                     <ObjectIcons.Unlink />
                                                 </Button>
@@ -168,7 +173,11 @@ export default function AdminModule_User_Page(
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => setLinkPersonDialogOpen(true)}
+                                                    onClick={() =>
+                                                        setAction("link-person", {
+                                                            history: "push",
+                                                        })
+                                                    }
                                                 >
                                                     <ObjectIcons.Link />
                                                 </Button>
@@ -233,16 +242,24 @@ export default function AdminModule_User_Page(
             <AdminModule_LinkPerson_Dialog
                 userId={userId}
                 userName={member.user.name}
-                open={linkPersonDialogOpen}
-                onOpenChange={setLinkPersonDialogOpen}
+                open={action === "link-person"}
+                onOpenChange={(open) =>
+                    setAction(open ? "link-person" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
             {linkedPerson && (
                 <AdminModule_UnlinkPerson_Dialog
                     userId={userId}
                     userName={member.user.name}
                     personName={linkedPerson.name}
-                    open={unlinkPersonDialogOpen}
-                    onOpenChange={setUnlinkPersonDialogOpen}
+                    open={action === "unlink-person"}
+                    onOpenChange={(open) =>
+                        setAction(open ? "unlink-person" : null, {
+                            history: open ? "push" : "replace",
+                        })
+                    }
                 />
             )}
         </Std.SidebarInset>
