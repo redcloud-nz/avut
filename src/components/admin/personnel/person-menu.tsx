@@ -8,6 +8,7 @@ import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
+import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
@@ -20,10 +21,12 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 import { personnelEffects } from "@/client/personnel-effects";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -38,7 +41,13 @@ interface AdminModule_PersonMenuProps {
 export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["update", "delete"] as const),
+    );
+
+    const canUpdatePerson = useHasPermission({ person: ["update"] });
+    const canDeletePerson = useHasPermission({ person: ["delete"] });
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -87,6 +96,19 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
         );
     }
 
+    useHotkey("E", () => void setAction("update", { history: "push" }), {
+        enabled: canUpdatePerson,
+    });
+    useHotkey("Delete", () => void setAction("delete", { history: "push" }), {
+        enabled: canDeletePerson && person.status !== "Archived",
+    });
+    useHotkey("A", () => handleArchive(), {
+        enabled: canUpdatePerson && person.status === "Active",
+    });
+    useHotkey("R", () => handleRestore(), {
+        enabled: canUpdatePerson && person.status !== "Active",
+    });
+
     return (
         <>
             {/* Person dropdown menu */}
@@ -114,12 +136,29 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <Protect
+                            permissions={{ person: ["update"] }}
+                            render={(allowed) => (
+                                <DropdownMenuItem
+                                    onClick={() => setAction("update", { history: "push" })}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Edit /> Edit
+                                    <DropdownMenuShortcut>
+                                        {formatForDisplay("E")}
+                                    </DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                            )}
+                        />
                         {person.status == "Active" && (
                             <Protect
                                 permissions={{ person: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
                                         <ObjectIcons.Archive /> Archive
+                                        <DropdownMenuShortcut>
+                                            {formatForDisplay("A")}
+                                        </DropdownMenuShortcut>
                                     </DropdownMenuItem>
                                 )}
                             />
@@ -130,6 +169,9 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                 render={(allowed) => (
                                     <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
                                         <ObjectIcons.Restore /> Restore
+                                        <DropdownMenuShortcut>
+                                            {formatForDisplay("R")}
+                                        </DropdownMenuShortcut>
                                     </DropdownMenuItem>
                                 )}
                             />
@@ -145,6 +187,9 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                                     >
                                         <ObjectIcons.Delete />
                                         Delete
+                                        <DropdownMenuShortcut>
+                                            {formatForDisplay("Delete")}
+                                        </DropdownMenuShortcut>
                                     </DropdownMenuItem>
                                 )}
                             />

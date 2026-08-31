@@ -4,10 +4,9 @@
  */
 "use client";
 
-import { ReactNode, useMemo } from "react";
+import { ReactNode } from "react";
 
-import { authClient } from "@/client/auth-client";
-import { useOrganization } from "@/hooks/use-organization";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { Permissions } from "@/lib/permissions";
 
 type ProtectProps = {
@@ -18,15 +17,7 @@ type ProtectProps = {
 );
 
 export function Protect({ permissions, ...props }: ProtectProps) {
-    const { roles } = useOrganization();
-
-    const hasPermission = useMemo(
-        () =>
-            roles.some((role) =>
-                authClient.organization.checkRolePermission({ role, permissions }),
-            ),
-        [roles, permissions],
-    );
+    const hasPermission = useHasPermission(permissions);
 
     return "children" in props ? (
         <>{hasPermission ? props.children : props.fallback || null}</>

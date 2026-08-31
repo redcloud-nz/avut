@@ -5,8 +5,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useMemo, useRef } from "react";
 
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
@@ -20,6 +22,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";
@@ -39,6 +42,26 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
         trpc.personnel.listPersonnel.queryOptions({
             organizationId: organization.id,
         }),
+    );
+
+    const [, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const canCreatePerson = useHasPermission({ person: ["create"] });
+
+    // Alt+N rather than Mod+N — Cmd/Ctrl+N is reserved by the browser/OS for
+    // "new window" and can't be reliably preventDefault-ed.
+    useHotkey("Alt+N", () => void setAction("create", { history: "push" }), {
+        enabled: canCreatePerson,
+        preventDefault: true,
+    });
+
+    const tableRef = useRef<HTMLDivElement>(null);
+    useHotkey(
+        "/",
+        () =>
+            tableRef.current
+                ?.querySelector<HTMLInputElement>('[data-slot="table-toolbar"] input')
+                ?.focus(),
+        { preventDefault: true },
     );
 
     type RowData = PersonData;
@@ -113,7 +136,7 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
                 </Saratoga.Actions>
             </Saratoga.Header>
 
-            <div>
+            <div ref={tableRef}>
                 <Kaga.TableToolbar table={table} />
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
