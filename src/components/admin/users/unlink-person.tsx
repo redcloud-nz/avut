@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -53,14 +54,20 @@ export function AdminModule_UnlinkPerson_Dialog({
                 );
 
                 props.onOpenChange?.(false);
-                mutation.reset();
             },
         }),
     );
 
+    useEffect(() => {
+        if (props.open) {
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
+
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Unlink Person</AlertDialogTitle>
                     <AlertDialogDescription>
