@@ -5,14 +5,13 @@
 "use client";
 
 import Link from "next/link";
+import { ReactNode } from "react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
-import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -21,13 +20,15 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MenuAction } from "@/components/ui/menu-action";
 
 import { personnelEffects } from "@/client/personnel-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { ActionVerb } from "@/lib/hotkeys";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -46,8 +47,8 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
         parseAsStringLiteral(["update", "delete"] as const),
     );
 
-    const canUpdatePerson = useHasPermission({ person: ["update"] });
-    const canDeletePerson = useHasPermission({ person: ["delete"] });
+    const canUpdate = useHasPermission({ person: ["update"] });
+    const canDelete = useHasPermission({ person: ["delete"] });
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -70,10 +71,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
     function handleArchive() {
         toast.promise(
-            archiveMutation.mutateAsync({
-                organizationId: organization.id,
-                personId: person.id,
-            }),
+            archiveMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
             {
                 loading: "Archiving person record...",
                 success: "Person record archived.",
@@ -84,10 +82,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
     function handleRestore() {
         toast.promise(
-            restoreMutation.mutateAsync({
-                organizationId: organization.id,
-                personId: person.id,
-            }),
+            restoreMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
             {
                 loading: "Restoring person record...",
                 success: "Person record restored.",
@@ -96,18 +91,61 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
         );
     }
 
-    useHotkey("E", () => void setAction("update", { history: "push" }), {
-        enabled: canUpdatePerson,
-    });
-    useHotkey("Delete", () => void setAction("delete", { history: "push" }), {
-        enabled: canDeletePerson && person.status !== "Archived",
-    });
-    useHotkey("A", () => handleArchive(), {
-        enabled: canUpdatePerson && person.status === "Active",
-    });
-    useHotkey("R", () => handleRestore(), {
-        enabled: canUpdatePerson && person.status !== "Active",
-    });
+    interface MenuActionConfig {
+        verb: ActionVerb;
+        label: string;
+        icon: ReactNode;
+        run: () => void;
+        disabled: boolean;
+        destructive?: boolean;
+    }
+
+    const actions: MenuActionConfig[] = [
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            run: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate,
+        },
+    ];
+    if (person.status === "Active") {
+        actions.push({
+            verb: "archive",
+            label: "Archive",
+            icon: <ObjectIcons.Archive />,
+            run: handleArchive,
+            disabled: !canUpdate,
+        });
+    } else {
+        actions.push({
+            verb: "restore",
+            label: "Restore",
+            icon: <ObjectIcons.Restore />,
+            run: handleRestore,
+            disabled: !canUpdate,
+        });
+    }
+    if (person.status !== "Archived") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            run: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
+
+    useActionHotkeys(
+        actions.map(({ verb, label, run, disabled }) => ({
+            verb,
+            run,
+            enabled: !disabled,
+            name: label,
+            category: "Personnel",
+        })),
+    );
 
     return (
         <>
@@ -136,64 +174,17 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Protect
-                            permissions={{ person: ["update"] }}
-                            render={(allowed) => (
-                                <DropdownMenuItem
-                                    onClick={() => setAction("update", { history: "push" })}
-                                    disabled={!allowed}
-                                >
-                                    <ObjectIcons.Edit /> Edit
-                                    <DropdownMenuShortcut>
-                                        {formatForDisplay("E")}
-                                    </DropdownMenuShortcut>
-                                </DropdownMenuItem>
-                            )}
-                        />
-                        {person.status == "Active" && (
-                            <Protect
-                                permissions={{ person: ["update"] }}
-                                render={(allowed) => (
-                                    <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
-                                        <ObjectIcons.Archive /> Archive
-                                        <DropdownMenuShortcut>
-                                            {formatForDisplay("A")}
-                                        </DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                )}
+                        {actions.map(({ verb, label, icon, run, disabled, destructive }) => (
+                            <MenuAction
+                                key={verb}
+                                verb={verb}
+                                label={label}
+                                icon={icon}
+                                onSelect={run}
+                                disabled={disabled}
+                                destructive={destructive}
                             />
-                        )}
-                        {person.status != "Active" && (
-                            <Protect
-                                permissions={{ person: ["update"] }}
-                                render={(allowed) => (
-                                    <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
-                                        <ObjectIcons.Restore /> Restore
-                                        <DropdownMenuShortcut>
-                                            {formatForDisplay("R")}
-                                        </DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                )}
-                            />
-                        )}
-                        {person.status != "Archived" && (
-                            <Protect
-                                permissions={{ person: ["delete"] }}
-                                render={(allowed) => (
-                                    <DropdownMenuItem
-                                        onClick={() => setAction("delete", { history: "push" })}
-                                        disabled={!allowed}
-                                        className="text-destructive focus:text-destructive"
-                                    >
-                                        <ObjectIcons.Delete />
-                                        Delete
-                                        <DropdownMenuShortcut>
-                                            {formatForDisplay("Delete")}
-                                        </DropdownMenuShortcut>
-                                    </DropdownMenuItem>
-                                )}
-                            />
-                        )}
+                        ))}
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>

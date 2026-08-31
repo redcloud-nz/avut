@@ -29,6 +29,7 @@ import {
     Table as TanstackTable,
 } from "@tanstack/react-table";
 
+import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -186,6 +187,7 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
             className="flex flex-col sm:flex-row sm:items-center gap-2 bg-accent/50 p-2 border rounded-lg"
             data-slot="table-toolbar"
         >
+            <KagaSearchHotkey />
             <InputGroup className={cn("grow bg-background")}>
                 <InputGroupInput
                     placeholder="Search..."

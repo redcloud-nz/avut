@@ -29,6 +29,8 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 
 import { personnelEffects } from "@/client/personnel-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiablePersonData, PersonData, PersonId } from "@/lib/schemas/person";
@@ -40,6 +42,17 @@ export function AdminModule_CreatePerson_Dialog() {
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    const canCreatePerson = useHasPermission({ person: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreatePerson,
+            name: "New person",
+            category: "Personnel",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(PersonData.modifiableSchema),

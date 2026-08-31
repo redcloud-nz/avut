@@ -8,9 +8,11 @@ import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { HotkeyHelp } from "@/components/hotkey-help";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { installDevTools } from "@/client/dev-tools";
 import { MutationInvalidator } from "@/trpc/mutation-effector";
@@ -34,9 +36,12 @@ export function CommonProviders({ children }: Readonly<{ children: ReactNode }>)
             <QueryClientProvider client={queryClient}>
                 <MutationInvalidator />
                 <NuqsAdapter>
-                    <TooltipProvider>
-                        <SidebarProvider>{children}</SidebarProvider>
-                    </TooltipProvider>
+                    <HotkeysProvider>
+                        <TooltipProvider>
+                            <SidebarProvider>{children}</SidebarProvider>
+                        </TooltipProvider>
+                        <HotkeyHelp />
+                    </HotkeysProvider>
                 </NuqsAdapter>
             </QueryClientProvider>
         </ThemeProvider>
