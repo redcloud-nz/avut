@@ -303,17 +303,35 @@ recurring shapes have fixed rules:
   `activeVariant` resolves on first render. A bogus `variantId` resolves to
   `null` → the host renders nothing, no crash.
 
-- **Relationship / join dialog** (link-person, add-team-member, subscribe). Hosted
-  by whichever detail/list component the action is triggered from; the `action`
-  value names the relationship (`link-person`, `subscribe`). Single-instance
-  (one per page) so it needs no second param. Same-page close — `onSuccess` does
-  only `handleDialogOpenChange(false)`, never a navigation.
+- **Relationship / join dialog** (link-person, add-team-member,
+  subscribe/unsubscribe). The `action` value names the relationship.
+  Single-instance (one per page) → no second param. Two sub-shapes:
+  - **Self-triggered** (add-team-member): the dialog keeps its own
+    `<DialogTrigger>` and owns its `useQueryState` (Recipe A). Only safe when the
+    dialog **stays mounted through its mutation's success**.
+  - **Host-driven** (link-person, subscribe/unsubscribe): the hosting
+    detail/list component owns the `action` param and passes `open` /
+    `onOpenChange` down (Recipe C); the dialog is `{...props}`-driven; the
+    trigger button lives in the host.
+
+  **A dialog may own its own `action` param only if it outlives its mutation's
+  `onSuccess`.** If a dialog's own success effect flips a condition that unmounts
+  it — e.g. a `write()` effect toggling `subscription`, so the host swaps which
+  of subscribe/unsubscribe it renders — the close `setAction(null)` would fire
+  from an unmounted hook. Make it host-driven instead (the host stays mounted).
+  Same-page close either way — `onSuccess` does only the param clear, never a
+  navigation.
 
 - **State-transition confirm** (archive, restore, publish, unpublish, subscribe,
   unsubscribe). Use a plain **`Dialog`, never `AlertDialog`** — `AlertDialog` is
   reserved strictly for delete/remove. No `react-hook-form` when there is no
-  field input: just descriptive body text and a `MutationButton` whose `onClick`
-  fires the mutation. `onSuccess` stays on the page.
+  field input: descriptive body text, an `<ObjectName>` naming the target, and a
+  `MutationButton` whose `onClick` fires the mutation. `onSuccess` stays on the
+  page. One dialog component per action (`archive-package.tsx`,
+  `publish-package.tsx`, …), each parsing its single verb. The verbs are
+  **entity-agnostic** — don't render two menus that parse the same verb set on
+  one page (a skill menu inside a group page would make `?action=archive` open
+  two dialogs).
 
 - **Bulk-order dialog** (reorder / bulk-assign). A plain `Dialog` with a bespoke
   body (sortable list, target select); add a `form` only if there is genuine
