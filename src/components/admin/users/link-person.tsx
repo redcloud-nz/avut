@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -63,16 +63,20 @@ export function AdminModule_LinkPerson_Dialog({
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
-            setPersonId(null);
-            mutation.reset();
-        }
         props.onOpenChange?.(open);
     }
 
+    useEffect(() => {
+        if (props.open) {
+            setPersonId(null);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [props.open]);
+
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
-            <DialogContent>
+            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>Link Person</DialogTitle>
                     <DialogDescription>
