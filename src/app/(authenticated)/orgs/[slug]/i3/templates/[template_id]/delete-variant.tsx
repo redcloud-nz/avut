@@ -69,8 +69,8 @@ export function I3Module_DeleteVariant_Dialog({
         if (props.open) {
             mutation.reset();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [props.open]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state when opening or when the target row changes under an open dialog
+    }, [props.open, variant.id]);
 
     function handleOpenChange(open: boolean) {
         props.onOpenChange?.(open);

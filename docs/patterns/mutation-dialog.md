@@ -304,6 +304,11 @@ recurring shapes have fixed rules:
   `activeVariant` resolves on first render. A bogus `variantId` resolves to
   `null` → the host renders nothing, no crash.
 
+  Key the dialog's reset effect on the **row id** as well as `open`
+  (`}, [props.open, variant.id]);`) — a back/forward jump between two rows can
+  swap the `variant` prop while the dialog stays mounted, and an `open`-only dep
+  would carry the previous row's form / mutation state into the new one.
+
 - **Relationship / join dialog** (link-person, add-team-member,
   subscribe/unsubscribe). The `action` value names the relationship.
   Single-instance (one per page) → no second param. Two sub-shapes:
