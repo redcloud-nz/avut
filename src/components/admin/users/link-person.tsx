@@ -76,7 +76,7 @@ export function AdminModule_LinkPerson_Dialog({
 
     return (
         <Dialog {...props} onOpenChange={handleOpenChange}>
-            <DialogContent>
+            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>Link Person</DialogTitle>
                     <DialogDescription>
