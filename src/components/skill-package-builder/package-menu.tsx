@@ -6,9 +6,6 @@
 
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { toast } from "sonner";
-
-import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -22,148 +19,23 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ObjectName } from "@/components/ui/typography";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
 
+import { SkillPackageBuilder_ArchivePackage_Dialog } from "./archive-package";
 import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
+import { SkillPackageBuilder_PublishPackage_Dialog } from "./publish-package";
+import { SkillPackageBuilder_RestorePackage_Dialog } from "./restore-package";
+import { SkillPackageBuilder_UnpublishPackage_Dialog } from "./unpublish-package";
 
 export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
 
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
-
-    const archiveMutation = useMutation(
-        trpc.skillPackageBuilder.archivePackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.archivePackage },
-            onError(error) {
-                console.error("Failed to archive skill package:", error);
-            },
-        }),
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "archive", "restore", "publish", "unpublish"] as const),
     );
-
-    const publishMutation = useMutation(
-        trpc.skillPackageBuilder.publishPackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.publishPackage },
-            onError(error) {
-                console.error("Failed to publish skill package:", error);
-            },
-        }),
-    );
-
-    const restoreMutation = useMutation(
-        trpc.skillPackageBuilder.restorePackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restorePackage },
-            onError(error) {
-                console.error("Failed to restore skill package:", error);
-            },
-        }),
-    );
-
-    const unpublishMutation = useMutation(
-        trpc.skillPackageBuilder.unpublishPackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.unpublishPackage },
-            onError(error) {
-                console.error("Failed to unpublish skill package:", error);
-            },
-        }),
-    );
-
-    function handleArchive() {
-        toast.promise(
-            archiveMutation.mutateAsync({
-                skillPackageId: skillPackage.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Archiving skill package...",
-                success: (
-                    <>
-                        Skill package <ObjectName>{skillPackage.name}</ObjectName> archived.
-                    </>
-                ),
-                error: (error) => (
-                    <>
-                        Error archiving skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
-                        {error.message}
-                    </>
-                ),
-            },
-        );
-    }
-
-    function handlePublish() {
-        toast.promise(
-            publishMutation.mutateAsync({
-                skillPackageId: skillPackage.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Publishing skill package...",
-                success: (
-                    <>
-                        Skill package <ObjectName>{skillPackage.name}</ObjectName> published.
-                    </>
-                ),
-                error: (error) => (
-                    <>
-                        Error publishing skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
-                        {error.message}
-                    </>
-                ),
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            restoreMutation.mutateAsync({
-                skillPackageId: skillPackage.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Restoring skill package...",
-                success: (
-                    <>
-                        Skill package <ObjectName>{skillPackage.name}</ObjectName> restored.
-                    </>
-                ),
-                error: (error) => (
-                    <>
-                        Error restoring skill package <ObjectName>{skillPackage.name}</ObjectName>:{" "}
-                        {error.message}
-                    </>
-                ),
-            },
-        );
-    }
-
-    function handleUnpublish() {
-        toast.promise(
-            unpublishMutation.mutateAsync({
-                skillPackageId: skillPackage.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Unpublishing skill package...",
-                success: (
-                    <>
-                        Skill package <ObjectName>{skillPackage.name}</ObjectName> unpublished.
-                    </>
-                ),
-                error: (error) => (
-                    <>
-                        Error unpublishing skill package{" "}
-                        <ObjectName>{skillPackage.name}</ObjectName>: {error.message}
-                    </>
-                ),
-            },
-        );
-    }
 
     return (
         <>
@@ -196,8 +68,8 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={handleArchive}
-                                        disabled={!allowed || archiveMutation.isPending}
+                                        onClick={() => setAction("archive", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Archive /> Archive
                                     </DropdownMenuItem>
@@ -210,8 +82,8 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={handleRestore}
-                                        disabled={!allowed || restoreMutation.isPending}
+                                        onClick={() => setAction("restore", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Restore /> Restore
                                     </DropdownMenuItem>
@@ -224,8 +96,8 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                 permissions={{ skillPackageBuilder: ["publish"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={handlePublish}
-                                        disabled={!allowed || publishMutation.isPending}
+                                        onClick={() => setAction("publish", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Publish /> Publish
                                     </DropdownMenuItem>
@@ -238,8 +110,8 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                                 permissions={{ skillPackageBuilder: ["publish"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onClick={handleUnpublish}
-                                        disabled={!allowed || unpublishMutation.isPending}
+                                        onClick={() => setAction("unpublish", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Unpublish /> Unpublish
                                     </DropdownMenuItem>
@@ -272,6 +144,10 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                     })
                 }
             />
+            <SkillPackageBuilder_ArchivePackage_Dialog skillPackage={skillPackage} />
+            <SkillPackageBuilder_RestorePackage_Dialog skillPackage={skillPackage} />
+            <SkillPackageBuilder_PublishPackage_Dialog skillPackage={skillPackage} />
+            <SkillPackageBuilder_UnpublishPackage_Dialog skillPackage={skillPackage} />
         </>
     );
 }

@@ -5,9 +5,6 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { toast } from "sonner";
-
-import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -21,14 +18,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
-import { useOrganization } from "@/hooks/use-organization";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 
-import { trpc } from "@/trpc/client";
-
+import { SkillPackageBuilder_ArchiveGroup_Dialog } from "./archive-group";
 import { SkillPackageBuilder_DeleteSkillGroup_Dialog } from "./delete-group";
+import { SkillPackageBuilder_RestoreGroup_Dialog } from "./restore-group";
 
 interface SkillPackageBuilder_Group_MenuProps {
     skillGroup: SkillGroup & { skillPackage: SkillPackage };
@@ -37,54 +32,10 @@ interface SkillPackageBuilder_Group_MenuProps {
 export function SkillPackageBuilder_Group_Menu({
     skillGroup,
 }: SkillPackageBuilder_Group_MenuProps) {
-    const organization = useOrganization();
-
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
-
-    const archiveMutation = useMutation(
-        trpc.skillPackageBuilder.archiveGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.archiveGroup },
-            onError(error) {
-                console.error("Failed to archive skill group:", error);
-            },
-        }),
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "archive", "restore"] as const),
     );
-    const restoreMutation = useMutation(
-        trpc.skillPackageBuilder.restoreGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restoreGroup },
-            onError(error) {
-                console.error("Failed to restore skill group:", error);
-            },
-        }),
-    );
-
-    function handleArchive() {
-        toast.promise(
-            archiveMutation.mutateAsync({
-                skillGroupId: skillGroup.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Archiving skill group...",
-                success: "Skill group archived.",
-                error: (error) => "Error archiving skill group." + error.message,
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            restoreMutation.mutateAsync({
-                skillGroupId: skillGroup.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Restoring skill group...",
-                success: "Skill group restored.",
-                error: (error) => "Error restoring skill group." + error.message,
-            },
-        );
-    }
 
     return (
         <>
@@ -104,8 +55,8 @@ export function SkillPackageBuilder_Group_Menu({
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onSelect={handleArchive}
-                                        disabled={!allowed || archiveMutation.isPending}
+                                        onClick={() => setAction("archive", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Archive /> Archive
                                     </DropdownMenuItem>
@@ -119,8 +70,8 @@ export function SkillPackageBuilder_Group_Menu({
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onSelect={handleRestore}
-                                        disabled={!allowed || restoreMutation.isPending}
+                                        onClick={() => setAction("restore", { history: "push" })}
+                                        disabled={!allowed}
                                     >
                                         <ObjectIcons.Restore /> Restore
                                     </DropdownMenuItem>
@@ -152,6 +103,8 @@ export function SkillPackageBuilder_Group_Menu({
                     })
                 }
             />
+            <SkillPackageBuilder_ArchiveGroup_Dialog skillGroup={skillGroup} />
+            <SkillPackageBuilder_RestoreGroup_Dialog skillGroup={skillGroup} />
         </>
     );
 }

@@ -221,13 +221,10 @@ export function SkillPackageBuilder_ArchivePackage_Dialog({
         <DialogHeader>
           <DialogTitle>Archive package</DialogTitle>
           <DialogDescription>
-            Archived packages are hidden from the catalogue and cannot be subscribed to. You can
-            restore it later.
+            Archive package <ObjectName>{skillPackage.name}</ObjectName>. Archived packages are
+            hidden from the catalogue and cannot be subscribed to. You can restore it later.
           </DialogDescription>
         </DialogHeader>
-        <p className="text-sm">
-          <ObjectName>{skillPackage.name}</ObjectName>
-        </p>
         <DialogFooter>
           <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
           <MutationButton
@@ -413,6 +410,7 @@ Each is the Recipe D template with these substitutions. File names follow the ex
 | `archive-skill.tsx`     | `SkillPackageBuilder_ArchiveSkill_Dialog`     | `archive`     | `archiveSkill`     | `["update"]`  | Archive skill     | "Archived skills are hidden and no longer assigned in new skill checks. You can restore it later."       | Archive / Archiving / Archived         | Skill `<name>` archived.      |
 | `restore-skill.tsx`     | `SkillPackageBuilder_RestoreSkill_Dialog`     | `restore`     | `restoreSkill`     | `["update"]`  | Restore skill     | "The skill returns to Active."                                                                           | Restore / Restoring / Restored         | Skill `<name>` restored.      |
 
+- **`DialogDescription` names the object inline** (the `delete-team` pattern), not a standalone `<p>`: `<Title verb-phrase> <ObjectName>{entity.name}</ObjectName>. <Body sentence from the table>` — e.g. "Archive package **Rope Rescue**. Archived packages are hidden from the catalogue…".
 - Entity prop: `{ skillPackage }` / `{ skillGroup }` / `{ skill }`; mutation input key: `skillPackageId` / `skillGroupId` / `skillId` (+ `organizationId`).
 - `onError` toast: `Failed to <idle.toLowerCase()> <entity>: ${error.message}` + `console.error`.
 - All eight: `Dialog` (not `AlertDialog`), `onCloseAutoFocus={(e) => e.preventDefault()}` on `DialogContent`, reset the mutation in the open-triggered effect, `onSuccess` = toast + `handleDialogOpenChange(false)` (no navigation).
