@@ -6,9 +6,6 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
-import { toast } from "sonner";
-
-import { useMutation } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -24,15 +21,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
-import { useOrganization } from "@/hooks/use-organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { trpc } from "@/trpc/client";
 
+import { SkillPackageBuilder_ArchiveSkill_Dialog } from "./archive-skill";
 import { SkillPackageBuilder_DeleteSkill_Dialog } from "./delete-skill";
 import { SkillPackageBuilder_MoveSkill_Dialog } from "./move-skill";
+import { SkillPackageBuilder_RestoreSkill_Dialog } from "./restore-skill";
 
 interface SkillPackageBuilder_Skill_MenuProps {
     skill: Skill & {
@@ -42,55 +38,11 @@ interface SkillPackageBuilder_Skill_MenuProps {
 }
 
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
-    const organization = useOrganization();
-
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "archive", "restore"] as const),
+    );
     const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-
-    const archiveMutation = useMutation(
-        trpc.skillPackageBuilder.archiveSkill.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.archiveSkill },
-            onError(error) {
-                console.error("Failed to archive skill:", error);
-            },
-        }),
-    );
-    const restoreMutation = useMutation(
-        trpc.skillPackageBuilder.restoreSkill.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restoreSkill },
-            onError(error) {
-                console.error("Failed to restore skill:", error);
-            },
-        }),
-    );
-
-    function handleArchive() {
-        toast.promise(
-            archiveMutation.mutateAsync({
-                skillId: skill.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Archiving skill...",
-                success: "Skill archived.",
-                error: (error) => "Error archiving skill." + error.message,
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            restoreMutation.mutateAsync({
-                skillId: skill.id,
-                organizationId: organization.id,
-            }),
-            {
-                loading: "Restoring skill...",
-                success: "Skill restored.",
-                error: (error) => "Error restoring skill." + error.message,
-            },
-        );
-    }
 
     return (
         <>
@@ -109,7 +61,10 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             <Protect
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
-                                    <DropdownMenuItem onClick={handleArchive} disabled={!allowed}>
+                                    <DropdownMenuItem
+                                        onClick={() => setAction("archive", { history: "push" })}
+                                        disabled={!allowed}
+                                    >
                                         <ObjectIcons.Archive /> Archive
                                     </DropdownMenuItem>
                                 )}
@@ -131,7 +86,10 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             <Protect
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
-                                    <DropdownMenuItem onClick={handleRestore} disabled={!allowed}>
+                                    <DropdownMenuItem
+                                        onClick={() => setAction("restore", { history: "push" })}
+                                        disabled={!allowed}
+                                    >
                                         <ObjectIcons.Restore /> Restore
                                     </DropdownMenuItem>
                                 )}
@@ -162,6 +120,8 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                     })
                 }
             />
+            <SkillPackageBuilder_ArchiveSkill_Dialog skill={skill} />
+            <SkillPackageBuilder_RestoreSkill_Dialog skill={skill} />
             <SkillPackageBuilder_MoveSkill_Dialog
                 skill={skill}
                 open={moveDialogOpen}
