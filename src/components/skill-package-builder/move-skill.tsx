@@ -204,7 +204,7 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [props.open]);
 
-    const ready = skillPackagesReady && skillGroupsReady && !!originPackage && !!originGroup;
+    const loading = !skillPackagesReady || !skillGroupsReady;
 
     return (
         <Dialog {...props}>
@@ -216,13 +216,23 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                {!ready ? (
+                {loading ? (
                     <div className="flex flex-col gap-2">
                         <Skeleton className="w-full h-14" />
                         <Skeleton className="w-full h-14" />
                         <Skeleton className="w-full h-14" />
                         <Skeleton className="w-full h-14" />
                     </div>
+                ) : !originPackage || !originGroup ? (
+                    <>
+                        <p className="text-sm text-muted-foreground">
+                            This skill&rsquo;s current package or group could not be found. It may
+                            have been moved or deleted. Reload the page and try again.
+                        </p>
+                        <DialogFooter>
+                            <DialogCloseButton variant="outline">Close</DialogCloseButton>
+                        </DialogFooter>
+                    </>
                 ) : (
                     <>
                         <FieldGroup>
