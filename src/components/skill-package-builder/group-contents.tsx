@@ -6,6 +6,7 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -66,7 +67,10 @@ export function SkillPackageBuilder_Group_Contents_List({
         }),
     );
 
-    const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["reorder-skills"] as const),
+    );
     const [showArchived, setShowArchived] = useState(false);
 
     const skills = (skillsQuery.data ?? [])
@@ -88,7 +92,7 @@ export function SkillPackageBuilder_Group_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setReorderDialogOpen(true)}
+                                onClick={() => setAction("reorder-skills", { history: "push" })}
                             >
                                 <ReorderIcon />
                             </Button>
@@ -171,8 +175,12 @@ export function SkillPackageBuilder_Group_Contents_List({
             <SkillPackageBuilder_ReorderSkills_Dialog
                 skillGroup={skillGroup}
                 skillPackage={skillPackage}
-                open={reorderDialogOpen}
-                onOpenChange={setReorderDialogOpen}
+                open={action === "reorder-skills"}
+                onOpenChange={(open) =>
+                    setAction(open ? "reorder-skills" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </Card>
     );
