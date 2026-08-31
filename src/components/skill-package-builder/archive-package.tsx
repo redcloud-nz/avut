@@ -76,6 +76,9 @@ export function SkillPackageBuilder_ArchivePackage_Dialog({
                         You can restore it later.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skillPackage.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

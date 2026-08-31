@@ -76,6 +76,9 @@ export function SkillPackageBuilder_ArchiveGroup_Dialog({
                         later.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skillGroup.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

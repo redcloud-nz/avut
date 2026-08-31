@@ -72,6 +72,9 @@ export function SkillPackageBuilder_ArchiveSkill_Dialog({ skill }: { skill: Skil
                         can restore it later.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skill.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

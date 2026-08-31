@@ -76,6 +76,9 @@ export function SkillPackageBuilder_PublishPackage_Dialog({
                         to.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skillPackage.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

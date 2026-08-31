@@ -55,7 +55,7 @@ export function SkillPackageBuilder_Group_Menu({
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onSelect={() => setAction("archive", { history: "push" })}
+                                        onClick={() => setAction("archive", { history: "push" })}
                                         disabled={!allowed}
                                     >
                                         <ObjectIcons.Archive /> Archive
@@ -70,7 +70,7 @@ export function SkillPackageBuilder_Group_Menu({
                                 permissions={{ skillPackageBuilder: ["update"] }}
                                 render={(allowed) => (
                                     <DropdownMenuItem
-                                        onSelect={() => setAction("restore", { history: "push" })}
+                                        onClick={() => setAction("restore", { history: "push" })}
                                         disabled={!allowed}
                                     >
                                         <ObjectIcons.Restore /> Restore

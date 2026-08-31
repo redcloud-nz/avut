@@ -78,6 +78,9 @@ export function SkillPackageBuilder_UnpublishPackage_Dialog({
                         Existing subscribers keep their copy; no new organisations can subscribe.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skillPackage.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

@@ -75,6 +75,9 @@ export function SkillPackageBuilder_RestorePackage_Dialog({
                         The package returns to Active and can be edited and published again.
                     </DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skillPackage.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

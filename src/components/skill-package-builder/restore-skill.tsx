@@ -69,6 +69,9 @@ export function SkillPackageBuilder_RestoreSkill_Dialog({ skill }: { skill: Skil
                     <DialogTitle>Restore skill</DialogTitle>
                     <DialogDescription>The skill returns to Active.</DialogDescription>
                 </DialogHeader>
+                <p className="text-sm">
+                    <ObjectName>{skill.name}</ObjectName>
+                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
