@@ -5,7 +5,6 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -40,9 +39,8 @@ interface SkillPackageBuilder_Skill_MenuProps {
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["delete", "archive", "restore"] as const),
+        parseAsStringLiteral(["delete", "archive", "restore", "move"] as const),
     );
-    const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
     return (
         <>
@@ -74,7 +72,7 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                             permissions={{ skillPackageBuilder: ["update"] }}
                             render={(allowed) => (
                                 <DropdownMenuItem
-                                    onClick={() => setMoveDialogOpen(true)}
+                                    onClick={() => setAction("move", { history: "push" })}
                                     disabled={!allowed}
                                 >
                                     <ObjectIcons.Move /> Move
@@ -124,8 +122,12 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
             <SkillPackageBuilder_RestoreSkill_Dialog skill={skill} />
             <SkillPackageBuilder_MoveSkill_Dialog
                 skill={skill}
-                open={moveDialogOpen}
-                onOpenChange={setMoveDialogOpen}
+                open={action === "move"}
+                onOpenChange={(open) =>
+                    setAction(open ? "move" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
             />
         </>
     );
