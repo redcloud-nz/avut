@@ -4,7 +4,8 @@
  */
 "use client";
 
-import { ComponentProps, useState } from "react";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { ComponentProps } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
@@ -34,7 +35,6 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -54,7 +54,23 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
         ],
     });
 
-    const [deleteTarget, setDeleteTarget] = useState<PersonRef | null>(null);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["remove-member"] as const),
+    );
+    const [memberId, setMemberId] = useQueryState("memberId", parseAsString);
+
+    const activeMember = teamMembers.find((tm) => tm.personId === memberId) ?? null;
+
+    function openRemoveMember(id: string) {
+        void setMemberId(id, { history: "push" });
+        void setAction("remove-member", { history: "push" });
+    }
+
+    function closeRemoveMember() {
+        void setAction(null, { history: "replace" });
+        void setMemberId(null, { history: "replace" });
+    }
 
     return (
         <>
@@ -107,7 +123,11 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        onClick={() => setDeleteTarget(person)}
+                                                        onClick={() =>
+                                                            openRemoveMember(
+                                                                teamMembership.personId,
+                                                            )
+                                                        }
                                                     >
                                                         <ObjectIcons.Delete />
                                                     </Button>
@@ -118,13 +138,15 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                             </TableBody>
                         </Table>
 
-                        <AdminModule_RemoveTeamMember_Dialog
-                            organizationId={organization.id}
-                            team={team}
-                            person={deleteTarget}
-                            open={deleteTarget !== null}
-                            onOpenChange={() => setDeleteTarget(null)}
-                        />
+                        {activeMember && (
+                            <AdminModule_RemoveTeamMember_Dialog
+                                organizationId={organization.id}
+                                team={team}
+                                person={activeMember.person}
+                                open={action === "remove-member"}
+                                onOpenChange={(open) => (open ? undefined : closeRemoveMember())}
+                            />
+                        )}
                     </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
