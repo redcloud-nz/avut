@@ -5,7 +5,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -17,10 +16,10 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
+    DialogProps,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { skillsEffects } from "@/client/skills-effects";
@@ -30,16 +29,11 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_UnsubscribeFromPackage_Dialog({
     skillPackage,
-}: {
+    ...props
+}: DialogProps & {
     skillPackage: { id: SkillPackageId; name: string };
 }) {
     const organization = useOrganization();
-
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["unsubscribe"] as const),
-    );
-    const dialogOpen = action === "unsubscribe";
 
     const mutation = useMutation(
         trpc.skills.unsubscribeFromPackage.mutationOptions({
@@ -54,27 +48,20 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                         Unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
                 );
-                handleDialogOpenChange(false);
+                props.onOpenChange?.(false);
             },
         }),
     );
 
     useEffect(() => {
-        if (dialogOpen) {
+        if (props.open) {
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
-
-    function handleDialogOpenChange(open: boolean) {
-        void setAction(open ? "unsubscribe" : null, { history: open ? "push" : "replace" });
-    }
+    }, [props.open]);
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">Unsubscribe</Button>
-            </DialogTrigger>
+        <Dialog {...props}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Unsubscribe from Package</DialogTitle>

@@ -62,7 +62,11 @@ export const skillsEffects = createEffects<"skills">()({
             }),
             (old) =>
                 old
-                    ? { ...old, subscription: null, subscriptionCount: old.subscriptionCount - 1 }
+                    ? {
+                          ...old,
+                          subscription: null,
+                          subscriptionCount: Math.max(0, old.subscriptionCount - 1),
+                      }
                     : old,
         ),
         invalidate(trpc.skills.listPackages.queryFilter({ organizationId: vars.organizationId })),
