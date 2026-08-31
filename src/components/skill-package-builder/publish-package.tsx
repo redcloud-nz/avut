@@ -72,13 +72,10 @@ export function SkillPackageBuilder_PublishPackage_Dialog({
                 <DialogHeader>
                     <DialogTitle>Publish package</DialogTitle>
                     <DialogDescription>
-                        Publishing makes this package available for other organisations to subscribe
-                        to.
+                        Publish package <ObjectName>{skillPackage.name}</ObjectName>. Publishing
+                        makes this package available for other organisations to subscribe to.
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm">
-                    <ObjectName>{skillPackage.name}</ObjectName>
-                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

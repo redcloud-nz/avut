@@ -68,13 +68,10 @@ export function SkillPackageBuilder_ArchiveSkill_Dialog({ skill }: { skill: Skil
                 <DialogHeader>
                     <DialogTitle>Archive skill</DialogTitle>
                     <DialogDescription>
-                        Archived skills are hidden and no longer assigned in new skill checks. You
-                        can restore it later.
+                        Archive skill <ObjectName>{skill.name}</ObjectName>. Archived skills are
+                        hidden and no longer assigned in new skill checks. You can restore it later.
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm">
-                    <ObjectName>{skill.name}</ObjectName>
-                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

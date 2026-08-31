@@ -72,13 +72,10 @@ export function SkillPackageBuilder_ArchiveGroup_Dialog({
                 <DialogHeader>
                     <DialogTitle>Archive group</DialogTitle>
                     <DialogDescription>
-                        Archived groups and their skills are hidden. You can restore the group
-                        later.
+                        Archive group <ObjectName>{skillGroup.name}</ObjectName>. Archived groups
+                        and their skills are hidden. You can restore the group later.
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm">
-                    <ObjectName>{skillGroup.name}</ObjectName>
-                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

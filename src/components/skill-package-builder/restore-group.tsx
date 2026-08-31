@@ -72,12 +72,10 @@ export function SkillPackageBuilder_RestoreGroup_Dialog({
                 <DialogHeader>
                     <DialogTitle>Restore group</DialogTitle>
                     <DialogDescription>
-                        The group and its skills return to Active.
+                        Restore group <ObjectName>{skillGroup.name}</ObjectName>. The group and its
+                        skills return to Active.
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm">
-                    <ObjectName>{skillGroup.name}</ObjectName>
-                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

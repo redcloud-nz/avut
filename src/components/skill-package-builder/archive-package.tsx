@@ -72,13 +72,11 @@ export function SkillPackageBuilder_ArchivePackage_Dialog({
                 <DialogHeader>
                     <DialogTitle>Archive package</DialogTitle>
                     <DialogDescription>
-                        Archived packages are hidden from the catalogue and cannot be subscribed to.
-                        You can restore it later.
+                        Archive package <ObjectName>{skillPackage.name}</ObjectName>. Archived
+                        packages are hidden from the catalogue and cannot be subscribed to. You can
+                        restore it later.
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm">
-                    <ObjectName>{skillPackage.name}</ObjectName>
-                </p>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
