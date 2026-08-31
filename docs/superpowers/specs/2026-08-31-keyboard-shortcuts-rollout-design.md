@@ -6,7 +6,9 @@ A pilot (commit `d2acf1d`) added keyboard shortcuts to the admin personnel area
 using `@tanstack/react-hotkeys`:
 
 - Personnel list: `Alt+N` (new person), `/` (focus search)
-- Person detail: `E` (edit), `Delete`, `A` (archive), `R` (restore)
+- Person detail: `E` (edit), `Delete`, `A` (archive), `R` (restore) — this
+  rollout re-keys these to the `Alt+<key>` scheme below (`Alt+E`,
+  `Alt+Backspace`, `Alt+A`, `Alt+R`)
 - Person menu: an "Edit" item, plus `<DropdownMenuShortcut>` badges via
   `formatForDisplay`
 - `useHasPermission` was extracted from `<Protect>` so the permission boolean can
@@ -27,24 +29,34 @@ shapes.
 
 ## Key model
 
-One canonical key per action verb, app-wide, defined once:
+One canonical key per action verb, app-wide, defined once. Every dialog trigger
+is `Alt+<key>`; only the two non-destructive, universally-conventional web
+shortcuts (`/`, `?`) are bare keys.
 
-| Verb        | Key      |
-| ----------- | -------- |
-| `create`    | `Alt+N`  |
-| `update`    | `E`      |
-| `delete`    | `Delete` |
-| `archive`   | `A`      |
-| `restore`   | `R`      |
-| `publish`   | `P`      |
-| `unpublish` | `U`      |
-| `move`      | `M`      |
-| search      | `/`      |
-| help        | `?`      |
+| Verb        | Key             |
+| ----------- | --------------- |
+| `create`    | `Alt+N`         |
+| `update`    | `Alt+E`         |
+| `delete`    | `Alt+Backspace` |
+| `archive`   | `Alt+A`         |
+| `restore`   | `Alt+R`         |
+| `publish`   | `Alt+P`         |
+| `unpublish` | `Alt+U`         |
+| `move`      | `Alt+M`         |
+| search      | `/`             |
+| help        | `?`             |
 
-`Alt+N` rather than `Mod+N` — Cmd/Ctrl+N is reserved by the browser/OS and can't
-be reliably `preventDefault`-ed. Hotkey strings passed to the library must use
-uppercase keys (`"E"`, `"Alt+N"`); matching is case-insensitive.
+- `Alt+N` rather than `Mod+N` — Cmd/Ctrl+N is reserved by the browser/OS and
+  can't be reliably `preventDefault`-ed.
+- Everything is `Alt`-prefixed rather than a bare letter: `ignoreInputs` already
+  stops a bare `E` firing inside a text field, but it would still fire when focus
+  is on a button, link, table row, or the page body — one stray keystroke while
+  tabbing a detail page opens a mutation dialog. `Alt+<key>` requires intent.
+  Alt combos already default to `ignoreInputs: true`, so no loss there.
+- Hotkey strings passed to the library must use uppercase keys (`"Alt+E"`,
+  `"Alt+Backspace"`); matching is case-insensitive.
+- On a US Mac layout Option+E/U/N are dead keys for accents — only relevant
+  inside text inputs (which are ignored), and `preventDefault` covers the rest.
 
 ## Approach
 
@@ -66,13 +78,13 @@ onClick={() => setAction(verb, { history: "push" })} disabled={!allowed}>`. A
 ```ts
 export const ActionHotkey = {
   create: "Alt+N",
-  update: "E",
-  delete: "Delete",
-  archive: "A",
-  restore: "R",
-  publish: "P",
-  unpublish: "U",
-  move: "M",
+  update: "Alt+E",
+  delete: "Alt+Backspace",
+  archive: "Alt+A",
+  restore: "Alt+R",
+  publish: "Alt+P",
+  unpublish: "Alt+U",
+  move: "Alt+M",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;
@@ -243,7 +255,7 @@ goes inside `NuqsAdapter` (shortcuts call `setAction`) and `QueryClientProvider`
 
 ## Constraints / notes
 
-- `skill-menu` has no edit dialog → no `E` there.
+- `skill-menu` has no edit dialog → no `Alt+E` there.
 - `group`/`package`/`skill` menus parse entity-agnostic verbs
   (`archive`/`restore`/`publish`/`unpublish`) — safe because only one such menu
   renders per page (per `docs/patterns/mutation-dialog.md`).
@@ -259,9 +271,9 @@ Manual, against the running dev server (`test-in-browser`):
 
 - Each list page: `Alt+N` opens the create dialog, `/` focuses search, neither
   fires while typing in a field, `Alt+N` absent without create permission.
-- Each detail page: `E`/`Delete`/`A`/`R`/`P`/`U`/`M` as applicable open the right
-  dialog; disabled/absent without permission or when the record status doesn't
-  allow it; menu badges show the right combo.
+- Each detail page: `Alt+E`/`Alt+Backspace`/`Alt+A`/`Alt+R`/`Alt+P`/`Alt+U`/
+  `Alt+M` as applicable open the right dialog; disabled/absent without permission
+  or when the record status doesn't allow it; menu badges show the right combo.
 - `?` opens the overlay and lists only currently-active shortcuts, grouped.
 
 No unit tests — UI-only wiring. Run `npx tsc --noEmit`, `npm run lint`,
