@@ -6,7 +6,12 @@
 
 import { useMemo, useState } from "react";
 
-import { formatForDisplay, getHotkeyManager, useHotkey } from "@tanstack/react-hotkeys";
+import {
+    formatForDisplay,
+    getHotkeyManager,
+    type Hotkey,
+    useHotkey,
+} from "@tanstack/react-hotkeys";
 
 import {
     Dialog,
@@ -15,6 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
 
 import { HELP_HOTKEY } from "@/lib/hotkeys";
 
@@ -59,7 +65,7 @@ export function HotkeyHelp() {
  */
 function HotkeyHelpList() {
     const groups = useMemo(() => {
-        const byCategory = new Map<string, { key: string; name: string }[]>();
+        const byCategory = new Map<string, { hotkey: Hotkey; name: string }[]>();
 
         for (const reg of getHotkeyManager().registrations.state.values()) {
             if (reg.options.enabled === false) continue;
@@ -68,7 +74,7 @@ function HotkeyHelpList() {
             const name = reg.options.meta?.name ?? formatForDisplay(reg.hotkey);
 
             const rows = byCategory.get(category) ?? [];
-            rows.push({ key: formatForDisplay(reg.hotkey), name });
+            rows.push({ hotkey: reg.hotkey, name });
             byCategory.set(category, rows);
         }
 
@@ -93,15 +99,13 @@ function HotkeyHelpList() {
                     <h3 className="text-xs font-medium text-muted-foreground uppercase">
                         {category}
                     </h3>
-                    {rows.map(({ key, name }) => (
+                    {rows.map(({ hotkey, name }) => (
                         <div
-                            key={`${key}:${name}`}
+                            key={`${hotkey}:${name}`}
                             className="flex items-center justify-between gap-4 py-0.5"
                         >
                             <span>{name}</span>
-                            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs">
-                                {key}
-                            </kbd>
+                            <HotkeyKbd hotkey={hotkey} />
                         </div>
                     ))}
                 </div>

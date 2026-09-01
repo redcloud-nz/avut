@@ -6,9 +6,8 @@
 
 import { ReactNode } from "react";
 
-import { formatForDisplay } from "@tanstack/react-hotkeys";
-
 import { DropdownMenuItem, DropdownMenuShortcut } from "@/components/ui/dropdown-menu";
+import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
 
 import { ActionHotkey, ActionVerb } from "@/lib/hotkeys";
 
@@ -44,7 +43,9 @@ export function MenuAction({
         >
             {icon}
             {label}
-            <DropdownMenuShortcut>{formatForDisplay(ActionHotkey[verb])}</DropdownMenuShortcut>
+            <DropdownMenuShortcut>
+                <HotkeyKbd hotkey={ActionHotkey[verb]} />
+            </DropdownMenuShortcut>
         </DropdownMenuItem>
     );
 }
