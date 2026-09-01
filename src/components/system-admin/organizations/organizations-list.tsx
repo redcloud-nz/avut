@@ -4,7 +4,6 @@
  */
 "use client";
 
-import type { Route } from "next";
 import Link from "next/link";
 import { useMemo } from "react";
 
@@ -24,6 +23,7 @@ import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system-admin
 
 import { formatDate } from "@/lib/datetime";
 import { type ModuleId, Modules } from "@/lib/modules";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 type OrganizationRow = {
@@ -48,9 +48,12 @@ export function SystemAdmin_Organizations_List() {
                 columnHelper.accessor("name", {
                     id: "name",
                     header: "Name",
-                    // TODO(phase-5): detail route does not exist yet — link 404s until Phase 5.
                     cell: (ctx) => (
-                        <Link href={`/system-admin/organizations/${ctx.row.original.id}` as Route}>
+                        <Link
+                            href={route("/system-admin/organizations/[organizationId]", {
+                                organizationId: ctx.row.original.id,
+                            })}
+                        >
                             {ctx.getValue()}
                         </Link>
                     ),

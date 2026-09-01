@@ -95,6 +95,82 @@ export const systemAdminRouter = createTrpcRouter({
             return { id: organizationId, slug: input.slug };
         }),
 
+    getOrganization: systemAdminProcedure
+        .input(z.object({ organizationId: OrganizationId.schema }))
+        .query(async ({ ctx, input }) => {
+            const org = await ctx.prisma.organization.findUnique({
+                where: { id: input.organizationId },
+                include: {
+                    users: {
+                        include: {
+                            user: { select: { id: true, name: true, email: true } },
+                        },
+                    },
+                    teams: {
+                        select: {
+                            id: true,
+                            name: true,
+                            _count: { select: { teamMemberships: true } },
+                        },
+                    },
+                    configs: true,
+                    _count: {
+                        select: {
+                            d4hAccessTokens: true,
+                            personnel: true,
+                            skillChecks: true,
+                            skillCheckSessions: true,
+                            notes: true,
+                            skillPackages: true,
+                            i3IssuedItems: true,
+                            formInstances: true,
+                        },
+                    },
+                },
+            });
+
+            if (!org) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `Organization ${input.organizationId} not found.`,
+                });
+            }
+
+            return {
+                id: org.id,
+                name: org.name,
+                slug: org.slug,
+                logo: org.logo,
+                createdAt: org.createdAt,
+                members: org.users.map((m) => ({
+                    userId: m.userId,
+                    name: m.user.name,
+                    email: m.user.email,
+                    role: m.role,
+                })),
+                teams: org.teams.map((t) => ({
+                    id: t.id,
+                    name: t.name,
+                    memberCount: t._count.teamMemberships,
+                })),
+                enabledModules: Object.entries(
+                    OrganizationSettings.fromRecords(org.configs).modules,
+                )
+                    .filter(([, v]) => v.enabled)
+                    .map(([k]) => k as ModuleId),
+                d4hTokenCount: org._count.d4hAccessTokens,
+                recordCounts: {
+                    personnel: org._count.personnel,
+                    skillChecks: org._count.skillChecks,
+                    skillCheckSessions: org._count.skillCheckSessions,
+                    notes: org._count.notes,
+                    skillPackages: org._count.skillPackages,
+                    i3IssuedItems: org._count.i3IssuedItems,
+                    formInstances: org._count.formInstances,
+                } as Record<string, number>,
+            };
+        }),
+
     getUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
         .query(async ({ ctx, input }) => {

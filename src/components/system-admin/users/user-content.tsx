@@ -4,6 +4,8 @@
  */
 "use client";
 
+import Link from "next/link";
+
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -13,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 
+import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
@@ -84,9 +87,17 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                             <tbody>
                                                 {user.organizations.map((org) => (
                                                     <tr key={org.id} className="border-t">
-                                                        {/* TODO(phase-5): link to org detail
-                                                            (/system-admin/organizations/[organizationId]) */}
-                                                        <td className="py-1 pr-4">{org.name}</td>
+                                                        <td className="py-1 pr-4">
+                                                            <Link
+                                                                href={route(
+                                                                    "/system-admin/organizations/[organizationId]",
+                                                                    { organizationId: org.id },
+                                                                )}
+                                                                className="underline-offset-2 hover:underline"
+                                                            >
+                                                                {org.name}
+                                                            </Link>
+                                                        </td>
                                                         <td className="py-1 pr-4 font-mono text-xs">
                                                             {org.slug}
                                                         </td>

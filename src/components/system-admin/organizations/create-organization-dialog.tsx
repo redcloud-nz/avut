@@ -5,7 +5,6 @@
 
 "use client";
 
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -40,6 +39,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { systemAdminEffects } from "@/client/system-admin-effects";
+import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
@@ -82,8 +82,9 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                 }
             },
             onSuccess({ id }) {
-                // TODO(phase-5): detail route does not exist yet — this 404s until Phase 5.
-                router.push(`/system-admin/organizations/${id}` as Route);
+                router.push(
+                    route("/system-admin/organizations/[organizationId]", { organizationId: id }),
+                );
             },
         }),
     );
