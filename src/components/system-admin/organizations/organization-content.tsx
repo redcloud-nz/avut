@@ -49,6 +49,16 @@ export function SystemAdmin_Organization_Content({
                         <Saratoga.Actions>
                             <Button asChild variant="outline">
                                 <Link
+                                    href={route(
+                                        "/system-admin/organizations/[organizationId]/settings",
+                                        { organizationId },
+                                    )}
+                                >
+                                    Settings
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline">
+                                <Link
                                     href={route("/orgs/[slug]/admin", { slug: organization.slug })}
                                 >
                                     Open in-org admin

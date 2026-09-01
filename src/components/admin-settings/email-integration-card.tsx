@@ -6,11 +6,10 @@
 "use client";
 
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -25,7 +24,6 @@ import { Switch } from "@/components/ui/switch";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { trpc } from "@/trpc/client";
 
 export function EmailIntegration_SettingsCard({
     organizationId,
@@ -34,28 +32,16 @@ export function EmailIntegration_SettingsCard({
     organizationId: OrganizationId;
     settings: OrganizationSettings;
 }) {
-    const queryClient = useQueryClient();
-
     const form = useForm({
         resolver: zodResolver(OrganizationSettings.schema.shape.integrations.shape.email),
         defaultValues: settings.integrations.email,
     });
 
-    const mutation = useMutation(
-        trpc.settings.updateOrganizationSettings.mutationOptions({
-            onError(error) {
-                toast.error(`Failed to update email integration settings: ${error.message}`);
-                mutation.reset();
-            },
-            async onSuccess(updated) {
-                await queryClient.invalidateQueries(
-                    trpc.settings.getOrganizationSettings.queryFilter({ organizationId }),
-                );
-                form.reset(updated.integrations.email);
-                setTimeout(() => mutation.reset(), 1500);
-            },
-        }),
-    );
+    const mutation = useOrganizationSettingsMutation({
+        organizationId,
+        errorMessage: "Failed to update email integration settings",
+        onSaved: (updated) => form.reset(updated.integrations.email),
+    });
 
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({

@@ -14,6 +14,11 @@ import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
+import {
+    readOrganizationSettings,
+    writeOrganizationSettings,
+} from "@/server/organization-settings-store";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
 
@@ -35,6 +40,27 @@ export async function assertNotLastOwner(
         throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Cannot remove or demote the last owner of an organization.",
+        });
+    }
+}
+
+/**
+ * Throws `NOT_FOUND` if the organization does not exist. Settings resolve from defaults when no
+ * config rows exist, so without this an unknown id would silently look like a valid, untouched
+ * organization.
+ */
+async function assertOrganizationExists(
+    prisma: Pick<PrismaClient, "organization">,
+    organizationId: string,
+) {
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { id: true },
+    });
+    if (!org) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Organization ${organizationId} not found.`,
         });
     }
 }
@@ -256,6 +282,24 @@ export const systemAdminRouter = createTrpcRouter({
             };
         }),
 
+    /**
+     * Resolve an organization's settings, keyed purely on `organizationId` — no membership in
+     * that organization is required (or consulted).
+     *
+     * Reads through `readOrganizationSettings`, which layers the stored `OrganizationConfig`
+     * rows over `OrganizationSettings.default()`. That makes a config-less organization (the
+     * normal org-creation path seeds no rows) and a fully materialised one (`createOrganization`
+     * above seeds every default leaf) resolve identically.
+     */
+    getOrganizationSettings: systemAdminProcedure
+        .input(z.object({ organizationId: OrganizationId.schema }))
+        .output(OrganizationSettings.schema)
+        .query(async ({ ctx, input }) => {
+            await assertOrganizationExists(ctx.prisma, input.organizationId);
+
+            return await readOrganizationSettings(ctx.prisma, input.organizationId);
+        }),
+
     getUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
         .query(async ({ ctx, input }) => {
@@ -428,5 +472,55 @@ export const systemAdminRouter = createTrpcRouter({
             ]);
 
             return { id: updated.id, role: updated.role };
+        }),
+
+    /**
+     * Replace an organization's settings, without requiring membership in it.
+     *
+     * The incoming `settings` are validated against `OrganizationSettings.schema` (by the input
+     * schema, and again inside `writeOrganizationSettings` before anything is written), and only
+     * the `OrganizationConfig` leaves whose value actually changed are upserted — so this behaves
+     * identically for a config-less and a fully materialised organization.
+     *
+     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
+     * written directly into the same `$transaction` as the config writes — see
+     * `createOrganization`.
+     */
+    updateOrganizationSettings: systemAdminProcedure
+        .input(
+            z.object({
+                organizationId: OrganizationId.schema,
+                settings: OrganizationSettings.schema,
+            }),
+        )
+        .output(OrganizationSettings.schema)
+        .mutation(async ({ ctx, input }) => {
+            await assertOrganizationExists(ctx.prisma, input.organizationId);
+
+            const userId = ctx.auth.user.id;
+
+            const settings = await writeOrganizationSettings(
+                ctx.prisma,
+                input.organizationId,
+                input.settings,
+                (changes) =>
+                    ctx.prisma.organizationLogEntry.create({
+                        data: {
+                            id: nanoId16(),
+                            organizationId: input.organizationId,
+                            userId,
+                            action: "Update",
+                            objectType: "OrganizationSettings",
+                            objectId: input.organizationId,
+                            changes: changes as object[],
+                            description: "Updated settings from system administration",
+                        },
+                    }),
+            );
+
+            // Same tag the in-org settings path invalidates, so in-org UI reflects the change.
+            await revalidateOrganizationSettings(input.organizationId);
+
+            return settings;
         }),
 });

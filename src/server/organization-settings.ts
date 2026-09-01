@@ -4,31 +4,28 @@
  */
 import "server-only";
 
-import { cacheTag, revalidateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import prisma from "./prisma";
+import { organizationSettingsCacheTag } from "./organization-settings-cache";
+import { readOrganizationSettings } from "./organization-settings-store";
 import { OrganizationId } from "@/lib/schemas/organization";
+
+export { revalidateOrganizationSettings } from "./organization-settings-cache";
+export { readOrganizationSettings, writeOrganizationSettings } from "./organization-settings-store";
 
 /**
  * Get the organization settings for a given organization ID. This function is cached and will revalidate when settings are updated.
+ *
+ * Keys purely on `organizationId` — there is no session or membership check here.
  */
 export async function getOrganizationSettings(
     organizationId: OrganizationId,
 ): Promise<OrganizationSettings> {
     "use cache";
-    cacheTag(`organization-settings-${organizationId}`);
+    cacheTag(organizationSettingsCacheTag(organizationId));
 
-    const configRecords = await prisma.organizationConfig.findMany({
-        where: { organizationId },
-    });
-
-    return OrganizationSettings.fromRecords(configRecords);
-}
-
-export async function revalidateOrganizationSettings(
-    organizationId: OrganizationId,
-) {
-    revalidateTag(`organization-settings-${organizationId}`, { expire: 0 });
+    return await readOrganizationSettings(prisma, organizationId);
 }
