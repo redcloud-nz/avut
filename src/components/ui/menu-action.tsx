@@ -9,16 +9,33 @@ import { ReactNode } from "react";
 import { DropdownMenuItem, DropdownMenuShortcut } from "@/components/ui/dropdown-menu";
 import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
 
+import { useActionHotkeys, type ActionHotkeyEntry } from "@/hooks/use-action-hotkeys";
 import { ActionHotkey, ActionVerb } from "@/lib/hotkeys";
 
-interface MenuActionProps {
-    /** Action verb — determines the shortcut badge via the {@link ActionHotkey} registry. */
+export interface MenuActionProps {
+    /** Action verb — determines the shortcut key and badge via the {@link ActionHotkey} registry. */
     verb: ActionVerb;
     label: string;
     icon: ReactNode;
     onSelect: () => void;
     disabled?: boolean;
     destructive?: boolean;
+}
+
+/**
+ * Register the `Alt+<key>` hotkeys for a menu's action list — call once at the
+ * menu's always-mounted top level (a Radix menu only mounts its content, and
+ * thus any `<MenuAction>`, while open). The `<MenuAction>`s render the items.
+ */
+export function useMenuActionHotkeys(actions: MenuActionProps[], category: string): void {
+    const entries: ActionHotkeyEntry[] = actions.map(({ verb, label, onSelect, disabled }) => ({
+        verb,
+        run: onSelect,
+        enabled: !disabled,
+        name: label,
+        category,
+    }));
+    useActionHotkeys(entries);
 }
 
 /**

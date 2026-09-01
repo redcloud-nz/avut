@@ -7,19 +7,21 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
-
 import { Button } from "@/components/ui/button";
-
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    MenuAction,
+    useMenuActionHotkeys,
+    type MenuActionProps,
+} from "@/components/ui/menu-action";
 
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -42,6 +44,45 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
         parseAsStringLiteral(["delete", "archive", "restore", "move"] as const),
     );
 
+    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
+
+    const actions: MenuActionProps[] = [];
+    if (skill.status == "Active") {
+        actions.push({
+            verb: "archive",
+            label: "Archive",
+            icon: <ObjectIcons.Archive />,
+            onSelect: () => setAction("archive", { history: "push" }),
+            disabled: !canUpdate,
+        });
+    }
+    actions.push({
+        verb: "move",
+        label: "Move",
+        icon: <ObjectIcons.Move />,
+        onSelect: () => setAction("move", { history: "push" }),
+        disabled: !canUpdate,
+    });
+    if (skill.status == "Archived") {
+        actions.push({
+            verb: "restore",
+            label: "Restore",
+            icon: <ObjectIcons.Restore />,
+            onSelect: () => setAction("restore", { history: "push" }),
+            disabled: !canUpdate,
+        });
+    }
+    actions.push({
+        verb: "delete",
+        label: "Delete",
+        icon: <ObjectIcons.Delete />,
+        onSelect: () => setAction("delete", { history: "push" }),
+        disabled: !canUpdate,
+        destructive: true,
+    });
+
+    useMenuActionHotkeys(actions, "Skills");
+
     return (
         <>
             <DropdownMenu>
@@ -52,59 +93,10 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
                     <DropdownMenuGroup>
-                        {/* Show the archive option if the skill package is active */}
-                        {skill.status == "Active" && (
-                            <Protect
-                                permissions={{ skillPackageBuilder: ["update"] }}
-                                render={(allowed) => (
-                                    <DropdownMenuItem
-                                        onClick={() => setAction("archive", { history: "push" })}
-                                        disabled={!allowed}
-                                    >
-                                        <ObjectIcons.Archive /> Archive
-                                    </DropdownMenuItem>
-                                )}
-                            />
-                        )}
-                        <Protect
-                            permissions={{ skillPackageBuilder: ["update"] }}
-                            render={(allowed) => (
-                                <DropdownMenuItem
-                                    onClick={() => setAction("move", { history: "push" })}
-                                    disabled={!allowed}
-                                >
-                                    <ObjectIcons.Move /> Move
-                                </DropdownMenuItem>
-                            )}
-                        />
-                        {/* Show the restore option if the skill package is archived */}
-                        {skill.status == "Archived" && (
-                            <Protect
-                                permissions={{ skillPackageBuilder: ["update"] }}
-                                render={(allowed) => (
-                                    <DropdownMenuItem
-                                        onClick={() => setAction("restore", { history: "push" })}
-                                        disabled={!allowed}
-                                    >
-                                        <ObjectIcons.Restore /> Restore
-                                    </DropdownMenuItem>
-                                )}
-                            />
-                        )}
-                        <Protect
-                            permissions={{ skillPackageBuilder: ["update"] }}
-                            render={(allowed) => (
-                                <DropdownMenuItem
-                                    onClick={() => setAction("delete", { history: "push" })}
-                                    className="text-destructive focus:text-destructive"
-                                    disabled={!allowed}
-                                >
-                                    <ObjectIcons.Delete /> Delete
-                                </DropdownMenuItem>
-                            )}
-                        />
+                        {actions.map((a) => (
+                            <MenuAction key={a.verb} {...a} />
+                        ))}
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>

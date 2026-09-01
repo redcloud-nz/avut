@@ -52,6 +52,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 
 import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkill, Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -71,6 +73,17 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    const canCreateSkill = useHasPermission({ skillPackageBuilder: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateSkill,
+            name: "New skill",
+            category: "Skills",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),

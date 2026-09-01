@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { teamsEffects } from "@/client/teams-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
@@ -42,6 +44,17 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    const canCreateTeam = useHasPermission({ team: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateTeam,
+            name: "New team",
+            category: "Teams",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),

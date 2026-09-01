@@ -32,6 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { skillsEffects } from "@/client/skills-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -43,6 +45,17 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    const canCreateSession = useHasPermission({ skillCheckSession: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateSession,
+            name: "New session",
+            category: "Sessions",
+        },
+    ]);
 
     const nextSessionNumberQuery = useQuery(
         trpc.skills.nextSessionNumber.queryOptions(

@@ -32,6 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 
 import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillGroup, SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -48,6 +50,17 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    const canCreateGroup = useHasPermission({ skillPackageBuilder: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateGroup,
+            name: "New group",
+            category: "Groups",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(SkillGroup.modifiableSchema),

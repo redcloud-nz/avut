@@ -334,12 +334,22 @@ Upstream fix (`#141`, move the write to an effect) was closed unmerged.
 
 ## Rollout
 
-**Phased.** Phase 1 = all the infrastructure + retrofit **personnel** onto it
-(`hotkeys.ts`, `use-action-hotkeys.ts`, `menu-action.tsx`,
-`kaga-search-hotkey.tsx`, `hotkey-help.tsx`, `providers.tsx`, `kaga.tsx`,
-`create-person.tsx`, `person-menu.tsx`, `personnel-list.tsx`) — **done**,
-validated in-browser 2026-09-01. Phase 2 = the remaining create dialogs and
-menus below, once phase 1 is confirmed good in real use.
+**Phased, both shipped.**
+
+- **Phase 1** — infrastructure + personnel retrofit (`hotkeys.ts`,
+  `use-action-hotkeys.ts`, `menu-action.tsx`, `kaga-search-hotkey.tsx`,
+  `hotkey-help.tsx`, `hotkey-kbd.tsx` + `kbd.tsx`, `providers.tsx`, `kaga.tsx`,
+  `create-person.tsx`, `person-menu.tsx`, `personnel-list.tsx`). Validated
+  in-browser 2026-09-01.
+- **Phase 2** — the other top-level entities: `create-team`, `create-invitation`,
+  `create-package`, `create-group`, `create-skill`, `create-session` gain
+  `Alt+N`; `team-menu`, `session-menu`, `group-menu`, `package-menu`,
+  `skill-menu` rebuilt on the `MenuActionProps[]` + `useMenuActionHotkeys` +
+  `<MenuAction>` pattern. `menu-action.tsx` gained `useMenuActionHotkeys` (does
+  the `.map` to `useActionHotkeys` entries so each menu stays a 3-liner).
+  Existing per-file permission quirks preserved verbatim (e.g. `group-menu`
+  delete is gated on `skillPackageBuilder:["update"]`, `package-menu` delete on
+  `["delete"]`).
 
 | File                                                                                                                                                | Change                                                                                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |

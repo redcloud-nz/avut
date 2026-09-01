@@ -41,6 +41,8 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ObjectName } from "@/components/ui/typography";
 
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 
@@ -50,6 +52,17 @@ export function AdminModule_CreateInvitation_Dialog() {
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const open = action === "create";
+
+    const canCreateInvitation = useHasPermission({ invitation: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateInvitation,
+            name: "New invitation",
+            category: "Invitations",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(

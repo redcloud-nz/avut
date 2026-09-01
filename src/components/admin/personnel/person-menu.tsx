@@ -5,7 +5,6 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode } from "react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -22,13 +21,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MenuAction } from "@/components/ui/menu-action";
+import {
+    MenuAction,
+    useMenuActionHotkeys,
+    type MenuActionProps,
+} from "@/components/ui/menu-action";
 
 import { personnelEffects } from "@/client/personnel-effects";
-import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { ActionVerb } from "@/lib/hotkeys";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -91,21 +92,12 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
         );
     }
 
-    interface MenuActionConfig {
-        verb: ActionVerb;
-        label: string;
-        icon: ReactNode;
-        run: () => void;
-        disabled: boolean;
-        destructive?: boolean;
-    }
-
-    const actions: MenuActionConfig[] = [
+    const actions: MenuActionProps[] = [
         {
             verb: "update",
             label: "Edit",
             icon: <ObjectIcons.Edit />,
-            run: () => setAction("update", { history: "push" }),
+            onSelect: () => setAction("update", { history: "push" }),
             disabled: !canUpdate,
         },
     ];
@@ -114,7 +106,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
-            run: handleArchive,
+            onSelect: handleArchive,
             disabled: !canUpdate,
         });
     } else {
@@ -122,7 +114,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
-            run: handleRestore,
+            onSelect: handleRestore,
             disabled: !canUpdate,
         });
     }
@@ -131,21 +123,13 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             verb: "delete",
             label: "Delete",
             icon: <ObjectIcons.Delete />,
-            run: () => setAction("delete", { history: "push" }),
+            onSelect: () => setAction("delete", { history: "push" }),
             disabled: !canDelete,
             destructive: true,
         });
     }
 
-    useActionHotkeys(
-        actions.map(({ verb, label, run, disabled }) => ({
-            verb,
-            run,
-            enabled: !disabled,
-            name: label,
-            category: "Personnel",
-        })),
-    );
+    useMenuActionHotkeys(actions, "Personnel");
 
     return (
         <>
@@ -174,16 +158,8 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
 
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {actions.map(({ verb, label, icon, run, disabled, destructive }) => (
-                            <MenuAction
-                                key={verb}
-                                verb={verb}
-                                label={label}
-                                icon={icon}
-                                onSelect={run}
-                                disabled={disabled}
-                                destructive={destructive}
-                            />
+                        {actions.map((a) => (
+                            <MenuAction key={a.verb} {...a} />
                         ))}
                     </DropdownMenuGroup>
                 </DropdownMenuContent>

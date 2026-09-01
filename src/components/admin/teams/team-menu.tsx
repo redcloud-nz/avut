@@ -17,7 +17,13 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    MenuAction,
+    useMenuActionHotkeys,
+    type MenuActionProps,
+} from "@/components/ui/menu-action";
 
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
@@ -28,6 +34,21 @@ interface AdminModule_TeamMenuProps {
 
 export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+
+    const canDelete = useHasPermission({ team: ["delete"] });
+
+    const actions: MenuActionProps[] = [
+        {
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        },
+    ];
+
+    useMenuActionHotkeys(actions, "Teams");
 
     return (
         <>
@@ -47,18 +68,9 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                             </DropdownMenuItem>
                         )}
                     />
-                    <Protect
-                        permissions={{ team: ["delete"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem
-                                onClick={() => setAction("delete", { history: "push" })}
-                                disabled={!allowed}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        )}
-                    />
+                    {actions.map((a) => (
+                        <MenuAction key={a.verb} {...a} />
+                    ))}
                 </DropdownMenuContent>
             </DropdownMenu>
 

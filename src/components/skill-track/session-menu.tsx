@@ -7,22 +7,41 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    MenuAction,
+    useMenuActionHotkeys,
+    type MenuActionProps,
+} from "@/components/ui/menu-action";
 
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+
+    const canDelete = useHasPermission({ skillCheckSession: ["delete"] });
+
+    const actions: MenuActionProps[] = [
+        {
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        },
+    ];
+
+    useMenuActionHotkeys(actions, "Sessions");
 
     return (
         <>
@@ -34,18 +53,9 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <Protect
-                        permissions={{ skillCheckSession: ["delete"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => setAction("delete", { history: "push" })}
-                                disabled={!allowed}
-                            >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        )}
-                    />
+                    {actions.map((a) => (
+                        <MenuAction key={a.verb} {...a} />
+                    ))}
                 </DropdownMenuContent>
             </DropdownMenu>
 
