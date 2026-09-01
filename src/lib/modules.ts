@@ -8,6 +8,7 @@ import {
     NotebookPenIcon,
     PackageIcon,
     PocketKnifeIcon,
+    ShieldIcon,
     ShirtIcon,
     WrenchIcon,
     type LucideIcon,
@@ -30,20 +31,40 @@ export type ModuleId =
     | "i3"
     | "notes"
     | "skill-track"
-    | "skill-package-builder";
+    | "skill-package-builder"
+    | "system-admin";
 
-export interface ModuleDef {
+/**
+ * Whether a module lives under an organization (`/orgs/[slug]/…`) or is a
+ * site-wide area (`/system-admin`) gated on the Better Auth `admin` role.
+ */
+export type ModuleScope = "organization" | "global";
+
+interface BaseModuleDef {
     id: ModuleId;
     /** Display name shown in nav, dashboard, breadcrumbs, etc. */
     label: string;
     icon: LucideIcon;
-    /** Path segment under `/orgs/[slug]/…`. Note this can differ from `id` (e.g. `skills` → `skill-track`). */
+    /** Path segment (under `/orgs/[slug]/…` for org modules). Can differ from `id` (e.g. `skills` → `skill-track`). */
     segment: string;
     /** Always available, not gated by org settings (i.e. `admin`). */
     alwaysOn?: boolean;
+    scope: ModuleScope;
+}
+
+export interface OrganizationModuleDef extends BaseModuleDef {
+    scope: "organization";
     /** Builds the org-scoped href. Present only for modules that have a page. */
     href?: (slug: string) => Route;
 }
+
+export interface GlobalModuleDef extends BaseModuleDef {
+    scope: "global";
+    /** Builds the site-wide href. */
+    href: () => Route;
+}
+
+export type ModuleDef = OrganizationModuleDef | GlobalModuleDef;
 
 /**
  * Single source of truth for the org modules — their names, icons and routes.
@@ -56,6 +77,7 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         icon: WrenchIcon,
         segment: "admin",
         alwaysOn: true,
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/admin", { slug }),
     },
     "d4h-views": {
@@ -63,6 +85,7 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "D4H Views",
         icon: CableIcon,
         segment: "d4h-views",
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/d4h-views", { slug }),
     },
     forms: {
@@ -70,12 +93,14 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "Forms",
         icon: NotebookPenIcon,
         segment: "forms",
+        scope: "organization",
     },
     i3: {
         id: "i3",
         label: "I3",
         icon: ShirtIcon,
         segment: "i3",
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/i3", { slug }),
     },
     notes: {
@@ -83,6 +108,7 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "Notes",
         icon: NotebookPenIcon,
         segment: "notes",
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/notes", { slug }),
     },
     "skill-track": {
@@ -90,6 +116,7 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "Skill Track",
         icon: PocketKnifeIcon,
         segment: "skill-track",
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-track", { slug }),
     },
     "skill-package-builder": {
@@ -97,22 +124,40 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         label: "Skill Package Builder",
         icon: PackageIcon,
         segment: "skill-package-builder",
+        scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-package-builder", { slug }),
+    },
+    "system-admin": {
+        id: "system-admin",
+        label: "System Admin",
+        icon: ShieldIcon,
+        segment: "system-admin",
+        scope: "global",
+        href: () => "/system-admin",
     },
 };
 
 /** All modules in display order. */
 export const moduleList: readonly ModuleDef[] = Object.values(Modules);
 
-/** Settings-gated module ids (everything except always-on modules like `admin`). */
+/** Settings-gated module ids (org-scoped modules except always-on ones like `admin`). */
 export const configurableModuleIds = moduleList
-    .filter((m) => !m.alwaysOn)
-    .map((m) => m.id) as Exclude<ModuleId, "admin">[];
+    .filter((m) => m.scope === "organization" && !m.alwaysOn)
+    .map((m) => m.id) as Exclude<ModuleId, "admin" | "system-admin">[];
+
+/** An org-scoped module that has a page (appears in the org nav switcher / dashboard). */
+export type OrgModuleDef = OrganizationModuleDef & {
+    id: Exclude<ModuleId, "system-admin">;
+    href: (slug: string) => Route;
+};
 
 /** Modules surfaced in the org nav switcher / dashboard, in display order (those with a page). */
 export const orgModules = moduleList.filter(
-    (m): m is ModuleDef & { href: (slug: string) => Route } => Boolean(m.href),
+    (m): m is OrgModuleDef => m.scope === "organization" && Boolean(m.href),
 );
+
+/** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
+export const globalModules = moduleList.filter((m): m is GlobalModuleDef => m.scope === "global");
 
 /** Look up a module by its route segment (as found in the pathname). */
 export const moduleBySegment: Record<string, ModuleDef> = Object.fromEntries(

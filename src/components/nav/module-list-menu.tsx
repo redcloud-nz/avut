@@ -20,7 +20,8 @@ import { useOrganization } from "@/hooks/use-organization";
 import { Show } from "../show";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { moduleBySegment, orgModules } from "@/lib/modules";
+import { globalModules, moduleBySegment, orgModules } from "@/lib/modules";
+import { useUser } from "@/client/auth-queries";
 
 function useCurrentModule() {
     // Paths are /orgs/<slug>/<module>/...
@@ -28,7 +29,7 @@ function useCurrentModule() {
     return segment ? moduleBySegment[segment] : undefined;
 }
 
-export function ModuleListMenu({ scope }: { scope: "personal" | "organization" }) {
+export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) {
     const currentModule = useCurrentModule();
     const CurrentIcon = currentModule?.icon;
 
@@ -54,7 +55,7 @@ export function ModuleListMenu({ scope }: { scope: "personal" | "organization" }
                             {scope === "organization" ? (
                                 <OrganizationModuleOptions />
                             ) : (
-                                <PersonalModuleOptions />
+                                <GlobalModuleOptions />
                             )}
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -90,6 +91,26 @@ function OrganizationModuleOptions() {
     );
 }
 
-function PersonalModuleOptions() {
-    return <>TODO</>;
+function GlobalModuleOptions() {
+    const { data: user } = useUser();
+    const isGlobalAdmin = user?.role === "admin";
+
+    return (
+        <>
+            {globalModules.map((mod) => {
+                const Icon = mod.icon;
+
+                return (
+                    <Show key={mod.id} when={isGlobalAdmin}>
+                        <DropdownMenuItem asChild>
+                            <Link href={mod.href()}>
+                                <Icon />
+                                {mod.label}
+                            </Link>
+                        </DropdownMenuItem>
+                    </Show>
+                );
+            })}
+        </>
+    );
 }
