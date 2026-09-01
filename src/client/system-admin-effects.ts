@@ -39,4 +39,8 @@ export const systemAdminEffects = createEffects<"systemAdmin">()({
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
+    setUserRole: (vars) => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    ],
 });

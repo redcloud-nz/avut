@@ -715,6 +715,92 @@ describe("systemAdmin.deleteUser", () => {
     });
 });
 
+describe("systemAdmin.setUserRole", () => {
+    const T = {
+        adminA: UserId.create(),
+        adminB: UserId.create(),
+        plain: UserId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, role] of [
+            [T.adminA, "admin"],
+            [T.adminB, "admin"],
+            [T.plain, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+    });
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.adminA, role: "admin" }, prisma: db }),
+        );
+
+    it("promotes a user to admin", async () => {
+        const { role } = await call().setUserRole({ userId: T.plain, role: "admin" });
+        expect(role).toBe("admin");
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.role).toBe("admin");
+    });
+
+    it("refuses to change your own role", async () => {
+        await expect(call().setUserRole({ userId: T.adminA, role: "user" })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("demotes an admin while another admin remains", async () => {
+        const { role } = await call().setUserRole({ userId: T.adminB, role: "user" });
+        expect(role).toBe("user");
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(
+            call().setUserRole({ userId: UserId.create(), role: "admin" }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("systemAdmin.setUserRole last-admin guard", () => {
+    const soloAdmin = UserId.create();
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: soloAdmin,
+                name: "Solo",
+                email: "solo-role@x.test",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    it("refuses to demote the last system administrator", async () => {
+        const caller = systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: UserId.create(), role: "admin" },
+                prisma: db,
+            }),
+        );
+        await expect(caller.setUserRole({ userId: soloAdmin, role: "user" })).rejects.toMatchObject(
+            { code: "BAD_REQUEST" },
+        );
+    });
+});
+
 describe("systemAdmin.deleteUser last-admin guard", () => {
     const soloAdmin = UserId.create();
     const db = createMockPrisma();

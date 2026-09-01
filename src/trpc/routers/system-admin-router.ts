@@ -597,6 +597,59 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     /**
+     * Promote a user to the global `admin` role, or demote them to `user`.
+     *
+     * Guards, in order: (a) you cannot change your own role; (b) demoting the last remaining
+     * system administrator is refused (mirrors `deleteUser`'s last-admin guard). Promotion needs
+     * no guard.
+     *
+     * NOTE: global role changes are not yet audited — see #78 (system audit log). Same gap as
+     * `deleteUser`: `organizationLogEntry` requires an `organizationId` and this action has none.
+     * A plain `user.update` is enough here — there is nothing to atomically pair, so no
+     * `$transaction`.
+     */
+    setUserRole: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema, role: z.enum(["admin", "user"]) }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot change your own role.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            if (input.role === "user") {
+                const otherAdmins = await ctx.prisma.user.count({
+                    where: { role: "admin", id: { not: input.userId } },
+                });
+                if (otherAdmins === 0) {
+                    throw new TRPCError({
+                        code: "BAD_REQUEST",
+                        message: "Cannot demote the last system administrator.",
+                    });
+                }
+            }
+
+            const updated = await ctx.prisma.user.update({
+                where: { id: input.userId },
+                data: { role: input.role },
+            });
+
+            return { id: updated.id, role: updated.role };
+        }),
+
+    /**
      * Replace an organization's settings, without requiring membership in it.
      *
      * The incoming `settings` are validated against `OrganizationSettings.schema` (by the input
