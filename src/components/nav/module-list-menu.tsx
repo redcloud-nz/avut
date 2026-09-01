@@ -24,8 +24,9 @@ import { globalModules, moduleBySegment, orgModules } from "@/lib/modules";
 import { useUser } from "@/client/auth-queries";
 
 function useCurrentModule() {
-    // Paths are /orgs/<slug>/<module>/...
-    const segment = usePathname().split("/")[3];
+    // Org paths are /orgs/<slug>/<module>/...; global paths are /<module>/... (e.g. /system-admin).
+    const parts = usePathname().split("/");
+    const segment = parts[1] === "orgs" ? parts[3] : parts[1];
     return segment ? moduleBySegment[segment] : undefined;
 }
 
@@ -93,7 +94,10 @@ function OrganizationModuleOptions() {
 
 function GlobalModuleOptions() {
     const { data: user } = useUser();
-    const isGlobalAdmin = user?.role === "admin";
+
+    // The admin check is invariant across the list, so gate once up front rather
+    // than per item — avoids rendering an empty dropdown group for non-admins.
+    if (user?.role !== "admin") return null;
 
     return (
         <>
@@ -101,14 +105,12 @@ function GlobalModuleOptions() {
                 const Icon = mod.icon;
 
                 return (
-                    <Show key={mod.id} when={isGlobalAdmin}>
-                        <DropdownMenuItem asChild>
-                            <Link href={mod.href()}>
-                                <Icon />
-                                {mod.label}
-                            </Link>
-                        </DropdownMenuItem>
-                    </Show>
+                    <DropdownMenuItem key={mod.id} asChild>
+                        <Link href={mod.href()}>
+                            <Icon />
+                            {mod.label}
+                        </Link>
+                    </DropdownMenuItem>
                 );
             })}
         </>

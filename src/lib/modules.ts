@@ -70,7 +70,7 @@ export type ModuleDef = OrganizationModuleDef | GlobalModuleDef;
  * Single source of truth for the org modules — their names, icons and routes.
  * Insertion order is the display order used by the nav switcher and dashboard.
  */
-export const Modules: Record<ModuleId, ModuleDef> = {
+export const Modules = {
     admin: {
         id: "admin",
         label: "Admin",
@@ -135,15 +135,18 @@ export const Modules: Record<ModuleId, ModuleDef> = {
         scope: "global",
         href: () => "/system-admin",
     },
-};
+} satisfies Record<ModuleId, ModuleDef>;
 
 /** All modules in display order. */
 export const moduleList: readonly ModuleDef[] = Object.values(Modules);
 
-/** Settings-gated module ids (org-scoped modules except always-on ones like `admin`). */
+/** Settings-gated module ids (org-scoped modules except always-on `admin`). */
 export const configurableModuleIds = moduleList
-    .filter((m) => m.scope === "organization" && !m.alwaysOn)
-    .map((m) => m.id) as Exclude<ModuleId, "admin" | "system-admin">[];
+    .filter(
+        (m): m is OrganizationModuleDef & { id: Exclude<ModuleId, "admin" | "system-admin"> } =>
+            m.scope === "organization" && m.id !== "admin" && m.id !== "system-admin",
+    )
+    .map((m) => m.id);
 
 /** An org-scoped module that has a page (appears in the org nav switcher / dashboard). */
 export type OrgModuleDef = OrganizationModuleDef & {
@@ -151,9 +154,14 @@ export type OrgModuleDef = OrganizationModuleDef & {
     href: (slug: string) => Route;
 };
 
-/** Modules surfaced in the org nav switcher / dashboard, in display order (those with a page). */
+/**
+ * Modules surfaced in the org nav switcher / dashboard, in display order (those with a page).
+ * The `id` and `href` narrowing in the predicate is asserted, not inferred from `Boolean(m.href)` —
+ * the explicit `m.id !== "system-admin"` check is what backs the `id` exclusion.
+ */
 export const orgModules = moduleList.filter(
-    (m): m is OrgModuleDef => m.scope === "organization" && Boolean(m.href),
+    (m): m is OrgModuleDef =>
+        m.scope === "organization" && m.id !== "system-admin" && Boolean(m.href),
 );
 
 /** Site-wide modules (gated on the Better Auth `admin` role), in display order. */

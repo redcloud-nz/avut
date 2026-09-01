@@ -86,7 +86,7 @@ Three stacked PRs, each retargeted to `master` once its parent merges:
 **Interfaces:**
 
 - Produces:
-  - `requireGlobalAdmin(): Promise<{ user: AuthUser }>` — `redirect("/")` if `session.user.role !== "admin"`
+  - `requireGlobalAdmin(): Promise<{ user: AuthUser }>` — `forbidden()` if `session.user.role !== "admin"`, via the React-cached `requireSession()`
   - `systemAdminProcedure` — tRPC procedure on `authenticatedProcedure`, throws `TRPCError({ code: "FORBIDDEN" })` unless `ctx.session.user.role === "admin"`
   - `ModuleDef.scope: "organization" | "global"`; global modules have `href: () => Route`
   - `Modules["system-admin"]` = `{ id: "system-admin", label: "System Admin", icon: ShieldIcon, segment: "system-admin", scope: "global", href: () => "/system-admin" }`
@@ -157,16 +157,17 @@ export const systemAdminRouter = createTrpcRouter({
 
 ```ts
 import "server-only";
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "./auth";
+import { forbidden } from "next/navigation";
+import { requireSession } from "./session"; // React-cached; also handles the signed-out → sign-in redirect
 
 export async function requireGlobalAdmin() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || session.user.role !== "admin") redirect("/");
+  const session = await requireSession();
+  if (session.user.role !== "admin") forbidden(); // renders src/app/forbidden.tsx (experimental.authInterrupts)
   return { user: session.user };
 }
 ```
+
+House-convention notes (from the PR-A final review): use the request-cached `requireSession()` from `src/server/session.ts` — not a bare `auth.api.getSession` — so nested layouts + page don't each re-validate; and use `forbidden()` (this repo enables `experimental.authInterrupts` and ships `src/app/forbidden.tsx`), mirroring `src/server/organization-access.ts`, not `redirect("/")`.
 
 - [ ] **Step 9: Add `scope` to `ModuleDef` and the `system-admin` entry in `src/lib/modules.ts`** — add `"system-admin"` to `ModuleId`; add `scope: "organization"` to existing entries (or default in consumers); add the `system-admin` entry (`ShieldIcon` from lucide-react). Filter `orgModules` / settings-gated derivations to `scope === "organization"` so `system-admin` never leaks into org nav or dashboard.
 
@@ -330,6 +331,8 @@ getUser: systemAdminProcedure.input(z.object({ userId: UserId.schema })).query(a
 - [ ] **Step 9: Build `user-actions-menu.tsx`** — a `DropdownMenu` trigger (icon button) with no items yet (or a single disabled "No actions" placeholder). Takes `user` prop. Later phases add items.
 
 - [ ] **Step 10: Add "Users" to the global sidebar; make `/system-admin` redirect to `/system-admin/users`.**
+
+- [ ] **Step 10b: Add a UI entry point to `/system-admin`** (deferred from Phase 1 — the global nav code currently isn't reachable except by typing the URL). Add a "System Admin" item to the user menu (`src/components/nav/user-menu.tsx`), shown only when the client session `user.role === "admin"`, linking to `/system-admin`. Verify in-browser that a non-admin never sees it and hitting the URL directly renders `forbidden()`.
 
 - [ ] **Step 11: `npx next typegen && npx tsc --noEmit && npm run test:run` green.**
 
