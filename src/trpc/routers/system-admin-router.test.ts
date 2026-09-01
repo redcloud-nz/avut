@@ -96,6 +96,66 @@ describe("systemAdmin users", () => {
     });
 });
 
+describe("systemAdmin.createOrganization", () => {
+    const T = {
+        admin: UserId.create(),
+        existingOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.admin,
+                name: "Admin",
+                email: "admin@x.test",
+                emailVerified: true,
+                createdAt: new Date(),
+            },
+        });
+        await db.organization.create({
+            data: { id: T.existingOrg, name: "Existing", slug: "org", createdAt: new Date() },
+        });
+    });
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("creates an org with default config and no membership by default", async () => {
+        const { id, slug } = await call().createOrganization({
+            name: "New Co",
+            slug: "new-co",
+            addSelfAsOwner: false,
+        });
+        expect(slug).toBe("new-co");
+        expect(await db.organizationUser.count({ where: { organizationId: id } })).toBe(0);
+        expect(
+            await db.organizationConfig.count({ where: { organizationId: id } }),
+        ).toBeGreaterThan(0);
+    });
+
+    it("adds the actor as owner when addSelfAsOwner is true", async () => {
+        const { id } = await call().createOrganization({
+            name: "Mine",
+            slug: "mine",
+            addSelfAsOwner: true,
+        });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: id, userId: T.admin },
+            }),
+        ).toMatchObject({ role: "owner" });
+    });
+
+    it("rejects a duplicate slug", async () => {
+        await expect(
+            call().createOrganization({ name: "Dup", slug: "org", addSelfAsOwner: false }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+});
+
 describe("systemAdmin.listOrganizations", () => {
     const T = {
         admin: UserId.create(),

@@ -20,6 +20,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Badge } from "@/components/ui/badge";
+import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system-admin/organizations/create-organization-dialog";
 
 import { formatDate } from "@/lib/datetime";
 import { type ModuleId, Modules } from "@/lib/modules";
@@ -134,7 +135,9 @@ export function SystemAdmin_Organizations_List() {
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Organizations</Saratoga.Title>
-                <Saratoga.Actions></Saratoga.Actions>
+                <Saratoga.Actions>
+                    <SystemAdmin_CreateOrganization_Dialog />
+                </Saratoga.Actions>
             </Saratoga.Header>
             <div>
                 <Kaga.TableToolbar table={table} />

@@ -7,7 +7,9 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
 
@@ -20,6 +22,79 @@ import { createTrpcRouter, systemAdminProcedure } from "../init";
  * Procedures must be kept in alphabetical order.
  */
 export const systemAdminRouter = createTrpcRouter({
+    /**
+     * Provision a new organization site-wide. Seeds the same default `OrganizationConfig` rows a
+     * user-created org would resolve to (`OrganizationSettings.default()` flattened to
+     * `{ key, value }` leaves) so the two are indistinguishable, and — only when `addSelfAsOwner`
+     * is set — attaches the acting system admin as `owner`.
+     *
+     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
+     * written directly into the same `$transaction` — equivalent to what `ctx.logEvent` does.
+     */
+    createOrganization: systemAdminProcedure
+        .input(
+            OrganizationData.createSchema.extend({
+                addSelfAsOwner: z.boolean().default(false),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const existing = await ctx.prisma.organization.findUnique({
+                where: { slug: input.slug },
+                select: { id: true },
+            });
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: `An organization with the slug "${input.slug}" already exists.`,
+                });
+            }
+
+            const organizationId = OrganizationId.schema.parse(nanoId16());
+            const userId = ctx.auth.user.id;
+
+            const configRows = Object.entries(
+                OrganizationSettings.flatten(OrganizationSettings.default()),
+            ).map(([key, value]) => ({ organizationId, key, value }));
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organization.create({
+                    data: {
+                        id: organizationId,
+                        name: input.name,
+                        slug: input.slug,
+                        createdAt: new Date(),
+                    },
+                }),
+                ...configRows.map((data) => ctx.prisma.organizationConfig.create({ data })),
+                ...(input.addSelfAsOwner
+                    ? [
+                          ctx.prisma.organizationUser.create({
+                              data: {
+                                  id: nanoId16(),
+                                  organizationId,
+                                  userId,
+                                  role: "owner",
+                                  createdAt: new Date(),
+                              },
+                          }),
+                      ]
+                    : []),
+                ctx.prisma.organizationLogEntry.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId,
+                        userId,
+                        action: "Create",
+                        objectType: "Organization",
+                        objectId: organizationId,
+                        changes: [],
+                    },
+                }),
+            ]);
+
+            return { id: organizationId, slug: input.slug };
+        }),
+
     getUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
         .query(async ({ ctx, input }) => {
