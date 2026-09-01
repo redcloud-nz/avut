@@ -28,6 +28,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { UserId } from "@/lib/schemas/user";
 import { type RouterOutput } from "@/trpc/client";
 
 type SystemAdminUser = RouterOutput["systemAdmin"]["getUser"];
@@ -61,6 +62,9 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
     );
 
     const isAdmin = user.role === "admin";
+
+    // `getUser` returns `id` as a plain string; brand it once for the tRPC-input dialogs.
+    const target = { ...user, id: UserId.schema.parse(user.id) };
 
     function open(next: "ban" | "unban" | "delete" | "impersonate" | "promote" | "demote") {
         void setAction(next, { history: "push" });
@@ -117,24 +121,24 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
                     <SystemAdmin_ImpersonateUser_Dialog
                         user={user}
                         open={action === "impersonate"}
-                        onOpenChange={(open) => (open ? undefined : close())}
+                        onOpenChange={(next) => (next ? undefined : close())}
                     />
                     <SystemAdmin_BanUser_Dialog
-                        user={user}
-                        action={user.banned ? "unban" : "ban"}
+                        user={target}
+                        action={action === "unban" ? "unban" : "ban"}
                         open={action === "ban" || action === "unban"}
-                        onOpenChange={(open) => (open ? undefined : close())}
+                        onOpenChange={(next) => (next ? undefined : close())}
                     />
                     <SystemAdmin_DeleteUser_Dialog
                         user={user}
                         open={action === "delete"}
-                        onOpenChange={(open) => (open ? undefined : close())}
+                        onOpenChange={(next) => (next ? undefined : close())}
                     />
                     <SystemAdmin_SetUserRole_Dialog
-                        user={user}
-                        action={isAdmin ? "demote" : "promote"}
+                        user={target}
+                        action={action === "demote" ? "demote" : "promote"}
                         open={action === "promote" || action === "demote"}
-                        onOpenChange={(open) => (open ? undefined : close())}
+                        onOpenChange={(next) => (next ? undefined : close())}
                     />
                 </>
             )}

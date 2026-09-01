@@ -68,5 +68,23 @@ describe("ImpersonationBanner", () => {
         expect(screen.getByText(/Ada Lovelace/)).toBeInTheDocument();
         expect(screen.getByText(/ada@example.com/)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /stop impersonating/i })).toBeInTheDocument();
+
+        // The bar is out of normal flow so the h-svh app shell keeps the full viewport.
+        expect(screen.getByRole("alert")).toHaveClass("fixed");
+    });
+
+    it("falls back to the email when the impersonated user has no name", () => {
+        mockUseSession.mockReturnValue({
+            data: {
+                user: { name: "", email: "ada@example.com" },
+                session: { impersonatedBy: "admin-id" },
+            },
+        } as unknown as ReturnType<typeof useSession>);
+
+        renderBanner();
+
+        expect(screen.getByText(/The app is shown exactly as they see it/i)).toHaveTextContent(
+            "You are impersonating ada@example.com (ada@example.com).",
+        );
     });
 });

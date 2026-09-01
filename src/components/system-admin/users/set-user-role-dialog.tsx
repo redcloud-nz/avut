@@ -23,7 +23,7 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
 import { systemAdminEffects } from "@/client/system-admin-effects";
-import { UserId } from "@/lib/schemas/user";
+import type { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -40,7 +40,7 @@ export function SystemAdmin_SetUserRole_Dialog({
     action,
     ...props
 }: DialogProps & {
-    user: { id: string; name: string };
+    user: { id: UserId; name: string };
     action: "promote" | "demote";
 }) {
     const promote = action === "promote";
@@ -102,7 +102,7 @@ export function SystemAdmin_SetUserRole_Dialog({
                         }
                         onClick={() =>
                             mutation.mutate({
-                                userId: UserId.schema.parse(user.id),
+                                userId: user.id,
                                 role: promote ? "admin" : "user",
                             })
                         }

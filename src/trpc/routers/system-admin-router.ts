@@ -601,12 +601,15 @@ export const systemAdminRouter = createTrpcRouter({
      *
      * Guards, in order: (a) you cannot change your own role; (b) demoting the last remaining
      * system administrator is refused (mirrors `deleteUser`'s last-admin guard). Promotion needs
-     * no guard.
+     * no guard. A call that doesn't change the role returns early — no guard, no session churn.
+     *
+     * On a demotion (`role === "user"`) the target's `session` rows are deleted in the same
+     * `$transaction` as the `user.update` — `session.cookieCache` lasts 5 minutes, so without
+     * this a just-demoted admin keeps `systemAdmin` access until it expires (mirrors
+     * `deleteUser`). Promotion is a plain `user.update` — nothing to atomically pair.
      *
      * NOTE: global role changes are not yet audited — see #78 (system audit log). Same gap as
      * `deleteUser`: `organizationLogEntry` requires an `organizationId` and this action has none.
-     * A plain `user.update` is enough here — there is nothing to atomically pair, so no
-     * `$transaction`.
      */
     setUserRole: systemAdminProcedure
         .input(z.object({ userId: UserId.schema, role: z.enum(["admin", "user"]) }))
@@ -620,13 +623,20 @@ export const systemAdminRouter = createTrpcRouter({
 
             const target = await ctx.prisma.user.findUnique({
                 where: { id: input.userId },
-                select: { id: true },
+                select: { id: true, role: true },
             });
             if (!target) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: `User ${input.userId} not found.`,
                 });
+            }
+
+            // No admin-role transition: skip the last-admin guard and the session
+            // revocation — a no-op update must not log the target out.
+            const currentRole = target.role === "admin" ? "admin" : "user";
+            if (currentRole === input.role) {
+                return { id: target.id, role: input.role };
             }
 
             if (input.role === "user") {
@@ -639,6 +649,16 @@ export const systemAdminRouter = createTrpcRouter({
                         message: "Cannot demote the last system administrator.",
                     });
                 }
+
+                const [updated] = await ctx.prisma.$transaction([
+                    ctx.prisma.user.update({
+                        where: { id: input.userId },
+                        data: { role: input.role },
+                    }),
+                    ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
+                ]);
+
+                return { id: updated.id, role: updated.role };
             }
 
             const updated = await ctx.prisma.user.update({

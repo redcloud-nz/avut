@@ -25,7 +25,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
 
-import { UserId } from "@/lib/schemas/user";
+import type { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -45,7 +45,7 @@ export function SystemAdmin_BanUser_Dialog({
     action,
     ...props
 }: DialogProps & {
-    user: { id: string; name: string };
+    user: { id: UserId; name: string };
     action: "ban" | "unban";
 }) {
     const ban = action === "ban";
@@ -77,7 +77,7 @@ export function SystemAdmin_BanUser_Dialog({
             await Promise.all([
                 queryClient.invalidateQueries(trpc.systemAdmin.listUsers.queryFilter()),
                 queryClient.invalidateQueries(
-                    trpc.systemAdmin.getUser.queryFilter({ userId: UserId.schema.parse(user.id) }),
+                    trpc.systemAdmin.getUser.queryFilter({ userId: user.id }),
                 ),
             ]);
             props.onOpenChange?.(false);

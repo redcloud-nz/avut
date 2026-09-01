@@ -11,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { UserId } from "@/lib/schemas/user";
 
 import { SystemAdmin_BanUser_Dialog } from "./ban-user-dialog";
 
@@ -23,7 +24,7 @@ vi.mock("@/client/auth-client", () => ({
     },
 }));
 
-const USER = { id: "a1b2c3d4e5f6g7h8", name: "Ada Lovelace" };
+const USER = { id: UserId.schema.parse("a1b2c3d4e5f6g7h8"), name: "Ada Lovelace" };
 
 function Harness({ action, initialOpen }: { action: "ban" | "unban"; initialOpen: boolean }) {
     const [open, setOpen] = useState(initialOpen);

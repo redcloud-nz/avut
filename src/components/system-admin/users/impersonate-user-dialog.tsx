@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import {
@@ -24,7 +24,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { authQueryKeys } from "@/lib/auth-query-keys";
+import { getQueryClient } from "@/trpc/query-client";
 
 /**
  * `?action=impersonate` confirm dialog. Host-driven (`open` / `onOpenChange` come from
@@ -43,7 +43,6 @@ export function SystemAdmin_ImpersonateUser_Dialog({
     user: { id: string; name: string };
 }) {
     const router = useRouter();
-    const queryClient = useQueryClient();
 
     const mutation = useMutation({
         mutationFn: async () => {
@@ -55,11 +54,14 @@ export function SystemAdmin_ImpersonateUser_Dialog({
             const message = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Failed to impersonate user: ${message}`);
         },
-        async onSuccess() {
-            // Navigate away only — no param clear / mutation.reset() race (see
+        onSuccess() {
+            // Identity switch: the browser-singleton query client still holds the admin's
+            // `systemAdmin.*` and org-scoped tRPC results. Drop the whole cache and hard-refresh
+            // the RSC tree, mirroring `useSignOut`. No param clear / mutation.reset() race (see
             // docs/patterns/mutation-dialog.md).
-            await queryClient.invalidateQueries({ queryKey: authQueryKeys.all });
+            getQueryClient().clear();
             router.push("/");
+            router.refresh();
         },
     });
 
