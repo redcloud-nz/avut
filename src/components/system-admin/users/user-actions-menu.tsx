@@ -4,11 +4,13 @@
  */
 "use client";
 
+import { VenetianMaskIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useUser } from "@/client/auth-queries";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { SystemAdmin_DeleteUser_Dialog } from "@/components/system-admin/users/delete-user-dialog";
+import { SystemAdmin_ImpersonateUser_Dialog } from "@/components/system-admin/users/impersonate-user-dialog";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -23,24 +25,29 @@ import { type RouterOutput } from "@/trpc/client";
 type SystemAdminUser = RouterOutput["systemAdmin"]["getUser"];
 
 /**
- * Actions dropdown for a system-admin user detail page.
+ * Actions dropdown for a system-admin user detail page — mirrors how org member actions
+ * live only on the org detail page. The users list links each name to this page; it has no
+ * per-row action menu of its own.
  *
- * Currently: "Delete user" (`?action=delete`, hard delete, type-to-confirm). The item is
- * hidden when the row user is the signed-in operator — `systemAdmin.deleteUser` refuses a
- * self-delete anyway, this just keeps it off the menu.
+ * Items: "Impersonate" (`?action=impersonate`) and "Delete user" (`?action=delete`, hard
+ * delete, type-to-confirm). Both are hidden when the row user is the signed-in operator —
+ * the tRPC procedures refuse a self-target anyway, this just keeps them off the menu.
  *
- * Later phases (impersonate, set role, ban/unban, revoke sessions) add more items here.
+ * Later phases (set role, ban/unban, revoke sessions) add more items here.
  */
 export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }) {
     const { data: currentUser } = useUser();
     const isSelf = currentUser?.id === user.id;
 
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "impersonate"] as const),
+    );
 
-    function openDelete() {
-        void setAction("delete", { history: "push" });
+    function open(next: "delete" | "impersonate") {
+        void setAction(next, { history: "push" });
     }
-    function closeDelete() {
+    function close() {
         void setAction(null, { history: "replace" });
     }
 
@@ -57,19 +64,31 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
                     {isSelf ? (
                         <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
                     ) : (
-                        <DropdownMenuItem variant="destructive" onSelect={openDelete}>
-                            <ObjectIcons.Delete /> Delete user
-                        </DropdownMenuItem>
+                        <>
+                            <DropdownMenuItem onSelect={() => open("impersonate")}>
+                                <VenetianMaskIcon /> Impersonate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem variant="destructive" onSelect={() => open("delete")}>
+                                <ObjectIcons.Delete /> Delete user
+                            </DropdownMenuItem>
+                        </>
                     )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
             {!isSelf && (
-                <SystemAdmin_DeleteUser_Dialog
-                    user={user}
-                    open={action === "delete"}
-                    onOpenChange={(open) => (open ? undefined : closeDelete())}
-                />
+                <>
+                    <SystemAdmin_ImpersonateUser_Dialog
+                        user={user}
+                        open={action === "impersonate"}
+                        onOpenChange={(open) => (open ? undefined : close())}
+                    />
+                    <SystemAdmin_DeleteUser_Dialog
+                        user={user}
+                        open={action === "delete"}
+                        onOpenChange={(open) => (open ? undefined : close())}
+                    />
+                </>
             )}
         </>
     );
