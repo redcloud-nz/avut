@@ -18,21 +18,26 @@ import { Route } from "next";
 import { route } from "@/lib/routes";
 
 /**
- * Canonical identifier for a module.
+ * Identifier for an organization-scoped module (lives under `/orgs/[slug]/…`).
  *
- * For the settings-gated modules this matches the key under
+ * For the settings-gated ones this matches the key under
  * `OrganizationSettings.modules`, so the same id indexes both this registry and
  * the org's enabled flags. `admin` is always-on and has no settings entry.
  */
-export type ModuleId =
+export type OrganizationModuleId =
     | "admin"
     | "d4h-views"
     | "forms"
     | "i3"
     | "notes"
     | "skill-track"
-    | "skill-package-builder"
-    | "system-admin";
+    | "skill-package-builder";
+
+/** Identifier for a site-wide module (gated on the Better Auth `admin` role). */
+export type GlobalModuleId = "system-admin";
+
+/** Canonical identifier for any module. */
+export type ModuleId = OrganizationModuleId | GlobalModuleId;
 
 /**
  * Whether a module lives under an organization (`/orgs/[slug]/…`) or is a
@@ -41,7 +46,6 @@ export type ModuleId =
 export type ModuleScope = "organization" | "global";
 
 interface BaseModuleDef {
-    id: ModuleId;
     /** Display name shown in nav, dashboard, breadcrumbs, etc. */
     label: string;
     icon: LucideIcon;
@@ -53,12 +57,14 @@ interface BaseModuleDef {
 }
 
 export interface OrganizationModuleDef extends BaseModuleDef {
+    id: OrganizationModuleId;
     scope: "organization";
     /** Builds the org-scoped href. Present only for modules that have a page. */
     href?: (slug: string) => Route;
 }
 
 export interface GlobalModuleDef extends BaseModuleDef {
+    id: GlobalModuleId;
     scope: "global";
     /** Builds the site-wide href. */
     href: () => Route;
@@ -67,8 +73,10 @@ export interface GlobalModuleDef extends BaseModuleDef {
 export type ModuleDef = OrganizationModuleDef | GlobalModuleDef;
 
 /**
- * Single source of truth for the org modules — their names, icons and routes.
- * Insertion order is the display order used by the nav switcher and dashboard.
+ * Single source of truth for every module — org-scoped and site-wide — with their
+ * names, icons, route segments and hrefs. Insertion order is the display order used
+ * by the nav switcher and dashboard. Derive `orgModules` / `globalModules` /
+ * `configurableModuleIds` from here rather than hardcoding module ids elsewhere.
  */
 export const Modules = {
     admin: {
@@ -143,25 +151,23 @@ export const moduleList: readonly ModuleDef[] = Object.values(Modules);
 /** Settings-gated module ids (org-scoped modules except always-on `admin`). */
 export const configurableModuleIds = moduleList
     .filter(
-        (m): m is OrganizationModuleDef & { id: Exclude<ModuleId, "admin" | "system-admin"> } =>
-            m.scope === "organization" && m.id !== "admin" && m.id !== "system-admin",
+        (m): m is OrganizationModuleDef & { id: Exclude<OrganizationModuleId, "admin"> } =>
+            m.scope === "organization" && m.id !== "admin",
     )
     .map((m) => m.id);
 
 /** An org-scoped module that has a page (appears in the org nav switcher / dashboard). */
 export type OrgModuleDef = OrganizationModuleDef & {
-    id: Exclude<ModuleId, "system-admin">;
     href: (slug: string) => Route;
 };
 
 /**
  * Modules surfaced in the org nav switcher / dashboard, in display order (those with a page).
- * The `id` and `href` narrowing in the predicate is asserted, not inferred from `Boolean(m.href)` —
- * the explicit `m.id !== "system-admin"` check is what backs the `id` exclusion.
+ * `scope: "organization"` discriminates `m` to `OrganizationModuleDef` (so `m.id` is an
+ * `OrganizationModuleId`); `Boolean(m.href)` is the only extra narrowing needed.
  */
 export const orgModules = moduleList.filter(
-    (m): m is OrgModuleDef =>
-        m.scope === "organization" && m.id !== "system-admin" && Boolean(m.href),
+    (m): m is OrgModuleDef => m.scope === "organization" && Boolean(m.href),
 );
 
 /** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
