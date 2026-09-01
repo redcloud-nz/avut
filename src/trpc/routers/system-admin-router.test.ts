@@ -606,3 +606,124 @@ describe("systemAdmin organization settings", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
+
+describe("systemAdmin.deleteUser", () => {
+    const T = {
+        admin: UserId.create(),
+        plain: UserId.create(),
+        soleOwner: UserId.create(),
+        coOwnerA: UserId.create(),
+        coOwnerB: UserId.create(),
+        soleOwnedOrg: OrganizationId.create(),
+        coOwnedOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, role] of [
+            [T.admin, "admin"],
+            [T.plain, null],
+            [T.soleOwner, null],
+            [T.coOwnerA, null],
+            [T.coOwnerB, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.soleOwnedOrg, name: "Sole Co", slug: "sole-co", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.coOwnedOrg, name: "Co Co", slug: "co-co", createdAt: new Date() },
+        });
+        for (const [organizationId, userId, role] of [
+            [T.soleOwnedOrg, T.soleOwner, "owner"],
+            [T.soleOwnedOrg, T.plain, "member"],
+            [T.coOwnedOrg, T.coOwnerA, "owner"],
+            [T.coOwnedOrg, T.coOwnerB, "owner"],
+        ] as const) {
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId, userId, role, createdAt: new Date() },
+            });
+        }
+    });
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("deletes a user and their memberships", async () => {
+        const res = await call().deleteUser({ userId: T.plain });
+        expect(res).toEqual({ id: T.plain });
+        expect(await db.user.findUnique({ where: { id: T.plain } })).toBeNull();
+        expect(await db.organizationUser.count({ where: { userId: T.plain } })).toBe(0);
+    });
+
+    it("deletes an org owner when another owner remains", async () => {
+        await call().deleteUser({ userId: T.coOwnerA });
+        expect(await db.user.findUnique({ where: { id: T.coOwnerA } })).toBeNull();
+        expect(
+            await db.organizationUser.count({
+                where: { organizationId: T.coOwnedOrg, role: "owner" },
+            }),
+        ).toBe(1);
+    });
+
+    it("refuses to delete a sole organization owner", async () => {
+        await expect(call().deleteUser({ userId: T.soleOwner })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(await db.user.findUnique({ where: { id: T.soleOwner } })).not.toBeNull();
+    });
+
+    it("refuses to delete yourself", async () => {
+        await expect(call().deleteUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(call().deleteUser({ userId: UserId.create() })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+    });
+});
+
+describe("systemAdmin.deleteUser last-admin guard", () => {
+    const soloAdmin = UserId.create();
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: soloAdmin,
+                name: "Solo",
+                email: "solo@x.test",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    it("refuses to delete the last system administrator", async () => {
+        const caller = systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: UserId.create(), role: "admin" },
+                prisma: db,
+            }),
+        );
+        await expect(caller.deleteUser({ userId: soloAdmin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+});

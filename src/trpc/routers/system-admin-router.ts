@@ -206,6 +206,113 @@ export const systemAdminRouter = createTrpcRouter({
             return { id: organizationId, slug: input.slug };
         }),
 
+    /**
+     * Hard-delete a user account and everything that hangs off it.
+     *
+     * Guards, in order: (a) you cannot delete your own account; (b) you cannot delete the last
+     * remaining system administrator; (c) you cannot delete a user who is the sole `owner` of any
+     * organization — the operator must transfer ownership (`setOrganizationMemberRole` /
+     * `removeOrganizationMember`) or delete the organization first.
+     *
+     * Every FK into `User` in the schema is `onDelete: Cascade` or `SetNull`, so no migration is
+     * needed — but the dependent rows are still cleared explicitly inside the `$transaction`
+     * (mirroring the schema's referential actions) so the behaviour is pinned here and doesn't
+     * silently depend on the database's cascade config.
+     *
+     * NOTE: global user-level actions have no audit log home yet — `organizationLogEntry` requires
+     * an `organizationId` and this action has no org context. See the deferred "system audit log"
+     * issue (#78); Phase 11 / #14 has the same gap.
+     */
+    deleteUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot delete your own account.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            const otherAdmins = await ctx.prisma.user.count({
+                where: { role: "admin", id: { not: input.userId } },
+            });
+            if (otherAdmins === 0) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Cannot delete the last system administrator.",
+                });
+            }
+
+            const ownerships = await ctx.prisma.organizationUser.findMany({
+                where: { userId: input.userId, role: "owner" },
+                select: { organizationId: true },
+            });
+            const ownedOrgIds = ownerships.map((o) => o.organizationId);
+
+            // One query for every owner row across the orgs this user owns; the target is
+            // an owner of each, so an org with a single owner row is one they solely own.
+            const soleOwnerOrgIds: string[] = [];
+            if (ownedOrgIds.length > 0) {
+                const ownerRows = await ctx.prisma.organizationUser.findMany({
+                    where: { organizationId: { in: ownedOrgIds }, role: "owner" },
+                    select: { organizationId: true },
+                });
+                const ownerCountByOrg = new Map<string, number>();
+                for (const { organizationId } of ownerRows) {
+                    ownerCountByOrg.set(
+                        organizationId,
+                        (ownerCountByOrg.get(organizationId) ?? 0) + 1,
+                    );
+                }
+                for (const orgId of ownedOrgIds) {
+                    if ((ownerCountByOrg.get(orgId) ?? 0) <= 1) soleOwnerOrgIds.push(orgId);
+                }
+            }
+            if (soleOwnerOrgIds.length > 0) {
+                const orgs = await ctx.prisma.organization.findMany({
+                    where: { id: { in: soleOwnerOrgIds } },
+                    select: { name: true },
+                });
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Cannot delete a user who is the sole owner of ${orgs
+                        .map((o) => o.name)
+                        .join(", ")}. Transfer ownership or delete the organization first.`,
+                });
+            }
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.formInstance.updateMany({
+                    where: { userId: input.userId },
+                    data: { userId: null },
+                }),
+                ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.account.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.teamUser.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.organizationUser.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.organizationInvitation.deleteMany({
+                    where: { inviterId: input.userId },
+                }),
+                ctx.prisma.d4hAccessToken.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
+                ctx.prisma.organizationLogEntry.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.user.delete({ where: { id: input.userId } }),
+            ]);
+
+            return { id: input.userId };
+        }),
+
     getOrganization: systemAdminProcedure
         .input(z.object({ organizationId: OrganizationId.schema }))
         .query(async ({ ctx, input }) => {

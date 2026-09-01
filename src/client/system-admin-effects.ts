@@ -19,6 +19,7 @@ export const systemAdminEffects = createEffects<"systemAdmin">()({
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
     ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
+    deleteUser: () => [invalidate(trpc.systemAdmin.listUsers.queryFilter())],
     removeOrganizationMember: (vars) => [
         invalidate(
             trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
