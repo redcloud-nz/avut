@@ -4,11 +4,18 @@
  */
 "use client";
 
-import { ShieldIcon, ShieldOffIcon, VenetianMaskIcon } from "lucide-react";
+import {
+    BanIcon,
+    CircleCheckIcon,
+    ShieldIcon,
+    ShieldOffIcon,
+    VenetianMaskIcon,
+} from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useUser } from "@/client/auth-queries";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { SystemAdmin_BanUser_Dialog } from "@/components/system-admin/users/ban-user-dialog";
 import { SystemAdmin_DeleteUser_Dialog } from "@/components/system-admin/users/delete-user-dialog";
 import { SystemAdmin_ImpersonateUser_Dialog } from "@/components/system-admin/users/impersonate-user-dialog";
 import { SystemAdmin_SetUserRole_Dialog } from "@/components/system-admin/users/set-user-role-dialog";
@@ -31,12 +38,11 @@ type SystemAdminUser = RouterOutput["systemAdmin"]["getUser"];
  * per-row action menu of its own.
  *
  * Items: "Impersonate" (`?action=impersonate`), "Promote to admin" / "Demote to user"
- * (`?action=promote` / `?action=demote`, one shown depending on the user's global role), and
- * "Delete user" (`?action=delete`, hard delete, type-to-confirm). All are hidden when the row
- * user is the signed-in operator — the tRPC procedures refuse a self-target anyway, this just
- * keeps them off the menu.
- *
- * Later phases (ban/unban, revoke sessions) add more items here.
+ * (`?action=promote` / `?action=demote`, one shown depending on the user's global role),
+ * "Ban user" / "Unban user" (`?action=ban` / `?action=unban`, one shown depending on
+ * `user.banned`), and "Delete user" (`?action=delete`, hard delete, type-to-confirm). All are
+ * hidden when the row user is the signed-in operator — the tRPC procedures refuse a self-target
+ * anyway, this just keeps them off the menu.
  */
 export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }) {
     const { data: currentUser } = useUser();
@@ -44,12 +50,19 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["delete", "impersonate", "promote", "demote"] as const),
+        parseAsStringLiteral([
+            "ban",
+            "unban",
+            "delete",
+            "impersonate",
+            "promote",
+            "demote",
+        ] as const),
     );
 
     const isAdmin = user.role === "admin";
 
-    function open(next: "delete" | "impersonate" | "promote" | "demote") {
+    function open(next: "ban" | "unban" | "delete" | "impersonate" | "promote" | "demote") {
         void setAction(next, { history: "push" });
     }
     function close() {
@@ -82,6 +95,15 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
                                     <ShieldIcon /> Promote to admin
                                 </DropdownMenuItem>
                             )}
+                            {user.banned ? (
+                                <DropdownMenuItem onSelect={() => open("unban")}>
+                                    <CircleCheckIcon /> Unban user
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem onSelect={() => open("ban")}>
+                                    <BanIcon /> Ban user
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem variant="destructive" onSelect={() => open("delete")}>
                                 <ObjectIcons.Delete /> Delete user
                             </DropdownMenuItem>
@@ -95,6 +117,12 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
                     <SystemAdmin_ImpersonateUser_Dialog
                         user={user}
                         open={action === "impersonate"}
+                        onOpenChange={(open) => (open ? undefined : close())}
+                    />
+                    <SystemAdmin_BanUser_Dialog
+                        user={user}
+                        action={user.banned ? "unban" : "ban"}
+                        open={action === "ban" || action === "unban"}
                         onOpenChange={(open) => (open ? undefined : close())}
                     />
                     <SystemAdmin_DeleteUser_Dialog
