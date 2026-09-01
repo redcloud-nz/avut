@@ -69,7 +69,7 @@ describe("ImpersonationBanner", () => {
         expect(screen.getByText(/ada@example.com/)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /stop impersonating/i })).toBeInTheDocument();
 
-        // The bar is out of normal flow so the h-svh app shell keeps the full viewport.
+        // Smoke check that the bar is pinned (not in normal flow).
         expect(screen.getByRole("alert")).toHaveClass("fixed");
     });
 

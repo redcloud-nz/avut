@@ -28,9 +28,12 @@ import { getQueryClient } from "@/trpc/query-client";
  * returns the operator to the system-admin user list. `router.refresh()` is required
  * because the RSC payload on screen was rendered as the impersonated user.
  *
- * Layout: the bar itself is `fixed` (out of normal flow) so the `h-svh` app shell and its
- * `fixed` sidebar still own the full viewport; a sibling `h-9` spacer — rendered only while
- * impersonating — reserves the matching strip so shell content starts below the bar.
+ * Layout — KNOWN LIMITATION: the bar is `fixed` at the top of the viewport (`h-9`, `z-50`)
+ * and overlaps the top ~36px of the app-shell navbar and the `fixed` sidebar header. The
+ * global `<SidebarProvider>` wrapper is a `min-h-svh` flex ROW and the sidebar is
+ * `fixed inset-y-0`, so no in-flow spacer here can push either down. A proper fix needs an
+ * `--impersonation-h` offset threaded through `Std.SidebarInset` / `src/components/ui/sidebar.tsx`;
+ * tracked as a follow-up. Impersonation is a transient, admin-only state, so this ships as-is.
  */
 export function ImpersonationBanner() {
     const router = useRouter();
@@ -61,31 +64,28 @@ export function ImpersonationBanner() {
     const label = user.name || user.email || "another user";
 
     return (
-        <>
-            <div
-                role="alert"
-                className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
-            >
-                <TriangleAlertIcon className="size-4 shrink-0" />
-                <span className="flex-1">
-                    You are impersonating <span className="font-medium">{label}</span>
-                    {user.email ? ` (${user.email})` : ""}. The app is shown exactly as they see it.
-                </span>
-                <MutationButton
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    status={mutation.status}
-                    text={{
-                        idle: "Stop impersonating",
-                        pending: "Stopping",
-                        success: "Stopped",
-                    }}
-                    onClick={() => mutation.mutate()}
-                    aria-label={`Stop impersonating ${label}`}
-                />
-            </div>
-            <div className="h-9" aria-hidden />
-        </>
+        <div
+            role="alert"
+            className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+        >
+            <TriangleAlertIcon className="size-4 shrink-0" />
+            <span className="flex-1">
+                You are impersonating <span className="font-medium">{label}</span>
+                {user.email ? ` (${user.email})` : ""}. The app is shown exactly as they see it.
+            </span>
+            <MutationButton
+                type="button"
+                size="xs"
+                variant="outline"
+                status={mutation.status}
+                text={{
+                    idle: "Stop impersonating",
+                    pending: "Stopping",
+                    success: "Stopped",
+                }}
+                onClick={() => mutation.mutate()}
+                aria-label={`Stop impersonating ${label}`}
+            />
+        </div>
     );
 }
