@@ -7,13 +7,37 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { PrismaClient } from "@/generated/prisma/client";
 import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
+
+/**
+ * Guard against orphaning an organization: throws `BAD_REQUEST` if `userId` is the
+ * organization's only `owner` (so removing them, or demoting them from `owner`, would
+ * leave the org with no owner).
+ */
+export async function assertNotLastOwner(
+    prisma: Pick<PrismaClient, "organizationUser">,
+    organizationId: string,
+    userId: string,
+) {
+    const owners = await prisma.organizationUser.findMany({
+        where: { organizationId, role: "owner" },
+        select: { userId: true },
+    });
+    if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot remove or demote the last owner of an organization.",
+        });
+    }
+}
 
 /**
  * Site-wide administration router. Gated by `systemAdminProcedure`
@@ -22,6 +46,67 @@ import { createTrpcRouter, systemAdminProcedure } from "../init";
  * Procedures must be kept in alphabetical order.
  */
 export const systemAdminRouter = createTrpcRouter({
+    /**
+     * Attach an existing user to an organization as a direct membership (not the invitation
+     * flow). `CONFLICT` if the user is already a member.
+     *
+     * This deliberately skips the invitation-only `personId` link that
+     * `organizationHooks.afterAcceptInvitation` copies — a system-admin direct assignment has
+     * no invitation to source a `personId` from, and that link is optional. Nothing else in
+     * that hook affects a plain membership insert.
+     *
+     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
+     * written directly into the same `$transaction` — see `createOrganization`.
+     */
+    addOrganizationMember: systemAdminProcedure
+        .input(
+            z.object({
+                organizationId: OrganizationId.schema,
+                userId: UserId.schema,
+                role: OrganizationRole.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const existing = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: input.organizationId, userId: input.userId },
+                select: { id: true },
+            });
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "That user is already a member of this organization.",
+                });
+            }
+
+            const id = nanoId16();
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.create({
+                    data: {
+                        id,
+                        organizationId: input.organizationId,
+                        userId: input.userId,
+                        role: input.role,
+                        createdAt: new Date(),
+                    },
+                }),
+                ctx.prisma.organizationLogEntry.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId: input.organizationId,
+                        userId: ctx.auth.user.id,
+                        action: "Create",
+                        objectType: "OrganizationMembership",
+                        objectId: id,
+                        changes: [],
+                        description: `Added user ${input.userId} as ${input.role}`,
+                    },
+                }),
+            ]);
+
+            return { id };
+        }),
+
     /**
      * Provision a new organization site-wide. Seeds the same default `OrganizationConfig` rows a
      * user-created org would resolve to (`OrganizationSettings.default()` flattened to
@@ -255,4 +340,93 @@ export const systemAdminRouter = createTrpcRouter({
             })),
         };
     }),
+
+    /**
+     * Remove a user's direct membership from an organization. `BAD_REQUEST` if they are the
+     * organization's last `owner`.
+     */
+    removeOrganizationMember: systemAdminProcedure
+        .input(z.object({ organizationId: OrganizationId.schema, userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const membership = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: input.organizationId, userId: input.userId },
+                select: { id: true, role: true },
+            });
+            if (!membership) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "That user is not a member of this organization.",
+                });
+            }
+
+            await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
+                ctx.prisma.organizationLogEntry.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId: input.organizationId,
+                        userId: ctx.auth.user.id,
+                        action: "Delete",
+                        objectType: "OrganizationMembership",
+                        objectId: membership.id,
+                        changes: [],
+                        description: `Removed user ${input.userId}`,
+                    },
+                }),
+            ]);
+
+            return { ok: true as const };
+        }),
+
+    /**
+     * Change a member's role within an organization. `BAD_REQUEST` if this would demote the
+     * organization's last `owner`.
+     */
+    setOrganizationMemberRole: systemAdminProcedure
+        .input(
+            z.object({
+                organizationId: OrganizationId.schema,
+                userId: UserId.schema,
+                role: OrganizationRole.schema,
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const membership = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: input.organizationId, userId: input.userId },
+                select: { id: true, role: true },
+            });
+            if (!membership) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "That user is not a member of this organization.",
+                });
+            }
+
+            if (input.role !== "owner") {
+                await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
+            }
+
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role: input.role },
+                }),
+                ctx.prisma.organizationLogEntry.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId: input.organizationId,
+                        userId: ctx.auth.user.id,
+                        action: "Update",
+                        objectType: "OrganizationMembership",
+                        objectId: membership.id,
+                        changes: [],
+                        description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
+                    },
+                }),
+            ]);
+
+            return { id: updated.id, role: updated.role };
+        }),
 });

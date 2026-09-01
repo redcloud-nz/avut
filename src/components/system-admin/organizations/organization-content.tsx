@@ -21,6 +21,9 @@ import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
+import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
+import { SystemAdmin_MemberActionsMenu } from "./member-actions-menu";
+
 export function SystemAdmin_Organization_Content({
     organizationId,
 }: {
@@ -81,6 +84,14 @@ export function SystemAdmin_Organization_Content({
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Members</CardTitle>
+                                    <div className="ml-auto">
+                                        <SystemAdmin_AddMember_Dialog
+                                            organizationId={organizationId}
+                                            memberUserIds={organization.members.map(
+                                                (m) => m.userId,
+                                            )}
+                                        />
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     {organization.members.length === 0 ? (
@@ -92,6 +103,7 @@ export function SystemAdmin_Organization_Content({
                                                     <th className="py-1 pr-4 font-medium">Name</th>
                                                     <th className="py-1 pr-4 font-medium">Email</th>
                                                     <th className="py-1 font-medium">Role</th>
+                                                    <th className="py-1" />
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -115,6 +127,12 @@ export function SystemAdmin_Organization_Content({
                                                             <Badge variant="secondary">
                                                                 {member.role}
                                                             </Badge>
+                                                        </td>
+                                                        <td className="py-1 text-right">
+                                                            <SystemAdmin_MemberActionsMenu
+                                                                organizationId={organizationId}
+                                                                member={member}
+                                                            />
                                                         </td>
                                                     </tr>
                                                 ))}

@@ -278,6 +278,110 @@ describe("systemAdmin.createOrganization", () => {
     });
 });
 
+describe("systemAdmin organization members", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        u1: UserId.create(),
+        u2: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.admin, T.owner, T.u1, T.u2]) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "members-org", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.u1,
+                role: "member",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("adds an existing user as a member", async () => {
+        await call().addOrganizationMember({
+            organizationId: T.org,
+            userId: T.u2,
+            role: "member",
+        });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.u2 },
+            }),
+        ).toMatchObject({ role: "member" });
+    });
+
+    it("rejects adding a user who is already a member", async () => {
+        await expect(
+            call().addOrganizationMember({ organizationId: T.org, userId: T.u1, role: "member" }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("refuses to remove the last owner", async () => {
+        await expect(
+            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("refuses to demote the last owner", async () => {
+        await expect(
+            call().setOrganizationMemberRole({
+                organizationId: T.org,
+                userId: T.owner,
+                role: "member",
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("removes a non-owner member", async () => {
+        await call().removeOrganizationMember({ organizationId: T.org, userId: T.u1 });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.u1 },
+            }),
+        ).toBeNull();
+    });
+
+    it("changes a member's role", async () => {
+        const res = await call().setOrganizationMemberRole({
+            organizationId: T.org,
+            userId: T.u2,
+            role: "admin",
+        });
+        expect(res.role).toBe("admin");
+    });
+});
+
 describe("systemAdmin.listOrganizations", () => {
     const T = {
         admin: UserId.create(),

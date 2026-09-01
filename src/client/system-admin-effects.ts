@@ -12,5 +12,23 @@ import { trpc } from "@/trpc/client";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
  */
 export const systemAdminEffects = createEffects<"systemAdmin">()({
+    addOrganizationMember: (vars) => [
+        invalidate(
+            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+    ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
+    removeOrganizationMember: (vars) => [
+        invalidate(
+            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+    ],
+    setOrganizationMemberRole: (vars) => [
+        invalidate(
+            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+    ],
 });
