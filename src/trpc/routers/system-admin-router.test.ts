@@ -95,3 +95,75 @@ describe("systemAdmin users", () => {
         });
     });
 });
+
+describe("systemAdmin.listOrganizations", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        member: UserId.create(),
+        org: OrganizationId.create(),
+        emptyOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.admin, T.owner, T.member]) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.emptyOrg, name: "Empty", slug: "empty", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.member,
+                role: "member",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationConfig.create({
+            data: { organizationId: T.org, key: "modules.notes.enabled", value: true },
+        });
+    });
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("lists every organization with member count, owner count, enabled modules", async () => {
+        const { organizations } = await call().listOrganizations();
+        expect(organizations).toHaveLength(2);
+
+        const org = organizations.find((o) => o.id === T.org)!;
+        expect(org.memberCount).toBe(2);
+        expect(org.ownerCount).toBe(1);
+        expect(org.enabledModules).toContain("notes");
+
+        const empty = organizations.find((o) => o.id === T.emptyOrg)!;
+        expect(empty.memberCount).toBe(0);
+        expect(empty.ownerCount).toBe(0);
+        expect(empty.enabledModules).toEqual([]);
+    });
+});

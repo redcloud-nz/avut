@@ -16,6 +16,7 @@ export function SystemAdmin_Sidebar_Menu() {
         <SidebarGroup>
             <SidebarMenu>
                 <NavItem label="Overview" href="/system-admin" />
+                <NavItem label="Organizations" href="/system-admin/organizations" />
                 <NavItem label="Users" href="/system-admin/users" />
             </SidebarMenu>
         </SidebarGroup>

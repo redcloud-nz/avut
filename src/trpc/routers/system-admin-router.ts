@@ -7,6 +7,8 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { ModuleId } from "@/lib/modules";
+import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
@@ -50,6 +52,33 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     health: systemAdminProcedure.query(() => ({ ok: true as const })),
+
+    listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
+        const rows = await ctx.prisma.organization.findMany({
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+                createdAt: true,
+                configs: true,
+                _count: { select: { users: true } },
+                users: { where: { role: "owner" }, select: { id: true } },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return {
+            organizations: rows.map(({ _count, configs, users, ...o }) => ({
+                ...o,
+                memberCount: _count.users,
+                ownerCount: users.length,
+                enabledModules: Object.entries(OrganizationSettings.fromRecords(configs).modules)
+                    .filter(([, v]) => v.enabled)
+                    .map(([k]) => k as ModuleId),
+            })),
+        };
+    }),
 
     listUsers: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.user.findMany({
