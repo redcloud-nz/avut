@@ -31,8 +31,12 @@ export type ActionVerb = keyof typeof ActionHotkey;
 /** Focus the table search input. Owned by the Kaga table toolbar. */
 export const SEARCH_HOTKEY = "/";
 
-/** Toggle the keyboard-shortcuts help overlay. `?` is Shift+/ on most layouts. */
-export const HELP_HOTKEY: RawHotkey = { key: "?" };
+/**
+ * Toggle the keyboard-shortcuts help overlay. `?` is Shift+/ on most layouts, so
+ * the real keydown always carries Shift — the registration must expect it, or the
+ * library's exact-modifier match (`event.shiftKey !== parsed.shift`) rejects it.
+ */
+export const HELP_HOTKEY: RawHotkey = { key: "?", shift: true };
 
 declare module "@tanstack/hotkeys" {
     /** Group shortcuts in the help overlay by entity ("Person", "Team", …). */

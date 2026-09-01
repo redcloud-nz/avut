@@ -65,8 +65,8 @@ key assignments are centralised.
 
 - **Menu items** already render `<Protect render={allowed => <DropdownMenuItem
 onClick={() => setAction(verb, { history: "push" })} disabled={!allowed}>`. A
-  new `<MenuAction>` component collapses that to one line and adds the hotkey +
-  shortcut badge.
+  new `<MenuAction>` component renders the item + a shortcut badge; the menu
+  registers the hotkeys from one shared config array.
 - **Create dialogs** already own `?action=create` and render their own
   `<DialogTrigger>`. They gain one `useActionHotkeys` call for `Alt+N`.
 - **`/`** is owned by the Kaga table toolbar — every Kaga table gets it with no
@@ -90,7 +90,7 @@ export const ActionHotkey = {
 export type ActionVerb = keyof typeof ActionHotkey;
 
 export const SEARCH_HOTKEY = "/";
-export const HELP_HOTKEY = "?";
+export const HELP_HOTKEY: RawHotkey = { key: "?", shift: true };
 
 // Group shortcuts in the help overlay by entity.
 declare module "@tanstack/hotkeys" {
@@ -125,40 +125,33 @@ export function useActionHotkeys(entries: ActionHotkeyEntry[]): void {
 `useHotkeys` (array form) is a single hook call, safe with a variable-length
 list. Callbacks are synced every render, so closures stay fresh.
 
-### 3. `<MenuAction>` — `src/components/ui/menu-action-item.tsx`
+### 3. `<MenuAction>` — `src/components/ui/menu-action.tsx`
+
+`<MenuAction>` is **pure** — it renders the item + a `<DropdownMenuShortcut>`
+badge from the registry and nothing else:
 
 ```tsx
 interface MenuActionProps {
   verb: ActionVerb;
-  permissions: Permissions;
-  category: string;
   label: string;
   icon: ReactNode;
   onSelect: () => void;
+  disabled?: boolean;
   destructive?: boolean;
 }
 
 export function MenuAction({
   verb,
-  permissions,
-  category,
   label,
   icon,
   onSelect,
+  disabled,
   destructive,
 }: MenuActionProps) {
-  const allowed = useHasPermission(permissions);
-
-  useHotkey(ActionHotkey[verb], () => onSelect(), {
-    enabled: allowed,
-    preventDefault: true,
-    meta: { name: label, category },
-  });
-
   return (
     <DropdownMenuItem
       onClick={onSelect}
-      disabled={!allowed}
+      disabled={disabled}
       className={destructive ? "text-destructive focus:text-destructive" : undefined}
     >
       {icon}
@@ -169,32 +162,97 @@ export function MenuAction({
 }
 ```
 
-- Self-registers its hotkey. Menus render `<MenuAction>` conditionally on record
-  status (`{status === "Active" && <MenuAction verb="archive" … />}`); the
-  mount/unmount naturally enables/disables the hotkey. This keeps the archive and
-  restore hotkeys from both being live at once.
-- `onSelect` is any callback: `() => setAction("archive", { history: "push" })`
-  for param-driven dialogs, or a direct handler (personnel archive/restore call
-  a mutation directly).
-- Each `<MenuAction>` is a stable, non-`.map`-ed JSX child in every menu, so the
-  `useHotkey` call order is stable.
+**It does NOT self-register its hotkey.** A Radix `DropdownMenuContent` only
+mounts its children while the menu is open, so a self-registered `useHotkey`
+inside `<MenuAction>` would only work _after_ opening the menu once — useless.
+
+Instead the hosting menu builds one `actions` config array and drives both the
+hotkeys and the render from it, at its always-mounted top level:
+
+```tsx
+const canUpdate = useHasPermission({ person: ["update"] });
+const canDelete = useHasPermission({ person: ["delete"] });
+
+const actions: MenuActionConfig[] = [
+  {
+    verb: "update",
+    label: "Edit",
+    icon: <ObjectIcons.Edit />,
+    run: () => setAction("update", { history: "push" }),
+    disabled: !canUpdate,
+  },
+];
+if (person.status === "Active")
+  actions.push({
+    verb: "archive",
+    label: "Archive",
+    icon: <ObjectIcons.Archive />,
+    run: handleArchive,
+    disabled: !canUpdate,
+  });
+else
+  actions.push({
+    verb: "restore",
+    label: "Restore",
+    icon: <ObjectIcons.Restore />,
+    run: handleRestore,
+    disabled: !canUpdate,
+  });
+if (person.status !== "Archived")
+  actions.push({
+    verb: "delete",
+    label: "Delete",
+    icon: <ObjectIcons.Delete />,
+    run: () => setAction("delete", { history: "push" }),
+    disabled: !canDelete,
+    destructive: true,
+  });
+
+useActionHotkeys(
+  actions.map(({ verb, label, run, disabled }) => ({
+    verb,
+    run,
+    enabled: !disabled,
+    name: label,
+    category: "Personnel",
+  })),
+);
+
+// render: {actions.map((a) => <MenuAction key={a.verb} {...a} onSelect={a.run} />)}
+```
+
+- The `actions` array is filtered by record status before it reaches
+  `useActionHotkeys`, so archive and restore are never both live.
+- `run` is any callback — `setAction(verb, …)` for param-driven dialogs, or a
+  direct mutation handler (personnel archive/restore).
+- `useActionHotkeys` uses the library's `useHotkeys` array form — one hook call,
+  safe with a variable-length array.
 
 ### 4. Kaga owns `/`
 
-In `KagaTableToolbar`: a `ref` on the search `InputGroupInput` (ref passes
-through `InputGroupInput` → `Input` → `<input>` in React 19; fall back to a
-wrapper-`div` `querySelector('input')` if the ref chain doesn't hold), and
+`KagaTableToolbar` renders a `<KagaSearchHotkey />`
+(`src/components/blocks/kaga-search-hotkey.tsx`, `"use client"`, returns `null`)
+that registers:
 
 ```tsx
-useHotkey(SEARCH_HOTKEY, () => inputRef.current?.focus(), {
-  preventDefault: true,
-  meta: { name: "Focus search", category: "Table" },
-});
+useHotkey(
+  SEARCH_HOTKEY,
+  () => {
+    document
+      .querySelector<HTMLInputElement>(
+        '[data-slot="table-toolbar"] [data-slot="input-group-control"]',
+      )
+      ?.focus();
+  },
+  { preventDefault: true, meta: { name: "Focus search", category: "Table" } },
+);
 ```
 
-Single key → the library's `ignoreInputs` default keeps it from firing while
-another field is focused; `preventDefault` stops the `/` landing in the input on
-focus.
+Split into its own client component so `kaga.tsx` stays hook-free / needs no
+`"use client"`. A document-scoped query (one Kaga table per page) avoids
+threading a ref through the shared toolbar. Single key → `ignoreInputs` default
+keeps it from firing while another field is focused; `preventDefault` stops the
+`/` landing in the input on focus.
 
 ### 5. Create dialogs own `Alt+N`
 
@@ -218,34 +276,77 @@ The create dialog is already rendered only inside `<Protect permissions={{
 
 ### 6. `?` help overlay — `src/components/hotkey-help.tsx`
 
+**Two components on purpose** — see the render-loop note below.
+
 ```tsx
 export function HotkeyHelp() {
   const [open, setOpen] = useState(false);
-  useHotkey(HELP_HOTKEY, () => setOpen((v) => !v), { preventDefault: true });
-
-  const { hotkeys } = useHotkeyRegistrations();
-  const active = hotkeys.filter((h) => h.options.enabled !== false);
-  // group by h.options.meta?.category ?? "General", row = formatForDisplay(h.hotkey) + meta.name
-
+  useHotkey(HELP_HOTKEY, () => setOpen((v) => !v), {
+    preventDefault: true,
+    meta: { name: "Show keyboard shortcuts", category: "General" },
+  });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      …
+      <DialogContent>… {open && <HotkeyHelpList />} …</DialogContent>
     </Dialog>
   );
 }
+
+function HotkeyHelpList() {
+  // ONE-TIME snapshot on mount — not useHotkeyRegistrations().
+  const groups = useMemo(() => {
+    for (const reg of getHotkeyManager().registrations.state.values()) {
+      if (reg.options.enabled === false) continue;
+      // group by reg.options.meta?.category ?? "General",
+      // row = { key: formatForDisplay(reg.hotkey), name: reg.options.meta?.name ?? … }
+    }
+    // …
+  }, []);
+  // …
+}
 ```
 
-Mounted once in `providers.tsx`, inside a new `HotkeysProvider` that supplies
-default options (and enables TanStack Hotkeys devtools in dev). `HotkeysProvider`
-goes inside `NuqsAdapter` (shortcuts call `setAction`) and `QueryClientProvider`.
+`HELP_HOTKEY = { key: "?", shift: true }` — the library does **exact** modifier
+matching (`event.shiftKey !== parsed.shift → no match`), and a real `?` keydown
+always carries Shift. `{ key: "?" }` alone never fires.
+
+Mounted once in `providers.tsx`, inside a new `HotkeysProvider`. It goes inside
+`NuqsAdapter` (shortcuts call `setAction`) and `QueryClientProvider`.
+
+#### `@tanstack/hotkeys` render-loop (issue #113)
+
+`useHotkey`/`useHotkeys` call `handle.setOptions(...)` **during render, every
+render**, and `setOptions` rebuilds the registrations-store `Map`
+**unconditionally** (no equality check). Consequences:
+
+- A component that both **subscribes** (`useHotkeyRegistrations`) and
+  **registers** (`useHotkey`) re-renders forever — a hard browser freeze
+  (synchronous via `useSyncExternalStore`, so React's max-update-depth guard
+  doesn't fire).
+- Even split into a register-parent + subscribe-child, the parent rendering
+  while the child is mounted throws React's "cannot update a component while
+  rendering a different component".
+
+**Resolution:** `HotkeyHelpList` never observes the store — it takes a one-time
+snapshot of `getHotkeyManager().registrations.state` when it mounts (i.e. when
+the overlay opens). Shortcuts don't change while you stare at the modal.
+Upstream fix (`#141`, move the write to an effect) was closed unmerged.
 
 ## Rollout
+
+**Phased.** Phase 1 = all the infrastructure + retrofit **personnel** onto it
+(`hotkeys.ts`, `use-action-hotkeys.ts`, `menu-action.tsx`,
+`kaga-search-hotkey.tsx`, `hotkey-help.tsx`, `providers.tsx`, `kaga.tsx`,
+`create-person.tsx`, `person-menu.tsx`, `personnel-list.tsx`) — **done**,
+validated in-browser 2026-09-01. Phase 2 = the remaining create dialogs and
+menus below, once phase 1 is confirmed good in real use.
 
 | File                                                                                                                                                | Change                                                                                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `src/lib/hotkeys.ts`                                                                                                                                | new — registry + `HotkeyMeta` augmentation                                                                                                       |
 | `src/hooks/use-action-hotkeys.ts`                                                                                                                   | new — `useActionHotkeys`                                                                                                                         |
-| `src/components/ui/menu-action-item.tsx`                                                                                                            | new — `<MenuAction>`                                                                                                                             |
+| `src/components/ui/menu-action.tsx`                                                                                                                 | new — `<MenuAction>` (pure item + shortcut badge)                                                                                                |
+| `src/components/blocks/kaga-search-hotkey.tsx`                                                                                                      | new — `/` focuses the Kaga search input                                                                                                          |
 | `src/components/hotkey-help.tsx`                                                                                                                    | new — `?` overlay                                                                                                                                |
 | `src/components/providers.tsx`                                                                                                                      | `HotkeysProvider` + `<HotkeyHelp>`                                                                                                               |
 | `src/components/blocks/kaga.tsx`                                                                                                                    | `/` → focus search in `KagaTableToolbar`                                                                                                         |
@@ -260,10 +361,12 @@ goes inside `NuqsAdapter` (shortcuts call `setAction`) and `QueryClientProvider`
   (`archive`/`restore`/`publish`/`unpublish`) — safe because only one such menu
   renders per page (per `docs/patterns/mutation-dialog.md`).
 - `users-list` has no create dialog → no `Alt+N`.
-- `<MenuAction>` must stay a direct conditional child in each menu, never inside
-  a `.map`, to keep `useHotkey` order stable.
-- Personnel archive/restore are direct mutations, not param dialogs —
-  `<MenuAction onSelect={handleArchive}>` handles that with no special-casing.
+- `<MenuAction>` is pure (no hooks), so `{actions.map(...)}` in the menu body is
+  fine. The **hotkey registration** goes through one `useActionHotkeys(...)` call
+  at the menu's top level (`useHotkeys` array form), never inside `<MenuAction>` —
+  a Radix menu only mounts its content while open.
+- Personnel archive/restore are direct mutations, not param dialogs — a config
+  entry with `run: handleArchive` handles that with no special-casing.
 
 ## Testing
 
