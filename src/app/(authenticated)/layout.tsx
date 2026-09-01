@@ -7,6 +7,7 @@
 
 import { ReactNode } from "react";
 
+import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
 import { ensureSession } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
 import { getServerQueryClient, HydrateClient } from "@/trpc/server";
@@ -25,6 +26,7 @@ export default async function AuthenticatedLayout(props: {
 
     return (
         <HydrateClient>
+            <ImpersonationBanner />
             {props.modal}
             {props.children}
         </HydrateClient>
