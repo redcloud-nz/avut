@@ -410,7 +410,7 @@ Object.entries(OrganizationSettings.fromRecords(o.configs).modules)
 
 - Produces: `systemAdmin.createOrganization({ name, slug, addSelfAsOwner: boolean })` → `{ id, slug }`. Slug uniqueness → `CONFLICT`; slug format via the existing zod refinement. Creates `Organization` (`id: nanoId16()`), seeds default config from `OrganizationSettings.default()` → `OrganizationSettings.flatten()` → `OrganizationConfig` rows, and (only if `addSelfAsOwner`) an `OrganizationUser` `role: "owner"` for `ctx.session.user.id`. One `$transaction` with `ctx.logEvent` against the new org.
 
-- [ ] **Step 1: Check how #6's create-org flow / better-auth `organization` plugin seeds default `OrganizationConfig`** — replicate that seeding exactly so system-admin-created orgs match user-created ones (we can't call `auth.api` from the router).
+- [ ] **Step 1: Check how #6's create-org flow / better-auth `organization` plugin seeds default `OrganizationConfig`.** NOTE (from Phase 4 execution): it turns out normal org creation seeds **zero** config rows — `create-org.tsx` calls better-auth `organization.create` with no hook, and `OrganizationSettings.fromRecords` supplies defaults implicitly. Phase 4 chose to **eagerly materialise** the default config rows anyway (`OrganizationSettings.flatten(OrganizationSettings.default())`); this was reviewed as provably equivalent for every settings consumer. So: system-admin-created orgs carry ~30 materialised `OrganizationConfig` rows; user-created orgs carry none. Phase 7's settings write path must work for **both**.
 
 - [ ] **Step 2: Write failing tests**
 
