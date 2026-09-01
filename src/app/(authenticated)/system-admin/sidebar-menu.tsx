@@ -9,14 +9,14 @@ import { NavItem } from "@/components/nav/nav-section";
 import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 /**
- * Site-wide admin sidebar. One item for now; Phase 2 adds "Users",
- * Phase 3 adds "Organizations".
+ * Site-wide admin sidebar. Phase 3 adds "Organizations".
  */
 export function SystemAdmin_Sidebar_Menu() {
     return (
         <SidebarGroup>
             <SidebarMenu>
                 <NavItem label="Overview" href="/system-admin" />
+                <NavItem label="Users" href="/system-admin/users" />
             </SidebarMenu>
         </SidebarGroup>
     );

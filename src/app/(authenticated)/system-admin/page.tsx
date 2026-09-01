@@ -5,24 +5,12 @@
  * Path: /system-admin
  */
 
-import { Std } from "@/components/blocks/std";
+import { redirect } from "next/navigation";
 
 import { requireGlobalAdmin } from "@/server/system-admin-access";
 
 export default async function SystemAdmin_Index_Page() {
     await requireGlobalAdmin();
 
-    return (
-        <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={["System Admin"]} />
-            <Std.ScrollContainer>
-                <Std.IndexPage title="System Admin">
-                    <p className="text-sm text-muted-foreground text-center">
-                        Site-wide administration. Users and organizations tools arrive in a later
-                        phase.
-                    </p>
-                </Std.IndexPage>
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
-    );
+    redirect("/system-admin/users");
 }
