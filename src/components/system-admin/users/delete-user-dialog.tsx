@@ -79,8 +79,8 @@ export function SystemAdmin_DeleteUser_Dialog({
                     <AlertDialogTitle>Delete user</AlertDialogTitle>
                     <AlertDialogDescription>
                         Permanently delete <ObjectName>{user.name}</ObjectName> along with their
-                        sessions, credentials, organization memberships, authored notes, and
-                        audit-log entries. This cannot be undone.
+                        sessions, credentials, organization memberships, D4H access tokens, authored
+                        notes, and audit-log entries. This cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Field>

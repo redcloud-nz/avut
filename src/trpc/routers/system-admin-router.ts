@@ -160,7 +160,7 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            const organizationId = OrganizationId.schema.parse(nanoId16());
+            const organizationId = OrganizationId.create();
             const userId = ctx.auth.user.id;
 
             const configRows = Object.entries(

@@ -18,7 +18,7 @@
 import * as R from "remeda";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { diffObject, DiffChange } from "@/lib/diff";
+import { diffObject, type DiffChange } from "@/lib/diff";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 /** The slice of the Prisma client this module needs. */

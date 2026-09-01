@@ -24,6 +24,16 @@ import { trpc } from "@/trpc/client";
 import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
 import { SystemAdmin_MemberActionsMenu } from "./member-actions-menu";
 
+const RECORD_COUNT_LABELS: Record<string, string> = {
+    personnel: "Personnel",
+    skillChecks: "Skill checks",
+    skillCheckSessions: "Skill check sessions",
+    notes: "Notes",
+    skillPackages: "Skill packages",
+    i3IssuedItems: "Issued equipment",
+    formInstances: "Form submissions",
+};
+
 export function SystemAdmin_Organization_Content({
     organizationId,
 }: {
@@ -223,7 +233,9 @@ export function SystemAdmin_Organization_Content({
                                         {Object.entries(organization.recordCounts).map(
                                             ([key, count]) => (
                                                 <React.Fragment key={key}>
-                                                    <DLTerm>{key}</DLTerm>
+                                                    <DLTerm>
+                                                        {RECORD_COUNT_LABELS[key] ?? key}
+                                                    </DLTerm>
                                                     <DLDetails>{count}</DLDetails>
                                                 </React.Fragment>
                                             ),

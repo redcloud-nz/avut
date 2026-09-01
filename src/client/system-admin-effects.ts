@@ -17,19 +17,26 @@ export const systemAdminEffects = createEffects<"systemAdmin">()({
             trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
-    deleteUser: () => [invalidate(trpc.systemAdmin.listUsers.queryFilter())],
+    deleteUser: () => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+        invalidate(trpc.systemAdmin.getOrganization.queryFilter()),
+    ],
     removeOrganizationMember: (vars) => [
         invalidate(
             trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
     setOrganizationMemberRole: (vars) => [
         invalidate(
             trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
 });
