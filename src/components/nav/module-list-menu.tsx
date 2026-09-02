@@ -13,6 +13,7 @@ import {
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -53,11 +54,10 @@ export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) 
                     <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg">
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Modules</DropdownMenuLabel>
-                            {scope === "organization" ? (
-                                <OrganizationModuleOptions />
-                            ) : (
-                                <GlobalModuleOptions />
-                            )}
+                            {scope === "organization" && <OrganizationModuleOptions />}
+                            {/* Global modules are reachable from any scope (admin-only);
+                                inside an org they follow the org modules under a divider. */}
+                            <GlobalModuleOptions separated={scope === "organization"} />
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -92,15 +92,21 @@ function OrganizationModuleOptions() {
     );
 }
 
-function GlobalModuleOptions() {
+function GlobalModuleOptions({ separated = false }: { separated?: boolean }) {
     const { data: user } = useUser();
 
     // The admin check is invariant across the list, so gate once up front rather
     // than per item — avoids rendering an empty dropdown group for non-admins.
-    if (user?.role !== "admin") return null;
+    if (user?.role !== "admin" || globalModules.length === 0) return null;
 
     return (
         <>
+            {separated && (
+                <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Global</DropdownMenuLabel>
+                </>
+            )}
             {globalModules.map((mod) => {
                 const Icon = mod.icon;
 
