@@ -71,7 +71,7 @@ export function SystemAdmin_Users_List() {
                 }),
                 columnHelper.accessor("role", {
                     id: "role",
-                    header: "Role",
+                    header: "System role",
                     cell: (ctx) => <Badge variant="secondary">{ctx.getValue()}</Badge>,
                     enableSorting: true,
                     enableGlobalFilter: false,

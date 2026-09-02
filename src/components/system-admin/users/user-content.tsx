@@ -56,7 +56,7 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                         <DLDetails>{user.email}</DLDetails>
                                         <DLTerm>Email verified</DLTerm>
                                         <DLDetails>{user.emailVerified ? "Yes" : "No"}</DLDetails>
-                                        <DLTerm>Role</DLTerm>
+                                        <DLTerm>System role</DLTerm>
                                         <DLDetails>{user.role}</DLDetails>
                                         <DLTerm>Status</DLTerm>
                                         <DLDetails>{user.banned ? "Banned" : "Active"}</DLDetails>
