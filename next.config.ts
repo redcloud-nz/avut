@@ -25,6 +25,9 @@ import packageDataJson from "./package.json" with { type: "json" };
 const packageData = packageDataJson as unknown as PackageData;
 
 const appMetadata = packageData["nz.avut"];
+if (!appMetadata) {
+    throw new Error("Missing required 'nz.avut' metadata in package.json");
+}
 
 // Deployments off the `production` branch ship a bare product version (e.g. `0.7`);
 // every other branch (chiefly `master`) displays the build number alongside it
@@ -32,16 +35,16 @@ const appMetadata = packageData["nz.avut"];
 const branchName = process.env.VERCEL_GIT_COMMIT_REF ?? process.env.GITHUB_REF_NAME;
 const appVersion =
     branchName === "production"
-        ? appMetadata?.version
-        : `${appMetadata?.version}-build.${appMetadata?.build}`;
+        ? appMetadata.version
+        : `${appMetadata.version}-build.${appMetadata.build}`;
 
 const nextConfig: NextConfig = {
     cacheComponents: true,
     env: {
         NEXT_PUBLIC_APP_VERSION: appVersion,
-        NEXT_PUBLIC_APP_VERSION_NAME: appMetadata?.versionName,
-        NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata?.displayName,
-        NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata?.repositoryUrl,
+        NEXT_PUBLIC_APP_VERSION_NAME: appMetadata.versionName,
+        NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata.displayName,
+        NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata.repositoryUrl,
     },
     experimental: {
         // Enables `forbidden()` / `forbidden.tsx`. Server-thrown errors lose their class

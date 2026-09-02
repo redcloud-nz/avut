@@ -12,7 +12,11 @@ branch listed below.
   - Dismiss stale pull request approvals when new commits are pushed
 - Require status checks to pass before merging
   - Require branches to be up to date before merging
-- Do not allow bypassing the above settings
+- Do not allow bypassing the above settings, **except** allow
+  `github-actions[bot]` (or the "GitHub Actions" app) to bypass the PR
+  requirement — [`increment-build-number.yml`](../.github/workflows/increment-build-number.yml)
+  pushes its build-number commit directly to `master` using `GITHUB_TOKEN`,
+  and that push would otherwise be rejected
 
 ## `production`
 
