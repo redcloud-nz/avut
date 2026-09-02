@@ -63,7 +63,7 @@ Three stacked PRs, each retargeted to `master` once its parent merges:
 - PR body: link the issues it closes (`Closes #11`, `Closes #77`, …) and reference the tracking issue #78.
 - Do **not** commit directly to `master` for this work — this supersedes the old solo-workflow default.
 
-> **Note on the actions menu:** Phase 2 creates `user-actions-menu.tsx` as an empty dropdown shell on the user detail page so Phase 8's "Delete" item has a home. Phase 9 fills it with "Impersonate" and adds the list-row actions column; Phases 11–12 add their items. If executing Phase 8 before Phase 9, the menu simply has one item.
+> **Note on the actions menu:** Phase 2 creates `user-actions-menu.tsx` as an empty dropdown shell on the user detail page so Phase 8's "Delete" item has a home. Phases 9, 11, 12 add their items to it. All per-user actions live ONLY on the user **detail page** — mirroring how org member actions live only on the org detail page. **No actions column is added to the users list** (superseded by user decision during PR C execution — keeps the pattern consistent with the org detail page and avoids the per-row `?action=` targeting problem). The users list's name column links to the detail page.
 
 ---
 
@@ -657,7 +657,7 @@ it("refuses to delete yourself", async () => {
 - Modify: `src/server/auth.ts` — `admin({ impersonationSessionDuration })` only if a non-default is wanted (optional)
 - Modify: `src/components/system-admin/users/user-actions-menu.tsx` — add "Impersonate"
 - Create: `src/components/system-admin/users/impersonate-user-dialog.tsx` — `?action=impersonate` confirm
-- Modify: `src/components/system-admin/users/users-list.tsx` — add the actions column
+- (Phase 9 no longer touches `users-list.tsx` — actions are detail-page-only)
 
 **Interfaces:**
 
@@ -670,7 +670,7 @@ it("refuses to delete yourself", async () => {
 
 - [ ] **Step 3: Add "Impersonate" to `user-actions-menu.tsx`** (hidden when the row user is the current user).
 
-- [ ] **Step 4: Add the actions column to `users-list.tsx`** (icon button → the same menu).
+- [ ] ~~Step 4: Add the actions column to `users-list.tsx`~~ — CUT (user decision): per-user actions are detail-page-only; `users-list.tsx` stays untouched.
 
 - [ ] **Step 5: `npx tsc --noEmit && npm run test:run` green.**
 
