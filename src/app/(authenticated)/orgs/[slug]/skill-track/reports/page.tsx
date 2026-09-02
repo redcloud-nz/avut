@@ -58,6 +58,54 @@ export default async function SkillsTrack_Reports_Page(
                                     </ItemActions>
                                 </Link>
                             </Item>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/team", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Team Competency</ItemTitle>
+                                        <ItemDescription>
+                                            Competency gaps across a team or the whole organization,
+                                            summarised per skill.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/matrix", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Personnel × Skill Matrix</ItemTitle>
+                                        <ItemDescription>
+                                            Every person against every skill in one grid.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/skill", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Skill Coverage</ItemTitle>
+                                        <ItemDescription>
+                                            Who currently holds a given skill.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
                         </Protect>
                     </ItemGroup>
                 </Std.IndexPage>
