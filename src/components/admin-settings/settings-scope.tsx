@@ -76,6 +76,16 @@ export function useOrganizationSettingsMutation({
         },
         async onSuccess(updated: OrganizationSettings) {
             await queryClient.invalidateQueries(queryFilter);
+            if (scope === "system-admin") {
+                // `enabledModules` on the system-admin org views is derived from the same
+                // config rows, so a settings save leaves those screens stale otherwise.
+                await Promise.all([
+                    queryClient.invalidateQueries(
+                        trpc.systemAdmin.getOrganization.queryFilter({ organizationId }),
+                    ),
+                    queryClient.invalidateQueries(trpc.systemAdmin.listOrganizations.queryFilter()),
+                ]);
+            }
             onSaved(updated);
             setTimeout(() => mutation.reset(), 1500);
         },
