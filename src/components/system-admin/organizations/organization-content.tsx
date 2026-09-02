@@ -4,8 +4,8 @@
  */
 "use client";
 
+import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
-import React from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -67,11 +67,12 @@ export function SystemAdmin_Organization_Content({
                                     Settings
                                 </Link>
                             </Button>
-                            <Button asChild variant="outline">
+                            <Button asChild variant="outline" size="icon" title="Open in-org admin">
                                 <Link
                                     href={route("/orgs/[slug]/admin", { slug: organization.slug })}
                                 >
-                                    Open in-org admin
+                                    <ExternalLinkIcon />
+                                    <span className="sr-only">Open in-org admin</span>
                                 </Link>
                             </Button>
                         </Saratoga.Actions>
@@ -174,14 +175,18 @@ export function SystemAdmin_Organization_Content({
                                             <thead>
                                                 <tr className="text-left text-muted-foreground">
                                                     <th className="py-1 pr-4 font-medium">Name</th>
-                                                    <th className="py-1 font-medium">Members</th>
+                                                    <th className="py-1 text-center font-medium">
+                                                        Members
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {organization.teams.map((team) => (
                                                     <tr key={team.id} className="border-t">
                                                         <td className="py-1 pr-4">{team.name}</td>
-                                                        <td className="py-1">{team.memberCount}</td>
+                                                        <td className="py-1 text-center tabular-nums">
+                                                            {team.memberCount}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -229,18 +234,23 @@ export function SystemAdmin_Organization_Content({
                                     <CardTitle>Record Counts</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
+                                    <dl className="divide-y divide-border/50 text-sm">
                                         {Object.entries(organization.recordCounts).map(
                                             ([key, count]) => (
-                                                <React.Fragment key={key}>
-                                                    <DLTerm>
+                                                <div
+                                                    key={key}
+                                                    className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0"
+                                                >
+                                                    <dt className="text-muted-foreground">
                                                         {RECORD_COUNT_LABELS[key] ?? key}
-                                                    </DLTerm>
-                                                    <DLDetails>{count}</DLDetails>
-                                                </React.Fragment>
+                                                    </dt>
+                                                    <dd className="font-medium tabular-nums">
+                                                        {count}
+                                                    </dd>
+                                                </div>
                                             ),
                                         )}
-                                    </DL>
+                                    </dl>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

@@ -79,6 +79,7 @@ export function SystemAdmin_Organizations_List() {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                     enableHiding: false,
+                    meta: Kaga.numericColumnMeta,
                 }),
                 columnHelper.accessor("ownerCount", {
                     id: "ownerCount",
@@ -88,6 +89,7 @@ export function SystemAdmin_Organizations_List() {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                     enableHiding: false,
+                    meta: Kaga.numericColumnMeta,
                 }),
                 columnHelper.accessor("enabledModules", {
                     id: "enabledModules",

@@ -104,6 +104,7 @@ export function SystemAdmin_Users_List() {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                     enableHiding: false,
+                    meta: Kaga.numericColumnMeta,
                 }),
                 columnHelper.accessor("createdAt", {
                     id: "createdAt",
