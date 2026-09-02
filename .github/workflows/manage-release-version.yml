@@ -1,0 +1,51 @@
+name: Manage Release Version
+
+# Runs on every push to `production`. Reads the version and versionName from
+# package.json, creates a `v{version}` git tag, and publishes a GitHub Release
+# for it.
+
+on:
+  push:
+    branches:
+      - production
+    paths-ignore:
+      - ".github/workflows/**"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: production
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json')['nz.avut'].version)")
+          VERSION_NAME=$(node -e "console.log(require('./package.json')['nz.avut'].versionName)")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.get_version.outputs.version }}" -m "Release ${{ steps.get_version.outputs.version }} (${{ steps.get_version.outputs.version_name }})"
+          git push origin "v${{ steps.get_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: ${{ steps.get_version.outputs.version }} - ${{ steps.get_version.outputs.version_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

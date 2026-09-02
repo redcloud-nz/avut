@@ -5,7 +5,8 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.7.41",
+    "version": "0.7",
+    "build": 41,
     "versionName": "Philomel"
   },
   "scripts": {
