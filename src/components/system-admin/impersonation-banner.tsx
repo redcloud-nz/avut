@@ -5,6 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { TriangleAlertIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,6 +59,14 @@ export function ImpersonationBanner() {
             router.refresh();
         },
     });
+
+    // This banner lives in the persistent (authenticated) layout and never unmounts, so a
+    // previous "Stopped" success state would otherwise carry into the next impersonation
+    // session and leave the button stuck. Reset whenever the impersonation identity changes.
+    useEffect(() => {
+        mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- reset on the identity transition only
+    }, [impersonatedBy]);
 
     if (!impersonatedBy || !user) return null;
 

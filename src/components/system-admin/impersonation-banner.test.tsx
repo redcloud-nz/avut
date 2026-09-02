@@ -2,7 +2,8 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -71,6 +72,41 @@ describe("ImpersonationBanner", () => {
 
         // Smoke check that the bar is pinned (not in normal flow).
         expect(screen.getByRole("alert")).toHaveClass("fixed");
+    });
+
+    it("resets the stop button for a fresh impersonation session", async () => {
+        const user = userEvent.setup();
+        const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        const session = (impersonatedBy: string, name: string) =>
+            ({
+                data: { user: { name, email: `${name}@x.test` }, session: { impersonatedBy } },
+            }) as unknown as ReturnType<typeof useSession>;
+        const tree = () => (
+            <QueryClientProvider client={queryClient}>
+                <ImpersonationBanner />
+            </QueryClientProvider>
+        );
+
+        mockUseSession.mockReturnValue(session("admin-id", "Ada"));
+        const { rerender } = render(tree());
+
+        await user.click(screen.getByRole("button", { name: /stop impersonating/i }));
+        await waitFor(() => expect(screen.getByRole("button")).toHaveTextContent("Stopped"));
+
+        // Stop lands back on the admin's own session (banner hidden)...
+        mockUseSession.mockReturnValue({
+            data: { user: { name: "Ada", email: "ada@x.test" }, session: {} },
+        } as unknown as ReturnType<typeof useSession>);
+        rerender(tree());
+        expect(screen.queryByRole("button")).not.toBeInTheDocument();
+
+        // ...then a fresh impersonation re-shows it, against the same query client.
+        mockUseSession.mockReturnValue(session("admin-id", "Grace"));
+        rerender(tree());
+
+        await waitFor(() =>
+            expect(screen.getByRole("button", { name: /stop impersonating/i })).toBeEnabled(),
+        );
     });
 
     it("falls back to the email when the impersonated user has no name", () => {
