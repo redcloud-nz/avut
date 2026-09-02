@@ -25,7 +25,7 @@ export function ModuleSidebar({
     scope,
 }: {
     children?: ReactNode;
-    scope: "personal" | "organization";
+    scope: "global" | "organization";
 }) {
     return (
         <Sidebar>

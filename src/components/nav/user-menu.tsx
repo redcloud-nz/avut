@@ -5,7 +5,7 @@
 
 "use client";
 
-import { ChevronsUpDown, LogOutIcon } from "lucide-react";
+import { ChevronsUpDown, LogOutIcon, ShieldIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -101,6 +101,19 @@ export function UserMenu() {
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
+                        {user.role === "admin" && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/system-admin">
+                                            <ShieldIcon />
+                                            <span>System Admin</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>

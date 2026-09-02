@@ -38,6 +38,20 @@ export const OrganizationData = {
         slug: true,
     }),
 
+    /**
+     * Input schema for creating a new organization (name + slug). Mirrors the slug refinement used
+     * by the user-facing `CreateOrganization_Card` (`/orgs/--create`) — lowercase letters, digits,
+     * and hyphens — so system-admin-created orgs validate identically to user-created ones.
+     */
+    createSchema: z.object({
+        name: z.string().min(2).max(100),
+        slug: z
+            .string()
+            .min(2)
+            .max(50)
+            .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only"),
+    }),
+
     fromRecord: (record: OrganizationRecord) =>
         OrganizationData.schema.parse({
             ...record,

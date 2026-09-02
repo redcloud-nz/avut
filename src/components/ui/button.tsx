@@ -80,8 +80,10 @@ interface MutationButtonProps extends Omit<
 }
 
 /**
- * Button that reflects the status of a mutation. It shows a spinner when pending, a check icon when successful, and is disabled when not idle.
- * The text changes based on the status.
+ * Button that reflects the status of a mutation. It shows a spinner when pending and a
+ * success label when successful, and is disabled while pending/succeeding. After an
+ * `error` it falls back to the idle label and stays clickable so the user can correct
+ * their input and retry.
  * @param status The status of the mutation.
  * @param text The text to display for each status.
  * @param props Other button props.
@@ -96,7 +98,7 @@ export function MutationButton({
     return (
         <Button
             {...props}
-            disabled={disabled || status != "idle"}
+            disabled={disabled || status === "pending" || status === "success"}
             data-status={status}
             className={cn("data-[status=success]:bg-green-500", className)}
         >

@@ -13,6 +13,7 @@ import {
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -20,15 +21,17 @@ import { useOrganization } from "@/hooks/use-organization";
 import { Show } from "../show";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { moduleBySegment, orgModules } from "@/lib/modules";
+import { globalModules, moduleBySegment, orgModules } from "@/lib/modules";
+import { useUser } from "@/client/auth-queries";
 
 function useCurrentModule() {
-    // Paths are /orgs/<slug>/<module>/...
-    const segment = usePathname().split("/")[3];
+    // Org paths are /orgs/<slug>/<module>/...; global paths are /<module>/... (e.g. /system-admin).
+    const parts = usePathname().split("/");
+    const segment = parts[1] === "orgs" ? parts[3] : parts[1];
     return segment ? moduleBySegment[segment] : undefined;
 }
 
-export function ModuleListMenu({ scope }: { scope: "personal" | "organization" }) {
+export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) {
     const currentModule = useCurrentModule();
     const CurrentIcon = currentModule?.icon;
 
@@ -51,11 +54,10 @@ export function ModuleListMenu({ scope }: { scope: "personal" | "organization" }
                     <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg">
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Modules</DropdownMenuLabel>
-                            {scope === "organization" ? (
-                                <OrganizationModuleOptions />
-                            ) : (
-                                <PersonalModuleOptions />
-                            )}
+                            {scope === "organization" && <OrganizationModuleOptions />}
+                            {/* Global modules are reachable from any scope (admin-only);
+                                inside an org they follow the org modules under a divider. */}
+                            <GlobalModuleOptions separated={scope === "organization"} />
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -90,6 +92,33 @@ function OrganizationModuleOptions() {
     );
 }
 
-function PersonalModuleOptions() {
-    return <>TODO</>;
+function GlobalModuleOptions({ separated = false }: { separated?: boolean }) {
+    const { data: user } = useUser();
+
+    // The admin check is invariant across the list, so gate once up front rather
+    // than per item — avoids rendering an empty dropdown group for non-admins.
+    if (user?.role !== "admin" || globalModules.length === 0) return null;
+
+    return (
+        <>
+            {separated && (
+                <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Global</DropdownMenuLabel>
+                </>
+            )}
+            {globalModules.map((mod) => {
+                const Icon = mod.icon;
+
+                return (
+                    <DropdownMenuItem key={mod.id} asChild>
+                        <Link href={mod.href()}>
+                            <Icon />
+                            {mod.label}
+                        </Link>
+                    </DropdownMenuItem>
+                );
+            })}
+        </>
+    );
 }

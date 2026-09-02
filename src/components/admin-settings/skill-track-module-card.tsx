@@ -6,11 +6,10 @@
 "use client";
 
 import { Control, Controller, useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -37,7 +36,6 @@ import { Switch } from "@/components/ui/switch";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
-import { trpc } from "@/trpc/client";
 
 // Exempt, Expired, and Provisional exist in the fixed vocabulary but aren't offered to
 // organizations yet — their semantics aren't settled. Remove from this list to enable them.
@@ -52,28 +50,16 @@ export function SkillTrackModule_SettingsCard({
     organizationId: OrganizationId;
     settings: OrganizationSettings;
 }) {
-    const queryClient = useQueryClient();
-
     const form = useForm({
         resolver: zodResolver(OrganizationSettings.schema.shape.modules.shape["skill-track"]),
         defaultValues: settings.modules["skill-track"],
     });
 
-    const mutation = useMutation(
-        trpc.settings.updateOrganizationSettings.mutationOptions({
-            onError(error) {
-                toast.error(`Failed to update Skill Track module settings: ${error.message}`);
-                mutation.reset();
-            },
-            async onSuccess(updated) {
-                await queryClient.invalidateQueries(
-                    trpc.settings.getOrganizationSettings.queryFilter({ organizationId }),
-                );
-                form.reset(updated.modules["skill-track"]);
-                setTimeout(() => mutation.reset(), 1500);
-            },
-        }),
-    );
+    const mutation = useOrganizationSettingsMutation({
+        organizationId,
+        errorMessage: "Failed to update Skill Track module settings",
+        onSaved: (updated) => form.reset(updated.modules["skill-track"]),
+    });
 
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({

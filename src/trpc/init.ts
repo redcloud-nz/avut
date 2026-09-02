@@ -101,6 +101,22 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
     });
 });
 
+/**
+ * Procedure that requires the authenticated user to be a site-wide administrator
+ * (Better Auth `admin` plugin — `session.user.role === "admin"`). This is distinct
+ * from the org-scoped permission system used by `organizationProcedure`.
+ * @throws TRPCError with code 'FORBIDDEN' if the user is not a global admin.
+ */
+export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, next }) => {
+    if (ctx.auth.user.role !== "admin") {
+        throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "System administrator access required.",
+        });
+    }
+    return next({ ctx });
+});
+
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     organizationId: OrganizationId;
     /**

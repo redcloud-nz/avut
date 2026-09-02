@@ -466,12 +466,22 @@ oneOfFilterFn.autoRemove = () => false;
 oneOfFilterFn.resolveFilterValue = (filterValue: unknown) =>
     Array.isArray(filterValue) ? filterValue : [filterValue];
 
+/**
+ * `meta` fragment for a numeric column: centre the header label and the cell
+ * values, and render digits with `tabular-nums` so they line up column-wise.
+ */
+const numericColumnMeta = {
+    headerProps: { className: "[&>div:first-child]:justify-center" },
+    cellProps: { className: "text-center tabular-nums" },
+} as const;
+
 export const Kaga = {
     DEFAULT_PAGE_SIZE: 50,
     Table: KagaTable,
     TableToolbar: KagaTableToolbar,
     TablePagination: KagaTablePagination,
     defineColumns,
+    numericColumnMeta,
     oneOfFilterFn,
     filterFns: {
         /**
