@@ -27,13 +27,15 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }));
 
-    if (typeof skill === "string") {
-        const parsedSkillId = SkillId.schema.safeParse(skill);
+    // Only prefetch the competency matrix for a well-formed skill id — an invalid `?skill=`
+    // falls back to the picker client-side, so fetching the full org matrix here is wasted work.
+    const parsedSkillId = typeof skill === "string" ? SkillId.schema.safeParse(skill) : undefined;
+    if (parsedSkillId?.success) {
         const parsedTeamId = typeof team === "string" ? TeamId.schema.safeParse(team) : undefined;
         prefetch(
             trpc.skillChecks.getCompetencyMatrix.queryOptions({
                 organizationId: organization.id,
-                skillId: parsedSkillId.success ? parsedSkillId.data : undefined,
+                skillId: parsedSkillId.data,
                 teamId: parsedTeamId && parsedTeamId.success ? parsedTeamId.data : undefined,
             }),
         );

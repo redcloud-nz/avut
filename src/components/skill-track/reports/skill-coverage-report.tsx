@@ -58,23 +58,25 @@ const STATUS_RANK: Record<CompetencyStatus, number> = {
 };
 
 export function SkillTrack_SkillCoverageReport() {
-    const [skill] = useQueryState("skill");
+    const [skillParam] = useQueryState("skill");
+    const parsedSkillId = skillParam ? SkillId.schema.safeParse(skillParam) : undefined;
 
-    if (skill === null) {
+    // An absent — or malformed — `?skill=` means "nothing picked yet"; show the picker rather
+    // than falling through to a full-org competency matrix.
+    if (!parsedSkillId?.success) {
         return (
             <SkillTrack_ReportSkillScopePicker routePattern="/orgs/[slug]/skill-track/reports/skill" />
         );
     }
 
-    return <SkillCoverageReportView skillParam={skill} />;
+    return <SkillCoverageReportView skillId={parsedSkillId.data} />;
 }
 
-function SkillCoverageReportView({ skillParam }: { skillParam: string }) {
+function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
     const organization = useOrganization();
 
     const [teamParam, setTeamParam] = useQueryState("team");
 
-    const parsedSkillId = SkillId.schema.safeParse(skillParam);
     const parsedTeamId = teamParam ? TeamId.schema.safeParse(teamParam) : undefined;
     const teamId = parsedTeamId?.success ? parsedTeamId.data : undefined;
 
@@ -87,7 +89,7 @@ function SkillCoverageReportView({ skillParam }: { skillParam: string }) {
     } = useSuspenseQuery(
         trpc.skillChecks.getCompetencyMatrix.queryOptions({
             organizationId: organization.id,
-            skillId: parsedSkillId.success ? parsedSkillId.data : undefined,
+            skillId,
             teamId,
         }),
     );
@@ -98,9 +100,7 @@ function SkillCoverageReportView({ skillParam }: { skillParam: string }) {
         recordedCompetencies,
     );
 
-    const skill = parsedSkillId.success
-        ? skills.find((candidate) => candidate.id === parsedSkillId.data)
-        : undefined;
+    const skill = skills.find((candidate) => candidate.id === skillId);
 
     const competencyByAssessee = new Map(
         competencies.map((competency) => [competency.assesseeId, competency]),
