@@ -27,8 +27,8 @@ import type { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 /**
- * `?action=promote` / `?action=demote` state-transition confirm dialog for a user's global
- * role. Host-driven (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`), which
+ * `?action=promote` / `?action=demote` state-transition confirm dialog for a user's system
+ * role (site-wide, as opposed to their per-organization role). Host-driven (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`), which
  * also picks `action` from the current `user.role`.
  *
  * Plain `Dialog` (not `AlertDialog` — that is reserved for delete/remove). `onSuccess` stays
@@ -77,13 +77,13 @@ export function SystemAdmin_SetUserRole_Dialog({
                     <DialogDescription>
                         {promote ? (
                             <>
-                                Grant <ObjectName>{user.name}</ObjectName> the global{" "}
-                                <span className="font-mono">admin</span> role — full access to
-                                system administration for the whole site.
+                                Grant <ObjectName>{user.name}</ObjectName> the{" "}
+                                <span className="font-mono">admin</span> system role — full access
+                                to system administration for the whole site.
                             </>
                         ) : (
                             <>
-                                Remove the global <span className="font-mono">admin</span> role from{" "}
+                                Remove the <span className="font-mono">admin</span> system role from{" "}
                                 <ObjectName>{user.name}</ObjectName>. They keep their organization
                                 memberships and roles.
                             </>

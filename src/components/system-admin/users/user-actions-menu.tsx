@@ -39,7 +39,7 @@ type SystemAdminUser = RouterOutput["systemAdmin"]["getUser"];
  * per-row action menu of its own.
  *
  * Items: "Impersonate" (`?action=impersonate`), "Promote to admin" / "Demote to user"
- * (`?action=promote` / `?action=demote`, one shown depending on the user's global role),
+ * (`?action=promote` / `?action=demote`, one shown depending on the user's system role),
  * "Ban user" / "Unban user" (`?action=ban` / `?action=unban`, one shown depending on
  * `user.banned`), and "Delete user" (`?action=delete`, hard delete, type-to-confirm). All are
  * hidden when the row user is the signed-in operator — the tRPC procedures refuse a self-target
