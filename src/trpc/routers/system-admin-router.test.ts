@@ -355,6 +355,23 @@ describe("systemAdmin organization members", () => {
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 
+    it("throws NOT_FOUND for an unknown organization or user", async () => {
+        await expect(
+            call().addOrganizationMember({
+                organizationId: OrganizationId.create(),
+                userId: T.u2,
+                role: "member",
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await expect(
+            call().addOrganizationMember({
+                organizationId: T.org,
+                userId: UserId.create(),
+                role: "member",
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
     it("refuses to remove the last owner", async () => {
         await expect(
             call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),

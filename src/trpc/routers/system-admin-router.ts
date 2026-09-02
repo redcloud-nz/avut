@@ -65,6 +65,14 @@ async function assertOrganizationExists(
     }
 }
 
+/** Throws `NOT_FOUND` if the user does not exist (surfaces a clear error before an FK violation). */
+async function assertUserExists(prisma: Pick<PrismaClient, "user">, userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: `User ${userId} not found.` });
+    }
+}
+
 /**
  * Site-wide administration router. Gated by `systemAdminProcedure`
  * (`session.user.role === "admin"`), not by org-scoped permissions.
@@ -93,6 +101,9 @@ export const systemAdminRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
+            await assertOrganizationExists(ctx.prisma, input.organizationId);
+            await assertUserExists(ctx.prisma, input.userId);
+
             const existing = await ctx.prisma.organizationUser.findFirst({
                 where: { organizationId: input.organizationId, userId: input.userId },
                 select: { id: true },
@@ -510,7 +521,10 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
+            // Only an owner removal can orphan the org — skip the owners query otherwise.
+            if (membership.role === "owner") {
+                await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
+            }
 
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
@@ -555,7 +569,8 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            if (input.role !== "owner") {
+            // The guard only matters when demoting an existing owner to a non-owner role.
+            if (membership.role === "owner" && input.role !== "owner") {
                 await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
             }
 
