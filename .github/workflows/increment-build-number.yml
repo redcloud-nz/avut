@@ -1,0 +1,61 @@
+name: Increment Build Number
+
+# Increments `nz.avut.build` in package.json on every push to master so each
+# merge gets a unique, monotonically increasing build number
+# (displayed as `{version}-build.{build}`, see next.config.ts).
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - ".github/workflows/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: increment-build-number
+  cancel-in-progress: false
+
+jobs:
+  increment-build:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Increment build number
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg['nz.avut'].build += 1;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('New build number:', pkg['nz.avut'].build);
+          "
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: increment build number [skip ci]"
+
+          # `master` may have moved since checkout (e.g. a push that landed
+          # outside this workflow's own concurrency group). Rebase onto the
+          # latest master and retry on a non-fast-forward push rejection.
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:master; then
+              exit 0
+            fi
+            echo "Push rejected, retrying (attempt $i)..."
+            git fetch origin master
+            git rebase origin/master
+          done
+          echo "Failed to push after 5 attempts" >&2
+          exit 1
