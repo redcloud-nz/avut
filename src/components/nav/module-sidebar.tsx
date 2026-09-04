@@ -14,6 +14,8 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 
+import { VersionString } from "@/components/ui/version-string";
+
 import { ModuleListMenu } from "./module-list-menu";
 import { ModeToggle } from "./mode-toggle";
 import { NavSkeleton } from "./nav-skeleton";
@@ -50,18 +52,12 @@ export function ModuleSidebar({
                 <Suspense fallback={<NavSkeleton />}>{children}</Suspense>
             </SidebarContent>
             <SidebarFooter>
-                <AppVersion />
+                <div className="py-1 text-center text-xs text-muted-foreground">
+                    <VersionString />
+                </div>
                 <UserMenu />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
-    );
-}
-
-function AppVersion() {
-    return (
-        <div className="text-xs text-center text-muted-foreground py-1">
-            {`${process.env.NEXT_PUBLIC_APP_DISPLAY_NAME} v${process.env.NEXT_PUBLIC_APP_VERSION} (${process.env.NEXT_PUBLIC_APP_VERSION_NAME})`}
-        </div>
     );
 }
