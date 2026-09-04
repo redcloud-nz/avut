@@ -27,8 +27,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Increment build number
         run: |
           node -e "
