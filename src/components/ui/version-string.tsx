@@ -4,7 +4,8 @@
  */
 
 /**
- * Renders the running app version, e.g. `AVUT v0.7.41 (Philomel)`.
+ * Renders the running app version, e.g. `AVUT v0.7-build.41 (Philomel)` on
+ * master, or `AVUT v0.7 (Philomel)` on `production` (no build suffix).
  *
  * Values come from the `NEXT_PUBLIC_APP_*` env vars that `next.config.ts` derives
  * from the `nz.avut` block in `package.json` — the single source of truth for the
