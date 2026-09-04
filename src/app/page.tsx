@@ -14,6 +14,7 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { Button } from "@/components/ui/button";
 import { CopyrightString } from "@/components/ui/copyright";
+import { ExternalLink } from "@/components/ui/link";
 import { VersionString } from "@/components/ui/version-string";
 import { orgModules } from "@/lib/modules";
 import { getSession } from "@/server/session";
@@ -22,16 +23,22 @@ const REPO_URL =
     process.env.NEXT_PUBLIC_APP_REPOSITORY_URL ?? "https://github.com/redcloud-nz/avut";
 const REPO_SLUG = REPO_URL.replace(/^https?:\/\/github\.com\//, "");
 
-/** Marketing copy per module. Names and icons come from the `Modules` registry. */
-const MODULE_COPY: Record<string, string> = {
+/**
+ * Marketing copy per module. Names and icons come from the `Modules` registry.
+ * `(typeof orgModules)[number]["id"]` is `OrganizationModuleId`, not narrowed to
+ * the ids `orgModules` actually filters down to, so `forms` (vestigial, has no
+ * `href` and never appears in `orgModules`) still needs an entry here to satisfy it.
+ */
+const MODULE_COPY = {
     admin: "Users, teams, personnel and invitations for your organisation.",
     "d4h-views": "Read-only views of the D4H data you already maintain.",
+    forms: "",
     i3: "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
     notes: "Rich-text notes that live with the org instead of in someone's inbox.",
     "skill-track": "Skill checks, assessment sessions, a catalogue and reports on who's current.",
     "skill-package-builder":
         "Author the skill packages your assessors work from, and version them.",
-};
+} satisfies Record<(typeof orgModules)[number]["id"], string>;
 
 /** Module ids that only work with a connected D4H account. */
 const NEEDS_D4H = new Set(["d4h-views", "i3"]);
@@ -162,14 +169,13 @@ export default function HomePage() {
                         <a href="#questions" className="hidden sm:inline hover:text-foreground">
                             Questions
                         </a>
-                        <a
+                        <ExternalLink
                             href={REPO_URL}
-                            target="_blank"
-                            rel="noreferrer"
+                            noDecoration
                             className="hidden sm:inline hover:text-foreground"
                         >
                             GitHub
-                        </a>
+                        </ExternalLink>
                         <div className="flex items-center gap-1.5">
                             <Suspense fallback={<SignedOutHeaderCta />}>
                                 <HeaderCta />
@@ -244,7 +250,7 @@ export default function HomePage() {
                         return (
                             <div
                                 key={mod.id}
-                                className="flex gap-3.5 rounded-lg border border-border bg-card p-4.5"
+                                className="flex gap-3.5 rounded-lg border border-border bg-card p-[18px]"
                             >
                                 <Icon className="mt-0.5 size-5 shrink-0 opacity-75" />
                                 <div className="flex flex-col gap-1.5">
@@ -338,7 +344,7 @@ export default function HomePage() {
                     {FAQ.map((item) => (
                         <div
                             key={item.q}
-                            className="flex flex-col gap-1.5 border-t border-border py-4.5"
+                            className="flex flex-col gap-1.5 border-t border-border py-[18px]"
                         >
                             <div className="text-[15px] font-medium">{item.q}</div>
                             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -358,15 +364,14 @@ export default function HomePage() {
                             tRPC — nothing exotic.
                         </p>
                     </div>
-                    <a
+                    <ExternalLink
                         href={REPO_URL}
-                        target="_blank"
-                        rel="noreferrer"
+                        noDecoration
                         className="inline-flex h-9 shrink-0 items-center gap-2 self-start whitespace-nowrap rounded-md bg-background/10 px-3.5 text-sm font-medium text-background hover:bg-background/20 sm:self-auto"
                     >
                         <SiGithub className="size-4" />
                         {REPO_SLUG}
-                    </a>
+                    </ExternalLink>
                 </section>
             </div>
 
