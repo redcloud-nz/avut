@@ -5,18 +5,18 @@
  * Path: /
  */
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
-import { getSessionCookie } from "better-auth/cookies";
 import Image from "next/image";
-import { headers as nextHeaders } from "next/headers";
 import Link from "next/link";
-import { Cable, Github, Tag } from "lucide-react";
+import { Cable, Tag } from "lucide-react";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { Button } from "@/components/ui/button";
 import { CopyrightString } from "@/components/ui/copyright";
 import { VersionString } from "@/components/ui/version-string";
 import { orgModules } from "@/lib/modules";
+import { getSession } from "@/server/session";
 
 const REPO_URL =
     process.env.NEXT_PUBLIC_APP_REPOSITORY_URL ?? "https://github.com/redcloud-nz/avut";
@@ -37,15 +37,19 @@ const MODULE_COPY: Record<string, string> = {
 const NEEDS_D4H = new Set(["d4h-views", "i3"]);
 
 /**
- * Hero product screenshot. To light up the section: capture the Skill Track
- * session view at 1440×900, save it under `public/marketing/`, and fill this in.
+ * Hero product screenshot — the "Assess by Person" recording view from the
+ * seeded demo org (`prisma/seed-demo.ts`), captured at 1440×900.
  */
 const PRODUCT_SHOT: {
     src: string;
     alt: string;
     /** Fake address-bar path shown in the browser chrome. */
     urlPath: string;
-} | null = null;
+} | null = {
+    src: "/marketing/skill-track-session.png",
+    alt: "Skill Track: recording a Rope Rescue Technician assessment session",
+    urlPath: "avut.app/orgs/your-team/skill-track/sessions/…/by-person",
+};
 
 const FAQ: { q: string; a: ReactNode }[] = [
     {
@@ -64,7 +68,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
         q: "Where does our data live?",
         a: (
             <>
-                In a Postgres database, scoped per organisation. The{" "}
+                In a Postgres database in Sydney (AWS ap-southeast-2), scoped per organisation. The{" "}
                 <Link href="/policies/privacy" className="underline underline-offset-4">
                     privacy policy
                 </Link>{" "}
@@ -74,11 +78,69 @@ const FAQ: { q: string; a: ReactNode }[] = [
     },
 ];
 
-export default async function HomePage() {
-    const hasSession = getSessionCookie(await nextHeaders()) != null;
+/**
+ * `getSession()` is wrapped in React `cache()`, so checking it twice per request
+ * (header + hero) costs one lookup, not two. Deliberately the real, DB-validated
+ * check rather than the cheap `getSessionCookie()` presence check — a stale or
+ * revoked cookie must not show "Open AVUT" for a session that's actually dead.
+ * Each call site owns its own `<Suspense>` boundary so this is the *only*
+ * dynamic part of the page; see #96 for why that doesn't yet buy a cached
+ * static shell for the rest of it.
+ */
+async function hasActiveSession(): Promise<boolean> {
+    return (await getSession()) != null;
+}
 
+function SignedOutHeaderCta() {
     return (
-        <div className="min-h-svh bg-background text-foreground">
+        <>
+            <Button asChild variant="outline">
+                <Link href="/auth/sign-in">Sign In</Link>
+            </Button>
+            <Button asChild>
+                <Link href="/auth/sign-up">Sign Up</Link>
+            </Button>
+        </>
+    );
+}
+
+async function HeaderCta() {
+    if (!(await hasActiveSession())) return <SignedOutHeaderCta />;
+    return (
+        <Button asChild>
+            <Link href="/orgs/--select-org">Open AVUT</Link>
+        </Button>
+    );
+}
+
+function SignedOutHeroCta() {
+    return (
+        <>
+            <Button asChild size="lg">
+                <Link href="/auth/sign-up">Sign Up</Link>
+            </Button>
+            <span className="text-sm text-muted-foreground">
+                Already in a team? Your invite link brings you straight in.
+            </span>
+        </>
+    );
+}
+
+async function HeroCta() {
+    if (!(await hasActiveSession())) return <SignedOutHeroCta />;
+    return (
+        <>
+            <Button asChild size="lg">
+                <Link href="/orgs/--select-org">Open AVUT</Link>
+            </Button>
+            <span className="text-sm text-muted-foreground">You&apos;re signed in.</span>
+        </>
+    );
+}
+
+export default function HomePage() {
+    return (
+        <div className="min-h-svh w-full bg-background text-foreground">
             <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
                 <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-6 px-6 py-3.5 md:px-10">
                     <Link href="#top" className="shrink-0">
@@ -109,20 +171,9 @@ export default async function HomePage() {
                             GitHub
                         </a>
                         <div className="flex items-center gap-1.5">
-                            {hasSession ? (
-                                <Button asChild size="sm">
-                                    <Link href="/orgs/--select-org">Open AVUT</Link>
-                                </Button>
-                            ) : (
-                                <>
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href="/auth/sign-in">Sign In</Link>
-                                    </Button>
-                                    <Button asChild size="sm">
-                                        <Link href="/auth/sign-up">Sign Up</Link>
-                                    </Button>
-                                </>
-                            )}
+                            <Suspense fallback={<SignedOutHeaderCta />}>
+                                <HeaderCta />
+                            </Suspense>
                         </div>
                     </nav>
                 </div>
@@ -148,28 +199,9 @@ export default async function HomePage() {
                             It&apos;s free, and the source is open.
                         </p>
                         <div className="flex flex-wrap items-center gap-2.5">
-                            {hasSession ? (
-                                <>
-                                    <Button asChild size="lg">
-                                        <Link href="/orgs/--select-org">Open AVUT</Link>
-                                    </Button>
-                                    <span className="text-sm text-muted-foreground">
-                                        You&apos;re signed in.
-                                    </span>
-                                </>
-                            ) : (
-                                <>
-                                    <Button asChild size="lg">
-                                        <Link href="/auth/sign-up">Sign Up</Link>
-                                    </Button>
-                                    <Button asChild variant="outline" size="lg">
-                                        <Link href="/auth/sign-in">Sign In</Link>
-                                    </Button>
-                                    <span className="text-sm text-muted-foreground">
-                                        Already in a team? Your invite link brings you straight in.
-                                    </span>
-                                </>
-                            )}
+                            <Suspense fallback={<SignedOutHeroCta />}>
+                                <HeroCta />
+                            </Suspense>
                         </div>
                     </div>
                     <Image
@@ -332,7 +364,7 @@ export default async function HomePage() {
                         rel="noreferrer"
                         className="inline-flex h-9 shrink-0 items-center gap-2 self-start whitespace-nowrap rounded-md bg-background/10 px-3.5 text-sm font-medium text-background hover:bg-background/20 sm:self-auto"
                     >
-                        <Github className="size-4" />
+                        <SiGithub className="size-4" />
                         {REPO_SLUG}
                     </a>
                 </section>

@@ -412,6 +412,8 @@ async function createSessions(organizationId: string, personnel: PersonSpec[], s
                 status: "Include",
                 startsAt: opts.when,
                 endsAt: opts.fillRatio >= 1 ? opts.when : null,
+                // Nullable in the DB, but the app's Zod schema requires a string.
+                notes: "",
                 assessees: { connect: assessees.map((p) => ({ id: p.id })) },
                 assessors: { connect: assessors.map((p) => ({ id: p.id })) },
                 skills: { connect: skillIds.map((id) => ({ id })) },
