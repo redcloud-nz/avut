@@ -9,7 +9,14 @@
 
 "use client";
 
+import { useMemo, useState, type ReactNode } from "react";
+
+import { useQueryState } from "nuqs";
+
 import { DicesIcon, FlaskConicalIcon } from "lucide-react";
+
+import { useOrganization } from "@/hooks/use-organization";
+import { getEnabledSkillCheckResultOptions } from "@/lib/schemas/skill-check";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -105,6 +112,69 @@ export function generateSyntheticCompetencies(
             },
         ];
     });
+}
+
+/**
+ * Synthetic competencies for a whole personnel × skill matrix. Each person's slice is generated
+ * by {@link generateSyntheticCompetencies} with a per-person seed offset, so the distribution
+ * stays deterministic for a given config but doesn't come out identical for everyone.
+ */
+export function generateSyntheticMatrix(
+    skills: MatrixSkill[],
+    personnel: { id: Competency["assesseeId"] }[],
+    config: SyntheticConfig,
+): Competency[] {
+    return personnel.flatMap((person) =>
+        generateSyntheticCompetencies(skills, person.id, {
+            ...config,
+            seed: config.seed + hashString(person.id),
+        }),
+    );
+}
+
+/**
+ * Wires the `?synthetic` search param into a report: when present, swaps the recorded
+ * competencies for a generated matrix and returns the tuning dialog to drop into the report
+ * header; when absent, passes the recorded competencies straight through and returns no dialog.
+ */
+export function useSyntheticCompetencies(
+    skills: MatrixSkill[],
+    personnel: { id: Competency["assesseeId"] }[],
+    competencies: Competency[],
+): { competencies: Competency[]; syntheticActions: ReactNode } {
+    const organization = useOrganization();
+    const [synthetic] = useQueryState("synthetic");
+    const [config, setConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
+    const isSynthetic = synthetic !== null;
+
+    const generated = useMemo(
+        () => (isSynthetic ? generateSyntheticMatrix(skills, personnel, config) : null),
+        [isSynthetic, skills, personnel, config],
+    );
+
+    if (!isSynthetic || !generated) {
+        return { competencies, syntheticActions: null };
+    }
+
+    return {
+        competencies: generated,
+        syntheticActions: (
+            <SyntheticDataDialog
+                config={config}
+                onConfigChange={setConfig}
+                resultOptions={getEnabledSkillCheckResultOptions(organization.settings)}
+            />
+        ),
+    };
+}
+
+/** Cheap deterministic string hash (djb2), for deriving a per-person seed offset. */
+function hashString(value: string): number {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i++) {
+        hash = ((hash << 5) + hash + value.charCodeAt(i)) >>> 0;
+    }
+    return hash;
 }
 
 function pickResult(roll: number, config: SyntheticConfig): SkillCheckResultValue {
