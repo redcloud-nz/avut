@@ -46,6 +46,26 @@ export default async function SkillTrack_Session_Page(props: Props) {
             skillCheckSessionId,
         }),
     );
+    prefetch(
+        trpc.skillChecks.listSkillChecks.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+        }),
+    );
+    prefetch(
+        trpc.skills.listSessionAssessees.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skills.listSessionSkills.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
 
     return (
         <HydrateClient>
