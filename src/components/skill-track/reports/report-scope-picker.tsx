@@ -29,13 +29,19 @@ type TeamScopedRoute =
     | "/orgs/[slug]/skill-track/reports/team"
     | "/orgs/[slug]/skill-track/reports/matrix";
 
-const REPORT_BREADCRUMB: Record<TeamScopedRoute | SkillScopedRoute, string> = {
+/** The Personnel Competency report carries its scope in `?person=<id>`. */
+type PersonScopedRoute = "/orgs/[slug]/skill-track/reports/person";
+
+type ReportRoute = TeamScopedRoute | SkillScopedRoute | PersonScopedRoute;
+
+const REPORT_BREADCRUMB: Record<ReportRoute, string> = {
+    "/orgs/[slug]/skill-track/reports/person": "Personnel Competency",
     "/orgs/[slug]/skill-track/reports/team": "Team Competency",
     "/orgs/[slug]/skill-track/reports/matrix": "Personnel × Skill Matrix",
     "/orgs/[slug]/skill-track/reports/skill": "Skill Coverage",
 };
 
-function ReportNavbar({ routePattern }: { routePattern: TeamScopedRoute | SkillScopedRoute }) {
+function ReportNavbar({ routePattern }: { routePattern: ReportRoute }) {
     const { slug } = useOrganization();
     return (
         <Std.Navbar

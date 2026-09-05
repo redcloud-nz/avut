@@ -21,7 +21,9 @@ import { UsersIcon } from "lucide-react";
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
+import { ReportNavbar } from "@/components/skill-track/reports/report-scope-picker";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -46,18 +48,15 @@ export function SkillTrack_PersonPicker() {
 
     type Row = (typeof activePersonnel)[number];
 
+    const pathname = route("/orgs/[slug]/skill-track/reports/person", { slug: organization.slug });
+
     const columns = useMemo(
         () =>
             Kaga.defineColumns<Row>((col) => [
                 col.accessor("name", {
                     header: "Name",
                     cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/skill-track/reports/person/[person_id]", {
-                                slug: organization.slug,
-                                person_id: ctx.row.original.id,
-                            })}
-                        >
+                        <Link href={{ pathname, query: { person: ctx.row.original.id } }}>
                             {ctx.getValue()}
                         </Link>
                     ),
@@ -72,7 +71,7 @@ export function SkillTrack_PersonPicker() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug],
+        [pathname],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -90,29 +89,34 @@ export function SkillTrack_PersonPicker() {
     });
 
     return (
-        <Saratoga.Root>
-            <Saratoga.Header>
-                <Saratoga.Title>Select a Person</Saratoga.Title>
-            </Saratoga.Header>
-            <Show
-                when={activePersonnel.length > 0}
-                fallback={
-                    <Empty>
-                        <EmptyMedia>
-                            <UsersIcon className="size-12 text-muted-foreground" />
-                        </EmptyMedia>
-                        <EmptyDescription>
-                            There are no active personnel in this organization.
-                        </EmptyDescription>
-                    </Empty>
-                }
-            >
-                <div>
-                    <Kaga.TableToolbar table={table} />
-                    <Kaga.Table table={table} />
-                    <Kaga.TablePagination table={table} />
-                </div>
-            </Show>
-        </Saratoga.Root>
+        <>
+            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/person" />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Select a Person</Saratoga.Title>
+                    </Saratoga.Header>
+                    <Show
+                        when={activePersonnel.length > 0}
+                        fallback={
+                            <Empty>
+                                <EmptyMedia>
+                                    <UsersIcon className="size-12 text-muted-foreground" />
+                                </EmptyMedia>
+                                <EmptyDescription>
+                                    There are no active personnel in this organization.
+                                </EmptyDescription>
+                            </Empty>
+                        }
+                    >
+                        <div>
+                            <Kaga.TableToolbar table={table} />
+                            <Kaga.Table table={table} />
+                            <Kaga.TablePagination table={table} />
+                        </div>
+                    </Show>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
     );
 }

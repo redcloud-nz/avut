@@ -9,12 +9,15 @@ import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryState } from "nuqs";
 
 import { ChevronDownIcon, UserXIcon } from "lucide-react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { SkillTrack_PersonPicker } from "@/components/skill-track/reports/person-picker";
+import { ReportNavbar } from "@/components/skill-track/reports/report-scope-picker";
 import {
     deriveStatus,
     StatusBadge,
@@ -32,30 +35,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
-import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
-import { getEnabledSkillCheckResultOptions } from "@/lib/schemas/skill-check";
-import {
-    DEFAULT_SYNTHETIC_CONFIG,
-    generateSyntheticCompetencies,
-    SyntheticDataDialog,
-} from "@/components/skill-track/reports/synthetic-competency-data";
 import { trpc } from "@/trpc/client";
 
-export function SkillTrack_PersonCompetencyReport({
-    personId,
-    synthetic = false,
-}: {
-    personId: PersonId;
-    synthetic?: boolean;
-}) {
+export function SkillTrack_PersonCompetencyReport() {
+    const [personParam] = useQueryState("person");
+    const parsedPersonId = personParam ? PersonId.schema.safeParse(personParam) : undefined;
+
+    // An absent — or malformed — `?person=` means "nothing picked yet"; show the picker.
+    if (!parsedPersonId?.success) {
+        return <SkillTrack_PersonPicker />;
+    }
+
+    return <PersonCompetencyReportView personId={parsedPersonId.data} />;
+}
+
+function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
     const organization = useOrganization();
 
     const {
-        data: { personnel, skillPackages, skillGroups, skills, competencies },
+        data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
     } = useSuspenseQuery(
         trpc.skillChecks.getCompetencyMatrix.queryOptions({
             organizationId: organization.id,
@@ -63,19 +66,19 @@ export function SkillTrack_PersonCompetencyReport({
         }),
     );
 
+    const { competencies, syntheticActions } = useSyntheticCompetencies(
+        skills,
+        personnel,
+        recordedCompetencies,
+    );
+
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);
-    const [syntheticConfig, setSyntheticConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
 
     const person = personnel[0];
 
     // Pair each in-scope skill with its most recent approved check (if any).
-    const competencyBySkillId = new Map(
-        (synthetic
-            ? generateSyntheticCompetencies(skills, personId, syntheticConfig)
-            : competencies
-        ).map((c) => [c.skillId, c]),
-    );
+    const competencyBySkillId = new Map(competencies.map((c) => [c.skillId, c]));
 
     // A check only counts towards competency if its result demonstrates competency — a
     // "Not Yet Competent" result is a fail regardless of how recently it was recorded, so
@@ -123,27 +126,7 @@ export function SkillTrack_PersonCompetencyReport({
     if (!person) {
         return (
             <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        {
-                            label: "Skill Track",
-                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                        },
-                        {
-                            label: "Reports",
-                            href: route("/orgs/[slug]/skill-track/reports", {
-                                slug: organization.slug,
-                            }),
-                        },
-                        {
-                            label: "Personnel Competency",
-                            href: route("/orgs/[slug]/skill-track/reports/person", {
-                                slug: organization.slug,
-                            }),
-                        },
-                        "Report",
-                    ]}
-                />
+                <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/person" />
                 <Std.ScrollContainer>
                     <Saratoga.Root>
                         <Empty>
@@ -162,41 +145,13 @@ export function SkillTrack_PersonCompetencyReport({
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "Skill Track",
-                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                    },
-                    {
-                        label: "Reports",
-                        href: route("/orgs/[slug]/skill-track/reports", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    {
-                        label: "Personnel Competency",
-                        href: route("/orgs/[slug]/skill-track/reports/person", {
-                            slug: organization.slug,
-                        }),
-                    },
-                    "Report",
-                ]}
-            />
+            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/person" />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            {synthetic && (
-                                <SyntheticDataDialog
-                                    config={syntheticConfig}
-                                    onConfigChange={setSyntheticConfig}
-                                    resultOptions={getEnabledSkillCheckResultOptions(
-                                        organization.settings,
-                                    )}
-                                />
-                            )}
+                            {syntheticActions}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost">
