@@ -5,19 +5,20 @@
 
 import { describe, expect, it } from "vitest";
 
+import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
+
 import { DEFAULT_SYNTHETIC_CONFIG, generateSyntheticMatrix } from "./synthetic-competency-data";
 
 type MatrixSkill = Parameters<typeof generateSyntheticMatrix>[0][number];
 
 const skills = [
-    { id: "skill-1", frequency: 12 },
-    { id: "skill-2", frequency: 24 },
-    { id: "skill-3", frequency: 6 },
+    { id: SkillId.create(), frequency: 12 },
+    { id: SkillId.create(), frequency: 24 },
+    { id: SkillId.create(), frequency: 6 },
 ] as unknown as MatrixSkill[];
 
-const personnel = [{ id: "person-a" }, { id: "person-b" }, { id: "person-c" }] as Parameters<
-    typeof generateSyntheticMatrix
->[1];
+const personnel = [{ id: PersonId.create() }, { id: PersonId.create() }, { id: PersonId.create() }];
 
 describe("generateSyntheticMatrix", () => {
     it("tags every generated competency with the person it belongs to", () => {
