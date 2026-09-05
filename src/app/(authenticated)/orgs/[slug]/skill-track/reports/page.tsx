@@ -33,7 +33,7 @@ export default async function SkillsTrack_Reports_Page(
         <Std.SidebarInset>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "Skills", href: route("/orgs/[slug]/skill-track", { slug }) },
+                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                     { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
                 ]}
             />

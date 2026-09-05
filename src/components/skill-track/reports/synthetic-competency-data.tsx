@@ -216,7 +216,7 @@ export function SyntheticDataDialog({
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <FlaskConicalIcon />
-                    Synthetic Data
+                    <span className="hidden sm:inline">Synthetic Data</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

@@ -10,8 +10,6 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
 import {
     ReportNavbar,
     SkillTrack_ReportTeamScopePicker,
@@ -96,112 +94,127 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ),
     );
 
-    const stickyFirstCol = "sticky left-0 z-10 bg-background border-r min-w-48 max-w-64 truncate";
+    const stickyFirstCol =
+        "sticky left-0 z-10 bg-background border-r min-w-32 max-w-40 sm:min-w-48 sm:max-w-64 truncate";
+
+    // TODO: person columns should be a uniform, minimal width sized to the rotated label's
+    // footprint (see PR #94 review) — auto table layout doesn't reliably honor a declared
+    // per-column width against 116+ body rows, and table-fixed didn't resolve it either
+    // (investigated in-session; needs a fresh look, possibly via <colgroup><col> or a
+    // measured inline width). Left at browser-default sizing for now.
+    const personCol = "";
+
+    const isEmpty = people.length === 0 || skills.length === 0;
 
     return (
         <>
             <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/matrix" />
-            <Std.ScrollContainer>
-                <Saratoga.Root className="max-w-none">
-                    <Saratoga.Header>
-                        <Saratoga.Title>Personnel × Skill Matrix</Saratoga.Title>
-                        {syntheticActions && (
-                            <Saratoga.Actions>{syntheticActions}</Saratoga.Actions>
-                        )}
-                    </Saratoga.Header>
+            <main className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                        <h1 className="text-lg font-semibold">Personnel × Skill Matrix</h1>
+                        <p className="text-sm text-muted-foreground">
+                            {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
+                            {skills.length} {skills.length === 1 ? "skill" : "skills"} ·{" "}
+                            {teamId ? "Team" : "Whole Organization"}
+                        </p>
+                    </div>
+                    {syntheticActions}
+                </div>
 
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
-                        {skills.length} {skills.length === 1 ? "skill" : "skills"} ·{" "}
-                        {teamId ? "Team" : "Whole Organization"}
-                    </p>
-
-                    {people.length === 0 || skills.length === 0 ? (
-                        <Empty>
-                            <EmptyDescription>
-                                {people.length === 0
-                                    ? "There are no active personnel in this scope."
-                                    : "This organization is not subscribed to any skill packages."}
-                            </EmptyDescription>
-                        </Empty>
-                    ) : (
-                        <div className="mt-6 max-h-[70vh] overflow-auto rounded-md border">
-                            <table className="border-separate border-spacing-0 text-sm">
-                                <thead>
-                                    <tr>
+                {isEmpty ? (
+                    <Empty>
+                        <EmptyDescription>
+                            {people.length === 0
+                                ? "There are no active personnel in this scope."
+                                : "This organization is not subscribed to any skill packages."}
+                        </EmptyDescription>
+                    </Empty>
+                ) : (
+                    <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded-md border">
+                        <table className="border-separate border-spacing-0 text-sm">
+                            <thead>
+                                <tr>
+                                    <th
+                                        className={cn(
+                                            stickyFirstCol,
+                                            "top-0 z-30 border-b text-left px-3 py-2 font-medium",
+                                        )}
+                                    >
+                                        Skill
+                                    </th>
+                                    {people.map((person) => (
                                         <th
+                                            key={person.id}
                                             className={cn(
-                                                stickyFirstCol,
-                                                "top-0 z-30 border-b text-left px-3 py-2 font-medium",
+                                                personCol,
+                                                "sticky top-0 z-20 h-[130px] bg-background border-b border-l px-0 py-0 font-medium",
                                             )}
+                                            title={person.name}
                                         >
-                                            Skill
-                                        </th>
-                                        {people.map((person) => (
-                                            <th
-                                                key={person.id}
-                                                className="sticky top-0 z-20 bg-background border-b border-l px-2 py-2 font-medium"
-                                                title={person.name}
-                                            >
-                                                <div className="w-8 mx-auto truncate text-center">
+                                            <div className="relative h-full w-full">
+                                                <span className="absolute top-1/2 left-1/2 w-28 origin-center -translate-x-1/2 -translate-y-1/2 overflow-hidden text-ellipsis whitespace-nowrap rotate-[-80deg] text-sm font-normal">
                                                     {person.name}
+                                                </span>
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {skillRows.map((row) =>
+                                    row.kind === "group" ? (
+                                        <tr key={`group-${row.id}`}>
+                                            <th
+                                                colSpan={people.length + 1}
+                                                className="bg-muted border-b p-0 text-left"
+                                            >
+                                                <div className="sticky left-0 z-10 w-fit bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                                    {row.label}
                                                 </div>
                                             </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {skillRows.map((row) =>
-                                        row.kind === "group" ? (
-                                            <tr key={`group-${row.id}`}>
-                                                <th
-                                                    colSpan={people.length + 1}
-                                                    className="bg-muted border-b p-0 text-left"
-                                                >
-                                                    <div className="sticky left-0 w-fit px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                        {row.label}
-                                                    </div>
-                                                </th>
-                                            </tr>
-                                        ) : (
-                                            <tr key={row.skill.id} className="hover:bg-muted/40">
-                                                <th
-                                                    scope="row"
-                                                    className={cn(
-                                                        stickyFirstCol,
-                                                        "border-b text-left px-3 py-1.5 font-normal",
-                                                    )}
-                                                    title={row.skill.name}
-                                                >
-                                                    {row.skill.name}
-                                                </th>
-                                                {people.map((person) => {
-                                                    const status = deriveStatus(
-                                                        competencyByKey.get(
-                                                            `${person.id}:${row.skill.id}`,
-                                                        ),
-                                                    );
-                                                    return (
-                                                        <td
-                                                            key={person.id}
-                                                            className="border-b border-l px-2 py-1.5 text-center"
-                                                        >
-                                                            <StatusIcon
-                                                                status={status}
-                                                                className="mx-auto"
-                                                            />
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        ),
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
+                                        </tr>
+                                    ) : (
+                                        <tr key={row.skill.id} className="hover:bg-muted/40">
+                                            <th
+                                                scope="row"
+                                                className={cn(
+                                                    stickyFirstCol,
+                                                    "border-b text-left px-3 py-1.5 font-normal",
+                                                )}
+                                                title={row.skill.name}
+                                            >
+                                                {row.skill.name}
+                                            </th>
+                                            {people.map((person) => {
+                                                const status = deriveStatus(
+                                                    competencyByKey.get(
+                                                        `${person.id}:${row.skill.id}`,
+                                                    ),
+                                                );
+                                                return (
+                                                    <td
+                                                        key={person.id}
+                                                        className={cn(
+                                                            personCol,
+                                                            "border-b border-l px-2 py-1.5 text-center",
+                                                        )}
+                                                    >
+                                                        <StatusIcon
+                                                            status={status}
+                                                            className="mx-auto"
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ),
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </main>
         </>
     );
 }
