@@ -30,7 +30,9 @@ import { trpc } from "@/trpc/client";
 export function SkillTrack_SkillMatrixReport() {
     const [team] = useQueryState("team");
 
-    if (team === null) {
+    // An absent — or malformed — `?team=` means "nothing picked yet"; show the picker rather
+    // than falling through to a full-org competency matrix.
+    if (team === null || (team !== "all" && !TeamId.schema.safeParse(team).success)) {
         return (
             <SkillTrack_ReportTeamScopePicker routePattern="/orgs/[slug]/skill-track/reports/matrix" />
         );

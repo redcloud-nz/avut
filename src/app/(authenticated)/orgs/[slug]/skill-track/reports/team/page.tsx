@@ -25,14 +25,25 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
 
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
 
-    if (typeof team === "string") {
-        const parsedTeamId = team === "all" ? undefined : TeamId.schema.safeParse(team);
+    // A malformed `?team=` isn't "whole org" — it's "nothing picked yet", so skip the
+    // prefetch and let the client show the scope picker instead.
+    if (team === "all") {
         prefetch(
             trpc.skillChecks.getCompetencyMatrix.queryOptions({
                 organizationId: organization.id,
-                teamId: parsedTeamId && parsedTeamId.success ? parsedTeamId.data : undefined,
+                teamId: undefined,
             }),
         );
+    } else if (typeof team === "string") {
+        const parsedTeamId = TeamId.schema.safeParse(team);
+        if (parsedTeamId.success) {
+            prefetch(
+                trpc.skillChecks.getCompetencyMatrix.queryOptions({
+                    organizationId: organization.id,
+                    teamId: parsedTeamId.data,
+                }),
+            );
+        }
     }
 
     return (

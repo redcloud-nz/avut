@@ -50,7 +50,9 @@ const STATUS_ORDER = ["current", "expired", "not-competent", "not-assessed"] as 
 export function SkillTrack_TeamCompetencyReport() {
     const [team] = useQueryState("team");
 
-    if (team === null) {
+    // An absent — or malformed — `?team=` means "nothing picked yet"; show the picker rather
+    // than falling through to a full-org competency matrix.
+    if (team === null || (team !== "all" && !TeamId.schema.safeParse(team).success)) {
         return (
             <SkillTrack_ReportTeamScopePicker routePattern="/orgs/[slug]/skill-track/reports/team" />
         );
