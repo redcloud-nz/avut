@@ -16,6 +16,10 @@ import {
 } from "@/components/skill-track/reports/report-scope-picker";
 import { deriveStatus, StatusIcon } from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
+import {
+    DiagonalColumnHeader,
+    DiagonalLeadColumnHeader,
+} from "@/components/ui/diagonal-column-header";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -94,15 +98,11 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ),
     );
 
-    const stickyFirstCol =
-        "sticky left-0 z-10 bg-background border-r min-w-32 max-w-40 sm:min-w-48 sm:max-w-64 truncate";
+    const stickyFirstCol = "sticky left-0 z-10 bg-background";
 
-    // TODO: person columns should be a uniform, minimal width sized to the rotated label's
-    // footprint (see PR #94 review) — auto table layout doesn't reliably honor a declared
-    // per-column width against 116+ body rows, and table-fixed didn't resolve it either
-    // (investigated in-session; needs a fresh look, possibly via <colgroup><col> or a
-    // measured inline width). Left at browser-default sizing for now.
-    const personCol = "";
+    const PERSON_HEADER_HEIGHT = 130;
+    const SKILL_COL_WIDTH = 220;
+    const PERSON_COL_WIDTH = 50;
 
     const isEmpty = people.length === 0 || skills.length === 0;
 
@@ -132,31 +132,32 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                     </Empty>
                 ) : (
                     <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded-md border">
-                        <table className="border-separate border-spacing-0 text-sm">
+                        <table className="table-fixed border-separate border-spacing-0 text-sm">
+                            <colgroup>
+                                <col style={{ width: SKILL_COL_WIDTH }} />
+                                {people.map((person) => (
+                                    <col key={person.id} style={{ width: PERSON_COL_WIDTH }} />
+                                ))}
+                            </colgroup>
                             <thead>
                                 <tr>
-                                    <th
-                                        className={cn(
-                                            stickyFirstCol,
-                                            "top-0 z-30 border-b text-left px-3 py-2 font-medium",
-                                        )}
-                                    >
-                                        Skill
+                                    <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                        <DiagonalLeadColumnHeader
+                                            label="Skill"
+                                            headerHeight={PERSON_HEADER_HEIGHT}
+                                            columnWidth={SKILL_COL_WIDTH}
+                                        />
                                     </th>
                                     {people.map((person) => (
                                         <th
                                             key={person.id}
-                                            className={cn(
-                                                personCol,
-                                                "sticky top-0 z-20 h-[130px] bg-background border-b border-l px-0 py-0 font-medium",
-                                            )}
-                                            title={person.name}
+                                            className="sticky top-0 z-20 p-0 font-medium border-b"
                                         >
-                                            <div className="relative h-full w-full">
-                                                <span className="absolute top-1/2 left-1/2 w-28 origin-center -translate-x-1/2 -translate-y-1/2 overflow-hidden text-ellipsis whitespace-nowrap rotate-[-80deg] text-sm font-normal">
-                                                    {person.name}
-                                                </span>
-                                            </div>
+                                            <DiagonalColumnHeader
+                                                label={person.name}
+                                                headerHeight={PERSON_HEADER_HEIGHT}
+                                                columnWidth={PERSON_COL_WIDTH}
+                                            />
                                         </th>
                                     ))}
                                 </tr>
@@ -180,13 +181,18 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                                 scope="row"
                                                 className={cn(
                                                     stickyFirstCol,
-                                                    "border-b text-left px-3 py-1.5 font-normal",
+                                                    "border-r border-b p-0 font-normal",
                                                 )}
                                                 title={row.skill.name}
                                             >
-                                                {row.skill.name}
+                                                <div
+                                                    className="truncate px-3 py-1.5 text-left"
+                                                    style={{ width: SKILL_COL_WIDTH }}
+                                                >
+                                                    {row.skill.name}
+                                                </div>
                                             </th>
-                                            {people.map((person) => {
+                                            {people.map((person, i) => {
                                                 const status = deriveStatus(
                                                     competencyByKey.get(
                                                         `${person.id}:${row.skill.id}`,
@@ -196,8 +202,9 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                                     <td
                                                         key={person.id}
                                                         className={cn(
-                                                            personCol,
-                                                            "border-b border-l px-2 py-1.5 text-center",
+                                                            "border-b px-2 py-1.5 text-center",
+                                                            i > 0 && "border-l",
+                                                            i === people.length - 1 && "border-r",
                                                         )}
                                                     >
                                                         <StatusIcon
