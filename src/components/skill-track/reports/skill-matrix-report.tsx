@@ -5,10 +5,13 @@
 
 "use client";
 
+import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
+
+import { ChevronDownIcon } from "lucide-react";
 
 import {
     ReportNavbar,
@@ -69,10 +72,21 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ]),
     );
 
+    const [collapsedGroups, setCollapsedGroups] = useState<ReadonlySet<string>>(new Set());
+
+    const toggleGroup = (groupId: string) =>
+        setCollapsedGroups((previous) => {
+            const next = new Set(previous);
+            if (next.has(groupId)) next.delete(groupId);
+            else next.add(groupId);
+            return next;
+        });
+
     const people = R.sortBy(personnel, (person) => person.name);
 
-    // Skills flattened in package -> group -> skill order, with a marker row before each group.
-    const skillRows = R.pipe(
+    // One section per skill group, in package -> group -> skill order. Each renders as its own
+    // <tbody> so the group's sticky header releases at the section boundary when scrolling.
+    const groupSections = R.pipe(
         skillPackages,
         R.sortBy((skillPackage) => skillPackage.name),
         R.flatMap((skillPackage) =>
@@ -89,11 +103,10 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                     if (groupSkills.length === 0) return [];
                     return [
                         {
-                            kind: "group" as const,
                             id: skillGroup.id,
                             label: `${skillPackage.name} · ${skillGroup.name}`,
+                            skills: groupSkills,
                         },
-                        ...groupSkills.map((skill) => ({ kind: "skill" as const, skill })),
                     ];
                 }),
             ),
@@ -164,62 +177,84 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {skillRows.map((row) =>
-                                    row.kind === "group" ? (
-                                        <tr key={`group-${row.id}`}>
+                            {groupSections.map((section) => {
+                                const collapsed = collapsedGroups.has(section.id);
+                                return (
+                                    <tbody key={section.id}>
+                                        <tr>
                                             <th
                                                 colSpan={people.length + 1}
-                                                className="bg-muted border-b p-0 text-left"
+                                                style={{ top: PERSON_HEADER_HEIGHT }}
+                                                className="sticky z-20 bg-muted p-0 text-left"
                                             >
-                                                <div className="sticky left-0 z-10 w-fit bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                    {row.label}
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    ) : (
-                                        <tr key={row.skill.id} className="hover:bg-muted/40">
-                                            <th
-                                                scope="row"
-                                                className={cn(
-                                                    stickyFirstCol,
-                                                    "border-r border-b p-0 font-normal",
-                                                )}
-                                                title={row.skill.name}
-                                            >
-                                                <div
-                                                    className="truncate px-3 py-1.5 text-left"
-                                                    style={{ width: SKILL_COL_WIDTH }}
-                                                >
-                                                    {row.skill.name}
-                                                </div>
-                                            </th>
-                                            {people.map((person, i) => {
-                                                const status = deriveStatus(
-                                                    competencyByKey.get(
-                                                        `${person.id}:${row.skill.id}`,
-                                                    ),
-                                                );
-                                                return (
-                                                    <td
-                                                        key={person.id}
-                                                        className={cn(
-                                                            "border-b px-2 py-1.5 text-center",
-                                                            i > 0 && "border-l",
-                                                            i === people.length - 1 && "border-r",
-                                                        )}
+                                                {/* Full-width wrapper carries the divider — a
+                                                    border on the sticky <th> itself paints
+                                                    unreliably once it's stuck. The button stays
+                                                    narrow so it has room to stick horizontally. */}
+                                                <div className="border-b">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleGroup(section.id)}
+                                                        aria-expanded={!collapsed}
+                                                        className="sticky left-0 z-10 flex w-fit items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground"
                                                     >
-                                                        <StatusIcon
-                                                            status={status}
-                                                            className="mx-auto"
+                                                        <ChevronDownIcon
+                                                            className={cn(
+                                                                "size-3.5 transition-transform",
+                                                                collapsed && "-rotate-90",
+                                                            )}
                                                         />
-                                                    </td>
-                                                );
-                                            })}
+                                                        {section.label}
+                                                    </button>
+                                                </div>
+                                            </th>
                                         </tr>
-                                    ),
-                                )}
-                            </tbody>
+                                        {!collapsed &&
+                                            section.skills.map((skill) => (
+                                                <tr key={skill.id} className="hover:bg-muted/40">
+                                                    <th
+                                                        scope="row"
+                                                        className={cn(
+                                                            stickyFirstCol,
+                                                            "border-r border-b p-0 font-normal",
+                                                        )}
+                                                        title={skill.name}
+                                                    >
+                                                        <div
+                                                            className="truncate px-3 py-1.5 text-left"
+                                                            style={{ width: SKILL_COL_WIDTH }}
+                                                        >
+                                                            {skill.name}
+                                                        </div>
+                                                    </th>
+                                                    {people.map((person, i) => {
+                                                        const status = deriveStatus(
+                                                            competencyByKey.get(
+                                                                `${person.id}:${skill.id}`,
+                                                            ),
+                                                        );
+                                                        return (
+                                                            <td
+                                                                key={person.id}
+                                                                className={cn(
+                                                                    "border-b px-2 py-1.5 text-center",
+                                                                    i > 0 && "border-l",
+                                                                    i === people.length - 1 &&
+                                                                        "border-r",
+                                                                )}
+                                                            >
+                                                                <StatusIcon
+                                                                    status={status}
+                                                                    className="mx-auto"
+                                                                />
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                    </tbody>
+                                );
+                            })}
                         </table>
                     </div>
                 )}
