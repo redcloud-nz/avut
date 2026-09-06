@@ -53,9 +53,6 @@ export function SkillTrack_PersonCompetencyReport() {
 }
 
 const HEADER_HEIGHT = 36;
-const SKILL_COL_WIDTH = "55%";
-const DATE_COL_WIDTH = "20%";
-const STATUS_COL_WIDTH = "25%";
 
 const stickyFirstCol = "sticky left-0 z-10 bg-background";
 const headCell =
@@ -211,9 +208,9 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                     <Glorious.ScrollFrame>
                         <Glorious.Table className="w-full">
                             <colgroup>
-                                <col style={{ width: SKILL_COL_WIDTH }} />
-                                <col style={{ width: DATE_COL_WIDTH }} />
-                                <col style={{ width: STATUS_COL_WIDTH }} />
+                                <col className="w-[60%] sm:w-[55%]" />
+                                <col className="w-[40%] sm:w-[25%]" />
+                                <col className="hidden sm:table-column sm:w-[20%]" />
                             </colgroup>
                             <Glorious.TableHeader>
                                 <th
@@ -225,11 +222,21 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                                 >
                                     Skill
                                 </th>
-                                <th className={cn(headCell, "sticky top-0 z-20 text-center")}>
-                                    Last Checked
-                                </th>
-                                <th className={cn(headCell, "sticky top-0 z-20 text-center")}>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 text-center sm:border-r",
+                                    )}
+                                >
                                     Status
+                                </th>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 hidden text-center sm:table-cell",
+                                    )}
+                                >
+                                    Last Checked
                                 </th>
                             </Glorious.TableHeader>
                             {groupSections.map((section) => (
@@ -256,13 +263,13 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                                                     </div>
                                                 )}
                                             </th>
-                                            <td className="border-b px-3 py-1.5 text-center align-top text-sm text-muted-foreground tabular-nums">
+                                            <td className="border-b px-3 py-1.5 text-center align-top sm:border-r">
+                                                <StatusBadge status={status} />
+                                            </td>
+                                            <td className="hidden border-b px-3 py-1.5 text-center align-top text-sm text-muted-foreground tabular-nums sm:table-cell">
                                                 {competency
                                                     ? formatDate(competency.checkedAt)
                                                     : "—"}
-                                            </td>
-                                            <td className="border-b px-3 py-1.5 text-center align-top">
-                                                <StatusBadge status={status} />
                                             </td>
                                         </tr>
                                     ))}
