@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import { ObjectIcons, SkillsIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
+import { RESULT_ICONS } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -34,23 +35,6 @@ import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
 
 const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
 const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass", "StrongPass"];
-
-/** Distinct icon + color per exact result value, so tiers within a family read at a glance. */
-const RESULT_ICONS: Record<
-    SkillCheckResultValue,
-    { Icon: typeof SkillsIcons.Pass; className: string }
-> = {
-    NotTaught: { Icon: SkillsIcons.NotTaught, className: "text-gray-500" },
-    LowFail: { Icon: SkillsIcons.LowFail, className: "text-red-500" },
-    Fail: { Icon: SkillsIcons.Fail, className: "text-orange-500" },
-    HighFail: { Icon: SkillsIcons.HighFail, className: "text-gray-400" },
-    WeakPass: { Icon: SkillsIcons.WeakPass, className: "text-gray-400" },
-    Pass: { Icon: SkillsIcons.Pass, className: "text-green-500" },
-    StrongPass: { Icon: SkillsIcons.StrongPass, className: "text-blue-500" },
-    Exempt: { Icon: SkillsIcons.NotTaught, className: "text-gray-500" },
-    Expired: { Icon: SkillsIcons.NotTaught, className: "text-gray-500" },
-    Provisional: { Icon: SkillsIcons.NotTaught, className: "text-gray-500" },
-};
 
 /**
  * The next tier to land on when clicking a family's cycle button — advances to the next
