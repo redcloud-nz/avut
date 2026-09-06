@@ -17,7 +17,7 @@ import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
-    title: `Personnel Competency`,
+    title: `Personal Competency Report`,
 };
 
 export default async function SkillTrack_ReportsPersonCompetency_Page(

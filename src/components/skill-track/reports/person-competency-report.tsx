@@ -169,15 +169,17 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
             <Glorious.Header>
                 <Glorious.Title>Personal Competency Report</Glorious.Title>
                 <Glorious.Subtitle>
-                    Person: {person.name}
-                    <br />
-                    {rows.length} {rows.length === 1 ? "skill" : "skills"}
+                    <div>
+                        {person.name}
+                        {" · "}
+                        {rows.length} {rows.length === 1 ? "skill" : "skills"}
+                    </div>
+
                     {showStatusCounts && (
-                        <>
-                            {" "}
-                            · {counts.current} current · {counts.expired} expired ·{" "}
+                        <div>
+                            {counts.current} current · {counts.expired} expired ·{" "}
                             {counts.notCompetent} not competent · {counts.notAssessed} not assessed
-                        </>
+                        </div>
                     )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>

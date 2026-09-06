@@ -61,7 +61,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                             href: route("/orgs/[slug]/skill-track/reports", { slug }),
                         },
                         {
-                            label: "Personnel × Skill Matrix Report",
+                            label: "Personnel × Skill Matrix",
                             href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
                         },
                     ]}

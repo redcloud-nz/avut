@@ -165,8 +165,7 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
             <Glorious.Header>
                 <Glorious.Title>Team Competency Report</Glorious.Title>
                 <Glorious.Subtitle>
-                    Scope: {scopeLabel} ({total} {total === 1 ? "person" : "people"})
-                    <br />
+                    {scopeLabel} ({total} {total === 1 ? "person" : "people"}){" · "}
                     {rows.length} {rows.length === 1 ? "skill" : "skills"}
                 </Glorious.Subtitle>
                 <Glorious.Actions>

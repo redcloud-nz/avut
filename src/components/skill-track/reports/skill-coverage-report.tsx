@@ -111,9 +111,10 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
             <Glorious.Header>
                 <Glorious.Title>Skill Coverage Report</Glorious.Title>
                 <Glorious.Subtitle>
-                    Skill: {skill ? skill.name : "Unknown Skill"}
-                    <br />
-                    Scope: {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
+                    {skill ? skill.name : "Unknown Skill"}
+                    <span className="hidden sm:inline">{" · "}</span>
+                    <br className="inline sm:hidden" />
+                    {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
                 </Glorious.Subtitle>
                 <Glorious.Actions>
                     <SkillTrack_SkillScopeDialog />

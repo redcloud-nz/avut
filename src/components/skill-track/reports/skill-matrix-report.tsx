@@ -156,17 +156,20 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
             <Glorious.Header>
                 <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                 <Glorious.Subtitle>
-                    Scope: {scopeLabel} ({people.length} {people.length === 1 ? "person" : "people"}
-                    )
-                    <br />
-                    {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                    <div>
+                        {scopeLabel} ({people.length} {people.length === 1 ? "person" : "people"})
+                        <span className="hidden sm:inline">{" · "}</span>
+                        <br className="inline sm:hidden" />
+                        {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                    </div>
+                    <div></div>
+
                     {showStatusCounts && (
-                        <>
-                            {" "}
-                            · {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
+                        <div>
+                            {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
                             {cellCounts["not-competent"]} not competent ·{" "}
                             {cellCounts["not-assessed"]} not assessed
-                        </>
+                        </div>
                     )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
