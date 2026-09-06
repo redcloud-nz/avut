@@ -33,7 +33,7 @@ export default async function SkillsTrack_Reports_Page(
         <Std.SidebarInset>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "Skills", href: route("/orgs/[slug]/skill-track", { slug }) },
+                    { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                     { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
                 ]}
             />
@@ -51,6 +51,59 @@ export default async function SkillsTrack_Reports_Page(
                                         <ItemTitle>Personnel Competency</ItemTitle>
                                         <ItemDescription>
                                             Competency and currency for an individual person.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        {/* These three also list teams for their scope picker/filter, so they
+                            need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
+                            a link that then hits a FORBIDDEN error when it loads. */}
+                        <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/team", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Team Competency</ItemTitle>
+                                        <ItemDescription>
+                                            Competency gaps across a team or the whole organization,
+                                            summarised per skill.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/matrix", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Personnel × Skill Matrix</ItemTitle>
+                                        <ItemDescription>
+                                            Every person against every skill in one grid.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/skill-track/reports/skill", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Skill Coverage</ItemTitle>
+                                        <ItemDescription>
+                                            Who currently holds a given skill.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

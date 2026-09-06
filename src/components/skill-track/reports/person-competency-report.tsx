@@ -7,7 +7,6 @@
 
 import { useState } from "react";
 import * as R from "remeda";
-import { match } from "ts-pattern";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -16,7 +15,11 @@ import { ChevronDownIcon, UserXIcon } from "lucide-react";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-import { Badge } from "@/components/ui/badge";
+import {
+    deriveStatus,
+    StatusBadge,
+    type CompetencyStatus,
+} from "@/components/skill-track/reports/competency-status";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -34,15 +37,13 @@ import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
-import { getEnabledSkillCheckResultOptions, isCompetentResult } from "@/lib/schemas/skill-check";
+import { getEnabledSkillCheckResultOptions } from "@/lib/schemas/skill-check";
 import {
     DEFAULT_SYNTHETIC_CONFIG,
     generateSyntheticCompetencies,
     SyntheticDataDialog,
 } from "@/components/skill-track/reports/synthetic-competency-data";
 import { trpc } from "@/trpc/client";
-
-type CompetencyStatus = "current" | "expired" | "not-competent" | "not-assessed";
 
 export function SkillTrack_PersonCompetencyReport({
     personId,
@@ -81,13 +82,7 @@ export function SkillTrack_PersonCompetencyReport({
     // expiry is only meaningful for a competent result.
     const rows = skills.map((skill) => {
         const competency = competencyBySkillId.get(skill.id);
-        const status: CompetencyStatus = !competency
-            ? "not-assessed"
-            : !isCompetentResult(competency.result)
-              ? "not-competent"
-              : competency.isCurrent
-                ? "current"
-                : "expired";
+        const status: CompetencyStatus = deriveStatus(competency);
         return { skill, competency, status };
     });
 
@@ -306,27 +301,4 @@ export function SkillTrack_PersonCompetencyReport({
             </Std.ScrollContainer>
         </>
     );
-}
-
-function StatusBadge({ status }: { status: CompetencyStatus }) {
-    return match(status)
-        .with("current", () => (
-            <Badge
-                variant="outline"
-                className="border-green-600 text-green-700 dark:text-green-500"
-            >
-                Current
-            </Badge>
-        ))
-        .with("expired", () => (
-            <Badge
-                variant="outline"
-                className="border-amber-600 text-amber-700 dark:text-amber-500"
-            >
-                Expired
-            </Badge>
-        ))
-        .with("not-competent", () => <Badge variant="destructive">Not Competent</Badge>)
-        .with("not-assessed", () => <Badge variant="secondary">Not Assessed</Badge>)
-        .exhaustive();
 }
