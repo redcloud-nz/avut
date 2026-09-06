@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
+import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -52,7 +54,6 @@ import { trpc } from "@/trpc/client";
 
 const CreateCheckSchema = z.object({
     assesseeId: PersonId.schema,
-    assessorId: PersonId.schema,
     skillId: SkillId.schema,
     result: SkillCheckResultValue.schema,
     notes: z.string(),
@@ -77,6 +78,16 @@ export function SkillTrack_CreateCheck_Dialog() {
             category: "Checks",
         },
     ]);
+
+    // The assessor is always the current user's linked person — mirrors the session
+    // check-taking flow, where the recorder can't stand in for someone else.
+    const personSelfQuery = useQuery(
+        trpc.personnel.getPersonSelf.queryOptions(
+            { organizationId: organization.id },
+            { enabled: dialogOpen },
+        ),
+    );
+    const personSelf = personSelfQuery.data;
 
     const personnelQuery = useQuery(
         trpc.personnel.listPersonnel.queryOptions(
@@ -112,7 +123,6 @@ export function SkillTrack_CreateCheck_Dialog() {
         resolver: zodResolver(CreateCheckSchema),
         defaultValues: {
             assesseeId: undefined,
-            assessorId: undefined,
             skillId: undefined,
             result: undefined,
             notes: "",
@@ -145,6 +155,9 @@ export function SkillTrack_CreateCheck_Dialog() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [dialogOpen]);
 
+    // getPersonSelf returns null (not undefined) once loaded with no linked person.
+    const hasNoLinkedPerson = personSelfQuery.isSuccess && personSelf === null;
+
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -158,142 +171,150 @@ export function SkillTrack_CreateCheck_Dialog() {
                     <DialogTitle>Add Skill Check</DialogTitle>
                     <DialogDescription>
                         Record a single skill check outside of a session — for an informal
-                        observation or a historical result.
+                        observation or a historical result. You are recorded as the assessor.
                     </DialogDescription>
                 </DialogHeader>
-                <form
-                    id="add-check-form"
-                    onSubmit={form.handleSubmit(
-                        (formData) =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                skillCheckId: SkillCheckId.create(),
-                                sessionId: null,
-                                create: formData,
-                            }),
-                        (errors) => {
-                            console.error("Form validation errors:", errors);
-                        },
-                    )}
-                >
-                    <FieldGroup>
-                        <Controller
-                            name="assesseeId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Assessee</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value}
-                                        onValueChange={(value) =>
-                                            field.onChange((value as PersonId) || undefined)
-                                        }
-                                        options={personnelOptions}
-                                        placeholder="Select a person"
-                                        searchPlaceholder="Search personnel..."
-                                        emptyMessage="No personnel found."
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="assessorId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Assessor</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value}
-                                        onValueChange={(value) =>
-                                            field.onChange((value as PersonId) || undefined)
-                                        }
-                                        options={personnelOptions}
-                                        placeholder="Select a person"
-                                        searchPlaceholder="Search personnel..."
-                                        emptyMessage="No personnel found."
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="skillId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Skill</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value}
-                                        onValueChange={(value) =>
-                                            field.onChange((value as SkillId) || undefined)
-                                        }
-                                        options={skillOptions}
-                                        placeholder="Select a skill"
-                                        searchPlaceholder="Search skills..."
-                                        emptyMessage="No assessable skills found."
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="result"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Result</FieldLabel>
-                                    <Select
-                                        value={field.value ?? ""}
-                                        onValueChange={(value) =>
-                                            field.onChange(
-                                                (value as SkillCheckResultValue) || undefined,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger aria-invalid={fieldState.invalid}>
-                                            <SelectValue placeholder="Select a result" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {resultOptions.map((option) => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="notes"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Notes</FieldLabel>
-                                    <Textarea {...field} placeholder="Notes" />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                {hasNoLinkedPerson ? (
+                    <Alert variant="warning">
+                        <AlertTitle>No linked person record</AlertTitle>
+                        <AlertDescription>
+                            Your account is not linked to a person record in this organization.
+                            Contact an administrator to link your account before recording skill
+                            checks.
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <form
+                        id="add-check-form"
+                        onSubmit={form.handleSubmit(
+                            (formData) => {
+                                if (!personSelf) return;
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillCheckId: SkillCheckId.create(),
+                                    sessionId: null,
+                                    create: { ...formData, assessorId: personSelf.id },
+                                });
+                            },
+                            (errors) => {
+                                console.error("Form validation errors:", errors);
+                            },
+                        )}
+                    >
+                        <FieldGroup>
+                            <Controller
+                                name="assesseeId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Assessee</FieldLabel>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={(value) =>
+                                                field.onChange((value as PersonId) || undefined)
+                                            }
+                                            options={personnelOptions}
+                                            placeholder="Select a person"
+                                            searchPlaceholder="Search personnel..."
+                                            emptyMessage="No personnel found."
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="skillId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Skill</FieldLabel>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={(value) =>
+                                                field.onChange((value as SkillId) || undefined)
+                                            }
+                                            options={skillOptions}
+                                            placeholder="Select a skill"
+                                            searchPlaceholder="Search skills..."
+                                            emptyMessage="No assessable skills found."
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="result"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Result</FieldLabel>
+                                        <Select
+                                            value={field.value ?? ""}
+                                            onValueChange={(value) =>
+                                                field.onChange(
+                                                    (value as SkillCheckResultValue) || undefined,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a result" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {resultOptions.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        <SkillCheckResultIcon
+                                                            result={option.value}
+                                                        />
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="notes"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Notes</FieldLabel>
+                                        <Textarea {...field} placeholder="Notes" />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                )}
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="add-check-form"
-                        status={mutation.status}
-                        text={{
-                            idle: "Add Check",
-                            pending: "Adding...",
-                            success: "Added",
-                        }}
-                    />
+                    {!hasNoLinkedPerson && (
+                        <MutationButton
+                            type="submit"
+                            form="add-check-form"
+                            status={mutation.status}
+                            text={{
+                                idle: "Add Check",
+                                pending: "Adding...",
+                                success: "Added",
+                            }}
+                        />
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
