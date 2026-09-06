@@ -161,7 +161,7 @@ export function SkillTrack_CreateCheck_Dialog() {
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" aria-label="Add Check">
                     <ObjectIcons.Create />
                     <span className="hidden sm:inline">Add Check</span>
                 </Button>
@@ -307,6 +307,7 @@ export function SkillTrack_CreateCheck_Dialog() {
                         <MutationButton
                             type="submit"
                             form="add-check-form"
+                            disabled={!personSelf}
                             status={mutation.status}
                             text={{
                                 idle: "Add Check",
