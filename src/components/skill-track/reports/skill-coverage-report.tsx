@@ -5,15 +5,30 @@
 
 "use client";
 
+import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
-import { deriveStatus, StatusBadge } from "@/components/skill-track/reports/competency-status";
+import {
+    deriveStatus,
+    StatusBadge,
+    tallyStatuses,
+} from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -82,6 +97,8 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         recordedCompetencies,
     );
 
+    const [showStatusCounts, setShowStatusCounts] = useState(true);
+
     const skill = skills.find((candidate) => candidate.id === skillId);
 
     const competencyByAssessee = new Map(
@@ -102,6 +119,8 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         R.sortBy((row) => row.name),
     );
 
+    const counts = tallyStatuses(rows.map((row) => row.status));
+
     const scopeLabel = teamId
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
         : "Whole Organization";
@@ -111,14 +130,41 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
             <Glorious.Header>
                 <Glorious.Title>Skill Coverage Report</Glorious.Title>
                 <Glorious.Subtitle>
-                    {skill ? skill.name : "Unknown Skill"}
-                    <span className="hidden sm:inline">{" · "}</span>
-                    <br className="inline sm:hidden" />
-                    {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
+                    <div>
+                        {skill ? skill.name : "Unknown Skill"}
+                        <span className="hidden sm:inline">{" · "}</span>
+                        <br className="inline sm:hidden" />
+                        {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
+                    </div>
+                    {showStatusCounts && (
+                        <div>
+                            {counts.current} current · {counts.expired} expired ·{" "}
+                            {counts["not-competent"]} not competent · {counts["not-assessed"]} not
+                            assessed
+                        </div>
+                    )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
                     <SkillTrack_SkillScopeDialog />
                     {syntheticActions}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost">
+                                <DropdownMenuTriggerIcon />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                <DropdownMenuCheckboxItem
+                                    checked={showStatusCounts}
+                                    onCheckedChange={setShowStatusCounts}
+                                >
+                                    <span>Status Counts</span>
+                                </DropdownMenuCheckboxItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </Glorious.Actions>
             </Glorious.Header>
 
