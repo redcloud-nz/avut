@@ -34,7 +34,7 @@ export function SkillTrack_SkillMatrixReport() {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Personnel × Skill Matrix</Glorious.Title>
+                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_TeamScopeDialog forceOpen label="Select a scope" />
                     </Glorious.Actions>
@@ -57,6 +57,10 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
     const teamId = parsedTeamId.success ? parsedTeamId.data : undefined;
 
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
     } = useSuspenseQuery(
@@ -65,6 +69,10 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
             teamId,
         }),
     );
+
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
 
     const { competencies, syntheticActions } = useSyntheticCompetencies(
         skills,
@@ -122,11 +130,10 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         <Glorious.Root>
             <Glorious.Header>
                 <div>
-                    <Glorious.Title>Personnel × Skill Matrix</Glorious.Title>
+                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                     <Glorious.Subtitle>
                         {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
-                        {skills.length} {skills.length === 1 ? "skill" : "skills"} ·{" "}
-                        {teamId ? "Team" : "Whole Organization"}
+                        {skills.length} {skills.length === 1 ? "skill" : "skills"} · {scopeLabel}
                     </Glorious.Subtitle>
                 </div>
                 <Glorious.Actions>

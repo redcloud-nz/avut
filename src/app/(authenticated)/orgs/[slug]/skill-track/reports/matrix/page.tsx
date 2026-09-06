@@ -17,7 +17,7 @@ import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
-    title: `Personnel × Skill Matrix`,
+    title: `Personnel × Skill Matrix Report`,
 };
 
 export default async function SkillTrack_ReportsSkillMatrix_Page(
@@ -61,7 +61,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                             href: route("/orgs/[slug]/skill-track/reports", { slug }),
                         },
                         {
-                            label: "Personnel × Skill Matrix",
+                            label: "Personnel × Skill Matrix Report",
                             href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
                         },
                     ]}

@@ -81,6 +81,10 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
     const teamId = parsedTeamId.success ? parsedTeamId.data : undefined;
 
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
     } = useSuspenseQuery(
@@ -151,7 +155,9 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         ),
     );
 
-    const scopeLabel = teamId ? "Team" : "Whole Organization";
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
 
     return (
         <Glorious.Root>
