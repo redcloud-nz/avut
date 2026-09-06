@@ -12,6 +12,17 @@ import { trpc } from "@/trpc/client";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
  */
 export const skillChecksEffects = createEffects<"skillChecks">()({
+    createSkillCheck: (vars) => [
+        // A standalone check adds a row to the recent-checks list and to any scoped
+        // listSkillChecks cache (e.g. the session matrices), so both need to refetch.
+        invalidate(
+            trpc.skillChecks.listRecentChecks.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
+
     approveSession: (vars, { updated }) => [
         write(
             trpc.skills.getSession.queryKey({

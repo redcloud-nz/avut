@@ -59,6 +59,9 @@ export const Roles = {
     "skills-assessor": ac.newRole({
         organization: ["view"],
         skillPackageSubscription: ["view"],
+        // Recording a check — in a session or standalone — means picking the assessee and
+        // assessor from the org's personnel, so an assessor needs to read personnel records.
+        person: ["view"],
         // Mirrors the session grant below: an assessor who can record a check must also be
         // able to amend it, and `approveSession` requires `skillCheck: ["update"]` alongside
         // `skillCheckSession: ["update"]`.
