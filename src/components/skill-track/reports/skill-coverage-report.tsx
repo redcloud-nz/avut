@@ -13,6 +13,10 @@ import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import {
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+} from "@/components/skill-track/reports/report-cell-popovers";
 import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import {
@@ -93,8 +97,13 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
-        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    const {
+        competencies,
+        isSynthetic,
+        syntheticActions,
+        syntheticMenuItem,
+        syntheticOpenMenuItem,
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const [showStatusCounts, setShowStatusCounts] = useState(true);
 
@@ -111,6 +120,7 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
             return {
                 id: person.id,
                 name: person.name,
+                competency,
                 status: deriveStatus(competency),
                 checkedAt: competency?.checkedAt ?? null,
             };
@@ -125,125 +135,137 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         : "Whole Organization";
 
     return (
-        <Glorious.Root>
-            <Glorious.Header>
-                <Glorious.Title>Skill Coverage Report</Glorious.Title>
-                <Glorious.Subtitle>
-                    <div>
-                        {skill ? skill.name : "Unknown Skill"}
-                        <span className="hidden sm:inline">{" · "}</span>
-                        <br className="inline sm:hidden" />
-                        {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
-                    </div>
-                    {showStatusCounts && (
+        <ReportCellPopoversProvider isSynthetic={isSynthetic}>
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>Skill Coverage Report</Glorious.Title>
+                    <Glorious.Subtitle>
                         <div>
-                            {counts.current} current · {counts.expired} expired ·{" "}
-                            {counts["not-competent"]} not competent · {counts["not-assessed"]} not
-                            assessed
+                            {skill ? skill.name : "Unknown Skill"}
+                            <span className="hidden sm:inline">{" · "}</span>
+                            <br className="inline sm:hidden" />
+                            {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
                         </div>
-                    )}
-                </Glorious.Subtitle>
-                <Glorious.Actions>
-                    <SkillTrack_SkillScopeDialog compact />
-                    {syntheticActions}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
-                                <DropdownMenuTriggerIcon />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end">
-                            <DropdownMenuGroup>
-                                <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                <DropdownMenuCheckboxItem
-                                    checked={showStatusCounts}
-                                    onCheckedChange={setShowStatusCounts}
-                                >
-                                    <span>Status Counts</span>
-                                </DropdownMenuCheckboxItem>
-                            </DropdownMenuGroup>
-                            <DropdownMenuSeparator className="sm:hidden" />
-                            <SkillTrack_ScopeDialogMenuItem />
-                            {syntheticOpenMenuItem}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </Glorious.Actions>
-            </Glorious.Header>
-
-            {!skill ? (
-                <Empty>
-                    <EmptyDescription>
-                        That skill is not in any of this organization&apos;s subscribed packages.
-                    </EmptyDescription>
-                </Empty>
-            ) : rows.length === 0 ? (
-                <Empty>
-                    <EmptyDescription>
-                        There are no active personnel in this scope.
-                    </EmptyDescription>
-                </Empty>
-            ) : (
-                <Glorious.ScrollFrame>
-                    <Glorious.Table className="w-full">
-                        <colgroup>
-                            <col className="w-[60%] sm:w-[50%]" />
-                            <col className="w-[40%] sm:w-[25%]" />
-                            <col className="hidden sm:table-column sm:w-[25%]" />
-                        </colgroup>
-                        <Glorious.TableHeader>
-                            <th
-                                className={cn(
-                                    stickyFirstCol,
-                                    headCell,
-                                    "top-0 z-30 border-r text-left",
-                                )}
-                            >
-                                Name
-                            </th>
-                            <th
-                                className={cn(
-                                    headCell,
-                                    "sticky top-0 z-20 text-center sm:border-r",
-                                )}
-                            >
-                                Status
-                            </th>
-                            <th
-                                className={cn(
-                                    headCell,
-                                    "sticky top-0 z-20 hidden text-center sm:table-cell",
-                                )}
-                            >
-                                Last Checked
-                            </th>
-                        </Glorious.TableHeader>
-                        <tbody>
-                            {rows.map((row) => (
-                                <tr key={row.id} className="hover:bg-muted/40">
-                                    <th
-                                        scope="row"
-                                        className={cn(
-                                            stickyFirstCol,
-                                            "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
-                                        )}
-                                        title={row.name}
+                        {showStatusCounts && (
+                            <div>
+                                {counts.current} current · {counts.expired} expired ·{" "}
+                                {counts["not-competent"]} not competent · {counts["not-assessed"]}{" "}
+                                not assessed
+                            </div>
+                        )}
+                    </Glorious.Subtitle>
+                    <Glorious.Actions>
+                        <SkillTrack_SkillScopeDialog compact />
+                        {syntheticActions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showStatusCounts}
+                                        onCheckedChange={setShowStatusCounts}
                                     >
-                                        {row.name}
-                                    </th>
-                                    <td className="border-b px-3 py-1.5 text-center align-middle sm:border-r">
-                                        <StatusBadge status={row.status} />
-                                    </td>
-                                    <td className="hidden border-b px-3 py-1.5 text-center align-middle text-sm text-muted-foreground tabular-nums sm:table-cell">
-                                        {row.checkedAt ? formatDate(row.checkedAt) : "—"}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Glorious.Table>
-                </Glorious.ScrollFrame>
-            )}
-        </Glorious.Root>
+                                        <span>Status Counts</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator className="sm:hidden" />
+                                <SkillTrack_ScopeDialogMenuItem />
+                                {syntheticOpenMenuItem}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Glorious.Actions>
+                </Glorious.Header>
+
+                {!skill ? (
+                    <Empty>
+                        <EmptyDescription>
+                            That skill is not in any of this organization&apos;s subscribed
+                            packages.
+                        </EmptyDescription>
+                    </Empty>
+                ) : rows.length === 0 ? (
+                    <Empty>
+                        <EmptyDescription>
+                            There are no active personnel in this scope.
+                        </EmptyDescription>
+                    </Empty>
+                ) : (
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table className="w-full">
+                            <colgroup>
+                                <col className="w-[60%] sm:w-[50%]" />
+                                <col className="w-[40%] sm:w-[25%]" />
+                                <col className="hidden sm:table-column sm:w-[25%]" />
+                            </colgroup>
+                            <Glorious.TableHeader>
+                                <th
+                                    className={cn(
+                                        stickyFirstCol,
+                                        headCell,
+                                        "top-0 z-30 border-r text-left",
+                                    )}
+                                >
+                                    Name
+                                </th>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 text-center sm:border-r",
+                                    )}
+                                >
+                                    Status
+                                </th>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 hidden text-center sm:table-cell",
+                                    )}
+                                >
+                                    Last Checked
+                                </th>
+                            </Glorious.TableHeader>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <tr key={row.id} className="hover:bg-muted/40">
+                                        <th
+                                            scope="row"
+                                            className={cn(
+                                                stickyFirstCol,
+                                                "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
+                                            )}
+                                            title={row.name}
+                                        >
+                                            {row.name}
+                                        </th>
+                                        <td className="border-b px-3 py-1.5 text-center align-middle sm:border-r">
+                                            {row.competency ? (
+                                                <CheckDetailsTrigger
+                                                    competency={row.competency}
+                                                    className="cursor-pointer hover:opacity-80"
+                                                >
+                                                    <StatusBadge status={row.status} />
+                                                </CheckDetailsTrigger>
+                                            ) : (
+                                                <StatusBadge status={row.status} />
+                                            )}
+                                        </td>
+                                        <td className="hidden border-b px-3 py-1.5 text-center align-middle text-sm text-muted-foreground tabular-nums sm:table-cell">
+                                            {row.checkedAt ? formatDate(row.checkedAt) : "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
+                )}
+            </Glorious.Root>
+        </ReportCellPopoversProvider>
     );
 }

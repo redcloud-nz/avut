@@ -359,6 +359,32 @@ export const skillChecksRouter = createTrpcRouter({
         }),
 
     /**
+     * Returns a single skill check by id, with the assessor's name resolved. Used by the
+     * competency reports to populate the "check details" popover on demand.
+     */
+    getSkillCheck: organizationProcedure({ skillCheck: ["view"] })
+        .input(z.object({ skillCheckId: SkillCheckId.schema }))
+        .output(SkillCheck.schema.extend({ assessor: PersonRef.schema }))
+        .query(async ({ ctx, input }) => {
+            const check = await ctx.prisma.skillCheck.findFirst({
+                where: { id: input.skillCheckId, organizationId: ctx.organizationId },
+                include: { assessor: { select: { id: true, name: true } } },
+            });
+
+            if (!check) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckNotFound(input.skillCheckId),
+                });
+            }
+
+            return {
+                ...SkillCheck.fromRecord(check),
+                assessor: PersonRef.schema.parse(check.assessor),
+            };
+        }),
+
+    /**
      * Lists skill checks recorded within the last month, with resolved names for assessee,
      * assessor, skill, and session. Ordered by createdAt descending.
      */

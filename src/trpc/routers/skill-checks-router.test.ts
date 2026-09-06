@@ -912,3 +912,90 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
         });
     });
 });
+
+describe("skillChecks.getSkillCheck", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        skill: SkillId.create(),
+        check: nanoId16(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessor,
+                organizationId: T.org,
+                name: "Dana Assessor",
+                email: `${T.assessor}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessee,
+                organizationId: T.org,
+                name: "Pat Assessee",
+                email: `${T.assessee}@example.com`,
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: T.check as never,
+                organizationId: T.org,
+                assesseeId: T.assessee,
+                assessorId: T.assessor,
+                skillId: T.skill,
+                result: "Pass",
+                notes: "Solid technique",
+                status: "Include",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillCheck: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns the check with the assessor's name resolved", async () => {
+        const result = await makeCaller().getSkillCheck({
+            organizationId: T.org,
+            skillCheckId: T.check as never,
+        });
+
+        expect(result.notes).toBe("Solid technique");
+        expect(result.result).toBe("Pass");
+        expect(result.assessor).toEqual({ id: T.assessor, name: "Dana Assessor" });
+    });
+
+    it("throws NOT_FOUND for an unknown check", async () => {
+        await expect(
+            makeCaller().getSkillCheck({
+                organizationId: T.org,
+                skillCheckId: nanoId16() as never,
+            }),
+        ).rejects.toThrow(TRPCError);
+    });
+
+    it("does not return a check from another organization", async () => {
+        await expect(
+            makeCaller().getSkillCheck({
+                organizationId: T.otherOrg,
+                skillCheckId: T.check as never,
+            }),
+        ).rejects.toThrow(TRPCError);
+    });
+});

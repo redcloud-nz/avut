@@ -13,6 +13,11 @@ import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import {
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+    SkillInfoTrigger,
+} from "@/components/skill-track/reports/report-cell-popovers";
 import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import {
@@ -94,8 +99,13 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
         : "Whole Organization";
 
-    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
-        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    const {
+        competencies,
+        isSynthetic,
+        syntheticActions,
+        syntheticMenuItem,
+        syntheticOpenMenuItem,
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const competencyByKey = new Map(
         competencies.map((competency) => [
@@ -151,153 +161,175 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     const isEmpty = people.length === 0 || skills.length === 0;
 
     return (
-        <Glorious.Root>
-            <Glorious.Header>
-                <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
-                <Glorious.Subtitle>
-                    <div>
-                        {scopeLabel} ({people.length} {people.length === 1 ? "person" : "people"})
-                        <span className="hidden sm:inline">{" · "}</span>
-                        <br className="inline sm:hidden" />
-                        {skills.length} {skills.length === 1 ? "skill" : "skills"}
-                    </div>
-                    {showStatusCounts && (
+        <ReportCellPopoversProvider isSynthetic={isSynthetic}>
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
+                    <Glorious.Subtitle>
                         <div>
-                            {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
-                            {cellCounts["not-competent"]} not competent ·{" "}
-                            {cellCounts["not-assessed"]} not assessed
+                            {scopeLabel} ({people.length}{" "}
+                            {people.length === 1 ? "person" : "people"})
+                            <span className="hidden sm:inline">{" · "}</span>
+                            <br className="inline sm:hidden" />
+                            {skills.length} {skills.length === 1 ? "skill" : "skills"}
                         </div>
-                    )}
-                </Glorious.Subtitle>
-                <Glorious.Actions>
-                    <SkillTrack_TeamScopeDialog compact />
-                    {syntheticActions}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost">
-                                <DropdownMenuTriggerIcon />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end">
-                            <DropdownMenuGroup>
-                                <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                <DropdownMenuCheckboxItem
-                                    checked={showSkillDescription}
-                                    onCheckedChange={setShowSkillDescription}
-                                >
-                                    <span>Skill Description</span>
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    checked={showStatusCounts}
-                                    onCheckedChange={setShowStatusCounts}
-                                >
-                                    <span>Status Counts</span>
-                                </DropdownMenuCheckboxItem>
-                            </DropdownMenuGroup>
-                            <DropdownMenuSeparator className="sm:hidden" />
-                            <SkillTrack_ScopeDialogMenuItem />
-                            {syntheticOpenMenuItem}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </Glorious.Actions>
-            </Glorious.Header>
+                        {showStatusCounts && (
+                            <div>
+                                {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
+                                {cellCounts["not-competent"]} not competent ·{" "}
+                                {cellCounts["not-assessed"]} not assessed
+                            </div>
+                        )}
+                    </Glorious.Subtitle>
+                    <Glorious.Actions>
+                        <SkillTrack_TeamScopeDialog compact />
+                        {syntheticActions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showSkillDescription}
+                                        onCheckedChange={setShowSkillDescription}
+                                    >
+                                        <span>Skill Description</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showStatusCounts}
+                                        onCheckedChange={setShowStatusCounts}
+                                    >
+                                        <span>Status Counts</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator className="sm:hidden" />
+                                <SkillTrack_ScopeDialogMenuItem />
+                                {syntheticOpenMenuItem}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Glorious.Actions>
+                </Glorious.Header>
 
-            {isEmpty ? (
-                <Empty>
-                    <EmptyDescription>
-                        {people.length === 0
-                            ? "There are no active personnel in this scope."
-                            : "This organization is not subscribed to any skill packages."}
-                    </EmptyDescription>
-                </Empty>
-            ) : (
-                <Glorious.ScrollFrame>
-                    <Glorious.Table>
-                        <colgroup>
-                            <col style={{ width: SKILL_COL_WIDTH }} />
-                            {people.map((person) => (
-                                <col key={person.id} style={{ width: PERSON_COL_WIDTH }} />
-                            ))}
-                        </colgroup>
-                        <Glorious.TableHeader>
-                            <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
-                                <DiagonalLeadColumnHeader
-                                    label="Skill"
-                                    headerHeight={PERSON_HEADER_HEIGHT}
-                                    columnWidth={SKILL_COL_WIDTH}
-                                />
-                            </th>
-                            {people.map((person) => (
-                                <th
-                                    key={person.id}
-                                    className="sticky top-0 z-20 p-0 font-medium border-b"
-                                >
-                                    <DiagonalColumnHeader
-                                        label={person.name}
+                {isEmpty ? (
+                    <Empty>
+                        <EmptyDescription>
+                            {people.length === 0
+                                ? "There are no active personnel in this scope."
+                                : "This organization is not subscribed to any skill packages."}
+                        </EmptyDescription>
+                    </Empty>
+                ) : (
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table>
+                            <colgroup>
+                                <col style={{ width: SKILL_COL_WIDTH }} />
+                                {people.map((person) => (
+                                    <col key={person.id} style={{ width: PERSON_COL_WIDTH }} />
+                                ))}
+                            </colgroup>
+                            <Glorious.TableHeader>
+                                <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                    <DiagonalLeadColumnHeader
+                                        label="Skill"
                                         headerHeight={PERSON_HEADER_HEIGHT}
-                                        columnWidth={PERSON_COL_WIDTH}
+                                        columnWidth={SKILL_COL_WIDTH}
                                     />
                                 </th>
-                            ))}
-                        </Glorious.TableHeader>
-                        {groupSections.map((section) => (
-                            <Glorious.GroupSection
-                                key={section.id}
-                                label={section.label}
-                                headerOffset={PERSON_HEADER_HEIGHT}
-                                colSpan={people.length + 1}
-                            >
-                                {section.skills.map((skill) => (
-                                    <tr key={skill.id} className="hover:bg-muted/40">
-                                        <th
-                                            scope="row"
-                                            className={cn(
-                                                stickyFirstCol,
-                                                "border-r border-b p-0 align-top font-normal",
-                                            )}
-                                            title={skill.name}
-                                        >
-                                            <div
-                                                className="px-3 py-1.5 text-left"
-                                                style={{ width: SKILL_COL_WIDTH }}
-                                            >
-                                                <div className="truncate">{skill.name}</div>
-                                                {showSkillDescription && skill.description && (
-                                                    <div className="truncate text-xs text-muted-foreground">
-                                                        {skill.description}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </th>
-                                        {people.map((person, i) => {
-                                            const status = deriveStatus(
-                                                competencyByKey.get(`${person.id}:${skill.id}`),
-                                            );
-                                            return (
-                                                <td
-                                                    key={person.id}
-                                                    className={cn(
-                                                        "border-b px-2 py-1.5 text-center",
-                                                        i > 0 && "border-l",
-                                                        i === people.length - 1 && "border-r",
-                                                    )}
-                                                >
-                                                    <StatusIcon
-                                                        status={status}
-                                                        className="mx-auto"
-                                                    />
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
+                                {people.map((person) => (
+                                    <th
+                                        key={person.id}
+                                        className="sticky top-0 z-20 p-0 font-medium border-b"
+                                    >
+                                        <DiagonalColumnHeader
+                                            label={person.name}
+                                            headerHeight={PERSON_HEADER_HEIGHT}
+                                            columnWidth={PERSON_COL_WIDTH}
+                                        />
+                                    </th>
                                 ))}
-                            </Glorious.GroupSection>
-                        ))}
-                    </Glorious.Table>
-                </Glorious.ScrollFrame>
-            )}
-        </Glorious.Root>
+                            </Glorious.TableHeader>
+                            {groupSections.map((section) => (
+                                <Glorious.GroupSection
+                                    key={section.id}
+                                    label={section.label}
+                                    headerOffset={PERSON_HEADER_HEIGHT}
+                                    colSpan={people.length + 1}
+                                >
+                                    {section.skills.map((skill) => (
+                                        <tr key={skill.id} className="hover:bg-muted/40">
+                                            <th
+                                                scope="row"
+                                                className={cn(
+                                                    stickyFirstCol,
+                                                    "border-r border-b p-0 align-top font-normal",
+                                                )}
+                                                title={skill.name}
+                                            >
+                                                <SkillInfoTrigger
+                                                    skill={skill}
+                                                    className="block px-3 py-1.5 text-left hover:underline"
+                                                >
+                                                    <div
+                                                        style={{ width: SKILL_COL_WIDTH }}
+                                                        className="max-w-full"
+                                                    >
+                                                        <div className="truncate">{skill.name}</div>
+                                                        {showSkillDescription &&
+                                                            skill.description && (
+                                                                <div className="truncate text-xs text-muted-foreground">
+                                                                    {skill.description}
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </SkillInfoTrigger>
+                                            </th>
+                                            {people.map((person, i) => {
+                                                const competency = competencyByKey.get(
+                                                    `${person.id}:${skill.id}`,
+                                                );
+                                                const status = deriveStatus(competency);
+                                                return (
+                                                    <td
+                                                        key={person.id}
+                                                        className={cn(
+                                                            "border-b px-2 py-1.5 text-center",
+                                                            i > 0 && "border-l",
+                                                            i === people.length - 1 && "border-r",
+                                                        )}
+                                                    >
+                                                        {competency ? (
+                                                            <CheckDetailsTrigger
+                                                                competency={competency}
+                                                                className="mx-auto block cursor-pointer hover:opacity-80"
+                                                            >
+                                                                <StatusIcon
+                                                                    status={status}
+                                                                    className="mx-auto"
+                                                                />
+                                                            </CheckDetailsTrigger>
+                                                        ) : (
+                                                            <StatusIcon
+                                                                status={status}
+                                                                className="mx-auto"
+                                                            />
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </Glorious.GroupSection>
+                            ))}
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
+                )}
+            </Glorious.Root>
+        </ReportCellPopoversProvider>
     );
 }

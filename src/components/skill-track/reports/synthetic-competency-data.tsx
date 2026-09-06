@@ -143,6 +143,7 @@ export function useSyntheticCompetencies(
     competencies: Competency[],
 ): {
     competencies: Competency[];
+    isSynthetic: boolean;
     syntheticActions: ReactNode;
     syntheticMenuItem: ReactNode;
     syntheticOpenMenuItem: ReactNode;
@@ -172,6 +173,7 @@ export function useSyntheticCompetencies(
     if (!isSynthetic || !generated) {
         return {
             competencies,
+            isSynthetic: false,
             syntheticActions: null,
             syntheticMenuItem,
             syntheticOpenMenuItem: null,
@@ -180,6 +182,7 @@ export function useSyntheticCompetencies(
 
     return {
         competencies: generated,
+        isSynthetic: true,
         syntheticActions: (
             <SyntheticDataDialog
                 open={dialogOpen}
