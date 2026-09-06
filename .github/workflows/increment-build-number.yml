@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: increment-build-number
@@ -39,23 +40,24 @@ jobs:
             console.log('New build number:', pkg['nz.avut'].build);
           "
 
-      - name: Commit and push
+      - name: Commit, push branch and merge via pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # `master` is protected by a repository rule that requires changes
+          # to land through a pull request, so pushing the commit straight to
+          # `master` is rejected (GH013). Push it to a side branch instead and
+          # merge that in via a pull request.
+          BRANCH="chore/increment-build-number-${{ github.run_id }}"
+          git checkout -b "$BRANCH"
           git add package.json
           git commit -m "chore: increment build number [skip ci]"
+          git push origin "$BRANCH"
 
-          # `master` may have moved since checkout (e.g. a push that landed
-          # outside this workflow's own concurrency group). Rebase onto the
-          # latest master and retry on a non-fast-forward push rejection.
-          for i in 1 2 3 4 5; do
-            if git push origin HEAD:master; then
-              exit 0
-            fi
-            echo "Push rejected, retrying (attempt $i)..."
-            git fetch origin master
-            git rebase origin/master
-          done
-          echo "Failed to push after 5 attempts" >&2
-          exit 1
+          PR_URL=$(gh pr create --base master --head "$BRANCH" \
+            --title "chore: increment build number" \
+            --body "Automated build number increment.")
+          gh pr merge "$PR_URL" --squash --delete-branch --auto
