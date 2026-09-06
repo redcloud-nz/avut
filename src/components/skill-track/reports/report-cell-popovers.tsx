@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/popover";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { formatDate, formatRelativeDateTime } from "@/lib/datetime";
 import { getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import type { Skill } from "@/lib/schemas/skill";
 import { RouterOutput, trpc } from "@/trpc/client";
@@ -201,6 +201,9 @@ function CheckDetailsContent({
 }) {
     const organization = useOrganization();
 
+    // `isCurrent` is the server's `expiresAt > now` check, so its negation is "expiry is past".
+    const expired = !competency.isCurrent;
+
     const { data: check, isPending } = useQuery(
         trpc.skillChecks.getSkillCheck.queryOptions(
             { organizationId: organization.id, skillCheckId: competency.checkId },
@@ -215,11 +218,21 @@ function CheckDetailsContent({
                     {getSkillCheckResultLabel(organization.settings, competency.result)}
                 </PopoverTitle>
             </PopoverHeader>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs">
                 <dt className="text-muted-foreground">Assessed</dt>
-                <dd>{formatDate(competency.checkedAt)}</dd>
-                <dt className="text-muted-foreground">Expires</dt>
-                <dd>{formatDate(competency.expiresAt)}</dd>
+                <dd>
+                    <div>{formatDate(competency.checkedAt)}</div>
+                    <div className="text-muted-foreground">
+                        {formatRelativeDateTime(competency.checkedAt)}
+                    </div>
+                </dd>
+                <dt className="text-muted-foreground">{expired ? "Expired" : "Expires"}</dt>
+                <dd>
+                    <div>{formatDate(competency.expiresAt)}</div>
+                    <div className="text-muted-foreground">
+                        {formatRelativeDateTime(competency.expiresAt)}
+                    </div>
+                </dd>
                 <dt className="text-muted-foreground">Assessor</dt>
                 <dd>
                     {isSynthetic
