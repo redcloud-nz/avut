@@ -28,6 +28,7 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -84,7 +85,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
+    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
         skills,
         personnel,
         recordedCompetencies,
@@ -213,6 +214,8 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </Glorious.Actions>

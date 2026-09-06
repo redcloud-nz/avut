@@ -28,6 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
 
@@ -141,9 +142,9 @@ export function useSyntheticCompetencies(
     skills: MatrixSkill[],
     personnel: { id: Competency["assesseeId"] }[],
     competencies: Competency[],
-): { competencies: Competency[]; syntheticActions: ReactNode } {
+): { competencies: Competency[]; syntheticActions: ReactNode; syntheticMenuItem: ReactNode } {
     const organization = useOrganization();
-    const [synthetic] = useQueryState("synthetic");
+    const [synthetic, setSynthetic] = useQueryState("synthetic");
     const [config, setConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
     const isSynthetic = synthetic !== null;
 
@@ -152,8 +153,19 @@ export function useSyntheticCompetencies(
         [isSynthetic, skills, personnel, config],
     );
 
+    // Drop straight into a report's "Show" dropdown so every report toggles synthetic mode
+    // the same way. Writes the `?synthetic` search param the hook keys off.
+    const syntheticMenuItem = (
+        <DropdownMenuCheckboxItem
+            checked={isSynthetic}
+            onCheckedChange={(next) => void setSynthetic(next ? "" : null, { history: "push" })}
+        >
+            <span>Use Synthetic Checks</span>
+        </DropdownMenuCheckboxItem>
+    );
+
     if (!isSynthetic || !generated) {
-        return { competencies, syntheticActions: null };
+        return { competencies, syntheticActions: null, syntheticMenuItem };
     }
 
     return {
@@ -165,6 +177,7 @@ export function useSyntheticCompetencies(
                 resultOptions={getEnabledSkillCheckResultOptions(organization.settings)}
             />
         ),
+        syntheticMenuItem,
     };
 }
 

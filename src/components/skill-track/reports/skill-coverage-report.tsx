@@ -27,6 +27,7 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
@@ -91,7 +92,7 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
+    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
         skills,
         personnel,
         recordedCompetencies,
@@ -163,6 +164,8 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </Glorious.Actions>

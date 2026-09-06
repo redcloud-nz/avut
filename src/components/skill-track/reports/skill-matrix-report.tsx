@@ -31,6 +31,7 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
@@ -92,7 +93,7 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
         : "Whole Organization";
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
+    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
         skills,
         personnel,
         recordedCompetencies,
@@ -195,6 +196,8 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </Glorious.Actions>

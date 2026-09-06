@@ -28,6 +28,7 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
@@ -94,7 +95,7 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
+    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
         skills,
         personnel,
         recordedCompetencies,
@@ -193,6 +194,8 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
                                     <span>Skill Description</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </Glorious.Actions>
