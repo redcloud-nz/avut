@@ -162,8 +162,6 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                         <br className="inline sm:hidden" />
                         {skills.length} {skills.length === 1 ? "skill" : "skills"}
                     </div>
-                    <div></div>
-
                     {showStatusCounts && (
                         <div>
                             {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
