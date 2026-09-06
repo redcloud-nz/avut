@@ -28,11 +28,12 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     const { organization } = await requireOrganization(slug);
     const { skill, team } = await props.searchParams;
 
+    // The scope dialog (rendered in both the blank and loaded states) lists teams and
+    // assessable skills, so both are always needed; the matrix itself only once a valid
+    // `?skill=` is picked.
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }));
 
-    // Only prefetch the competency matrix for a well-formed skill id — an invalid `?skill=`
-    // falls back to the picker client-side, so fetching the full org matrix here is wasted work.
     const parsedSkillId = typeof skill === "string" ? SkillId.schema.safeParse(skill) : undefined;
     if (parsedSkillId?.success) {
         const parsedTeamId = typeof team === "string" ? TeamId.schema.safeParse(team) : undefined;

@@ -3,21 +3,22 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
 
 import { DEFAULT_SYNTHETIC_CONFIG, generateSyntheticMatrix } from "./synthetic-competency-data";
 
 type MatrixSkill = Parameters<typeof generateSyntheticMatrix>[0][number];
 
 const skills = [
-    { id: "skill-1", frequency: 12 },
-    { id: "skill-2", frequency: 24 },
-    { id: "skill-3", frequency: 6 },
+    { id: SkillId.create(), frequency: 12 },
+    { id: SkillId.create(), frequency: 24 },
+    { id: SkillId.create(), frequency: 6 },
 ] as unknown as MatrixSkill[];
 
-const personnel = [{ id: "person-a" }, { id: "person-b" }, { id: "person-c" }] as Parameters<
-    typeof generateSyntheticMatrix
->[1];
+const personnel = [{ id: PersonId.create() }, { id: PersonId.create() }, { id: PersonId.create() }];
 
 describe("generateSyntheticMatrix", () => {
     it("tags every generated competency with the person it belongs to", () => {
@@ -31,10 +32,24 @@ describe("generateSyntheticMatrix", () => {
         }
     });
 
-    it("is deterministic for a given config", () => {
-        const a = generateSyntheticMatrix(skills, personnel, DEFAULT_SYNTHETIC_CONFIG);
-        const b = generateSyntheticMatrix(skills, personnel, DEFAULT_SYNTHETIC_CONFIG);
-        expect(a).toEqual(b);
+    describe("is deterministic for a given config", () => {
+        // The generator reads `new Date()` internally for checkedAt/expiresAt, so without a
+        // frozen clock this comparison could flake if the real clock ticks between the two
+        // calls below.
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("produces identical output across calls", () => {
+            const a = generateSyntheticMatrix(skills, personnel, DEFAULT_SYNTHETIC_CONFIG);
+            const b = generateSyntheticMatrix(skills, personnel, DEFAULT_SYNTHETIC_CONFIG);
+            expect(a).toEqual(b);
+        });
     });
 
     it("does not produce an identical slice for every person", () => {

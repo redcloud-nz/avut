@@ -58,6 +58,11 @@ export default async function SkillsTrack_Reports_Page(
                                     </ItemActions>
                                 </Link>
                             </Item>
+                        </Protect>
+                        {/* These three also list teams for their scope picker/filter, so they
+                            need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
+                            a link that then hits a FORBIDDEN error when it loads. */}
+                        <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
                             <Item asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/team", { slug })}
