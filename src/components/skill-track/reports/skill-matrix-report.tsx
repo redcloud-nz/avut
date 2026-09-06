@@ -5,14 +5,12 @@
 
 "use client";
 
-import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
-import { ChevronDownIcon } from "lucide-react";
-
+import { Glorious } from "@/components/blocks/glorious";
 import {
     ReportNavbar,
     SkillTrack_ReportTeamScopePicker,
@@ -72,16 +70,6 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ]),
     );
 
-    const [collapsedGroups, setCollapsedGroups] = useState<ReadonlySet<string>>(new Set());
-
-    const toggleGroup = (groupId: string) =>
-        setCollapsedGroups((previous) => {
-            const next = new Set(previous);
-            if (next.has(groupId)) next.delete(groupId);
-            else next.add(groupId);
-            return next;
-        });
-
     const people = R.sortBy(personnel, (person) => person.name);
 
     // One section per skill group, in package -> group -> skill order. Each renders as its own
@@ -124,18 +112,18 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     return (
         <>
             <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/matrix" />
-            <main className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+            <Glorious.Root>
+                <Glorious.Header>
                     <div>
-                        <h1 className="text-lg font-semibold">Personnel × Skill Matrix</h1>
-                        <p className="text-sm text-muted-foreground">
+                        <Glorious.Title>Personnel × Skill Matrix</Glorious.Title>
+                        <Glorious.Subtitle>
                             {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
                             {skills.length} {skills.length === 1 ? "skill" : "skills"} ·{" "}
                             {teamId ? "Team" : "Whole Organization"}
-                        </p>
+                        </Glorious.Subtitle>
                     </div>
-                    {syntheticActions}
-                </div>
+                    <Glorious.Actions>{syntheticActions}</Glorious.Actions>
+                </Glorious.Header>
 
                 {isEmpty ? (
                     <Empty>
@@ -146,119 +134,87 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                         </EmptyDescription>
                     </Empty>
                 ) : (
-                    <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded-md border">
-                        <table className="table-fixed border-separate border-spacing-0 text-sm">
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table>
                             <colgroup>
                                 <col style={{ width: SKILL_COL_WIDTH }} />
                                 {people.map((person) => (
                                     <col key={person.id} style={{ width: PERSON_COL_WIDTH }} />
                                 ))}
                             </colgroup>
-                            <thead>
-                                <tr>
-                                    <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
-                                        <DiagonalLeadColumnHeader
-                                            label="Skill"
+                            <Glorious.TableHeader>
+                                <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                    <DiagonalLeadColumnHeader
+                                        label="Skill"
+                                        headerHeight={PERSON_HEADER_HEIGHT}
+                                        columnWidth={SKILL_COL_WIDTH}
+                                    />
+                                </th>
+                                {people.map((person) => (
+                                    <th
+                                        key={person.id}
+                                        className="sticky top-0 z-20 p-0 font-medium border-b"
+                                    >
+                                        <DiagonalColumnHeader
+                                            label={person.name}
                                             headerHeight={PERSON_HEADER_HEIGHT}
-                                            columnWidth={SKILL_COL_WIDTH}
+                                            columnWidth={PERSON_COL_WIDTH}
                                         />
                                     </th>
-                                    {people.map((person) => (
-                                        <th
-                                            key={person.id}
-                                            className="sticky top-0 z-20 p-0 font-medium border-b"
-                                        >
-                                            <DiagonalColumnHeader
-                                                label={person.name}
-                                                headerHeight={PERSON_HEADER_HEIGHT}
-                                                columnWidth={PERSON_COL_WIDTH}
-                                            />
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            {groupSections.map((section) => {
-                                const collapsed = collapsedGroups.has(section.id);
-                                return (
-                                    <tbody key={section.id}>
-                                        <tr>
+                                ))}
+                            </Glorious.TableHeader>
+                            {groupSections.map((section) => (
+                                <Glorious.GroupSection
+                                    key={section.id}
+                                    label={section.label}
+                                    headerOffset={PERSON_HEADER_HEIGHT}
+                                    colSpan={people.length + 1}
+                                >
+                                    {section.skills.map((skill) => (
+                                        <tr key={skill.id} className="hover:bg-muted/40">
                                             <th
-                                                colSpan={people.length + 1}
-                                                style={{ top: PERSON_HEADER_HEIGHT }}
-                                                className="sticky z-20 bg-muted p-0 text-left"
+                                                scope="row"
+                                                className={cn(
+                                                    stickyFirstCol,
+                                                    "border-r border-b p-0 font-normal",
+                                                )}
+                                                title={skill.name}
                                             >
-                                                {/* Full-width wrapper carries the divider — a
-                                                    border on the sticky <th> itself paints
-                                                    unreliably once it's stuck. The button stays
-                                                    narrow so it has room to stick horizontally. */}
-                                                <div className="border-b">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => toggleGroup(section.id)}
-                                                        aria-expanded={!collapsed}
-                                                        className="sticky left-0 z-10 flex w-fit items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground"
-                                                    >
-                                                        <ChevronDownIcon
-                                                            className={cn(
-                                                                "size-3.5 transition-transform",
-                                                                collapsed && "-rotate-90",
-                                                            )}
-                                                        />
-                                                        {section.label}
-                                                    </button>
+                                                <div
+                                                    className="truncate px-3 py-1.5 text-left"
+                                                    style={{ width: SKILL_COL_WIDTH }}
+                                                >
+                                                    {skill.name}
                                                 </div>
                                             </th>
-                                        </tr>
-                                        {!collapsed &&
-                                            section.skills.map((skill) => (
-                                                <tr key={skill.id} className="hover:bg-muted/40">
-                                                    <th
-                                                        scope="row"
+                                            {people.map((person, i) => {
+                                                const status = deriveStatus(
+                                                    competencyByKey.get(`${person.id}:${skill.id}`),
+                                                );
+                                                return (
+                                                    <td
+                                                        key={person.id}
                                                         className={cn(
-                                                            stickyFirstCol,
-                                                            "border-r border-b p-0 font-normal",
+                                                            "border-b px-2 py-1.5 text-center",
+                                                            i > 0 && "border-l",
+                                                            i === people.length - 1 && "border-r",
                                                         )}
-                                                        title={skill.name}
                                                     >
-                                                        <div
-                                                            className="truncate px-3 py-1.5 text-left"
-                                                            style={{ width: SKILL_COL_WIDTH }}
-                                                        >
-                                                            {skill.name}
-                                                        </div>
-                                                    </th>
-                                                    {people.map((person, i) => {
-                                                        const status = deriveStatus(
-                                                            competencyByKey.get(
-                                                                `${person.id}:${skill.id}`,
-                                                            ),
-                                                        );
-                                                        return (
-                                                            <td
-                                                                key={person.id}
-                                                                className={cn(
-                                                                    "border-b px-2 py-1.5 text-center",
-                                                                    i > 0 && "border-l",
-                                                                    i === people.length - 1 &&
-                                                                        "border-r",
-                                                                )}
-                                                            >
-                                                                <StatusIcon
-                                                                    status={status}
-                                                                    className="mx-auto"
-                                                                />
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                    </tbody>
-                                );
-                            })}
-                        </table>
-                    </div>
+                                                        <StatusIcon
+                                                            status={status}
+                                                            className="mx-auto"
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </Glorious.GroupSection>
+                            ))}
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
                 )}
-            </main>
+            </Glorious.Root>
         </>
     );
 }

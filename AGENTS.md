@@ -234,13 +234,14 @@ describe("myRouter.someQuery", () => {
 
 Reusable layout systems in `src/components/blocks/`:
 
-| Block      | Purpose                                                                                                                                       |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                  |
-| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`      |
-| `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns` |
-| `Argus`    | Centered card layout for auth/form pages                                                                                                      |
-| `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                               |
+| Block      | Purpose                                                                                                                                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                                                                                            |
+| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`                                                                                |
+| `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns`                                                                           |
+| `Argus`    | Centered card layout for auth/form pages                                                                                                                                                                                |
+| `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                                                                                                         |
+| `Glorious` | Full-height matrix table — `Glorious.Root`, `Glorious.Header`/`.Title`/`.Subtitle`/`.Actions`, `Glorious.ScrollFrame`, `Glorious.Table`, `Glorious.TableHeader`, `Glorious.GroupSection` (collapsible sticky `<tbody>`) |
 
 Typical page layout — shell in `page.tsx`, content in the client component:
 
