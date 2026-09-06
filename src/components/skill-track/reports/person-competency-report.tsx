@@ -166,7 +166,14 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
     return (
         <Glorious.Root>
             <Glorious.Header>
-                <Glorious.Title>{person.name}</Glorious.Title>
+                <div>
+                    <Glorious.Title>{person.name}</Glorious.Title>
+                    <Glorious.Subtitle>
+                        {rows.length} {rows.length === 1 ? "skill" : "skills"} · {counts.current}{" "}
+                        current · {counts.expired} expired · {counts.notCompetent} not competent ·{" "}
+                        {counts.notAssessed} not assessed
+                    </Glorious.Subtitle>
+                </div>
                 <Glorious.Actions>
                     <SkillTrack_PersonScopeDialog />
                     {syntheticActions}
@@ -196,21 +203,6 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                     </DropdownMenu>
                 </Glorious.Actions>
             </Glorious.Header>
-
-            <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status="current" />
-                <span className="text-sm text-muted-foreground">{counts.current} current</span>
-                <StatusBadge status="expired" />
-                <span className="text-sm text-muted-foreground">{counts.expired} expired</span>
-                <StatusBadge status="not-competent" />
-                <span className="text-sm text-muted-foreground">
-                    {counts.notCompetent} not competent
-                </span>
-                <StatusBadge status="not-assessed" />
-                <span className="text-sm text-muted-foreground">
-                    {counts.notAssessed} not assessed
-                </span>
-            </div>
 
             {groupSections.length === 0 ? (
                 <Empty>
