@@ -5,9 +5,13 @@
  * Path: /orgs/[slug]/skill-track/reports/team
  */
 
+import { Suspense } from "react";
+
 import { Std } from "@/components/blocks/std";
 import { SkillTrack_TeamCompetencyReport } from "@/components/skill-track/reports/team-competency-report";
+import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -49,7 +53,22 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
     return (
         <HydrateClient>
             <Std.SidebarInset>
-                <SkillTrack_TeamCompetencyReport />
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
+                        {
+                            label: "Reports",
+                            href: route("/orgs/[slug]/skill-track/reports", { slug }),
+                        },
+                        {
+                            label: "Team Competency",
+                            href: route("/orgs/[slug]/skill-track/reports/team", { slug }),
+                        },
+                    ]}
+                />
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <SkillTrack_TeamCompetencyReport />
+                </Suspense>
             </Std.SidebarInset>
         </HydrateClient>
     );

@@ -10,22 +10,9 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
-import { ChevronDownIcon } from "lucide-react";
-
 import { Glorious } from "@/components/blocks/glorious";
-import {
-    ReportNavbar,
-    SkillTrack_ReportSkillScopePicker,
-} from "@/components/skill-track/reports/report-scope-picker";
+import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import { deriveStatus, StatusBadge } from "@/components/skill-track/reports/competency-status";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
@@ -44,11 +31,23 @@ export function SkillTrack_SkillCoverageReport() {
     const [skillParam] = useQueryState("skill");
     const parsedSkillId = skillParam ? SkillId.schema.safeParse(skillParam) : undefined;
 
-    // An absent — or malformed — `?skill=` means "nothing picked yet"; show the picker rather
-    // than falling through to a full-org competency matrix.
+    // An absent — or malformed — `?skill=` means "nothing picked yet"; show the blank report
+    // shell with the scope dialog forced open.
     if (!parsedSkillId?.success) {
         return (
-            <SkillTrack_ReportSkillScopePicker routePattern="/orgs/[slug]/skill-track/reports/skill" />
+            <Glorious.Root className="mx-auto w-full max-w-4xl">
+                <Glorious.Header>
+                    <Glorious.Title>Skill Coverage</Glorious.Title>
+                    <Glorious.Actions>
+                        <SkillTrack_SkillScopeDialog forceOpen label="Select a skill" />
+                    </Glorious.Actions>
+                </Glorious.Header>
+                <Empty>
+                    <EmptyDescription>
+                        Select a skill to see who currently holds it.
+                    </EmptyDescription>
+                </Empty>
+            </Glorious.Root>
         );
     }
 
@@ -58,7 +57,7 @@ export function SkillTrack_SkillCoverageReport() {
 function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
     const organization = useOrganization();
 
-    const [teamParam, setTeamParam] = useQueryState("team");
+    const [teamParam] = useQueryState("team");
 
     const parsedTeamId = teamParam ? TeamId.schema.safeParse(teamParam) : undefined;
     const teamId = parsedTeamId?.success ? parsedTeamId.data : undefined;
@@ -103,130 +102,97 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         R.sortBy((row) => row.name),
     );
 
-    const currentTeamValue = teamId ?? "all";
     const scopeLabel = teamId
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
         : "Whole Organization";
 
     return (
-        <>
-            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/skill" />
-            <Glorious.Root>
-                <Glorious.Header>
-                    <div>
-                        <Glorious.Title>{skill ? skill.name : "Skill Coverage"}</Glorious.Title>
-                        <Glorious.Subtitle>
-                            {rows.length} {rows.length === 1 ? "person" : "people"} · {scopeLabel}
-                        </Glorious.Subtitle>
-                    </div>
-                    <Glorious.Actions>
-                        {syntheticActions}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    {scopeLabel}
-                                    <ChevronDownIcon className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuRadioGroup
-                                    value={currentTeamValue}
-                                    onValueChange={(value) =>
-                                        setTeamParam(value === "all" ? null : value)
-                                    }
-                                >
-                                    <DropdownMenuRadioItem value="all">
-                                        Whole Organization
-                                    </DropdownMenuRadioItem>
-                                    {R.pipe(
-                                        teams,
-                                        R.sortBy((team) => team.name),
-                                        R.map((team) => (
-                                            <DropdownMenuRadioItem key={team.id} value={team.id}>
-                                                {team.name}
-                                            </DropdownMenuRadioItem>
-                                        )),
-                                    )}
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </Glorious.Actions>
-                </Glorious.Header>
+        <Glorious.Root>
+            <Glorious.Header>
+                <div>
+                    <Glorious.Title>{skill ? skill.name : "Skill Coverage"}</Glorious.Title>
+                    <Glorious.Subtitle>
+                        {rows.length} {rows.length === 1 ? "person" : "people"} · {scopeLabel}
+                    </Glorious.Subtitle>
+                </div>
+                <Glorious.Actions>
+                    <SkillTrack_SkillScopeDialog />
+                    {syntheticActions}
+                </Glorious.Actions>
+            </Glorious.Header>
 
-                {!skill ? (
-                    <Empty>
-                        <EmptyDescription>
-                            That skill is not in any of this organization&apos;s subscribed
-                            packages.
-                        </EmptyDescription>
-                    </Empty>
-                ) : rows.length === 0 ? (
-                    <Empty>
-                        <EmptyDescription>
-                            There are no active personnel in this scope.
-                        </EmptyDescription>
-                    </Empty>
-                ) : (
-                    <Glorious.ScrollFrame>
-                        <Glorious.Table className="w-full">
-                            <colgroup>
-                                <col className="w-[60%] sm:w-[50%]" />
-                                <col className="w-[40%] sm:w-[25%]" />
-                                <col className="hidden sm:table-column sm:w-[25%]" />
-                            </colgroup>
-                            <Glorious.TableHeader>
-                                <th
-                                    className={cn(
-                                        stickyFirstCol,
-                                        headCell,
-                                        "top-0 z-30 border-r text-left",
-                                    )}
-                                >
-                                    Name
-                                </th>
-                                <th
-                                    className={cn(
-                                        headCell,
-                                        "sticky top-0 z-20 text-center sm:border-r",
-                                    )}
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    className={cn(
-                                        headCell,
-                                        "sticky top-0 z-20 hidden text-center sm:table-cell",
-                                    )}
-                                >
-                                    Last Checked
-                                </th>
-                            </Glorious.TableHeader>
-                            <tbody>
-                                {rows.map((row) => (
-                                    <tr key={row.id} className="hover:bg-muted/40">
-                                        <th
-                                            scope="row"
-                                            className={cn(
-                                                stickyFirstCol,
-                                                "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
-                                            )}
-                                            title={row.name}
-                                        >
-                                            {row.name}
-                                        </th>
-                                        <td className="border-b px-3 py-1.5 text-center align-middle sm:border-r">
-                                            <StatusBadge status={row.status} />
-                                        </td>
-                                        <td className="hidden border-b px-3 py-1.5 text-center align-middle text-sm text-muted-foreground tabular-nums sm:table-cell">
-                                            {row.checkedAt ? formatDate(row.checkedAt) : "—"}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Glorious.Table>
-                    </Glorious.ScrollFrame>
-                )}
-            </Glorious.Root>
-        </>
+            {!skill ? (
+                <Empty>
+                    <EmptyDescription>
+                        That skill is not in any of this organization&apos;s subscribed packages.
+                    </EmptyDescription>
+                </Empty>
+            ) : rows.length === 0 ? (
+                <Empty>
+                    <EmptyDescription>
+                        There are no active personnel in this scope.
+                    </EmptyDescription>
+                </Empty>
+            ) : (
+                <Glorious.ScrollFrame>
+                    <Glorious.Table className="w-full">
+                        <colgroup>
+                            <col className="w-[60%] sm:w-[50%]" />
+                            <col className="w-[40%] sm:w-[25%]" />
+                            <col className="hidden sm:table-column sm:w-[25%]" />
+                        </colgroup>
+                        <Glorious.TableHeader>
+                            <th
+                                className={cn(
+                                    stickyFirstCol,
+                                    headCell,
+                                    "top-0 z-30 border-r text-left",
+                                )}
+                            >
+                                Name
+                            </th>
+                            <th
+                                className={cn(
+                                    headCell,
+                                    "sticky top-0 z-20 text-center sm:border-r",
+                                )}
+                            >
+                                Status
+                            </th>
+                            <th
+                                className={cn(
+                                    headCell,
+                                    "sticky top-0 z-20 hidden text-center sm:table-cell",
+                                )}
+                            >
+                                Last Checked
+                            </th>
+                        </Glorious.TableHeader>
+                        <tbody>
+                            {rows.map((row) => (
+                                <tr key={row.id} className="hover:bg-muted/40">
+                                    <th
+                                        scope="row"
+                                        className={cn(
+                                            stickyFirstCol,
+                                            "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
+                                        )}
+                                        title={row.name}
+                                    >
+                                        {row.name}
+                                    </th>
+                                    <td className="border-b px-3 py-1.5 text-center align-middle sm:border-r">
+                                        <StatusBadge status={row.status} />
+                                    </td>
+                                    <td className="hidden border-b px-3 py-1.5 text-center align-middle text-sm text-muted-foreground tabular-nums sm:table-cell">
+                                        {row.checkedAt ? formatDate(row.checkedAt) : "—"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Glorious.Table>
+                </Glorious.ScrollFrame>
+            )}
+        </Glorious.Root>
     );
 }

@@ -5,9 +5,13 @@
  * Path: /orgs/[slug]/skill-track/reports/skill
  */
 
+import { Suspense } from "react";
+
 import { Std } from "@/components/blocks/std";
 import { SkillTrack_SkillCoverageReport } from "@/components/skill-track/reports/skill-coverage-report";
+import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
@@ -44,7 +48,22 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     return (
         <HydrateClient>
             <Std.SidebarInset>
-                <SkillTrack_SkillCoverageReport />
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
+                        {
+                            label: "Reports",
+                            href: route("/orgs/[slug]/skill-track/reports", { slug }),
+                        },
+                        {
+                            label: "Skill Coverage",
+                            href: route("/orgs/[slug]/skill-track/reports/skill", { slug }),
+                        },
+                    ]}
+                />
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <SkillTrack_SkillCoverageReport />
+                </Suspense>
             </Std.SidebarInset>
         </HydrateClient>
     );
