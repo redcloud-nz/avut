@@ -102,10 +102,6 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
 
     const skill = skills.find((candidate) => candidate.id === skillId);
 
-    const competencyByAssessee = new Map(
-        competencies.map((competency) => [competency.assesseeId, competency]),
-    );
-
     type Row = {
         id: string;
         name: string;
@@ -115,6 +111,9 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
 
     const data = useMemo<Row[]>(() => {
         if (!skill) return [];
+        const competencyByAssessee = new Map(
+            competencies.map((competency) => [competency.assesseeId, competency]),
+        );
         return R.pipe(
             personnel,
             R.map((person) => {
@@ -128,7 +127,6 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
             }),
             R.sortBy([(row) => STATUS_RANK[row.status], "desc"], [(row) => row.name, "asc"]),
         );
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- derived purely from the query data
     }, [personnel, competencies, skill]);
 
     const columns = useMemo(
