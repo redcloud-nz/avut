@@ -53,7 +53,7 @@ function DialogContent({
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 className={cn(
-                    "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
                     className,
                 )}
                 {...props}
@@ -69,6 +69,22 @@ function DialogContent({
                 )}
             </DialogPrimitive.Content>
         </DialogPortal>
+    );
+}
+
+/**
+ * Scrollable wrapper for a dialog's body, below a fixed `DialogHeader`. Bleeds to the
+ * dialog's padding edges (`-mx-4`/`px-4`) so scrolled content sits flush, and caps its
+ * own height so tall content scrolls internally instead of pushing the header (and close
+ * button) off small viewports. See the shadcn "Scrollable Content" dialog pattern.
+ */
+function DialogScrollableBody({ className, ...props }: React.ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="dialog-scrollable-body"
+            className={cn("no-scrollbar -mx-4 max-h-[75vh] overflow-y-auto px-4", className)}
+            {...props}
+        />
     );
 }
 
@@ -154,6 +170,7 @@ export {
     DialogHeader,
     DialogOverlay,
     DialogPortal,
+    DialogScrollableBody,
     DialogTitle,
     DialogTrigger,
 };
