@@ -53,7 +53,7 @@ export function SkillTrack_CataloguePackage_Content({
             <Std.Navbar
                 breadcrumbs={[
                     {
-                        label: "Skills",
+                        label: "Skill Track",
                         href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
                     },
                     {
