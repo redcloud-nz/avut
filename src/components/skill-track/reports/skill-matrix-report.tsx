@@ -47,6 +47,14 @@ import { cn } from "@/lib/utils";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
+const stickyFirstCol = "sticky left-0 z-10 bg-background";
+
+// `PERSON_HEADER_HEIGHT` must match the height `DiagonalColumnHeader` actually renders
+// for `headerHeight` — it's the offset the sticky group headings pin beneath.
+const PERSON_HEADER_HEIGHT = 130;
+const SKILL_COL_WIDTH = 220;
+const PERSON_COL_WIDTH = 50;
+
 export function SkillTrack_SkillMatrixReport() {
     const [team] = useQueryState("team");
 
@@ -151,12 +159,6 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
             ),
         ),
     );
-
-    const stickyFirstCol = "sticky left-0 z-10 bg-background";
-
-    const PERSON_HEADER_HEIGHT = 130;
-    const SKILL_COL_WIDTH = 220;
-    const PERSON_COL_WIDTH = 50;
 
     const isEmpty = people.length === 0 || skills.length === 0;
 

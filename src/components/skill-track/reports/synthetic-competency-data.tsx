@@ -97,18 +97,25 @@ export function generateSyntheticCompetencies(
         const checkedAt = new Date(now);
         checkedAt.setDate(checkedAt.getDate() - Math.floor(ageRoll * config.maxAgeMonths * 30));
 
-        const expiresAt = new Date(checkedAt);
-        expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+        // Mirror the router: frequency 0 means the skill never expires.
+        const neverExpires = skill.frequency <= 0;
+        let expiresAt: Date | null = null;
+        if (!neverExpires) {
+            expiresAt = new Date(checkedAt);
+            expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+        }
 
         return [
             {
                 assesseeId: personId,
                 skillId: skill.id,
-                checkId: `synthetic${skill.id}`.slice(0, 16) as Competency["checkId"],
+                // No real record exists in synthetic mode (the check lookup is disabled), but
+                // keep it unique per skill and the right shape. The skill id already is.
+                checkId: skill.id as unknown as Competency["checkId"],
                 result,
                 checkedAt: checkedAt.toISOString(),
-                expiresAt: expiresAt.toISOString(),
-                isCurrent: expiresAt > now,
+                expiresAt: expiresAt ? expiresAt.toISOString() : null,
+                isCurrent: neverExpires || expiresAt! > now,
             },
         ];
     });

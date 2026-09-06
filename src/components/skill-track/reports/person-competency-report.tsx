@@ -25,6 +25,7 @@ import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports
 import {
     deriveStatus,
     StatusBadge,
+    tallyStatuses,
     type CompetencyStatus,
 } from "@/components/skill-track/reports/competency-status";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ export function SkillTrack_PersonCompetencyReport() {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Personal Competency Report</Glorious.Title>
+                    <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_PersonScopeDialog forceOpen label="Select a person" />
                     </Glorious.Actions>
@@ -73,6 +74,8 @@ export function SkillTrack_PersonCompetencyReport() {
     return <PersonCompetencyReportView personId={parsedPersonId.data} />;
 }
 
+// Must match the rendered height of `headCell` below (`h-9` = 36px) — it's the offset the
+// sticky group headings pin beneath.
 const HEADER_HEIGHT = 36;
 
 const stickyFirstCol = "sticky left-0 z-10 bg-background";
@@ -114,12 +117,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         return { skill, competency, status };
     });
 
-    const counts = {
-        current: rows.filter((row) => row.status === "current").length,
-        expired: rows.filter((row) => row.status === "expired").length,
-        notCompetent: rows.filter((row) => row.status === "not-competent").length,
-        notAssessed: rows.filter((row) => row.status === "not-assessed").length,
-    };
+    const counts = tallyStatuses(rows.map((row) => row.status));
 
     const visibleRows = gapsOnly ? rows.filter((row) => row.status !== "current") : rows;
 
@@ -156,7 +154,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Personnel Competency</Glorious.Title>
+                    <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_PersonScopeDialog label="Select a person" />
                     </Glorious.Actions>
@@ -177,7 +175,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         <ReportCellPopoversProvider isSynthetic={isSynthetic}>
             <Glorious.Root>
                 <Glorious.Header>
-                    <Glorious.Title>Personal Competency Report</Glorious.Title>
+                    <Glorious.Title>Personnel Competency Report</Glorious.Title>
                     <Glorious.Subtitle>
                         <div>
                             {person.name}
@@ -188,8 +186,8 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                         {showStatusCounts && (
                             <div>
                                 {counts.current} current · {counts.expired} expired ·{" "}
-                                {counts.notCompetent} not competent · {counts.notAssessed} not
-                                assessed
+                                {counts["not-competent"]} not competent · {counts["not-assessed"]}{" "}
+                                not assessed
                             </div>
                         )}
                     </Glorious.Subtitle>

@@ -69,7 +69,8 @@ export function SkillTrack_SkillScopeDialog({
 
     // `forceOpen` (report has no scope yet) shows the dialog on arrival, but it stays
     // dismissable — Escape leaves the blank report with its prompt and the trigger button to
-    // reopen. `?action=select-scope` opens it explicitly regardless.
+    // reopen. Once dismissed, it only ever reopens through `?action=select-scope`, so a
+    // Back-button navigation that clears the param always closes it.
     const [dismissed, setDismissed] = useState(false);
     const open = action === "select-scope" || (forceOpen && !dismissed);
 
@@ -111,10 +112,13 @@ export function SkillTrack_SkillScopeDialog({
         ),
     );
 
-    const currentTeamValue = teamParam ?? "all";
+    // A malformed `?team=` isn't one of the SelectItem values, so fall back to whole-org —
+    // matching how the report itself treats an unparseable team id.
+    const currentTeamValue =
+        teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
 
     function handleOpenChange(next: boolean) {
-        setDismissed(!next);
+        if (!next) setDismissed(true);
         void setAction(next ? "select-scope" : null, { history: next ? "push" : "replace" });
     }
 
@@ -148,7 +152,9 @@ export function SkillTrack_SkillScopeDialog({
                     <Select
                         value={currentTeamValue}
                         onValueChange={(value) =>
-                            setTeamParam(value === "all" ? null : value, { history: "replace" })
+                            void setTeamParam(value === "all" ? null : value, {
+                                history: "replace",
+                            })
                         }
                     >
                         <SelectTrigger id="skill-scope-team" size="sm" className="flex-1">

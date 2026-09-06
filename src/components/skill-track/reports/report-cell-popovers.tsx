@@ -201,8 +201,10 @@ function CheckDetailsContent({
 }) {
     const organization = useOrganization();
 
-    // `isCurrent` is the server's `expiresAt > now` check, so its negation is "expiry is past".
-    const expired = !competency.isCurrent;
+    // A null `expiresAt` means the skill never needs reassessment. Otherwise `isCurrent` is the
+    // server's `expiresAt > now` check, so its negation is "expiry is past".
+    const { expiresAt } = competency;
+    const expired = expiresAt !== null && !competency.isCurrent;
 
     const { data: check, isPending } = useQuery(
         trpc.skillChecks.getSkillCheck.queryOptions(
@@ -226,12 +228,20 @@ function CheckDetailsContent({
                         {formatRelativeDateTime(competency.checkedAt)}
                     </div>
                 </dd>
-                <dt className="text-muted-foreground">{expired ? "Expired" : "Expires"}</dt>
+                <dt className="text-muted-foreground">
+                    {expiresAt === null ? "Expiry" : expired ? "Expired" : "Expires"}
+                </dt>
                 <dd>
-                    <div>{formatDate(competency.expiresAt)}</div>
-                    <div className="text-muted-foreground">
-                        {formatRelativeDateTime(competency.expiresAt)}
-                    </div>
+                    {expiresAt === null ? (
+                        <div>No expiry</div>
+                    ) : (
+                        <>
+                            <div>{formatDate(expiresAt)}</div>
+                            <div className="text-muted-foreground">
+                                {formatRelativeDateTime(expiresAt)}
+                            </div>
+                        </>
+                    )}
                 </dd>
                 <dt className="text-muted-foreground">Assessor</dt>
                 <dd>

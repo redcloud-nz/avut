@@ -21,6 +21,7 @@ import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports
 import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import {
     deriveStatus,
+    STATUS_RANK,
     StatusBadge,
     tallyStatuses,
 } from "@/components/skill-track/reports/competency-status";
@@ -125,7 +126,8 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
                 checkedAt: competency?.checkedAt ?? null,
             };
         }),
-        R.sortBy((row) => row.name),
+        // Default "worst first" so coverage gaps surface at the top, name as the tiebreaker.
+        R.sortBy([(row) => STATUS_RANK[row.status], "desc"], [(row) => row.name, "asc"]),
     );
 
     const counts = tallyStatuses(rows.map((row) => row.status));

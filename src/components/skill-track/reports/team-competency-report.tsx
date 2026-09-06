@@ -46,6 +46,8 @@ import { trpc } from "@/trpc/client";
 
 const STATUS_ORDER = ["current", "expired", "not-competent", "not-assessed"] as const;
 
+// Must match the rendered height of `headCell` below (`h-9` = 36px) — the offset the
+// sticky group headings pin beneath.
 const HEADER_HEIGHT = 36;
 const SKILL_COL_WIDTH = "45%";
 const BAR_COL_WIDTH = "35%";
@@ -64,7 +66,7 @@ export function SkillTrack_TeamCompetencyReport() {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Team Competency</Glorious.Title>
+                    <Glorious.Title>Team Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_TeamScopeDialog forceOpen label="Select a scope" />
                     </Glorious.Actions>

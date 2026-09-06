@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
@@ -913,6 +914,109 @@ describe("skillChecks.upsertSessionSkillChecks", () => {
     });
 });
 
+describe("skillChecks.getCompetencyMatrix — skills with no reassessment interval", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        person: PersonId.create(),
+        assessor: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Alice",
+                email: `${T.person}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessor,
+                organizationId: T.org,
+                name: "Assessor",
+                email: `${T.assessor}@example.com`,
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "First Aid",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Basic",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Situational Awareness",
+                description: "",
+                properties: {},
+                frequency: 0,
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: SkillCheckId.create(),
+                organizationId: T.org,
+                assesseeId: T.person,
+                assessorId: T.assessor,
+                skillId: T.skill,
+                result: "Pass",
+                notes: "",
+                status: "Include",
+                createdAt: new Date("2020-01-01"),
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillCheck: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("reports a passing check as current with no expiry date", async () => {
+        const result = await makeCaller().getCompetencyMatrix({
+            organizationId: T.org,
+            personId: T.person,
+        });
+
+        expect(result.competencies).toHaveLength(1);
+        expect(result.competencies[0].expiresAt).toBeNull();
+        expect(result.competencies[0].isCurrent).toBe(true);
+    });
+});
+
 describe("skillChecks.getSkillCheck", () => {
     const T = {
         org: OrganizationId.create(),
@@ -921,7 +1025,7 @@ describe("skillChecks.getSkillCheck", () => {
         assessor: PersonId.create(),
         assessee: PersonId.create(),
         skill: SkillId.create(),
-        check: nanoId16(),
+        check: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -948,7 +1052,7 @@ describe("skillChecks.getSkillCheck", () => {
         });
         await db.skillCheck.create({
             data: {
-                id: T.check as never,
+                id: T.check,
                 organizationId: T.org,
                 assesseeId: T.assessee,
                 assessorId: T.assessor,
@@ -973,7 +1077,7 @@ describe("skillChecks.getSkillCheck", () => {
     it("returns the check with the assessor's name resolved", async () => {
         const result = await makeCaller().getSkillCheck({
             organizationId: T.org,
-            skillCheckId: T.check as never,
+            skillCheckId: T.check,
         });
 
         expect(result.notes).toBe("Solid technique");
@@ -985,7 +1089,7 @@ describe("skillChecks.getSkillCheck", () => {
         await expect(
             makeCaller().getSkillCheck({
                 organizationId: T.org,
-                skillCheckId: nanoId16() as never,
+                skillCheckId: SkillCheckId.create(),
             }),
         ).rejects.toThrow(TRPCError);
     });
@@ -994,7 +1098,7 @@ describe("skillChecks.getSkillCheck", () => {
         await expect(
             makeCaller().getSkillCheck({
                 organizationId: T.otherOrg,
-                skillCheckId: T.check as never,
+                skillCheckId: T.check,
             }),
         ).rejects.toThrow(TRPCError);
     });

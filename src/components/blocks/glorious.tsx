@@ -62,15 +62,18 @@ function GloriousTitle({ children, className, ...props }: ComponentProps<"h1">) 
     );
 }
 
-function GloriousSubtitle({ children, className, ...props }: ComponentProps<"p">) {
+// A header slot rather than a paragraph: reports pass block children (stacked <div>
+// lines, responsive <br>), so this must not be a <p> — a <div> inside <p> is invalid
+// markup and desyncs SSR/hydration.
+function GloriousSubtitle({ children, className, ...props }: ComponentProps<"div">) {
     return (
-        <p
+        <div
             data-component="GloriousSubtitle"
             className={cn("text-sm text-muted-foreground", className)}
             {...props}
         >
             {children}
-        </p>
+        </div>
     );
 }
 
