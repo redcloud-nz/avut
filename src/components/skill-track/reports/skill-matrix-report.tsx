@@ -14,7 +14,11 @@ import { useQueryState } from "nuqs";
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
-import { deriveStatus, StatusIcon } from "@/components/skill-track/reports/competency-status";
+import {
+    deriveStatus,
+    StatusIcon,
+    tallyStatuses,
+} from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +86,7 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     );
 
     const [showSkillDescription, setShowSkillDescription] = useState(false);
+    const [showStatusCounts, setShowStatusCounts] = useState(true);
 
     const scopeLabel = teamId
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
@@ -101,6 +106,13 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     );
 
     const people = R.sortBy(personnel, (person) => person.name);
+
+    // Status breakdown across every person × skill cell (personnel.length × skills.length).
+    const cellCounts = tallyStatuses(
+        personnel.flatMap((person) =>
+            skills.map((skill) => deriveStatus(competencyByKey.get(`${person.id}:${skill.id}`))),
+        ),
+    );
 
     // One section per skill group, in package -> group -> skill order. Each renders as its own
     // <tbody> so the group's sticky header releases at the section boundary when scrolling.
@@ -149,6 +161,14 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                         {people.length === 1 ? "person" : "people"})
                         <br />
                         {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                        {showStatusCounts && (
+                            <>
+                                {" "}
+                                · {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
+                                {cellCounts["not-competent"]} not competent ·{" "}
+                                {cellCounts["not-assessed"]} not assessed
+                            </>
+                        )}
                     </Glorious.Subtitle>
                 </div>
                 <Glorious.Actions>
@@ -168,6 +188,12 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                     onCheckedChange={setShowSkillDescription}
                                 >
                                     <span>Skill Description</span>
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showStatusCounts}
+                                    onCheckedChange={setShowStatusCounts}
+                                >
+                                    <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
