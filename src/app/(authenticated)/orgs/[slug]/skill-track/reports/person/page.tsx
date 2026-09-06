@@ -5,9 +5,13 @@
  * Path: /orgs/[slug]/skill-track/reports/person
  */
 
+import { Suspense } from "react";
+
 import { Std } from "@/components/blocks/std";
 import { SkillTrack_PersonCompetencyReport } from "@/components/skill-track/reports/person-competency-report";
+import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -41,7 +45,25 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
     return (
         <HydrateClient>
             <Std.SidebarInset>
-                <SkillTrack_PersonCompetencyReport />
+                <Std.Navbar
+                    breadcrumbs={[
+                        {
+                            label: "Skill Track",
+                            href: route("/orgs/[slug]/skill-track", { slug }),
+                        },
+                        {
+                            label: "Reports",
+                            href: route("/orgs/[slug]/skill-track/reports", { slug }),
+                        },
+                        {
+                            label: "Personnel Competency",
+                            href: route("/orgs/[slug]/skill-track/reports/person", { slug }),
+                        },
+                    ]}
+                />
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <SkillTrack_PersonCompetencyReport />
+                </Suspense>
             </Std.SidebarInset>
         </HydrateClient>
     );
