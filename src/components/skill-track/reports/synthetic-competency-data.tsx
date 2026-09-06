@@ -26,9 +26,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-import { DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenuCheckboxItem, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
 
@@ -142,10 +141,16 @@ export function useSyntheticCompetencies(
     skills: MatrixSkill[],
     personnel: { id: Competency["assesseeId"] }[],
     competencies: Competency[],
-): { competencies: Competency[]; syntheticActions: ReactNode; syntheticMenuItem: ReactNode } {
+): {
+    competencies: Competency[];
+    syntheticActions: ReactNode;
+    syntheticMenuItem: ReactNode;
+    syntheticOpenMenuItem: ReactNode;
+} {
     const organization = useOrganization();
     const [synthetic, setSynthetic] = useQueryState("synthetic");
     const [config, setConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const isSynthetic = synthetic !== null;
 
     const generated = useMemo(
@@ -165,19 +170,32 @@ export function useSyntheticCompetencies(
     );
 
     if (!isSynthetic || !generated) {
-        return { competencies, syntheticActions: null, syntheticMenuItem };
+        return {
+            competencies,
+            syntheticActions: null,
+            syntheticMenuItem,
+            syntheticOpenMenuItem: null,
+        };
     }
 
     return {
         competencies: generated,
         syntheticActions: (
             <SyntheticDataDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
                 config={config}
                 onConfigChange={setConfig}
                 resultOptions={getEnabledSkillCheckResultOptions(organization.settings)}
             />
         ),
         syntheticMenuItem,
+        syntheticOpenMenuItem: (
+            <DropdownMenuItem className="sm:hidden" onSelect={() => setDialogOpen(true)}>
+                <FlaskConicalIcon />
+                <span>Synthetic Data</span>
+            </DropdownMenuItem>
+        ),
     };
 }
 
@@ -215,23 +233,25 @@ function mulberry32(seed: number): () => number {
  * header, where it doubles as the signal that the report is not showing recorded data.
  */
 export function SyntheticDataDialog({
+    open,
+    onOpenChange,
     config,
     onConfigChange,
     resultOptions,
 }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     config: SyntheticConfig;
     onConfigChange: (config: SyntheticConfig) => void;
     /** The org's enabled result values, in fixed order, with their configured labels. */
     resultOptions: { value: SkillCheckResultValue; label: string }[];
 }) {
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <FlaskConicalIcon />
-                    <span className="sr-only sm:not-sr-only">Synthetic Data</span>
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <Button variant="outline" onClick={() => onOpenChange(true)} className="max-sm:hidden">
+                <FlaskConicalIcon />
+                <span className="sr-only sm:not-sr-only">Synthetic Data</span>
+            </Button>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Synthetic Data</DialogTitle>

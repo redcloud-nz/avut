@@ -13,6 +13,7 @@ import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import {
     deriveStatus,
@@ -95,11 +96,8 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         }),
     );
 
-    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
+        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);
@@ -170,7 +168,7 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
                     {rows.length} {rows.length === 1 ? "skill" : "skills"}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
-                    <SkillTrack_TeamScopeDialog />
+                    <SkillTrack_TeamScopeDialog compact />
                     {syntheticActions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -194,6 +192,9 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
                                     <span>Skill Description</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator className="sm:hidden" />
+                            <SkillTrack_ScopeDialogMenuItem />
+                            {syntheticOpenMenuItem}
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>

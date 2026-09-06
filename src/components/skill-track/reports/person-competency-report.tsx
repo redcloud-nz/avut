@@ -16,6 +16,7 @@ import { UserXIcon } from "lucide-react";
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { SkillTrack_PersonScopeDialog } from "@/components/skill-track/reports/person-scope-dialog";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import {
     deriveStatus,
     StatusBadge,
@@ -85,11 +86,8 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         }),
     );
 
-    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
+        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);
@@ -184,7 +182,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                     )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
-                    <SkillTrack_PersonScopeDialog />
+                    <SkillTrack_PersonScopeDialog compact />
                     {syntheticActions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -214,6 +212,9 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator className="sm:hidden" />
+                            <SkillTrack_ScopeDialogMenuItem />
+                            {syntheticOpenMenuItem}
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>

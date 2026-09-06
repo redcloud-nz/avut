@@ -13,6 +13,7 @@ import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import {
     deriveStatus,
@@ -92,11 +93,8 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
+        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const [showStatusCounts, setShowStatusCounts] = useState(true);
 
@@ -146,7 +144,7 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
                     )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
-                    <SkillTrack_SkillScopeDialog />
+                    <SkillTrack_SkillScopeDialog compact />
                     {syntheticActions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -164,6 +162,9 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator className="sm:hidden" />
+                            <SkillTrack_ScopeDialogMenuItem />
+                            {syntheticOpenMenuItem}
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>

@@ -28,7 +28,6 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,6 +39,7 @@ import {
 } from "@/components/ui/select";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -51,9 +51,12 @@ import { trpc } from "@/trpc/client";
 export function SkillTrack_SkillScopeDialog({
     forceOpen = false,
     label = "Change scope",
+    compact = false,
 }: {
     forceOpen?: boolean;
     label?: string;
+    /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
+    compact?: boolean;
 }) {
     const organization = useOrganization();
 
@@ -123,12 +126,14 @@ export function SkillTrack_SkillScopeDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <TelescopeIcon />
-                    <span className="sr-only sm:not-sr-only">{label}</span>
-                </Button>
-            </DialogTrigger>
+            <Button
+                variant="outline"
+                onClick={() => handleOpenChange(true)}
+                className={cn(compact && "max-sm:hidden")}
+            >
+                <TelescopeIcon />
+                <span className="sr-only sm:not-sr-only">{label}</span>
+            </Button>
             <DialogContent className="gap-0 p-0">
                 <DialogHeader className="border-b px-4 py-3">
                     <DialogTitle>Select a skill</DialogTitle>

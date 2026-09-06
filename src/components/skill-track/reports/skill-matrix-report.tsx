@@ -13,6 +13,7 @@ import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
 import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import {
     deriveStatus,
@@ -93,11 +94,8 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
         : "Whole Organization";
 
-    const { competencies, syntheticActions, syntheticMenuItem } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const { competencies, syntheticActions, syntheticMenuItem, syntheticOpenMenuItem } =
+        useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const competencyByKey = new Map(
         competencies.map((competency) => [
@@ -172,7 +170,7 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                     )}
                 </Glorious.Subtitle>
                 <Glorious.Actions>
-                    <SkillTrack_TeamScopeDialog />
+                    <SkillTrack_TeamScopeDialog compact />
                     {syntheticActions}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -196,6 +194,9 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                     <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
+                            <DropdownMenuSeparator className="sm:hidden" />
+                            <SkillTrack_ScopeDialogMenuItem />
+                            {syntheticOpenMenuItem}
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
                         </DropdownMenuContent>
