@@ -24,6 +24,31 @@ import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedu
 import { Messages } from "../messages";
 
 /**
+ * The public, catalogue-facing shape of a package's skills and groups: names, descriptions,
+ * ordering, and default include/required flags only — never `properties`, `tags`, or timestamps,
+ * which must not leak to orgs that aren't subscribed.
+ */
+const catalogueSkillSchema = Skill.schema.pick({
+    id: true,
+    skillGroupId: true,
+    name: true,
+    description: true,
+    sequence: true,
+    defaultInclude: true,
+    defaultRequired: true,
+});
+
+const catalogueGroupSchema = SkillGroup.schema
+    .pick({
+        id: true,
+        name: true,
+        description: true,
+        sequence: true,
+        defaultInclude: true,
+    })
+    .extend({ skills: z.array(catalogueSkillSchema) });
+
+/**
  * Router for managing skill package subscriptions and listing the groups and skills associated with the organization's subscribed skill packages.
  */
 export const skillsRouter = createTrpcRouter({
@@ -127,8 +152,12 @@ export const skillsRouter = createTrpcRouter({
      * Get a single published skill package by ID, including this organization's subscription
      * status and package-level counts.
      * @param skillPackageId The ID of the skill package to retrieve.
-     * @returns The skill package with organization, subscription, skillCount, subscriptionCount.
+     * @returns The skill package with organization, subscription, skillCount, subscriptionCount,
+     *   and its active groups (each with its active skills) for the catalogue contents view.
      * @throws TRPCError(NOT_FOUND) if the package doesn't exist or isn't published.
+     *
+     * Note: unlike the builder's `getPackage`, this response is NOT flat — a cache effect that
+     * writes a mutation response wholesale into this query key would drop `groups`. Spread `old`.
      */
     getPackage: organizationProcedure({ skillPackageSubscription: ["view"] })
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
@@ -141,8 +170,7 @@ export const skillsRouter = createTrpcRouter({
                 subscription: SkillPackageSubscription.schema.nullable(),
                 skillCount: z.number(),
                 subscriptionCount: z.number(),
-                groups: z.array(SkillGroup.schema),
-                skills: z.array(Skill.schema),
+                groups: z.array(catalogueGroupSchema),
             }),
         )
         .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
@@ -176,19 +204,30 @@ export const skillsRouter = createTrpcRouter({
                     groups: {
                         where: { status: "Active" },
                         orderBy: { sequence: "asc" },
-                    },
-                    skills: {
-                        where: { status: "Active" },
-                        orderBy: { sequence: "asc" },
+                        select: {
+                            id: true,
+                            name: true,
+                            description: true,
+                            sequence: true,
+                            defaultInclude: true,
+                            skills: {
+                                where: { status: "Active" },
+                                orderBy: { sequence: "asc" },
+                                select: {
+                                    id: true,
+                                    skillGroupId: true,
+                                    name: true,
+                                    description: true,
+                                    sequence: true,
+                                    defaultInclude: true,
+                                    defaultRequired: true,
+                                },
+                            },
+                        },
                     },
                     _count: {
                         select: {
                             subscriptions: true,
-                            skills: {
-                                where: {
-                                    status: "Active",
-                                },
-                            },
                         },
                     },
                 },
@@ -207,14 +246,15 @@ export const skillsRouter = createTrpcRouter({
                     id: pkg.organization.id,
                     name: pkg.organization.name,
                 },
-                skillCount: pkg._count.skills,
+                // Derived from the loaded contents so the count can never disagree with what the
+                // catalogue page renders (archived groups and their still-active skills are excluded).
+                skillCount: pkg.groups.reduce((total, group) => total + group.skills.length, 0),
                 subscriptionCount: pkg._count.subscriptions,
                 subscription:
                     pkg.subscriptions.length > 0
                         ? SkillPackageSubscription.fromRecord(pkg.subscriptions[0])
                         : null,
-                groups: pkg.groups.map((group) => SkillGroup.fromRecord(group)),
-                skills: pkg.skills.map((skill) => Skill.fromRecord(skill)),
+                groups: pkg.groups,
             };
         }),
 
