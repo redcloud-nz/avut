@@ -10,7 +10,9 @@ import { TRPCError } from "@trpc/server";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { UserId } from "@/lib/schemas/user";
@@ -270,6 +272,83 @@ describe("skillsRouter.getPackage", () => {
             skillPackageId: T.pkg,
         });
         expect(result.subscription).toBeNull();
+    });
+
+    it("returns groups and skills ordered by sequence with their default flags", async () => {
+        const pkg = SkillPackageId.create();
+        const groupA = SkillGroupId.create();
+        const groupB = SkillGroupId.create();
+        await db.skillPackage.create({
+            data: {
+                id: pkg,
+                organizationId: T.publisherOrg,
+                name: "Contents Pkg",
+                description: "",
+                properties: {},
+                tags: [],
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: groupB,
+                skillPackageId: pkg,
+                name: "Group B",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+                defaultInclude: false,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: groupA,
+                skillPackageId: pkg,
+                name: "Group A",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 0,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: SkillId.create(),
+                skillPackageId: pkg,
+                skillGroupId: groupA,
+                name: "Skill A2",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+                defaultRequired: true,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: SkillId.create(),
+                skillPackageId: pkg,
+                skillGroupId: groupA,
+                name: "Skill A1",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 0,
+                defaultInclude: false,
+            },
+        });
+
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: pkg,
+        });
+
+        expect(result.groups.map((g) => g.name)).toEqual(["Group A", "Group B"]);
+        expect(result.groups[1].defaultInclude).toBe(false);
+        expect(result.skills.map((s) => s.name)).toEqual(["Skill A1", "Skill A2"]);
+        expect(result.skills[0].defaultInclude).toBe(false);
+        expect(result.skills[1].defaultRequired).toBe(true);
     });
 
     it("throws NOT_FOUND for an unpublished package", async () => {

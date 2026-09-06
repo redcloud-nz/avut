@@ -141,6 +141,8 @@ export const skillsRouter = createTrpcRouter({
                 subscription: SkillPackageSubscription.schema.nullable(),
                 skillCount: z.number(),
                 subscriptionCount: z.number(),
+                groups: z.array(SkillGroup.schema),
+                skills: z.array(Skill.schema),
             }),
         )
         .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
@@ -170,6 +172,14 @@ export const skillsRouter = createTrpcRouter({
                         where: {
                             organizationId,
                         },
+                    },
+                    groups: {
+                        where: { status: "Active" },
+                        orderBy: { sequence: "asc" },
+                    },
+                    skills: {
+                        where: { status: "Active" },
+                        orderBy: { sequence: "asc" },
                     },
                     _count: {
                         select: {
@@ -203,6 +213,8 @@ export const skillsRouter = createTrpcRouter({
                     pkg.subscriptions.length > 0
                         ? SkillPackageSubscription.fromRecord(pkg.subscriptions[0])
                         : null,
+                groups: pkg.groups.map((group) => SkillGroup.fromRecord(group)),
+                skills: pkg.skills.map((skill) => Skill.fromRecord(skill)),
             };
         }),
 

@@ -13,6 +13,7 @@ import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/components/skill-track/subscribe-package";
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/components/skill-track/unsubscribe-package";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
@@ -20,6 +21,8 @@ import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
+import type { Skill } from "@/lib/schemas/skill";
+import type { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
@@ -113,24 +116,41 @@ export function SkillTrack_CataloguePackage_Content({
                                     </DL>
                                 </CardContent>
                             </Card>
-                            {skillPackage.subscription && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Subscription Information</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DL>
-                                            <DLTerm>Subscription ID</DLTerm>
-                                            <DLDetails>{skillPackage.subscription.id}</DLDetails>
-                                        </DL>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Contents</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {skillPackage.groups.length === 0 ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            This package has no groups or skills yet.
+                                        </p>
+                                    ) : (
+                                        skillPackage.groups.map((group) => (
+                                            <PackageGroup
+                                                key={group.id}
+                                                group={group}
+                                                skills={skillPackage.skills.filter(
+                                                    (skill) => skill.skillGroupId === group.id,
+                                                )}
+                                            />
+                                        ))
+                                    )}
+                                </CardContent>
+                            </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
                                     <DL>
+                                        {skillPackage.subscription && (
+                                            <>
+                                                <DLTerm>Subscription ID</DLTerm>
+                                                <DLDetails>
+                                                    {skillPackage.subscription.id}
+                                                </DLDetails>
+                                            </>
+                                        )}
                                         <DLTerm>Created</DLTerm>
                                         <DLDetails>
                                             <div>{formatDateTime(skillPackage.createdAt)}</div>
@@ -172,5 +192,45 @@ export function SkillTrack_CataloguePackage_Content({
                 }
             />
         </>
+    );
+}
+
+function PackageGroup({ group, skills }: { group: SkillGroup; skills: Skill[] }) {
+    return (
+        <div>
+            <div className="flex items-center gap-2">
+                <h3 className="font-medium">{group.name}</h3>
+                {!group.defaultInclude && <Badge variant="outline">Not included by default</Badge>}
+            </div>
+            {group.description && (
+                <p className="text-muted-foreground mt-0.5 text-sm">{group.description}</p>
+            )}
+            {skills.length === 0 ? (
+                <p className="text-muted-foreground mt-2 text-sm">No skills in this group.</p>
+            ) : (
+                <ul className="mt-2 divide-y rounded-md border">
+                    {skills.map((skill) => (
+                        <li key={skill.id} className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{skill.name}</span>
+                                {skill.defaultRequired ? (
+                                    <Badge variant="secondary">Required</Badge>
+                                ) : (
+                                    <Badge variant="outline">Optional</Badge>
+                                )}
+                                {!skill.defaultInclude && (
+                                    <Badge variant="outline">Not included by default</Badge>
+                                )}
+                            </div>
+                            {skill.description && (
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                    {skill.description}
+                                </p>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }
