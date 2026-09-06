@@ -167,22 +167,19 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
     return (
         <Glorious.Root>
             <Glorious.Header>
-                <div>
-                    <Glorious.Title>Personal Competency Report</Glorious.Title>
-                    <Glorious.Subtitle>
-                        Person: {person.name}
-                        <br />
-                        {rows.length} {rows.length === 1 ? "skill" : "skills"}
-                        {showStatusCounts && (
-                            <>
-                                {" "}
-                                · {counts.current} current · {counts.expired} expired ·{" "}
-                                {counts.notCompetent} not competent · {counts.notAssessed} not
-                                assessed
-                            </>
-                        )}
-                    </Glorious.Subtitle>
-                </div>
+                <Glorious.Title>Personal Competency Report</Glorious.Title>
+                <Glorious.Subtitle>
+                    Person: {person.name}
+                    <br />
+                    {rows.length} {rows.length === 1 ? "skill" : "skills"}
+                    {showStatusCounts && (
+                        <>
+                            {" "}
+                            · {counts.current} current · {counts.expired} expired ·{" "}
+                            {counts.notCompetent} not competent · {counts.notAssessed} not assessed
+                        </>
+                    )}
+                </Glorious.Subtitle>
                 <Glorious.Actions>
                     <SkillTrack_PersonScopeDialog />
                     {syntheticActions}

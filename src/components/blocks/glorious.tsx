@@ -29,11 +29,20 @@ function GloriousRoot({ children, className, ...props }: ComponentProps<"main">)
     );
 }
 
+/**
+ * Grid header, laid out like the shadcn `CardHeader`: title and subtitle stack in
+ * column 1, `GloriousActions` pins to column 2 spanning both rows so it stays beside
+ * the title at every width instead of wrapping. Title/Subtitle/Actions must be direct
+ * children (no wrapper element) for the grid placement to work.
+ */
 function GloriousHeader({ children, className, ...props }: ComponentProps<"header">) {
     return (
         <header
             data-component="GloriousHeader"
-            className={cn("flex flex-wrap items-start justify-between gap-2", className)}
+            className={cn(
+                "grid auto-rows-min grid-cols-[1fr_auto] items-start gap-x-2 gap-y-1",
+                className,
+            )}
             {...props}
         >
             {children}
@@ -69,7 +78,10 @@ function GloriousActions({ children, className, ...props }: ComponentProps<"div"
     return (
         <div
             data-component="GloriousActions"
-            className={cn("flex items-center justify-end gap-2", className)}
+            className={cn(
+                "col-start-2 row-span-2 row-start-1 flex items-center gap-2 self-start justify-self-end",
+                className,
+            )}
             {...props}
         >
             {children}

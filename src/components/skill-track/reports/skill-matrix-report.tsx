@@ -154,23 +154,21 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     return (
         <Glorious.Root>
             <Glorious.Header>
-                <div>
-                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
-                    <Glorious.Subtitle>
-                        Scope: {scopeLabel} ({people.length}{" "}
-                        {people.length === 1 ? "person" : "people"})
-                        <br />
-                        {skills.length} {skills.length === 1 ? "skill" : "skills"}
-                        {showStatusCounts && (
-                            <>
-                                {" "}
-                                · {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
-                                {cellCounts["not-competent"]} not competent ·{" "}
-                                {cellCounts["not-assessed"]} not assessed
-                            </>
-                        )}
-                    </Glorious.Subtitle>
-                </div>
+                <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
+                <Glorious.Subtitle>
+                    Scope: {scopeLabel} ({people.length} {people.length === 1 ? "person" : "people"}
+                    )
+                    <br />
+                    {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                    {showStatusCounts && (
+                        <>
+                            {" "}
+                            · {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
+                            {cellCounts["not-competent"]} not competent ·{" "}
+                            {cellCounts["not-assessed"]} not assessed
+                        </>
+                    )}
+                </Glorious.Subtitle>
                 <Glorious.Actions>
                     <SkillTrack_TeamScopeDialog />
                     {syntheticActions}

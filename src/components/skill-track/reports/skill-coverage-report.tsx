@@ -37,7 +37,7 @@ export function SkillTrack_SkillCoverageReport() {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Skill Coverage</Glorious.Title>
+                    <Glorious.Title>Skill Coverage Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_SkillScopeDialog forceOpen label="Select a skill" />
                     </Glorious.Actions>
@@ -109,12 +109,12 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
     return (
         <Glorious.Root>
             <Glorious.Header>
-                <div>
-                    <Glorious.Title>{skill ? skill.name : "Skill Coverage"}</Glorious.Title>
-                    <Glorious.Subtitle>
-                        {rows.length} {rows.length === 1 ? "person" : "people"} · {scopeLabel}
-                    </Glorious.Subtitle>
-                </div>
+                <Glorious.Title>Skill Coverage Report</Glorious.Title>
+                <Glorious.Subtitle>
+                    Skill: {skill ? skill.name : "Unknown Skill"}
+                    <br />
+                    Scope: {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
+                </Glorious.Subtitle>
                 <Glorious.Actions>
                     <SkillTrack_SkillScopeDialog />
                     {syntheticActions}
