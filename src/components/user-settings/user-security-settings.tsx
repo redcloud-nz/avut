@@ -10,7 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/client/auth-client";
 import { Alert } from "@/components/ui/alert";
 import { RainbowSpinner } from "@/components/ui/loading";
-// import { LinkedAccounts_Card } from "@/components/user-settings/linked-accounts-card";
+import { ActiveSessions_Card } from "@/components/user-settings/active-sessions-card";
+import { LinkedAccounts_Card } from "@/components/user-settings/linked-accounts-card";
 import { UserPassword_Card } from "@/components/user-settings/user-password-card";
 
 export function UserSecuritySettings() {
@@ -41,9 +42,10 @@ export function UserSecuritySettings() {
     return (
         <div className="space-y-4">
             <UserPassword_Card hasCredentialAccount={hasCredentialAccount} />
-            {/* <LinkedAccounts_Card
+            <LinkedAccounts_Card
                 linkedAccounts={accountsQuery.data.map((account) => account.providerId)}
-            /> */}
+            />
+            <ActiveSessions_Card />
         </div>
     );
 }

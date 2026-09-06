@@ -155,6 +155,10 @@ export const auth = betterAuth({
             enabled: true,
             maxAge: 5 * 60, // 5 minutes
         },
+        // How recently the user must have signed in for "fresh session" endpoints
+        // (e.g. list-sessions, delete-user). Default is 24h; widened to 7 days so the
+        // Security settings' Active Sessions card stays usable between logins.
+        freshAge: 7 * 24 * 60 * 60, // 7 days
     },
     socialProviders: {
         github: {

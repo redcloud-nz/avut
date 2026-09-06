@@ -5,11 +5,13 @@
 
 "use client";
 
-import { Link2Icon, Link2OffIcon } from "lucide-react";
+import { toast } from "sonner";
 
-import { SiApple, SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
+import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { authClient } from "@/client/auth-client";
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Item,
@@ -19,6 +21,15 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
+import { useLogger } from "@/hooks/use-logger";
+
+/** Social providers configured in `src/server/auth.ts`. */
+const SocialProviders = [
+    { id: "github", name: "GitHub", Icon: SiGithub },
+    { id: "google", name: "Google", Icon: SiGoogle },
+] as const;
+
+type SocialProviderId = (typeof SocialProviders)[number]["id"];
 
 export function LinkedAccounts_Card({ linkedAccounts }: { linkedAccounts: string[] }) {
     return (
@@ -27,50 +38,89 @@ export function LinkedAccounts_Card({ linkedAccounts }: { linkedAccounts: string
                 <CardTitle>Linked Accounts</CardTitle>
             </CardHeader>
             <CardContent>
-                <LinkedAccount providerId="github" isLinked={linkedAccounts.includes("github")} />
-                <LinkedAccount providerId="google" isLinked={linkedAccounts.includes("google")} />
+                {SocialProviders.map((provider) => (
+                    <LinkedAccount
+                        key={provider.id}
+                        provider={provider}
+                        isLinked={linkedAccounts.includes(provider.id)}
+                    />
+                ))}
             </CardContent>
         </Card>
     );
 }
 
-const providerIcons = {
-    github: SiGithub,
-    google: SiGoogle,
-    apple: SiApple,
-};
-
 function LinkedAccount({
-    providerId,
+    provider,
     isLinked,
 }: {
-    providerId: "github" | "google" | "apple";
+    provider: { id: SocialProviderId; name: string; Icon: typeof SiGithub };
     isLinked: boolean;
 }) {
-    const IconComponent = providerIcons[providerId];
+    const logger = useLogger("Common", "LinkedAccounts_Card");
+    const queryClient = useQueryClient();
+
+    const linkMutation = useMutation({
+        async mutationFn() {
+            const { data, error } = await authClient.linkSocial({
+                provider: provider.id,
+                callbackURL: window.location.href,
+            });
+            if (error) throw new Error(error.message ?? "Failed to link account");
+            // The client redirects automatically when it can; fall back to a manual redirect.
+            if (data && "url" in data && typeof data.url === "string") {
+                window.location.href = data.url;
+            }
+        },
+        onError(error: Error) {
+            logger.error(`Failed to link ${provider.name} account`, error);
+            toast.error(`Failed to link ${provider.name} account: ${error.message}`);
+        },
+    });
+
+    const unlinkMutation = useMutation({
+        async mutationFn() {
+            const { error } = await authClient.unlinkAccount({ providerId: provider.id });
+            if (error) throw new Error(error.message ?? "Failed to unlink account");
+        },
+        onError(error: Error) {
+            logger.error(`Failed to unlink ${provider.name} account`, error);
+            toast.error(`Failed to unlink ${provider.name} account: ${error.message}`);
+        },
+        async onSuccess() {
+            await queryClient.invalidateQueries({ queryKey: ["user", "linkedAccounts"] });
+            toast.success(`Unlinked ${provider.name} account`);
+        },
+    });
+
+    const { Icon } = provider;
 
     return (
         <Item>
             <ItemMedia>
-                <IconComponent />
+                <Icon />
             </ItemMedia>
             <ItemContent>
-                <ItemTitle>{providerId.charAt(0).toUpperCase() + providerId.slice(1)}</ItemTitle>
+                <ItemTitle>{provider.name}</ItemTitle>
                 <ItemDescription>
-                    {isLinked
-                        ? "Linked"
-                        : `Link your ${providerId.charAt(0).toUpperCase() + providerId.slice(1)} account`}
+                    {isLinked ? "Linked" : `Link your ${provider.name} account`}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
                 {isLinked ? (
-                    <Button variant="outline">
-                        <Link2OffIcon /> Unlink
-                    </Button>
+                    <MutationButton
+                        variant="outline"
+                        status={unlinkMutation.status}
+                        text={{ idle: "Unlink", pending: "Unlinking", success: "Unlinked" }}
+                        onClick={() => unlinkMutation.mutate()}
+                    />
                 ) : (
-                    <Button variant="outline">
-                        <Link2Icon /> Link
-                    </Button>
+                    <MutationButton
+                        variant="outline"
+                        status={linkMutation.status}
+                        text={{ idle: "Link", pending: "Redirecting", success: "Redirecting" }}
+                        onClick={() => linkMutation.mutate()}
+                    />
                 )}
             </ItemActions>
         </Item>
