@@ -49,7 +49,7 @@ export function SkillTrack_PersonCompetencyReport() {
         return (
             <Glorious.Root className="mx-auto w-full max-w-4xl">
                 <Glorious.Header>
-                    <Glorious.Title>Personnel Competency</Glorious.Title>
+                    <Glorious.Title>Personal Competency Report</Glorious.Title>
                     <Glorious.Actions>
                         <SkillTrack_PersonScopeDialog forceOpen label="Select a person" />
                     </Glorious.Actions>
@@ -92,6 +92,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
 
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);
+    const [showStatusCounts, setShowStatusCounts] = useState(true);
 
     const person = personnel[0];
 
@@ -167,11 +168,19 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         <Glorious.Root>
             <Glorious.Header>
                 <div>
-                    <Glorious.Title>{person.name}</Glorious.Title>
+                    <Glorious.Title>Personal Competency Report</Glorious.Title>
                     <Glorious.Subtitle>
-                        {rows.length} {rows.length === 1 ? "skill" : "skills"} · {counts.current}{" "}
-                        current · {counts.expired} expired · {counts.notCompetent} not competent ·{" "}
-                        {counts.notAssessed} not assessed
+                        Person: {person.name}
+                        <br />
+                        {rows.length} {rows.length === 1 ? "skill" : "skills"}
+                        {showStatusCounts && (
+                            <>
+                                {" "}
+                                · {counts.current} current · {counts.expired} expired ·{" "}
+                                {counts.notCompetent} not competent · {counts.notAssessed} not
+                                assessed
+                            </>
+                        )}
                     </Glorious.Subtitle>
                 </div>
                 <Glorious.Actions>
@@ -197,6 +206,12 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
                                     onCheckedChange={setShowSkillDescription}
                                 >
                                     <span>Skill Description</span>
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showStatusCounts}
+                                    onCheckedChange={setShowStatusCounts}
+                                >
+                                    <span>Status Counts</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>

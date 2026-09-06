@@ -5,19 +5,30 @@
 
 "use client";
 
+import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import { deriveStatus, StatusIcon } from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
+import { Button } from "@/components/ui/button";
 import {
     DiagonalColumnHeader,
     DiagonalLeadColumnHeader,
 } from "@/components/ui/diagonal-column-header";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -69,6 +80,8 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
             teamId,
         }),
     );
+
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     const scopeLabel = teamId
         ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
@@ -132,13 +145,33 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                 <div>
                     <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
                     <Glorious.Subtitle>
-                        {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
-                        {skills.length} {skills.length === 1 ? "skill" : "skills"} · {scopeLabel}
+                        Scope: {scopeLabel} ({people.length}{" "}
+                        {people.length === 1 ? "person" : "people"})
+                        <br />
+                        {skills.length} {skills.length === 1 ? "skill" : "skills"}
                     </Glorious.Subtitle>
                 </div>
                 <Glorious.Actions>
                     <SkillTrack_TeamScopeDialog />
                     {syntheticActions}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost">
+                                <DropdownMenuTriggerIcon />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="end">
+                            <DropdownMenuGroup>
+                                <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                <DropdownMenuCheckboxItem
+                                    checked={showSkillDescription}
+                                    onCheckedChange={setShowSkillDescription}
+                                >
+                                    <span>Skill Description</span>
+                                </DropdownMenuCheckboxItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </Glorious.Actions>
             </Glorious.Header>
 
@@ -193,15 +226,20 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                             scope="row"
                                             className={cn(
                                                 stickyFirstCol,
-                                                "border-r border-b p-0 font-normal",
+                                                "border-r border-b p-0 align-top font-normal",
                                             )}
                                             title={skill.name}
                                         >
                                             <div
-                                                className="truncate px-3 py-1.5 text-left"
+                                                className="px-3 py-1.5 text-left"
                                                 style={{ width: SKILL_COL_WIDTH }}
                                             >
-                                                {skill.name}
+                                                <div className="truncate">{skill.name}</div>
+                                                {showSkillDescription && skill.description && (
+                                                    <div className="truncate text-xs text-muted-foreground">
+                                                        {skill.description}
+                                                    </div>
+                                                )}
                                             </div>
                                         </th>
                                         {people.map((person, i) => {

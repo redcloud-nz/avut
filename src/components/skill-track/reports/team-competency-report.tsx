@@ -101,6 +101,7 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
     );
 
     const [gapsOnly, setGapsOnly] = useState(false);
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // (assesseeId, skillId) -> competency, so each person/skill pair resolves in O(1).
     const competencyByKey = new Map(
@@ -163,11 +164,11 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         <Glorious.Root>
             <Glorious.Header>
                 <div>
-                    <Glorious.Title>
-                        {teamId ? "Team Competency" : "Whole Organization"}
-                    </Glorious.Title>
+                    <Glorious.Title>Team Competency Report</Glorious.Title>
                     <Glorious.Subtitle>
-                        {total} {total === 1 ? "person" : "people"} in scope · {scopeLabel}
+                        Scope: {scopeLabel} ({total} {total === 1 ? "person" : "people"})
+                        <br />
+                        {rows.length} {rows.length === 1 ? "skill" : "skills"}
                     </Glorious.Subtitle>
                 </div>
                 <Glorious.Actions>
@@ -187,6 +188,12 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
                                     onCheckedChange={setGapsOnly}
                                 >
                                     <span>Only Gaps</span>
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={showSkillDescription}
+                                    onCheckedChange={setShowSkillDescription}
+                                >
+                                    <span>Skill Description</span>
                                 </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
@@ -246,11 +253,16 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
                                             scope="row"
                                             className={cn(
                                                 stickyFirstCol,
-                                                "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
+                                                "border-r border-b px-3 py-1.5 text-left align-top font-normal",
                                             )}
                                             title={skill.name}
                                         >
-                                            {skill.name}
+                                            <div className="truncate">{skill.name}</div>
+                                            {showSkillDescription && skill.description && (
+                                                <div className="truncate text-xs text-muted-foreground">
+                                                    {skill.description}
+                                                </div>
+                                            )}
                                         </th>
                                         <td className="border-r border-b px-3 py-1.5 align-middle">
                                             <CompetencyBar counts={counts} total={total} />
