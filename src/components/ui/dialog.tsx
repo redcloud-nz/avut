@@ -77,12 +77,17 @@ function DialogContent({
  * dialog's padding edges (`-mx-4`/`px-4`) so scrolled content sits flush, and caps its
  * own height so tall content scrolls internally instead of pushing the header (and close
  * button) off small viewports. See the shadcn "Scrollable Content" dialog pattern.
+ *
+ * The cap is `dvh` to match `DialogContent`'s own `calc(100dvh-2rem)` — `vh` tracks the
+ * *large* viewport, so on mobile it overshoots by the height of the browser toolbar. The
+ * 30dvh left over is what the header, padding and gap get before both boxes need to
+ * scroll; that is enough down to roughly a 400px-tall viewport.
  */
 function DialogScrollableBody({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-scrollable-body"
-            className={cn("no-scrollbar -mx-4 max-h-[75vh] overflow-y-auto px-4", className)}
+            className={cn("no-scrollbar -mx-4 max-h-[70dvh] overflow-y-auto px-4", className)}
             {...props}
         />
     );
