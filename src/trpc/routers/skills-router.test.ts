@@ -10,7 +10,9 @@ import { TRPCError } from "@trpc/server";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { UserId } from "@/lib/schemas/user";
@@ -183,6 +185,14 @@ describe("skillsRouter.getPackage", () => {
         user: nanoId16(),
         pkg: SkillPackageId.create(),
         unpublishedPkg: SkillPackageId.create(),
+        // Package used for the contents assertions:
+        //   groupA (seq 0)         → skillA1 (seq 0, not included), skillA2 (seq 1, required)
+        //   groupB (seq 1, not included by default) → no skills
+        //   archivedGroup (Archived) → archivedGroupSkill (still Active — archiveGroup doesn't cascade)
+        contentsPkg: SkillPackageId.create(),
+        groupA: SkillGroupId.create(),
+        groupB: SkillGroupId.create(),
+        archivedGroup: SkillGroupId.create(),
     };
 
     const db = createMockPrisma();
@@ -228,6 +238,92 @@ describe("skillsRouter.getPackage", () => {
                 skillPackageId: T.pkg,
             },
         });
+
+        await db.skillPackage.create({
+            data: {
+                id: T.contentsPkg,
+                organizationId: T.publisherOrg,
+                name: "Contents Pkg",
+                description: "",
+                properties: {},
+                tags: [],
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.groupB,
+                skillPackageId: T.contentsPkg,
+                name: "Group B",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+                defaultInclude: false,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.groupA,
+                skillPackageId: T.contentsPkg,
+                name: "Group A",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 0,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.archivedGroup,
+                skillPackageId: T.contentsPkg,
+                name: "Archived Group",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 2,
+                status: "Archived",
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: SkillId.create(),
+                skillPackageId: T.contentsPkg,
+                skillGroupId: T.groupA,
+                name: "Skill A2",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+                defaultRequired: true,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: SkillId.create(),
+                skillPackageId: T.contentsPkg,
+                skillGroupId: T.groupA,
+                name: "Skill A1",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 0,
+                defaultInclude: false,
+            },
+        });
+        // Active skill whose parent group is Archived — must not surface or be counted.
+        await db.skill.create({
+            data: {
+                id: SkillId.create(),
+                skillPackageId: T.contentsPkg,
+                skillGroupId: T.archivedGroup,
+                name: "Orphan Skill",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 0,
+            },
+        });
     });
 
     function makeCaller() {
@@ -270,6 +366,47 @@ describe("skillsRouter.getPackage", () => {
             skillPackageId: T.pkg,
         });
         expect(result.subscription).toBeNull();
+    });
+
+    it("returns groups and their skills ordered by sequence with default flags", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.contentsPkg,
+        });
+
+        expect(result.groups.map((g) => g.name)).toEqual(["Group A", "Group B"]);
+        expect(result.groups[1].defaultInclude).toBe(false);
+
+        const [groupA, groupB] = result.groups;
+        expect(groupA.skills.map((s) => s.name)).toEqual(["Skill A1", "Skill A2"]);
+        expect(groupA.skills[0].defaultInclude).toBe(false);
+        expect(groupA.skills[1].defaultRequired).toBe(true);
+        expect(groupB.skills).toEqual([]);
+    });
+
+    it("excludes archived groups and their still-active skills, and doesn't count them", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.contentsPkg,
+        });
+
+        expect(result.groups.map((g) => g.name)).not.toContain("Archived Group");
+        expect(result.groups.flatMap((g) => g.skills.map((s) => s.name))).not.toContain(
+            "Orphan Skill",
+        );
+        expect(result.skillCount).toBe(2);
+    });
+
+    it("doesn't leak properties/tags/timestamps on catalogue groups and skills", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.contentsPkg,
+        });
+
+        expect(result.groups[0]).not.toHaveProperty("properties");
+        expect(result.groups[0]).not.toHaveProperty("createdAt");
+        expect(result.groups[0].skills[0]).not.toHaveProperty("properties");
+        expect(result.groups[0].skills[0]).not.toHaveProperty("frequency");
     });
 
     it("throws NOT_FOUND for an unpublished package", async () => {
