@@ -12,14 +12,23 @@ import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
+import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
+import { buildD4hToday, D4hTodayActivityInput, zonedTodayRange } from "@/lib/d4h-today";
 
 import {
     getConfiguredD4HAccessToken,
     getPersonalD4HAccessTokenForUser,
 } from "@/server/d4h-access-token";
-import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import {
+    D4HListResponse,
+    fetchD4HMemberAttendance,
+    fetchD4HTeamDetailCached,
+    fetchD4HWhoamiCached,
+    getD4HFetchClient,
+    getD4HTokenMetadata,
+} from "@/server/d4h-api/client";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { TRPCError } from "@trpc/server";
@@ -398,5 +407,148 @@ export const d4hApiRouter = createTrpcRouter({
 
             const { d4HTeams } = await getD4HTokenMetadata(accessToken);
             return d4HTeams;
+        }),
+
+    /**
+     * The current user's events, exercises and incidents scheduled for today, across every
+     * D4H team their personal access token can see, with their attendance status for each.
+     *
+     * "Today" is the civil day in each team's own timezone. Events and exercises overlapping
+     * today are always listed (as `not-involved` when the user has no attendance record);
+     * incidents appear only when the user has an attendance record for them.
+     */
+    myActivitiesToday: organizationProcedure({})
+        .output(
+            z.array(
+                z.object({
+                    team: z.object({ id: z.number(), title: z.string() }),
+                    timezone: z.string(),
+                    activities: z.array(
+                        z.object({
+                            id: z.number(),
+                            type: z.enum(["Event", "Exercise", "Incident"]),
+                            reference: z.string().nullable(),
+                            title: z.string(),
+                            startsAt: z.string(),
+                            endsAt: z.string(),
+                            location: z.string().nullable(),
+                            status: z.enum(["attending", "absent", "requested", "not-involved"]),
+                        }),
+                    ),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const fetchClient = getD4HFetchClient(accessToken);
+            const whoami = await fetchD4HWhoamiCached(accessToken);
+            const now = new Date();
+
+            const parseList = (data: unknown) =>
+                (data as D4HListResponse).results.map((raw) => D4HActivity.schema.parse(raw));
+
+            const toInput = (
+                a: D4HActivity,
+                resourceType: D4hTodayActivityInput["resourceType"],
+            ): D4hTodayActivityInput => ({
+                id: a.id,
+                resourceType,
+                reference: a.reference,
+                referenceDescription: a.referenceDescription,
+                startsAt: a.startsAt,
+                endsAt: a.endsAt,
+                location: formatD4HActivityLocation(a.address),
+            });
+
+            const teams = await Promise.all(
+                whoami.members
+                    .filter((member) => member.hasAccess)
+                    .map(async (member) => {
+                        const teamId = member.owner.id;
+                        const { timezone } = await fetchD4HTeamDetailCached(accessToken, teamId);
+                        const { start, end } = zonedTodayRange(now, timezone);
+                        const path = { context: "team", contextId: teamId } as const;
+                        // Overlaps today: starts before end-of-day and ends after start-of-day.
+                        // No `published` filter — some teams never publish activities, but
+                        // members still have attendance records to act on, and unrostered
+                        // drafts simply show as "not involved".
+                        const overlapQuery = {
+                            after: start.toISOString(),
+                            before: end.toISOString(),
+                            size: 250,
+                        };
+
+                        const [eventsRes, exercisesRes, attendances] = await Promise.all([
+                            fetchClient.GET("/v3/{context}/{contextId}/events", {
+                                params: { path, query: overlapQuery },
+                            }),
+                            fetchClient.GET("/v3/{context}/{contextId}/exercises", {
+                                params: { path, query: overlapQuery },
+                            }),
+                            fetchD4HMemberAttendance(accessToken, teamId, {
+                                memberId: member.id,
+                                startsBefore: end.toISOString(),
+                                endsAfter: start.toISOString(),
+                            }),
+                        ]);
+
+                        const listed = [
+                            ...parseList(eventsRes.data).map((a) => toInput(a, "Event")),
+                            ...parseList(exercisesRes.data).map((a) => toInput(a, "Exercise")),
+                        ];
+                        const key = (t: string, id: number) => `${t}:${id}`;
+                        const listedKeys = new Set(listed.map((a) => key(a.resourceType, a.id)));
+
+                        // Activities the member has an attendance record for but that the list
+                        // queries didn't return (incidents, unpublished drafts, window edges) —
+                        // fetch each by id so it still appears with the right status.
+                        const missing = R.uniqueBy(
+                            attendances
+                                .map((a) => a.activity)
+                                .filter((act) => !listedKeys.has(key(act.resourceType, act.id))),
+                            (act) => key(act.resourceType, act.id),
+                        );
+                        const fetched = await Promise.all(
+                            missing.map(async (act) => {
+                                const activityPath = { ...path, activityId: act.id };
+                                const res =
+                                    act.resourceType === "Event"
+                                        ? await fetchClient.GET(
+                                              "/v3/{context}/{contextId}/events/{activityId}",
+                                              { params: { path: activityPath } },
+                                          )
+                                        : act.resourceType === "Exercise"
+                                          ? await fetchClient.GET(
+                                                "/v3/{context}/{contextId}/exercises/{activityId}",
+                                                { params: { path: activityPath } },
+                                            )
+                                          : await fetchClient.GET(
+                                                "/v3/{context}/{contextId}/incidents/{activityId}",
+                                                { params: { path: activityPath } },
+                                            );
+                                return toInput(
+                                    D4HActivity.schema.parse(res.data),
+                                    act.resourceType,
+                                );
+                            }),
+                        );
+
+                        return {
+                            team: { id: teamId, title: member.owner.title },
+                            timezone,
+                            activities: [...listed, ...fetched],
+                            attendances: attendances.map((a) => ({
+                                activity: a.activity,
+                                status: a.status,
+                            })),
+                        };
+                    }),
+            );
+
+            const tzByTeam = new Map(teams.map((t) => [t.team.id, t.timezone]));
+            return buildD4hToday(teams).map((group) => ({
+                ...group,
+                timezone: tzByTeam.get(group.team.id) ?? "UTC",
+            }));
         }),
 });
