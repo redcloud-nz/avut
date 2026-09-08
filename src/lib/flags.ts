@@ -4,42 +4,22 @@
  */
 
 import { flag } from "flags/next";
-import { edgeConfigAdapter } from "@flags-sdk/edge-config";
+import { vercelAdapter } from "@flags-sdk/vercel";
 
-export const objectTagsFeatureFlag = flag({
-    key: "object-tags-enabled",
+/**
+ * Feature flags backed by Vercel's hosted flags store. Each flag can carry a
+ * different value per deployment environment (production / preview / development),
+ * set in the Vercel dashboard or via `vercel flags enable <key> --environment <env>`.
+ * The code only declares the flags; environment differentiation lives on the platform.
+ */
+
+export const exampleFlag = flag<boolean>({
+    key: "example-flag",
+    adapter: vercelAdapter(),
     defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-// Module availability flags
-
-export const availabilityModuleFlag = flag<boolean>({
-    key: "availability-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const checklistsModuleFlag = flag<boolean>({
-    key: "checklists-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const d4hViewsModuleFlag = flag<boolean>({
-    key: "d4h-views-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const fogModuleFlag = flag<boolean>({
-    key: "fog-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const notesModuleFlag = flag<boolean>({
-    key: "notes-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
+    description: "Placeholder flag — replace when the first real flag lands",
+    options: [
+        { value: true, label: "On" },
+        { value: false, label: "Off" },
+    ],
 });
