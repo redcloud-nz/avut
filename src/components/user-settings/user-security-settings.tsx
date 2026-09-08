@@ -35,7 +35,7 @@ export function UserSecuritySettings() {
     }
 
     const hasCredentialAccount = accountsQuery.data.some(
-        (account) => account.providerId === "credentials",
+        (account) => account.providerId === "credential",
     );
 
     return (
