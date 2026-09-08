@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { useLogger } from "@/hooks/use-logger";
+import { formatRelativeDateTime } from "@/lib/datetime";
 import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
 import { trpc } from "@/trpc/client";
 
@@ -157,7 +158,7 @@ function ActiveSession_Item({
                     {session.isCurrent ? (
                         <Badge variant="secondary">Current session</Badge>
                     ) : (
-                        `Signed in ${timeAgo(session.createdAt)}`
+                        `Signed in ${formatRelativeDateTime(session.createdAt)}`
                     )}
                 </ItemDescription>
             </ItemContent>
@@ -237,27 +238,4 @@ function parseUserAgent(userAgent: string | null): {
                 : "";
 
     return { browser, os, isMobile };
-}
-
-const RelativeTime = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-const TimeDivisions: [Intl.RelativeTimeFormatUnit, number][] = [
-    ["second", 60],
-    ["minute", 60],
-    ["hour", 24],
-    ["day", 7],
-    ["week", 4.34524],
-    ["month", 12],
-    ["year", Number.POSITIVE_INFINITY],
-];
-
-/** "3 days ago", via `Intl` — not worth a date library for one label. */
-function timeAgo(date: Date): string {
-    let duration = (date.getTime() - Date.now()) / 1000;
-
-    for (const [unit, amount] of TimeDivisions) {
-        if (Math.abs(duration) < amount) return RelativeTime.format(Math.round(duration), unit);
-        duration /= amount;
-    }
-    return "";
 }
