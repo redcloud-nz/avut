@@ -86,7 +86,8 @@ function D4hToday_Answer() {
         trpc.d4hApi.myActivitiesToday.queryOptions({ organizationId: organization.id }),
     );
 
-    const showTeamHeadings = groups.length > 1;
+    const teamsWithActivities = groups.filter((group) => group.activities.length > 0);
+    const showTeamHeadings = teamsWithActivities.length > 1;
     const everything = groups.flatMap((group) =>
         group.activities.map((activity) => ({ ...activity, timezone: group.timezone })),
     );
@@ -173,52 +174,50 @@ function D4hToday_Answer() {
                     </h2>
                     <Separator className="flex-1" />
                 </div>
-                {groups
-                    .filter((group) => group.activities.length > 0)
-                    .map((group) => (
-                        <div key={group.team.id} className="space-y-3">
-                            {showTeamHeadings && (
-                                <h3 className="pt-2 text-xs font-semibold text-muted-foreground uppercase">
-                                    {group.team.title}
-                                </h3>
-                            )}
-                            {group.activities.map((activity) => (
-                                <Card key={`${activity.type}-${activity.id}`}>
-                                    <CardContent className="flex items-center gap-4 py-3">
-                                        <Badge
-                                            variant="outline"
-                                            className="w-20 shrink-0 justify-center"
-                                        >
-                                            {activity.type}
-                                        </Badge>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-medium">
-                                                {activity.title}
-                                            </p>
-                                            <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                {teamsWithActivities.map((group) => (
+                    <div key={group.team.id} className="space-y-3">
+                        {showTeamHeadings && (
+                            <h3 className="pt-2 text-xs font-semibold text-muted-foreground uppercase">
+                                {group.team.title}
+                            </h3>
+                        )}
+                        {group.activities.map((activity) => (
+                            <Card key={`${activity.type}-${activity.id}`}>
+                                <CardContent className="flex items-center gap-4 py-3">
+                                    <Badge
+                                        variant="outline"
+                                        className="w-20 shrink-0 justify-center"
+                                    >
+                                        {activity.type}
+                                    </Badge>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium">
+                                            {activity.title}
+                                        </p>
+                                        <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1">
+                                                <ClockIcon className="size-3" />
+                                                {formatTimeRange({
+                                                    ...activity,
+                                                    timezone: group.timezone,
+                                                })}
+                                            </span>
+                                            {activity.location && (
                                                 <span className="inline-flex items-center gap-1">
-                                                    <ClockIcon className="size-3" />
-                                                    {formatTimeRange({
-                                                        ...activity,
-                                                        timezone: group.timezone,
-                                                    })}
+                                                    <MapPinIcon className="size-3" />
+                                                    {activity.location}
                                                 </span>
-                                                {activity.location && (
-                                                    <span className="inline-flex items-center gap-1">
-                                                        <MapPinIcon className="size-3" />
-                                                        {activity.location}
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                        <Badge variant={STATUS_META[activity.status].variant}>
-                                            {STATUS_META[activity.status].label}
-                                        </Badge>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ))}
+                                            )}
+                                        </p>
+                                    </div>
+                                    <Badge variant={STATUS_META[activity.status].variant}>
+                                        {STATUS_META[activity.status].label}
+                                    </Badge>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ))}
             </div>
         </div>
     );

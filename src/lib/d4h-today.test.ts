@@ -64,6 +64,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [
                     activity({ id: 1, resourceType: "Event" }),
                     activity({
@@ -87,7 +88,12 @@ describe("buildD4hToday", () => {
 
     it("marks an event with no attendance record as not-involved", () => {
         const [group] = buildD4hToday([
-            { team: TEAM, activities: [activity({ id: 3 })], attendances: [] },
+            {
+                team: TEAM,
+                timezone: "Pacific/Auckland",
+                activities: [activity({ id: 3 })],
+                attendances: [],
+            },
         ]);
 
         expect(group.activities[0].status).toBe("not-involved");
@@ -97,6 +103,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [activity({ id: 1 })],
                 attendances: [attendance({ status: "REQUESTED" })],
             },
@@ -109,6 +116,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [
                     activity({
                         id: 4,
@@ -134,6 +142,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [activity({ id: 7, resourceType: "Event" })],
                 attendances: [
                     attendance({
@@ -151,6 +160,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [
                     activity({ id: 1, referenceDescription: "Named", reference: "R1" }),
                     activity({ id: 2, referenceDescription: null, reference: "R2" }),
@@ -167,6 +177,7 @@ describe("buildD4hToday", () => {
         const [group] = buildD4hToday([
             {
                 team: TEAM,
+                timezone: "Pacific/Auckland",
                 activities: [
                     activity({ id: 1, startsAt: "2026-09-07T20:00:00Z" }),
                     activity({ id: 2, startsAt: "2026-09-07T08:00:00Z" }),
@@ -178,12 +189,23 @@ describe("buildD4hToday", () => {
         expect(group.activities.map((a) => a.id)).toEqual([2, 1]);
     });
 
-    it("returns teams sorted by title, each carrying its own activities", () => {
+    it("returns teams sorted by title, each carrying its own activities and timezone", () => {
         const groups = buildD4hToday([
-            { team: { id: 2, title: "Zulu" }, activities: [activity({ id: 1 })], attendances: [] },
-            { team: { id: 1, title: "Alpha" }, activities: [activity({ id: 2 })], attendances: [] },
+            {
+                team: { id: 2, title: "Zulu" },
+                timezone: "America/New_York",
+                activities: [activity({ id: 1 })],
+                attendances: [],
+            },
+            {
+                team: { id: 1, title: "Alpha" },
+                timezone: "Pacific/Auckland",
+                activities: [activity({ id: 2 })],
+                attendances: [],
+            },
         ]);
 
         expect(groups.map((g) => g.team.title)).toEqual(["Alpha", "Zulu"]);
+        expect(groups.map((g) => g.timezone)).toEqual(["Pacific/Auckland", "America/New_York"]);
     });
 });

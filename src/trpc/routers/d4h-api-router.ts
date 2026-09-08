@@ -15,7 +15,12 @@ import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
-import { buildD4hToday, D4hTodayActivityInput, zonedTodayRange } from "@/lib/d4h-today";
+import {
+    buildD4hToday,
+    d4hTodayTeamGroupSchema,
+    D4hTodayActivityInput,
+    zonedTodayRange,
+} from "@/lib/d4h-today";
 
 import {
     getConfiguredD4HAccessToken,
@@ -418,26 +423,7 @@ export const d4hApiRouter = createTrpcRouter({
      * incidents appear only when the user has an attendance record for them.
      */
     myActivitiesToday: organizationProcedure({})
-        .output(
-            z.array(
-                z.object({
-                    team: z.object({ id: z.number(), title: z.string() }),
-                    timezone: z.string(),
-                    activities: z.array(
-                        z.object({
-                            id: z.number(),
-                            type: z.enum(["Event", "Exercise", "Incident"]),
-                            reference: z.string().nullable(),
-                            title: z.string(),
-                            startsAt: z.string(),
-                            endsAt: z.string(),
-                            location: z.string().nullable(),
-                            status: z.enum(["attending", "absent", "requested", "not-involved"]),
-                        }),
-                    ),
-                }),
-            ),
-        )
+        .output(z.array(d4hTodayTeamGroupSchema))
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
             const fetchClient = getD4HFetchClient(accessToken);
@@ -492,6 +478,15 @@ export const d4hApiRouter = createTrpcRouter({
                             }),
                         ]);
 
+                        if (!eventsRes.response.ok || !eventsRes.data)
+                            throw new Error(
+                                `Failed to fetch events for team ${teamId} (${eventsRes.response.status})`,
+                            );
+                        if (!exercisesRes.response.ok || !exercisesRes.data)
+                            throw new Error(
+                                `Failed to fetch exercises for team ${teamId} (${exercisesRes.response.status})`,
+                            );
+
                         const listed = [
                             ...parseList(eventsRes.data).map((a) => toInput(a, "Event")),
                             ...parseList(exercisesRes.data).map((a) => toInput(a, "Exercise")),
@@ -508,30 +503,36 @@ export const d4hApiRouter = createTrpcRouter({
                                 .filter((act) => !listedKeys.has(key(act.resourceType, act.id))),
                             (act) => key(act.resourceType, act.id),
                         );
-                        const fetched = await Promise.all(
-                            missing.map(async (act) => {
-                                const activityPath = { ...path, activityId: act.id };
-                                const res =
-                                    act.resourceType === "Event"
-                                        ? await fetchClient.GET(
-                                              "/v3/{context}/{contextId}/events/{activityId}",
-                                              { params: { path: activityPath } },
-                                          )
-                                        : act.resourceType === "Exercise"
-                                          ? await fetchClient.GET(
-                                                "/v3/{context}/{contextId}/exercises/{activityId}",
-                                                { params: { path: activityPath } },
-                                            )
-                                          : await fetchClient.GET(
-                                                "/v3/{context}/{contextId}/incidents/{activityId}",
-                                                { params: { path: activityPath } },
-                                            );
-                                return toInput(
-                                    D4HActivity.schema.parse(res.data),
-                                    act.resourceType,
-                                );
-                            }),
-                        );
+                        const fetched = (
+                            await Promise.all(
+                                missing.map(async (act) => {
+                                    const activityPath = { ...path, activityId: act.id };
+                                    const { data, error } =
+                                        act.resourceType === "Event"
+                                            ? await fetchClient.GET(
+                                                  "/v3/{context}/{contextId}/events/{activityId}",
+                                                  { params: { path: activityPath } },
+                                              )
+                                            : act.resourceType === "Exercise"
+                                              ? await fetchClient.GET(
+                                                    "/v3/{context}/{contextId}/exercises/{activityId}",
+                                                    { params: { path: activityPath } },
+                                                )
+                                              : await fetchClient.GET(
+                                                    "/v3/{context}/{contextId}/incidents/{activityId}",
+                                                    { params: { path: activityPath } },
+                                                );
+                                    // The attendance record can outlive the activity (deleted,
+                                    // archived, or no longer visible to this token) — skip it
+                                    // rather than failing the whole view.
+                                    if (error || !data) return null;
+                                    return toInput(
+                                        D4HActivity.schema.parse(data),
+                                        act.resourceType,
+                                    );
+                                }),
+                            )
+                        ).filter((a): a is D4hTodayActivityInput => a !== null);
 
                         return {
                             team: { id: teamId, title: member.owner.title },
@@ -545,10 +546,6 @@ export const d4hApiRouter = createTrpcRouter({
                     }),
             );
 
-            const tzByTeam = new Map(teams.map((t) => [t.team.id, t.timezone]));
-            return buildD4hToday(teams).map((group) => ({
-                ...group,
-                timezone: tzByTeam.get(group.team.id) ?? "UTC",
-            }));
+            return buildD4hToday(teams);
         }),
 });
