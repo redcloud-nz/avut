@@ -1,10 +1,4 @@
 {
-  "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true,
-    "prisma@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true,
-    "resend@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
@@ -20,5 +14,11 @@
       "Bash(pgrep *)",
       "Bash(curl -s http://localhost:*)"
     ]
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "prisma@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "resend@claude-plugins-official": true
   }
 }
