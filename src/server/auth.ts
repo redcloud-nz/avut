@@ -39,6 +39,7 @@ export const auth = betterAuth({
     advanced: {
         database: {
             generateId: nanoId16,
+            joins: true,
         },
     },
     baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
@@ -75,10 +76,6 @@ export const auth = betterAuth({
             });
         },
     },
-    experimental: {
-        joins: true,
-    },
-
     plugins: [
         admin(),
         emailOTP({
