@@ -9,6 +9,7 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
 
+import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
 
@@ -18,6 +19,15 @@ import { ac, Roles } from "@/lib/permissions";
 
 import { revalidateOrganization } from "./organization";
 import prisma from "./prisma";
+
+/**
+ * Bridges better-auth's `beforeEmailVerification` and `afterEmailVerification`
+ * hooks within a single change-email request: `before` stashes the address the
+ * account had, `after` reads it back to notify that address. Keyed by the
+ * request object (identical across both calls in one route invocation), so it
+ * is request-scoped and garbage-collected with the request.
+ */
+const previousEmailByRequest = new WeakMap<Request, string>();
 
 export const auth = betterAuth({
     account: {
@@ -41,6 +51,29 @@ export const auth = betterAuth({
     },
     emailVerification: {
         autoSignInAfterVerification: true,
+        async beforeEmailVerification(user, request) {
+            if (request) previousEmailByRequest.set(request, user.email);
+        },
+        async afterEmailVerification(user, request) {
+            const previousEmail = request ? previousEmailByRequest.get(request) : undefined;
+
+            // Same hook pair also fires on signup verification, where the
+            // address is unchanged - only notify on an actual change.
+            if (!previousEmail || previousEmail.toLowerCase() === user.email.toLowerCase()) {
+                return;
+            }
+
+            sendEmail({
+                from: NoReplyEmailAddress,
+                to: previousEmail,
+                subject: "Your AVUT email address was changed",
+                react: EmailAddressChangedTemplate({
+                    name: user.name,
+                    previousEmail,
+                    newEmail: user.email,
+                }),
+            });
+        },
     },
     experimental: {
         joins: true,
