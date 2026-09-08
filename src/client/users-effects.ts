@@ -63,4 +63,6 @@ export const usersEffects = createEffects<"users">()({
               ]
             : []),
     ],
+
+    revokeSession: () => [invalidate(trpc.users.listSessions.queryFilter())],
 });
