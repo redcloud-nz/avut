@@ -12,6 +12,7 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
+    DialogScrollableBody,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { UserSettings_PageContent } from "@/components/user-settings/settings-page";
@@ -33,7 +34,9 @@ export function UserSettings_Dialog() {
                         Manage your account, security, and organizations settings.
                     </DialogDescription>
                 </DialogHeader>
-                <UserSettings_PageContent />
+                <DialogScrollableBody>
+                    <UserSettings_PageContent />
+                </DialogScrollableBody>
             </DialogContent>
         </Dialog>
     );

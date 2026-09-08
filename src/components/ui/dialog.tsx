@@ -53,7 +53,7 @@ function DialogContent({
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 className={cn(
-                    "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
                     className,
                 )}
                 {...props}
@@ -72,11 +72,36 @@ function DialogContent({
     );
 }
 
+/**
+ * Scrollable wrapper for a dialog's body, below a fixed `DialogHeader`. Bleeds to the
+ * dialog's padding edges (`-mx-4`/`px-4`) so scrolled content sits flush. See the shadcn
+ * "Scrollable Content" dialog pattern.
+ *
+ * `DialogContent` is a `flex flex-col` capped at `calc(100dvh-2rem)`; this body takes
+ * `min-h-0 flex-1` so it absorbs exactly the space left after the (`shrink-0`) header and
+ * footer. Tall content then scrolls internally instead of pushing the header — and close
+ * button — off small viewports, with no height guess of its own. A thin styled scrollbar
+ * (`scrollbar-color`, matching `Std.ScrollContainer`) appears when the body overflows;
+ * `scrollbar-gutter: stable` keeps the text from shifting when it does.
+ */
+function DialogScrollableBody({ className, ...props }: React.ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="dialog-scrollable-body"
+            className={cn(
+                "-mx-4 min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-header"
-            className={cn("flex flex-col gap-2", className)}
+            className={cn("flex shrink-0 flex-col gap-2", className)}
             {...props}
         />
     );
@@ -94,7 +119,7 @@ function DialogFooter({
         <div
             data-slot="dialog-footer"
             className={cn(
-                "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+                "-mx-4 -mb-4 flex shrink-0 flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
                 className,
             )}
             {...props}
@@ -154,6 +179,7 @@ export {
     DialogHeader,
     DialogOverlay,
     DialogPortal,
+    DialogScrollableBody,
     DialogTitle,
     DialogTrigger,
 };
