@@ -13,6 +13,7 @@ import { I3Module_SettingsCard } from "@/components/admin-settings/i3-module-car
 import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin-settings/skill-package-builder-module-card";
 import { SkillTrackModule_SettingsCard } from "@/components/admin-settings/skill-track-module-card";
 
+import type { ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
@@ -28,9 +29,12 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 export function OrganizationSettingsForm({
     organizationId,
     settings,
+    moduleFlags,
 }: {
     organizationId: OrganizationId;
     settings: OrganizationSettings;
+    /** Environment-level module availability — a module's card is hidden when its flag is off. */
+    moduleFlags: ModuleFlagState;
 }) {
     return (
         <>
@@ -50,7 +54,9 @@ export function OrganizationSettingsForm({
             <div className="space-y-4 pt-6">
                 <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
                 <D4HViewsModule_SettingsCard organizationId={organizationId} settings={settings} />
-                <I3Module_SettingsCard organizationId={organizationId} settings={settings} />
+                {moduleFlags.i3 !== false && (
+                    <I3Module_SettingsCard organizationId={organizationId} settings={settings} />
+                )}
                 <SkillPackageBuilderModule_SettingsCard
                     organizationId={organizationId}
                     settings={settings}

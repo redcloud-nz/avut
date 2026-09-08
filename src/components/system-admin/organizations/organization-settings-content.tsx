@@ -11,6 +11,7 @@ import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/s
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 
+import type { ModuleFlagState } from "@/lib/module-flags";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
@@ -22,8 +23,10 @@ import { trpc } from "@/trpc/client";
  */
 export function SystemAdmin_OrganizationSettings_Content({
     organizationId,
+    moduleFlags,
 }: {
     organizationId: OrganizationId;
+    moduleFlags: ModuleFlagState;
 }) {
     const { data: organization } = useSuspenseQuery(
         trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
@@ -54,7 +57,11 @@ export function SystemAdmin_OrganizationSettings_Content({
                         <Saratoga.Title>{organization.name} Settings</Saratoga.Title>
                     </Saratoga.Header>
 
-                    <OrganizationSettingsForm organizationId={organizationId} settings={settings} />
+                    <OrganizationSettingsForm
+                        organizationId={organizationId}
+                        settings={settings}
+                        moduleFlags={moduleFlags}
+                    />
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </OrganizationSettingsScopeProvider>
