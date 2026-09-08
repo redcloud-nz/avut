@@ -11,15 +11,14 @@ import * as R from "remeda";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
-import { ChevronDownIcon } from "lucide-react";
-
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
+import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import {
-    ReportNavbar,
-    SkillTrack_ReportTeamScopePicker,
-} from "@/components/skill-track/reports/report-scope-picker";
+    ReportCellPopoversProvider,
+    SkillInfoTrigger,
+} from "@/components/skill-track/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
+import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import {
     deriveStatus,
     STATUS_BAR_COLORS,
@@ -28,33 +27,56 @@ import {
     type CompetencyStatus,
 } from "@/components/skill-track/reports/competency-status";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
-import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 
 import { useOrganization } from "@/hooks/use-organization";
+import { cn } from "@/lib/utils";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 const STATUS_ORDER = ["current", "expired", "not-competent", "not-assessed"] as const;
 
+// Must match the rendered height of `headCell` below (`h-9` = 36px) — the offset the
+// sticky group headings pin beneath.
+const HEADER_HEIGHT = 36;
+const SKILL_COL_WIDTH = "45%";
+const BAR_COL_WIDTH = "35%";
+const PCT_COL_WIDTH = "20%";
+
+const stickyFirstCol = "sticky left-0 z-10 bg-background";
+const headCell =
+    "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
+
 export function SkillTrack_TeamCompetencyReport() {
     const [team] = useQueryState("team");
 
-    // An absent — or malformed — `?team=` means "nothing picked yet"; show the picker rather
-    // than falling through to a full-org competency matrix.
+    // An absent — or malformed — `?team=` means "nothing picked yet"; show the blank report
+    // shell with the scope dialog forced open.
     if (team === null || (team !== "all" && !TeamId.schema.safeParse(team).success)) {
         return (
-            <SkillTrack_ReportTeamScopePicker routePattern="/orgs/[slug]/skill-track/reports/team" />
+            <Glorious.Root className="mx-auto w-full max-w-4xl">
+                <Glorious.Header>
+                    <Glorious.Title>Team Competency Report</Glorious.Title>
+                    <Glorious.Actions>
+                        <SkillTrack_TeamScopeDialog forceOpen label="Select a scope" />
+                    </Glorious.Actions>
+                </Glorious.Header>
+                <Empty>
+                    <EmptyDescription>
+                        Select a team, or the whole organization, to view competency gaps.
+                    </EmptyDescription>
+                </Empty>
+            </Glorious.Root>
         );
     }
 
@@ -67,6 +89,10 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
     const teamId = parsedTeamId.success ? parsedTeamId.data : undefined;
 
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
     } = useSuspenseQuery(
@@ -76,13 +102,16 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const {
+        competencies,
+        isSynthetic,
+        syntheticActions,
+        syntheticMenuItem,
+        syntheticOpenMenuItem,
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const [gapsOnly, setGapsOnly] = useState(false);
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // (assesseeId, skillId) -> competency, so each person/skill pair resolves in O(1).
     const competencyByKey = new Map(
@@ -108,126 +137,171 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
 
     const visibleRows = gapsOnly ? rows.filter((row) => row.counts.current < total) : rows;
 
-    const packageSections = R.pipe(
+    // One section per skill group, in package -> group -> skill order, flattened to a single
+    // "Package · Group" level (matches the skill-matrix report). Empty groups are dropped.
+    const groupSections = R.pipe(
         skillPackages,
         R.sortBy((skillPackage) => skillPackage.name),
-        R.map((skillPackage) => ({
-            skillPackage,
-            groups: R.pipe(
+        R.flatMap((skillPackage) =>
+            R.pipe(
                 skillGroups,
                 R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
                 R.sortBy((skillGroup) => skillGroup.sequence),
-                R.map((skillGroup) => ({
-                    skillGroup,
-                    rows: R.pipe(
+                R.flatMap((skillGroup) => {
+                    const groupRows = R.pipe(
                         visibleRows,
                         R.filter((row) => row.skill.skillGroupId === skillGroup.id),
                         R.sortBy((row) => row.skill.sequence),
-                    ),
-                })),
-                R.filter(({ rows }) => rows.length > 0),
+                    );
+                    if (groupRows.length === 0) return [];
+                    return [
+                        {
+                            id: skillGroup.id,
+                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            rows: groupRows,
+                        },
+                    ];
+                }),
             ),
-        })),
-        R.filter(({ groups }) => groups.length > 0),
+        ),
     );
 
-    const scopeLabel = teamId ? "Team" : "Whole Organization";
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
 
     return (
-        <>
-            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/team" />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>
-                            {teamId ? "Team Competency" : "Whole Organization"}
-                        </Saratoga.Title>
-                        <Saratoga.Actions>
-                            {syntheticActions}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                        <DropdownMenuCheckboxItem
-                                            checked={gapsOnly}
-                                            onCheckedChange={setGapsOnly}
-                                        >
-                                            <span>Only Gaps</span>
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
+        <ReportCellPopoversProvider isSynthetic={isSynthetic}>
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>Team Competency Report</Glorious.Title>
+                    <Glorious.Subtitle>
+                        {scopeLabel} ({total} {total === 1 ? "person" : "people"}){" · "}
+                        {rows.length} {rows.length === 1 ? "skill" : "skills"}
+                    </Glorious.Subtitle>
+                    <Glorious.Actions>
+                        <SkillTrack_TeamScopeDialog compact />
+                        {syntheticActions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={gapsOnly}
+                                        onCheckedChange={setGapsOnly}
+                                    >
+                                        <span>Only Gaps</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showSkillDescription}
+                                        onCheckedChange={setShowSkillDescription}
+                                    >
+                                        <span>Skill Description</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator className="sm:hidden" />
+                                <SkillTrack_ScopeDialogMenuItem />
+                                {syntheticOpenMenuItem}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Glorious.Actions>
+                </Glorious.Header>
 
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        {total} {total === 1 ? "person" : "people"} in scope · {scopeLabel}
-                    </p>
-
-                    {total === 0 ? (
-                        <Empty>
-                            <EmptyDescription>
-                                There are no active personnel in this scope.
-                            </EmptyDescription>
-                        </Empty>
-                    ) : packageSections.length === 0 ? (
-                        <Empty>
-                            <EmptyDescription>
-                                {gapsOnly
-                                    ? "Every assessable skill is current for everyone in scope."
-                                    : "This organization is not subscribed to any skill packages."}
-                            </EmptyDescription>
-                        </Empty>
-                    ) : (
-                        <div className="mt-6 space-y-6">
-                            {packageSections.map(({ skillPackage, groups }) => (
-                                <Collapsible key={skillPackage.id} defaultOpen>
-                                    <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
-                                        <span>{skillPackage.name}</span>
-                                        <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <div className="space-y-6 pt-4">
-                                            {groups.map(({ skillGroup, rows }) => (
-                                                <div key={skillGroup.id}>
-                                                    <div className="text-sm font-medium text-muted-foreground mb-2">
-                                                        {skillGroup.name}
-                                                    </div>
-                                                    {rows.map(({ skill, counts, currentPct }) => (
-                                                        <Item key={skill.id}>
-                                                            <ItemContent>
-                                                                <ItemTitle>{skill.name}</ItemTitle>
-                                                                <CompetencyBar
-                                                                    counts={counts}
-                                                                    total={total}
-                                                                />
-                                                            </ItemContent>
-                                                            <div className="shrink-0 text-right text-sm tabular-nums">
-                                                                <div className="font-medium">
-                                                                    {currentPct}%
-                                                                </div>
-                                                                <div className="text-muted-foreground">
-                                                                    {counts.current}/{total} current
-                                                                </div>
-                                                            </div>
-                                                        </Item>
-                                                    ))}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CollapsibleContent>
-                                </Collapsible>
+                {total === 0 ? (
+                    <Empty>
+                        <EmptyDescription>
+                            There are no active personnel in this scope.
+                        </EmptyDescription>
+                    </Empty>
+                ) : groupSections.length === 0 ? (
+                    <Empty>
+                        <EmptyDescription>
+                            {gapsOnly
+                                ? "Every assessable skill is current for everyone in scope."
+                                : "This organization is not subscribed to any skill packages."}
+                        </EmptyDescription>
+                    </Empty>
+                ) : (
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table className="w-full">
+                            <colgroup>
+                                <col style={{ width: SKILL_COL_WIDTH }} />
+                                <col style={{ width: BAR_COL_WIDTH }} />
+                                <col style={{ width: PCT_COL_WIDTH }} />
+                            </colgroup>
+                            <Glorious.TableHeader>
+                                <th
+                                    className={cn(
+                                        stickyFirstCol,
+                                        headCell,
+                                        "top-0 z-30 border-r text-left",
+                                    )}
+                                >
+                                    Skill
+                                </th>
+                                <th
+                                    className={cn(headCell, "sticky top-0 z-20 border-r text-left")}
+                                >
+                                    Coverage
+                                </th>
+                                <th className={cn(headCell, "sticky top-0 z-20 text-center")}>
+                                    Current
+                                </th>
+                            </Glorious.TableHeader>
+                            {groupSections.map((section) => (
+                                <Glorious.GroupSection
+                                    key={section.id}
+                                    label={section.label}
+                                    headerOffset={HEADER_HEIGHT}
+                                    colSpan={3}
+                                >
+                                    {section.rows.map(({ skill, counts, currentPct }) => (
+                                        <tr key={skill.id} className="hover:bg-muted/40">
+                                            <th
+                                                scope="row"
+                                                className={cn(
+                                                    stickyFirstCol,
+                                                    "border-r border-b px-3 py-1.5 text-left align-top font-normal",
+                                                )}
+                                                title={skill.name}
+                                            >
+                                                <SkillInfoTrigger
+                                                    skill={skill}
+                                                    className="block w-full text-left hover:underline"
+                                                >
+                                                    <div className="truncate">{skill.name}</div>
+                                                    {showSkillDescription && skill.description && (
+                                                        <div className="truncate text-xs text-muted-foreground">
+                                                            {skill.description}
+                                                        </div>
+                                                    )}
+                                                </SkillInfoTrigger>
+                                            </th>
+                                            <td className="border-r border-b px-3 py-1.5 align-middle">
+                                                <CompetencyBar counts={counts} total={total} />
+                                            </td>
+                                            <td className="border-b px-3 py-1.5 text-center align-middle text-sm tabular-nums">
+                                                <span className="font-medium">{currentPct}%</span>{" "}
+                                                <span className="text-muted-foreground">
+                                                    ({counts.current}/{total})
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </Glorious.GroupSection>
                             ))}
-                        </div>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
+                )}
+            </Glorious.Root>
+        </ReportCellPopoversProvider>
     );
 }
 
@@ -240,7 +314,7 @@ function CompetencyBar({
 }) {
     return (
         <div
-            className="mt-1 flex h-2 w-full max-w-md overflow-hidden rounded-full"
+            className="flex h-2 w-full overflow-hidden rounded-full"
             role="img"
             aria-label={STATUS_ORDER.map(
                 (status) => `${counts[status]} ${STATUS_LABELS[status]}`,

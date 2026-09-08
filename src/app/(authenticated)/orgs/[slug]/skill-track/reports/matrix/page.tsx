@@ -5,15 +5,19 @@
  * Path: /orgs/[slug]/skill-track/reports/matrix
  */
 
+import { Suspense } from "react";
+
 import { Std } from "@/components/blocks/std";
 import { SkillTrack_SkillMatrixReport } from "@/components/skill-track/reports/skill-matrix-report";
+import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
-    title: `Personnel × Skill Matrix`,
+    title: `Personnel × Skill Matrix Report`,
 };
 
 export default async function SkillTrack_ReportsSkillMatrix_Page(
@@ -49,7 +53,22 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
     return (
         <HydrateClient>
             <Std.SidebarInset>
-                <SkillTrack_SkillMatrixReport />
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
+                        {
+                            label: "Reports",
+                            href: route("/orgs/[slug]/skill-track/reports", { slug }),
+                        },
+                        {
+                            label: "Personnel × Skill Matrix",
+                            href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
+                        },
+                    ]}
+                />
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <SkillTrack_SkillMatrixReport />
+                </Suspense>
             </Std.SidebarInset>
         </HydrateClient>
     );

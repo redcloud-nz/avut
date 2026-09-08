@@ -5,21 +5,41 @@
 
 "use client";
 
+import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 
+import { Glorious } from "@/components/blocks/glorious";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import {
-    ReportNavbar,
-    SkillTrack_ReportTeamScopePicker,
-} from "@/components/skill-track/reports/report-scope-picker";
-import { deriveStatus, StatusIcon } from "@/components/skill-track/reports/competency-status";
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+    SkillInfoTrigger,
+} from "@/components/skill-track/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
+import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
+import {
+    deriveStatus,
+    StatusIcon,
+    tallyStatuses,
+} from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
+import { Button } from "@/components/ui/button";
 import {
     DiagonalColumnHeader,
     DiagonalLeadColumnHeader,
 } from "@/components/ui/diagonal-column-header";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -27,14 +47,34 @@ import { cn } from "@/lib/utils";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
+const stickyFirstCol = "sticky left-0 z-10 bg-background";
+
+// `PERSON_HEADER_HEIGHT` must match the height `DiagonalColumnHeader` actually renders
+// for `headerHeight` — it's the offset the sticky group headings pin beneath.
+const PERSON_HEADER_HEIGHT = 130;
+const SKILL_COL_WIDTH = 220;
+const PERSON_COL_WIDTH = 50;
+
 export function SkillTrack_SkillMatrixReport() {
     const [team] = useQueryState("team");
 
-    // An absent — or malformed — `?team=` means "nothing picked yet"; show the picker rather
-    // than falling through to a full-org competency matrix.
+    // An absent — or malformed — `?team=` means "nothing picked yet"; show the blank report
+    // shell with the scope dialog forced open.
     if (team === null || (team !== "all" && !TeamId.schema.safeParse(team).success)) {
         return (
-            <SkillTrack_ReportTeamScopePicker routePattern="/orgs/[slug]/skill-track/reports/matrix" />
+            <Glorious.Root className="mx-auto w-full max-w-4xl">
+                <Glorious.Header>
+                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
+                    <Glorious.Actions>
+                        <SkillTrack_TeamScopeDialog forceOpen label="Select a scope" />
+                    </Glorious.Actions>
+                </Glorious.Header>
+                <Empty>
+                    <EmptyDescription>
+                        Select a team, or the whole organization, to view the matrix.
+                    </EmptyDescription>
+                </Empty>
+            </Glorious.Root>
         );
     }
 
@@ -47,6 +87,10 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
     const teamId = parsedTeamId.success ? parsedTeamId.data : undefined;
 
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },
     } = useSuspenseQuery(
@@ -56,11 +100,20 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const [showSkillDescription, setShowSkillDescription] = useState(false);
+    const [showStatusCounts, setShowStatusCounts] = useState(true);
+
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
+
+    const {
+        competencies,
+        isSynthetic,
+        syntheticActions,
+        syntheticMenuItem,
+        syntheticOpenMenuItem,
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
 
     const competencyByKey = new Map(
         competencies.map((competency) => [
@@ -71,8 +124,16 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
 
     const people = R.sortBy(personnel, (person) => person.name);
 
-    // Skills flattened in package -> group -> skill order, with a marker row before each group.
-    const skillRows = R.pipe(
+    // Status breakdown across every person × skill cell (personnel.length × skills.length).
+    const cellCounts = tallyStatuses(
+        personnel.flatMap((person) =>
+            skills.map((skill) => deriveStatus(competencyByKey.get(`${person.id}:${skill.id}`))),
+        ),
+    );
+
+    // One section per skill group, in package -> group -> skill order. Each renders as its own
+    // <tbody> so the group's sticky header releases at the section boundary when scrolling.
+    const groupSections = R.pipe(
         skillPackages,
         R.sortBy((skillPackage) => skillPackage.name),
         R.flatMap((skillPackage) =>
@@ -89,40 +150,73 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                     if (groupSkills.length === 0) return [];
                     return [
                         {
-                            kind: "group" as const,
                             id: skillGroup.id,
                             label: `${skillPackage.name} · ${skillGroup.name}`,
+                            skills: groupSkills,
                         },
-                        ...groupSkills.map((skill) => ({ kind: "skill" as const, skill })),
                     ];
                 }),
             ),
         ),
     );
 
-    const stickyFirstCol = "sticky left-0 z-10 bg-background";
-
-    const PERSON_HEADER_HEIGHT = 130;
-    const SKILL_COL_WIDTH = 220;
-    const PERSON_COL_WIDTH = 50;
-
     const isEmpty = people.length === 0 || skills.length === 0;
 
     return (
-        <>
-            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/matrix" />
-            <main className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                        <h1 className="text-lg font-semibold">Personnel × Skill Matrix</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {people.length} {people.length === 1 ? "person" : "people"} ·{" "}
-                            {skills.length} {skills.length === 1 ? "skill" : "skills"} ·{" "}
-                            {teamId ? "Team" : "Whole Organization"}
-                        </p>
-                    </div>
-                    {syntheticActions}
-                </div>
+        <ReportCellPopoversProvider isSynthetic={isSynthetic}>
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>Personnel × Skill Matrix Report</Glorious.Title>
+                    <Glorious.Subtitle>
+                        <div>
+                            {scopeLabel} ({people.length}{" "}
+                            {people.length === 1 ? "person" : "people"})
+                            <span className="hidden sm:inline">{" · "}</span>
+                            <br className="inline sm:hidden" />
+                            {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                        </div>
+                        {showStatusCounts && (
+                            <div>
+                                {cellCounts.current} current · {cellCounts.expired} expired ·{" "}
+                                {cellCounts["not-competent"]} not competent ·{" "}
+                                {cellCounts["not-assessed"]} not assessed
+                            </div>
+                        )}
+                    </Glorious.Subtitle>
+                    <Glorious.Actions>
+                        <SkillTrack_TeamScopeDialog compact />
+                        {syntheticActions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showSkillDescription}
+                                        onCheckedChange={setShowSkillDescription}
+                                    >
+                                        <span>Skill Description</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showStatusCounts}
+                                        onCheckedChange={setShowStatusCounts}
+                                    >
+                                        <span>Status Counts</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator className="sm:hidden" />
+                                <SkillTrack_ScopeDialogMenuItem />
+                                {syntheticOpenMenuItem}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Glorious.Actions>
+                </Glorious.Header>
 
                 {isEmpty ? (
                     <Empty>
@@ -133,73 +227,75 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                         </EmptyDescription>
                     </Empty>
                 ) : (
-                    <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded-md border">
-                        <table className="table-fixed border-separate border-spacing-0 text-sm">
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table>
                             <colgroup>
                                 <col style={{ width: SKILL_COL_WIDTH }} />
                                 {people.map((person) => (
                                     <col key={person.id} style={{ width: PERSON_COL_WIDTH }} />
                                 ))}
                             </colgroup>
-                            <thead>
-                                <tr>
-                                    <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
-                                        <DiagonalLeadColumnHeader
-                                            label="Skill"
+                            <Glorious.TableHeader>
+                                <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                    <DiagonalLeadColumnHeader
+                                        label="Skill"
+                                        headerHeight={PERSON_HEADER_HEIGHT}
+                                        columnWidth={SKILL_COL_WIDTH}
+                                    />
+                                </th>
+                                {people.map((person) => (
+                                    <th
+                                        key={person.id}
+                                        className="sticky top-0 z-20 p-0 font-medium border-b"
+                                    >
+                                        <DiagonalColumnHeader
+                                            label={person.name}
                                             headerHeight={PERSON_HEADER_HEIGHT}
-                                            columnWidth={SKILL_COL_WIDTH}
+                                            columnWidth={PERSON_COL_WIDTH}
                                         />
                                     </th>
-                                    {people.map((person) => (
-                                        <th
-                                            key={person.id}
-                                            className="sticky top-0 z-20 p-0 font-medium border-b"
-                                        >
-                                            <DiagonalColumnHeader
-                                                label={person.name}
-                                                headerHeight={PERSON_HEADER_HEIGHT}
-                                                columnWidth={PERSON_COL_WIDTH}
-                                            />
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {skillRows.map((row) =>
-                                    row.kind === "group" ? (
-                                        <tr key={`group-${row.id}`}>
-                                            <th
-                                                colSpan={people.length + 1}
-                                                className="bg-muted border-b p-0 text-left"
-                                            >
-                                                <div className="sticky left-0 z-10 w-fit bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                    {row.label}
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    ) : (
-                                        <tr key={row.skill.id} className="hover:bg-muted/40">
+                                ))}
+                            </Glorious.TableHeader>
+                            {groupSections.map((section) => (
+                                <Glorious.GroupSection
+                                    key={section.id}
+                                    label={section.label}
+                                    headerOffset={PERSON_HEADER_HEIGHT}
+                                    colSpan={people.length + 1}
+                                >
+                                    {section.skills.map((skill) => (
+                                        <tr key={skill.id} className="hover:bg-muted/40">
                                             <th
                                                 scope="row"
                                                 className={cn(
                                                     stickyFirstCol,
-                                                    "border-r border-b p-0 font-normal",
+                                                    "border-r border-b p-0 align-top font-normal",
                                                 )}
-                                                title={row.skill.name}
+                                                title={skill.name}
                                             >
-                                                <div
-                                                    className="truncate px-3 py-1.5 text-left"
-                                                    style={{ width: SKILL_COL_WIDTH }}
+                                                <SkillInfoTrigger
+                                                    skill={skill}
+                                                    className="block px-3 py-1.5 text-left hover:underline"
                                                 >
-                                                    {row.skill.name}
-                                                </div>
+                                                    <div
+                                                        style={{ width: SKILL_COL_WIDTH }}
+                                                        className="max-w-full"
+                                                    >
+                                                        <div className="truncate">{skill.name}</div>
+                                                        {showSkillDescription &&
+                                                            skill.description && (
+                                                                <div className="truncate text-xs text-muted-foreground">
+                                                                    {skill.description}
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </SkillInfoTrigger>
                                             </th>
                                             {people.map((person, i) => {
-                                                const status = deriveStatus(
-                                                    competencyByKey.get(
-                                                        `${person.id}:${row.skill.id}`,
-                                                    ),
+                                                const competency = competencyByKey.get(
+                                                    `${person.id}:${skill.id}`,
                                                 );
+                                                const status = deriveStatus(competency);
                                                 return (
                                                     <td
                                                         key={person.id}
@@ -209,21 +305,33 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
                                                             i === people.length - 1 && "border-r",
                                                         )}
                                                     >
-                                                        <StatusIcon
-                                                            status={status}
-                                                            className="mx-auto"
-                                                        />
+                                                        {competency ? (
+                                                            <CheckDetailsTrigger
+                                                                competency={competency}
+                                                                className="mx-auto block cursor-pointer hover:opacity-80"
+                                                            >
+                                                                <StatusIcon
+                                                                    status={status}
+                                                                    className="mx-auto"
+                                                                />
+                                                            </CheckDetailsTrigger>
+                                                        ) : (
+                                                            <StatusIcon
+                                                                status={status}
+                                                                className="mx-auto"
+                                                            />
+                                                        )}
                                                     </td>
                                                 );
                                             })}
                                         </tr>
-                                    ),
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    ))}
+                                </Glorious.GroupSection>
+                            ))}
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
                 )}
-            </main>
-        </>
+            </Glorious.Root>
+        </ReportCellPopoversProvider>
     );
 }

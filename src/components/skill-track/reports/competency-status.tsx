@@ -30,6 +30,14 @@ export function deriveStatus(
             : "expired";
 }
 
+/** Severity ranking for default "worst first" sorting — higher is more urgent. */
+export const STATUS_RANK: Record<CompetencyStatus, number> = {
+    "not-competent": 3,
+    expired: 2,
+    "not-assessed": 1,
+    current: 0,
+};
+
 /** Zeroed tally of every status — a starting point for {@link tallyStatuses}. */
 export function emptyStatusCounts(): Record<CompetencyStatus, number> {
     return { current: 0, expired: 0, "not-competent": 0, "not-assessed": 0 };

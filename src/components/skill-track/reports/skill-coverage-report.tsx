@@ -5,67 +5,71 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from "@tanstack/react-table";
 import { useQueryState } from "nuqs";
 
-import { ChevronDownIcon } from "lucide-react";
-
-import { Kaga } from "@/components/blocks/kaga";
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
+import { Glorious } from "@/components/blocks/glorious";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import {
-    ReportNavbar,
-    SkillTrack_ReportSkillScopePicker,
-} from "@/components/skill-track/reports/report-scope-picker";
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+} from "@/components/skill-track/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
+import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import {
     deriveStatus,
-    STATUS_LABELS,
+    STATUS_RANK,
     StatusBadge,
-    type CompetencyStatus,
+    tallyStatuses,
 } from "@/components/skill-track/reports/competency-status";
+import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
+    DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
-const STATUS_RANK: Record<CompetencyStatus, number> = {
-    "not-competent": 3,
-    expired: 2,
-    "not-assessed": 1,
-    current: 0,
-};
+const stickyFirstCol = "sticky left-0 z-10 bg-background";
+const headCell =
+    "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
 export function SkillTrack_SkillCoverageReport() {
     const [skillParam] = useQueryState("skill");
     const parsedSkillId = skillParam ? SkillId.schema.safeParse(skillParam) : undefined;
 
-    // An absent — or malformed — `?skill=` means "nothing picked yet"; show the picker rather
-    // than falling through to a full-org competency matrix.
+    // An absent — or malformed — `?skill=` means "nothing picked yet"; show the blank report
+    // shell with the scope dialog forced open.
     if (!parsedSkillId?.success) {
         return (
-            <SkillTrack_ReportSkillScopePicker routePattern="/orgs/[slug]/skill-track/reports/skill" />
+            <Glorious.Root className="mx-auto w-full max-w-4xl">
+                <Glorious.Header>
+                    <Glorious.Title>Skill Coverage Report</Glorious.Title>
+                    <Glorious.Actions>
+                        <SkillTrack_SkillScopeDialog forceOpen label="Select a skill" />
+                    </Glorious.Actions>
+                </Glorious.Header>
+                <Empty>
+                    <EmptyDescription>
+                        Select a skill to see who currently holds it.
+                    </EmptyDescription>
+                </Empty>
+            </Glorious.Root>
         );
     }
 
@@ -75,7 +79,7 @@ export function SkillTrack_SkillCoverageReport() {
 function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
     const organization = useOrganization();
 
-    const [teamParam, setTeamParam] = useQueryState("team");
+    const [teamParam] = useQueryState("team");
 
     const parsedTeamId = teamParam ? TeamId.schema.safeParse(teamParam) : undefined;
     const teamId = parsedTeamId?.success ? parsedTeamId.data : undefined;
@@ -94,156 +98,176 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    const { competencies, syntheticActions } = useSyntheticCompetencies(
-        skills,
-        personnel,
-        recordedCompetencies,
-    );
+    const {
+        competencies,
+        isSynthetic,
+        syntheticActions,
+        syntheticMenuItem,
+        syntheticOpenMenuItem,
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+
+    const [showStatusCounts, setShowStatusCounts] = useState(true);
 
     const skill = skills.find((candidate) => candidate.id === skillId);
 
-    type Row = {
-        id: string;
-        name: string;
-        status: CompetencyStatus;
-        checkedAt: string | null;
-    };
-
-    const data = useMemo<Row[]>(() => {
-        if (!skill) return [];
-        const competencyByAssessee = new Map(
-            competencies.map((competency) => [competency.assesseeId, competency]),
-        );
-        return R.pipe(
-            personnel,
-            R.map((person) => {
-                const competency = competencyByAssessee.get(person.id);
-                return {
-                    id: person.id,
-                    name: person.name,
-                    status: deriveStatus(competency),
-                    checkedAt: competency?.checkedAt ?? null,
-                };
-            }),
-            R.sortBy([(row) => STATUS_RANK[row.status], "desc"], [(row) => row.name, "asc"]),
-        );
-    }, [personnel, competencies, skill]);
-
-    const columns = useMemo(
-        () =>
-            Kaga.defineColumns<Row>((col) => [
-                col.accessor("name", {
-                    header: "Name",
-                    enableSorting: true,
-                    enableGlobalFilter: true,
-                    enableColumnFilter: false,
-                }),
-                col.accessor("status", {
-                    header: "Status",
-                    cell: (ctx) => <StatusBadge status={ctx.getValue()} />,
-                    enableSorting: true,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: true,
-                    sortingFn: (a, b) =>
-                        STATUS_RANK[a.original.status] - STATUS_RANK[b.original.status],
-                    filterFn: Kaga.filterFns.oneOf,
-                    meta: {
-                        columnOptions: (Object.keys(STATUS_LABELS) as CompetencyStatus[]).map(
-                            (status) => ({ label: STATUS_LABELS[status], value: status }),
-                        ),
-                    },
-                }),
-                col.accessor("checkedAt", {
-                    header: "Last Checked",
-                    cell: (ctx) => {
-                        const value = ctx.getValue();
-                        return value ? formatDate(value) : "—";
-                    },
-                    enableSorting: true,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: false,
-                }),
-            ]),
-        [],
+    const competencyByAssessee = new Map(
+        competencies.map((competency) => [competency.assesseeId, competency]),
     );
 
-    const table = useReactTable({
-        data,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        initialState: {
-            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
-        },
-    });
+    const rows = R.pipe(
+        personnel,
+        R.map((person) => {
+            const competency = competencyByAssessee.get(person.id);
+            return {
+                id: person.id,
+                name: person.name,
+                competency,
+                status: deriveStatus(competency),
+                checkedAt: competency?.checkedAt ?? null,
+            };
+        }),
+        // Default "worst first" so coverage gaps surface at the top, name as the tiebreaker.
+        R.sortBy([(row) => STATUS_RANK[row.status], "desc"], [(row) => row.name, "asc"]),
+    );
 
-    const currentTeamValue = teamId ?? "all";
+    const counts = tallyStatuses(rows.map((row) => row.status));
+
+    const scopeLabel = teamId
+        ? (teams.find((team) => team.id === teamId)?.name ?? "Team")
+        : "Whole Organization";
 
     return (
-        <>
-            <ReportNavbar routePattern="/orgs/[slug]/skill-track/reports/skill" />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{skill ? skill.name : "Skill Coverage"}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            {syntheticActions}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
-                                        {teamId
-                                            ? (teams.find((team) => team.id === teamId)?.name ??
-                                              "Team")
-                                            : "Whole Organization"}
-                                        <ChevronDownIcon className="size-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuRadioGroup
-                                        value={currentTeamValue}
-                                        onValueChange={(value) =>
-                                            setTeamParam(value === "all" ? null : value)
-                                        }
-                                    >
-                                        <DropdownMenuRadioItem value="all">
-                                            Whole Organization
-                                        </DropdownMenuRadioItem>
-                                        {R.pipe(
-                                            teams,
-                                            R.sortBy((team) => team.name),
-                                            R.map((team) => (
-                                                <DropdownMenuRadioItem
-                                                    key={team.id}
-                                                    value={team.id}
-                                                >
-                                                    {team.name}
-                                                </DropdownMenuRadioItem>
-                                            )),
-                                        )}
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-
-                    {!skill ? (
-                        <Empty>
-                            <EmptyDescription>
-                                That skill is not in any of this organization&apos;s subscribed
-                                packages.
-                            </EmptyDescription>
-                        </Empty>
-                    ) : (
+        <ReportCellPopoversProvider isSynthetic={isSynthetic}>
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>Skill Coverage Report</Glorious.Title>
+                    <Glorious.Subtitle>
                         <div>
-                            <Kaga.TableToolbar table={table} />
-                            <Kaga.Table table={table} />
-                            <Kaga.TablePagination table={table} />
+                            {skill ? skill.name : "Unknown Skill"}
+                            <span className="hidden sm:inline">{" · "}</span>
+                            <br className="inline sm:hidden" />
+                            {scopeLabel} ({rows.length} {rows.length === 1 ? "person" : "people"})
                         </div>
-                    )}
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+                        {showStatusCounts && (
+                            <div>
+                                {counts.current} current · {counts.expired} expired ·{" "}
+                                {counts["not-competent"]} not competent · {counts["not-assessed"]}{" "}
+                                not assessed
+                            </div>
+                        )}
+                    </Glorious.Subtitle>
+                    <Glorious.Actions>
+                        <SkillTrack_SkillScopeDialog compact />
+                        {syntheticActions}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost">
+                                    <DropdownMenuTriggerIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={showStatusCounts}
+                                        onCheckedChange={setShowStatusCounts}
+                                    >
+                                        <span>Status Counts</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator className="sm:hidden" />
+                                <SkillTrack_ScopeDialogMenuItem />
+                                {syntheticOpenMenuItem}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>{syntheticMenuItem}</DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Glorious.Actions>
+                </Glorious.Header>
+
+                {!skill ? (
+                    <Empty>
+                        <EmptyDescription>
+                            That skill is not in any of this organization&apos;s subscribed
+                            packages.
+                        </EmptyDescription>
+                    </Empty>
+                ) : rows.length === 0 ? (
+                    <Empty>
+                        <EmptyDescription>
+                            There are no active personnel in this scope.
+                        </EmptyDescription>
+                    </Empty>
+                ) : (
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table className="w-full">
+                            <colgroup>
+                                <col className="w-[60%] sm:w-[50%]" />
+                                <col className="w-[40%] sm:w-[25%]" />
+                                <col className="hidden sm:table-column sm:w-[25%]" />
+                            </colgroup>
+                            <Glorious.TableHeader>
+                                <th
+                                    className={cn(
+                                        stickyFirstCol,
+                                        headCell,
+                                        "top-0 z-30 border-r text-left",
+                                    )}
+                                >
+                                    Name
+                                </th>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 text-center sm:border-r",
+                                    )}
+                                >
+                                    Status
+                                </th>
+                                <th
+                                    className={cn(
+                                        headCell,
+                                        "sticky top-0 z-20 hidden text-center sm:table-cell",
+                                    )}
+                                >
+                                    Last Checked
+                                </th>
+                            </Glorious.TableHeader>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <tr key={row.id} className="hover:bg-muted/40">
+                                        <th
+                                            scope="row"
+                                            className={cn(
+                                                stickyFirstCol,
+                                                "truncate border-r border-b px-3 py-1.5 text-left align-middle font-normal",
+                                            )}
+                                            title={row.name}
+                                        >
+                                            {row.name}
+                                        </th>
+                                        <td className="border-b px-3 py-1.5 text-center align-middle sm:border-r">
+                                            {row.competency ? (
+                                                <CheckDetailsTrigger
+                                                    competency={row.competency}
+                                                    className="cursor-pointer hover:opacity-80"
+                                                >
+                                                    <StatusBadge status={row.status} />
+                                                </CheckDetailsTrigger>
+                                            ) : (
+                                                <StatusBadge status={row.status} />
+                                            )}
+                                        </td>
+                                        <td className="hidden border-b px-3 py-1.5 text-center align-middle text-sm text-muted-foreground tabular-nums sm:table-cell">
+                                            {row.checkedAt ? formatDate(row.checkedAt) : "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
+                )}
+            </Glorious.Root>
+        </ReportCellPopoversProvider>
     );
 }

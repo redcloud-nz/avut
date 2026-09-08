@@ -26,8 +26,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuCheckboxItem, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
 
@@ -97,18 +97,25 @@ export function generateSyntheticCompetencies(
         const checkedAt = new Date(now);
         checkedAt.setDate(checkedAt.getDate() - Math.floor(ageRoll * config.maxAgeMonths * 30));
 
-        const expiresAt = new Date(checkedAt);
-        expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+        // Mirror the router: frequency 0 means the skill never expires.
+        const neverExpires = skill.frequency <= 0;
+        let expiresAt: Date | null = null;
+        if (!neverExpires) {
+            expiresAt = new Date(checkedAt);
+            expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+        }
 
         return [
             {
                 assesseeId: personId,
                 skillId: skill.id,
-                checkId: `synthetic${skill.id}`.slice(0, 16) as Competency["checkId"],
+                // No real record exists in synthetic mode (the check lookup is disabled), but
+                // keep it unique per skill and the right shape. The skill id already is.
+                checkId: skill.id as unknown as Competency["checkId"],
                 result,
                 checkedAt: checkedAt.toISOString(),
-                expiresAt: expiresAt.toISOString(),
-                isCurrent: expiresAt > now,
+                expiresAt: expiresAt ? expiresAt.toISOString() : null,
+                isCurrent: neverExpires || expiresAt! > now,
             },
         ];
     });
@@ -141,10 +148,17 @@ export function useSyntheticCompetencies(
     skills: MatrixSkill[],
     personnel: { id: Competency["assesseeId"] }[],
     competencies: Competency[],
-): { competencies: Competency[]; syntheticActions: ReactNode } {
+): {
+    competencies: Competency[];
+    isSynthetic: boolean;
+    syntheticActions: ReactNode;
+    syntheticMenuItem: ReactNode;
+    syntheticOpenMenuItem: ReactNode;
+} {
     const organization = useOrganization();
-    const [synthetic] = useQueryState("synthetic");
+    const [synthetic, setSynthetic] = useQueryState("synthetic");
     const [config, setConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const isSynthetic = synthetic !== null;
 
     const generated = useMemo(
@@ -152,18 +166,45 @@ export function useSyntheticCompetencies(
         [isSynthetic, skills, personnel, config],
     );
 
+    // Drop straight into a report's "Show" dropdown so every report toggles synthetic mode
+    // the same way. Writes the `?synthetic` search param the hook keys off.
+    const syntheticMenuItem = (
+        <DropdownMenuCheckboxItem
+            checked={isSynthetic}
+            onCheckedChange={(next) => void setSynthetic(next ? "" : null, { history: "push" })}
+        >
+            <span>Use Synthetic Checks</span>
+        </DropdownMenuCheckboxItem>
+    );
+
     if (!isSynthetic || !generated) {
-        return { competencies, syntheticActions: null };
+        return {
+            competencies,
+            isSynthetic: false,
+            syntheticActions: null,
+            syntheticMenuItem,
+            syntheticOpenMenuItem: null,
+        };
     }
 
     return {
         competencies: generated,
+        isSynthetic: true,
         syntheticActions: (
             <SyntheticDataDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
                 config={config}
                 onConfigChange={setConfig}
                 resultOptions={getEnabledSkillCheckResultOptions(organization.settings)}
             />
+        ),
+        syntheticMenuItem,
+        syntheticOpenMenuItem: (
+            <DropdownMenuItem className="sm:hidden" onSelect={() => setDialogOpen(true)}>
+                <FlaskConicalIcon />
+                <span>Synthetic Data</span>
+            </DropdownMenuItem>
         ),
     };
 }
@@ -202,23 +243,25 @@ function mulberry32(seed: number): () => number {
  * header, where it doubles as the signal that the report is not showing recorded data.
  */
 export function SyntheticDataDialog({
+    open,
+    onOpenChange,
     config,
     onConfigChange,
     resultOptions,
 }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     config: SyntheticConfig;
     onConfigChange: (config: SyntheticConfig) => void;
     /** The org's enabled result values, in fixed order, with their configured labels. */
     resultOptions: { value: SkillCheckResultValue; label: string }[];
 }) {
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <FlaskConicalIcon />
-                    <span className="sr-only sm:not-sr-only">Synthetic Data</span>
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <Button variant="outline" onClick={() => onOpenChange(true)} className="max-sm:hidden">
+                <FlaskConicalIcon />
+                <span className="sr-only sm:not-sr-only">Synthetic Data</span>
+            </Button>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Synthetic Data</DialogTitle>
