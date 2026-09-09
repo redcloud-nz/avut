@@ -13,6 +13,8 @@ vi.mock("server-only", () => ({}));
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { TeamId } from "@/lib/schemas/team";
+import { UserId } from "@/lib/schemas/user";
+import { createLogBatch, recordLogEntry } from "@/server/log-entry";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -92,5 +94,65 @@ describe("teamsRouter.getTeam", () => {
         await expect(
             makeCaller().getTeam({ organizationId: T.org, teamId: T.otherOrgTeam }),
         ).rejects.toThrow(/not found/i);
+    });
+});
+
+describe("syncronizeD4HTeam — batching", () => {
+    it("opens one batch and stamps every entry in the run with it", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+        const userId = UserId.create();
+        const teamId = TeamId.create();
+
+        const batch = await createLogBatch(
+            {
+                operationKey: "d4h-team-sync",
+                userId,
+                actorLabel: "Ada Lovelace <ada@example.com>",
+                description: "Synchronized memberships from linked D4H team",
+            },
+            db,
+        );
+
+        await recordLogEntry(
+            {
+                scope: "organization",
+                organizationId: orgId,
+                actor: { userId },
+                actorLabel: "Ada Lovelace <ada@example.com>",
+                batchId: batch.id,
+                action: "Create",
+                objectType: "TeamMembership",
+                objectId: "tm_1",
+            },
+            db,
+        );
+        await recordLogEntry(
+            {
+                scope: "organization",
+                organizationId: orgId,
+                actor: { userId },
+                actorLabel: "Ada Lovelace <ada@example.com>",
+                batchId: batch.id,
+                action: "Update",
+                objectType: "Team",
+                objectId: teamId,
+            },
+            db,
+        );
+
+        const entries = await db.logEntry.findMany({ where: { batchId: batch.id } });
+        expect(entries).toHaveLength(2);
+
+        // Entries written in one run share a timestamp, so sequence is what orders them.
+        const sequences = entries.map((e) => e.sequence).sort((a, b) => a - b);
+        expect(new Set(sequences).size).toBe(2);
+
+        const stored = await db.logBatch.findUnique({ where: { id: batch.id } });
+        expect(stored).toMatchObject({
+            operationKey: "d4h-team-sync",
+            userId,
+            description: "Synchronized memberships from linked D4H team",
+        });
     });
 });

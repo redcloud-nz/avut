@@ -17,6 +17,7 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { auth } from "@/server/auth";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -323,6 +324,16 @@ export const teamsRouter = createTrpcRouter({
 
             const d4hTeam = await getD4HTeam(accessToken, d4hTeamId);
 
+            const batch = await createLogBatch(
+                {
+                    operationKey: "d4h-team-import",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: `Imported team "${create.name}" and its members from D4H`,
+                },
+                ctx.prisma,
+            );
+
             const data = await auth.api.createTeam({
                 body: {
                     name: create.name,
@@ -357,6 +368,7 @@ export const teamsRouter = createTrpcRouter({
                     objectType: "Team",
                     objectId: data.id,
                     changes,
+                    batchId: batch.id,
                 }),
             ]);
 
@@ -365,14 +377,19 @@ export const teamsRouter = createTrpcRouter({
                     const existingPerson = await getPersonByEmail(ctx, member.email.value);
                     if (existingPerson) return { member, person: existingPerson };
 
-                    const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
-                        name: member.name,
-                        email: member.email.value,
-                        tags: [],
-                        properties: {
-                            d4hId: member.id,
+                    const { created: newPerson } = await createPerson(
+                        ctx,
+                        PersonId.create(),
+                        {
+                            name: member.name,
+                            email: member.email.value,
+                            tags: [],
+                            properties: {
+                                d4hId: member.id,
+                            },
                         },
-                    });
+                        batch.id,
+                    );
                     return { member, person: newPerson };
                 }),
             );
@@ -403,6 +420,11 @@ export const teamsRouter = createTrpcRouter({
                             objectType: "TeamMembership",
                             objectId: teamMembershipId,
                             changes: diffObject({}, memberCreate),
+                            batchId: batch.id,
+                            refs: [
+                                { objectType: "Person", objectId: person.id, role: "context" },
+                                { objectType: "Team", objectId: createdTeam.id, role: "context" },
+                            ],
                         }),
                     ];
                 }),
@@ -525,6 +547,16 @@ export const teamsRouter = createTrpcRouter({
                 z.number().parse(team.properties.d4hTeamId),
             );
 
+            const batch = await createLogBatch(
+                {
+                    operationKey: "d4h-team-sync",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: "Synchronized memberships from linked D4H team",
+                },
+                ctx.prisma,
+            );
+
             // Find members that are in our system but have been removed.
             for (const member of members) {
                 const d4hMember = d4hTeam.members.find(
@@ -544,6 +576,11 @@ export const teamsRouter = createTrpcRouter({
                         objectType: "TeamMembership",
                         objectId: `${teamId}_${member.personId}`,
                         description: `Member ${member.personId} removed from team as they are no longer in the linked D4H team.`,
+                        batchId: batch.id,
+                        refs: [
+                            { objectType: "Person", objectId: member.personId, role: "context" },
+                            { objectType: "Team", objectId: teamId, role: "context" },
+                        ],
                     });
                 }
             }
@@ -554,14 +591,19 @@ export const teamsRouter = createTrpcRouter({
                     // This member is in D4H but not in our system, add them.
                     let person = await getPersonByEmail(ctx, d4hMember.email.value);
                     if (!person) {
-                        const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
-                            name: d4hMember.name,
-                            email: d4hMember.email.value,
-                            tags: [],
-                            properties: {
-                                d4hId: d4hMember.id,
+                        const { created: newPerson } = await createPerson(
+                            ctx,
+                            PersonId.create(),
+                            {
+                                name: d4hMember.name,
+                                email: d4hMember.email.value,
+                                tags: [],
+                                properties: {
+                                    d4hId: d4hMember.id,
+                                },
                             },
-                        });
+                            batch.id,
+                        );
                         person = newPerson;
                     }
 
@@ -589,6 +631,11 @@ export const teamsRouter = createTrpcRouter({
                         objectId: teamMembershipId,
                         description: `Member ${person.id} added to team as they are in the linked D4H team but not in our system.`,
                         changes: diffObject({}, memberCreate),
+                        batchId: batch.id,
+                        refs: [
+                            { objectType: "Person", objectId: person.id, role: "context" },
+                            { objectType: "Team", objectId: teamId, role: "context" },
+                        ],
                     });
                 }
             }
@@ -614,6 +661,7 @@ export const teamsRouter = createTrpcRouter({
                         { d4hLastSync: syncedAt },
                     ),
                     description: "Synchronized team membership from linked D4H team.",
+                    batchId: batch.id,
                 }),
             ]);
         }),

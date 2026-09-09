@@ -411,6 +411,8 @@ export async function createPerson(
     ctx: AuthenticatedOrganizationContext,
     personId: PersonId,
     create: z.infer<typeof PersonData.modifiableSchema>,
+    /** Set when this create is part of a multi-entry operation, so the entry joins its batch. */
+    batchId?: string,
 ): Promise<{ created: PersonData }> {
     const created = await ctx.prisma.person.create({
         data: {
@@ -439,6 +441,7 @@ export async function createPerson(
         objectType: "Person",
         objectId: created.id,
         changes: changes,
+        batchId,
     });
 
     return {
