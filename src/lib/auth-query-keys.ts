@@ -20,6 +20,7 @@ import { UserId } from "@/lib/schemas/user";
 export const authQueryKeys = {
     all: ["auth"] as const,
     session: ["auth", "session"] as const,
+    linkedAccounts: ["auth", "linkedAccounts"] as const,
     users: () => [...authQueryKeys.all, "user"] as const,
     user: (userId: UserId) => [...authQueryKeys.users(), userId] as const,
 };
