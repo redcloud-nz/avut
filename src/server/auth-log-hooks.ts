@@ -6,6 +6,33 @@
 /*
  * Pure mapping functions for the better-auth `databaseHooks`.
  *
+ * NOTHING CALLS THIS MODULE YET. The `databaseHooks` wire in `auth.ts` was written,
+ * reviewed, and then deliberately reverted (see the revert of 53fc88a): the hook mechanics
+ * it depended on are better-auth *internals*, not public API, and this project is not yet
+ * committed to staying on 1.7.x. The mapping layer is kept because it depends only on row
+ * SHAPES — `user.banned`, `account.providerId`, `session.impersonatedBy` — which are schema
+ * fields and stable across those versions, unlike the hook plumbing.
+ *
+ * Two defects were found in that reverted wire, both silent, both invisible to `tsc`
+ * because better-auth's declared types are wider than its runtime behaviour. Whoever
+ * re-wires this must handle them, and must re-verify them against the version in use:
+ *
+ * 1. `update.before` receives the update PAYLOAD, which carries no `id` — the id lives in
+ *    the `where` clause, which is never passed to the hook. Reading `user.id` there yields
+ *    `undefined`, so any pre-value lookup keyed on it silently finds nothing. The old email
+ *    is already captured correctly elsewhere in `auth.ts`, via
+ *    `emailVerification.beforeEmailVerification` into `previousEmailByRequest`.
+ * 2. `account.update.after` does NOT always receive an Account row. `updatePassword` goes
+ *    through `updateManyWithHooks`, and the Prisma adapter's `updateMany` returns
+ *    `result.count` — a number. `/change-password` and `/set-password` pass a real row;
+ *    `/reset-password`, admin set-user-password, and the emailOTP reset pass a count. Guard
+ *    on the shape, and log the gap rather than returning silently.
+ *
+ * A third, latent: the wire's `before`/`after` WeakMap stash held one slot per request,
+ * but `after` hooks are deferred until after commit, so two same-model writes in one
+ * request run `before(A) → before(B) → commit → after(A) → after(B)` and lose both
+ * entries. A FIFO per context fixes it.
+ *
  * All the logic lives here, with no database access and no better-auth imports, so it is
  * unit-testable from jsdom. The shell in `auth.ts` — which cannot be tested there — stays
  * a thin wire: snapshot in `before`, map and record in `after`.

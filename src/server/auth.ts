@@ -17,15 +17,6 @@ import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 
-import {
-    mapAccountLink,
-    mapImpersonation,
-    mapPasswordChange,
-    mapUserUpdate,
-    type HookActor,
-    type UserUpdateSnapshot,
-} from "./auth-log-hooks";
-import { recordLogEntry, type RecordLogEntryInput } from "./log-entry";
 import { revalidateOrganization } from "./organization";
 import prisma from "./prisma";
 
@@ -37,62 +28,6 @@ import prisma from "./prisma";
  * is request-scoped and garbage-collected with the request.
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
-
-/**
- * Carries what a `*.before` database hook observed into its matching `*.after` hook.
- *
- * better-auth's hooks cannot supply a previous value: `update.before` receives only the
- * update payload and `update.after` only the resulting row. So `before` records which keys
- * the payload carried — and, for an email change, reads the address the row still holds —
- * and `after` maps that into an entry.
- *
- * Recording in `after` rather than `before` means a write that fails leaves no entry.
- * Keyed by the endpoint context object, so it is request-scoped and collected with the
- * request; nothing leaks if `after` never runs. Same pattern as
- * `previousEmailByRequest` above.
- */
-const userUpdateSnapshotByContext = new WeakMap<object, UserUpdateSnapshot>();
-const passwordTouchedByContext = new WeakMap<object, boolean>();
-
-/**
- * The user driving the request, from better-auth's endpoint context.
- *
- * `GenericEndpointContext` is `EndpointContext & { context: AuthContext }`, and the admin
- * middleware populates `session` on the endpoints that matter (ban, unban, set-role).
- * Read structurally so a better-auth type change cannot break the build here.
- */
-function resolveHookActor(context: unknown): HookActor | null {
-    const session = (
-        context as {
-            context?: { session?: { user?: { id?: string; name?: string; email?: string } } };
-        }
-    )?.context?.session;
-
-    const user = session?.user;
-    if (!user?.id || !user.name || !user.email) return null;
-
-    return { userId: user.id, name: user.name, email: user.email };
-}
-
-/**
- * Record entries produced by a hook, swallowing every failure.
- *
- * `databaseHooks.*.after` runs AFTER the underlying write commits, and better-auth
- * rethrows what the hook throws (it never passes its core's `onAfterCommitHookError`
- * handler). So a throwing hook does not roll back the password change — it returns a 500
- * for an operation that already succeeded. Fail-closed is not available on this path, so
- * we fail open and accept audit gaps, which are at least visible in the logs.
- */
-async function recordFromHook(entries: (RecordLogEntryInput | null)[]): Promise<void> {
-    for (const entry of entries) {
-        if (!entry) continue;
-        try {
-            await recordLogEntry(entry, prisma);
-        } catch (error) {
-            console.error("[audit] failed to record log entry from an auth hook", error);
-        }
-    }
-}
 
 export const auth = betterAuth({
     account: {
@@ -111,127 +46,6 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    /*
-     * Account-security events reach us here rather than through tRPC, because they run
-     * through better-auth's own endpoints. All the logic lives in `auth-log-hooks.ts` —
-     * this is a thin wire, and is deliberately untested: it cannot run under jsdom.
-     */
-    databaseHooks: {
-        user: {
-            update: {
-                async before(user, context) {
-                    try {
-                        if (!context) return;
-                        const touched = Object.keys(user);
-                        const snapshot: UserUpdateSnapshot = { touched };
-
-                        if (touched.includes("email")) {
-                            // The only previous value the `after` hook cannot recover.
-                            // The row still holds the pre-update address at this point.
-                            const existing = await prisma.user.findUnique({
-                                where: { id: String(user.id) },
-                                select: { email: true },
-                            });
-                            if (existing) snapshot.previousEmail = existing.email;
-                        }
-
-                        userUpdateSnapshotByContext.set(context, snapshot);
-                    } catch (error) {
-                        console.error("[audit] user.update.before snapshot failed", error);
-                    }
-                },
-                async after(user, context) {
-                    try {
-                        const snapshot = context
-                            ? userUpdateSnapshotByContext.get(context)
-                            : undefined;
-                        if (context) userUpdateSnapshotByContext.delete(context);
-
-                        const actor = resolveHookActor(context);
-                        if (!actor && snapshot?.touched.includes("banned")) {
-                            console.warn(
-                                "[audit] no actor resolvable for a ban change; attributing to the affected user",
-                            );
-                        }
-
-                        await recordFromHook(mapUserUpdate(user, snapshot, actor));
-                    } catch (error) {
-                        console.error("[audit] user.update.after failed", error);
-                    }
-                },
-            },
-        },
-        account: {
-            create: {
-                async after(account, context) {
-                    try {
-                        await recordFromHook([
-                            mapAccountLink(account, "Create", resolveHookActor(context)),
-                        ]);
-                    } catch (error) {
-                        console.error("[audit] account.create.after failed", error);
-                    }
-                },
-            },
-            update: {
-                async before(account, context) {
-                    try {
-                        if (context) {
-                            passwordTouchedByContext.set(
-                                context,
-                                Object.keys(account).includes("password"),
-                            );
-                        }
-                    } catch (error) {
-                        console.error("[audit] account.update.before snapshot failed", error);
-                    }
-                },
-                async after(account, context) {
-                    try {
-                        const passwordTouched = context
-                            ? (passwordTouchedByContext.get(context) ?? false)
-                            : false;
-                        if (context) passwordTouchedByContext.delete(context);
-
-                        await recordFromHook([mapPasswordChange(account, passwordTouched)]);
-                    } catch (error) {
-                        console.error("[audit] account.update.after failed", error);
-                    }
-                },
-            },
-            delete: {
-                async after(account, context) {
-                    try {
-                        await recordFromHook([
-                            mapAccountLink(account, "Delete", resolveHookActor(context)),
-                        ]);
-                    } catch (error) {
-                        console.error("[audit] account.delete.after failed", error);
-                    }
-                },
-            },
-        },
-        session: {
-            create: {
-                async after(session) {
-                    try {
-                        await recordFromHook([mapImpersonation(session, "start")]);
-                    } catch (error) {
-                        console.error("[audit] session.create.after failed", error);
-                    }
-                },
-            },
-            delete: {
-                async after(session) {
-                    try {
-                        await recordFromHook([mapImpersonation(session, "end")]);
-                    } catch (error) {
-                        console.error("[audit] session.delete.after failed", error);
-                    }
-                },
-            },
-        },
-    },
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
