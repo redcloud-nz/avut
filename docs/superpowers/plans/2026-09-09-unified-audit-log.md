@@ -2708,6 +2708,37 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 7: Wire the `databaseHooks` shell in `auth.ts`
 
+> **POSTPONED — DO NOT IMPLEMENT THIS TASK AS WRITTEN.** It was implemented (53fc88a),
+> reviewed, and reverted (5dba042). The step text below is preserved for its reasoning, but it
+> encodes three defects that a fresh run would faithfully reproduce, because all three
+> typecheck and none is covered by any test:
+>
+> 1. **Step 1's pre-value lookup cannot work.** `update.before` receives the update PAYLOAD,
+>    which carries no `id` — the id lives in the `where` clause, never passed to the hook. So
+>    `String(user.id)` is `"undefined"`, the `findUnique` always misses, `previousEmail` is
+>    never set, and email-change entries never fire. The old email is already captured
+>    correctly elsewhere in `auth.ts`, via `emailVerification.beforeEmailVerification` into
+>    `previousEmailByRequest`.
+> 2. **Step 3's `account.update.after` assumes a row.** `updatePassword` routes through
+>    `updateManyWithHooks`, and the Prisma adapter's `updateMany` returns `result.count` — a
+>    number. `/change-password` and `/set-password` pass a real Account row; `/reset-password`,
+>    admin set-user-password, and the emailOTP reset pass a count, so `mapPasswordChange`
+>    returns `null` and every reset path goes unlogged.
+> 3. **Step 1's one-slot-per-request WeakMap stash is unsound.** `after` hooks are deferred
+>    until after commit, so two same-model writes in one request run
+>    `before(A) → before(B) → commit → after(A) → after(B)`: B overwrites A's snapshot, A's
+>    `after` consumes and deletes it, and B's `after` gets nothing. Both entries are lost. A
+>    FIFO per context fixes it. Latent — no current flow triggers it.
+>
+> The deeper reason for the postponement is that every one of those facts is a better-auth
+> _internal_ (`with-hooks.mjs`, `internal-adapter.mjs`, the Prisma adapter's return types), not
+> public API, and this project is not committed to staying on 1.7.x. Re-verify all three
+> against the version in use before re-wiring.
+>
+> Task 6's mapping layer (`src/server/auth-log-hooks.ts`) and its tests remain in the tree,
+> dormant, carrying the same notes in their header. The rest of the capture layer does not
+> depend on this task.
+
 A thin, deliberately untested wire: snapshot in `before`, map and record in `after`, catch everything.
 
 **Files:**
@@ -3196,6 +3227,14 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ---
 
 ## Verification
+
+> **Scope note.** This section was written assuming all eight tasks landed. Task 7 was
+> reverted (see its heading), so "the whole capture layer" below means Tasks 1-6 and 8:
+> the `LogEntry` model, the `recordLogEntry`/`createLogBatch` service, the three tRPC
+> `logEvent` helpers, the `system-admin-router` conversion, the dormant mapping layer, and
+> the D4H batch wiring. Account-security events reaching the app through better-auth's own
+> endpoints are NOT captured until Task 7 returns. Every check below still applies as
+> written — none of them tests the reverted wire.
 
 After Task 8, the whole capture layer is in place. Confirm:
 
