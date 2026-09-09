@@ -4,7 +4,9 @@
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 
+import type { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
@@ -221,6 +223,36 @@ describe("recordLogEntry — refs fan-out", () => {
         expect(() => recordLogEntry({ ...baseInput(), objectType: "Widget" as never }, db)).toThrow(
             LogEntryInvariantError,
         );
+    });
+
+    it("rejects a ref objectType off the closed union", () => {
+        expect(() =>
+            recordLogEntry(
+                {
+                    ...baseInput(),
+                    refs: [{ objectType: "Widget" as never, objectId: "widget_1" }],
+                },
+                db,
+            ),
+        ).toThrow(LogEntryInvariantError);
+    });
+});
+
+describe("recordLogEntry — changes parse", () => {
+    const db = createMockPrisma();
+
+    it("persists a valid DiffChange[] through the round trip", async () => {
+        const changes: DiffChange[] = [{ type: "obj_mod", path: ["name"], prev: "a", curr: "b" }];
+
+        const entry = await recordLogEntry({ ...baseInput(), changes }, db);
+
+        expect(entry.changes).toEqual(changes);
+    });
+
+    it("rejects a malformed change", () => {
+        const changes = [{ type: "obj_mod", path: ["name"], prev: "a" }] as never;
+
+        expect(() => recordLogEntry({ ...baseInput(), changes }, db)).toThrow(ZodError);
     });
 });
 
