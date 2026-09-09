@@ -329,6 +329,47 @@ describe("diff", () => {
     it("reports the path of an unrepresentable value", () => {
         expect(() => diffObject({}, { a: { b: new Map() } })).toThrow(/a\.b/);
     });
+
+    it("throws on Infinity", () => {
+        expect(() => diffObject({}, { x: Infinity })).toThrow(DiffValueError);
+    });
+
+    it("throws when the root value itself is not a plain object", () => {
+        expect(() => diffObject({}, new Date() as unknown as Record<string, unknown>)).toThrow(
+            DiffValueError,
+        );
+        expect(() =>
+            diffObject({}, new (class Thing {})() as unknown as Record<string, unknown>),
+        ).toThrow(DiffValueError);
+    });
+
+    it("throws DiffValueError, not a bare RangeError, for an invalid Date", () => {
+        expect(() => diffObject({}, { at: new Date("nope") })).toThrow(DiffValueError);
+    });
+
+    it("keeps the error's value readable but non-enumerable", () => {
+        expect.assertions(3);
+        try {
+            diffObject({}, { a: new Map() });
+        } catch (err) {
+            expect(err).toBeInstanceOf(DiffValueError);
+            const diffErr = err as DiffValueError;
+            expect(diffErr.value).toBeInstanceOf(Map);
+            expect(Object.prototype.propertyIsEnumerable.call(diffErr, "value")).toBe(false);
+        }
+    });
+
+    it("pins the set-semantics behaviour on duplicate-bearing arrays", () => {
+        // A duplicate that collapses away is invisible.
+        expect(diffObject({ tags: ["a", "a"] }, { tags: ["a"] })).toEqual([]);
+
+        // A fresh duplicate is reported once per occurrence.
+        expect(diffObject({ tags: ["a"] }, { tags: ["b", "b"] })).toEqual([
+            { type: "arr_del", path: ["tags"], value: "a" },
+            { type: "arr_add", path: ["tags"], value: "b" },
+            { type: "arr_add", path: ["tags"], value: "b" },
+        ]);
+    });
 });
 
 describe("DiffChange.schema", () => {

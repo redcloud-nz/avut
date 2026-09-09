@@ -60,12 +60,16 @@ export type DiffChange = z.infer<typeof DiffChange.schema>;
 
 /** Thrown when a value cannot be faithfully represented in a change. */
 export class DiffValueError extends Error {
-    constructor(
-        readonly path: string[],
-        readonly value: unknown,
-    ) {
+    readonly path: string[];
+    declare readonly value: unknown;
+
+    constructor(path: string[], value: unknown) {
         super(`Cannot diff value at "${path.join(".")}": not representable`);
         this.name = "DiffValueError";
+        this.path = path;
+        // Non-enumerable so a structured logger that serializes an Error's own
+        // enumerable properties never echoes the raw value it names.
+        Object.defineProperty(this, "value", { value, enumerable: false });
     }
 }
 
@@ -90,8 +94,13 @@ interface Leaf {
  * - Date -> leaf, as an ISO string
  * - undefined -> absent
  * - anything else -> throw
+ *
+ * The policy applies to the top-level input too: `input` itself must be a plain
+ * object, or this throws rather than silently iterating zero keys.
  */
 function flatten(input: DiffInput): Leaf[] {
+    if (!isPlainObject(input)) throw new DiffValueError([], input);
+
     const leaves: Leaf[] = [];
 
     function recurse(value: unknown, path: string[]): void {
@@ -100,6 +109,7 @@ function flatten(input: DiffInput): Leaf[] {
         if (isDiffValue(value)) {
             leaves.push({ path, value });
         } else if (value instanceof Date) {
+            if (Number.isNaN(value.getTime())) throw new DiffValueError(path, value);
             leaves.push({ path, value: value.toISOString() });
         } else if (Array.isArray(value)) {
             if (!value.every(isDiffValue)) throw new DiffValueError(path, value);
@@ -124,6 +134,12 @@ function flatten(input: DiffInput): Leaf[] {
  * Both sides are flattened to scalar leaves, then compared by path. Arrays of scalars are compared
  * as sets — `tags` is a set, so `+blue` is the right reading. Reordering is not inferred; a caller
  * that reorders something constructs an `arr_ord` change directly.
+ *
+ * Out of contract: arrays holding duplicate values. Set semantics means a duplicate collapses
+ * (`["a","a"] -> ["a"]` reports no change) and a fresh duplicate can be reported twice
+ * (`["a"] -> ["b","b"]` emits two `arr_add "b"`). This is deliberate — `diffObject` is exported
+ * as a general `Record<string, unknown>` utility, but every current caller's schema (e.g.
+ * `tagsSchema`) already forbids duplicates, so the algorithm is not changed to handle them.
  *
  * @param a Initial object.
  * @param b Changed object.
