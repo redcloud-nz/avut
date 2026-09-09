@@ -347,6 +347,31 @@ describe("diff", () => {
         expect(() => diffObject({}, { at: new Date("nope") })).toThrow(DiffValueError);
     });
 
+    it("throws DiffValueError, not a RangeError, on a self-referential object", () => {
+        const cyclic: Record<string, unknown> = { name: "a" };
+        cyclic.self = cyclic;
+
+        expect(() => diffObject({}, cyclic)).toThrow(DiffValueError);
+        expect(() => diffObject(cyclic, {})).toThrow(DiffValueError);
+        expect(() => diffObject({}, cyclic)).toThrow(/self/);
+    });
+
+    it("throws on a cycle that closes further down than the root", () => {
+        const inner: Record<string, unknown> = { depth: 2 };
+        inner.back = inner;
+
+        expect(() => diffObject({}, { outer: { inner } })).toThrow(DiffValueError);
+    });
+
+    it("flattens the same object reached twice through sibling keys — a repeat is not a cycle", () => {
+        const shared = { n: 1 };
+
+        expect(diffObject({}, { a: shared, b: shared })).toEqual([
+            { type: "obj_add", path: ["a", "n"], curr: 1 },
+            { type: "obj_add", path: ["b", "n"], curr: 1 },
+        ]);
+    });
+
     it("keeps the error's value readable but non-enumerable", () => {
         expect.assertions(3);
         try {

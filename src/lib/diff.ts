@@ -97,11 +97,20 @@ interface Leaf {
  *
  * The policy applies to the top-level input too: `input` itself must be a plain
  * object, or this throws rather than silently iterating zero keys.
+ *
+ * A cyclic object is "anything else": it is caught explicitly and throws
+ * `DiffValueError`, rather than recursing until the stack blows and raising a
+ * `RangeError` the documented contract does not mention.
  */
 function flatten(input: DiffInput): Leaf[] {
     if (!isPlainObject(input)) throw new DiffValueError([], input);
 
     const leaves: Leaf[] = [];
+
+    // Objects on the path from the root to the value being visited. Only ancestors
+    // count: the same object reached twice through sibling keys is a repeat, which
+    // flattens fine, not a cycle.
+    const ancestors = new Set<object>([input]);
 
     function recurse(value: unknown, path: string[]): void {
         if (value === undefined) return;
@@ -115,9 +124,12 @@ function flatten(input: DiffInput): Leaf[] {
             if (!value.every(isDiffValue)) throw new DiffValueError(path, value);
             leaves.push({ path, value: value as DiffValue[] });
         } else if (isPlainObject(value)) {
+            if (ancestors.has(value)) throw new DiffValueError(path, value);
+            ancestors.add(value);
             for (const key of Object.keys(value)) {
                 recurse((value as DiffInput)[key], [...path, key]);
             }
+            ancestors.delete(value);
         } else {
             throw new DiffValueError(path, value);
         }
