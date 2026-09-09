@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ZodError } from "zod";
 
 import type { DiffChange } from "@/lib/diff";
@@ -238,6 +238,42 @@ describe("recordLogEntry — refs fan-out", () => {
     });
 });
 
+describe("recordLogEntry — closed vocabularies", () => {
+    const db = createMockPrisma();
+
+    /*
+     * `scope` and `action` are text columns, so a value off their unions has nothing else
+     * standing between it and the database. `scope` matters most: `assertOwnerInvariant`
+     * switches on it, so an unrecognised value would previously have fallen through the
+     * switch and written an entry with neither owner invariant checked.
+     */
+    it("rejects a scope off the closed union, rather than writing an unguarded entry", async () => {
+        expect(() => recordLogEntry({ ...baseInput(), scope: "global" as never }, db)).toThrow(
+            LogEntryInvariantError,
+        );
+
+        expect(await db.logEntry.count({ where: { scope: "global" } })).toBe(0);
+    });
+
+    it("rejects a scope that would otherwise escape the owner invariant entirely", () => {
+        // Neither an organization nor a user entry: `organization` scope requires an
+        // organizationId and `user` scope requires an ownerId, so this would be rejected
+        // under any recognised scope. It must be rejected under an unrecognised one too.
+        expect(() =>
+            recordLogEntry(
+                { ...baseInput(), scope: "everything" as never, organizationId: null },
+                db,
+            ),
+        ).toThrow(LogEntryInvariantError);
+    });
+
+    it("rejects an action off the closed union", () => {
+        expect(() => recordLogEntry({ ...baseInput(), action: "Frobnicate" as never }, db)).toThrow(
+            LogEntryInvariantError,
+        );
+    });
+});
+
 describe("recordLogEntry — changes parse", () => {
     const db = createMockPrisma();
 
@@ -302,6 +338,14 @@ describe("createLogBatch", () => {
         expect(() => createLogBatch({ operationKey: "not-a-real-operation" as never }, db)).toThrow(
             LogEntryInvariantError,
         );
+    });
+
+    it("rejects inherited object keys, which an `in` check would have accepted", () => {
+        for (const key of ["constructor", "toString", "hasOwnProperty"]) {
+            expect(() => createLogBatch({ operationKey: key as never }, db)).toThrow(
+                LogEntryInvariantError,
+            );
+        }
     });
 });
 

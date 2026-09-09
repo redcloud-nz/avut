@@ -24,7 +24,7 @@ import type { LogBatch, LogEntry, Prisma, PrismaClient } from "@/generated/prism
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
-import { LogObjectType, LogRefRole, type LogAction, type LogScope } from "@/lib/schemas/log-entry";
+import { LogAction, LogObjectType, LogRefRole, LogScope } from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import type { UserId } from "@/lib/schemas/user";
 
@@ -87,11 +87,17 @@ export function formatActorLabel(name: string, email: string): string {
     return `${name} <${email}>`;
 }
 
-function assertOwnerInvariant(input: RecordLogEntryInput): void {
+/**
+ * Takes the already-parsed `scope` rather than reading `input.scope`, so the switch is
+ * exhaustive over `LogScope` by construction. Reading the unparsed field would let an
+ * off-vocabulary scope fall straight through the switch and write an entry with *neither*
+ * owner invariant enforced.
+ */
+function assertOwnerInvariant(scope: LogScope, input: RecordLogEntryInput): void {
     const hasOrganization = input.organizationId != null;
     const hasOwner = input.ownerId != null;
 
-    switch (input.scope) {
+    switch (scope) {
         case "organization":
             if (!hasOrganization)
                 throw new LogEntryInvariantError(
@@ -118,6 +124,13 @@ function assertOwnerInvariant(input: RecordLogEntryInput): void {
                     'A log entry with scope "system" must set neither an organizationId nor an ownerId.',
                 );
             return;
+        default: {
+            // Unreachable while `scope` is parsed against `LogScope.schema` first — this
+            // arm is what makes adding a scope value a compile error here rather than a
+            // silently unguarded entry.
+            const unhandled: never = scope;
+            throw new LogEntryInvariantError(`Unhandled log entry scope "${String(unhandled)}".`);
+        }
     }
 }
 
@@ -140,7 +153,17 @@ export function recordLogEntry(
     input: RecordLogEntryInput,
     tx: LogEntryPrisma,
 ): Prisma.PrismaPromise<LogEntry> {
-    assertOwnerInvariant(input);
+    // `scope` and `action` are stored as text columns, so nothing downstream rejects a value
+    // off their unions — the parse here is the whole guarantee, and `scope` in particular
+    // must be parsed before the owner invariant switches on it.
+    const scope = parseOrThrow(LogScope.schema, input.scope, `Unknown scope "${input.scope}".`);
+    const action = parseOrThrow(
+        LogAction.schema,
+        input.action,
+        `Unknown action "${input.action}".`,
+    );
+
+    assertOwnerInvariant(scope, input);
     assertActorInvariant(input);
 
     const objectType = parseOrThrow(
@@ -173,14 +196,14 @@ export function recordLogEntry(
     return tx.logEntry.create({
         data: {
             id: nanoId16(),
-            scope: input.scope,
+            scope,
             organizationId: input.organizationId ?? null,
             ownerId: input.ownerId ?? null,
             userId: input.actor?.userId ?? null,
             actorLabel: input.actorLabel ?? null,
             impersonatorId: input.actor?.impersonatorId ?? null,
             batchId: input.batchId ?? null,
-            action: input.action,
+            action,
             objectType,
             objectId: input.objectId,
             // Parsed, not merely cast. `logEvent` used to do this; centralising it here
@@ -215,7 +238,9 @@ export function createLogBatch(
     input: CreateLogBatchInput,
     tx: LogEntryPrisma,
 ): Prisma.PrismaPromise<LogBatch> {
-    if (!(input.operationKey in Operations)) {
+    // `Object.hasOwn`, not `in`: `in` walks the prototype chain, so `"constructor"` and
+    // `"toString"` would pass the very check this function exists to make impossible.
+    if (!Object.hasOwn(Operations, input.operationKey)) {
         throw new LogEntryInvariantError(
             `Unknown operationKey "${input.operationKey}". Add it to the Operations registry.`,
         );
