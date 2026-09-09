@@ -1011,3 +1011,55 @@ describe("systemAdminRouter — audit entries", () => {
         expect(survivors[0].actorLabel).toBe("Kim Park <kim@example.com>");
     });
 });
+
+describe("systemAdmin.deleteUser — the deletion's own audit entry", () => {
+    const T = { admin: UserId.create(), subject: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: T.subject, name: "Kim Park", email: "kim@example.com" },
+        });
+    });
+
+    function makeCaller() {
+        return systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    /*
+     * The regression this guards: the entry used to be written with `ownerId: input.userId`
+     * inside the same `$transaction` as `user.delete`. `log_entries.ownerId` is
+     * `onDelete: Cascade`, so it was inserted and cascaded away before the transaction
+     * committed — a write with a zero-length lifetime that nothing could ever read.
+     */
+    it("survives the deletion, because a system-scoped entry has no owner FK to cascade through", async () => {
+        await makeCaller().deleteUser({ userId: T.subject });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "User", objectId: T.subject, action: "Delete" },
+        });
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "system",
+            organizationId: null,
+            ownerId: null,
+            userId: T.admin,
+            actorLabel: "Dana Okafor <dana@example.com>",
+        });
+        expect(entries[0].description).toContain("Kim Park <kim@example.com>");
+    });
+});

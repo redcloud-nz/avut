@@ -15,6 +15,7 @@ import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
+import { formatActorLabel } from "@/server/log-entry";
 import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
@@ -220,6 +221,13 @@ export const systemAdminRouter = createTrpcRouter({
      * Log entries are deliberately *not* cleared here: `LogEntry.userId` is `SetNull` and
      * `LogEntry.ownerId` is `Cascade`, so the FKs already implement the policy — the user's own
      * log goes with them, their actions elsewhere survive, anonymised.
+     *
+     * The deletion's own entry is therefore `scope: "system"`, not user-scoped. A user-scoped
+     * entry would carry `ownerId: input.userId`, which is `onDelete: Cascade` — it would be
+     * inserted and cascaded away inside this same `$transaction`, giving it a zero-length
+     * lifetime. A system-scoped entry has neither owner FK, so nothing can cascade it; the
+     * subject is named by `objectId` and by the denormalized label in `description`, which is
+     * what keeps it readable once the `User` row is gone.
      */
     deleteUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
@@ -231,9 +239,14 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
+            // `name`/`email` are read for the audit entry's description: the entry outlives
+            // the `User` row, so the subject has to be denormalized into it here.
+            // `formatActorLabel` is reused for the subject rather than the actor — it is the
+            // one place the `Name <email>` form lives, and a second format would read oddly
+            // next to `actorLabel` in the same log.
             const target = await ctx.prisma.user.findUnique({
                 where: { id: input.userId },
-                select: { id: true },
+                select: { id: true, name: true, email: true },
             });
             if (!target) {
                 throw new TRPCError({
@@ -305,12 +318,12 @@ export const systemAdminRouter = createTrpcRouter({
                 ctx.prisma.d4hAccessToken.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
                 ctx.logEvent({
-                    ownerId: input.userId,
+                    scope: "system",
                     action: "Delete",
                     objectType: "User",
                     objectId: input.userId,
                     changes: [],
-                    description: "Account deleted by a system administrator",
+                    description: `Account ${formatActorLabel(target.name, target.email)} deleted by a system administrator`,
                 }),
                 ctx.prisma.user.delete({ where: { id: input.userId } }),
             ]);

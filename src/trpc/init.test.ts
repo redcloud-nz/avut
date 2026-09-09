@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import * as z from "zod";
 
@@ -12,7 +12,12 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
-import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "./init";
+import {
+    authenticatedProcedure,
+    createTrpcRouter,
+    organizationProcedure,
+    systemAdminProcedure,
+} from "./init";
 
 const T = {
     org: OrganizationId.create(),
@@ -32,6 +37,31 @@ const testRouter = createTrpcRouter({
                 objectId: input.personId,
                 refs: [{ objectType: "Team", objectId: "team_1" }],
             });
+            return { ok: true as const };
+        }),
+
+    systemAdminWrite: systemAdminProcedure
+        .input(
+            z.object({
+                target: z.enum(["organization", "user", "system"]),
+                objectId: z.string(),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const common = {
+                action: "Delete",
+                objectType: "User",
+                objectId: input.objectId,
+            } as const;
+
+            if (input.target === "organization") {
+                await ctx.logEvent({ organizationId: T.org, ...common });
+            } else if (input.target === "user") {
+                await ctx.logEvent({ ownerId: T.user, ...common });
+            } else {
+                await ctx.logEvent({ scope: "system", ...common });
+            }
+
             return { ok: true as const };
         }),
 
@@ -114,5 +144,70 @@ describe("authenticatedProcedure.logEvent", () => {
             userId: T.user,
             description: "Password changed",
         });
+    });
+});
+
+describe("systemAdminProcedure.logEvent", () => {
+    function makeAdminCaller() {
+        return testRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("puts the entry in an organization's log when given an organizationId", async () => {
+        await makeAdminCaller().systemAdminWrite({
+            target: "organization",
+            objectId: "sysadmin_org",
+        });
+
+        const entry = (await db.logEntry.findMany({ where: { objectId: "sysadmin_org" } }))[0];
+        expect(entry).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            ownerId: null,
+            userId: T.admin,
+        });
+    });
+
+    it("puts the entry in the subject user's own log when given an ownerId", async () => {
+        await makeAdminCaller().systemAdminWrite({ target: "user", objectId: "sysadmin_user" });
+
+        const entry = (await db.logEntry.findMany({ where: { objectId: "sysadmin_user" } }))[0];
+        expect(entry).toMatchObject({
+            scope: "user",
+            organizationId: null,
+            ownerId: T.user,
+            userId: T.admin,
+        });
+    });
+
+    /*
+     * The third arm exists so an action can outlive its subject: with neither owner FK set,
+     * there is nothing for a `User` or `Organization` deletion to cascade through.
+     */
+    it('writes an owner-less system entry when given scope: "system"', async () => {
+        await makeAdminCaller().systemAdminWrite({ target: "system", objectId: "sysadmin_system" });
+
+        const entry = (await db.logEntry.findMany({ where: { objectId: "sysadmin_system" } }))[0];
+        expect(entry).toMatchObject({
+            scope: "system",
+            organizationId: null,
+            ownerId: null,
+            userId: T.admin,
+        });
+    });
+
+    it("refuses a caller whose session role is not admin", async () => {
+        await expect(
+            makeCaller().systemAdminWrite({ target: "system", objectId: "sysadmin_denied" }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

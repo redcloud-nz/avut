@@ -184,14 +184,21 @@ export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, nex
         ...ctx,
         logEvent(options: SystemAdminLogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
             const { actor, actorLabel } = resolveActor(ctx.auth);
-            const { organizationId, ownerId, ...rest } = options;
+            const { organizationId, ownerId, scope, ...rest } = options;
 
-            return recordLogEntry(
-                organizationId
-                    ? { scope: "organization", organizationId, actor, actorLabel, ...rest }
-                    : { scope: "user", ownerId, actor, actorLabel, ...rest },
-                tx,
-            );
+            if (organizationId != null) {
+                return recordLogEntry(
+                    { scope: "organization", organizationId, actor, actorLabel, ...rest },
+                    tx,
+                );
+            }
+            if (ownerId != null) {
+                return recordLogEntry({ scope: "user", ownerId, actor, actorLabel, ...rest }, tx);
+            }
+
+            // The union leaves no fourth possibility: with neither FK, `scope` is present
+            // and is `"system"`.
+            return recordLogEntry({ scope, actor, actorLabel, ...rest }, tx);
         },
     };
 
@@ -279,14 +286,26 @@ export interface LogEventOptions {
 
 /**
  * A system administrator acts outside any one organization, so the target log is chosen
- * per call: an `organizationId` puts the entry in that organization's log, and its absence
- * puts it in the subject user's own log, which is what `ownerId` names.
+ * per call, and exactly one of three ways:
  *
- * Scope is inferred rather than passed. An explicit `scope` alongside an `organizationId`
- * would be redundant in the valid cases and contradictory in the invalid ones.
+ * - `organizationId` — the entry belongs to that organization's log.
+ * - `ownerId` — the entry belongs to the subject user's own log. Note that
+ *   `log_entries.ownerId` is `onDelete: Cascade`, so such an entry dies with that user.
+ *   Never use this arm to record the *deletion* of the user it names: the entry would be
+ *   cascaded away inside the very transaction that wrote it.
+ * - `scope: "system"` — the entry belongs to no organization and no user. It carries no
+ *   owner FK at all, so nothing can cascade it away; the subject is named by
+ *   `objectId`/`description` instead. This is the arm for actions that outlive their
+ *   subject, `deleteUser` being the case that forced it.
+ *
+ * The first two infer their scope rather than taking one — an explicit `scope` there would
+ * be redundant in the valid cases and contradictory in the invalid ones. The third has no
+ * FK to infer from, so `scope: "system"` is its discriminant, and passing it is what makes
+ * "neither owner" a deliberate choice rather than two forgotten properties.
  */
 export type SystemAdminLogEventOptions = LogEventOptions &
     (
-        | { organizationId: OrganizationId; ownerId?: never }
-        | { organizationId?: never; ownerId: UserId }
+        | { organizationId: OrganizationId; ownerId?: never; scope?: never }
+        | { organizationId?: never; ownerId: UserId; scope?: never }
+        | { organizationId?: never; ownerId?: never; scope: "system" }
     );
