@@ -1,0 +1,58 @@
+name: CI
+
+# Type checks and runs the test suite on every PR and on master. The Vercel
+# deployment already covers `prisma migrate deploy && next build`, so this
+# deliberately doesn't build — it covers the two things nothing else did.
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+concurrency:
+  # A new push to the same PR makes the in-flight run irrelevant.
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The Prisma client is generated into `src/generated/prisma`, which the
+      # whole codebase imports, so it has to exist before tsc runs. `generate`
+      # never opens a connection — it only needs the variable to resolve, since
+      # prisma.config.ts reads it via `env()` — so a dummy URL is enough and no
+      # database service is required.
+      - name: Generate Prisma client
+        env:
+          POSTGRES_PRISMA_URL: postgresql://user:password@localhost:5432/postgres
+        run: npx prisma generate
+
+      # Typed routes live in `.next/types`, which isn't committed. Without this
+      # tsc fails on `.next/types/routes` "Cannot find module" errors that have
+      # nothing to do with the change under test.
+      - name: Generate route types
+        run: npx next typegen
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Tests use prisma-mock in-memory, so this needs no database either.
+      - name: Test
+        run: npm run test:run
