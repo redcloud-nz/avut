@@ -1,7 +1,7 @@
 # Pattern: pairing a write with `ctx.logEvent`
 
 Every state-changing mutation that logs an audit entry (`ctx.logEvent(...)` →
-`OrganizationLogEntry`) must commit its write and its log entry atomically, via
+`LogEntry`) must commit its write and its log entry atomically, via
 `ctx.prisma.$transaction([...])` — never `Promise.all([write, ctx.logEvent(...)])`, and never a
 bare sequential `await write(); await logEvent();` either.
 
@@ -19,17 +19,22 @@ to be a reliable record.
 awaiting it internally, so the same call composes two ways:
 
 ```ts
-logEvent: (
-    options: LogEventOptions,
-    tx?: Prisma.TransactionClient,
-) => Prisma.PrismaPromise<OrganizationLogEntry>;
+logEvent: (options: LogEventOptions, tx?: Prisma.TransactionClient) =>
+  Prisma.PrismaPromise<LogEntry>;
 ```
+
+`logEvent` also accepts `refs` — extra entities the entry should surface on, beyond the
+`objectType`/`objectId` primary. `recordLogEntry` writes the primary ref itself and drops
+any `refs` entry that duplicates it, so passing the primary again is a no-op rather than a
+duplicate row. Entries are ordered by `sequence`, not `timestamp`: in Postgres
+`CURRENT_TIMESTAMP` is transaction _start_ time, so every entry written by one
+`$transaction([...])` — which is exactly this pattern — shares a byte-identical timestamp.
 
 - **Standalone**: `await ctx.logEvent(options)` — executes immediately, for a procedure that only
   logs and doesn't need to couple the write and the log into one commit.
 - **Atomically**: pass it unawaited into `ctx.prisma.$transaction([...])` (array form, uses the
   default `tx`), or `await` it with an explicit `tx` inside `ctx.prisma.$transaction(async (tx) =>
-  ...)` (interactive form).
+...)` (interactive form).
 
 ## The array-form shape
 
@@ -37,14 +42,14 @@ The default and simplest shape — used for the large majority of sites:
 
 ```ts
 await ctx.prisma.$transaction([
-    ctx.prisma.skillCheckSession.delete({
-        where: { id: skillCheckSessionId, organizationId },
-    }),
-    ctx.logEvent({
-        action: "Delete",
-        objectType: "SkillCheckSession",
-        objectId: skillCheckSessionId,
-    }),
+  ctx.prisma.skillCheckSession.delete({
+    where: { id: skillCheckSessionId, organizationId },
+  }),
+  ctx.logEvent({
+    action: "Delete",
+    objectType: "SkillCheckSession",
+    objectId: skillCheckSessionId,
+  }),
 ]);
 ```
 
@@ -64,9 +69,13 @@ sequentially afterward, not inside the array:
 
 ```ts
 await ctx.prisma.$transaction([
-    ctx.prisma.d4hAccessToken.delete({ where: { id: input.tokenId } }),
-    ctx.logEvent({ action: "Delete", objectType: "D4hAccessToken", objectId: existing.id }),
-    ctx.prisma.organizationConfig.delete({ where: { /* ... */ } }),
+  ctx.prisma.d4hAccessToken.delete({ where: { id: input.tokenId } }),
+  ctx.logEvent({ action: "Delete", objectType: "D4hAccessToken", objectId: existing.id }),
+  ctx.prisma.organizationConfig.delete({
+    where: {
+      /* ... */
+    },
+  }),
 ]);
 
 // Revalidate organization settings in case this token was being used.
@@ -96,5 +105,5 @@ first place, not because sequential-without-a-transaction is a fallback to reach
 A mutation that doesn't call `ctx.logEvent` (a query, or a write on an object type not in
 `LogEventOptions.objectType`) has nothing to couple — a plain `await` on the single write is fine,
 and `$transaction` isn't needed for a mutation with only one write in the first place. This pattern
-applies specifically to *pairing* a write with its log entry (or multiple writes with a shared log
+applies specifically to _pairing_ a write with its log entry (or multiple writes with a shared log
 entry) — not to every mutation.

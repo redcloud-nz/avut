@@ -10,11 +10,17 @@ import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { LogEntry, Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
+import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
+import {
+    formatActorLabel,
+    recordLogEntry,
+    type LogActor,
+    type LogEntryRef,
+} from "@/server/log-entry";
 import prisma from "@/server/prisma";
 import { formatTrpcError } from "./error-formatter";
 import { UserId } from "@/lib/schemas/user";
@@ -75,7 +81,41 @@ export const publicProcedure = t.procedure.use(async function artificialDelayInD
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
     userId: UserId;
+    /**
+     * Records an entry in the calling user's own log — account-level events with no
+     * organization. Returns the un-awaited `PrismaPromise`, same contract as the
+     * organization-scoped helper.
+     */
+    logEvent: (
+        options: LogEventOptions,
+        tx?: Prisma.TransactionClient,
+    ) => Prisma.PrismaPromise<LogEntry>;
 };
+
+/**
+ * Resolve the acting user from a session, centrally.
+ *
+ * Impersonation is resolved here rather than at call sites: every `logEvent` caller gets
+ * `impersonatorId` populated without passing anything, and none of them can forget it.
+ * Without this, an action taken while impersonating is attributed to the impersonated
+ * user — the log blames the victim.
+ *
+ * `impersonatedBy` is read structurally: the `Session` model has the column and the
+ * `admin` plugin declares it, but better-auth's `$Infer` chain is not guaranteed to
+ * surface it, and a cast is cheaper here than a compile break in a file every router
+ * imports.
+ */
+function resolveActor(auth: AuthSession): { actor: LogActor; actorLabel: string } {
+    const impersonatedBy = (auth.session as { impersonatedBy?: string | null }).impersonatedBy;
+
+    return {
+        actor: {
+            userId: UserId.schema.parse(auth.user.id),
+            impersonatorId: impersonatedBy ? UserId.schema.parse(impersonatedBy) : undefined,
+        },
+        actorLabel: formatActorLabel(auth.user.name, auth.user.email),
+    };
+}
 
 /**
  * Procedure that requires the user to be authenticated.
@@ -90,16 +130,41 @@ export const authenticatedProcedure = publicProcedure.use((opts) => {
         });
     }
 
+    const auth = ctx.auth;
+    const userId = UserId.schema.parse(auth.user.id);
+
     const enhancedCtx: AuthenticatedContext = {
         ...ctx,
-        auth: ctx.auth,
-        userId: UserId.schema.parse(ctx.auth.user.id),
+        auth,
+        userId,
+        logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+            const { actor, actorLabel } = resolveActor(auth);
+
+            return recordLogEntry(
+                { scope: "user", ownerId: userId, actor, actorLabel, ...options },
+                tx,
+            );
+        },
     };
 
     return opts.next({
         ctx: enhancedCtx,
     });
 });
+
+/**
+ * `Omit<…, "logEvent">` is load-bearing. A plain intersection would merge the inherited
+ * `logEvent` signature with this one into an overload set, and a call passing
+ * `organizationId` would resolve against the inherited signature and be rejected as an
+ * excess property. Replacing the member outright is what makes the system-admin options
+ * type actually usable.
+ */
+export type SystemAdminContext = Omit<AuthenticatedContext, "logEvent"> & {
+    logEvent: (
+        options: SystemAdminLogEventOptions,
+        tx?: Prisma.TransactionClient,
+    ) => Prisma.PrismaPromise<LogEntry>;
+};
 
 /**
  * Procedure that requires the authenticated user to be a site-wide administrator
@@ -114,7 +179,23 @@ export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, nex
             message: "System administrator access required.",
         });
     }
-    return next({ ctx });
+
+    const enhancedCtx: SystemAdminContext = {
+        ...ctx,
+        logEvent(options: SystemAdminLogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+            const { actor, actorLabel } = resolveActor(ctx.auth);
+            const { organizationId, ownerId, ...rest } = options;
+
+            return recordLogEntry(
+                organizationId
+                    ? { scope: "organization", organizationId, actor, actorLabel, ...rest }
+                    : { scope: "user", ownerId, actor, actorLabel, ...rest },
+                tx,
+            );
+        },
+    };
+
+    return next({ ctx: enhancedCtx });
 });
 
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
@@ -157,25 +238,21 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
             await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
 
             function logEvent(
-                { action, objectType, objectId, changes = [], description }: LogEventOptions,
+                options: LogEventOptions,
                 tx: Prisma.TransactionClient = opts.ctx.prisma,
             ) {
-                return tx.logEntry.create({
-                    data: {
-                        id: nanoId16(),
+                const { actor, actorLabel } = resolveActor(opts.ctx.auth);
+
+                return recordLogEntry(
+                    {
                         scope: "organization",
                         organizationId: opts.input.organizationId,
-                        userId: opts.ctx.auth.user.id,
-                        action,
-                        objectType,
-                        objectId,
-                        changes: z.array(DiffChange.schema).parse(changes) as object[],
-                        description,
-                        objects: {
-                            create: [{ id: nanoId16(), objectType, objectId, role: "primary" }],
-                        },
+                        actor,
+                        actorLabel,
+                        ...options,
                     },
-                });
+                    tx,
+                );
             }
 
             return opts.next({
@@ -188,33 +265,28 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
         });
 }
 
-interface LogEventOptions {
-    action:
-        | "Approve"
-        | "Archive"
-        | "Create"
-        | "Delete"
-        | "Publish"
-        | "Restore"
-        | "Subscribe"
-        | "Unpublish"
-        | "Unsubscribe"
-        | "Update";
-    objectType:
-        | "D4hAccessToken"
-        | "I3Template"
-        | "I3TemplateVariant"
-        | "Organization"
-        | "OrganizationMembership"
-        | "OrganizationSettings"
-        | "Person"
-        | "Skill"
-        | "SkillCheckSession"
-        | "SkillGroup"
-        | "SkillPackage"
-        | "Team"
-        | "TeamMembership";
+export interface LogEventOptions {
+    action: LogAction;
+    objectType: LogObjectType;
     objectId: string;
     changes?: DiffChange[];
     description?: string;
+    /** Extra entities this entry is relevant to. The primary is implicit. */
+    refs?: LogEntryRef[];
+    /** An existing `LogBatch.id`, when this entry is part of a multi-entry operation. */
+    batchId?: string;
 }
+
+/**
+ * A system administrator acts outside any one organization, so the target log is chosen
+ * per call: an `organizationId` puts the entry in that organization's log, and its absence
+ * puts it in the subject user's own log, which is what `ownerId` names.
+ *
+ * Scope is inferred rather than passed. An explicit `scope` alongside an `organizationId`
+ * would be redundant in the valid cases and contradictory in the invalid ones.
+ */
+export type SystemAdminLogEventOptions = LogEventOptions &
+    (
+        | { organizationId: OrganizationId; ownerId?: never }
+        | { organizationId?: never; ownerId: UserId }
+    );
