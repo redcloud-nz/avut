@@ -23,6 +23,13 @@ logEvent: (options: LogEventOptions, tx?: Prisma.TransactionClient) =>
   Prisma.PrismaPromise<LogEntry>;
 ```
 
+Every `ctx.logEvent` delegates to `recordLogEntry` (`src/server/log-entry.ts`), which is the
+only place an entry is written. It validates synchronously and _then_ returns the lazy
+`PrismaPromise`, so a bad entry throws at the call site before the primary write is issued
+rather than failing mid-transaction. Never hand-roll a `prisma.logEntry.create` — it would
+bypass the write-time invariants and the closed vocabularies (`scope`, `action`,
+`objectType`, ref `role`) that `recordLogEntry` enforces.
+
 `logEvent` also accepts `refs` — extra entities the entry should surface on, beyond the
 `objectType`/`objectId` primary. `recordLogEntry` writes the primary ref itself and drops
 any `refs` entry that duplicates it, so passing the primary again is a no-op rather than a
@@ -99,6 +106,78 @@ await ctx.logEvent({ action: "Delete", objectType: "Team", objectId: teamId });
 loses the atomicity guarantee this pattern otherwise gives (the removal could succeed and the log
 call could still fail) — accepted here because there's no Prisma operation to couple it to in the
 first place, not because sequential-without-a-transaction is a fallback to reach for generally.
+
+## Three `logEvent`s, differing only in where the entry lands
+
+Which helper `ctx.logEvent` is depends on the procedure factory, and the difference is only
+which log the entry belongs to. All three return the same `PrismaPromise` and compose into
+`$transaction([...])` identically.
+
+**`organizationProcedure`** — `scope: "organization"`, against the organization from the
+procedure's own `organizationId` input. Nothing to pass; this is the signature every example
+above uses.
+
+**`authenticatedProcedure`** — `scope: "user"`, owned by the **calling** user. Again nothing to
+pass: the owner is the caller, not a parameter, so this arm cannot be pointed at somebody
+else's log.
+
+```ts
+// A user changing something about their own account.
+await ctx.prisma.$transaction([
+  ctx.prisma.user.update({ where: { id: ctx.userId }, data: { name } }),
+  ctx.logEvent({
+    action: "Update",
+    objectType: "User",
+    objectId: ctx.userId,
+    changes: diffObject({ name: before.name }, { name }),
+  }),
+]);
+```
+
+**`systemAdminProcedure`** — a system admin acts outside any one organization, so the target is
+chosen per call, and the options union forces exactly one of three:
+
+```ts
+ctx.logEvent({ organizationId, action: "Create", objectType: "Organization", objectId });
+ctx.logEvent({ ownerId, action: "Update", objectType: "User", objectId: ownerId });
+ctx.logEvent({ scope: "system", action: "Delete", objectType: "User", objectId: userId });
+```
+
+- `organizationId` — the action changed something inside that organization.
+- `ownerId` — the entry belongs on that user's own account timeline. `log_entries.ownerId` is
+  `onDelete: Cascade`, so the entry dies with the user.
+- `scope: "system"` — neither owner FK is set, so nothing can cascade the entry away.
+
+That last distinction is load-bearing, and it is the reason the third arm exists at all. An
+`ownerId` entry recording the **deletion** of the user it names is inserted and then cascaded
+away inside the very `$transaction` that wrote it — a write with a zero-length lifetime that no
+reader can ever see, and no test that only checks _other_ entries will catch it.
+`system-admin-router.ts`'s `deleteUser` is that case, and uses `scope: "system"`, carrying the
+subject in `objectId` and their denormalized name/email in `description` — because once the
+`User` row is gone, that description is all that identifies them.
+
+## Correlating several events: `LogBatch`
+
+A run that produces several _independently meaningful_ events correlates them with a
+`LogBatch`. Open it with `createLogBatch` (`src/server/log-entry.ts`) and pass the resulting
+`batch.id` as `batchId` on each entry. `operationKey` must be a key of the `Operations`
+registry (`src/lib/operations.ts`); `createLogBatch` rejects anything else.
+
+The test for "does this warrant a batch" is in the registry's own doc comment: a batch
+correlates events that would each belong, on their own, on their own entity's timeline. It does
+not group the row-writes of a single event. A D4H team import creating several people earns an
+entry per person and is a batch; a reorder writing a `sequence` integer across five rows is one
+event whose five-ness is an implementation detail, and is one entry.
+
+Entries reference the batch, so the batch row must exist first — `$transaction([...])` runs in
+array order, so `[createBatch, ...writes, ...logEvents]` is correct and reordering it breaks the
+FK. `teams-router.ts`'s two D4H operations go further and commit the batch _before_ their
+non-Prisma `auth.api.*` call, which is the one shape here that can leave an orphan batch row (a
+batch with no entries) if that call throws; the trade-off is noted at both call sites.
+
+A batch also supplies provenance for an unattended run. `recordLogEntry` allows a null `actor`
+only alongside a `batchId`, so an entry with no human behind it is still traceable to the
+operation that produced it.
 
 ## When there's no `logEvent` at all
 
