@@ -21,6 +21,13 @@ jobs:
   check:
     name: Typecheck & test
     runs-on: ubuntu-latest
+    # Set job-wide because `npm ci` triggers the `postinstall` hook, which runs
+    # `prisma generate` — and prisma.config.ts resolves this via `env()`, so it
+    # must exist before install, not just before the client is generated.
+    # `generate` never opens a connection, so a dummy URL is enough and no
+    # database service is required.
+    env:
+      POSTGRES_PRISMA_URL: postgresql://user:password@localhost:5432/postgres
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,18 +38,11 @@ jobs:
           node-version: 24
           cache: npm
 
+      # The `postinstall` hook generates the Prisma client into
+      # `src/generated/prisma`, which the whole codebase imports, so there's no
+      # separate generate step here.
       - name: Install dependencies
         run: npm ci
-
-      # The Prisma client is generated into `src/generated/prisma`, which the
-      # whole codebase imports, so it has to exist before tsc runs. `generate`
-      # never opens a connection — it only needs the variable to resolve, since
-      # prisma.config.ts reads it via `env()` — so a dummy URL is enough and no
-      # database service is required.
-      - name: Generate Prisma client
-        env:
-          POSTGRES_PRISMA_URL: postgresql://user:password@localhost:5432/postgres
-        run: npx prisma generate
 
       # Typed routes live in `.next/types`, which isn't committed. Without this
       # tsc fails on `.next/types/routes` "Cannot find module" errors that have
