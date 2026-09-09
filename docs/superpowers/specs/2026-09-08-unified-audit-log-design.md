@@ -1,7 +1,7 @@
 # Unified Audit Log — Capture Layer
 
 **Date:** 2026-09-08 (revised 2026-09-09)
-**Status:** Design approved, pending spec review
+**Status:** Design approved; open questions resolved 2026-09-09, ready for planning
 **Scope:** Data model + write path only. No display/UI in this pass.
 
 ## Problem
@@ -43,7 +43,7 @@ We also want the model to accommodate, without another schema rewrite:
   is a join row or which bridge multiple entities, in a deterministic order.
 - Actions taken under impersonation are attributed to the real actor.
 - Entries survive the deletion of the user who wrote them, and stay readable.
-- Process-initiated entries record which process, and entries from one run are
+- Operation-initiated entries record which operation, and entries from one run are
   correlated.
 - Existing `ctx.logEvent` call sites and the `$transaction([...])` pairing pattern keep
   working with no signature change.
@@ -56,14 +56,15 @@ We also want the model to accommodate, without another schema rewrite:
 - No session-lifecycle logging (sign-in/sign-out), failed-attempt logging, or 2FA/passkey
   events (those plugins aren't enabled).
 - No event bus / async indirection — single process, single sink.
-- No _unattended_ processes (cron, scheduled sync) are being built here, and no
-  `withProcessRun` helper ships. `LogBatch` leaves room for them. Named processes
+- No _unattended_ operations (cron, scheduled sync) are being built here, and no
+  `withOperationRun` helper ships. `LogBatch` leaves room for them. Named operations
   themselves are not speculative: two exist in the codebase today and are wired in this
   pass.
 - No `moduleId` column. It is a pure function of `objectType`; see "Module attribution".
-- **No changes to the `changes` diff format.** `src/lib/diff.ts` has known defects
-  (see below) and is being reworked as a separate piece of work. This spec treats
-  `changes` as an opaque payload and does not depend on its shape.
+- **No changes to the `changes` diff format.** The `src/lib/diff.ts` rework landed
+  separately (merged 2026-09-09) and is a prerequisite of this pass, not part of it.
+  `DiffChange` is now a zod discriminated union and `logEvent` parses against it; this spec
+  consumes that format and does not alter it.
 - No centralised redaction policy. The password marker below is handled case-by-case;
   a declared redaction key list enforced in `recordLogEntry` is a follow-up.
 
@@ -83,7 +84,7 @@ Rejected: hooks writing Prisma directly (duplicates the scope invariant, `change
 shaping, `nanoId16`, and vocabulary into `auth.ts` — drift). Rejected: an event bus (no
 benefit here, adds a failure mode). Rejected: a generic polymorphic owner column (loses
 typed relations, bigger rewrite of existing `logEntry.organization` sites) and synthetic
-"system user" rows for processes (pollutes `User`, every auth/admin listing special-cases
+"system user" rows for operations (pollutes `User`, every auth/admin listing special-cases
 them).
 
 ## Data model
@@ -99,7 +100,7 @@ them).
 | actor   | `userId`         | **now nullable** `String?` → `User`, **`onDelete: SetNull`**. The acting human.                                                                                                                               |
 | actor   | `actorLabel`     | **new** `String?` — the actor's display name + email, denormalized at write time so the entry stays readable after the user is deleted. Written by `recordLogEntry`, never by callers.                        |
 | actor   | `impersonatorId` | **new** `String?` → `User`, `onDelete: SetNull`, relation `impersonator`. Set when the action was taken under an impersonated session; the admin actually driving it.                                         |
-| actor   | `batchId`        | **new** `String?` → `LogBatch`, `onDelete: SetNull`. Set on every entry written by one bulk action or process run. See `LogBatch` below.                                                                      |
+| actor   | `batchId`        | **new** `String?` → `LogBatch`, `onDelete: SetNull`. Set on every entry written by one bulk action or operation run. See `LogBatch` below.                                                                    |
 | event   | `action`         | unchanged `String` — vocabulary extended (below)                                                                                                                                                              |
 | event   | `objectType`     | unchanged `String` — vocabulary extended (below)                                                                                                                                                              |
 | event   | `objectId`       | unchanged `String`                                                                                                                                                                                            |
@@ -117,7 +118,7 @@ CHECKs poorly):
   it is null and `batchId` points at a `LogBatch` whose `userId` is also null.
 - `impersonatorId` may only be set alongside `userId`.
 - `actorLabel` is always set when an actor is identifiable — the acting user for a human
-  actor, the process label for a process run.
+  actor, the operation label for an operation run.
 
 These are **write-time only, and do not hold on read.** `userId onDelete: SetNull` means
 a human-actor entry can later hold a null `userId`; `ownerId onDelete: Cascade` removes
@@ -252,33 +253,33 @@ Add: `User`, `Account`, `Session`.
 
 ### `LogBatch` (new, `@@map("log_batches")`)
 
-One row per bulk action or process run; `LogEntry.batchId` references it. Run-level facts
+One row per bulk action or operation run; `LogEntry.batchId` references it. Run-level facts
 live here once instead of being repeated on every entry.
 
-| field         | type         | notes                                                                                  |
-| ------------- | ------------ | -------------------------------------------------------------------------------------- |
-| `id`          | `String @id` | `nanoId16()` — this _is_ the `batchId`                                                 |
-| `processKey`  | `String`     | **required** — which named process this run was. Values from the `Processes` registry. |
-| `userId`      | `String?`    | → `User`, `onDelete: SetNull`. Who initiated the run. Null for unattended runs.        |
-| `actorLabel`  | `String?`    | denormalized initiator name, same rationale as on `LogEntry`                           |
-| `description` | `String?`    | human summary — "Synchronized memberships from linked D4H team"                        |
-| `startedAt`   | `DateTime`   | `@default(now())`                                                                      |
+| field          | type         | notes                                                                                     |
+| -------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| `id`           | `String @id` | `nanoId16()` — this _is_ the `batchId`                                                    |
+| `operationKey` | `String`     | **required** — which named operation this run was. Values from the `Operations` registry. |
+| `userId`       | `String?`    | → `User`, `onDelete: SetNull`. Who initiated the run. Null for unattended runs.           |
+| `actorLabel`   | `String?`    | denormalized initiator name, same rationale as on `LogEntry`                              |
+| `description`  | `String?`    | human summary — "Synchronized memberships from linked D4H team"                           |
+| `startedAt`    | `DateTime`   | `@default(now())`                                                                         |
 
-Index: `@@index([processKey, startedAt])`.
+Index: `@@index([operationKey, startedAt])`.
 
-`processKey` and `userId` are orthogonal, and that is the point of the shape: `processKey`
+`operationKey` and `userId` are orthogonal, and that is the point of the shape: `operationKey`
 says _what kind of operation_ this was, `userId` says _who set it off_. A user clicking
-"sync from D4H" and a nightly cron running the same sync are the same process with a
+"sync from D4H" and a nightly cron running the same sync are the same operation with a
 different initiator, and both are named. There is no such thing as an anonymous batch.
 
 **When to open a batch:** a named operation that writes more than one `LogEntry`.
 Single-entry mutations (`updateTeam`, `createPerson`) don't open one and don't need a
-process key, which is why `LogEntry.batchId` stays nullable.
+operation key, which is why `LogEntry.batchId` stays nullable.
 
 Deliberately **not** included yet: `finishedAt`, status, and entry counts. A lifecycle
 needs something to close it out, and for a bulk action inside one transaction start and
 finish are the same instant. Those are the first fields to add when a genuinely
-long-running process lands.
+long-running operation lands.
 
 **Why a table rather than a bare correlation id.** Grouping entries by a loose `batchId`
 gives you N rows and no summary — you cannot say who triggered a run, when it began, what
@@ -293,18 +294,18 @@ FK, so keep the batch create first.
 `onDelete: SetNull` on `LogEntry.batchId`: deleting a batch orphans its entries rather
 than destroying audit rows. Nothing deletes batches today.
 
-### `Processes` registry — `src/lib/processes.ts` (new)
+### `Operations` registry — `src/lib/operations.ts` (new)
 
 ```ts
-export const Processes = {
+export const Operations = {
   "d4h-team-import": { label: "D4H team import" },
   "d4h-team-sync": { label: "D4H team sync" },
 } as const;
-export type ProcessKey = keyof typeof Processes;
+export type OperationKey = keyof typeof Operations;
 ```
 
-Mirrors `modules.ts`: a single source of truth for `processKey` values and their human
-labels. Because `processKey` is required, this registry is the closed vocabulary of
+Mirrors `modules.ts`: a single source of truth for `operationKey` values and their human
+labels. Because `operationKey` is required, this registry is the closed vocabulary of
 multi-entry operations in the app — adding one is a one-line edit, and the type stops you
 inventing a key at a call site.
 
@@ -320,7 +321,7 @@ its own, on its own entity's timeline?
   implementation detail of storing order in a column. **Not a batch — one entry.**
 
 Getting this wrong in the second direction is what makes a batch concept metastasize:
-every mutation touching more than one row starts claiming a process key.
+every mutation touching more than one row starts claiming an operation key.
 
 The two initial entries are the operations that pass that test today:
 
@@ -332,17 +333,17 @@ The two initial entries are the operations that pass that test today:
 Both are user-initiated, so they set `userId`; neither has an unattended counterpart yet.
 Wiring them is mechanical (open a batch, thread `batchId` into the existing `logEvent`
 calls) and is included in this pass — a registry with no callers would be exactly the
-speculative surface we cut `moduleId` and the old `processKey` column to avoid.
+speculative surface we cut `moduleId` and the old `operationKey` column to avoid.
 
-> Naming: "process" covers a user-initiated D4H import as well as a future cron, which
-> a little. `Operations`/`OperationKey` would read more neutrally. Keeping `Processes` as
-> the established term in this design; worth settling before the registry has callers,
-> since renaming later touches the file, the type, the column, and every entry.
+> Naming, settled 2026-09-09: this was `Processes`/`processKey` in the first draft.
+> "Process" reads oddly for a user-clicked D4H import, and `Operations`/`OperationKey`
+> covers both that and a future cron neutrally. Renamed while the registry still has no
+> callers — later it would have touched the file, the type, the column, and every entry.
 
 ## Write service — `src/server/log-entry.ts`
 
 ```ts
-/** A human actor, or none — a process run identifies itself through its `LogBatch`. */
+/** A human actor, or none — an operation run identifies itself through its `LogBatch`. */
 type LogActor = { userId: UserId; impersonatorId?: UserId; actorLabel?: string } | null;
 
 interface RecordLogEntryInput {
@@ -368,7 +369,7 @@ function recordLogEntry(
 
 /** Opens a batch. Returns a `PrismaPromise` so it composes into `$transaction([...])`. */
 function createLogBatch(
-  input: { processKey: ProcessKey; userId?: UserId; actorLabel?: string; description?: string },
+  input: { operationKey: OperationKey; userId?: UserId; actorLabel?: string; description?: string },
   tx?: Prisma.TransactionClient,
 ): Prisma.PrismaPromise<LogBatch>;
 ```
@@ -412,32 +413,89 @@ function createLogBatch(
 
 ## better-auth hooks — `src/server/auth-log-hooks.ts`
 
-Pure mapping functions (mutation row + before/after values → `RecordLogEntryInput | null`),
-plus a thin `databaseHooks` shell in `auth.ts` that calls them and then `recordLogEntry`.
+Pure mapping functions (mutation row + the fields the write touched →
+`RecordLogEntryInput | null`), plus a thin `databaseHooks` shell in `auth.ts` that calls
+them and then `recordLogEntry`.
+
+### Verified hook mechanics (better-auth 1.7.3)
+
+Three facts, read out of `node_modules` rather than assumed, that constrain everything
+below. Re-verify them on a major better-auth bump.
+
+**`*.after` hooks run after the write commits, and a throw is not a rollback.**
+`db/with-hooks.mjs` wraps every `after` hook in `queueAfterTransactionHook`, which
+(`@better-auth/core/dist/context/transaction.mjs`) defers it until after commit and then
+rethrows. Its core supports an `onAfterCommitHookError` handler, but better-auth never
+passes one. So a throwing hook does not undo the password change — it commits and then
+returns a 500 for an operation that succeeded. **Fail-closed is therefore unavailable, not
+merely undesirable.** Every hook body wraps its work in `try/catch` and `console.error`s;
+audit gaps are the accepted cost, and `auth.ts` carries a comment saying why.
+
+**Hook payloads do not carry old values.** `update.before` receives the _update payload_
+(`Partial<User>` — which fields the write touches); `update.after` receives the _resulting
+row_. Neither carries the previous value. Consequences:
+
+- Ban/unban: unaffected. The direction is a function of the new `banned` value.
+- Password: unaffected. The entry is a bare marker with no values by design.
+- Email: affected. Capturing the old address takes a deliberate read — see below.
+
+**Impersonation end is observable.** `stopImpersonating` calls
+`internalAdapter.deleteSession`, which routes through `deleteWithHooks("session")`; that
+helper pre-reads the row and hands the full record — `impersonatedBy` included — to
+`session.delete.after`. Sign-out and session revocation of an impersonated session fire the
+same hook, and those genuinely are impersonation ends. No expired-session sweeper exists in
+the adapter (expiry is checked on read), so there is no source of false positives. The
+start-without-end asymmetry the first draft worried about does not apply; both are logged.
+
+### Email change: capturing the old address
+
+`user.update.before` reads the current row through our own prisma client and, if the
+payload touches `email` and the address actually differs, stashes `{ old, new }` on a
+module-level `WeakMap` keyed by the `GenericEndpointContext` object. `user.update.after`
+looks the entry up and records the full old→new change, then deletes the key.
+
+Recording in `after` rather than `before` means a write that fails leaves no entry. The
+`WeakMap` keying means nothing leaks if `after` never runs, and no property is bolted onto
+better-auth's context object. The extra read is one indexed `findUnique` on a path that
+runs at most once per request, and it is scoped to this one field — no other hook needs
+it.
+
+If `context` is null (no request context), the stash is skipped and `after` records the
+new address alone with a `console.warn`.
 
 | Hook                   | Condition                                   | Resulting entry                                                                                                                                                                                                                                    |
 | ---------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user.update.after`    | `email` changed                             | `scope: "user"`, `ownerId`/actor = the user, `action: "Update"`, `objectType: "User"`, `objectId: user.id`, `changes: [modify email]`, `description: "Email address changed"`                                                                      |
+| `user.update.before`   | payload touches `email`, value differs      | No entry. Reads the current row and stashes `{ old, new }` on the `WeakMap` for the `after` hook.                                                                                                                                                  |
+| `user.update.after`    | a stashed email change exists               | `scope: "user"`, `ownerId`/actor = the user, `action: "Update"`, `objectType: "User"`, `objectId: user.id`, `changes: [obj_mod email old→new]`, `description: "Email address changed"`                                                             |
 | `user.update.after`    | `banned` false→true                         | `scope: "user"`, `ownerId` = target user, `actor: { userId }` = admin from hook-context session, `action: "Ban"`, `objectType: "User"`, `objectId: user.id`, `changes` incl. `banReason`/`banExpires`                                              |
 | `user.update.after`    | `banned` true→false                         | as above, `action: "Unban"`                                                                                                                                                                                                                        |
 | `account.update.after` | credential-provider row, `password` changed | `scope: "user"`, `ownerId`/actor = the user, `action: "Update"`, `objectType: "User"`, `objectId: userId`, `changes` = a bare marker **with no values**, `description: "Password changed"`                                                         |
 | `account.create.after` | social provider                             | `scope: "user"`, `ownerId`/actor = the user, `action: "Create"`, `objectType: "Account"`, `objectId: account.id`, `changes` = the created row (incl. `providerId`), ref → `{User, userId, "context"}`                                              |
 | `account.delete.after` | social provider                             | as above, `action: "Delete"`                                                                                                                                                                                                                       |
 | `session.create.after` | `impersonatedBy` set                        | `scope: "user"`, `ownerId` = impersonated user, `actor: { userId: impersonatedBy }`, `action: "Impersonate"`, `objectType: "User"`, `objectId: session.userId`, ref → `{Session, session.id, "context"}`, `description: "Started impersonating …"` |
+| `session.delete.after` | `impersonatedBy` set on the deleted row     | as above, `description: "Stopped impersonating …"`. Also fires on sign-out and session revocation of an impersonated session — both are genuine ends.                                                                                              |
 
-**Actor resolution:** a helper reads better-auth's hook context session for the acting
-user. If genuinely absent (no request context), fall back to the affected user and record
-a `console.warn` — it is a diagnostic about our own code, not a fact about the event, so
-it does not belong in the row. Verify the hook-context shape against the installed
-better-auth version during implementation.
+**Actor resolution:** a helper reads `context.context.session?.user` — better-auth's
+`GenericEndpointContext` is `EndpointContext & { context: AuthContext }`, and the admin
+middleware populates `session` on the endpoints that matter (ban, unban, set-role). If
+genuinely absent (no request context), fall back to the affected user and record a
+`console.warn` — it is a diagnostic about our own code, not a fact about the event, so it
+does not belong in the row. Confirm this shape still holds on a major better-auth bump.
 
 **Password values are never stored** — the `changes` entry is a bare marker naming the
-field, with no old or new value. Its exact encoding follows the diff rework.
+field, with no old or new value. The encoding is `DiffChange`'s `obj_mask`:
+`{ type: "obj_mask", path: ["password"] }`. That variant already has a live producer (the
+D4H access-token redaction added in the diff rework), so this is a second use of an
+established shape rather than a type invented for one call site.
 
-**Impersonation start is logged; impersonation end is not.** `session.delete` would carry
-it, but better-auth's stop-impersonating path needs verifying before we claim to log a
-session boundary we may miss. A timeline showing starts without ends is worse than one
-showing neither, so this is listed as an open question rather than half-built.
+**Both ends of impersonation are logged.** Verified above: `stopImpersonating` deletes the
+session row through the hooked path, so `session.delete.after` reliably carries
+`impersonatedBy`. Timelines show start/stop pairs.
+
+**Hook failure is swallowed.** Every hook body is `try/catch` + `console.error`, for the
+reason given under "Verified hook mechanics": the underlying write has already committed by
+the time the hook runs, so rethrowing breaks the user's operation without protecting the
+audit trail.
 
 ## Convert `system-admin-router.ts` hand-rolled entries
 
@@ -477,17 +535,17 @@ reads them.
 
 ## Worked examples
 
-> `changes` payloads below are illustrative. The diff format is being reworked
-> separately; these examples deliberately don't commit to an encoding.
+> `changes` payloads below are illustrative — the shapes are `DiffChange` values from
+> `src/lib/diff.ts`, but the examples name fields rather than spelling out full entries.
 
 ### An unattended run creates a Person and a TeamMembership
 
-Illustrative of the shape an unattended process takes. `"d4h-user-sync"` is **not** in the
-registry — no such process exists — so this is what the first cron job would look like
+Illustrative of the shape an unattended operation takes. `"d4h-user-sync"` is **not** in the
+registry — no such operation exists — so this is what the first cron job would look like
 after adding its key. No helper ships in this pass, so it opens its batch explicitly and
 threads the id.
 
-`createLogBatch({ processKey: "d4h-user-sync", actorLabel: "D4H user sync", description:
+`createLogBatch({ operationKey: "d4h-user-sync", actorLabel: "D4H user sync", description:
 "Imported members from D4H" })` → `bat_a1…`. Unattended, so no `userId`.
 
 - Entry 1: `scope: "organization"`, `organizationId: org_x`, `actor: null`,
@@ -509,11 +567,11 @@ to join `log_batches` just to name who acted.
 N `TeamMembership` deletes, N creates, and a `Team` update in one user-initiated mutation
 — currently as unrelated entries sharing an identical `timestamp`. Wired:
 
-- `createLogBatch({ processKey: "d4h-team-sync", userId: ctx.userId, actorLabel,
+- `createLogBatch({ operationKey: "d4h-team-sync", userId: ctx.userId, actorLabel,
 description: "Synchronized memberships from linked D4H team" })` before the writes.
 - Every `ctx.logEvent` in the run passes that `batchId`; `actor` stays the human.
 
-The same operation run by a future nightly cron is the identical `processKey` with
+The same operation run by a future nightly cron is the identical `operationKey` with
 `userId: null` — which is exactly why the two fields are separate.
 
 ### Skill moves from (package A, group X) to (package B, group Y)
@@ -564,9 +622,9 @@ Kim's own timeline correctly distinguishes what Kim did from what was done as Ki
 - **Ordering test**: two entries written in one `$transaction([...])` share a `timestamp`
   but receive distinct, increasing `sequence` values. This is the regression test for the
   bug that motivated the column.
-- **`createLogBatch` / batch tests**: a batch requires a `processKey`; entries carrying a
+- **`createLogBatch` / batch tests**: a batch requires a `operationKey`; entries carrying a
   `batchId` resolve to it; an unattended batch (`userId: null`) produces entries with a
-  null actor and a process `actorLabel`.
+  null actor and an operation `actorLabel`.
 - **Deletion tests**: deleting an actor leaves their entries with `userId: null` and an
   intact `actorLabel`; deleting an owner removes their `scope: "user"` entries.
 - **tRPC router tests** via `createMockPrisma`: extend `system-admin-router` tests to
@@ -575,10 +633,13 @@ Kim's own timeline correctly distinguishes what Kim did from what was done as Ki
 - **Impersonation wiring test**: a context with `session.impersonatedBy` set produces an
   entry with `impersonatorId` populated, without the call site passing anything.
 - **better-auth hooks**: the `databaseHooks` shell can't run under jsdom / `server-only`.
-  Test the **pure mapping functions** in `auth-log-hooks.ts` (row + before/after →
-  `RecordLogEntryInput | null`): email-changed detection, ban/unban transitions,
-  password-marker redaction, impersonation actor = `impersonatedBy`, non-matching updates
-  return `null`. The hook wiring in `auth.ts` stays a thin untested shell.
+  Test the **pure mapping functions** in `auth-log-hooks.ts` (row + touched fields →
+  `RecordLogEntryInput | null`): email-changed detection from a stashed old value,
+  ban/unban transitions from the new `banned` value, password `obj_mask` marker carrying no
+  value, impersonation start actor = `impersonatedBy`, impersonation end from a deleted
+  session row, non-matching updates return `null`. Also assert the `WeakMap` stash is
+  cleared after `after` consumes it, and that a mapping function throwing never escapes the
+  hook body. The hook wiring in `auth.ts` stays a thin untested shell.
 - `create-prisma-mock` needs regenerated DMMF after the schema change
   (`npx prisma generate`). Note `prisma-mock` does not emulate Postgres sequences, so
   `sequence` assertions may need the mock to assign values explicitly — verify during
@@ -590,7 +651,7 @@ Kim's own timeline correctly distinguishes what Kim did from what was done as Ki
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `prisma/schema.prisma`                         | rename model; `sequence`, `scope`, nullable `organizationId`/`userId`, `ownerId`, `actorLabel`, `impersonatorId`, `batchId`; `LogEntryObject`; `LogBatch`; indexes; delete behaviours |
 | `prisma/migrations/*`                          | generated migration + hand-added partial unique index                                                                                                                                 |
-| `src/lib/processes.ts`                         | **new** — `Processes` registry, four initial entries                                                                                                                                  |
+| `src/lib/operations.ts`                        | **new** — `Operations` registry, two initial entries                                                                                                                                  |
 | `src/trpc/routers/teams-router.ts`             | `createTeam` (D4H branch) and `syncronizeD4HTeam` open a `LogBatch` and thread `batchId`                                                                                              |
 | `src/lib/schemas/log-entry.ts`                 | **new** — `LogRefRole`, `LogAction`, `LogObjectType`, `LogScope` unions + zod enums                                                                                                   |
 | `src/server/log-entry.ts`                      | **new** — `recordLogEntry`, module-derivation map                                                                                                                                     |
@@ -604,41 +665,41 @@ Kim's own timeline correctly distinguishes what Kim did from what was done as Ki
 | `docs/patterns/transactional-writes.md`        | `OrganizationLogEntry` → `LogEntry`; note `refs`                                                                                                                                      |
 | `src/generated/dmmf.ts`                        | regenerated                                                                                                                                                                           |
 
-## Open questions for review
+## Resolved questions
 
-- **better-auth hook failure semantics.** `databaseHooks.*.after` runs outside our
-  transaction and after better-auth's own write. If `recordLogEntry` throws, does the
-  password change fail, or does the audit entry silently go missing? Fail-open (log and
-  swallow) accepts audit gaps; fail-closed accepts broken password resets. Needs a
-  decision and a note in `auth.ts` either way — and the answer depends on whether
-  better-auth propagates or swallows hook errors, which must be verified against the
-  installed version.
-- **Impersonation end.** Log a `session.delete` counterpart so timelines show start/stop
-  pairs, or leave impersonation as a start-only marker? Depends on whether better-auth's
-  stop-impersonating path reliably deletes the session row.
-- `systemAdminProcedure.logEvent` inferring scope from an optional `organizationId` arg —
-  clean enough, or pass an explicit `scope`?
-- better-auth hook-context shape for actor resolution — verify against the installed
-  version during implementation; the fallback path covers us if it's not reachable.
+All four were settled on 2026-09-09, three of them by reading better-auth 1.7.3 in
+`node_modules` rather than by preference.
+
+- **better-auth hook failure semantics → fail-open.** Not a trade-off in the end: `after`
+  hooks run post-commit and better-auth never supplies the `onAfterCommitHookError`
+  handler its core supports, so a throwing hook returns a 500 for a write that already
+  succeeded. Fail-closed does not exist on this path. Hooks catch and `console.error`; see
+  "Verified hook mechanics".
+- **Impersonation end → logged.** `stopImpersonating` deletes the session through the
+  hooked path, so `session.delete.after` carries `impersonatedBy` reliably. Both ends of an
+  impersonation appear on the timeline.
+- **Old values in hooks → read-in-`before`, record-in-`after`.** Hook payloads carry no
+  previous value. Only the email change needs one; it is captured with a targeted read in
+  `user.update.before` stashed on a `WeakMap`. See "Email change: capturing the old
+  address".
+- **`systemAdminProcedure.logEvent` scope → inferred from `organizationId`, no explicit
+  `scope` param.** An explicit scope alongside an `organizationId` is redundant in the
+  valid cases and contradictory in the invalid ones (`scope: "user"` plus an
+  `organizationId` has no meaning), so the parameter would exist only to be validated
+  against the other one. Inference has a single source of truth.
 
 ## Follow-ups (explicitly out of scope)
 
-- **The `changes` diff rework.** `src/lib/diff.ts` loses Date changes silently, mis-diffs
-  arrays of objects (identity comparison, so every element reads as removed-and-added),
-  ignores array reordering and duplicates, and emits value-less `obj_add` entries for
-  explicit `undefined`. It also has no zod schema, so consumers get `unknown` and call
-  sites cast. Nothing in the app reads log entries today, so the format has never been
-  exercised by a consumer. Next piece of work.
-- **`reorderGroups` / `reorderGroupSkills` log N entries where they should log one.** Each
-  writes an `Update` entry per moved row carrying a bare `sequence` integer — the
-  row-writes of a single event, surfaced as N events on N timelines. The right shape is one
-  entry against the `SkillPackage`/`SkillGroup`, order change in `changes`, moved items as
-  `context` refs. Blocked on the diff rework: `diffObject` returns `[]` for a reordered
-  array, so there is currently no way to express "the order changed" — the per-row integers
-  are a workaround for that gap, not a design choice.
+- ~~The `changes` diff rework~~ — **done**, merged 2026-09-09. `src/lib/diff.ts` was
+  rewritten flatten-then-diff with a `DiffChange` zod union, and `logEvent` parses against
+  it.
+- ~~`reorderGroups` / `reorderGroupSkills` log N entries where they should log one~~ —
+  **done** in the same pass. Both now emit one entry against the parent using the new
+  `arr_ord` change type. The `context` refs this spec adds are still a possible refinement,
+  but the N-entries defect is fixed.
 - Centralised redaction policy in `recordLogEntry` (password, tokens,
   `D4hAccessToken.token`, invitation tokens) rather than per-call-site discipline.
-- `withProcessRun` (or whatever ergonomics fit) and the first real process; `LogBatch`
+- `withOperationRun` (or whatever ergonomics fit) and the first real unattended operation; `LogBatch`
   gains `finishedAt`/status/counts at that point.
 - A stored `moduleId`, if module attribution should be frozen historically once module
   boundaries settle.
