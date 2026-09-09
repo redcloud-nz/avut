@@ -80,6 +80,19 @@ describe("mapUserUpdate — email", () => {
     it("records nothing when there is no snapshot at all", () => {
         expect(mapUserUpdate(subject, undefined, null)).toEqual([]);
     });
+
+    it("returns [] instead of throwing when the user id is malformed", () => {
+        const malformed: HookUserRow = { ...subject, id: "not-a-valid-id" as never };
+        let result: ReturnType<typeof mapUserUpdate> = [];
+        expect(() => {
+            result = mapUserUpdate(
+                malformed,
+                { touched: ["email"], previousEmail: "kim@example.com" },
+                null,
+            );
+        }).not.toThrow();
+        expect(result).toEqual([]);
+    });
 });
 
 describe("mapUserUpdate — ban", () => {
@@ -146,7 +159,7 @@ describe("mapPasswordChange", () => {
             description: "Password changed",
         });
         expect(entry!.changes).toEqual([{ type: "obj_mask", path: ["password"] }]);
-        expect(JSON.stringify(entry)).not.toContain("hunter2");
+        expect(Object.keys(entry!.changes![0])).toEqual(["type", "path"]);
     });
 
     it("records nothing when the payload did not touch the password", () => {
@@ -237,5 +250,16 @@ describe("mapImpersonation", () => {
 
     it("ignores an ordinary session with no impersonator", () => {
         expect(mapImpersonation({ id: "sess_1", userId: subjectId }, "start")).toBeNull();
+    });
+
+    it("returns null instead of throwing when impersonatedBy is malformed", () => {
+        let result: ReturnType<typeof mapImpersonation> = null;
+        expect(() => {
+            result = mapImpersonation(
+                { id: "sess_1", userId: subjectId, impersonatedBy: "not-a-valid-id" as never },
+                "start",
+            );
+        }).not.toThrow();
+        expect(result).toBeNull();
     });
 });

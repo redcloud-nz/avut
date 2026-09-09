@@ -69,6 +69,16 @@ export interface UserUpdateSnapshot {
 }
 
 /**
+ * Brand an id, or give up. Malformed ids come from data we do not control — a database row
+ * shaped unexpectedly by a future better-auth version, a bad migration, and so on — and
+ * this module's contract is to return nothing rather than throw into a swallowed catch.
+ */
+function asUserId(value: string | null | undefined): UserId | null {
+    const result = UserId.schema.safeParse(value);
+    return result.success ? result.data : null;
+}
+
+/**
  * Entries for a `user.update`.
  *
  * Returns zero, one, or two entries — a single update can touch both the email and the
@@ -79,9 +89,11 @@ export function mapUserUpdate(
     snapshot: UserUpdateSnapshot | undefined,
     actor: HookActor | null,
 ): RecordLogEntryInput[] {
+    const ownerId = asUserId(user.id);
+    if (!ownerId) return [];
+
     const touched = snapshot?.touched ?? [];
     const entries: RecordLogEntryInput[] = [];
-    const ownerId = UserId.schema.parse(user.id);
 
     if (
         touched.includes("email") &&
@@ -115,8 +127,10 @@ export function mapUserUpdate(
         // An admin ban has a resolvable actor; a self-service path may not. Falling back
         // to the affected user keeps the entry attributable — the shell warns separately,
         // because an unresolved actor is a diagnostic about our code, not a fact about
-        // the event.
+        // the event. A malformed actor id falls back the same way, rather than dropping
+        // the ban entry entirely.
         const resolved = actor ?? { userId: user.id, name: user.name, email: user.email };
+        const actorId = asUserId(resolved.userId) ?? ownerId;
 
         const changes: DiffChange[] = [];
         if (banned && user.banReason != null) {
@@ -133,7 +147,7 @@ export function mapUserUpdate(
         entries.push({
             scope: "user",
             ownerId,
-            actor: { userId: UserId.schema.parse(resolved.userId) },
+            actor: { userId: actorId },
             actorLabel: formatActorLabel(resolved.name, resolved.email),
             action: banned ? "Ban" : "Unban",
             objectType: "User",
@@ -159,7 +173,8 @@ export function mapPasswordChange(
     if (!passwordTouched) return null;
     if (account.providerId !== CREDENTIAL_PROVIDER) return null;
 
-    const ownerId = UserId.schema.parse(account.userId);
+    const ownerId = asUserId(account.userId);
+    if (!ownerId) return null;
 
     return {
         scope: "user",
@@ -181,8 +196,9 @@ export function mapAccountLink(
 ): RecordLogEntryInput | null {
     if (account.providerId === CREDENTIAL_PROVIDER) return null;
 
-    const ownerId = UserId.schema.parse(account.userId);
-    const resolved = actor?.userId ? UserId.schema.parse(actor.userId) : ownerId;
+    const ownerId = asUserId(account.userId);
+    if (!ownerId) return null;
+    const resolved = asUserId(actor?.userId) ?? ownerId;
 
     return {
         scope: "user",
@@ -218,10 +234,14 @@ export function mapImpersonation(
 ): RecordLogEntryInput | null {
     if (!session.impersonatedBy) return null;
 
+    const ownerId = asUserId(session.userId);
+    const actorId = asUserId(session.impersonatedBy);
+    if (!ownerId || !actorId) return null;
+
     return {
         scope: "user",
-        ownerId: UserId.schema.parse(session.userId),
-        actor: { userId: UserId.schema.parse(session.impersonatedBy) },
+        ownerId,
+        actor: { userId: actorId },
         action: "Impersonate",
         objectType: "User",
         objectId: session.userId,
