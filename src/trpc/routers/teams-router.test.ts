@@ -10,11 +10,57 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 // under jsdom.
 vi.mock("server-only", () => ({}));
 
+// syncronizeD4HTeam calls neither auth.api.createTeam nor anything else requiring a
+// behavioral @/server/auth mock — only getPersonalD4HAccessTokenForUser and
+// getD4HTeam/getD4HFetchClient, which is why those two are stubbed here (same pattern as
+// d4h-access-tokens-router.test.ts) rather than a live D4H client.
+vi.mock("@/server/d4h-api/client", () => ({
+    getD4HFetchClient: vi.fn(() => ({
+        GET: vi.fn(async () => ({
+            data: {
+                results: [
+                    {
+                        id: 501,
+                        resourceType: "Member",
+                        email: { value: "grace@example.com", verified: true },
+                        name: "Grace Hopper",
+                        owner: { id: 4242, resourceType: "Team" },
+                        position: null,
+                        ref: null,
+                        role: { id: null, resourceType: "Role" },
+                        status: "OPERATIONAL",
+                    },
+                ],
+                page: 1,
+                pageSize: 50,
+                totalSize: 1,
+            },
+            error: undefined,
+        })),
+    })),
+    getD4HTokenMetadata: vi.fn(async () => ({
+        d4HTeams: [{ id: 4242, resourceType: "Team", title: "Alpha D4H" }],
+        d4HOrganisations: [],
+    })),
+}));
+
+vi.mock("@/server/d4h-access-token", () => ({
+    getPersonalD4HAccessTokenForUser: vi.fn(async () => ({
+        id: "d4h-token-fixture-id",
+        organizationId: null,
+        userId: null,
+        label: "Test token",
+        serverCode: "us",
+        token: "fake-token",
+        metadata: { d4HTeams: [], d4HOrganisations: [] },
+    })),
+}));
+
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
-import { UserId } from "@/lib/schemas/user";
-import { createLogBatch, recordLogEntry } from "@/server/log-entry";
+import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -97,62 +143,111 @@ describe("teamsRouter.getTeam", () => {
     });
 });
 
-describe("syncronizeD4HTeam — batching", () => {
-    it("opens one batch and stamps every entry in the run with it", async () => {
+describe("teamsRouter.syncronizeD4HTeam — batching", () => {
+    it("stamps every log entry from one run with the same LogBatch", async () => {
         const db = createMockPrisma();
-        const orgId = OrganizationId.create();
-        const userId = UserId.create();
-        const teamId = TeamId.create();
+        const T = {
+            org: OrganizationId.create(),
+            user: nanoId16(),
+            team: TeamId.create(),
+            // A person/membership already in our system whose D4H membership has been
+            // removed — d4hMemberId 999 never appears among the mocked D4H members
+            // (id 501), so this triggers the TeamMembership-Delete branch.
+            departedPerson: PersonId.create(),
+            departedMembership: TeamMembershipId.create(),
+        };
 
-        const batch = await createLogBatch(
-            {
-                operationKey: "d4h-team-sync",
-                userId,
-                actorLabel: "Ada Lovelace <ada@example.com>",
-                description: "Synchronized memberships from linked D4H team",
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "First team",
+                properties: { d4hTeamId: 4242 },
+                tags: [],
             },
-            db,
+        });
+        // The `d4h` relation is what `getTeam` checks to confirm the team is linked —
+        // separate from `properties.d4hTeamId`, which `syncronizeD4HTeam` reads directly.
+        await db.team_D4H.create({
+            data: {
+                teamId: T.team,
+                d4hTeamId: 4242,
+                d4hTeamName: "Alpha D4H",
+                d4hServer: "us",
+                d4hLastSyncedAt: null,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.departedPerson,
+                organizationId: T.org,
+                name: "Departed Person",
+                email: "departed@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.departedMembership,
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.departedPerson,
+                tags: [],
+                properties: { d4hMemberId: 999 },
+            },
+        });
+
+        const caller = teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
         );
 
-        await recordLogEntry(
-            {
-                scope: "organization",
-                organizationId: orgId,
-                actor: { userId },
-                actorLabel: "Ada Lovelace <ada@example.com>",
-                batchId: batch.id,
-                action: "Create",
-                objectType: "TeamMembership",
-                objectId: "tm_1",
-            },
-            db,
+        await caller.syncronizeD4HTeam({ organizationId: T.org, teamId: T.team });
+
+        // Sanity check the wiring actually did what the fixture set it up to do: a
+        // departed member removed, a new one (from D4H member id 501, "grace@example.com")
+        // created via `createPerson`, and the team's `d4hLastSync` bumped.
+        expect(
+            await db.teamMembership.findUnique({
+                where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
+            }),
+        ).toBeNull();
+        const newPerson = await db.person.findFirst({
+            where: { organizationId: T.org, email: "grace@example.com" },
+        });
+        expect(newPerson).not.toBeNull();
+        expect(
+            await db.teamMembership.findFirst({
+                where: { teamId: T.team, personId: newPerson!.id },
+            }),
+        ).not.toBeNull();
+
+        const entries = await db.logEntry.findMany({ where: { organizationId: T.org } });
+
+        // One TeamMembership-Delete, one Person-Create, one TeamMembership-Create, one
+        // Team-Update — a wiring change that silently drops one of these must fail here.
+        expect(entries).toHaveLength(4);
+        expect(entries.map((e) => e.objectType).sort()).toEqual(
+            ["Person", "Team", "TeamMembership", "TeamMembership"].sort(),
         );
-        await recordLogEntry(
-            {
-                scope: "organization",
-                organizationId: orgId,
-                actor: { userId },
-                actorLabel: "Ada Lovelace <ada@example.com>",
-                batchId: batch.id,
-                action: "Update",
-                objectType: "Team",
-                objectId: teamId,
-            },
-            db,
-        );
 
-        const entries = await db.logEntry.findMany({ where: { batchId: batch.id } });
-        expect(entries).toHaveLength(2);
+        const batchIds = new Set(entries.map((e) => e.batchId));
+        expect(batchIds.size).toBe(1);
+        const [batchId] = batchIds;
+        expect(batchId).not.toBeNull();
 
-        // Entries written in one run share a timestamp, so sequence is what orders them.
-        const sequences = entries.map((e) => e.sequence).sort((a, b) => a - b);
-        expect(new Set(sequences).size).toBe(2);
-
-        const stored = await db.logBatch.findUnique({ where: { id: batch.id } });
-        expect(stored).toMatchObject({
+        const batch = await db.logBatch.findUnique({ where: { id: batchId! } });
+        expect(batch).toMatchObject({
             operationKey: "d4h-team-sync",
-            userId,
-            description: "Synchronized memberships from linked D4H team",
+            userId: T.user,
         });
     });
 });
