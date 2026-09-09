@@ -116,9 +116,9 @@ function LinkedAccount_Item({
     const unlinkMutation = useMutation({
         async mutationFn(accountId: string) {
             const { error } = await authClient.unlinkAccount({
-                providerId: provider.id,
-                // Pin the exact account. Without it Better Auth unlinks whichever account
-                // happens to match the provider.
+                // Better Auth 1.7 identifies the link by its own account row id and dropped
+                // `providerId` from the body — this is `account.id`, not `account.accountId`
+                // (the provider's own id for the user), which no longer resolves.
                 accountId,
             });
             if (error) {
@@ -165,7 +165,7 @@ function LinkedAccount_Item({
                                     ? undefined
                                     : "You can't unlink your only sign-in method. Set a password or link another provider first."
                             }
-                            onClick={() => unlinkMutation.mutate(account.accountId)}
+                            onClick={() => unlinkMutation.mutate(account.id)}
                         />
                     ) : (
                         <MutationButton
