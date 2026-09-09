@@ -50,6 +50,10 @@ jobs:
       - name: Generate route types
         run: npx next typegen
 
+      # `eslint .` exits 0 on warnings, so this gates on errors only.
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npx tsc --noEmit
 
