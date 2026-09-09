@@ -121,6 +121,28 @@ export const LogRefRole = {
 export type LogRefRole = (typeof logRefRoleValues)[number];
 
 /**
+ * The subset of `LogRefRole` a caller may ask for on a ref.
+ *
+ * `primary` is excluded deliberately. `recordLogEntry` writes the primary row itself from
+ * the entry's own `objectType`/`objectId`, and `log_entry_objects_primary_unique` allows
+ * exactly one per entry — so a ref naming a *different* object as primary is not a
+ * mislabelled row, it is a constraint violation that rolls back the business transaction
+ * it was composed into, reported as an opaque P2002. Making it unrepresentable is cheaper
+ * than diagnosing that.
+ *
+ * Derived from `LogRefRole` rather than listed again, so adding a role there cannot
+ * silently miss this.
+ */
+const logRefRoleInputSchema = LogRefRole.schema.exclude(["primary"]);
+
+export const LogRefRoleInput = {
+    values: logRefRoleInputSchema.options,
+    schema: logRefRoleInputSchema,
+} as const;
+
+export type LogRefRoleInput = z.infer<typeof logRefRoleInputSchema>;
+
+/**
  * Module attribution, derived rather than stored.
  *
  * A module is a pure function of `objectType`, so a `moduleId` column would be

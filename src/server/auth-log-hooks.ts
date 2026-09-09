@@ -243,7 +243,11 @@ export function mapAccountLink(
         action,
         objectType: "Account",
         objectId: account.id,
-        changes: [{ type: "obj_add", path: ["providerId"], curr: account.providerId }],
+        changes: [
+            action === "Create"
+                ? { type: "obj_add", path: ["providerId"], curr: account.providerId }
+                : { type: "obj_del", path: ["providerId"], prev: account.providerId },
+        ],
         description:
             action === "Create"
                 ? `Linked ${account.providerId} account`

@@ -205,6 +205,13 @@ describe("mapAccountLink", () => {
             null,
         );
         expect(entry!.action).toBe("Delete");
+        // An unlink is a removal — the same change shape as a link would render the two
+        // identically in the diff.
+        expect(entry!.changes).toContainEqual({
+            type: "obj_del",
+            path: ["providerId"],
+            prev: "google",
+        });
     });
 
     it("ignores the credential provider — that is a password, not a linked account", () => {

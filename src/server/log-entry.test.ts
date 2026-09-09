@@ -219,6 +219,26 @@ describe("recordLogEntry — refs fan-out", () => {
         ).toThrow(LogEntryInvariantError);
     });
 
+    it("rejects a ref claiming the primary role for a different object", () => {
+        // Would otherwise insert a second role='primary' row and violate
+        // log_entry_objects_primary_unique, rolling back the caller's whole transaction.
+        expect(() =>
+            recordLogEntry(
+                {
+                    ...baseInput(),
+                    refs: [
+                        {
+                            objectType: "Team",
+                            objectId: "team_5",
+                            role: "primary" as never,
+                        },
+                    ],
+                },
+                db,
+            ),
+        ).toThrow(LogEntryInvariantError);
+    });
+
     it("rejects an objectType off the closed union", () => {
         expect(() => recordLogEntry({ ...baseInput(), objectType: "Widget" as never }, db)).toThrow(
             LogEntryInvariantError,

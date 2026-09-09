@@ -560,10 +560,11 @@ export const teamsRouter = createTrpcRouter({
                     message: "No personal D4H Access Token found for user",
                 });
 
-            const d4hTeam = await getD4HTeam(
-                accessToken,
-                z.number().parse(team.properties.d4hTeamId),
-            );
+            // Read from the `Team_D4H` relation, which is what the guard above tested. The
+            // legacy `properties.d4hTeamId` is not written anywhere in `src/`, so a team
+            // linked through the relation alone would pass the guard and then fail on a
+            // missing property.
+            const d4hTeam = await getD4HTeam(accessToken, team.d4h.d4hTeamId);
 
             // Same orphan-batch trade-off as `importTeamFromD4H` above.
             const batch = await createLogBatch(

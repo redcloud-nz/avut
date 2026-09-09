@@ -24,7 +24,7 @@ import type { LogBatch, LogEntry, Prisma, PrismaClient } from "@/generated/prism
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
-import { LogAction, LogObjectType, LogRefRole, LogScope } from "@/lib/schemas/log-entry";
+import { LogAction, LogObjectType, LogRefRoleInput, LogScope } from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import type { UserId } from "@/lib/schemas/user";
 
@@ -39,11 +39,14 @@ export type LogEntryPrisma = Pick<PrismaClient, "logEntry" | "logBatch">;
  */
 export type LogActor = { userId: UserId; impersonatorId?: UserId } | null;
 
-/** An extra entity an entry is relevant to. The primary is implicit. */
+/**
+ * An extra entity an entry is relevant to. The primary is implicit — `role` cannot name it,
+ * see `LogRefRoleInput`.
+ */
 export interface LogEntryRef {
     objectType: LogObjectType;
     objectId: string;
-    role?: LogRefRole;
+    role?: LogRefRoleInput;
 }
 
 export interface RecordLogEntryInput {
@@ -186,10 +189,12 @@ export function recordLogEntry(
             `Unknown ref objectType "${ref.objectType}".`,
         ),
         objectId: ref.objectId,
+        // `LogRefRoleInput`, not `LogRefRole`: the type already forbids `primary`, and this
+        // is the runtime half of the same rule for callers that reach here untyped.
         role: parseOrThrow(
-            LogRefRole.schema,
+            LogRefRoleInput.schema,
             ref.role ?? "context",
-            `Unknown ref role "${ref.role}".`,
+            `Invalid ref role "${ref.role}" — "primary" is written by recordLogEntry itself.`,
         ),
     }));
 
