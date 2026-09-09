@@ -146,6 +146,9 @@ model Team {
   tags        String[] @default([])
   properties  Json     @default("{}")
 
+  // Maintained by better-auth's organization plugin (input: false); see the 1.7 upgrade.
+  memberCount Int @default(0)
+
   organizationId  String
   organization    Organization     @relation("team_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   d4h             Team_D4H?        @relation("team_d4h_to_team")
@@ -194,6 +197,10 @@ model TeamUser {
   userId    String
   user      User     @relation("team_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  // Per-user-per-team uniqueness boundary maintained by better-auth's
+  // organization plugin (input: false); see the 1.7 upgrade.
+  membershipKey String? @unique
 
   @@index([teamId])
   @@unique([teamId, userId])
