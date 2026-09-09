@@ -25,10 +25,7 @@ export const recordStatusParameterSchema = z
 export const zodSlug = z
     .string()
     .max(100)
-    .regex(
-        /^[a-zA-Z0-9\-]+$/,
-        "Must be url slug format (alphanumeric with hyphens).",
-    );
+    .regex(/^[a-zA-Z0-9\-]+$/, "Must be url slug format (alphanumeric with hyphens).");
 
 export function zodNanoId8(error?: string) {
     return z.stringFormat("nanoid-8", /^[a-zA-Z0-9]{8}$/, error);
@@ -38,11 +35,24 @@ export function zodNanoId16(error?: string) {
     return z.stringFormat("nanoid-16", /^[a-zA-Z0-9]{16}$/, error);
 }
 
-export const propertiesSchema = z.record(z.string(), z.any());
+/** A single JSON scalar. */
+export const scalarSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+
+/**
+ * A record's free-form properties bag.
+ *
+ * Deliberately flat and scalar-only: every real write is `{}` or a flat record from the D4H
+ * paths, and keeping it scalar is what lets `diffObject` throw on unrepresentable values without
+ * client input being able to hard-fail a mutation.
+ */
+export const propertiesSchema = z.record(z.string(), scalarSchema);
 
 export const recordStatusSchema = z.enum(["Active", "Archived", "Deleted"]);
 
-export const tagsSchema = z.array(z.string().nonempty());
+/** A record's tags. A set, not a bag — `diffObject` compares tag lists as sets. */
+export const tagsSchema = z
+    .array(z.string().nonempty())
+    .refine((tags) => new Set(tags).size === tags.length, "Tags must be unique");
 
 export type RecordStatus = z.infer<typeof recordStatusSchema>;
 
