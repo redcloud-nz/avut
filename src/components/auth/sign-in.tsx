@@ -12,11 +12,11 @@ import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
 import { authClient } from "@/client/auth-client";
 import { postSignInUrl } from "@/lib/auth-redirect";
 
+import { SocialProviderId, SocialProviders } from "@/components/auth/social-providers";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -181,7 +181,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
  * @param redirectTo Optional path to return to once signed in.
  */
 export function SocialSignInButtons_Field({ redirectTo }: { redirectTo?: string } = {}) {
-    async function handleSignIn(provider: "apple" | "google" | "github") {
+    async function handleSignIn(provider: SocialProviderId) {
         try {
             const { error } = await authClient.signIn.social({
                 provider,
@@ -200,23 +200,12 @@ export function SocialSignInButtons_Field({ redirectTo }: { redirectTo?: string 
 
     return (
         <Field className="grid grid-cols-2 gap-4">
-            {/* <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleSignIn("apple")}
-                disabled
-            >
-                <SiApple />
-                <span className="sr-only">Sign in with Apple</span>
-            </Button> */}
-            <Button variant="outline" type="button" onClick={() => handleSignIn("google")}>
-                <SiGoogle />
-                <span className="sr-only">Sign in with Google</span>
-            </Button>
-            <Button variant="outline" type="button" onClick={() => handleSignIn("github")}>
-                <SiGithub />
-                <span className="sr-only">Sign in with GitHub</span>
-            </Button>
+            {SocialProviders.map(({ id, name, Icon }) => (
+                <Button key={id} variant="outline" type="button" onClick={() => handleSignIn(id)}>
+                    <Icon />
+                    <span className="sr-only">Sign in with {name}</span>
+                </Button>
+            ))}
         </Field>
     );
 }

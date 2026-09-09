@@ -47,3 +47,31 @@ export function useUser() {
     const { data, ...rest } = useSession();
     return { ...rest, data: data?.user };
 }
+
+/**
+ * The single definition of the linked-accounts query.
+ *
+ * Both `UserSecuritySettings` (which only needs to know whether a credential account
+ * exists) and `LinkedAccounts_Card` read through this, so the two share one cache entry
+ * and one request rather than each fetching the list.
+ *
+ * The key sits inside the `["auth"]` subtree so it inherits `authQueryRetryOptions` — a
+ * 403 from a stale session fails fast instead of burning three pointless retries — and is
+ * evicted along with the rest of the auth cache on sign-out.
+ */
+export function linkedAccountsQueryOptions() {
+    return queryOptions({
+        queryKey: authQueryKeys.linkedAccounts,
+        queryFn: ({ signal }) => listAccounts(signal),
+    });
+}
+
+// Named separately so `LinkedAccount` below can be derived from it rather than hand-rolled.
+function listAccounts(signal?: AbortSignal) {
+    // `throw: true` rejects on error and resolves with the accounts themselves rather than
+    // Better Auth's `{ data, error }` envelope.
+    return authClient.listAccounts({}, { signal, throw: true });
+}
+
+/** One account linked to the current user, as returned by Better Auth's `/list-accounts`. */
+export type LinkedAccount = Awaited<ReturnType<typeof listAccounts>>[number];

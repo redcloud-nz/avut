@@ -10,10 +10,19 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 // them import in jsdom.
 vi.mock("server-only", () => ({}));
 
+// `revokeSession` delegates the actual revocation to Better Auth so its session cache is
+// invalidated properly. The tests assert on that delegation rather than standing up a real
+// auth instance.
+const revokeSessionMock = vi.fn();
+vi.mock("@/server/auth", () => ({
+    auth: { api: { revokeSession: (...args: unknown[]) => revokeSessionMock(...args) } },
+}));
+
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
+import { UserSessionId } from "@/lib/schemas/user-session";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -167,5 +176,122 @@ describe("user↔person linking", () => {
         // person1 is now available to link again
         const unlinked = await personnel().listUnlinkedPersonnel({ organizationId: T.org });
         expect(unlinked.map((p) => p.id)).toContain(T.person1);
+    });
+});
+
+describe("usersRouter session management", () => {
+    // Dataset:
+    //   user1 → current session (sessionCurrent) + another device (sessionOther)
+    //          + one already expired (sessionExpired)
+    //   user2 → an unrelated session, to prove cross-user access is refused
+    const T = {
+        user1: UserId.create(),
+        user2: UserId.create(),
+        sessionCurrent: UserSessionId.create(),
+        sessionOther: UserSessionId.create(),
+        sessionExpired: UserSessionId.create(),
+        sessionOtherUser: UserSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        const base = { createdAt: new Date("2026-01-01T00:00:00Z"), updatedAt: new Date() };
+
+        await db.session.create({
+            data: {
+                ...base,
+                id: T.sessionCurrent,
+                token: "token-current",
+                userId: T.user1,
+                expiresAt: new Date("2099-01-01T00:00:00Z"),
+                userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0",
+            },
+        });
+        await db.session.create({
+            data: {
+                ...base,
+                id: T.sessionOther,
+                token: "token-other",
+                userId: T.user1,
+                expiresAt: new Date("2099-01-01T00:00:00Z"),
+                userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/604.1",
+            },
+        });
+        await db.session.create({
+            data: {
+                ...base,
+                id: T.sessionExpired,
+                token: "token-expired",
+                userId: T.user1,
+                expiresAt: new Date("2020-01-01T00:00:00Z"),
+                userAgent: null,
+            },
+        });
+        await db.session.create({
+            data: {
+                ...base,
+                id: T.sessionOtherUser,
+                token: "token-other-user",
+                userId: T.user2,
+                expiresAt: new Date("2099-01-01T00:00:00Z"),
+                userAgent: null,
+            },
+        });
+    });
+
+    function users(sessionId: string = T.sessionCurrent) {
+        return usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user1 },
+                session: { id: sessionId, token: "token-current" },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("lists only the current user's unexpired sessions", async () => {
+        const sessions = await users().listSessions();
+
+        expect(sessions.map((s) => s.id).sort()).toEqual([T.sessionCurrent, T.sessionOther].sort());
+    });
+
+    it("flags the requesting session as current", async () => {
+        const sessions = await users().listSessions();
+
+        expect(sessions.find((s) => s.id === T.sessionCurrent)?.isCurrent).toBe(true);
+        expect(sessions.find((s) => s.id === T.sessionOther)?.isCurrent).toBe(false);
+    });
+
+    it("never exposes session tokens", async () => {
+        const sessions = await users().listSessions();
+
+        for (const session of sessions) {
+            expect(session).not.toHaveProperty("token");
+        }
+    });
+
+    it("revokes another of the user's sessions through Better Auth", async () => {
+        await users().revokeSession({ sessionId: T.sessionOther });
+
+        expect(revokeSessionMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { token: "token-other" } }),
+        );
+    });
+
+    it("refuses to revoke a session belonging to another user", async () => {
+        await expect(
+            users().revokeSession({ sessionId: T.sessionOtherUser }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        expect(revokeSessionMock).not.toHaveBeenCalled();
+    });
+
+    it("refuses to revoke the current session", async () => {
+        await expect(users().revokeSession({ sessionId: T.sessionCurrent })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+
+        expect(revokeSessionMock).not.toHaveBeenCalled();
     });
 });
