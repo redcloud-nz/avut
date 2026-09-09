@@ -168,7 +168,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                         action,
                         objectType,
                         objectId,
-                        changes: changes as object[],
+                        changes: z.array(DiffChange.schema).parse(changes) as object[],
                         description,
                     },
                 });

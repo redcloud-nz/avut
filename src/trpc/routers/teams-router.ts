@@ -520,7 +520,10 @@ export const teamsRouter = createTrpcRouter({
                     message: "No personal D4H Access Token found for user",
                 });
 
-            const d4hTeam = await getD4HTeam(accessToken, team.properties.d4hTeamId);
+            const d4hTeam = await getD4HTeam(
+                accessToken,
+                z.number().parse(team.properties.d4hTeamId),
+            );
 
             // Find members that are in our system but have been removed.
             for (const member of members) {

@@ -84,7 +84,7 @@ export async function writeOrganizationSettings(
         ),
     );
 
-    const changes = diffObject(flattenedExisting, flattenedNext);
+    const changes = diffObject(existing, parsed);
 
     await prisma.$transaction([...upserts, ...(logEntry ? [logEntry(changes)] : [])]);
 

@@ -249,7 +249,7 @@ model OrganizationLogEntry {
   objectType     String
   objectId       String
   metadata       Json         @default("{}")
-  changes        Json         @default("{}")
+  changes        Json         @default("[]")
   description    String?
   timestamp      DateTime     @default(now())
 
