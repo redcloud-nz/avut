@@ -10,7 +10,7 @@ import prettier from "eslint-config-prettier";
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
-    ignores: [".next/**", "next-env.d.ts", "src/generated/**"],
+    ignores: [".next/**", "next-env.d.ts", "src/generated/**", ".claude/worktrees/**"],
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,

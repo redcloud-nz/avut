@@ -6,3 +6,6 @@ package-lock.json
 # entries in skills-lock.json.
 .agents
 .claude/skills
+
+# Nested checkouts — each worktree formats its own staged files.
+.claude/worktrees

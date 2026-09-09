@@ -79,6 +79,14 @@ npm run prisma studio        # Open Prisma Studio
 - If `npx tsc --noEmit` fails inside `.next/types/validator.ts` with `LayoutRoutes`/`Route` mismatches between `.next/types/routes` and `.next/dev/types/routes`, the running dev server's `.next/dev/types` is stale against the current branch's routes — `rm -rf .next/dev/types && npx next typegen`. Common when checking out branches that add or remove `page.tsx`/route groups.
 - Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
 
+## Database
+
+There is **one** shared PostgreSQL dev database, reached through `.env.local`, and every checkout and worktree points at it. A schema or data change from one place is seen everywhere.
+
+- **Never run a command that mutates the database without explicit permission each time.** That covers, at least: `npm run prisma migrate dev` / `migrate deploy` / `migrate reset` / `db push`, `npm run prisma db execute`, `npm run seed:demo`, and `npm run build` (its first step is `prisma migrate deploy`). When one of these is the right next step, stop and ask.
+- Read-only Prisma commands are fine unprompted: `npm run prisma studio`, `prisma generate`, `prisma migrate status`, `prisma validate`.
+- Editing `prisma/schema.prisma` and running `npx prisma generate` (regenerates the client only, no DB contact) is fine; turning that into a migration is not — ask first.
+
 ## Git
 
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
@@ -88,6 +96,22 @@ npm run prisma studio        # Open Prisma Studio
 
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
 - Remove a worktree with `git worktree remove` when done; run `git worktree prune` if a directory was deleted by hand.
+
+### Setting up a fresh worktree
+
+The scanning tools (`tsc`, `eslint`, `vitest`) already skip `.claude/worktrees/`, so a worktree doesn't disturb the main checkout. But a new worktree is missing every gitignored file, so from the worktree root:
+
+```bash
+ln -s ../../../.env.local .env.local     # shared env — needed by prisma, build, seed, dev server
+ln -s ../../../.vercel .vercel            # only if using the Vercel CLI / skills
+npm install                              # node_modules is gitignored; also required for the pre-commit hook. Runs `prisma generate` via postinstall
+npx next typegen                          # .next/ is per-worktree; typed routes won't resolve without this
+```
+
+- If the worktree's branch changed `prisma/schema.prisma`, also run `npx prisma generate` (the committed `src/generated/` may be stale).
+- Run the dev server on its own port — `npm run dev -- -p 3100` — so it doesn't collide with a dev server in the main checkout (3000, and 3001 for `dev-email`).
+- The database is shared (see **Database** above) — a worktree on a schema branch must not run migrations without permission.
+- `.claude/settings.local.json` (personal permission allowlist) is not copied; expect more permission prompts until you re-add entries.
 
 ---
 
