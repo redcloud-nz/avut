@@ -4,13 +4,14 @@
  */
 
 import { addYears } from "date-fns";
+import * as R from "remeda";
 import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
-import { diffObject } from "@/lib/diff";
+import { diffObject, DiffChange } from "@/lib/diff";
 import {
     D4HAccessToken,
     D4HAccessToken_ServerOnly,
@@ -67,7 +68,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganisations: [] };
 
-            const changes = diffObject({}, create);
+            const changes: DiffChange[] = [
+                ...diffObject({}, R.omit(create, ["token"])),
+                { type: "obj_mask", path: ["token"] },
+            ];
 
             const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.create({
@@ -123,7 +127,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganizations: [] };
 
-            const changes = diffObject({}, create);
+            const changes: DiffChange[] = [
+                ...diffObject({}, R.omit(create, ["token"])),
+                { type: "obj_mask", path: ["token"] },
+            ];
 
             const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.d4hAccessToken.create({

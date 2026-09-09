@@ -19,7 +19,7 @@ const nowDate = new Date();
 
 interface CreateAuthenticatedMockContextOverrides {
     user: Partial<AuthSession["user"]> & Pick<AuthSession["user"], "id">;
-    session?: Partial<AuthSession["session"]>;
+    session?: Partial<AuthSession["session"]> & { impersonatedBy?: string | null };
     permissions?: Permissions;
     prisma: PrismaClient;
 }
@@ -44,14 +44,16 @@ export const createAuthenticatedMockContext = ({
                 ...user,
             } satisfies AuthSession["user"],
             session: {
-                id: nanoId16(),
-                createdAt: mockDate,
-                updatedAt: mockDate,
-                expiresAt: addDays(nowDate, 1),
-                userId: user.id,
-                token: "mock-session-token",
+                ...({
+                    id: nanoId16(),
+                    createdAt: mockDate,
+                    updatedAt: mockDate,
+                    expiresAt: addDays(nowDate, 1),
+                    userId: user.id,
+                    token: "mock-session-token",
+                } satisfies AuthSession["session"]),
                 ...session,
-            } satisfies AuthSession["session"],
+            },
         },
         hasPermission: async (organizationId: OrganizationId, requiredPermissions: Permissions) => {
             for (const key in requiredPermissions) {

@@ -582,7 +582,7 @@ describe("systemAdmin organization settings", () => {
             settings: next,
         });
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.seededOrg, objectType: "OrganizationSettings" },
         });
         expect(entries.length).toBeGreaterThan(0);
@@ -864,5 +864,202 @@ describe("systemAdmin.setUserRole last-admin guard", () => {
         await expect(caller.setUserRole({ userId: soloAdmin, role: "user" })).rejects.toMatchObject(
             { code: "BAD_REQUEST" },
         );
+    });
+});
+
+describe("systemAdminRouter — audit entries", () => {
+    it("records an organization-scoped entry when adding a member", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+        const adminId = UserId.create();
+        const memberId = UserId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Org", slug: `org-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: memberId, name: "Kim Park", email: "kim@example.com" },
+        });
+
+        const caller = systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: adminId,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+
+        await caller.addOrganizationMember({
+            organizationId: orgId,
+            userId: memberId,
+            role: "member",
+        });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "OrganizationMembership" },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: orgId,
+            ownerId: null,
+            userId: adminId,
+            action: "Create",
+        });
+        expect(entries[0].actorLabel).toBe("Dana Okafor <dana@example.com>");
+    });
+
+    it("records a user-scoped entry against the subject when changing a global role", async () => {
+        const db = createMockPrisma();
+        const adminId = UserId.create();
+        const subjectId = UserId.create();
+
+        await db.user.create({
+            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: subjectId, name: "Kim Park", email: "kim@example.com", role: "user" },
+        });
+
+        const caller = systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: adminId,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+
+        await caller.setUserRole({ userId: subjectId, role: "admin" });
+
+        const entries = await db.logEntry.findMany({ where: { objectType: "User" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: subjectId,
+            organizationId: null,
+            userId: adminId,
+            action: "Update",
+            objectId: subjectId,
+        });
+        expect(entries[0].changes).toContainEqual({
+            type: "obj_mod",
+            path: ["role"],
+            prev: "user",
+            curr: "admin",
+        });
+    });
+
+    it("no longer deletes a deleted user's entries elsewhere — the FK policy keeps them", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+        const adminId = UserId.create();
+        const subjectId = UserId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Org", slug: `org-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: subjectId, name: "Kim Park", email: "kim@example.com" },
+        });
+
+        // An action the subject took in an organization, which must survive their deletion.
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: orgId,
+                userId: subjectId,
+                actorLabel: "Kim Park <kim@example.com>",
+                action: "Update",
+                objectType: "Person",
+                objectId: "person_1",
+                changes: [],
+            },
+        });
+
+        const caller = systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: adminId,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+
+        await caller.deleteUser({ userId: subjectId });
+
+        const survivors = await db.logEntry.findMany({ where: { objectId: "person_1" } });
+        expect(survivors).toHaveLength(1);
+        expect(survivors[0].userId).toBeNull();
+        expect(survivors[0].actorLabel).toBe("Kim Park <kim@example.com>");
+    });
+});
+
+describe("systemAdmin.deleteUser — the deletion's own audit entry", () => {
+    const T = { admin: UserId.create(), subject: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: T.subject, name: "Kim Park", email: "kim@example.com" },
+        });
+    });
+
+    function makeCaller() {
+        return systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    /*
+     * The regression this guards: the entry used to be written with `ownerId: input.userId`
+     * inside the same `$transaction` as `user.delete`. `log_entries.ownerId` is
+     * `onDelete: Cascade`, so it was inserted and cascaded away before the transaction
+     * committed — a write with a zero-length lifetime that nothing could ever read.
+     */
+    it("survives the deletion, because a system-scoped entry has no owner FK to cascade through", async () => {
+        await makeCaller().deleteUser({ userId: T.subject });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "User", objectId: T.subject, action: "Delete" },
+        });
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "system",
+            organizationId: null,
+            ownerId: null,
+            userId: T.admin,
+            actorLabel: "Dana Okafor <dana@example.com>",
+        });
+        expect(entries[0].description).toContain("Kim Park <kim@example.com>");
     });
 });

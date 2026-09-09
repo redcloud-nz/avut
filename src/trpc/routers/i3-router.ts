@@ -131,7 +131,6 @@ export const i3Router = createTrpcRouter({
                     action: "Delete",
                     objectType: "I3Template",
                     objectId: templateId,
-                    changes: diffObject(existing, {}),
                 }),
             ]);
 

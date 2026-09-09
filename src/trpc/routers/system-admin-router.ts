@@ -8,12 +8,14 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import type { PrismaClient } from "@/generated/prisma/client";
+import { diffObject } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
+import { formatActorLabel } from "@/server/log-entry";
 import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
@@ -88,9 +90,6 @@ export const systemAdminRouter = createTrpcRouter({
      * `organizationHooks.afterAcceptInvitation` copies — a system-admin direct assignment has
      * no invitation to source a `personId` from, and that link is optional. Nothing else in
      * that hook affects a plain membership insert.
-     *
-     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
-     * written directly into the same `$transaction` — see `createOrganization`.
      */
     addOrganizationMember: systemAdminProcedure
         .input(
@@ -127,17 +126,13 @@ export const systemAdminRouter = createTrpcRouter({
                         createdAt: new Date(),
                     },
                 }),
-                ctx.prisma.organizationLogEntry.create({
-                    data: {
-                        id: nanoId16(),
-                        organizationId: input.organizationId,
-                        userId: ctx.auth.user.id,
-                        action: "Create",
-                        objectType: "OrganizationMembership",
-                        objectId: id,
-                        changes: [],
-                        description: `Added user ${input.userId} as ${input.role}`,
-                    },
+                ctx.logEvent({
+                    organizationId: input.organizationId,
+                    action: "Create",
+                    objectType: "OrganizationMembership",
+                    objectId: id,
+                    changes: [],
+                    description: `Added user ${input.userId} as ${input.role}`,
                 }),
             ]);
 
@@ -149,9 +144,6 @@ export const systemAdminRouter = createTrpcRouter({
      * user-created org would resolve to (`OrganizationSettings.default()` flattened to
      * `{ key, value }` leaves) so the two are indistinguishable, and — only when `addSelfAsOwner`
      * is set — attaches the acting system admin as `owner`.
-     *
-     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
-     * written directly into the same `$transaction` — equivalent to what `ctx.logEvent` does.
      */
     createOrganization: systemAdminProcedure
         .input(
@@ -201,16 +193,12 @@ export const systemAdminRouter = createTrpcRouter({
                           }),
                       ]
                     : []),
-                ctx.prisma.organizationLogEntry.create({
-                    data: {
-                        id: nanoId16(),
-                        organizationId,
-                        userId,
-                        action: "Create",
-                        objectType: "Organization",
-                        objectId: organizationId,
-                        changes: [],
-                    },
+                ctx.logEvent({
+                    organizationId,
+                    action: "Create",
+                    objectType: "Organization",
+                    objectId: organizationId,
+                    changes: [],
                 }),
             ]);
 
@@ -230,9 +218,16 @@ export const systemAdminRouter = createTrpcRouter({
      * (mirroring the schema's referential actions) so the behaviour is pinned here and doesn't
      * silently depend on the database's cascade config.
      *
-     * NOTE: global user-level actions have no audit log home yet — `organizationLogEntry` requires
-     * an `organizationId` and this action has no org context. See the deferred "system audit log"
-     * issue (#78); Phase 11 / #14 has the same gap.
+     * Log entries are deliberately *not* cleared here: `LogEntry.userId` is `SetNull` and
+     * `LogEntry.ownerId` is `Cascade`, so the FKs already implement the policy — the user's own
+     * log goes with them, their actions elsewhere survive, anonymised.
+     *
+     * The deletion's own entry is therefore `scope: "system"`, not user-scoped. A user-scoped
+     * entry would carry `ownerId: input.userId`, which is `onDelete: Cascade` — it would be
+     * inserted and cascaded away inside this same `$transaction`, giving it a zero-length
+     * lifetime. A system-scoped entry has neither owner FK, so nothing can cascade it; the
+     * subject is named by `objectId` and by the denormalized label in `description`, which is
+     * what keeps it readable once the `User` row is gone.
      */
     deleteUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
@@ -244,9 +239,14 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
+            // `name`/`email` are read for the audit entry's description: the entry outlives
+            // the `User` row, so the subject has to be denormalized into it here.
+            // `formatActorLabel` is reused for the subject rather than the actor — it is the
+            // one place the `Name <email>` form lives, and a second format would read oddly
+            // next to `actorLabel` in the same log.
             const target = await ctx.prisma.user.findUnique({
                 where: { id: input.userId },
-                select: { id: true },
+                select: { id: true, name: true, email: true },
             });
             if (!target) {
                 throw new TRPCError({
@@ -317,7 +317,14 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.d4hAccessToken.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
-                ctx.prisma.organizationLogEntry.deleteMany({ where: { userId: input.userId } }),
+                ctx.logEvent({
+                    scope: "system",
+                    action: "Delete",
+                    objectType: "User",
+                    objectId: input.userId,
+                    changes: [],
+                    description: `Account ${formatActorLabel(target.name, target.email)} deleted by a system administrator`,
+                }),
                 ctx.prisma.user.delete({ where: { id: input.userId } }),
             ]);
 
@@ -528,17 +535,13 @@ export const systemAdminRouter = createTrpcRouter({
 
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
-                ctx.prisma.organizationLogEntry.create({
-                    data: {
-                        id: nanoId16(),
-                        organizationId: input.organizationId,
-                        userId: ctx.auth.user.id,
-                        action: "Delete",
-                        objectType: "OrganizationMembership",
-                        objectId: membership.id,
-                        changes: [],
-                        description: `Removed user ${input.userId}`,
-                    },
+                ctx.logEvent({
+                    organizationId: input.organizationId,
+                    action: "Delete",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Removed user ${input.userId}`,
                 }),
             ]);
 
@@ -579,17 +582,13 @@ export const systemAdminRouter = createTrpcRouter({
                     where: { id: membership.id },
                     data: { role: input.role },
                 }),
-                ctx.prisma.organizationLogEntry.create({
-                    data: {
-                        id: nanoId16(),
-                        organizationId: input.organizationId,
-                        userId: ctx.auth.user.id,
-                        action: "Update",
-                        objectType: "OrganizationMembership",
-                        objectId: membership.id,
-                        changes: [],
-                        description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
-                    },
+                ctx.logEvent({
+                    organizationId: input.organizationId,
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
                 }),
             ]);
 
@@ -608,8 +607,8 @@ export const systemAdminRouter = createTrpcRouter({
      * this a just-demoted admin keeps `systemAdmin` access until it expires (mirrors
      * `deleteUser`). Promotion is a plain `user.update` — nothing to atomically pair.
      *
-     * NOTE: global role changes are not yet audited — see #78 (system audit log). Same gap as
-     * `deleteUser`: `organizationLogEntry` requires an `organizationId` and this action has none.
+     * The audit entry is user-scoped and owned by the subject (`ownerId: input.userId`), so it
+     * cascades away if that user is later deleted.
      */
     setUserRole: systemAdminProcedure
         .input(z.object({ userId: UserId.schema, role: z.enum(["admin", "user"]) }))
@@ -656,15 +655,33 @@ export const systemAdminRouter = createTrpcRouter({
                         data: { role: input.role },
                     }),
                     ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
+                    ctx.logEvent({
+                        ownerId: input.userId,
+                        action: "Update",
+                        objectType: "User",
+                        objectId: input.userId,
+                        changes: diffObject({ role: currentRole }, { role: input.role }),
+                        description: `Changed global role from ${currentRole} to ${input.role}`,
+                    }),
                 ]);
 
                 return { id: updated.id, role: updated.role };
             }
 
-            const updated = await ctx.prisma.user.update({
-                where: { id: input.userId },
-                data: { role: input.role },
-            });
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.user.update({
+                    where: { id: input.userId },
+                    data: { role: input.role },
+                }),
+                ctx.logEvent({
+                    ownerId: input.userId,
+                    action: "Update",
+                    objectType: "User",
+                    objectId: input.userId,
+                    changes: diffObject({ role: currentRole }, { role: input.role }),
+                    description: `Changed global role from ${currentRole} to ${input.role}`,
+                }),
+            ]);
 
             return { id: updated.id, role: updated.role };
         }),
@@ -676,10 +693,6 @@ export const systemAdminRouter = createTrpcRouter({
      * schema, and again inside `writeOrganizationSettings` before anything is written), and only
      * the `OrganizationConfig` leaves whose value actually changed are upserted — so this behaves
      * identically for a config-less and a fully materialised organization.
-     *
-     * `systemAdminProcedure` has no `ctx.logEvent` (that is org-scoped), so the audit entry is
-     * written directly into the same `$transaction` as the config writes — see
-     * `createOrganization`.
      */
     updateOrganizationSettings: systemAdminProcedure
         .input(
@@ -692,24 +705,18 @@ export const systemAdminRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             await assertOrganizationExists(ctx.prisma, input.organizationId);
 
-            const userId = ctx.auth.user.id;
-
             const settings = await writeOrganizationSettings(
                 ctx.prisma,
                 input.organizationId,
                 input.settings,
                 (changes) =>
-                    ctx.prisma.organizationLogEntry.create({
-                        data: {
-                            id: nanoId16(),
-                            organizationId: input.organizationId,
-                            userId,
-                            action: "Update",
-                            objectType: "OrganizationSettings",
-                            objectId: input.organizationId,
-                            changes: changes as object[],
-                            description: "Updated settings from system administration",
-                        },
+                    ctx.logEvent({
+                        organizationId: input.organizationId,
+                        action: "Update",
+                        objectType: "OrganizationSettings",
+                        objectId: input.organizationId,
+                        changes,
+                        description: "Updated settings from system administration",
                     }),
             );
 

@@ -19,14 +19,25 @@ export type TeamModel = runtime.Types.Result.DefaultSelection<Prisma.$TeamPayloa
 
 export type AggregateTeam = {
     _count: TeamCountAggregateOutputType | null;
+    _avg: TeamAvgAggregateOutputType | null;
+    _sum: TeamSumAggregateOutputType | null;
     _min: TeamMinAggregateOutputType | null;
     _max: TeamMaxAggregateOutputType | null;
+};
+
+export type TeamAvgAggregateOutputType = {
+    memberCount: number | null;
+};
+
+export type TeamSumAggregateOutputType = {
+    memberCount: number | null;
 };
 
 export type TeamMinAggregateOutputType = {
     id: string | null;
     name: string | null;
     description: string | null;
+    memberCount: number | null;
     organizationId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -36,6 +47,7 @@ export type TeamMaxAggregateOutputType = {
     id: string | null;
     name: string | null;
     description: string | null;
+    memberCount: number | null;
     organizationId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -47,16 +59,26 @@ export type TeamCountAggregateOutputType = {
     description: number;
     tags: number;
     properties: number;
+    memberCount: number;
     organizationId: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
 };
 
+export type TeamAvgAggregateInputType = {
+    memberCount?: true;
+};
+
+export type TeamSumAggregateInputType = {
+    memberCount?: true;
+};
+
 export type TeamMinAggregateInputType = {
     id?: true;
     name?: true;
     description?: true;
+    memberCount?: true;
     organizationId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -66,6 +88,7 @@ export type TeamMaxAggregateInputType = {
     id?: true;
     name?: true;
     description?: true;
+    memberCount?: true;
     organizationId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -77,6 +100,7 @@ export type TeamCountAggregateInputType = {
     description?: true;
     tags?: true;
     properties?: true;
+    memberCount?: true;
     organizationId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -123,6 +147,18 @@ export type TeamAggregateArgs<
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      *
+     * Select which fields to average
+     **/
+    _avg?: TeamAvgAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to sum
+     **/
+    _sum?: TeamSumAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
      * Select which fields to find the minimum value
      **/
     _min?: TeamMinAggregateInputType;
@@ -152,6 +188,8 @@ export type TeamGroupByArgs<
     take?: number;
     skip?: number;
     _count?: TeamCountAggregateInputType | true;
+    _avg?: TeamAvgAggregateInputType;
+    _sum?: TeamSumAggregateInputType;
     _min?: TeamMinAggregateInputType;
     _max?: TeamMaxAggregateInputType;
 };
@@ -162,10 +200,13 @@ export type TeamGroupByOutputType = {
     description: string;
     tags: string[];
     properties: runtime.JsonValue;
+    memberCount: number;
     organizationId: string;
     createdAt: Date;
     updatedAt: Date | null;
     _count: TeamCountAggregateOutputType | null;
+    _avg: TeamAvgAggregateOutputType | null;
+    _sum: TeamSumAggregateOutputType | null;
     _min: TeamMinAggregateOutputType | null;
     _max: TeamMaxAggregateOutputType | null;
 };
@@ -191,6 +232,7 @@ export type TeamWhereInput = {
     description?: Prisma.StringFilter<"Team"> | string;
     tags?: Prisma.StringNullableListFilter<"Team">;
     properties?: Prisma.JsonFilter<"Team">;
+    memberCount?: Prisma.IntFilter<"Team"> | number;
     organizationId?: Prisma.StringFilter<"Team"> | string;
     createdAt?: Prisma.DateTimeFilter<"Team"> | Date | string;
     updatedAt?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
@@ -210,6 +252,7 @@ export type TeamOrderByWithRelationInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    memberCount?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -230,6 +273,7 @@ export type TeamWhereUniqueInput = Prisma.AtLeast<
         description?: Prisma.StringFilter<"Team"> | string;
         tags?: Prisma.StringNullableListFilter<"Team">;
         properties?: Prisma.JsonFilter<"Team">;
+        memberCount?: Prisma.IntFilter<"Team"> | number;
         organizationId?: Prisma.StringFilter<"Team"> | string;
         createdAt?: Prisma.DateTimeFilter<"Team"> | Date | string;
         updatedAt?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
@@ -254,12 +298,15 @@ export type TeamOrderByWithAggregationInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    memberCount?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.TeamCountOrderByAggregateInput;
+    _avg?: Prisma.TeamAvgOrderByAggregateInput;
     _max?: Prisma.TeamMaxOrderByAggregateInput;
     _min?: Prisma.TeamMinOrderByAggregateInput;
+    _sum?: Prisma.TeamSumOrderByAggregateInput;
 };
 
 export type TeamScalarWhereWithAggregatesInput = {
@@ -271,6 +318,7 @@ export type TeamScalarWhereWithAggregatesInput = {
     description?: Prisma.StringWithAggregatesFilter<"Team"> | string;
     tags?: Prisma.StringNullableListFilter<"Team">;
     properties?: Prisma.JsonWithAggregatesFilter<"Team">;
+    memberCount?: Prisma.IntWithAggregatesFilter<"Team"> | number;
     organizationId?: Prisma.StringWithAggregatesFilter<"Team"> | string;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Team"> | Date | string;
     updatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Team"> | Date | string | null;
@@ -282,6 +330,7 @@ export type TeamCreateInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     organization: Prisma.OrganizationCreateNestedOneWithoutTeamsInput;
@@ -297,6 +346,7 @@ export type TeamUncheckedCreateInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -312,6 +362,7 @@ export type TeamUpdateInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutTeamsNestedInput;
@@ -327,6 +378,7 @@ export type TeamUncheckedUpdateInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -342,6 +394,7 @@ export type TeamCreateManyInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -353,6 +406,7 @@ export type TeamUpdateManyMutationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -363,6 +417,7 @@ export type TeamUncheckedUpdateManyInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -392,15 +447,21 @@ export type TeamCountOrderByAggregateInput = {
     description?: Prisma.SortOrder;
     tags?: Prisma.SortOrder;
     properties?: Prisma.SortOrder;
+    memberCount?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+};
+
+export type TeamAvgOrderByAggregateInput = {
+    memberCount?: Prisma.SortOrder;
 };
 
 export type TeamMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
+    memberCount?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -410,9 +471,14 @@ export type TeamMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
+    memberCount?: Prisma.SortOrder;
     organizationId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+};
+
+export type TeamSumOrderByAggregateInput = {
+    memberCount?: Prisma.SortOrder;
 };
 
 export type TeamScalarRelationFilter = {
@@ -513,6 +579,14 @@ export type TeamCreatetagsInput = {
 export type TeamUpdatetagsInput = {
     set?: string[];
     push?: string | string[];
+};
+
+export type IntFieldUpdateOperationsInput = {
+    set?: number;
+    increment?: number;
+    decrement?: number;
+    multiply?: number;
+    divide?: number;
 };
 
 export type TeamCreateNestedOneWithoutD4hInput = {
@@ -625,6 +699,7 @@ export type TeamCreateWithoutOrganizationInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     d4h?: Prisma.Team_D4HCreateNestedOneWithoutTeamInput;
@@ -639,6 +714,7 @@ export type TeamUncheckedCreateWithoutOrganizationInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     d4h?: Prisma.Team_D4HUncheckedCreateNestedOneWithoutTeamInput;
@@ -697,6 +773,7 @@ export type TeamScalarWhereInput = {
     description?: Prisma.StringFilter<"Team"> | string;
     tags?: Prisma.StringNullableListFilter<"Team">;
     properties?: Prisma.JsonFilter<"Team">;
+    memberCount?: Prisma.IntFilter<"Team"> | number;
     organizationId?: Prisma.StringFilter<"Team"> | string;
     createdAt?: Prisma.DateTimeFilter<"Team"> | Date | string;
     updatedAt?: Prisma.DateTimeNullableFilter<"Team"> | Date | string | null;
@@ -708,6 +785,7 @@ export type TeamCreateWithoutD4hInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     organization: Prisma.OrganizationCreateNestedOneWithoutTeamsInput;
@@ -722,6 +800,7 @@ export type TeamUncheckedCreateWithoutD4hInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -752,6 +831,7 @@ export type TeamUpdateWithoutD4hInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutTeamsNestedInput;
@@ -766,6 +846,7 @@ export type TeamUncheckedUpdateWithoutD4hInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -780,6 +861,7 @@ export type TeamCreateWithoutConfigsInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     organization: Prisma.OrganizationCreateNestedOneWithoutTeamsInput;
@@ -794,6 +876,7 @@ export type TeamUncheckedCreateWithoutConfigsInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -836,6 +919,7 @@ export type TeamUpdateWithoutConfigsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutTeamsNestedInput;
@@ -850,6 +934,7 @@ export type TeamUncheckedUpdateWithoutConfigsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -864,6 +949,7 @@ export type TeamCreateWithoutTeamUsersInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     organization: Prisma.OrganizationCreateNestedOneWithoutTeamsInput;
@@ -878,6 +964,7 @@ export type TeamUncheckedCreateWithoutTeamUsersInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -920,6 +1007,7 @@ export type TeamUpdateWithoutTeamUsersInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutTeamsNestedInput;
@@ -934,6 +1022,7 @@ export type TeamUncheckedUpdateWithoutTeamUsersInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -948,6 +1037,7 @@ export type TeamCreateWithoutTeamMembershipsInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
     organization: Prisma.OrganizationCreateNestedOneWithoutTeamsInput;
@@ -962,6 +1052,7 @@ export type TeamUncheckedCreateWithoutTeamMembershipsInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     organizationId: string;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
@@ -1004,6 +1095,7 @@ export type TeamUpdateWithoutTeamMembershipsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutTeamsNestedInput;
@@ -1018,6 +1110,7 @@ export type TeamUncheckedUpdateWithoutTeamMembershipsInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
@@ -1032,6 +1125,7 @@ export type TeamCreateManyOrganizationInput = {
     description?: string;
     tags?: Prisma.TeamCreatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: number;
     createdAt?: Date | string;
     updatedAt?: Date | string | null;
 };
@@ -1042,6 +1136,7 @@ export type TeamUpdateWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     d4h?: Prisma.Team_D4HUpdateOneWithoutTeamNestedInput;
@@ -1056,6 +1151,7 @@ export type TeamUncheckedUpdateWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     d4h?: Prisma.Team_D4HUncheckedUpdateOneWithoutTeamNestedInput;
@@ -1070,6 +1166,7 @@ export type TeamUncheckedUpdateManyWithoutOrganizationInput = {
     description?: Prisma.StringFieldUpdateOperationsInput | string;
     tags?: Prisma.TeamUpdatetagsInput | string[];
     properties?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    memberCount?: Prisma.IntFieldUpdateOperationsInput | number;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
@@ -1140,6 +1237,7 @@ export type TeamSelect<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        memberCount?: boolean;
         organizationId?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1162,6 +1260,7 @@ export type TeamSelectCreateManyAndReturn<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        memberCount?: boolean;
         organizationId?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1179,6 +1278,7 @@ export type TeamSelectUpdateManyAndReturn<
         description?: boolean;
         tags?: boolean;
         properties?: boolean;
+        memberCount?: boolean;
         organizationId?: boolean;
         createdAt?: boolean;
         updatedAt?: boolean;
@@ -1193,6 +1293,7 @@ export type TeamSelectScalar = {
     description?: boolean;
     tags?: boolean;
     properties?: boolean;
+    memberCount?: boolean;
     organizationId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1206,6 +1307,7 @@ export type TeamOmit<
     | "description"
     | "tags"
     | "properties"
+    | "memberCount"
     | "organizationId"
     | "createdAt"
     | "updatedAt",
@@ -1250,6 +1352,7 @@ export type $TeamPayload<
             description: string;
             tags: string[];
             properties: runtime.JsonValue;
+            memberCount: number;
             organizationId: string;
             createdAt: Date;
             updatedAt: Date | null;
@@ -1884,6 +1987,7 @@ export interface TeamFieldRefs {
     readonly description: Prisma.FieldRef<"Team", "String">;
     readonly tags: Prisma.FieldRef<"Team", "String[]">;
     readonly properties: Prisma.FieldRef<"Team", "Json">;
+    readonly memberCount: Prisma.FieldRef<"Team", "Int">;
     readonly organizationId: Prisma.FieldRef<"Team", "String">;
     readonly createdAt: Prisma.FieldRef<"Team", "DateTime">;
     readonly updatedAt: Prisma.FieldRef<"Team", "DateTime">;

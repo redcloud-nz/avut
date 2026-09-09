@@ -34,11 +34,12 @@ export const auth = betterAuth({
         accountLinking: {
             enabled: true,
         },
-        modelName: "Account",
+        modelName: "account",
     },
     advanced: {
         database: {
             generateId: nanoId16,
+            joins: true,
         },
     },
     baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
@@ -75,10 +76,6 @@ export const auth = betterAuth({
             });
         },
     },
-    experimental: {
-        joins: true,
-    },
-
     plugins: [
         admin(),
         emailOTP({
@@ -132,10 +129,10 @@ export const auth = betterAuth({
             roles: Roles,
             schema: {
                 organization: {
-                    modelName: "Organization",
+                    modelName: "organization",
                 },
                 member: {
-                    modelName: "OrganizationUser",
+                    modelName: "organizationUser",
                     additionalFields: {
                         personId: {
                             type: "string",
@@ -145,7 +142,7 @@ export const auth = betterAuth({
                     },
                 },
                 invitation: {
-                    modelName: "OrganizationInvitation",
+                    modelName: "organizationInvitation",
                     additionalFields: {
                         personId: {
                             type: "string",
@@ -155,10 +152,10 @@ export const auth = betterAuth({
                     },
                 },
                 team: {
-                    modelName: "Team",
+                    modelName: "team",
                 },
                 teamMember: {
-                    modelName: "TeamUser",
+                    modelName: "teamUser",
                 },
             },
             async sendInvitationEmail({ invitation, email, organization, inviter }) {
@@ -201,10 +198,10 @@ export const auth = betterAuth({
     },
 
     user: {
-        modelName: "User",
+        modelName: "user",
     },
     verification: {
-        modelName: "Verification",
+        modelName: "verification",
     },
 } satisfies BetterAuthOptions);
 
