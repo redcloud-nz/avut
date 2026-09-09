@@ -48,7 +48,7 @@ export const teamsRouter = createTrpcRouter({
                 },
             });
 
-            const changes = diffObject({}, create);
+            const changes = diffObject({ tags: [], properties: {} }, create);
 
             const [createdTeam] = await ctx.prisma.$transaction([
                 // Update additional fields
@@ -167,7 +167,11 @@ export const teamsRouter = createTrpcRouter({
                     action: "Create",
                     objectType: "TeamMembership",
                     objectId: teamMembershipId,
-                    changes: diffObject({}, create),
+                    changes: diffObject({ tags: [], properties: {} }, create),
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
 
@@ -270,7 +274,11 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Delete",
                     objectType: "TeamMembership",
-                    objectId: `${teamId}_${personId}`,
+                    objectId: existing.id,
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
         }),
@@ -426,7 +434,10 @@ export const teamsRouter = createTrpcRouter({
                             action: "Create",
                             objectType: "TeamMembership",
                             objectId: teamMembershipId,
-                            changes: diffObject({}, memberCreate),
+                            changes: diffObject(
+                                { tags: [], properties: {} },
+                                pick(memberCreate, ["tags", "properties"]),
+                            ),
                             batchId: batch.id,
                             refs: [
                                 { objectType: "Person", objectId: person.id, role: "context" },
@@ -582,7 +593,7 @@ export const teamsRouter = createTrpcRouter({
                     await ctx.logEvent({
                         action: "Delete",
                         objectType: "TeamMembership",
-                        objectId: `${teamId}_${member.personId}`,
+                        objectId: member.id,
                         description: `Member ${member.personId} removed from team as they are no longer in the linked D4H team.`,
                         batchId: batch.id,
                         refs: [
@@ -638,7 +649,10 @@ export const teamsRouter = createTrpcRouter({
                         objectType: "TeamMembership",
                         objectId: teamMembershipId,
                         description: `Member ${person.id} added to team as they are in the linked D4H team but not in our system.`,
-                        changes: diffObject({}, memberCreate),
+                        changes: diffObject(
+                            { tags: [], properties: {} },
+                            pick(memberCreate, ["tags", "properties"]),
+                        ),
                         batchId: batch.id,
                         refs: [
                             { objectType: "Person", objectId: person.id, role: "context" },
@@ -771,7 +785,10 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const diff = diffObject(TeamMembershipData.schema.parse(existing), update);
+            const diff = diffObject(
+                TeamMembershipData.modifiableSchema.parse(TeamMembershipData.fromRecord(existing)),
+                update,
+            );
 
             if (diff.length == 0) return { updated: TeamMembershipData.fromRecord(existing) };
 
@@ -790,8 +807,12 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Update",
                     objectType: "TeamMembership",
-                    objectId: `${teamId}_${personId}`,
+                    objectId: existing.id,
                     changes: diff,
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
 

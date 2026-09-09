@@ -162,7 +162,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, create);
+                const diff = diffObject({ tags: [], properties: {} }, create);
 
                 const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skillGroup.create({
@@ -200,7 +200,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .output(z.object({ created: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillPackageId, create } }) => {
-            const diff = diffObject({}, create);
+            const diff = diffObject({ tags: [], properties: {} }, create);
 
             const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.create({
@@ -269,7 +269,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, create);
+                const diff = diffObject({ tags: [], properties: {} }, create);
 
                 const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skill.create({

@@ -49,16 +49,17 @@ export const personnelRouter = createTrpcRouter({
                 return { updated: PersonData.fromRecord(existing) }; // Already archived
             }
 
-            const updated = await ctx.prisma.person.update({
-                where: { organizationId: ctx.organizationId, id: personId },
-                data: { status: "Archived" },
-            });
-
-            await ctx.logEvent({
-                action: "Archive",
-                objectType: "Person",
-                objectId: personId,
-            });
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.person.update({
+                    where: { organizationId: ctx.organizationId, id: personId },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({
+                    action: "Archive",
+                    objectType: "Person",
+                    objectId: personId,
+                }),
+            ]);
 
             return { updated: PersonData.fromRecord(updated) };
         }),
@@ -98,27 +99,28 @@ export const personnelRouter = createTrpcRouter({
                     ),
                 });
 
-            const created = await ctx.prisma.person.create({
-                data: {
-                    id: personId,
-                    organizationId: ctx.organizationId,
-                    name: create.name,
-                    email: create.email,
-                    tags: create.tags,
-                    properties: create.properties,
-                    status: "Active",
-                },
-            });
-
             // Calculate changes from empty record
-            const changes = diffObject({}, create);
+            const changes = diffObject({ tags: [], properties: {} }, create);
 
-            await ctx.logEvent({
-                action: "Create",
-                objectType: "Person",
-                objectId: created.id,
-                changes: changes,
-            });
+            const [created] = await ctx.prisma.$transaction([
+                ctx.prisma.person.create({
+                    data: {
+                        id: personId,
+                        organizationId: ctx.organizationId,
+                        name: create.name,
+                        email: create.email,
+                        tags: create.tags,
+                        properties: create.properties,
+                        status: "Active",
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Create",
+                    objectType: "Person",
+                    objectId: personId,
+                    changes,
+                }),
+            ]);
 
             return { created: PersonData.fromRecord(created) };
         }),
@@ -159,43 +161,43 @@ export const personnelRouter = createTrpcRouter({
                 });
             }
 
-            await ctx.logEvent({
-                action: "Delete",
-                objectType: "Person",
-                objectId: person.id,
-            });
+            const isReferenced =
+                person.skillChecksAsAssessee.length > 0 || person.skillChecksAsAssessor.length > 0;
 
-            if (
-                person.skillChecksAsAssessee.length > 0 ||
-                person.skillChecksAsAssessor.length > 0
-            ) {
+            if (isReferenced) {
                 // Soft delete the person if they are referenced in skill checks
-                await ctx.prisma.person.update({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                    data: { status: "Deleted" },
-                });
-
-                return {
-                    deletionType: "Soft",
-                    person: PersonData.fromRecord({
-                        ...person,
-                        status: "Deleted",
+                await ctx.prisma.$transaction([
+                    ctx.prisma.person.update({
+                        where: { organizationId: ctx.organizationId, id: personId },
+                        data: { status: "Deleted" },
                     }),
-                };
+                    ctx.logEvent({
+                        action: "Delete",
+                        objectType: "Person",
+                        objectId: person.id,
+                    }),
+                ]);
             } else {
                 // Hard delete the person if they are not referenced anywhere
-                await ctx.prisma.person.delete({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                });
-
-                return {
-                    deletionType: "Hard",
-                    person: PersonData.fromRecord({
-                        ...person,
-                        status: "Deleted",
+                await ctx.prisma.$transaction([
+                    ctx.prisma.person.delete({
+                        where: { organizationId: ctx.organizationId, id: personId },
                     }),
-                };
+                    ctx.logEvent({
+                        action: "Delete",
+                        objectType: "Person",
+                        objectId: person.id,
+                    }),
+                ]);
             }
+
+            return {
+                deletionType: isReferenced ? "Soft" : "Hard",
+                person: PersonData.fromRecord({
+                    ...person,
+                    status: "Deleted",
+                }),
+            };
         }),
 
     /**
@@ -329,16 +331,17 @@ export const personnelRouter = createTrpcRouter({
                 return { updated: PersonData.fromRecord(existing) }; // Not restorable
             }
 
-            const updated = await ctx.prisma.person.update({
-                where: { organizationId: ctx.organizationId, id: personId },
-                data: { status: "Active" },
-            });
-
-            await ctx.logEvent({
-                action: "Restore",
-                objectType: "Person",
-                objectId: personId,
-            });
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.person.update({
+                    where: { organizationId: ctx.organizationId, id: personId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({
+                    action: "Restore",
+                    objectType: "Person",
+                    objectId: personId,
+                }),
+            ]);
 
             return { updated: PersonData.fromRecord(updated) };
         }),
@@ -389,17 +392,18 @@ export const personnelRouter = createTrpcRouter({
 
             if (changes.length == 0) return { updated: existing }; // No changes
 
-            const updated = await ctx.prisma.person.update({
-                where: { organizationId: ctx.organizationId, id: personId },
-                data: { ...update },
-            });
-
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "Person",
-                objectId: personId,
-                changes,
-            });
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.person.update({
+                    where: { organizationId: ctx.organizationId, id: personId },
+                    data: { ...update },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "Person",
+                    objectId: personId,
+                    changes,
+                }),
+            ]);
 
             return {
                 updated: PersonData.fromRecord(updated),
@@ -414,35 +418,36 @@ export async function createPerson(
     /** Set when this create is part of a multi-entry operation, so the entry joins its batch. */
     batchId?: string,
 ): Promise<{ created: PersonData }> {
-    const created = await ctx.prisma.person.create({
-        data: {
-            id: personId,
-            organizationId: ctx.organizationId,
-            name: create.name,
-            email: create.email,
-            tags: create.tags,
-            properties: create.properties,
-            status: "Active",
-        },
-        include: {
-            organizationUser: {
-                include: {
-                    user: true,
+    // Calculate changes from empty record
+    const changes = diffObject({ tags: [], properties: {} }, create);
+
+    const [created] = await ctx.prisma.$transaction([
+        ctx.prisma.person.create({
+            data: {
+                id: personId,
+                organizationId: ctx.organizationId,
+                name: create.name,
+                email: create.email,
+                tags: create.tags,
+                properties: create.properties,
+                status: "Active",
+            },
+            include: {
+                organizationUser: {
+                    include: {
+                        user: true,
+                    },
                 },
             },
-        },
-    });
-
-    // Calculate changes from empty record
-    const changes = diffObject({}, create);
-
-    await ctx.logEvent({
-        action: "Create",
-        objectType: "Person",
-        objectId: created.id,
-        changes: changes,
-        batchId,
-    });
+        }),
+        ctx.logEvent({
+            action: "Create",
+            objectType: "Person",
+            objectId: personId,
+            changes,
+            batchId,
+        }),
+    ]);
 
     return {
         created: PersonData.fromRecord(created),

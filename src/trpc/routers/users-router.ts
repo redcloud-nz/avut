@@ -96,22 +96,23 @@ export const usersRouter = createTrpcRouter({
                     ),
                 });
 
-            await ctx.prisma.organizationUser.update({
-                where: {
-                    organizationId_userId: {
-                        organizationId: ctx.organizationId,
-                        userId: input.userId,
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: {
+                        organizationId_userId: {
+                            organizationId: ctx.organizationId,
+                            userId: input.userId,
+                        },
                     },
-                },
-                data: { personId: input.personId },
-            });
-
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "OrganizationMembership",
-                objectId: orgUser.id,
-                description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
-            });
+                    data: { personId: input.personId },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: orgUser.id,
+                    description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
+                }),
+            ]);
         }),
 
     /**
@@ -197,22 +198,23 @@ export const usersRouter = createTrpcRouter({
                     message: Messages.userNotFound(input.userId),
                 });
 
-            await ctx.prisma.organizationUser.update({
-                where: {
-                    organizationId_userId: {
-                        organizationId: ctx.organizationId,
-                        userId: input.userId,
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: {
+                        organizationId_userId: {
+                            organizationId: ctx.organizationId,
+                            userId: input.userId,
+                        },
                     },
-                },
-                data: { personId: null },
-            });
-
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "OrganizationMembership",
-                objectId: orgUser.id,
-                description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
-            });
+                    data: { personId: null },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: orgUser.id,
+                    description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
+                }),
+            ]);
 
             return { personId: orgUser.personId as PersonId | null };
         }),

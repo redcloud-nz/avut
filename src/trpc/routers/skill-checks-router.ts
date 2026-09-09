@@ -65,14 +65,13 @@ export const skillChecksRouter = createTrpcRouter({
                     where: { id: sessionId, organizationId: ctx.organizationId },
                     data: { status: "Include" },
                 }),
+                ctx.logEvent({
+                    action: "Approve",
+                    objectType: "SkillCheckSession",
+                    objectId: sessionId,
+                    description: `Approved session "${session.name}".`,
+                }),
             ]);
-
-            await ctx.logEvent({
-                action: "Approve",
-                objectType: "SkillCheckSession",
-                objectId: sessionId,
-                description: `Approved session "${session.name}".`,
-            });
 
             return {
                 updated: SkillCheckSession.fromRecord({
