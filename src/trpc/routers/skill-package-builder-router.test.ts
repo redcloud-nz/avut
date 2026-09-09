@@ -203,7 +203,7 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
             newOrder: [T.groupA, T.groupB],
         });
 
-        expect(await db.organizationLogEntry.count()).toBe(0);
+        expect(await db.logEntry.count()).toBe(0);
     });
 
     it("writes one entry against the package, not one per group", async () => {
@@ -213,7 +213,7 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
             newOrder: [T.groupB, T.groupA],
         });
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
         });
 
@@ -240,7 +240,7 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
             newOrder: [foreignGroupId, T.groupA, T.groupB],
         });
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
         });
 
@@ -332,7 +332,7 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
             newOrder: [T.skillA, T.skillB],
         });
 
-        expect(await db.organizationLogEntry.count()).toBe(0);
+        expect(await db.logEntry.count()).toBe(0);
     });
 
     it("writes one entry against the group, not one per skill", async () => {
@@ -342,7 +342,7 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
             newOrder: [T.skillB, T.skillA],
         });
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
         });
 

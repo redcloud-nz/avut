@@ -8,7 +8,7 @@ import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
-import type { OrganizationLogEntry, Prisma } from "@/generated/prisma/client";
+import type { LogEntry, Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
@@ -131,7 +131,7 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<OrganizationLogEntry>;
+    ) => Prisma.PrismaPromise<LogEntry>;
 };
 
 /**
@@ -160,9 +160,10 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                 { action, objectType, objectId, changes = [], description }: LogEventOptions,
                 tx: Prisma.TransactionClient = opts.ctx.prisma,
             ) {
-                return tx.organizationLogEntry.create({
+                return tx.logEntry.create({
                     data: {
                         id: nanoId16(),
+                        scope: "organization",
                         organizationId: opts.input.organizationId,
                         userId: opts.ctx.auth.user.id,
                         action,
@@ -170,6 +171,9 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                         objectId,
                         changes: z.array(DiffChange.schema).parse(changes) as object[],
                         description,
+                        objects: {
+                            create: [{ id: nanoId16(), objectType, objectId, role: "primary" }],
+                        },
                     },
                 });
             }

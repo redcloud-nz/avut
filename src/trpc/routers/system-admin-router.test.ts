@@ -582,7 +582,7 @@ describe("systemAdmin organization settings", () => {
             settings: next,
         });
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.seededOrg, objectType: "OrganizationSettings" },
         });
         expect(entries.length).toBeGreaterThan(0);

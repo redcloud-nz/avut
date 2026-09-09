@@ -105,10 +105,20 @@ export type OrganizationUser = Prisma.OrganizationUserModel;
  */
 export type OrganizationInvitation = Prisma.OrganizationInvitationModel;
 /**
- * Model OrganizationLogEntry
+ * Model LogEntry
  *
  */
-export type OrganizationLogEntry = Prisma.OrganizationLogEntryModel;
+export type LogEntry = Prisma.LogEntryModel;
+/**
+ * Model LogEntryObject
+ *
+ */
+export type LogEntryObject = Prisma.LogEntryObjectModel;
+/**
+ * Model LogBatch
+ *
+ */
+export type LogBatch = Prisma.LogBatchModel;
 /**
  * Model D4hAccessToken
  *

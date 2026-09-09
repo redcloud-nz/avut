@@ -77,12 +77,12 @@ export type PrismaVersion = {
 };
 
 /**
- * Prisma Client JS version: 7.8.0
- * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
+ * Prisma Client JS version: 7.10.0
+ * Query Engine version: 0edf323efd1d98336f3f0a68684b56f689b900d3
  */
 export const prismaVersion: PrismaVersion = {
-    client: "7.8.0",
-    engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a",
+    client: "7.10.0",
+    engine: "0edf323efd1d98336f3f0a68684b56f689b900d3",
 };
 
 /**
@@ -151,6 +151,22 @@ export type Subset<T, U> = {
 };
 
 /**
+ * Resolved type of the argument passed to the `PrismaClient` constructor.
+ *
+ * When called without a narrower options type (the common case), this resolves
+ * to `PrismaClientOptions` directly, which produces a clear TypeScript error
+ * message (`not assignable to parameter of type 'PrismaClientOptions'`) when
+ * the argument is missing or incomplete. When the user supplies a narrower
+ * options type (e.g. via a literal), it falls back to `Subset` to keep
+ * filtering out unknown properties.
+ */
+export type PrismaClientConstructorArgs<Options extends PrismaClientOptions> = [
+    PrismaClientOptions,
+] extends [Options]
+    ? PrismaClientOptions
+    : Subset<Options, PrismaClientOptions>;
+
+/**
  * SelectSubset
  * @desc From `T` pick properties that exist in `U`. Simple version of Intersection.
  * Additionally, it validates, if both select and include are present. If the case, it errors.
@@ -179,7 +195,7 @@ type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
  */
 export type XOR<T, U> = T extends object
     ? U extends object
-        ? (Without<T, U> & U) | (Without<U, T> & T)
+        ? ((Without<T, U> & U) | (Without<U, T> & T)) & object
         : U
     : T;
 
@@ -387,7 +403,9 @@ export const ModelName = {
     TeamUser: "TeamUser",
     OrganizationUser: "OrganizationUser",
     OrganizationInvitation: "OrganizationInvitation",
-    OrganizationLogEntry: "OrganizationLogEntry",
+    LogEntry: "LogEntry",
+    LogEntryObject: "LogEntryObject",
+    LogBatch: "LogBatch",
     D4hAccessToken: "D4hAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
@@ -439,7 +457,9 @@ export type TypeMap<
             | "teamUser"
             | "organizationUser"
             | "organizationInvitation"
-            | "organizationLogEntry"
+            | "logEntry"
+            | "logEntryObject"
+            | "logBatch"
             | "d4hAccessToken"
             | "person"
             | "teamMembership"
@@ -1374,78 +1394,230 @@ export type TypeMap<
                 };
             };
         };
-        OrganizationLogEntry: {
-            payload: Prisma.$OrganizationLogEntryPayload<ExtArgs>;
-            fields: Prisma.OrganizationLogEntryFieldRefs;
+        LogEntry: {
+            payload: Prisma.$LogEntryPayload<ExtArgs>;
+            fields: Prisma.LogEntryFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.OrganizationLogEntryFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload> | null;
+                    args: Prisma.LogEntryFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.OrganizationLogEntryFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 findFirst: {
-                    args: Prisma.OrganizationLogEntryFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload> | null;
+                    args: Prisma.LogEntryFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.OrganizationLogEntryFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 findMany: {
-                    args: Prisma.OrganizationLogEntryFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>[];
+                    args: Prisma.LogEntryFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>[];
                 };
                 create: {
-                    args: Prisma.OrganizationLogEntryCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 createMany: {
-                    args: Prisma.OrganizationLogEntryCreateManyArgs<ExtArgs>;
+                    args: Prisma.LogEntryCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.OrganizationLogEntryCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>[];
+                    args: Prisma.LogEntryCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>[];
                 };
                 delete: {
-                    args: Prisma.OrganizationLogEntryDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 update: {
-                    args: Prisma.OrganizationLogEntryUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.OrganizationLogEntryDeleteManyArgs<ExtArgs>;
+                    args: Prisma.LogEntryDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.OrganizationLogEntryUpdateManyArgs<ExtArgs>;
+                    args: Prisma.LogEntryUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.OrganizationLogEntryUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>[];
+                    args: Prisma.LogEntryUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>[];
                 };
                 upsert: {
-                    args: Prisma.OrganizationLogEntryUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$OrganizationLogEntryPayload>;
+                    args: Prisma.LogEntryUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryPayload>;
                 };
                 aggregate: {
-                    args: Prisma.OrganizationLogEntryAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateOrganizationLogEntry>;
+                    args: Prisma.LogEntryAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateLogEntry>;
                 };
                 groupBy: {
-                    args: Prisma.OrganizationLogEntryGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.OrganizationLogEntryGroupByOutputType>[];
+                    args: Prisma.LogEntryGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.LogEntryGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.OrganizationLogEntryCountArgs<ExtArgs>;
+                    args: Prisma.LogEntryCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.OrganizationLogEntryCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.LogEntryCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        LogEntryObject: {
+            payload: Prisma.$LogEntryObjectPayload<ExtArgs>;
+            fields: Prisma.LogEntryObjectFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.LogEntryObjectFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.LogEntryObjectFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                findFirst: {
+                    args: Prisma.LogEntryObjectFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.LogEntryObjectFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                findMany: {
+                    args: Prisma.LogEntryObjectFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>[];
+                };
+                create: {
+                    args: Prisma.LogEntryObjectCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                createMany: {
+                    args: Prisma.LogEntryObjectCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.LogEntryObjectCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>[];
+                };
+                delete: {
+                    args: Prisma.LogEntryObjectDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                update: {
+                    args: Prisma.LogEntryObjectUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.LogEntryObjectDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.LogEntryObjectUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.LogEntryObjectUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>[];
+                };
+                upsert: {
+                    args: Prisma.LogEntryObjectUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogEntryObjectPayload>;
+                };
+                aggregate: {
+                    args: Prisma.LogEntryObjectAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateLogEntryObject>;
+                };
+                groupBy: {
+                    args: Prisma.LogEntryObjectGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.LogEntryObjectGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.LogEntryObjectCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.LogEntryObjectCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        LogBatch: {
+            payload: Prisma.$LogBatchPayload<ExtArgs>;
+            fields: Prisma.LogBatchFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.LogBatchFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.LogBatchFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                findFirst: {
+                    args: Prisma.LogBatchFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.LogBatchFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                findMany: {
+                    args: Prisma.LogBatchFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>[];
+                };
+                create: {
+                    args: Prisma.LogBatchCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                createMany: {
+                    args: Prisma.LogBatchCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.LogBatchCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>[];
+                };
+                delete: {
+                    args: Prisma.LogBatchDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                update: {
+                    args: Prisma.LogBatchUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.LogBatchDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.LogBatchUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.LogBatchUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>[];
+                };
+                upsert: {
+                    args: Prisma.LogBatchUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$LogBatchPayload>;
+                };
+                aggregate: {
+                    args: Prisma.LogBatchAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateLogBatch>;
+                };
+                groupBy: {
+                    args: Prisma.LogBatchGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.LogBatchGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.LogBatchCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.LogBatchCountAggregateOutputType>
                         | number;
                 };
             };
@@ -3090,21 +3262,49 @@ export const OrganizationInvitationScalarFieldEnum = {
 export type OrganizationInvitationScalarFieldEnum =
     (typeof OrganizationInvitationScalarFieldEnum)[keyof typeof OrganizationInvitationScalarFieldEnum];
 
-export const OrganizationLogEntryScalarFieldEnum = {
+export const LogEntryScalarFieldEnum = {
     id: "id",
+    sequence: "sequence",
+    scope: "scope",
     organizationId: "organizationId",
+    ownerId: "ownerId",
     userId: "userId",
+    actorLabel: "actorLabel",
+    impersonatorId: "impersonatorId",
+    batchId: "batchId",
     action: "action",
     objectType: "objectType",
     objectId: "objectId",
-    metadata: "metadata",
     changes: "changes",
     description: "description",
     timestamp: "timestamp",
 } as const;
 
-export type OrganizationLogEntryScalarFieldEnum =
-    (typeof OrganizationLogEntryScalarFieldEnum)[keyof typeof OrganizationLogEntryScalarFieldEnum];
+export type LogEntryScalarFieldEnum =
+    (typeof LogEntryScalarFieldEnum)[keyof typeof LogEntryScalarFieldEnum];
+
+export const LogEntryObjectScalarFieldEnum = {
+    id: "id",
+    logEntryId: "logEntryId",
+    objectType: "objectType",
+    objectId: "objectId",
+    role: "role",
+} as const;
+
+export type LogEntryObjectScalarFieldEnum =
+    (typeof LogEntryObjectScalarFieldEnum)[keyof typeof LogEntryObjectScalarFieldEnum];
+
+export const LogBatchScalarFieldEnum = {
+    id: "id",
+    operationKey: "operationKey",
+    userId: "userId",
+    actorLabel: "actorLabel",
+    description: "description",
+    startedAt: "startedAt",
+} as const;
+
+export type LogBatchScalarFieldEnum =
+    (typeof LogBatchScalarFieldEnum)[keyof typeof LogBatchScalarFieldEnum];
 
 export const D4hAccessTokenScalarFieldEnum = {
     id: "id",
@@ -3526,22 +3726,10 @@ export const defineExtension = runtime.Extensions
 >;
 export type DefaultPrismaClient = PrismaClient;
 export type ErrorFormat = "pretty" | "colorless" | "minimal";
-export type PrismaClientOptions = (
-    | {
-          /**
-           * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-pg`.
-           */
-          adapter: runtime.SqlDriverAdapterFactory;
-          accelerateUrl?: never;
-      }
-    | {
-          /**
-           * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
-           */
-          accelerateUrl: string;
-          adapter?: never;
-      }
-) & {
+/**
+ * Options common to all variants of `PrismaClientOptions`, regardless of whether you connect to your database through a driver adapter or through Prisma Accelerate.
+ */
+export interface PrismaClientBaseOptions {
     /**
      * @default "colorless"
      */
@@ -3627,7 +3815,59 @@ export type PrismaClientOptions = (
      * ```
      */
     queryPlanCacheMaxSize?: number;
-};
+}
+
+/**
+ * `PrismaClient` options for connecting to your database through Prisma Accelerate instead of a driver adapter.
+ *
+ * Learn more: https://pris.ly/d/accelerate
+ */
+export interface PrismaClientOptionsWithAccelerateUrl extends PrismaClientBaseOptions {
+    /**
+     * The Prisma Accelerate connection URL. Use this option to connect to your database through Prisma Accelerate instead of using a driver adapter to connect directly.
+     *
+     * Learn more: https://pris.ly/d/accelerate
+     */
+    accelerateUrl: string;
+    adapter?: never;
+}
+
+/**
+ * `PrismaClient` options for connecting to your database through a driver adapter. This is the common case in Prisma 7.
+ *
+ * Learn more: https://pris.ly/d/driver-adapters
+ */
+export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions {
+    /**
+     * A driver adapter that PrismaClient uses to connect to your database, such as the ones provided by `@prisma/adapter-pg`, `@prisma/adapter-libsql`, `@prisma/adapter-planetscale`, etc.
+     *
+     * A driver adapter is **required** unless you connect to your database through Prisma Accelerate (in which case use `accelerateUrl` instead).
+     *
+     * Learn more: https://pris.ly/d/driver-adapters
+     *
+     * @example
+     * ```ts
+     * import { PrismaPg } from '@prisma/adapter-pg'
+     * import { PrismaClient } from './generated/prisma/client'
+     *
+     * const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+     * const prisma = new PrismaClient({ adapter })
+     * ```
+     */
+    adapter: runtime.SqlDriverAdapterFactory;
+    accelerateUrl?: never;
+}
+
+/**
+ * Options passed to the `PrismaClient` constructor.
+ *
+ * A driver adapter (or, alternatively, a Prisma Accelerate URL) is **required**. See {@link PrismaClientOptionsWithAdapter} and {@link PrismaClientOptionsWithAccelerateUrl} for the two variants. All other properties live in {@link PrismaClientBaseOptions} and are optional.
+ *
+ * Learn more about driver adapters: https://pris.ly/d/driver-adapters
+ */
+export type PrismaClientOptions =
+    | PrismaClientOptionsWithAccelerateUrl
+    | PrismaClientOptionsWithAdapter;
 export type GlobalOmitConfig = {
     user?: Prisma.UserOmit;
     session?: Prisma.SessionOmit;
@@ -3641,7 +3881,9 @@ export type GlobalOmitConfig = {
     teamUser?: Prisma.TeamUserOmit;
     organizationUser?: Prisma.OrganizationUserOmit;
     organizationInvitation?: Prisma.OrganizationInvitationOmit;
-    organizationLogEntry?: Prisma.OrganizationLogEntryOmit;
+    logEntry?: Prisma.LogEntryOmit;
+    logEntryObject?: Prisma.LogEntryObjectOmit;
+    logBatch?: Prisma.LogBatchOmit;
     d4hAccessToken?: Prisma.D4hAccessTokenOmit;
     person?: Prisma.PersonOmit;
     teamMembership?: Prisma.TeamMembershipOmit;

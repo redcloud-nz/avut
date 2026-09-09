@@ -127,9 +127,10 @@ export const systemAdminRouter = createTrpcRouter({
                         createdAt: new Date(),
                     },
                 }),
-                ctx.prisma.organizationLogEntry.create({
+                ctx.prisma.logEntry.create({
                     data: {
                         id: nanoId16(),
+                        scope: "organization",
                         organizationId: input.organizationId,
                         userId: ctx.auth.user.id,
                         action: "Create",
@@ -137,6 +138,16 @@ export const systemAdminRouter = createTrpcRouter({
                         objectId: id,
                         changes: [],
                         description: `Added user ${input.userId} as ${input.role}`,
+                        objects: {
+                            create: [
+                                {
+                                    id: nanoId16(),
+                                    objectType: "OrganizationMembership",
+                                    objectId: id,
+                                    role: "primary",
+                                },
+                            ],
+                        },
                     },
                 }),
             ]);
@@ -201,15 +212,26 @@ export const systemAdminRouter = createTrpcRouter({
                           }),
                       ]
                     : []),
-                ctx.prisma.organizationLogEntry.create({
+                ctx.prisma.logEntry.create({
                     data: {
                         id: nanoId16(),
+                        scope: "organization",
                         organizationId,
                         userId,
                         action: "Create",
                         objectType: "Organization",
                         objectId: organizationId,
                         changes: [],
+                        objects: {
+                            create: [
+                                {
+                                    id: nanoId16(),
+                                    objectType: "Organization",
+                                    objectId: organizationId,
+                                    role: "primary",
+                                },
+                            ],
+                        },
                     },
                 }),
             ]);
@@ -317,7 +339,7 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.d4hAccessToken.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
-                ctx.prisma.organizationLogEntry.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.logEntry.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.user.delete({ where: { id: input.userId } }),
             ]);
 
@@ -528,9 +550,10 @@ export const systemAdminRouter = createTrpcRouter({
 
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
-                ctx.prisma.organizationLogEntry.create({
+                ctx.prisma.logEntry.create({
                     data: {
                         id: nanoId16(),
+                        scope: "organization",
                         organizationId: input.organizationId,
                         userId: ctx.auth.user.id,
                         action: "Delete",
@@ -538,6 +561,16 @@ export const systemAdminRouter = createTrpcRouter({
                         objectId: membership.id,
                         changes: [],
                         description: `Removed user ${input.userId}`,
+                        objects: {
+                            create: [
+                                {
+                                    id: nanoId16(),
+                                    objectType: "OrganizationMembership",
+                                    objectId: membership.id,
+                                    role: "primary",
+                                },
+                            ],
+                        },
                     },
                 }),
             ]);
@@ -579,9 +612,10 @@ export const systemAdminRouter = createTrpcRouter({
                     where: { id: membership.id },
                     data: { role: input.role },
                 }),
-                ctx.prisma.organizationLogEntry.create({
+                ctx.prisma.logEntry.create({
                     data: {
                         id: nanoId16(),
+                        scope: "organization",
                         organizationId: input.organizationId,
                         userId: ctx.auth.user.id,
                         action: "Update",
@@ -589,6 +623,16 @@ export const systemAdminRouter = createTrpcRouter({
                         objectId: membership.id,
                         changes: [],
                         description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
+                        objects: {
+                            create: [
+                                {
+                                    id: nanoId16(),
+                                    objectType: "OrganizationMembership",
+                                    objectId: membership.id,
+                                    role: "primary",
+                                },
+                            ],
+                        },
                     },
                 }),
             ]);
@@ -699,9 +743,10 @@ export const systemAdminRouter = createTrpcRouter({
                 input.organizationId,
                 input.settings,
                 (changes) =>
-                    ctx.prisma.organizationLogEntry.create({
+                    ctx.prisma.logEntry.create({
                         data: {
                             id: nanoId16(),
+                            scope: "organization",
                             organizationId: input.organizationId,
                             userId,
                             action: "Update",
@@ -709,6 +754,16 @@ export const systemAdminRouter = createTrpcRouter({
                             objectId: input.organizationId,
                             changes: changes as object[],
                             description: "Updated settings from system administration",
+                            objects: {
+                                create: [
+                                    {
+                                        id: nanoId16(),
+                                        objectType: "OrganizationSettings",
+                                        objectId: input.organizationId,
+                                        role: "primary",
+                                    },
+                                ],
+                            },
                         },
                     }),
             );

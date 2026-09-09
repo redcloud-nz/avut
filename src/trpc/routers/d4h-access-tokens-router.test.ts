@@ -83,7 +83,7 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
             if (!(err instanceof Error) || !/toISOString/.test(err.message)) throw err;
         }
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
         });
 
@@ -151,7 +151,7 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
             if (!(err instanceof Error) || !/toISOString/.test(err.message)) throw err;
         }
 
-        const entries = await db.organizationLogEntry.findMany({
+        const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
         });
 
