@@ -69,9 +69,11 @@ npm run test:run             # Vitest (single run)
 npx tsc --noEmit             # Type check
 npx next typegen             # Regenerate typed routes — required after adding a page
 
-# Prisma (always uses .env.local)
+# Prisma (always uses .env.local) — see Database section before running migrations
 npm run prisma migrate dev   # Create and apply migration
 npm run prisma studio        # Open Prisma Studio
+npm run db:branch <slug>     # Copy the dev DB for a migration-bearing branch (avut_<slug>)
+npm run db:unbranch          # Point .env.local back at avut, drop the copy
 ```
 
 - After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
@@ -81,11 +83,23 @@ npm run prisma studio        # Open Prisma Studio
 
 ## Database
 
-There is **one** shared PostgreSQL dev database, reached through `.env.local`, and every checkout and worktree points at it. A schema or data change from one place is seen everywhere.
+There is **one** shared PostgreSQL dev database (`avut`), reached through `.env.local`, and every checkout and worktree points at it by default. A schema or data change from one place is seen everywhere.
 
-- **Never run a command that mutates the database without explicit permission each time.** That covers, at least: `npm run prisma migrate dev` / `migrate deploy` / `migrate reset` / `db push`, `npm run prisma db execute`, `npm run seed:demo`, and `npm run build` (its first step is `prisma migrate deploy`). When one of these is the right next step, stop and ask.
+- **Never run a command that mutates the shared database without explicit permission each time.** That covers, at least: `npm run prisma migrate dev` / `migrate deploy` / `migrate reset` / `db push`, `npm run prisma db execute`, `npm run seed:demo`, and `npm run build` (its first step is `prisma migrate deploy`). When one of these is the right next step, stop and ask.
 - Read-only Prisma commands are fine unprompted: `npm run prisma studio`, `prisma generate`, `prisma migrate status`, `prisma validate`.
 - Editing `prisma/schema.prisma` and running `npx prisma generate` (regenerates the client only, no DB contact) is fine; turning that into a migration is not — ask first.
+
+### Branching the database for a migration
+
+A branch that only reads or runs the app should just use shared `avut`. **The moment a branch adds a Prisma migration, give it its own database copy first** — a branch's migration must never land on shared `avut`.
+
+```bash
+npm run db:branch <slug>     # CREATE DATABASE avut_<slug> TEMPLATE avut, repoint this checkout's .env.local
+# ... restart the dev server, then (with permission) npm run prisma migrate dev
+npm run db:unbranch          # point .env.local back at avut, offer to drop the copy — run when the branch merges
+```
+
+`db:branch` needs zero other connections to `avut` (the `TEMPLATE` copy is exclusive) — stop the dev server and Prisma Studio first; it refuses otherwise. It converts a symlinked `.env.local` to a copy so the branch DB config stays local to that checkout. Running `migrate dev` against a branch DB still needs permission, but it's an easy yes — the blast radius is one throwaway database.
 
 ## Git
 
@@ -102,7 +116,7 @@ There is **one** shared PostgreSQL dev database, reached through `.env.local`, a
 The scanning tools (`tsc`, `eslint`, `vitest`) already skip `.claude/worktrees/`, so a worktree doesn't disturb the main checkout. But a new worktree is missing every gitignored file, so from the worktree root:
 
 ```bash
-ln -s ../../../.env.local .env.local     # shared env — needed by prisma, build, seed, dev server
+cp ../../../.env.local .env.local        # shared env — needed by prisma, build, seed, dev server (copy, not symlink, so db:branch can repoint it)
 ln -s ../../../.vercel .vercel            # only if using the Vercel CLI / skills
 npm install                              # node_modules is gitignored; also required for the pre-commit hook. Runs `prisma generate` via postinstall
 npx next typegen                          # .next/ is per-worktree; typed routes won't resolve without this
@@ -110,7 +124,7 @@ npx next typegen                          # .next/ is per-worktree; typed routes
 
 - If the worktree's branch changed `prisma/schema.prisma`, also run `npx prisma generate` (the committed `src/generated/` may be stale).
 - Run the dev server on its own port — `npm run dev -- -p 3100` — so it doesn't collide with a dev server in the main checkout (3000, and 3001 for `dev-email`).
-- The database is shared (see **Database** above) — a worktree on a schema branch must not run migrations without permission.
+- The database is shared (see **Database** above) — a worktree that adds a migration must `npm run db:branch <slug>` before running `migrate dev`, and `npm run db:unbranch` when done.
 - `.claude/settings.local.json` (personal permission allowlist) is not copied; expect more permission prompts until you re-add entries.
 
 ---
