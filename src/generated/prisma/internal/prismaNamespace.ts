@@ -3196,6 +3196,7 @@ export const TeamScalarFieldEnum = {
     description: "description",
     tags: "tags",
     properties: "properties",
+    memberCount: "memberCount",
     organizationId: "organizationId",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
@@ -3228,6 +3229,7 @@ export const TeamUserScalarFieldEnum = {
     teamId: "teamId",
     userId: "userId",
     createdAt: "createdAt",
+    membershipKey: "membershipKey",
 } as const;
 
 export type TeamUserScalarFieldEnum =

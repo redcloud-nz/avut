@@ -28,6 +28,7 @@ export type TeamUserMinAggregateOutputType = {
     teamId: string | null;
     userId: string | null;
     createdAt: Date | null;
+    membershipKey: string | null;
 };
 
 export type TeamUserMaxAggregateOutputType = {
@@ -35,6 +36,7 @@ export type TeamUserMaxAggregateOutputType = {
     teamId: string | null;
     userId: string | null;
     createdAt: Date | null;
+    membershipKey: string | null;
 };
 
 export type TeamUserCountAggregateOutputType = {
@@ -42,6 +44,7 @@ export type TeamUserCountAggregateOutputType = {
     teamId: number;
     userId: number;
     createdAt: number;
+    membershipKey: number;
     _all: number;
 };
 
@@ -50,6 +53,7 @@ export type TeamUserMinAggregateInputType = {
     teamId?: true;
     userId?: true;
     createdAt?: true;
+    membershipKey?: true;
 };
 
 export type TeamUserMaxAggregateInputType = {
@@ -57,6 +61,7 @@ export type TeamUserMaxAggregateInputType = {
     teamId?: true;
     userId?: true;
     createdAt?: true;
+    membershipKey?: true;
 };
 
 export type TeamUserCountAggregateInputType = {
@@ -64,6 +69,7 @@ export type TeamUserCountAggregateInputType = {
     teamId?: true;
     userId?: true;
     createdAt?: true;
+    membershipKey?: true;
     _all?: true;
 };
 
@@ -147,6 +153,7 @@ export type TeamUserGroupByOutputType = {
     teamId: string;
     userId: string;
     createdAt: Date;
+    membershipKey: string | null;
     _count: TeamUserCountAggregateOutputType | null;
     _min: TeamUserMinAggregateOutputType | null;
     _max: TeamUserMaxAggregateOutputType | null;
@@ -172,6 +179,7 @@ export type TeamUserWhereInput = {
     teamId?: Prisma.StringFilter<"TeamUser"> | string;
     userId?: Prisma.StringFilter<"TeamUser"> | string;
     createdAt?: Prisma.DateTimeFilter<"TeamUser"> | Date | string;
+    membershipKey?: Prisma.StringNullableFilter<"TeamUser"> | string | null;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
 };
@@ -181,6 +189,7 @@ export type TeamUserOrderByWithRelationInput = {
     teamId?: Prisma.SortOrder;
     userId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    membershipKey?: Prisma.SortOrderInput | Prisma.SortOrder;
     team?: Prisma.TeamOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
 };
@@ -188,6 +197,7 @@ export type TeamUserOrderByWithRelationInput = {
 export type TeamUserWhereUniqueInput = Prisma.AtLeast<
     {
         id?: string;
+        membershipKey?: string;
         teamId_userId?: Prisma.TeamUserTeamIdUserIdCompoundUniqueInput;
         AND?: Prisma.TeamUserWhereInput | Prisma.TeamUserWhereInput[];
         OR?: Prisma.TeamUserWhereInput[];
@@ -198,7 +208,7 @@ export type TeamUserWhereUniqueInput = Prisma.AtLeast<
         team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
         user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     },
-    "id" | "teamId_userId"
+    "id" | "membershipKey" | "teamId_userId"
 >;
 
 export type TeamUserOrderByWithAggregationInput = {
@@ -206,6 +216,7 @@ export type TeamUserOrderByWithAggregationInput = {
     teamId?: Prisma.SortOrder;
     userId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    membershipKey?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.TeamUserCountOrderByAggregateInput;
     _max?: Prisma.TeamUserMaxOrderByAggregateInput;
     _min?: Prisma.TeamUserMinOrderByAggregateInput;
@@ -223,11 +234,13 @@ export type TeamUserScalarWhereWithAggregatesInput = {
     teamId?: Prisma.StringWithAggregatesFilter<"TeamUser"> | string;
     userId?: Prisma.StringWithAggregatesFilter<"TeamUser"> | string;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"TeamUser"> | Date | string;
+    membershipKey?: Prisma.StringNullableWithAggregatesFilter<"TeamUser"> | string | null;
 };
 
 export type TeamUserCreateInput = {
     id: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
     team: Prisma.TeamCreateNestedOneWithoutTeamUsersInput;
     user: Prisma.UserCreateNestedOneWithoutTeamUsersInput;
 };
@@ -237,11 +250,13 @@ export type TeamUserUncheckedCreateInput = {
     teamId: string;
     userId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamUsersNestedInput;
     user?: Prisma.UserUpdateOneRequiredWithoutTeamUsersNestedInput;
 };
@@ -251,6 +266,7 @@ export type TeamUserUncheckedUpdateInput = {
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserCreateManyInput = {
@@ -258,11 +274,13 @@ export type TeamUserCreateManyInput = {
     teamId: string;
     userId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserUncheckedUpdateManyInput = {
@@ -270,6 +288,7 @@ export type TeamUserUncheckedUpdateManyInput = {
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserListRelationFilter = {
@@ -292,6 +311,7 @@ export type TeamUserCountOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     userId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    membershipKey?: Prisma.SortOrder;
 };
 
 export type TeamUserMaxOrderByAggregateInput = {
@@ -299,6 +319,7 @@ export type TeamUserMaxOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     userId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    membershipKey?: Prisma.SortOrder;
 };
 
 export type TeamUserMinOrderByAggregateInput = {
@@ -306,6 +327,7 @@ export type TeamUserMinOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     userId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
+    membershipKey?: Prisma.SortOrder;
 };
 
 export type TeamUserCreateNestedManyWithoutUserInput = {
@@ -483,6 +505,7 @@ export type TeamUserUncheckedUpdateManyWithoutTeamNestedInput = {
 export type TeamUserCreateWithoutUserInput = {
     id: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
     team: Prisma.TeamCreateNestedOneWithoutTeamUsersInput;
 };
 
@@ -490,6 +513,7 @@ export type TeamUserUncheckedCreateWithoutUserInput = {
     id: string;
     teamId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserCreateOrConnectWithoutUserInput = {
@@ -541,11 +565,13 @@ export type TeamUserScalarWhereInput = {
     teamId?: Prisma.StringFilter<"TeamUser"> | string;
     userId?: Prisma.StringFilter<"TeamUser"> | string;
     createdAt?: Prisma.DateTimeFilter<"TeamUser"> | Date | string;
+    membershipKey?: Prisma.StringNullableFilter<"TeamUser"> | string | null;
 };
 
 export type TeamUserCreateWithoutTeamInput = {
     id: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
     user: Prisma.UserCreateNestedOneWithoutTeamUsersInput;
 };
 
@@ -553,6 +579,7 @@ export type TeamUserUncheckedCreateWithoutTeamInput = {
     id: string;
     userId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserCreateOrConnectWithoutTeamInput = {
@@ -600,11 +627,13 @@ export type TeamUserCreateManyUserInput = {
     id: string;
     teamId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutTeamUsersNestedInput;
 };
 
@@ -612,23 +641,27 @@ export type TeamUserUncheckedUpdateWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserUncheckedUpdateManyWithoutUserInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserCreateManyTeamInput = {
     id: string;
     userId: string;
     createdAt?: Date | string;
+    membershipKey?: string | null;
 };
 
 export type TeamUserUpdateWithoutTeamInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     user?: Prisma.UserUpdateOneRequiredWithoutTeamUsersNestedInput;
 };
 
@@ -636,12 +669,14 @@ export type TeamUserUncheckedUpdateWithoutTeamInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserUncheckedUpdateManyWithoutTeamInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    membershipKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 
 export type TeamUserSelect<
@@ -652,6 +687,7 @@ export type TeamUserSelect<
         teamId?: boolean;
         userId?: boolean;
         createdAt?: boolean;
+        membershipKey?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     },
@@ -666,6 +702,7 @@ export type TeamUserSelectCreateManyAndReturn<
         teamId?: boolean;
         userId?: boolean;
         createdAt?: boolean;
+        membershipKey?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     },
@@ -680,6 +717,7 @@ export type TeamUserSelectUpdateManyAndReturn<
         teamId?: boolean;
         userId?: boolean;
         createdAt?: boolean;
+        membershipKey?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
         user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     },
@@ -691,12 +729,13 @@ export type TeamUserSelectScalar = {
     teamId?: boolean;
     userId?: boolean;
     createdAt?: boolean;
+    membershipKey?: boolean;
 };
 
 export type TeamUserOmit<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-    "id" | "teamId" | "userId" | "createdAt",
+    "id" | "teamId" | "userId" | "createdAt" | "membershipKey",
     ExtArgs["result"]["teamUser"]
 >;
 export type TeamUserInclude<
@@ -732,6 +771,7 @@ export type $TeamUserPayload<
             teamId: string;
             userId: string;
             createdAt: Date;
+            membershipKey: string | null;
         },
         ExtArgs["result"]["teamUser"]
     >;
@@ -1333,6 +1373,7 @@ export interface TeamUserFieldRefs {
     readonly teamId: Prisma.FieldRef<"TeamUser", "String">;
     readonly userId: Prisma.FieldRef<"TeamUser", "String">;
     readonly createdAt: Prisma.FieldRef<"TeamUser", "DateTime">;
+    readonly membershipKey: Prisma.FieldRef<"TeamUser", "String">;
 }
 
 // Custom InputTypes
