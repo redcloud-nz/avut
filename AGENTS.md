@@ -13,33 +13,6 @@ A Next.js web application providing organizational management tools with optiona
 - **D4H API**: openapi-fetch with a generated OpenAPI schema (`src/server/d4h-api/schema.d.ts`)
 - **Package manager**: npm
 
-## Commands
-
-```bash
-npm run dev                  # Start dev server (with Node inspector)
-npm run dev-email            # React Email preview server (src/emails, port 3001)
-npm run build                # Run migrations + build
-npm run lint                 # ESLint
-npm run lint:fix             # ESLint with --fix
-npm run test                 # Vitest (watch mode)
-npm run test:run             # Vitest (single run)
-npx tsc --noEmit             # Type check
-npx next typegen             # Regenerate typed routes — required after adding a page
-
-# Prisma (always uses .env.local)
-npm run prisma migrate dev   # Create and apply migration
-npm run prisma studio        # Open Prisma Studio
-```
-
-- After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
-- If `npx tsc --noEmit` fails with `.next/types/routes` "Cannot find module" errors unrelated to your change, `.next/types` is just stale/missing (e.g. no dev server has run recently) — run `npx next typegen` to regenerate before investigating further
-- If `npx tsc --noEmit` fails inside `.next/types/validator.ts` with `LayoutRoutes`/`Route` mismatches between `.next/types/routes` and `.next/dev/types/routes`, the running dev server's `.next/dev/types` is stale against the current branch's routes — `rm -rf .next/dev/types && npx next typegen`. Common when checking out branches that add or remove `page.tsx`/route groups.
-- Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
-
-## Git
-
-- When you judge it's a good point to commit, stage the relevant changes and show the proposed commit message — wait for a yes/no before running `git commit`.
-
 ## Project Structure
 
 ```
@@ -77,9 +50,52 @@ src/
 
 All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 
-## Key Conventions
+---
 
-### tRPC Routers
+# Workflow
+
+How to operate in this repo — commands, tooling gotchas, and git.
+
+## Commands
+
+```bash
+npm run dev                  # Start dev server (with Node inspector)
+npm run dev-email            # React Email preview server (src/emails, port 3001)
+npm run build                # Run migrations + build
+npm run lint                 # ESLint
+npm run lint:fix             # ESLint with --fix
+npm run test                 # Vitest (watch mode)
+npm run test:run             # Vitest (single run)
+npx tsc --noEmit             # Type check
+npx next typegen             # Regenerate typed routes — required after adding a page
+
+# Prisma (always uses .env.local)
+npm run prisma migrate dev   # Create and apply migration
+npm run prisma studio        # Open Prisma Studio
+```
+
+- After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
+- If `npx tsc --noEmit` fails with `.next/types/routes` "Cannot find module" errors unrelated to your change, `.next/types` is just stale/missing (e.g. no dev server has run recently) — run `npx next typegen` to regenerate before investigating further
+- If `npx tsc --noEmit` fails inside `.next/types/validator.ts` with `LayoutRoutes`/`Route` mismatches between `.next/types/routes` and `.next/dev/types/routes`, the running dev server's `.next/dev/types` is stale against the current branch's routes — `rm -rf .next/dev/types && npx next typegen`. Common when checking out branches that add or remove `page.tsx`/route groups.
+- Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
+
+## Git
+
+- When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
+- Never `git push`, open a PR, or otherwise publish commits without explicit approval — committing locally is fine, sharing is not.
+
+## Worktrees
+
+- All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
+- Remove a worktree with `git worktree remove` when done; run `git worktree prune` if a directory was deleted by hand.
+
+---
+
+# Codebase Conventions
+
+How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file.
+
+## tRPC Routers
 
 - One file per domain in `src/trpc/routers/`
 - Register new routers in `src/trpc/routers/_app.ts`
@@ -91,7 +107,7 @@ All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 - Pair a write with `ctx.logEvent(...)` inside `ctx.prisma.$transaction([...])`, not `Promise.all([...])` — see [`docs/patterns/transactional-writes.md`](docs/patterns/transactional-writes.md) for the shape and its gotchas (non-Prisma operations can't join the array)
 - Never write `prisma.logEntry.create` by hand. Every entry goes through a `ctx.logEvent`, which delegates to `recordLogEntry` in `src/server/log-entry.ts` — the one place the write-time invariants and the closed vocabularies are enforced
 
-### Audit logging — which `logEvent` am I holding?
+## Audit logging — which `logEvent` am I holding?
 
 All three procedure factories put a `logEvent` on `ctx`, and they differ only in which log the entry lands in. Each returns the un-awaited `PrismaPromise`, so all three compose into `$transaction([...])`.
 
@@ -126,7 +142,7 @@ A batch correlates **independently meaningful events** — ones that would each 
 
 A batch also supplies provenance for an unattended run: `recordLogEntry` allows a null `actor` only alongside a `batchId`, so an entry with no human behind it is still traceable to the operation that produced it.
 
-### Data Fetching
+## Data Fetching
 
 AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP). Never use the `@/trpc/client` one in a Server Component — its `queryFn` arrives unauthenticated.
 
@@ -137,7 +153,7 @@ See the pattern docs for the full shapes, code, and rationale — read the relev
 - [`docs/patterns/detail-page-data-fetching.md`](docs/patterns/detail-page-data-fetching.md) — `page.tsx`/`<entity>-content.tsx` split, `fetchQuery` vs `prefetch`+`HydrateClient`, `useSuspenseQuery`
 - [`docs/patterns/mutation-dialog.md`](docs/patterns/mutation-dialog.md) — create/update/delete/confirm dialogs driven by a `?action=` search param via nuqs (`NuqsAdapter`, `useQueryState` + `parseAsStringLiteral`, `history` push-on-open/replace-on-close, controlled `…_Dialog` components)
 
-### Permissions
+## Permissions
 
 Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`.
 
@@ -173,17 +189,17 @@ For cases where the permission boolean needs to flow into the markup (e.g. disab
 
 Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `permissions` actually match the mutation it guards, see [`docs/patterns/protect-permission-gating.md`](docs/patterns/protect-permission-gating.md).
 
-### Zod Schemas
+## Zod Schemas
 
 - Domain schemas live in `src/lib/schemas/`
 - Use Zod 4 syntax (`.parse`, `.safeParse`, `z.object`, etc.)
 - Schemas shared between client and server go in `src/lib/schemas/`; server-only in `src/server/`
 
-### IDs
+## IDs
 
 Use `nanoId16()` from `src/lib/id.ts` for new record IDs.
 
-### D4H Integration
+## D4H Integration
 
 - D4H is an optional feature — code that depends on a D4H access token must handle the case where none is configured
 - D4H API client: `src/server/d4h-api/client.ts` — use `getD4HFetchClient(token)` (note the capital `H`)
@@ -191,7 +207,7 @@ Use `nanoId16()` from `src/lib/id.ts` for new record IDs.
 - Cached D4H fetches use the standard Next.js 16 `"use cache"` directive with `cacheLife` + `cacheTag`
 - D4H resource schemas validated with Zod live in `src/lib/schemas/d4h/`
 
-### Internal URLs
+## Internal URLs
 
 Next.js typed routes are enabled, so static route strings are type-checked automatically. Use `route()` from `src/lib/routes.ts` only when a route has dynamic segments — it substitutes `[param]` placeholders and returns a typed `Route` string.
 

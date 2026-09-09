@@ -51,3 +51,4 @@ src/app/scratch/
 
 # claude code — personal overrides (.claude/settings.json IS shared)
 .claude/settings.local.json
+.claude/worktrees/
