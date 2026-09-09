@@ -2427,7 +2427,7 @@ export const models = [
                 hasDefaultValue: true,
                 type: "Json",
                 nativeType: null,
-                default: "{}",
+                default: "[]",
                 isGenerated: false,
                 isUpdatedAt: false,
             },
