@@ -324,6 +324,13 @@ export const teamsRouter = createTrpcRouter({
 
             const d4hTeam = await getD4HTeam(accessToken, d4hTeamId);
 
+            // The batch row must exist before any entry can reference it, and
+            // `auth.api.createTeam` is not a Prisma operation, so neither can join a
+            // `$transaction` with the other. Cost of that: if `createTeam` throws, this
+            // `log_batches` row is already committed and is orphaned — a batch with no
+            // entries. Harmless (nothing reads a batch except through its entries) and
+            // accepted here; a reader of the batch table should not assume every row has
+            // entries.
             const batch = await createLogBatch(
                 {
                     operationKey: "d4h-team-import",
@@ -547,6 +554,7 @@ export const teamsRouter = createTrpcRouter({
                 z.number().parse(team.properties.d4hTeamId),
             );
 
+            // Same orphan-batch trade-off as `importTeamFromD4H` above.
             const batch = await createLogBatch(
                 {
                     operationKey: "d4h-team-sync",

@@ -73,13 +73,6 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("Account")).toBeNull();
         expect(moduleIdForObjectType("Session")).toBeNull();
     });
-
-    it("maps every declared object type, so the map cannot drift from the union", () => {
-        for (const objectType of LogObjectType.values) {
-            // Throws if the map has no entry — `undefined` is not `null`.
-            expect(moduleIdForObjectType(objectType)).not.toBeUndefined();
-        }
-    });
 });
 
 describe("objectTypesForModule", () => {

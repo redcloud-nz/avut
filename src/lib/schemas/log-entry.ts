@@ -12,7 +12,13 @@ import type { ModuleId } from "@/lib/modules";
  *
  * Partly derivable from the entry's foreign keys, but kept explicit so the
  * owner invariant can be guarded on write and the per-scope feeds can be
- * indexed. Intended to match a realigned `modules.ts` `ModuleScope`.
+ * indexed.
+ *
+ * Intended to match a realigned `modules.ts` `ModuleScope`, which it does NOT
+ * today: `ModuleScope` is `"organization" | "global"` and has no `user` member,
+ * where this is `"organization" | "user" | "system"`. So `"system"` and
+ * `"global"` name the same idea in two vocabularies. Do not map one onto the
+ * other until they are actually realigned.
  */
 const logScopeValues = ["organization", "user", "system"] as const;
 
@@ -23,19 +29,30 @@ export const LogScope = {
 
 export type LogScope = (typeof logScopeValues)[number];
 
-/** What happened. */
+/**
+ * What happened.
+ *
+ * Declared centrally and closed, so no call site can invent a value. Entries
+ * marked DORMANT reach no database today. `Ban`/`Unban`/`Impersonate` are
+ * constructed only in `server/auth-log-hooks.ts`, whose better-auth
+ * `databaseHooks` wire was written and then reverted, so nothing calls it.
+ * `Move` has no producer at all — `skill-package-builder-router`'s `moveSkill`
+ * still logs `Update`. They are kept because the vocabulary is the design, not
+ * a census of the current call sites — but a reader should be able to tell
+ * which half is live.
+ */
 const logActionValues = [
     "Approve",
     "Archive",
-    "Ban",
+    "Ban", // DORMANT — reverted databaseHooks wire
     "Create",
     "Delete",
-    "Impersonate",
-    "Move",
+    "Impersonate", // DORMANT — reverted databaseHooks wire
+    "Move", // DORMANT — moveSkill logs "Update"
     "Publish",
     "Restore",
     "Subscribe",
-    "Unban",
+    "Unban", // DORMANT — reverted databaseHooks wire
     "Unpublish",
     "Unsubscribe",
     "Update",
@@ -48,9 +65,15 @@ export const LogAction = {
 
 export type LogAction = (typeof logActionValues)[number];
 
-/** What it happened to. */
+/**
+ * What it happened to.
+ *
+ * `Account` and `Session` are DORMANT for the same reason as the dormant
+ * actions above: they appear only in `server/auth-log-hooks.ts`, which has no
+ * callers. Every other value is written by at least one live call site.
+ */
 const logObjectTypeValues = [
-    "Account",
+    "Account", // DORMANT — reverted databaseHooks wire
     "D4hAccessToken",
     "I3Template",
     "I3TemplateVariant",
@@ -58,7 +81,7 @@ const logObjectTypeValues = [
     "OrganizationMembership",
     "OrganizationSettings",
     "Person",
-    "Session",
+    "Session", // DORMANT — reverted databaseHooks wire
     "Skill",
     "SkillCheckSession",
     "SkillGroup",
@@ -83,6 +106,10 @@ export type LogObjectType = (typeof logObjectTypeValues)[number];
  * relies on `objectType`, so `"from"` needs no compound tokens: `role: "from"`
  * with `objectType: "SkillPackage"` is unambiguous against the same role with
  * `objectType: "SkillGroup"`.
+ *
+ * `from` and `to` are DORMANT: every live call site passes `context`, or
+ * nothing at all (`recordLogEntry` writes the `primary` row itself). They are
+ * the intended shape for a move/transfer entry, which nothing emits yet.
  */
 const logRefRoleValues = ["primary", "context", "from", "to"] as const;
 

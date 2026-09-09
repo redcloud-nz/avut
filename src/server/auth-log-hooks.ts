@@ -13,7 +13,7 @@
  * SHAPES — `user.banned`, `account.providerId`, `session.impersonatedBy` — which are schema
  * fields and stable across those versions, unlike the hook plumbing.
  *
- * Two defects were found in that reverted wire, both silent, both invisible to `tsc`
+ * Three defects were found in that reverted wire, all silent, all invisible to `tsc`
  * because better-auth's declared types are wider than its runtime behaviour. Whoever
  * re-wires this must handle them, and must re-verify them against the version in use:
  *
@@ -27,8 +27,16 @@
  *    `result.count` — a number. `/change-password` and `/set-password` pass a real row;
  *    `/reset-password`, admin set-user-password, and the emailOTP reset pass a count. Guard
  *    on the shape, and log the gap rather than returning silently.
+ * 3. `mapPasswordChange` hardcodes `actor: { userId: ownerId }` — it attributes every
+ *    password change to the account's own owner, i.e. self-service. But per defect 2 the
+ *    paths that reach it are `/change-password` and `/set-password`, where that is right,
+ *    while `/reset-password` and admin set-user-password reach it too (once the count-vs-row
+ *    guard lets them through) — and there the acting party is a reset token or an
+ *    administrator, not the subject. Re-wired as written, an admin resetting someone's
+ *    password would be logged as that person changing their own. The actor has to be passed
+ *    in, the way `mapUserUpdate` and `mapAccountLink` already take one.
  *
- * A third, latent: the wire's `before`/`after` WeakMap stash held one slot per request,
+ * A fourth, latent: the wire's `before`/`after` WeakMap stash held one slot per request,
  * but `after` hooks are deferred until after commit, so two same-model writes in one
  * request run `before(A) → before(B) → commit → after(A) → after(B)` and lose both
  * entries. A FIFO per context fixes it.

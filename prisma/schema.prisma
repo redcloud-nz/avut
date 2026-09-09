@@ -38,12 +38,12 @@ model User {
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
   d4hAccessTokens   D4hAccessToken[]         @relation("d4h_access_token_to_user")
 
-  authoredNotes Note[]                 @relation("note_to_author")
-  formInstances FormInstance[]         @relation("form_instance_to_user")
-  logEntries      LogEntry[] @relation("log_entry_to_user")
-  ownedLogEntries LogEntry[] @relation("log_entry_to_owner")
-  impersonatedLogEntries LogEntry[] @relation("log_entry_to_impersonator")
-  logBatches      LogBatch[] @relation("log_batch_to_user")
+  authoredNotes          Note[]         @relation("note_to_author")
+  formInstances          FormInstance[] @relation("form_instance_to_user")
+  logEntries             LogEntry[]     @relation("log_entry_to_user")
+  ownedLogEntries        LogEntry[]     @relation("log_entry_to_owner")
+  impersonatedLogEntries LogEntry[]     @relation("log_entry_to_impersonator")
+  logBatches             LogBatch[]     @relation("log_batch_to_user")
 
   @@unique([email])
   @@map("users")
@@ -114,7 +114,7 @@ model Organization {
   users       OrganizationUser[]       @relation("organization_user_to_organization")
 
   // Owned records
-  logEntries     LogEntry[] @relation("log_entry_to_organization")
+  logEntries                LogEntry[]                 @relation("log_entry_to_organization")
   notes                     Note[]                     @relation("note_to_organization")
   skillChecks               SkillCheck[]               @relation("skill_check_to_organization")
   skillCheckSessions        SkillCheckSession[]        @relation("skill_check_session_to_organization")
@@ -243,11 +243,17 @@ model OrganizationInvitation {
 
 // Logging Models
 model LogEntry {
-  id             String        @id
-  // Postgres-assigned total write order. The canonical sort key for every feed.
+  id       String @id
+  // Postgres-assigned write order. The canonical sort key for DISPLAYING a feed:
   // `timestamp` is transaction START time, so entries written by one $transaction
   // share a byte-identical timestamp and cannot be ordered by it.
-  sequence       Int           @default(autoincrement())
+  //
+  // Not a commit order. A SERIAL is drawn at INSERT, so two concurrent transactions
+  // can commit in the opposite order to their sequences, and a reader that has seen
+  // max(sequence) = N can afterwards see a row < N appear. Safe for ordering a page
+  // of results; NOT safe as a keyset-pagination or incremental-sync cursor without
+  // an additional guard (e.g. a commit-order column, or a lag window).
+  sequence Int    @default(autoincrement())
 
   // Owner. Exactly one of these is set, per `scope`; `system` sets neither.
   scope          String
@@ -259,21 +265,21 @@ model LogEntry {
   // Actor. `userId` is SetNull so a deleted user's actions elsewhere survive,
   // anonymised but still named by `actorLabel`.
   userId         String?
-  user           User?         @relation("log_entry_to_user", fields: [userId], references: [id], onDelete: SetNull)
+  user           User?     @relation("log_entry_to_user", fields: [userId], references: [id], onDelete: SetNull)
   actorLabel     String?
   impersonatorId String?
-  impersonator   User?         @relation("log_entry_to_impersonator", fields: [impersonatorId], references: [id], onDelete: SetNull)
+  impersonator   User?     @relation("log_entry_to_impersonator", fields: [impersonatorId], references: [id], onDelete: SetNull)
   batchId        String?
-  batch          LogBatch?     @relation("log_entry_to_batch", fields: [batchId], references: [id], onDelete: SetNull)
+  batch          LogBatch? @relation("log_entry_to_batch", fields: [batchId], references: [id], onDelete: SetNull)
 
-  action         String
-  objectType     String
-  objectId       String
-  changes        Json          @default("[]")
-  description    String?
-  timestamp      DateTime      @default(now())
+  action      String
+  objectType  String
+  objectId    String
+  changes     Json     @default("[]")
+  description String?
+  timestamp   DateTime @default(now())
 
-  objects        LogEntryObject[] @relation("log_entry_object_to_log_entry")
+  objects LogEntryObject[] @relation("log_entry_object_to_log_entry")
 
   @@index([organizationId])
   @@index([objectType, objectId])
@@ -288,10 +294,13 @@ model LogEntry {
 // (`primary`, mirroring LogEntry.objectType/objectId), more when an entry
 // bridges entities.
 //
-// A partial unique index — `ON log_entry_objects (log_entry_id) WHERE role =
-// 'primary'` — guarantees exactly one primary row per entry. Prisma's DSL
+// A partial unique index — `ON "log_entry_objects" ("logEntryId") WHERE "role" =
+// 'primary'` — allows AT MOST one primary row per entry; zero primary rows
+// satisfies it too. "Exactly one" holds only because `recordLogEntry` always
+// emits a primary row alongside the entry, in the same write. Prisma's DSL
 // cannot express a partial unique index, so it is hand-added to the migration
-// SQL and must be carried forward by hand if this table is ever recreated.
+// SQL and must be carried forward by hand if this table is ever recreated —
+// copy it from the migration rather than from this comment.
 model LogEntryObject {
   id         String   @id
   logEntryId String
@@ -310,15 +319,15 @@ model LogEntryObject {
 // orthogonal — a user-clicked sync and a nightly cron share a key and differ
 // in initiator.
 model LogBatch {
-  id           String     @id
+  id           String   @id
   operationKey String
   userId       String?
-  user         User?      @relation("log_batch_to_user", fields: [userId], references: [id], onDelete: SetNull)
+  user         User?    @relation("log_batch_to_user", fields: [userId], references: [id], onDelete: SetNull)
   actorLabel   String?
   description  String?
-  startedAt    DateTime   @default(now())
+  startedAt    DateTime @default(now())
 
-  entries      LogEntry[] @relation("log_entry_to_batch")
+  entries LogEntry[] @relation("log_entry_to_batch")
 
   @@index([operationKey, startedAt])
   @@map("log_batches")
