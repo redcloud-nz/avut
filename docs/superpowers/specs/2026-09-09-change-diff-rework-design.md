@@ -112,12 +112,16 @@ single place type handling lives:
 | `string` / `number` / `boolean` / `null` | leaf                             |
 | array of scalars                         | leaf (the whole array)           |
 | `Date`                                   | leaf, converted to an ISO string |
+| `NaN` / `Infinity` / `-Infinity`         | **throw**                        |
 | `undefined`                              | treated as absent                |
 | anything else                            | **throw**                        |
 
 "Anything else" is arrays of non-scalars, nested arrays, `Map`, `Set`, functions,
 symbols, bigints, and class instances — nothing JSON can carry faithfully, so
-nothing that can be honestly logged.
+nothing that can be honestly logged. Non-finite numbers throw for the same
+reason: `number` is a leaf type, but `NaN`/`Infinity`/`-Infinity` serialize to
+`null` through `JSON.stringify`, which would silently misrepresent the value
+rather than honestly logging it.
 
 Three of these deserve their reasoning stated:
 
@@ -220,9 +224,13 @@ The unified audit log spec dropped three columns for having no writer, so these
 two additions need an answer. A union member is inert where a column is a
 migration plus a shape every reader must handle, but more concretely:
 
-- **`obj_mask`'s writer is the better-auth password hook**, specified in the audit
-  log design, which explicitly defers to this document for the encoding. Defining
-  it here answers a question that was asked.
+- **`obj_mask` already has a writer on this branch**: `d4hAccessTokensRouter`'s
+  two token-create procedures diff the create payload with the token field
+  omitted, then append a hand-constructed `obj_mask` at that field's path, so the
+  raw D4H API key never reaches `organization_log_entries.changes`. The
+  better-auth password hook, specified in the audit log design (which explicitly
+  defers to this document for the encoding), is a second, later writer of the
+  same type — not the only one.
 - **`arr_ord`'s writer is the reorder fix**, which is stage 2 of this work. It
   lands with a producer.
 
@@ -278,6 +286,16 @@ export const tagsSchema = z
 Nothing in the app treats a tag list as a bag and no UI can produce duplicates.
 With this, the differ's set semantics stops being an approximation and becomes
 correct by construction, rather than the differ needing multiset counting.
+
+Like `properties`, this is a read schema as well as a write schema: `Person`,
+`Team`, `TeamMembership`, `SkillPackage`, `SkillGroup`, and `Skill` all parse
+their DB record's `tags` column through `tagsSchema` via `fromRecord`. A
+pre-existing row holding a duplicate-bearing `tags` array would begin failing to
+parse. The same safety argument as `properties` applies — production is empty
+and no UI can produce duplicates today — so this is safe. The blast radius is
+larger than a single record, though: `fromRecord` also runs over list-query
+results (e.g. the personnel and skill-package list pages), so one bad row fails
+the entire list, not just that row's own detail page.
 
 ## Validation and storage
 
