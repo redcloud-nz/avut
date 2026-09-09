@@ -197,15 +197,13 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
     }
 
     it("writes nothing when the order is unchanged", async () => {
-        const before = await db.organizationLogEntry.count();
-
         await makeCaller().reorderGroups({
             organizationId: T.org,
             skillPackageId: T.pkg,
             newOrder: [T.groupA, T.groupB],
         });
 
-        expect(await db.organizationLogEntry.count()).toBe(before);
+        expect(await db.organizationLogEntry.count()).toBe(0);
     });
 
     it("writes one entry against the package, not one per group", async () => {
@@ -230,6 +228,34 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
                 curr: [T.groupB, T.groupA],
             },
         ]);
+    });
+
+    it("drops an ID that is not a child of the package from the recorded curr", async () => {
+        // At this point sequences are groupB=1, groupA=2 from the previous test.
+        const foreignGroupId = SkillGroupId.create();
+
+        await makeCaller().reorderGroups({
+            organizationId: T.org,
+            skillPackageId: T.pkg,
+            newOrder: [foreignGroupId, T.groupA, T.groupB],
+        });
+
+        const entries = await db.organizationLogEntry.findMany({
+            where: { organizationId: T.org },
+        });
+
+        expect(entries).toHaveLength(2);
+        const latest = entries[entries.length - 1];
+
+        expect(latest.changes).toEqual([
+            {
+                type: "arr_ord",
+                path: ["groups"],
+                prev: [T.groupB, T.groupA],
+                curr: [T.groupA, T.groupB],
+            },
+        ]);
+        expect(JSON.stringify(latest.changes)).not.toContain(foreignGroupId);
     });
 });
 
@@ -300,15 +326,13 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
     }
 
     it("writes nothing when the order is unchanged", async () => {
-        const before = await db.organizationLogEntry.count();
-
         await makeCaller().reorderGroupSkills({
             organizationId: T.org,
             skillGroupId: T.group,
             newOrder: [T.skillA, T.skillB],
         });
 
-        expect(await db.organizationLogEntry.count()).toBe(before);
+        expect(await db.organizationLogEntry.count()).toBe(0);
     });
 
     it("writes one entry against the group, not one per skill", async () => {

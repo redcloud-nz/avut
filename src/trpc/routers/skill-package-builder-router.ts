@@ -665,6 +665,15 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     .sort((a, b) => a.sequence - b.sequence)
                     .map((g) => g.id);
 
+                // Only IDs that are actually children of this package belong in the audit
+                // record — a foreign ID in newOrder is skipped by the .find() guard above and
+                // never gets an update, so recording it in curr would assert an ordering the
+                // system does not hold. A partial newOrder (fewer IDs than groups) is still a
+                // faithful record of what the caller asked for, so it is kept as-is.
+                const curr = newOrder.filter((groupId) =>
+                    skillPackage.groups.some((g) => g.id === groupId),
+                );
+
                 await ctx.prisma.$transaction([
                     ...toUpdate.map(({ id, sequence }) =>
                         ctx.prisma.skillGroup.update({
@@ -681,7 +690,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                                 type: "arr_ord",
                                 path: ["groups"],
                                 prev: prevOrder,
-                                curr: [...newOrder],
+                                curr,
                             },
                         ],
                         description: "Reordered skill groups.",
@@ -744,6 +753,15 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     .sort((a, b) => a.sequence - b.sequence)
                     .map((s) => s.id);
 
+                // Only IDs that are actually children of this group belong in the audit
+                // record — a foreign ID in newOrder is skipped by the .find() guard above and
+                // never gets an update, so recording it in curr would assert an ordering the
+                // system does not hold. A partial newOrder (fewer IDs than skills) is still a
+                // faithful record of what the caller asked for, so it is kept as-is.
+                const curr = newOrder.filter((skillId) =>
+                    group.skills.some((s) => s.id === skillId),
+                );
+
                 await ctx.prisma.$transaction([
                     ...toUpdate.map(({ id, sequence }) =>
                         ctx.prisma.skill.update({
@@ -760,7 +778,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                                 type: "arr_ord",
                                 path: ["skills"],
                                 prev: prevOrder,
-                                curr: [...newOrder],
+                                curr,
                             },
                         ],
                         description: "Reordered skills within the group.",
