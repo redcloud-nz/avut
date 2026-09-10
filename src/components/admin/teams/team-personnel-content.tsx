@@ -25,7 +25,6 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { D4HMemberStatus, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { TeamId } from "@/lib/schemas/team";
@@ -97,8 +96,8 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                 }),
                 teamIsD4HLinked
                     ? columnHelper.accessor((row) => row.d4h?.d4hPosition ?? "", {
-                          id: "position",
-                          header: "Position",
+                          id: "d4hPosition",
+                          header: "D4H Position",
                           cell: (ctx) => ctx.row.original.d4h?.d4hPosition || "—",
                           enableSorting: true,
                           enableColumnFilter: false,
@@ -107,8 +106,8 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                     : null,
                 teamIsD4HLinked
                     ? columnHelper.accessor((row) => row.d4h?.d4hStatus ?? "", {
-                          id: "status",
-                          header: "Status",
+                          id: "d4hStatus",
+                          header: "D4H Status",
                           cell: (ctx) =>
                               ctx.row.original.d4h ? (
                                   <D4HMemberStatusBadge status={ctx.row.original.d4h.d4hStatus} />
@@ -143,7 +142,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                 teamIsD4HLinked
                     ? columnHelper.accessor("status", {
                           id: "recordStatus",
-                          header: "Membership",
+                          header: "Status",
                           cell: (ctx) => ctx.getValue(),
                           enableSorting: false,
                           enableColumnFilter: true,
@@ -157,17 +156,6 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                           },
                       })
                     : null,
-                columnHelper.accessor("createdAt", {
-                    header: "Joined",
-                    cell: (ctx) => (
-                        <span title={formatDateTime(ctx.getValue())}>
-                            {formatRelativeDateTime(ctx.getValue())}
-                        </span>
-                    ),
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                    enableGlobalFilter: false,
-                }),
                 columnHelper.display({
                     id: "actions",
                     header: "",

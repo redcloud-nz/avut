@@ -37,6 +37,23 @@ small display helpers, and the two UI rewrites.
 
 ---
 
+## Post-review adjustments (applied)
+
+Terminology / columns feedback folded into the roster after the first build:
+
+- **Column headers:** "Position" → **"D4H Position"**, "Status" → **"D4H
+  Status"** (the D4H snapshot fields are always qualified). The
+  `TeamMembership.status` column, first labelled "Membership", is now **"Status"**
+  — bare "Status" matches every other admin table's `RecordStatus` column.
+- **No "Joined" column.** `createdAt` is the AVUT row-creation time and reads as
+  a D4H join date — dropped, along with the `formatDateTime`/`formatRelativeDateTime`
+  imports.
+- The actions column is `enableHiding: false` so its empty header doesn't show as
+  a blank row in the column-visibility menu.
+- D4H position renders `—` for empty-string values, not only `null`.
+
+---
+
 ## Step 1 — `teams.listTeamMemberships` (query only)
 
 `src/trpc/routers/teams-router.ts`, `listTeamMemberships`:
