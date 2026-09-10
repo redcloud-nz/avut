@@ -16,7 +16,9 @@ an included monthly AI/storage allowance as a secondary sweetener. Metered usage
 (AI tokens, file storage) burns the monthly allowance first, then the prepaid
 wallet; when both hit zero the cost-bearing feature is disabled until top-up. The
 free tier keeps all core modules forever. Personal accounts get free tier + wallet
-only (no subscription ladder for now).
+only (no subscription ladder for now). Leaning toward **Option B** for payments:
+Stripe processes only the flat subscription and one-time top-up purchases; the
+allowance, wallet balance and usage ledger live in Postgres and gate synchronously.
 
 ## Context / motivation
 
@@ -54,10 +56,24 @@ using AI on their personal notes should be able to pay for it without an org.
   influence module availability but they're separate concerns.
 - **Payment rails: Stripe (chosen).** better-auth's Stripe plugin handles the
   subscription half (customer per org/user, plan management, webhook lifecycle) but
-  deliberately not one-time payments or usage/wallet billing. The wallet + metered
-  overage half builds on Stripe Billing directly: **Meters** for usage events,
-  **Credit Grants** for both the expiring monthly allowance and the non-expiring
-  top-up balance, Checkout/PaymentIntent for the top-up purchase.
+  deliberately not one-time payments or usage/wallet billing.
+- **Stripe as system of record — Meters + Credit Grants (Option A, set aside for
+  v1).** Metered subscription items, usage reported via the Meter Events API, the
+  monthly allowance as an expiring credit grant and the top-up as a non-expiring
+  one. Stripe produces correct usage invoices + Stripe Tax on everything, but it's
+  two sources of truth to reconcile (Stripe grants _and_ a local counter, since
+  grants only apply at invoice finalisation and can't gate in real time), hits the
+  "100 unused credit grants per customer" cap, and sails close to Stripe's
+  "billing credits can't be stored value" prohibited-use line.
+- **Local ledger, Stripe for payments only (Option B — leaning).** Stripe handles
+  exactly two taxable events: the flat monthly subscription (better-auth plugin,
+  licensed price) and one-time top-up purchases (Stripe Checkout in `payment`
+  mode). Allowance, wallet balance and an append-only usage ledger all live in
+  Postgres; a `billingProcedure()` wrapper gates synchronously; a monthly cron
+  resets the allowance. GST is cleaner — charged at credit purchase and on the
+  subscription, with usage-consumption not a separate taxable supply — so no
+  usage-based tax invoices at all. Migrate B → A later if Stripe should own usage
+  invoicing. See "Integration sketch" below.
 - **Vercel Marketplace for payments (rejected — nothing there).** Marketplace is
   storage/observability/CMS; no payment-processor resale, no native billing
   product.
@@ -90,6 +106,56 @@ using AI on their personal notes should be able to pay for it without an org.
   overseas/non-GST customers.
 - Do paid **personal** subscriptions ever make sense later, or is personal
   permanently free-tier + wallet?
+- **Stripe "stored value" prohibited use** — a prepaid balance for our own PAYG
+  service is the approved case, but terms/framing need care: credits must not look
+  like a gift card or be refundable-on-demand as cash.
+- **better-auth plugin: per-user _and_ per-org subscriptions in one install** —
+  confirm `referenceId` + `authorizeReference` cleanly support both.
+- **AI cost estimation vs actual** — reserve-and-true-up so a near-empty wallet
+  can't go materially negative on a single call.
+- **NZ GST registration threshold** — check whether early revenue even requires
+  registration yet.
+
+## Integration sketch (Stripe, Option B)
+
+**Entity mapping.** `BillingAccount` (one per org, one per personal account) ↔ one
+Stripe Customer. The better-auth Stripe plugin adds `stripeCustomerId` to `user`
+and `organization` plus a `subscription` table; subscriptions carry a `referenceId`
+(user id _or_ organization id) so per-user and per-org subscriptions coexist in one
+install. `BillingAccount` is our table — points at whichever entity, holds
+`stripeCustomerId`, `tier`, `allowanceRemaining`, `walletBalanceCents`.
+
+**Two layers.** Stripe = money layer (real payments, receipts, GST). Postgres =
+enforcement layer. Stripe credit grants apply only at invoice finalisation, so they
+can't be the real-time "is there balance" gate — that check must be a local
+counter regardless of which option.
+
+**Local state.** `BillingAccount.allowanceRemaining`, `walletBalanceCents`, and an
+append-only `UsageLedgerEntry` table (debit per AI call / storage snapshot; credit
+per top-up). Consumption burns allowance first, then wallet.
+
+**Flows:**
+
+- _Subscribe:_ `authClient.subscription.upgrade()` → Stripe Checkout →
+  `checkout.session.completed` → plugin updates `subscription`; our
+  `onSubscriptionCreated` hook sets `tier` + seeds `allowanceRemaining`
+  (`ctx.logEvent` in a `$transaction`).
+- _Top up:_ custom tRPC mutation opens a Stripe Checkout session (`mode: "payment"`,
+  line item "AVUT credit NZD 20", Stripe Tax on) → `checkout.session.completed`
+  (distinguished by metadata) → transaction: `walletBalanceCents +=`, write ledger
+  credit, `ctx.logEvent`.
+- _Consume:_ `billingProcedure()` pre-checks `allowanceRemaining + walletBalanceCents
+  > estimatedCost`; after the provider call returns real token counts, a
+transaction writes the debit, decrements allowance-then-wallet, `ctx.logEvent`.
+  > Long calls: reserve an estimate up front, true up after.
+- _Monthly reset:_ Vercel Cron → handler iterates billing accounts, resets
+  `allowanceRemaining`, one ledger entry each. Unattended → open a `LogBatch` with
+  an `Operations`-registry `operationKey` for provenance.
+
+**Webhooks.** One endpoint. The plugin consumes the subscription events via its
+handler; pass the rest through `onEvent` — top-up `checkout.session.completed`,
+`invoice.payment_failed` (→ drop paid tier to free). Verify signature with
+`stripeWebhookSecret`. Every state change → `ctx.logEvent` in `$transaction`.
 
 ## Notes
 
