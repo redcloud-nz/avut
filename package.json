@@ -17,7 +17,7 @@
     "db:branch": "bash scripts/db-branch.sh",
     "db:unbranch": "bash scripts/db-unbranch.sh",
     "seed:demo": "dotenv -e .env.local -- tsx prisma/seed-demo.ts",
-    "docs:screenshot": "dotenv -e .env.local -- tsx scripts/docs-screenshots/upload.ts",
+    "screenshot": "dotenv -e .env.local -- tsx scripts/screenshots/upload.ts",
     "build": "dotenv -e .env.local -- prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",

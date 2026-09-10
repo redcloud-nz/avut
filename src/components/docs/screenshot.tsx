@@ -12,7 +12,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getScreenshot } from "@/components/docs/screenshots";
+import { getScreenshot } from "@/lib/screenshots";
 
 interface ScreenshotProps {
     /** Key into `screenshots.generated.json`. Unknown id → build-time error. */

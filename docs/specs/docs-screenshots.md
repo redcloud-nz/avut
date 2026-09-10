@@ -3,10 +3,14 @@
 **Date:** 2026-09-10
 **Status:** Phase 1 implemented; Phase 2 pending
 
-Covers how screenshots are captured, stored, and rendered in the end-user
+Covers how screenshots are captured, stored, and rendered — in the end-user
 documentation (`content/docs/**`, the public `/docs` site, and the in-app
-`?help=` sheet). Builds on the end-user documentation system introduced in
+`?help=` sheet) and on the public marketing home page (`src/app/page.tsx`).
+Builds on the end-user documentation system introduced in
 `docs/ideas/2026-09-10-end-user-documentation.md`.
+
+The storage and capture machinery is shared; only the rendering component
+differs — `<Screenshot>` in docs, `<ProductShot>` on the marketing page.
 
 ---
 
@@ -55,14 +59,14 @@ await put(`docs-screenshots/${id}${theme === "dark" ? "-dark" : ""}.webp`, buffe
 - Public URLs are CDN-cached with a long TTL. Overwriting a pathname can take a
   few minutes to propagate — acceptable for docs. If it ever matters, the index
   (§2.2) can carry a `?v=<contentHash>` suffix on the URL.
-- Write access is the `BLOB_READ_WRITE_TOKEN` env var — capture script only.
-  Nothing at runtime needs a token; the app renders public URLs.
+- Write access is the `SCREENSHOTS_READ_WRITE_TOKEN` env var (§5) — capture
+  script only. Nothing at runtime needs a token; the app renders public URLs.
 
 ### 2.2 Index → git
 
 The capture script writes a single generated file committed to the repo:
 
-`src/components/docs/screenshots.generated.json`
+`src/lib/screenshots.generated.json`
 
 ```jsonc
 {
@@ -125,17 +129,28 @@ Behaviour:
 The component reads the index via a static import, so a missing id or a stale
 index fails `next build` rather than shipping a broken image.
 
+### 3.1 `<ProductShot>` — the public marketing page
+
+`src/components/marketing/product-shot.tsx`, used from `src/app/page.tsx`. Same
+index (`getScreenshot(id)` from `src/lib/screenshots.ts`), but:
+
+- A **server component** — no dialog, no client JS.
+- `next/image` (not a raw `<img>`) for a responsive `srcset`; the Blob host is
+  allow-listed in `next.config.ts` `images.remotePatterns`.
+- A plain rounded border, **no browser-chrome frame**.
+- Light/dark swap by CSS, same as `<Screenshot>`.
+
 ---
 
 ## 4. Capture
 
-`scripts/docs-screenshots/` — run on demand locally, or as a
+`scripts/screenshots/` — run on demand locally, or as a
 manually-dispatched GitHub Action. **Never** part of the Vercel build (needs a
 browser, a running app, and a seeded database).
 
 ### 4.1 Manifest
 
-`scripts/docs-screenshots/manifest.ts` — the list of screenshots to capture:
+`scripts/screenshots/manifest.ts` — the list of screenshots to capture:
 
 ```ts
 interface ScreenshotSpec {
@@ -167,7 +182,7 @@ not `next build` time:
 - Manifest `id`s must be unique, and each must be a valid Blob pathname segment
   set (`[a-z0-9-]+(/[a-z0-9-]+)*`).
 
-Runs as its own script (`scripts/docs-screenshots/check.ts`), wired into
+Runs as its own script (`scripts/screenshots/check.ts`), wired into
 `npm run lint` and CI. It parses the manifest and greps the MDX only — no
 browser, no database — so it is cheap enough to run on every lint.
 
@@ -232,13 +247,15 @@ The Blob store's public host is embedded in the URLs in
 
 **Phase 1 — rendering, manual capture. _(implemented)_**
 `<Screenshot>` component (`src/components/docs/screenshot.tsx`, wired into
-`docsMdxComponents`), the `screenshots.generated.json` index +
-`src/components/docs/screenshots.ts` read model, and the manual upload helper
-`npm run docs:screenshot -- <id> <light> [dark] --alt "…"`
-(`scripts/docs-screenshots/upload.ts` — sharp → WebP, `put()` to Blob, rewrites
+`docsMdxComponents`) and `<ProductShot>` (§3.1), the
+`src/lib/screenshots.generated.json` index + `src/lib/screenshots.ts` read
+model, and the manual upload helper
+`npm run screenshot -- <id> <light> [dark] --alt "…"`
+(`scripts/screenshots/upload.ts` — sharp → WebP, `put()` to Blob, rewrites
 the index). A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
-Still to do: hand-capture the first screenshots (needs `BLOB_READ_WRITE_TOKEN`)
-and reference them from the highest-traffic docs pages.
+Captured so far: the sign-in / verification flow (docs) and the Skill Track
+hero (`marketing/skill-track-session`, light only — the dark variant needs the
+demo seed).
 
 **Phase 2 — automated capture.**
 `manifest.ts`, the coverage lint check (§4.2), the Playwright capture script,
@@ -256,7 +273,7 @@ enough that manual upkeep is painful.
 | git-LFS?                                           | No — screenshots are regenerable build output, not source               |
 | Branch-versioned screenshots?                      | Not required for end-user docs; preview shows current bucket contents   |
 | How does MDX reference a screenshot?               | `<Screenshot id="…" />`, keyed into the index; no raw Markdown images   |
-| Where are capture instructions kept?               | One `scripts/docs-screenshots/manifest.ts` list, not MDX frontmatter    |
+| Where are capture instructions kept?               | One `scripts/screenshots/manifest.ts` list, not MDX frontmatter         |
 | Catching a `<Screenshot id>` with no capture spec? | Lint check (§4.2) greps MDX against the manifest; errors at lint time   |
 | Where does `alt` text come from?                   | The capture manifest → the index; MDX may override                      |
 | Light/dark handling                                | Capture both, swap with CSS, follow app theme                           |

@@ -4,11 +4,11 @@
  *
  * Phase 1 manual screenshot helper (see docs/specs/docs-screenshots.md §6).
  *
- *   npm run docs:screenshot -- <id> <light-image> [dark-image] --alt "description"
+ *   npm run screenshot -- <id> <light-image> [dark-image] --alt "description"
  *
  * Converts the given PNG/JPEG/WebP file(s) to WebP, uploads them to Vercel Blob
- * at a deterministic pathname, and rewrites
- * `src/components/docs/screenshots.generated.json` with the resulting entry.
+ * at a deterministic pathname, and rewrites `src/lib/screenshots.generated.json`
+ * with the resulting entry.
  * Requires SCREENSHOTS_READ_WRITE_TOKEN (loaded from .env.local by the npm script).
  */
 
@@ -18,7 +18,7 @@ import path from "node:path";
 import { put } from "@vercel/blob";
 import sharp from "sharp";
 
-const INDEX_PATH = path.join(process.cwd(), "src/components/docs/screenshots.generated.json");
+const INDEX_PATH = path.join(process.cwd(), "src/lib/screenshots.generated.json");
 
 const ID_PATTERN = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 
@@ -64,6 +64,8 @@ async function uploadOne(
     const { width, height } = await sharp(buffer).metadata();
     if (!width || !height) throw new Error(`Could not read dimensions of ${file}`);
 
+    // `docs-screenshots/` prefix kept for URL stability — the index carries the
+    // full resolved URL, so the prefix string is never seen anywhere else.
     const pathname = `docs-screenshots/${id}${variant === "dark" ? "-dark" : ""}.webp`;
     const blob = await put(pathname, buffer, {
         access: "public",
@@ -81,7 +83,7 @@ async function main() {
 
     if (!id || !lightPath) {
         console.error(
-            'Usage: npm run docs:screenshot -- <id> <light-image> [dark-image] --alt "description"',
+            'Usage: npm run screenshot -- <id> <light-image> [dark-image] --alt "description"',
         );
         process.exit(1);
     }

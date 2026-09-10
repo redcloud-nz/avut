@@ -41,6 +41,13 @@ const appVersion =
 
 const nextConfig: NextConfig = {
     cacheComponents: true,
+    images: {
+        // Product screenshots served from the Vercel Blob store (see
+        // docs/specs/docs-screenshots.md). Public, immutable pathnames.
+        remotePatterns: [
+            { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
+        ],
+    },
     env: {
         NEXT_PUBLIC_APP_VERSION: appVersion,
         NEXT_PUBLIC_APP_VERSION_NAME: appMetadata.versionName,

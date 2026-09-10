@@ -54,5 +54,14 @@
     },
     "alt": "The email verification screen with six single-digit code inputs and a Verify button",
     "capturedAt": "2026-09-10T06:16:12.353Z"
+  },
+  "marketing/skill-track-session": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/marketing/skill-track-session.webp",
+      "width": 1440,
+      "height": 900
+    },
+    "alt": "Skill Track: recording a Rope Rescue Technician assessment session, assessing by person",
+    "capturedAt": "2026-09-10T07:28:21.231Z"
   }
 }
