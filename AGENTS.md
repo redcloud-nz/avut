@@ -133,6 +133,8 @@ npx next typegen                          # .next/ is per-worktree; typed routes
 
 How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file.
 
+Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec carries a `**Date:**` line in its header — see that README before adding one.
+
 ## tRPC Routers
 
 - One file per domain in `src/trpc/routers/`

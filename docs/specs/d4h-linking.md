@@ -1,5 +1,6 @@
 # Spec: D4H linking & team synchronisation
 
+**Date:** 2026-09-10
 **Status:** Draft — approved for implementation of Phase 1 (manual sync).
 **Supersedes:** `importTeamFromD4H` / `syncronizeD4HTeam` in `teams-router.ts`, the
 `properties.d4h*` blobs on `Team` / `Person` / `TeamMembership`, and the unused
