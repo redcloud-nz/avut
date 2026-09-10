@@ -28,8 +28,16 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
     const resolvedAlt = alt ?? entry.alt;
     const dark = entry.dark ?? entry.light;
 
+    // Never upscale past the captured resolution — a 500px-wide capture shown in
+    // a wider prose column looks blown up. Cap the figure at the intrinsic width
+    // (`width` in the index is CSS px) and centre it.
+    const maxWidth = entry.light.width;
+
     return (
-        <figure className="my-6">
+        <figure
+            className="my-6 flex flex-col items-center"
+            style={{ maxWidth, marginInline: "auto" }}
+        >
             <Dialog>
                 <DialogTrigger asChild>
                     <button
@@ -56,7 +64,10 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                         />
                     </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[95vw] p-2 sm:max-w-5xl">
+                <DialogContent
+                    className="w-fit max-w-[95vw] p-2 sm:max-w-[95vw]"
+                    style={{ width: maxWidth + 16 }}
+                >
                     <DialogTitle className="sr-only">{resolvedAlt}</DialogTitle>
                     {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
                     <img
