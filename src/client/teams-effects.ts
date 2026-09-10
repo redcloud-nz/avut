@@ -11,10 +11,29 @@ import { trpc } from "@/trpc/client";
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
  */
+const teamCaches = (vars: { organizationId: string; teamId: string }) => [
+    invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    invalidate(
+        trpc.teams.getTeam.queryFilter({
+            organizationId: vars.organizationId,
+            teamId: vars.teamId,
+        }),
+    ),
+    invalidate(
+        trpc.teams.listTeamMemberships.queryFilter({
+            organizationId: vars.organizationId,
+            teamId: vars.teamId,
+        }),
+    ),
+];
+
 export const teamsEffects = createEffects<"teams">()({
+    applyD4HTeamSync: (vars) => teamCaches(vars),
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
+    linkTeamToD4H: (vars) => teamCaches(vars),
+    unlinkTeamFromD4H: (vars) => teamCaches(vars),
     createTeamMembership: (vars) => [
         invalidate(
             trpc.teams.listTeamMemberships.queryFilter({

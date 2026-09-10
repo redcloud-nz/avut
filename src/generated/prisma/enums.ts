@@ -8,13 +8,6 @@
  * 🟢 You can import this file directly.
  */
 
-export const TeamType = {
-    General: "General",
-    D4HDefined: "D4HDefined",
-} as const;
-
-export type TeamType = (typeof TeamType)[keyof typeof TeamType];
-
 export const RecordStatus = {
     Active: "Active",
     Archived: "Archived",

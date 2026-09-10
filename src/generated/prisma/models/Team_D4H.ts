@@ -27,67 +27,89 @@ export type AggregateTeam_D4H = {
 
 export type Team_D4HAvgAggregateOutputType = {
     d4hTeamId: number | null;
+    d4hOrganisationId: number | null;
 };
 
 export type Team_D4HSumAggregateOutputType = {
     d4hTeamId: number | null;
+    d4hOrganisationId: number | null;
 };
 
 export type Team_D4HMinAggregateOutputType = {
     teamId: string | null;
     d4hTeamId: number | null;
     d4hTeamName: string | null;
-    d4hServer: string | null;
-    d4hLastSyncedAt: Date | null;
+    d4hServerCode: string | null;
+    d4hOrganisationId: number | null;
+    d4hTimezone: string | null;
+    linkTokenId: string | null;
+    lastSyncedAt: Date | null;
 };
 
 export type Team_D4HMaxAggregateOutputType = {
     teamId: string | null;
     d4hTeamId: number | null;
     d4hTeamName: string | null;
-    d4hServer: string | null;
-    d4hLastSyncedAt: Date | null;
+    d4hServerCode: string | null;
+    d4hOrganisationId: number | null;
+    d4hTimezone: string | null;
+    linkTokenId: string | null;
+    lastSyncedAt: Date | null;
 };
 
 export type Team_D4HCountAggregateOutputType = {
     teamId: number;
     d4hTeamId: number;
     d4hTeamName: number;
-    d4hServer: number;
-    d4hLastSyncedAt: number;
+    d4hServerCode: number;
+    d4hOrganisationId: number;
+    d4hTimezone: number;
+    linkTokenId: number;
+    lastSyncedAt: number;
     _all: number;
 };
 
 export type Team_D4HAvgAggregateInputType = {
     d4hTeamId?: true;
+    d4hOrganisationId?: true;
 };
 
 export type Team_D4HSumAggregateInputType = {
     d4hTeamId?: true;
+    d4hOrganisationId?: true;
 };
 
 export type Team_D4HMinAggregateInputType = {
     teamId?: true;
     d4hTeamId?: true;
     d4hTeamName?: true;
-    d4hServer?: true;
-    d4hLastSyncedAt?: true;
+    d4hServerCode?: true;
+    d4hOrganisationId?: true;
+    d4hTimezone?: true;
+    linkTokenId?: true;
+    lastSyncedAt?: true;
 };
 
 export type Team_D4HMaxAggregateInputType = {
     teamId?: true;
     d4hTeamId?: true;
     d4hTeamName?: true;
-    d4hServer?: true;
-    d4hLastSyncedAt?: true;
+    d4hServerCode?: true;
+    d4hOrganisationId?: true;
+    d4hTimezone?: true;
+    linkTokenId?: true;
+    lastSyncedAt?: true;
 };
 
 export type Team_D4HCountAggregateInputType = {
     teamId?: true;
     d4hTeamId?: true;
     d4hTeamName?: true;
-    d4hServer?: true;
-    d4hLastSyncedAt?: true;
+    d4hServerCode?: true;
+    d4hOrganisationId?: true;
+    d4hTimezone?: true;
+    linkTokenId?: true;
+    lastSyncedAt?: true;
     _all?: true;
 };
 
@@ -184,8 +206,11 @@ export type Team_D4HGroupByOutputType = {
     teamId: string;
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt: Date | null;
+    d4hServerCode: string;
+    d4hOrganisationId: number | null;
+    d4hTimezone: string | null;
+    linkTokenId: string | null;
+    lastSyncedAt: Date | null;
     _count: Team_D4HCountAggregateOutputType | null;
     _avg: Team_D4HAvgAggregateOutputType | null;
     _sum: Team_D4HSumAggregateOutputType | null;
@@ -212,18 +237,29 @@ export type Team_D4HWhereInput = {
     teamId?: Prisma.StringFilter<"Team_D4H"> | string;
     d4hTeamId?: Prisma.IntFilter<"Team_D4H"> | number;
     d4hTeamName?: Prisma.StringFilter<"Team_D4H"> | string;
-    d4hServer?: Prisma.StringFilter<"Team_D4H"> | string;
-    d4hLastSyncedAt?: Prisma.DateTimeNullableFilter<"Team_D4H"> | Date | string | null;
+    d4hServerCode?: Prisma.StringFilter<"Team_D4H"> | string;
+    d4hOrganisationId?: Prisma.IntNullableFilter<"Team_D4H"> | number | null;
+    d4hTimezone?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+    linkTokenId?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+    lastSyncedAt?: Prisma.DateTimeNullableFilter<"Team_D4H"> | Date | string | null;
     team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
+    linkToken?: Prisma.XOR<
+        Prisma.D4HAccessTokenNullableScalarRelationFilter,
+        Prisma.D4HAccessTokenWhereInput
+    > | null;
 };
 
 export type Team_D4HOrderByWithRelationInput = {
     teamId?: Prisma.SortOrder;
     d4hTeamId?: Prisma.SortOrder;
     d4hTeamName?: Prisma.SortOrder;
-    d4hServer?: Prisma.SortOrder;
-    d4hLastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    d4hServerCode?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    d4hTimezone?: Prisma.SortOrderInput | Prisma.SortOrder;
+    linkTokenId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     team?: Prisma.TeamOrderByWithRelationInput;
+    linkToken?: Prisma.D4HAccessTokenOrderByWithRelationInput;
 };
 
 export type Team_D4HWhereUniqueInput = Prisma.AtLeast<
@@ -234,9 +270,16 @@ export type Team_D4HWhereUniqueInput = Prisma.AtLeast<
         NOT?: Prisma.Team_D4HWhereInput | Prisma.Team_D4HWhereInput[];
         d4hTeamId?: Prisma.IntFilter<"Team_D4H"> | number;
         d4hTeamName?: Prisma.StringFilter<"Team_D4H"> | string;
-        d4hServer?: Prisma.StringFilter<"Team_D4H"> | string;
-        d4hLastSyncedAt?: Prisma.DateTimeNullableFilter<"Team_D4H"> | Date | string | null;
+        d4hServerCode?: Prisma.StringFilter<"Team_D4H"> | string;
+        d4hOrganisationId?: Prisma.IntNullableFilter<"Team_D4H"> | number | null;
+        d4hTimezone?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+        linkTokenId?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+        lastSyncedAt?: Prisma.DateTimeNullableFilter<"Team_D4H"> | Date | string | null;
         team?: Prisma.XOR<Prisma.TeamScalarRelationFilter, Prisma.TeamWhereInput>;
+        linkToken?: Prisma.XOR<
+            Prisma.D4HAccessTokenNullableScalarRelationFilter,
+            Prisma.D4HAccessTokenWhereInput
+        > | null;
     },
     "teamId"
 >;
@@ -245,8 +288,11 @@ export type Team_D4HOrderByWithAggregationInput = {
     teamId?: Prisma.SortOrder;
     d4hTeamId?: Prisma.SortOrder;
     d4hTeamName?: Prisma.SortOrder;
-    d4hServer?: Prisma.SortOrder;
-    d4hLastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    d4hServerCode?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    d4hTimezone?: Prisma.SortOrderInput | Prisma.SortOrder;
+    linkTokenId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.Team_D4HCountOrderByAggregateInput;
     _avg?: Prisma.Team_D4HAvgOrderByAggregateInput;
     _max?: Prisma.Team_D4HMaxOrderByAggregateInput;
@@ -265,67 +311,86 @@ export type Team_D4HScalarWhereWithAggregatesInput = {
     teamId?: Prisma.StringWithAggregatesFilter<"Team_D4H"> | string;
     d4hTeamId?: Prisma.IntWithAggregatesFilter<"Team_D4H"> | number;
     d4hTeamName?: Prisma.StringWithAggregatesFilter<"Team_D4H"> | string;
-    d4hServer?: Prisma.StringWithAggregatesFilter<"Team_D4H"> | string;
-    d4hLastSyncedAt?:
-        | Prisma.DateTimeNullableWithAggregatesFilter<"Team_D4H">
-        | Date
-        | string
-        | null;
+    d4hServerCode?: Prisma.StringWithAggregatesFilter<"Team_D4H"> | string;
+    d4hOrganisationId?: Prisma.IntNullableWithAggregatesFilter<"Team_D4H"> | number | null;
+    d4hTimezone?: Prisma.StringNullableWithAggregatesFilter<"Team_D4H"> | string | null;
+    linkTokenId?: Prisma.StringNullableWithAggregatesFilter<"Team_D4H"> | string | null;
+    lastSyncedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Team_D4H"> | Date | string | null;
 };
 
 export type Team_D4HCreateInput = {
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt?: Date | string | null;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    lastSyncedAt?: Date | string | null;
     team: Prisma.TeamCreateNestedOneWithoutD4hInput;
+    linkToken?: Prisma.D4HAccessTokenCreateNestedOneWithoutLinkedTeamsInput;
 };
 
 export type Team_D4HUncheckedCreateInput = {
     teamId: string;
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt?: Date | string | null;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    linkTokenId?: string | null;
+    lastSyncedAt?: Date | string | null;
 };
 
 export type Team_D4HUpdateInput = {
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     team?: Prisma.TeamUpdateOneRequiredWithoutD4hNestedInput;
+    linkToken?: Prisma.D4HAccessTokenUpdateOneWithoutLinkedTeamsNestedInput;
 };
 
 export type Team_D4HUncheckedUpdateInput = {
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    linkTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 
 export type Team_D4HCreateManyInput = {
     teamId: string;
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt?: Date | string | null;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    linkTokenId?: string | null;
+    lastSyncedAt?: Date | string | null;
 };
 
 export type Team_D4HUpdateManyMutationInput = {
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 
 export type Team_D4HUncheckedUpdateManyInput = {
     teamId?: Prisma.StringFieldUpdateOperationsInput | string;
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    linkTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 
 export type Team_D4HNullableScalarRelationFilter = {
@@ -337,32 +402,53 @@ export type Team_D4HCountOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     d4hTeamId?: Prisma.SortOrder;
     d4hTeamName?: Prisma.SortOrder;
-    d4hServer?: Prisma.SortOrder;
-    d4hLastSyncedAt?: Prisma.SortOrder;
+    d4hServerCode?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrder;
+    d4hTimezone?: Prisma.SortOrder;
+    linkTokenId?: Prisma.SortOrder;
+    lastSyncedAt?: Prisma.SortOrder;
 };
 
 export type Team_D4HAvgOrderByAggregateInput = {
     d4hTeamId?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrder;
 };
 
 export type Team_D4HMaxOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     d4hTeamId?: Prisma.SortOrder;
     d4hTeamName?: Prisma.SortOrder;
-    d4hServer?: Prisma.SortOrder;
-    d4hLastSyncedAt?: Prisma.SortOrder;
+    d4hServerCode?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrder;
+    d4hTimezone?: Prisma.SortOrder;
+    linkTokenId?: Prisma.SortOrder;
+    lastSyncedAt?: Prisma.SortOrder;
 };
 
 export type Team_D4HMinOrderByAggregateInput = {
     teamId?: Prisma.SortOrder;
     d4hTeamId?: Prisma.SortOrder;
     d4hTeamName?: Prisma.SortOrder;
-    d4hServer?: Prisma.SortOrder;
-    d4hLastSyncedAt?: Prisma.SortOrder;
+    d4hServerCode?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrder;
+    d4hTimezone?: Prisma.SortOrder;
+    linkTokenId?: Prisma.SortOrder;
+    lastSyncedAt?: Prisma.SortOrder;
 };
 
 export type Team_D4HSumOrderByAggregateInput = {
     d4hTeamId?: Prisma.SortOrder;
+    d4hOrganisationId?: Prisma.SortOrder;
+};
+
+export type Team_D4HListRelationFilter = {
+    every?: Prisma.Team_D4HWhereInput;
+    some?: Prisma.Team_D4HWhereInput;
+    none?: Prisma.Team_D4HWhereInput;
+};
+
+export type Team_D4HOrderByRelationAggregateInput = {
+    _count?: Prisma.SortOrder;
 };
 
 export type Team_D4HCreateNestedOneWithoutTeamInput = {
@@ -429,18 +515,110 @@ export type IntFieldUpdateOperationsInput = {
     divide?: number;
 };
 
+export type Team_D4HCreateNestedManyWithoutLinkTokenInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.Team_D4HCreateWithoutLinkTokenInput,
+              Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+          >
+        | Prisma.Team_D4HCreateWithoutLinkTokenInput[]
+        | Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput[];
+    connectOrCreate?:
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput[];
+    createMany?: Prisma.Team_D4HCreateManyLinkTokenInputEnvelope;
+    connect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+};
+
+export type Team_D4HUncheckedCreateNestedManyWithoutLinkTokenInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.Team_D4HCreateWithoutLinkTokenInput,
+              Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+          >
+        | Prisma.Team_D4HCreateWithoutLinkTokenInput[]
+        | Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput[];
+    connectOrCreate?:
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput[];
+    createMany?: Prisma.Team_D4HCreateManyLinkTokenInputEnvelope;
+    connect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+};
+
+export type Team_D4HUpdateManyWithoutLinkTokenNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.Team_D4HCreateWithoutLinkTokenInput,
+              Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+          >
+        | Prisma.Team_D4HCreateWithoutLinkTokenInput[]
+        | Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput[];
+    connectOrCreate?:
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput[];
+    upsert?:
+        | Prisma.Team_D4HUpsertWithWhereUniqueWithoutLinkTokenInput
+        | Prisma.Team_D4HUpsertWithWhereUniqueWithoutLinkTokenInput[];
+    createMany?: Prisma.Team_D4HCreateManyLinkTokenInputEnvelope;
+    set?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    disconnect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    delete?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    connect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    update?:
+        | Prisma.Team_D4HUpdateWithWhereUniqueWithoutLinkTokenInput
+        | Prisma.Team_D4HUpdateWithWhereUniqueWithoutLinkTokenInput[];
+    updateMany?:
+        | Prisma.Team_D4HUpdateManyWithWhereWithoutLinkTokenInput
+        | Prisma.Team_D4HUpdateManyWithWhereWithoutLinkTokenInput[];
+    deleteMany?: Prisma.Team_D4HScalarWhereInput | Prisma.Team_D4HScalarWhereInput[];
+};
+
+export type Team_D4HUncheckedUpdateManyWithoutLinkTokenNestedInput = {
+    create?:
+        | Prisma.XOR<
+              Prisma.Team_D4HCreateWithoutLinkTokenInput,
+              Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+          >
+        | Prisma.Team_D4HCreateWithoutLinkTokenInput[]
+        | Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput[];
+    connectOrCreate?:
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput
+        | Prisma.Team_D4HCreateOrConnectWithoutLinkTokenInput[];
+    upsert?:
+        | Prisma.Team_D4HUpsertWithWhereUniqueWithoutLinkTokenInput
+        | Prisma.Team_D4HUpsertWithWhereUniqueWithoutLinkTokenInput[];
+    createMany?: Prisma.Team_D4HCreateManyLinkTokenInputEnvelope;
+    set?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    disconnect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    delete?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    connect?: Prisma.Team_D4HWhereUniqueInput | Prisma.Team_D4HWhereUniqueInput[];
+    update?:
+        | Prisma.Team_D4HUpdateWithWhereUniqueWithoutLinkTokenInput
+        | Prisma.Team_D4HUpdateWithWhereUniqueWithoutLinkTokenInput[];
+    updateMany?:
+        | Prisma.Team_D4HUpdateManyWithWhereWithoutLinkTokenInput
+        | Prisma.Team_D4HUpdateManyWithWhereWithoutLinkTokenInput[];
+    deleteMany?: Prisma.Team_D4HScalarWhereInput | Prisma.Team_D4HScalarWhereInput[];
+};
+
 export type Team_D4HCreateWithoutTeamInput = {
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt?: Date | string | null;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    lastSyncedAt?: Date | string | null;
+    linkToken?: Prisma.D4HAccessTokenCreateNestedOneWithoutLinkedTeamsInput;
 };
 
 export type Team_D4HUncheckedCreateWithoutTeamInput = {
     d4hTeamId: number;
     d4hTeamName: string;
-    d4hServer: string;
-    d4hLastSyncedAt?: Date | string | null;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    linkTokenId?: string | null;
+    lastSyncedAt?: Date | string | null;
 };
 
 export type Team_D4HCreateOrConnectWithoutTeamInput = {
@@ -474,15 +652,136 @@ export type Team_D4HUpdateToOneWithWhereWithoutTeamInput = {
 export type Team_D4HUpdateWithoutTeamInput = {
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    linkToken?: Prisma.D4HAccessTokenUpdateOneWithoutLinkedTeamsNestedInput;
 };
 
 export type Team_D4HUncheckedUpdateWithoutTeamInput = {
     d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
     d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hServer?: Prisma.StringFieldUpdateOperationsInput | string;
-    d4hLastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    linkTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+};
+
+export type Team_D4HCreateWithoutLinkTokenInput = {
+    d4hTeamId: number;
+    d4hTeamName: string;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    lastSyncedAt?: Date | string | null;
+    team: Prisma.TeamCreateNestedOneWithoutD4hInput;
+};
+
+export type Team_D4HUncheckedCreateWithoutLinkTokenInput = {
+    teamId: string;
+    d4hTeamId: number;
+    d4hTeamName: string;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    lastSyncedAt?: Date | string | null;
+};
+
+export type Team_D4HCreateOrConnectWithoutLinkTokenInput = {
+    where: Prisma.Team_D4HWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.Team_D4HCreateWithoutLinkTokenInput,
+        Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+    >;
+};
+
+export type Team_D4HCreateManyLinkTokenInputEnvelope = {
+    data: Prisma.Team_D4HCreateManyLinkTokenInput | Prisma.Team_D4HCreateManyLinkTokenInput[];
+    skipDuplicates?: boolean;
+};
+
+export type Team_D4HUpsertWithWhereUniqueWithoutLinkTokenInput = {
+    where: Prisma.Team_D4HWhereUniqueInput;
+    update: Prisma.XOR<
+        Prisma.Team_D4HUpdateWithoutLinkTokenInput,
+        Prisma.Team_D4HUncheckedUpdateWithoutLinkTokenInput
+    >;
+    create: Prisma.XOR<
+        Prisma.Team_D4HCreateWithoutLinkTokenInput,
+        Prisma.Team_D4HUncheckedCreateWithoutLinkTokenInput
+    >;
+};
+
+export type Team_D4HUpdateWithWhereUniqueWithoutLinkTokenInput = {
+    where: Prisma.Team_D4HWhereUniqueInput;
+    data: Prisma.XOR<
+        Prisma.Team_D4HUpdateWithoutLinkTokenInput,
+        Prisma.Team_D4HUncheckedUpdateWithoutLinkTokenInput
+    >;
+};
+
+export type Team_D4HUpdateManyWithWhereWithoutLinkTokenInput = {
+    where: Prisma.Team_D4HScalarWhereInput;
+    data: Prisma.XOR<
+        Prisma.Team_D4HUpdateManyMutationInput,
+        Prisma.Team_D4HUncheckedUpdateManyWithoutLinkTokenInput
+    >;
+};
+
+export type Team_D4HScalarWhereInput = {
+    AND?: Prisma.Team_D4HScalarWhereInput | Prisma.Team_D4HScalarWhereInput[];
+    OR?: Prisma.Team_D4HScalarWhereInput[];
+    NOT?: Prisma.Team_D4HScalarWhereInput | Prisma.Team_D4HScalarWhereInput[];
+    teamId?: Prisma.StringFilter<"Team_D4H"> | string;
+    d4hTeamId?: Prisma.IntFilter<"Team_D4H"> | number;
+    d4hTeamName?: Prisma.StringFilter<"Team_D4H"> | string;
+    d4hServerCode?: Prisma.StringFilter<"Team_D4H"> | string;
+    d4hOrganisationId?: Prisma.IntNullableFilter<"Team_D4H"> | number | null;
+    d4hTimezone?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+    linkTokenId?: Prisma.StringNullableFilter<"Team_D4H"> | string | null;
+    lastSyncedAt?: Prisma.DateTimeNullableFilter<"Team_D4H"> | Date | string | null;
+};
+
+export type Team_D4HCreateManyLinkTokenInput = {
+    teamId: string;
+    d4hTeamId: number;
+    d4hTeamName: string;
+    d4hServerCode: string;
+    d4hOrganisationId?: number | null;
+    d4hTimezone?: string | null;
+    lastSyncedAt?: Date | string | null;
+};
+
+export type Team_D4HUpdateWithoutLinkTokenInput = {
+    d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
+    d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    team?: Prisma.TeamUpdateOneRequiredWithoutD4hNestedInput;
+};
+
+export type Team_D4HUncheckedUpdateWithoutLinkTokenInput = {
+    teamId?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
+    d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+};
+
+export type Team_D4HUncheckedUpdateManyWithoutLinkTokenInput = {
+    teamId?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hTeamId?: Prisma.IntFieldUpdateOperationsInput | number;
+    d4hTeamName?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hServerCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    d4hOrganisationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    d4hTimezone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 };
 
 export type Team_D4HSelect<
@@ -492,9 +791,13 @@ export type Team_D4HSelect<
         teamId?: boolean;
         d4hTeamId?: boolean;
         d4hTeamName?: boolean;
-        d4hServer?: boolean;
-        d4hLastSyncedAt?: boolean;
+        d4hServerCode?: boolean;
+        d4hOrganisationId?: boolean;
+        d4hTimezone?: boolean;
+        linkTokenId?: boolean;
+        lastSyncedAt?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+        linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
     },
     ExtArgs["result"]["team_D4H"]
 >;
@@ -506,9 +809,13 @@ export type Team_D4HSelectCreateManyAndReturn<
         teamId?: boolean;
         d4hTeamId?: boolean;
         d4hTeamName?: boolean;
-        d4hServer?: boolean;
-        d4hLastSyncedAt?: boolean;
+        d4hServerCode?: boolean;
+        d4hOrganisationId?: boolean;
+        d4hTimezone?: boolean;
+        linkTokenId?: boolean;
+        lastSyncedAt?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+        linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
     },
     ExtArgs["result"]["team_D4H"]
 >;
@@ -520,9 +827,13 @@ export type Team_D4HSelectUpdateManyAndReturn<
         teamId?: boolean;
         d4hTeamId?: boolean;
         d4hTeamName?: boolean;
-        d4hServer?: boolean;
-        d4hLastSyncedAt?: boolean;
+        d4hServerCode?: boolean;
+        d4hOrganisationId?: boolean;
+        d4hTimezone?: boolean;
+        linkTokenId?: boolean;
+        lastSyncedAt?: boolean;
         team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+        linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
     },
     ExtArgs["result"]["team_D4H"]
 >;
@@ -531,30 +842,43 @@ export type Team_D4HSelectScalar = {
     teamId?: boolean;
     d4hTeamId?: boolean;
     d4hTeamName?: boolean;
-    d4hServer?: boolean;
-    d4hLastSyncedAt?: boolean;
+    d4hServerCode?: boolean;
+    d4hOrganisationId?: boolean;
+    d4hTimezone?: boolean;
+    linkTokenId?: boolean;
+    lastSyncedAt?: boolean;
 };
 
 export type Team_D4HOmit<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-    "teamId" | "d4hTeamId" | "d4hTeamName" | "d4hServer" | "d4hLastSyncedAt",
+    | "teamId"
+    | "d4hTeamId"
+    | "d4hTeamName"
+    | "d4hServerCode"
+    | "d4hOrganisationId"
+    | "d4hTimezone"
+    | "linkTokenId"
+    | "lastSyncedAt",
     ExtArgs["result"]["team_D4H"]
 >;
 export type Team_D4HInclude<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+    linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
 };
 export type Team_D4HIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+    linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
 };
 export type Team_D4HIncludeUpdateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     team?: boolean | Prisma.TeamDefaultArgs<ExtArgs>;
+    linkToken?: boolean | Prisma.Team_D4H$linkTokenArgs<ExtArgs>;
 };
 
 export type $Team_D4HPayload<
@@ -563,14 +887,18 @@ export type $Team_D4HPayload<
     name: "Team_D4H";
     objects: {
         team: Prisma.$TeamPayload<ExtArgs>;
+        linkToken: Prisma.$D4HAccessTokenPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
             teamId: string;
             d4hTeamId: number;
             d4hTeamName: string;
-            d4hServer: string;
-            d4hLastSyncedAt: Date | null;
+            d4hServerCode: string;
+            d4hOrganisationId: number | null;
+            d4hTimezone: string | null;
+            linkTokenId: string | null;
+            lastSyncedAt: Date | null;
         },
         ExtArgs["result"]["team_D4H"]
     >;
@@ -1123,6 +1451,19 @@ export interface Prisma__Team_D4HClient<
         ExtArgs,
         GlobalOmitOptions
     >;
+    linkToken<T extends Prisma.Team_D4H$linkTokenArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.Team_D4H$linkTokenArgs<ExtArgs>>,
+    ): Prisma.Prisma__D4HAccessTokenClient<
+        runtime.Types.Result.GetResult<
+            Prisma.$D4HAccessTokenPayload<ExtArgs>,
+            T,
+            "findUniqueOrThrow",
+            GlobalOmitOptions
+        > | null,
+        null,
+        ExtArgs,
+        GlobalOmitOptions
+    >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1157,8 +1498,11 @@ export interface Team_D4HFieldRefs {
     readonly teamId: Prisma.FieldRef<"Team_D4H", "String">;
     readonly d4hTeamId: Prisma.FieldRef<"Team_D4H", "Int">;
     readonly d4hTeamName: Prisma.FieldRef<"Team_D4H", "String">;
-    readonly d4hServer: Prisma.FieldRef<"Team_D4H", "String">;
-    readonly d4hLastSyncedAt: Prisma.FieldRef<"Team_D4H", "DateTime">;
+    readonly d4hServerCode: Prisma.FieldRef<"Team_D4H", "String">;
+    readonly d4hOrganisationId: Prisma.FieldRef<"Team_D4H", "Int">;
+    readonly d4hTimezone: Prisma.FieldRef<"Team_D4H", "String">;
+    readonly linkTokenId: Prisma.FieldRef<"Team_D4H", "String">;
+    readonly lastSyncedAt: Prisma.FieldRef<"Team_D4H", "DateTime">;
 }
 
 // Custom InputTypes
@@ -1590,6 +1934,27 @@ export type Team_D4HDeleteManyArgs<
      * Limit how many Team_D4HS to delete.
      */
     limit?: number;
+};
+
+/**
+ * Team_D4H.linkToken
+ */
+export type Team_D4H$linkTokenArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the D4HAccessToken
+     */
+    select?: Prisma.D4HAccessTokenSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the D4HAccessToken
+     */
+    omit?: Prisma.D4HAccessTokenOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.D4HAccessTokenInclude<ExtArgs> | null;
+    where?: Prisma.D4HAccessTokenWhereInput;
 };
 
 /**

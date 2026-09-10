@@ -85,7 +85,7 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
     }
 
     const mutation = useMutation(
-        trpc.teams.importTeamFromD4H.mutationOptions({
+        trpc.teams.createTeamFromD4H.mutationOptions({
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
@@ -127,15 +127,8 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                     onSubmit={form.handleSubmit(({ teamId, ...values }) =>
                         mutation.mutate({
                             organizationId: organization.id,
-                            create: {
-                                name: values.name || selectedTeam!.title,
-                                description:
-                                    values.description ||
-                                    `Imported from D4H Team '${selectedTeam!.title}'`,
-                                tags: [],
-                                properties: { d4hTeamId: teamId },
-                            },
                             d4hTeamId: teamId,
+                            name: values.name || selectedTeam!.title,
                         }),
                     )}
                 >
@@ -165,8 +158,7 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                                                     value={team.id + ""}
                                                     disabled={existingTeams.some(
                                                         (existingTeam) =>
-                                                            existingTeam.properties.d4hTeamId ==
-                                                            team.id,
+                                                            existingTeam.d4h?.d4hTeamId === team.id,
                                                     )}
                                                 >
                                                     {team.title}

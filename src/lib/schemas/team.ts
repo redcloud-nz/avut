@@ -33,8 +33,10 @@ const teamSchema = z.object({
         .object({
             d4hTeamId: z.number(),
             d4hTeamName: z.string(),
-            d4hServer: D4HServerCode.schema,
-            d4hLastSyncedAt: z.iso.datetime().nullable(),
+            d4hServerCode: D4HServerCode.schema,
+            d4hOrganisationId: z.number().nullable(),
+            d4hTimezone: z.string().nullable(),
+            lastSyncedAt: z.iso.datetime().nullable(),
         })
         .nullable(),
 });
@@ -58,8 +60,10 @@ export const TeamData = {
                 ? {
                       d4hTeamId: record.d4h.d4hTeamId,
                       d4hTeamName: record.d4h.d4hTeamName,
-                      d4hServer: record.d4h.d4hServer,
-                      d4hLastSyncedAt: record.d4h.d4hLastSyncedAt?.toISOString() ?? null,
+                      d4hServerCode: record.d4h.d4hServerCode,
+                      d4hOrganisationId: record.d4h.d4hOrganisationId,
+                      d4hTimezone: record.d4h.d4hTimezone,
+                      lastSyncedAt: record.d4h.lastSyncedAt?.toISOString() ?? null,
                   }
                 : null,
         }),

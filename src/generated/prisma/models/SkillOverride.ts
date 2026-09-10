@@ -556,14 +556,6 @@ export type SkillOverrideUncheckedUpdateManyWithoutSubscriptionNestedInput = {
     deleteMany?: Prisma.SkillOverrideScalarWhereInput | Prisma.SkillOverrideScalarWhereInput[];
 };
 
-export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null;
-    increment?: number;
-    decrement?: number;
-    multiply?: number;
-    divide?: number;
-};
-
 export type SkillOverrideCreateWithoutSkillInput = {
     description?: string | null;
     frequency?: number | null;
