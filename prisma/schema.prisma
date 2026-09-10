@@ -35,7 +35,7 @@ model User {
   accounts          Account[]                @relation("account_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
-  d4hAccessTokens   D4hAccessToken[]         @relation("d4h_access_token_to_user")
+  d4hAccessTokens   D4HAccessToken[]         @relation("d4h_access_token_to_user")
 
   authoredNotes          Note[]         @relation("note_to_author")
   formInstances          FormInstance[] @relation("form_instance_to_user")
@@ -120,7 +120,7 @@ model Organization {
   skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
-  d4hAccessTokens           D4hAccessToken[]           @relation("d4h_access_token_to_organization")
+  d4hAccessTokens           D4HAccessToken[]           @relation("d4h_access_token_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
   i3IssuedItems             I3IssuedItem[]             @relation("i3_issued_item_to_organization")
@@ -325,7 +325,7 @@ enum RecordStatus {
 }
 
 
-model D4hAccessToken {
+model D4HAccessToken {
   id             String       @id
   organizationId String?
   organization   Organization? @relation("d4h_access_token_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)

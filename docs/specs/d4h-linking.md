@@ -29,7 +29,7 @@ A D4H `Member` is **not a person** — it is a person _in one team_. D4H has no
 cross-team person identity, so the same human on two D4H teams is two `Member`
 records with two ids.
 
-Access is per `D4hAccessToken` — either **personal** (`userId` set) or
+Access is per `D4HAccessToken` — either **personal** (`userId` set) or
 **organisation** (`userId: null`) — each carrying a `serverCode` of `ap` / `eu` /
 `us`. A token's `whoami` lists one `Member` per team the token can see, and a
 single token _may_ span more than one D4H organisation.
@@ -99,7 +99,7 @@ data_, which does not belong in a JSON config blob.
 | `d4hCurrency`            | `String?`   | Cache                                                                         |
 | `d4hReportingStartDay`   | `Int?`      | Cache                                                                         |
 | `d4hReportingStartMonth` | `Int?`      | Cache                                                                         |
-| `syncTokenId`            | `String?`   | FK → `D4hAccessToken` (an org token), `onDelete: SetNull`. Phase 2.           |
+| `syncTokenId`            | `String?`   | FK → `D4HAccessToken` (an org token), `onDelete: SetNull`. Phase 2.           |
 | `orgSyncedAt`            | `DateTime?` | Last refresh of the cached attributes above                                   |
 
 Created lazily on the first `linkTeamToD4H`.
@@ -122,7 +122,7 @@ Created lazily on the first `linkTeamToD4H`.
 | `d4hServerCode`     | `String`    | **renamed** from `d4hServer`                                                                     |
 | `d4hOrganisationId` | `Int?`      | **new** — the team's D4H org; null only if org-less                                              |
 | `d4hTimezone`       | `String?`   | **new**                                                                                          |
-| `linkTokenId`       | `String?`   | **new**, informational — token that created the link; FK → `D4hAccessToken`, `onDelete: SetNull` |
+| `linkTokenId`       | `String?`   | **new**, informational — token that created the link; FK → `D4HAccessToken`, `onDelete: SetNull` |
 | `d4hLastSyncedAt`   | `DateTime?` | exists; currently never written — sync writes it                                                 |
 
 ### 3.3 `TeamMembership_D4H` (new — replaces `properties.d4hMemberId`)

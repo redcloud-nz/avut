@@ -7,7 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 
-import { D4hToday_Content } from "@/components/d4h-today/d4h-today-content";
+import { D4HToday_Content } from "@/components/d4h-today/d4h-today-content";
 import { UserId } from "@/lib/schemas/user";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { requireOrganization } from "@/server/organization-access";
@@ -18,7 +18,7 @@ export const metadata = {
     title: `Today`,
 };
 
-export default async function D4hToday_Page(props: PageProps<"/orgs/[slug]/d4h-today">) {
+export default async function D4HToday_Page(props: PageProps<"/orgs/[slug]/d4h-today">) {
     const { slug } = await props.params;
     const { organization, settings } = await requireOrganization(slug);
     const session = await requireSession();
@@ -41,7 +41,7 @@ export default async function D4hToday_Page(props: PageProps<"/orgs/[slug]/d4h-t
             <Std.SidebarInset>
                 <Std.Navbar breadcrumbs={["Today"]} />
                 <Std.ScrollContainer>
-                    <D4hToday_Content availability={availability} />
+                    <D4HToday_Content availability={availability} />
                 </Std.ScrollContainer>
             </Std.SidebarInset>
         </HydrateClient>

@@ -16,9 +16,9 @@ import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activi
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
 import {
-    buildD4hToday,
+    buildD4HToday,
     d4hTodayTeamGroupSchema,
-    D4hTodayActivityInput,
+    D4HTodayActivityInput,
     zonedTodayRange,
 } from "@/lib/d4h-today";
 
@@ -435,8 +435,8 @@ export const d4hApiRouter = createTrpcRouter({
 
             const toInput = (
                 a: D4HActivity,
-                resourceType: D4hTodayActivityInput["resourceType"],
-            ): D4hTodayActivityInput => ({
+                resourceType: D4HTodayActivityInput["resourceType"],
+            ): D4HTodayActivityInput => ({
                 id: a.id,
                 resourceType,
                 reference: a.reference,
@@ -532,7 +532,7 @@ export const d4hApiRouter = createTrpcRouter({
                                     );
                                 }),
                             )
-                        ).filter((a): a is D4hTodayActivityInput => a !== null);
+                        ).filter((a): a is D4HTodayActivityInput => a !== null);
 
                         return {
                             team: { id: teamId, title: member.owner.title },
@@ -546,6 +546,6 @@ export const d4hApiRouter = createTrpcRouter({
                     }),
             );
 
-            return buildD4hToday(teams);
+            return buildD4HToday(teams);
         }),
 });

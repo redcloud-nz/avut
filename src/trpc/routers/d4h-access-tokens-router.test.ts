@@ -104,7 +104,7 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
         });
 
         // The token itself is still persisted (encrypted) on the record.
-        const stored = await db.d4hAccessToken.findUniqueOrThrow({ where: { id: tokenId } });
+        const stored = await db.d4HAccessToken.findUniqueOrThrow({ where: { id: tokenId } });
         expect(stored.token).not.toBe("super-secret-d4h-key");
     });
 });

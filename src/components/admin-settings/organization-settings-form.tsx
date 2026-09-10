@@ -5,7 +5,7 @@
 
 "use client";
 
-import { D4hIntegration_SettingsCard } from "@/components/admin-settings/d4h-integration-card";
+import { D4HIntegration_SettingsCard } from "@/components/admin-settings/d4h-integration-card";
 import { D4HViewsModule_SettingsCard } from "@/components/admin-settings/d4h-views-module-card";
 import { EmailIntegration_SettingsCard } from "@/components/admin-settings/email-integration-card";
 import { General_SettingsCard } from "@/components/admin-settings/general-settings-card";
@@ -44,7 +44,7 @@ export function OrganizationSettingsForm({
 
             <div className="space-y-4 pt-6">
                 <h3 className="text-lg font-semibold tracking-tight">Integrations</h3>
-                <D4hIntegration_SettingsCard organizationId={organizationId} settings={settings} />
+                <D4HIntegration_SettingsCard organizationId={organizationId} settings={settings} />
                 <EmailIntegration_SettingsCard
                     organizationId={organizationId}
                     settings={settings}

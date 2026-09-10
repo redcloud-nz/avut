@@ -87,10 +87,10 @@ export type LogEntryObject = Prisma.LogEntryObjectModel;
  */
 export type LogBatch = Prisma.LogBatchModel;
 /**
- * Model D4hAccessToken
+ * Model D4HAccessToken
  *
  */
-export type D4hAccessToken = Prisma.D4hAccessTokenModel;
+export type D4HAccessToken = Prisma.D4HAccessTokenModel;
 /**
  * Model Person
  *

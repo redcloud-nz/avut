@@ -34,13 +34,13 @@ import { D4HAccessToken, D4HAccessTokenId } from "@/lib/schemas/d4h-access-token
 import { OrganizationData } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
-interface CreateD4hAccessTokenFormProps {
+interface CreateD4HAccessTokenFormProps {
     organization: OrganizationData;
 }
 
-export function AdminModule_CreateD4hAccessToken_Form({
+export function AdminModule_CreateD4HAccessToken_Form({
     organization,
-}: CreateD4hAccessTokenFormProps) {
+}: CreateD4HAccessTokenFormProps) {
     const queryClient = useQueryClient();
     const router = useRouter();
 

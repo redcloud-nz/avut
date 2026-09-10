@@ -62,7 +62,7 @@ export const ModelName = {
     LogEntry: "LogEntry",
     LogEntryObject: "LogEntryObject",
     LogBatch: "LogBatch",
-    D4hAccessToken: "D4hAccessToken",
+    D4HAccessToken: "D4HAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
     Note: "Note",
@@ -290,7 +290,7 @@ export const LogBatchScalarFieldEnum = {
 export type LogBatchScalarFieldEnum =
     (typeof LogBatchScalarFieldEnum)[keyof typeof LogBatchScalarFieldEnum];
 
-export const D4hAccessTokenScalarFieldEnum = {
+export const D4HAccessTokenScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     userId: "userId",
@@ -304,8 +304,8 @@ export const D4hAccessTokenScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hAccessTokenScalarFieldEnum =
-    (typeof D4hAccessTokenScalarFieldEnum)[keyof typeof D4hAccessTokenScalarFieldEnum];
+export type D4HAccessTokenScalarFieldEnum =
+    (typeof D4HAccessTokenScalarFieldEnum)[keyof typeof D4HAccessTokenScalarFieldEnum];
 
 export const PersonScalarFieldEnum = {
     id: "id",

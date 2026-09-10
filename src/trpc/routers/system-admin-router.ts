@@ -314,7 +314,7 @@ export const systemAdminRouter = createTrpcRouter({
                 ctx.prisma.organizationInvitation.deleteMany({
                     where: { inviterId: input.userId },
                 }),
-                ctx.prisma.d4hAccessToken.deleteMany({ where: { userId: input.userId } }),
+                ctx.prisma.d4HAccessToken.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
                 ctx.logEvent({
                     scope: "system",

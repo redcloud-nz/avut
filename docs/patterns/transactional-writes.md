@@ -77,7 +77,7 @@ sequentially afterward, not inside the array:
 ```ts
 await ctx.prisma.$transaction([
   ctx.prisma.d4hAccessToken.delete({ where: { id: input.tokenId } }),
-  ctx.logEvent({ action: "Delete", objectType: "D4hAccessToken", objectId: existing.id }),
+  ctx.logEvent({ action: "Delete", objectType: "D4HAccessToken", objectId: existing.id }),
   ctx.prisma.organizationConfig.delete({
     where: {
       /* ... */

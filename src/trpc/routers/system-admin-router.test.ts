@@ -176,7 +176,7 @@ describe("systemAdmin.getOrganization", () => {
                 updatedAt: new Date(),
             },
         });
-        await db.d4hAccessToken.create({
+        await db.d4HAccessToken.create({
             data: {
                 id: nanoId16(),
                 organizationId: T.org,

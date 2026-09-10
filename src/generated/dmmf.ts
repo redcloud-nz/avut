@@ -340,7 +340,7 @@ export const models = [
                 isId: false,
                 isReadOnly: false,
                 hasDefaultValue: false,
-                type: "D4hAccessToken",
+                type: "D4HAccessToken",
                 nativeType: null,
                 relationName: "d4h_access_token_to_user",
                 relationFromFields: [],
@@ -1252,7 +1252,7 @@ export const models = [
                 isId: false,
                 isReadOnly: false,
                 hasDefaultValue: false,
-                type: "D4hAccessToken",
+                type: "D4HAccessToken",
                 nativeType: null,
                 relationName: "d4h_access_token_to_organization",
                 relationFromFields: [],
@@ -2752,7 +2752,7 @@ export const models = [
         isGenerated: false,
     },
     {
-        name: "D4hAccessToken",
+        name: "D4HAccessToken",
         dbName: "d4h_access_tokens",
         schema: null,
         fields: [
@@ -6665,7 +6665,7 @@ export const indexes = [
         ],
     },
     {
-        model: "D4hAccessToken",
+        model: "D4HAccessToken",
         type: "id",
         isDefinedOnField: true,
         fields: [
@@ -6675,7 +6675,7 @@ export const indexes = [
         ],
     },
     {
-        model: "D4hAccessToken",
+        model: "D4HAccessToken",
         type: "normal",
         isDefinedOnField: false,
         fields: [

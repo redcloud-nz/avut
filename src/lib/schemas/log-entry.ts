@@ -74,7 +74,7 @@ export type LogAction = (typeof logActionValues)[number];
  */
 const logObjectTypeValues = [
     "Account", // DORMANT — reverted databaseHooks wire
-    "D4hAccessToken",
+    "D4HAccessToken",
     "I3Template",
     "I3TemplateVariant",
     "Organization",
@@ -157,7 +157,7 @@ export type LogRefRoleInput = z.infer<typeof logRefRoleInputSchema>;
  */
 const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Account: null,
-    D4hAccessToken: "admin",
+    D4HAccessToken: "admin",
     I3Template: "i3",
     I3TemplateVariant: "i3",
     Organization: "admin",

@@ -32,7 +32,7 @@ import { route } from "@/lib/routes";
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_D4hAccessToken_Content({ tokenId }: { tokenId: D4HAccessTokenId }) {
+export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAccessTokenId }) {
     const organization = useOrganization();
 
     const { data: accessToken } = useSuspenseQuery(

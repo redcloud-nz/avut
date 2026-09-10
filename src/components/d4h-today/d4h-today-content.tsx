@@ -32,7 +32,7 @@ const STATUS_META: Record<
     "not-involved": { label: "Not involved", variant: "outline" },
 };
 
-export function D4hToday_Content({ availability }: { availability: Availability }) {
+export function D4HToday_Content({ availability }: { availability: Availability }) {
     return (
         <Saratoga.Root className="max-w-3xl">
             <Saratoga.Header>
@@ -40,15 +40,15 @@ export function D4hToday_Content({ availability }: { availability: Availability 
             </Saratoga.Header>
 
             {availability === "ready" ? (
-                <D4hToday_Answer />
+                <D4HToday_Answer />
             ) : (
-                <D4hToday_NotConfigured availability={availability} />
+                <D4HToday_NotConfigured availability={availability} />
             )}
         </Saratoga.Root>
     );
 }
 
-function D4hToday_NotConfigured({
+function D4HToday_NotConfigured({
     availability,
 }: {
     availability: Exclude<Availability, "ready">;
@@ -79,7 +79,7 @@ function D4hToday_NotConfigured({
     );
 }
 
-function D4hToday_Answer() {
+function D4HToday_Answer() {
     const organization = useOrganization();
 
     const { data: groups } = useSuspenseQuery(

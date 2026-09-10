@@ -21,7 +21,7 @@ export type * from "./models/OrganizationInvitation";
 export type * from "./models/LogEntry";
 export type * from "./models/LogEntryObject";
 export type * from "./models/LogBatch";
-export type * from "./models/D4hAccessToken";
+export type * from "./models/D4HAccessToken";
 export type * from "./models/Person";
 export type * from "./models/TeamMembership";
 export type * from "./models/Note";

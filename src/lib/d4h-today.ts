@@ -8,16 +8,16 @@ import { z } from "zod";
 export const d4hActivityTypeSchema = z.enum(["Event", "Exercise", "Incident"]);
 export const d4hTodayStatusSchema = z.enum(["attending", "absent", "requested", "not-involved"]);
 
-export type D4hActivityType = z.infer<typeof d4hActivityTypeSchema>;
+export type D4HActivityType = z.infer<typeof d4hActivityTypeSchema>;
 
-export type D4hAttendanceStatus = "ATTENDING" | "ABSENT" | "REQUESTED";
+export type D4HAttendanceStatus = "ATTENDING" | "ABSENT" | "REQUESTED";
 
-export type D4hTodayStatus = z.infer<typeof d4hTodayStatusSchema>;
+export type D4HTodayStatus = z.infer<typeof d4hTodayStatusSchema>;
 
 /** A raw event / exercise / incident as fetched from D4H, reduced to what this view needs. */
-export interface D4hTodayActivityInput {
+export interface D4HTodayActivityInput {
     id: number;
-    resourceType: D4hActivityType;
+    resourceType: D4HActivityType;
     reference: string | null;
     referenceDescription: string | null;
     startsAt: string;
@@ -26,17 +26,17 @@ export interface D4hTodayActivityInput {
 }
 
 /** A raw attendance record for the current member. */
-export interface D4hTodayAttendanceInput {
-    activity: { id: number; resourceType: D4hActivityType };
-    status: D4hAttendanceStatus;
+export interface D4HTodayAttendanceInput {
+    activity: { id: number; resourceType: D4HActivityType };
+    status: D4HAttendanceStatus;
 }
 
-export interface D4hTodayTeamInput {
+export interface D4HTodayTeamInput {
     team: { id: number; title: string };
     /** IANA timezone of the team, used to render "today" in the team's own civil day. */
     timezone: string;
-    activities: D4hTodayActivityInput[];
-    attendances: D4hTodayAttendanceInput[];
+    activities: D4HTodayActivityInput[];
+    attendances: D4HTodayAttendanceInput[];
 }
 
 export const d4hTodayActivitySchema = z.object({
@@ -56,11 +56,11 @@ export const d4hTodayTeamGroupSchema = z.object({
     activities: z.array(d4hTodayActivitySchema),
 });
 
-export type D4hTodayActivity = z.infer<typeof d4hTodayActivitySchema>;
+export type D4HTodayActivity = z.infer<typeof d4hTodayActivitySchema>;
 
-export type D4hTodayTeamGroup = z.infer<typeof d4hTodayTeamGroupSchema>;
+export type D4HTodayTeamGroup = z.infer<typeof d4hTodayTeamGroupSchema>;
 
-const STATUS_MAP: Record<D4hAttendanceStatus, Exclude<D4hTodayStatus, "not-involved">> = {
+const STATUS_MAP: Record<D4HAttendanceStatus, Exclude<D4HTodayStatus, "not-involved">> = {
     ATTENDING: "attending",
     ABSENT: "absent",
     REQUESTED: "requested",
@@ -73,7 +73,7 @@ const STATUS_MAP: Record<D4hAttendanceStatus, Exclude<D4hTodayStatus, "not-invol
  * member has an attendance record for them. Activities are keyed by `(type, id)` since
  * ids are only unique within an activity type.
  */
-export function buildD4hToday(teams: D4hTodayTeamInput[]): D4hTodayTeamGroup[] {
+export function buildD4HToday(teams: D4HTodayTeamInput[]): D4HTodayTeamGroup[] {
     return teams
         .map(({ team, timezone, activities, attendances }) => {
             const statusByKey = new Map(
@@ -81,7 +81,7 @@ export function buildD4hToday(teams: D4hTodayTeamInput[]): D4hTodayTeamGroup[] {
             );
 
             const resolved = activities
-                .map((raw): D4hTodayActivity => {
+                .map((raw): D4HTodayActivity => {
                     const status = statusByKey.get(`${raw.resourceType}:${raw.id}`);
                     return {
                         id: raw.id,

@@ -50,7 +50,7 @@ async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
 /**
  * DEVELOPMENT ONLY PAGE
  */
-export default async function Admin_D4hAccessToken_Organisation_Page(
+export default async function Admin_D4HAccessToken_Organisation_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/organisation`>,
 ) {
     const { slug, token_id } = await props.params;

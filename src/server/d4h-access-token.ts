@@ -7,7 +7,7 @@ import "server-only";
 
 import { cacheTag, revalidateTag } from "next/cache";
 
-import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/client";
+import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 
 import { NotConfiguredError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
@@ -17,11 +17,11 @@ import { UserId } from "@/lib/schemas/user";
 import { getOrganizationSettings } from "./organization-settings";
 import prisma from "./prisma";
 
-async function fetchD4HAccessToken(tokenId: string): Promise<D4hAccessTokenRecord | null> {
+async function fetchD4HAccessToken(tokenId: string): Promise<D4HAccessTokenRecord | null> {
     "use cache";
     cacheTag(`d4h-access-token-${tokenId}`);
 
-    return await prisma.d4hAccessToken.findUnique({
+    return await prisma.d4HAccessToken.findUnique({
         where: {
             id: tokenId,
         },
@@ -63,7 +63,7 @@ export async function getPersonalD4HAccessTokenForUser(
     "use cache";
     cacheTag(`d4h-personal-access-token-${organizationId}-${userId}`);
 
-    const record = await prisma.d4hAccessToken.findFirst({
+    const record = await prisma.d4HAccessToken.findFirst({
         where: {
             organizationId,
             userId,

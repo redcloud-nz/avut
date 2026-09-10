@@ -405,7 +405,7 @@ export const ModelName = {
     LogEntry: "LogEntry",
     LogEntryObject: "LogEntryObject",
     LogBatch: "LogBatch",
-    D4hAccessToken: "D4hAccessToken",
+    D4HAccessToken: "D4HAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
     Note: "Note",
@@ -458,7 +458,7 @@ export type TypeMap<
             | "logEntry"
             | "logEntryObject"
             | "logBatch"
-            | "d4hAccessToken"
+            | "d4HAccessToken"
             | "person"
             | "teamMembership"
             | "note"
@@ -1544,78 +1544,78 @@ export type TypeMap<
                 };
             };
         };
-        D4hAccessToken: {
-            payload: Prisma.$D4hAccessTokenPayload<ExtArgs>;
-            fields: Prisma.D4hAccessTokenFieldRefs;
+        D4HAccessToken: {
+            payload: Prisma.$D4HAccessTokenPayload<ExtArgs>;
+            fields: Prisma.D4HAccessTokenFieldRefs;
             operations: {
                 findUnique: {
-                    args: Prisma.D4hAccessTokenFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload> | null;
+                    args: Prisma.D4HAccessTokenFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload> | null;
                 };
                 findUniqueOrThrow: {
-                    args: Prisma.D4hAccessTokenFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 findFirst: {
-                    args: Prisma.D4hAccessTokenFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload> | null;
+                    args: Prisma.D4HAccessTokenFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload> | null;
                 };
                 findFirstOrThrow: {
-                    args: Prisma.D4hAccessTokenFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 findMany: {
-                    args: Prisma.D4hAccessTokenFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>[];
+                    args: Prisma.D4HAccessTokenFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>[];
                 };
                 create: {
-                    args: Prisma.D4hAccessTokenCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 createMany: {
-                    args: Prisma.D4hAccessTokenCreateManyArgs<ExtArgs>;
+                    args: Prisma.D4HAccessTokenCreateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 createManyAndReturn: {
-                    args: Prisma.D4hAccessTokenCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>[];
+                    args: Prisma.D4HAccessTokenCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>[];
                 };
                 delete: {
-                    args: Prisma.D4hAccessTokenDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 update: {
-                    args: Prisma.D4hAccessTokenUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 deleteMany: {
-                    args: Prisma.D4hAccessTokenDeleteManyArgs<ExtArgs>;
+                    args: Prisma.D4HAccessTokenDeleteManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateMany: {
-                    args: Prisma.D4hAccessTokenUpdateManyArgs<ExtArgs>;
+                    args: Prisma.D4HAccessTokenUpdateManyArgs<ExtArgs>;
                     result: BatchPayload;
                 };
                 updateManyAndReturn: {
-                    args: Prisma.D4hAccessTokenUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>[];
+                    args: Prisma.D4HAccessTokenUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>[];
                 };
                 upsert: {
-                    args: Prisma.D4hAccessTokenUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4hAccessTokenPayload>;
+                    args: Prisma.D4HAccessTokenUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$D4HAccessTokenPayload>;
                 };
                 aggregate: {
-                    args: Prisma.D4hAccessTokenAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateD4hAccessToken>;
+                    args: Prisma.D4HAccessTokenAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateD4HAccessToken>;
                 };
                 groupBy: {
-                    args: Prisma.D4hAccessTokenGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.D4hAccessTokenGroupByOutputType>[];
+                    args: Prisma.D4HAccessTokenGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.D4HAccessTokenGroupByOutputType>[];
                 };
                 count: {
-                    args: Prisma.D4hAccessTokenCountArgs<ExtArgs>;
+                    args: Prisma.D4HAccessTokenCountArgs<ExtArgs>;
                     result:
-                        | runtime.Types.Utils.Optional<Prisma.D4hAccessTokenCountAggregateOutputType>
+                        | runtime.Types.Utils.Optional<Prisma.D4HAccessTokenCountAggregateOutputType>
                         | number;
                 };
             };
@@ -3218,7 +3218,7 @@ export const LogBatchScalarFieldEnum = {
 export type LogBatchScalarFieldEnum =
     (typeof LogBatchScalarFieldEnum)[keyof typeof LogBatchScalarFieldEnum];
 
-export const D4hAccessTokenScalarFieldEnum = {
+export const D4HAccessTokenScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     userId: "userId",
@@ -3232,8 +3232,8 @@ export const D4hAccessTokenScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hAccessTokenScalarFieldEnum =
-    (typeof D4hAccessTokenScalarFieldEnum)[keyof typeof D4hAccessTokenScalarFieldEnum];
+export type D4HAccessTokenScalarFieldEnum =
+    (typeof D4HAccessTokenScalarFieldEnum)[keyof typeof D4HAccessTokenScalarFieldEnum];
 
 export const PersonScalarFieldEnum = {
     id: "id",
@@ -3795,7 +3795,7 @@ export type GlobalOmitConfig = {
     logEntry?: Prisma.LogEntryOmit;
     logEntryObject?: Prisma.LogEntryObjectOmit;
     logBatch?: Prisma.LogBatchOmit;
-    d4hAccessToken?: Prisma.D4hAccessTokenOmit;
+    d4HAccessToken?: Prisma.D4HAccessTokenOmit;
     person?: Prisma.PersonOmit;
     teamMembership?: Prisma.TeamMembershipOmit;
     note?: Prisma.NoteOmit;

@@ -33,7 +33,7 @@ import { D4HServerList } from "@/lib/d4h-servers";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
-export function D4hIntegration_SettingsCard({
+export function D4HIntegration_SettingsCard({
     organizationId,
     settings,
 }: {

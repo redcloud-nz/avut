@@ -5,10 +5,10 @@
 
 import { describe, expect, it } from "vitest";
 
-import { buildD4hToday, zonedTodayRange } from "./d4h-today";
+import { buildD4HToday, zonedTodayRange } from "./d4h-today";
 
 function activity(
-    over: Partial<Parameters<typeof buildD4hToday>[0][number]["activities"][number]> = {},
+    over: Partial<Parameters<typeof buildD4HToday>[0][number]["activities"][number]> = {},
 ) {
     return {
         id: 1,
@@ -23,7 +23,7 @@ function activity(
 }
 
 function attendance(
-    over: Partial<Parameters<typeof buildD4hToday>[0][number]["attendances"][number]> = {},
+    over: Partial<Parameters<typeof buildD4HToday>[0][number]["attendances"][number]> = {},
 ) {
     return {
         activity: { id: 1, resourceType: "Event" as const },
@@ -59,9 +59,9 @@ describe("zonedTodayRange", () => {
     });
 });
 
-describe("buildD4hToday", () => {
+describe("buildD4HToday", () => {
     it("joins each event/exercise to its attendance status", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -87,7 +87,7 @@ describe("buildD4hToday", () => {
     });
 
     it("marks an event with no attendance record as not-involved", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -100,7 +100,7 @@ describe("buildD4hToday", () => {
     });
 
     it("maps REQUESTED to requested", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -113,7 +113,7 @@ describe("buildD4hToday", () => {
     });
 
     it("includes an incident only when it has an attendance record", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -139,7 +139,7 @@ describe("buildD4hToday", () => {
     });
 
     it("does not confuse an event and an incident that share an id", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -157,7 +157,7 @@ describe("buildD4hToday", () => {
     });
 
     it("titles an activity by description, then reference, then a fallback", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -174,7 +174,7 @@ describe("buildD4hToday", () => {
     });
 
     it("sorts activities within a team by start time", () => {
-        const [group] = buildD4hToday([
+        const [group] = buildD4HToday([
             {
                 team: TEAM,
                 timezone: "Pacific/Auckland",
@@ -190,7 +190,7 @@ describe("buildD4hToday", () => {
     });
 
     it("returns teams sorted by title, each carrying its own activities and timezone", () => {
-        const groups = buildD4hToday([
+        const groups = buildD4HToday([
             {
                 team: { id: 2, title: "Zulu" },
                 timezone: "America/New_York",
