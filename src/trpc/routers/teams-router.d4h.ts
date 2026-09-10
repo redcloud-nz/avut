@@ -8,7 +8,7 @@
 
 import { TRPCError } from "@trpc/server";
 
-import { Team_D4H as TeamD4HRecord } from "@/generated/prisma/client";
+import { Prisma, Team_D4H as TeamD4HRecord } from "@/generated/prisma/client";
 
 import { diffObject } from "@/lib/diff";
 import { D4HMember } from "@/lib/schemas/d4h/member";
@@ -90,13 +90,30 @@ export async function upsertOrganizationD4H(
     const { action, resolved, batchId } = args;
     if (action.kind === "reuse") return;
 
+    // Two concurrent first-time links race on the unique `organizationId` — surface
+    // the loser as a friendly CONFLICT rather than a raw Prisma P2002 / opaque 500.
+    const createOrgLink = async (writes: Prisma.PrismaPromise<unknown>[]) => {
+        try {
+            await ctx.prisma.$transaction(writes);
+        } catch (e) {
+            if (e instanceof Object && "code" in e && e.code === "P2002") {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message:
+                        "This organization was just linked to D4H — reload the page and try again.",
+                });
+            }
+            throw e;
+        }
+    };
+
     if (action.kind === "create-org-linked") {
         const d4hOrg = await fetchD4HOrganisationCached(
             resolved.token,
             resolved.d4hTeamId,
             action.d4hOrganisationId,
         );
-        await ctx.prisma.$transaction([
+        await createOrgLink([
             ctx.prisma.organization_D4H.create({
                 data: {
                     organizationId: ctx.organizationId,
@@ -122,7 +139,7 @@ export async function upsertOrganizationD4H(
     }
 
     // create-org-less
-    await ctx.prisma.$transaction([
+    await createOrgLink([
         ctx.prisma.organization_D4H.create({
             data: {
                 organizationId: ctx.organizationId,
@@ -491,7 +508,16 @@ async function applyD4HSyncPlan(
             }),
         ]);
     } else {
-        await ctx.prisma.team_D4H.update({ where: { teamId }, data: { lastSyncedAt: now } });
+        await ctx.prisma.$transaction([
+            ctx.prisma.team_D4H.update({ where: { teamId }, data: { lastSyncedAt: now } }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "Team",
+                objectId: teamId,
+                description: "Synced with linked D4H team — no metadata changes.",
+                batchId,
+            }),
+        ]);
     }
 
     // Organization_D4H cache refresh — org-bearing teams only.
@@ -523,10 +549,19 @@ async function applyD4HSyncPlan(
                 }),
             ]);
         } else {
-            await ctx.prisma.organization_D4H.update({
-                where: { organizationId: ctx.organizationId },
-                data: { lastSyncedAt: now },
-            });
+            await ctx.prisma.$transaction([
+                ctx.prisma.organization_D4H.update({
+                    where: { organizationId: ctx.organizationId },
+                    data: { lastSyncedAt: now },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "Organization",
+                    objectId: ctx.organizationId,
+                    description: "Synced cached D4H organisation attributes — no changes.",
+                    batchId,
+                }),
+            ]);
         }
     }
 }
@@ -617,10 +652,18 @@ export async function syncOrganizationD4HCache(
             }),
         ]);
     } else {
-        await ctx.prisma.organization_D4H.update({
-            where: { organizationId: ctx.organizationId },
-            data: { lastSyncedAt: new Date() },
-        });
+        await ctx.prisma.$transaction([
+            ctx.prisma.organization_D4H.update({
+                where: { organizationId: ctx.organizationId },
+                data: { lastSyncedAt: new Date() },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "Organization",
+                objectId: ctx.organizationId,
+                description: "Synced cached D4H organisation attributes — no changes.",
+            }),
+        ]);
     }
 }
 
