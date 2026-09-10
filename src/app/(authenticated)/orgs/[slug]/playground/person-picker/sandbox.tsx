@@ -23,6 +23,18 @@ export function PersonPicker_Sandbox() {
     const [disabled, setDisabled] = useState(false);
     const [placeholder, setPlaceholder] = useState("Select a person");
 
+    const code = [
+        `<PersonPicker`,
+        `    value={${value ? `"${value}"` : "null"}}`,
+        `    onValueChange={setValue}`,
+        `    organizationId={organization.id}`,
+        ...(disabled ? [`    disabled`] : []),
+        ...(placeholder !== "Select a person"
+            ? [`    placeholder=${JSON.stringify(placeholder)}`]
+            : []),
+        `/>`,
+    ].join("\n");
+
     return (
         <Harness
             title="Person picker"
@@ -52,6 +64,7 @@ export function PersonPicker_Sandbox() {
                     </p>
                 </div>
             }
+            code={code}
         >
             <PersonPicker
                 value={value}
