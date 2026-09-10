@@ -64,32 +64,57 @@ export function AdminModule_Organization_D4HCard() {
         parseAsStringLiteral(["d4h-org-unlink"] as const),
     );
 
+    const syncMutation = useMutation(
+        trpc.teams.syncOrganizationD4H.mutationOptions({
+            meta: { effects: teamsEffects.syncOrganizationD4H },
+            onError: (error) => toast.error(`Sync failed: ${error.message}`),
+            onSuccess: () => toast.success("D4H organisation details refreshed"),
+        }),
+    );
+
     if (!organization.settings.integrations.d4h.enabled || !orgD4H) return null;
 
     const reportingStart = formatReportingStart(
         orgD4H.d4hReportingStartDay,
         orgD4H.d4hReportingStartMonth,
     );
+    const canSync = orgD4H.d4hOrganisationId != null && orgD4H.linkedTeamCount > 0;
+    const teamsRemain = orgD4H.linkedTeamCount > 0;
 
     return (
         <Protect permissions={{ organization: ["update"] }}>
             <Card>
                 <CardHeader>
                     <CardTitle>D4H Integration</CardTitle>
-                    <CardAction>
+                    <CardAction className="flex gap-1">
+                        {canSync && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Sync with D4H"
+                                title="Sync with D4H"
+                                disabled={syncMutation.isPending}
+                                onClick={() =>
+                                    syncMutation.mutate({ organizationId: organization.id })
+                                }
+                            >
+                                <D4HIcons.Sync />
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            aria-label="Unlink from D4H"
                             className="text-destructive hover:text-destructive"
-                            disabled={orgD4H.linkedTeamCount > 0}
+                            disabled={teamsRemain}
                             title={
-                                orgD4H.linkedTeamCount > 0
+                                teamsRemain
                                     ? "Unlink all D4H-linked teams first"
-                                    : undefined
+                                    : "Unlink from D4H"
                             }
                             onClick={() => void setAction("d4h-org-unlink", { history: "push" })}
                         >
-                            <D4HIcons.Unlink /> Unlink
+                            <D4HIcons.Unlink />
                         </Button>
                     </CardAction>
                 </CardHeader>

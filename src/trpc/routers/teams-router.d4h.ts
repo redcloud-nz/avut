@@ -532,6 +532,99 @@ async function applyD4HSyncPlan(
 }
 
 /**
+ * Refresh the cached `Organization_D4H` attributes (name, timezone, currency,
+ * reporting-year start) from D4H, bumping `lastSyncedAt`. Phase-1 org sync —
+ * metadata only, no membership reconciliation (that stays per-team).
+ *
+ * Reaches the D4H organisation through the caller's personal token, using any
+ * linked team as the API's `{context}/{contextId}`, so it requires at least one
+ * `Team_D4H` and an org-linked (not org-less) `Organization_D4H`.
+ */
+export async function syncOrganizationD4HCache(
+    ctx: AuthenticatedOrganizationContext,
+): Promise<void> {
+    const orgD4H = await ctx.prisma.organization_D4H.findUnique({
+        where: { organizationId: ctx.organizationId },
+    });
+    if (!orgD4H) {
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This organization is not linked to D4H.",
+        });
+    }
+    if (orgD4H.d4hOrganisationId == null) {
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This is an org-less D4H link — there is no D4H organisation to sync.",
+        });
+    }
+
+    const anyLinkedTeam = await ctx.prisma.team_D4H.findFirst({
+        where: { team: { organizationId: ctx.organizationId } },
+        select: { d4hTeamId: true },
+    });
+    if (!anyLinkedTeam) {
+        throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Link at least one team to D4H before syncing organisation details.",
+        });
+    }
+
+    const token = await getPersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+    if (!token) {
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No personal D4H Access Token found for user",
+        });
+    }
+
+    const d4hOrg = await fetchD4HOrganisationCached(
+        token,
+        anyLinkedTeam.d4hTeamId,
+        orgD4H.d4hOrganisationId,
+    );
+
+    const incoming = {
+        d4hOrganisationName: d4hOrg.title,
+        d4hTimezone: d4hOrg.timezone,
+        d4hCurrency: d4hOrg.currency,
+        d4hReportingStartDay: d4hOrg.reportingStartDay,
+        d4hReportingStartMonth: d4hOrg.reportingStartMonth,
+    };
+    const changes = diffObject(
+        {
+            d4hOrganisationName: orgD4H.d4hOrganisationName,
+            d4hTimezone: orgD4H.d4hTimezone,
+            d4hCurrency: orgD4H.d4hCurrency,
+            d4hReportingStartDay: orgD4H.d4hReportingStartDay,
+            d4hReportingStartMonth: orgD4H.d4hReportingStartMonth,
+        },
+        incoming,
+    );
+
+    if (changes.length > 0) {
+        await ctx.prisma.$transaction([
+            ctx.prisma.organization_D4H.update({
+                where: { organizationId: ctx.organizationId },
+                data: { lastSyncedAt: new Date(), ...incoming },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "Organization",
+                objectId: ctx.organizationId,
+                description: "Refreshed cached D4H organisation attributes.",
+                changes,
+            }),
+        ]);
+    } else {
+        await ctx.prisma.organization_D4H.update({
+            where: { organizationId: ctx.organizationId },
+            data: { lastSyncedAt: new Date() },
+        });
+    }
+}
+
+/**
  * Fetch → plan → (optionally match token) → apply. Used by link/create (no token
  * to match) and by `applyD4HTeamSync` (must match the previewed `planToken`).
  */

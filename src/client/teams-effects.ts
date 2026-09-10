@@ -37,6 +37,11 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),
     unlinkTeamFromD4H: (vars) => teamCaches(vars),
+    syncOrganizationD4H: (vars) => [
+        invalidate(
+            trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
     unlinkOrganizationFromD4H: (vars) => [
         invalidate(
             trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),

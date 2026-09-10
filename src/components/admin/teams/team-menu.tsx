@@ -75,27 +75,37 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>D4H</DropdownMenuLabel>
                             <DropdownMenuGroup>
-                                <DropdownMenuItem
-                                    disabled={!canUpdate || linked}
-                                    onClick={() => void setAction("d4h-link", { history: "push" })}
-                                >
-                                    <D4HIcons.Link /> Link to D4H
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!canUpdate || !linked}
-                                    onClick={() => void setAction("d4h-sync", { history: "push" })}
-                                >
-                                    <D4HIcons.Sync /> Sync with D4H
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!canUpdate || !linked}
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() =>
-                                        void setAction("d4h-unlink", { history: "push" })
-                                    }
-                                >
-                                    <D4HIcons.Unlink /> Unlink from D4H
-                                </DropdownMenuItem>
+                                {!linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        onClick={() =>
+                                            void setAction("d4h-link", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Link /> Link to D4H
+                                    </DropdownMenuItem>
+                                )}
+                                {linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        onClick={() =>
+                                            void setAction("d4h-sync", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Sync /> Sync with D4H
+                                    </DropdownMenuItem>
+                                )}
+                                {linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() =>
+                                            void setAction("d4h-unlink", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Unlink /> Unlink from D4H
+                                    </DropdownMenuItem>
+                                )}
                             </DropdownMenuGroup>
                         </>
                     )}

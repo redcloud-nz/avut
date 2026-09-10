@@ -24,6 +24,7 @@ import {
     planD4HSync,
     resolveD4HTeamForLink,
     runTeamSync,
+    syncOrganizationD4HCache,
     upsertOrganizationD4H,
 } from "./teams-router.d4h";
 
@@ -651,6 +652,16 @@ export const teamsRouter = createTrpcRouter({
 
             return planD4HSync(ctx, { teamD4H: team.d4h, token });
         }),
+
+    /**
+     * Refresh the org-level D4H cache (name, timezone, currency, reporting-year
+     * start) from D4H. Metadata only — team membership sync stays per-team.
+     */
+    syncOrganizationD4H: organizationProcedure({ organization: ["update"] }).mutation(
+        async ({ ctx }) => {
+            await syncOrganizationD4HCache(ctx);
+        },
+    ),
 
     /**
      * Remove the org-level D4H link. Refuses while any team in the org is still

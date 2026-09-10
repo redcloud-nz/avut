@@ -388,9 +388,19 @@ shows "already in sync".
   by-product of the first team link and is never user-created, so there is no
   "Link" action. Surfaces the bound D4H organisation (name + id, or "org-less"),
   server, cached timezone / currency / reporting-year start, linked-team count
-  and `lastSyncedAt`, plus an **Unlink** action disabled (with explanation)
-  while any `Team_D4H` remains — `unlinkOrganizationFromD4H`. Backed by a
-  `teams.getOrganizationD4H` query.
+  and `lastSyncedAt`. Actions live both on the card and in a `⋮` menu beside the
+  page's Settings button (which also carries Edit and a placeholder Delete):
+  - **Sync** — `syncOrganizationD4H`, refreshes the cached org attributes from
+    D4H (metadata only; membership sync stays per-team). Shown only for an
+    org-linked link with ≥1 linked team (needs a team for D4H API context).
+  - **Unlink** — `unlinkOrganizationFromD4H`, disabled with an explanation while
+    any `Team_D4H` remains.
+    Backed by a `teams.getOrganizationD4H` query. There is no org-level "Link"
+    action — the `Organization_D4H` row is only ever created as a by-product of
+    linking a team.
+- **D4H action visibility** (team menu + org menu/card): actions that don't
+  apply to the current link state are hidden, not disabled — no Sync/Unlink when
+  unlinked, no Link when linked.
 
 ---
 
@@ -422,7 +432,7 @@ Not built now. When it lands:
 | 3   | Drop `enum TeamType` and the orphaned `teams.type` column. "Is a D4H team" = `Team_D4H != null`.                                                                                                                                                                                                                         |
 | 4   | `src/lib/schemas/team.ts` — `TeamData.d4h` gains `d4hOrganisationId`, `d4hTimezone`; rename `d4hServer` → `d4hServerCode`. New `TeamMembershipData` D4H sub-object.                                                                                                                                                      |
 | 5   | `src/lib/operations.ts` — add `d4h-team-link`; rename `d4h-team-import` away (or keep as a historical key — batches referencing it still exist). Keep `d4h-team-sync`.                                                                                                                                                   |
-| 6   | Delete `importTeamFromD4H`, `syncronizeD4HTeam`; add `linkTeamToD4H`, `createTeamFromD4H`, `unlinkTeamFromD4H`, `unlinkOrganizationFromD4H`, `planD4HTeamSync`, `applyD4HTeamSync` (alphabetical order in the router).                                                                                                   |
+| 6   | Delete `importTeamFromD4H`, `syncronizeD4HTeam`; add `linkTeamToD4H`, `createTeamFromD4H`, `unlinkTeamFromD4H`, `getOrganizationD4H`, `syncOrganizationD4H`, `unlinkOrganizationFromD4H`, `planD4HTeamSync`, `applyD4HTeamSync` (alphabetical order in the router).                                                      |
 | 7   | `src/lib/schemas/d4h/organisation.ts` / `team.ts` — ensure the org-detail fetch and its cache mapping are covered; add `D4HMemberStatus` export if not present.                                                                                                                                                          |
 | 8   | UI: team-detail D4H card, sync dialog, repoint `import-team-from-d4h.tsx`.                                                                                                                                                                                                                                               |
 | 9   | Tests: `buildSyncPlan` unit tests (pure); router tests for link invariants (§4) and apply reconciliation (§7.2) with `createMockPrisma`.                                                                                                                                                                                 |
