@@ -150,10 +150,31 @@ interface ScreenshotSpec {
 }
 ```
 
-### 4.2 Flow
+The manifest is the single source of truth for what to capture — a capture
+concern, kept in one auditable list rather than scattered across MDX
+frontmatter. MDX authors only reference an `id` from it.
+
+### 4.2 Coverage lint check
+
+A check pairs the manifest against the MDX so a mismatch surfaces at lint time,
+not `next build` time:
+
+- Scan `content/docs/**/*.mdx` for `<Screenshot id="…" />`.
+- Every referenced `id` must exist in `manifest.ts` → otherwise error, naming
+  the file and id (the author added a `<Screenshot>` without a capture spec).
+- Every `manifest.ts` `id` should be referenced by at least one MDX file →
+  otherwise warn (a spec for a screenshot no doc shows — likely stale).
+- Manifest `id`s must be unique, and each must be a valid Blob pathname segment
+  set (`[a-z0-9-]+(/[a-z0-9-]+)*`).
+
+Runs as its own script (`scripts/docs-screenshots/check.ts`), wired into
+`npm run lint` and CI. It parses the manifest and greps the MDX only — no
+browser, no database — so it is cheap enough to run on every lint.
+
+### 4.3 Flow
 
 1. Load the manifest.
-2. Ensure the deterministic demo dataset is seeded (§4.3).
+2. Ensure the deterministic demo dataset is seeded (§4.4).
 3. Start (or connect to) a local non-production build.
 4. Playwright, per spec × theme:
    - `window.avut.signIn` as the admin test account, then
@@ -168,7 +189,7 @@ interface ScreenshotSpec {
 6. `put()` to Vercel Blob.
 7. Rewrite `screenshots.generated.json` and leave it staged for commit.
 
-### 4.3 Determinism
+### 4.4 Determinism
 
 Screenshots must not churn on every run. Prerequisite work on `seed:demo`:
 
@@ -180,7 +201,7 @@ Screenshots must not churn on every run. Prerequisite work on `seed:demo`:
 - `mask` remains the fallback for anything that can't be pinned (avatars,
   charts with live layout).
 
-### 4.4 CI
+### 4.5 CI
 
 GitHub Action, `workflow_dispatch`:
 
@@ -212,23 +233,25 @@ Hand-capture ~5 screenshots for the highest-traffic pages. Docs get images
 immediately; no Playwright, no demo-seed work.
 
 **Phase 2 — automated capture.**
-`manifest.ts`, the Playwright capture script, `seed:demo` determinism, the CI
-workflow. Justified once the doc set is large enough that manual upkeep is
-painful.
+`manifest.ts`, the coverage lint check (§4.2), the Playwright capture script,
+`seed:demo` determinism, the CI workflow. Justified once the doc set is large
+enough that manual upkeep is painful.
 
 ---
 
 ## 7. Resolved decisions
 
-| Question                              | Decision                                                                |
-| ------------------------------------- | ----------------------------------------------------------------------- |
-| Where do screenshot binaries live?    | Vercel Blob, public access, deterministic pathnames, overwrite in place |
-| Committed to git?                     | No — only the generated JSON index is committed                         |
-| git-LFS?                              | No — screenshots are regenerable build output, not source               |
-| Branch-versioned screenshots?         | Not required for end-user docs; preview shows current bucket contents   |
-| How does MDX reference a screenshot?  | `<Screenshot id="…" />`, keyed into the index; no raw Markdown images   |
-| Where does `alt` text come from?      | The capture manifest → the index; MDX may override                      |
-| Light/dark handling                   | Capture both, swap with CSS, follow app theme                           |
-| Does capture run in the Vercel build? | No — on demand locally or a dispatched GitHub Action                    |
-| Auth for capture                      | `window.avut` dev tools + impersonation; non-production builds only     |
-| Biggest prerequisite for Phase 2      | Deterministic `seed:demo` (fixed IDs, clock, ordering, per-role users)  |
+| Question                                           | Decision                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------- |
+| Where do screenshot binaries live?                 | Vercel Blob, public access, deterministic pathnames, overwrite in place |
+| Committed to git?                                  | No — only the generated JSON index is committed                         |
+| git-LFS?                                           | No — screenshots are regenerable build output, not source               |
+| Branch-versioned screenshots?                      | Not required for end-user docs; preview shows current bucket contents   |
+| How does MDX reference a screenshot?               | `<Screenshot id="…" />`, keyed into the index; no raw Markdown images   |
+| Where are capture instructions kept?               | One `scripts/docs-screenshots/manifest.ts` list, not MDX frontmatter    |
+| Catching a `<Screenshot id>` with no capture spec? | Lint check (§4.2) greps MDX against the manifest; errors at lint time   |
+| Where does `alt` text come from?                   | The capture manifest → the index; MDX may override                      |
+| Light/dark handling                                | Capture both, swap with CSS, follow app theme                           |
+| Does capture run in the Vercel build?              | No — on demand locally or a dispatched GitHub Action                    |
+| Auth for capture                                   | `window.avut` dev tools + impersonation; non-production builds only     |
+| Biggest prerequisite for Phase 2                   | Deterministic `seed:demo` (fixed IDs, clock, ordering, per-role users)  |
