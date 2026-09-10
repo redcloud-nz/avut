@@ -38,7 +38,7 @@ export function PersonPicker_Sandbox() {
     return (
         <Harness
             title="Person picker"
-            description="Org-scoped personnel picker. Reads the current organization from useOrganization() and the personnel.listPersonnel query."
+            description="Org-scoped personnel picker. Takes an organizationId and lists personnel via personnel.listPersonnel; this sandbox passes the current org."
             onReset={() => {
                 setValue(null);
                 setDisabled(false);

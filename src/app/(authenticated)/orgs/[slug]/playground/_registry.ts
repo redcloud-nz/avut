@@ -21,6 +21,6 @@ export const playgroundRegistry: readonly PlaygroundEntry[] = [
         slug: "person-picker",
         title: "Person picker",
         description:
-            "Select a person from the current organization. Exercises useOrganization() and the org-scoped personnel query against the live runtime.",
+            "Select a person from an organization's personnel. Exercises the org-scoped personnel.listPersonnel query against the live runtime.",
     },
 ];
