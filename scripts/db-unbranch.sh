@@ -3,9 +3,18 @@
 # db-unbranch — point .env.local back at the shared `avut` database and drop the
 # branch copy made by db-branch. Run this when the branch merges or is abandoned.
 #
-# Usage: npm run db:unbranch
+# Usage: npm run db:unbranch [-y|--yes]
+#   -y, --yes   drop the branch database without prompting
 #
 set -euo pipefail
+
+assume_yes=0
+for arg in "$@"; do
+  case "$arg" in
+    -y | --yes) assume_yes=1 ;;
+    *) echo "unknown argument: $arg" >&2; exit 1 ;;
+  esac
+done
 
 BASE_DB="avut"
 env_file=".env.local"
@@ -27,7 +36,11 @@ perl -i -pe "
 " "$env_file"
 echo ".env.local restored to '$BASE_DB'."
 
-read -r -p "drop database '$cur_db'? [y/N] " ans
+if [ "$assume_yes" -eq 1 ]; then
+  ans=y
+else
+  read -r -p "drop database '$cur_db'? [y/N] " ans
+fi
 case "$ans" in
   y | Y)
     psql "$admin_url" -v ON_ERROR_STOP=1 -q <<SQL

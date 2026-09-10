@@ -109,7 +109,8 @@ npm run db:unbranch          # point .env.local back at avut, offer to drop the 
 ## Worktrees
 
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
-- Remove a worktree with `git worktree remove` when done; run `git worktree prune` if a directory was deleted by hand.
+- Remove a worktree with `npm run worktree:remove <name>` — it drops the worktree's `db:branch` database copy first (a branch DB must never outlive its worktree), then runs `git worktree remove` + `prune`. Pass `git worktree remove` flags after `--` (e.g. `npm run worktree:remove <name> -- --force` when the tree has uncommitted changes). Plain `git worktree remove` still works but leaks the branch DB.
+- If a worktree directory was deleted by hand, run `git worktree prune` — and `npm run db:unbranch` from wherever `.env.local` was last pointed, or `dropdb avut_<slug>` directly, to clean up its branch DB.
 
 ### Setting up a fresh worktree
 
@@ -124,7 +125,7 @@ npx next typegen                          # .next/ is per-worktree; typed routes
 
 - If the worktree's branch changed `prisma/schema.prisma`, also run `npx prisma generate` (the committed `src/generated/` may be stale).
 - Run the dev server on its own port — `npm run dev -- -p 3100` — so it doesn't collide with a dev server in the main checkout (3000, and 3001 for `dev-email`).
-- The database is shared (see **Database** above) — a worktree that adds a migration must `npm run db:branch <slug>` before running `migrate dev`, and `npm run db:unbranch` when done.
+- The database is shared (see **Database** above) — a worktree that adds a migration must `npm run db:branch <slug>` before running `migrate dev`. `npm run worktree:remove` drops that copy at teardown; `npm run db:unbranch` does it mid-stream (e.g. once the branch merges but the worktree stays).
 - `.claude/settings.local.json` (personal permission allowlist) is not copied; expect more permission prompts until you re-add entries.
 
 ---

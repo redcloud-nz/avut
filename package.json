@@ -16,6 +16,7 @@
     "prisma": "dotenv -e .env.local -- npx prisma",
     "db:branch": "bash scripts/db-branch.sh",
     "db:unbranch": "bash scripts/db-unbranch.sh",
+    "worktree:remove": "bash scripts/worktree-remove.sh",
     "seed:demo": "dotenv -e .env.local -- tsx prisma/seed-demo.ts",
     "build": "dotenv -e .env.local -- prisma migrate deploy && next build",
     "start": "next start",
