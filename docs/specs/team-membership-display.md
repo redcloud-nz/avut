@@ -274,18 +274,18 @@ A dedicated page for **one person's membership of one team** — the record that
 
 ### 8.1 Why
 
-Four motivations, all real:
+Four motivations. **v1 delivers two of them**; the other two are deferred:
 
-1. **A home for editable membership metadata.** `updateTeamMembership` already
-   exists (`tags`, `properties`) with **zero UI** — `getTeamMembershipsCollection`
-   even wires an `onUpdate` to it. This page is the vehicle to finally ship it.
-2. **A deep-link target.** `logEvent` writes `objectType: "TeamMembership"` on
-   create / delete / every D4H sync add-archive-update, and today those entries
-   point at nothing.
-3. **D4H drill-down.** The full snapshot (`d4hRef`, `d4hRoleId`, team last-synced)
-   plus a jump to `/d4h-views/members/[team_id]/[member_id]`.
-4. **A membership activity timeline** — joined → D4H archived it → sync
-   re-activated → tag added. **This one has a prerequisite** (§8.5).
+1. **D4H drill-down.** _(v1)_ The full snapshot (`d4hRef`, `d4hRoleId`, team
+   last-synced) plus a jump to `/d4h-views/members/[team_id]/[member_id]`.
+2. **A deep-link target.** _(v1)_ `logEvent` writes `objectType: "TeamMembership"`
+   on create / delete / every D4H sync add-archive-update, and today those
+   entries point at nothing.
+3. **A home for editable membership metadata** — `tags` / `properties` via the
+   currently-unused `updateTeamMembership`. **Deferred.** The page shows neither
+   for now.
+4. **A membership activity timeline.** **Deferred** — needs a log-entry read
+   path that does not exist yet (§8.5.1).
 
 ### 8.2 Route
 
@@ -303,12 +303,16 @@ Breadcrumbs: Admin › Teams › _{team}_ › Personnel › _{person}_.
 ### 8.3 Navigation wiring
 
 - **Roster row** (`team-personnel-content.tsx`) — the Name cell keeps linking to
-  the **person** page (the more common intent). Reaching the membership page is a
-  new affordance: either a row `⋯` menu ("View membership", "Remove from team") or
-  a dedicated trailing link cell. _(Decision open — see §8.6.)_
-- **Person page Teams card** (`team-memberships.tsx`) — the row keeps linking to
-  the **team** page. Optionally the D4H secondary line / badge becomes the link
-  to the membership page. _(Decision open.)_
+  the **person** page. The **actions column** (currently a `Protect`-gated delete
+  button) becomes a **right-chevron link** to the membership page, one per row,
+  ungated (anyone who can view the roster can view a membership). "Remove from
+  team" leaves the roster (moves to the membership page, §8.5). The roster then
+  drops all its `?action=remove-member` / `?memberId=` nuqs wiring, `activeMember`,
+  `openRemoveMember`, and the `AdminModule_RemoveTeamMember_Dialog` mount.
+- **Person page Teams card** (`team-memberships.tsx`) — each row's `<Link>`
+  **retargets from the team page to the membership page**
+  (`teams/[team_id]/personnel/[person_id]`). Onward navigation to the team is via
+  the membership page's Related card.
 
 ### 8.4 API — `teams.getTeamMembership` (new)
 
@@ -320,39 +324,33 @@ roster omits (`d4hRef`, `d4hRoleId`) and the team's `d4h.lastSyncedAt`.
 
 ### 8.5 Page sections
 
-| Section  | Content                                                                                            | Notes                                                                                                                         |
-| -------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Details  | joined (`createdAt`), record status (`Active` / `Archived`), **tags**, **properties**              | `Protect team:["update"]` → an edit dialog on `updateTeamMembership`, per `docs/patterns/mutation-dialog.md` (`?action=edit`) |
-| D4H      | member id, D4H status badge, position, ref, role id, team last-synced; link to the D4H member view | read-only; card hidden when `d4h == null`                                                                                     |
-| Related  | → person page, → team page, → team roster                                                          | `Saratoga.Column slot="secondary"`                                                                                            |
-| Activity | membership log entries, newest first                                                               | **§8.5.1**                                                                                                                    |
-| Actions  | Remove from team                                                                                   | reuse `AdminModule_RemoveTeamMember_Dialog`; on success, redirect to the roster                                               |
+`page.tsx` + `team-membership-content.tsx`, `Saratoga.Root` / `Saratoga.Columns`.
+Header title _{person.name}_; the breadcrumb tail carries the team.
+`Saratoga.Actions` holds a `⋯` dropdown menu (`AdminModule_TeamMembershipMenu`,
+same shape as `AdminModule_PersonMenu` / `AdminModule_TeamMenu`).
 
-#### 8.5.1 Activity — the prerequisite
+| Section             | Slot        | Content                                                                                                                                 |
+| ------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Details             | `main`      | joined (`createdAt`), record status (`Active` / `Archived`) — read-only; no `tags` / `properties` in v1                                 |
+| D4H                 | `main`      | member id, `<D4HMemberStatusBadge>`, position, ref, role id, team last-synced; link to the D4H member view — omitted when `d4h == null` |
+| Related             | `secondary` | `Item` list: → person page · → team page · → team roster                                                                                |
+| _created / updated_ | `secondary` | `createdAt` / `updatedAt` with relative times, matching the person / team detail pages                                                  |
 
-There is **no log-entry read path anywhere in the app** (`personnel/[id]/history`
-is `NotImplemented`; no `logEntries` router). The activity card needs, at minimum:
+**Actions menu** (`⋯` dropdown): **Remove from team** — `Protect team:["update"]`,
+opens `AdminModule_RemoveTeamMember_Dialog` (reused as-is) via `?action=remove`;
+on success redirect to `teams/[team_id]/personnel` (the roster).
 
-- `logEntries.listForObject({ objectType, objectId })` (or a `teams`-router
-  procedure) — `organizationProcedure`, returns entries where
-  `objectId == <membershipId>`, newest first, with actor + `changes`.
-- A presentational `<LogEntryList>` / `<ActivityFeed>` — actor, action verb,
-  humanised `changes` diff, relative timestamp. `Eagle` (JSON diff block) may
-  help for the `changes` payload.
+**Deferred, not in v1:** an Edit action / editable `tags` + `properties`
+(motivation 3), and the Activity feed (motivation 4).
 
-**Options:** (a) build this minimal membership-scoped slice now, as the first
-consumer of the audit log; (b) ship the page with the Activity card stubbed
-("Coming soon" / omitted) and add it when a general log viewer is built.
+#### 8.5.1 Activity feed — deferred
 
-### 8.6 Open decisions
-
-| Question                        | Options                                                                         |
-| ------------------------------- | ------------------------------------------------------------------------------- |
-| How the roster reaches the page | row `⋯` menu · trailing link cell · make a non-Name cell the link               |
-| Person card → membership link   | keep row → team only · add membership link on the D4H line                      |
-| Activity card scope             | build the minimal log-entry read path now · stub until a general viewer exists  |
-| Editable `properties`           | free-form key/value editor · defer, edit `tags` only for v1                     |
-| Where "Remove from team" lives  | membership page only · membership page **and** roster · roster only (unchanged) |
+Motivation 4 needs the first log-entry **read** path in the app
+(`personnel/[id]/history` is `NotImplemented`; no `logEntries` router). When
+picked up it wants a `listForObject({ objectType, objectId })`-style query
+(entries where `objectId == <membershipId>`, newest first, actor + `changes`) and
+a presentational `<ActivityFeed>` (`Eagle` may help render the `changes` diff).
+Out of scope here; the page ships without the card.
 
 ---
 
@@ -383,16 +381,19 @@ No migration. No permission changes. No new tRPC procedures.
 
 ## 11. Decisions
 
-| Question                          | Decision                                                                                                                                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Native "role within team" field?  | **No.** Display D4H `position`/`status` read-only; nothing editable added.                                                                                         |
-| Roster table implementation       | `Kaga` data table, replacing the hand-rolled `<Table>`.                                                                                                            |
-| D4H columns on a non-linked team  | Absent entirely, not shown empty.                                                                                                                                  |
-| Column terminology                | Bare "Status" = `RecordStatus`, matching other admin tables. D4H snapshot fields are qualified: "D4H Status", "D4H Position".                                      |
-| No "Joined" column                | `createdAt` is the AVUT row-creation time, easily misread as a D4H join date — omitted.                                                                            |
-| Manual vs D4H-managed distinction | `<MembershipSourceBadge>` — "D4H" / "Manual" (linked teams only), driven by `TeamMembership_D4H` presence.                                                         |
-| Where sorting happens             | Server (`orderBy person.name`); consumers stop calling `.sort()`.                                                                                                  |
-| Person card: add-to-team action   | Out of scope — display-only spec; separate mutation-dialog change.                                                                                                 |
-| Team detail "Related" count card  | Unchanged — out of scope.                                                                                                                                          |
-| Team-membership detail page       | Phase 2 (§8). Route A: `teams/[team_id]/personnel/[person_id]`. Covers all four motivations; the Activity card carries a prerequisite (first log-entry read path). |
-| Dependency                        | Assumes `docs/specs/d4h-linking.md` (`TeamMembership_D4H`, `TeamMembershipData.d4h`) lands first.                                                                  |
+| Question                          | Decision                                                                                                                                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native "role within team" field?  | **No.** Display D4H `position`/`status` read-only; nothing editable added.                                                                                             |
+| Roster table implementation       | `Kaga` data table, replacing the hand-rolled `<Table>`.                                                                                                                |
+| D4H columns on a non-linked team  | Absent entirely, not shown empty.                                                                                                                                      |
+| Column terminology                | Bare "Status" = `RecordStatus`, matching other admin tables. D4H snapshot fields are qualified: "D4H Status", "D4H Position".                                          |
+| No "Joined" column                | `createdAt` is the AVUT row-creation time, easily misread as a D4H join date — omitted.                                                                                |
+| Manual vs D4H-managed distinction | `<MembershipSourceBadge>` — "D4H" / "Manual" (linked teams only), driven by `TeamMembership_D4H` presence.                                                             |
+| Where sorting happens             | Server (`orderBy person.name`); consumers stop calling `.sort()`.                                                                                                      |
+| Person card: add-to-team action   | Out of scope — display-only spec; separate mutation-dialog change.                                                                                                     |
+| Team detail "Related" count card  | Unchanged — out of scope.                                                                                                                                              |
+| Team-membership detail page       | Phase 2 (§8). Route `teams/[team_id]/personnel/[person_id]`. v1 = D4H drill-down + deep-link target + Remove action; editable metadata and the Activity feed deferred. |
+| Roster → membership affordance    | Right-chevron link in the actions column, replacing the delete button.                                                                                                 |
+| Person card row target            | Retargets from the team page to the membership page.                                                                                                                   |
+| "Remove from team" location       | Membership-page `⋯` menu only — removed from the roster.                                                                                                               |
+| Dependency                        | Assumes `docs/specs/d4h-linking.md` (`TeamMembership_D4H`, `TeamMembershipData.d4h`) lands first.                                                                      |
