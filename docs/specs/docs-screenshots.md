@@ -1,7 +1,7 @@
 # Spec: Documentation screenshots
 
 **Date:** 2026-09-10
-**Status:** Draft
+**Status:** Phase 1 implemented; Phase 2 pending
 
 Covers how screenshots are captured, stored, and rendered in the end-user
 documentation (`content/docs/**`, the public `/docs` site, and the in-app
@@ -226,11 +226,15 @@ The Blob store's public host is embedded in the URLs in
 
 ## 6. Phasing
 
-**Phase 1 — rendering, manual capture.**
-`<Screenshot>` component, `screenshots.generated.json` schema, a small
-`put()` helper script (`scripts/docs-screenshots/upload.ts <id> <file>`).
-Hand-capture ~5 screenshots for the highest-traffic pages. Docs get images
-immediately; no Playwright, no demo-seed work.
+**Phase 1 — rendering, manual capture. _(implemented)_**
+`<Screenshot>` component (`src/components/docs/screenshot.tsx`, wired into
+`docsMdxComponents`), the `screenshots.generated.json` index +
+`src/components/docs/screenshots.ts` read model, and the manual upload helper
+`npm run docs:screenshot -- <id> <light> [dark] --alt "…"`
+(`scripts/docs-screenshots/upload.ts` — sharp → WebP, `put()` to Blob, rewrites
+the index). A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
+Still to do: hand-capture the first screenshots (needs `BLOB_READ_WRITE_TOKEN`)
+and reference them from the highest-traffic docs pages.
 
 **Phase 2 — automated capture.**
 `manifest.ts`, the coverage lint check (§4.2), the Playwright capture script,

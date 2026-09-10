@@ -11,6 +11,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 
+import { Screenshot, UnsupportedImg } from "@/components/docs/screenshot";
 import { Alert } from "@/components/ui/alert";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
@@ -109,6 +110,8 @@ export const docsMdxComponents = {
         <th {...p} className="border-b px-3 py-2 text-left font-semibold" />
     ),
     td: (p: ComponentProps<"td">) => <td {...p} className="border-b px-3 py-2 align-top" />,
+    img: UnsupportedImg,
     Callout,
     Keys,
+    Screenshot,
 };
