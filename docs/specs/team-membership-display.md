@@ -219,7 +219,16 @@ under that; this keeps a large team usable.
 `Kaga.Table` renders its own "No results found" row, which is enough for v1. No
 bespoke empty-state component and no "run a D4H sync" hint for now.
 
-### 6.6 Cleanup
+### 6.6 Narrow screens
+
+At phone width the D4H columns don't fit. Below `md`, the table shows only
+**Name** (with its email sub-line) and the **actions** cell (the `>` chevron to
+the membership page — Phase 2 §8.3). D4H Position, D4H Status, Source and Status
+get `hidden md:table-cell` on both their header and body cells (via the Kaga
+column `meta.headerProps` / `meta.cellProps` `className`, the same mechanism the
+i3 member page uses). Their filters stay in the toolbar menu regardless.
+
+### 6.7 Cleanup
 
 The parked `SyncD4HTeamDialog` was already removed on the base branch — nothing
 to do here.
@@ -257,12 +266,30 @@ slice — but still copy before sorting: `[...memberships].sort(...)`).
 - `n === 0` → card body shows _"Not a member of any team."_ (muted, small),
   not an empty card.
 
-### 7.4 Out of scope (noted for a follow-up)
+### 7.4 Add-to-team action
 
-Adding a person to a team **from** this card (an "Add to team…" action mirroring
-`AdminModule_AddTeamMember_Dialog`, gated `team:["update"]`) is a natural
-extension but is a mutation-dialog task, not display. Left for a separate change
-so this spec stays display-only.
+A `+` icon button in the card header (`CardAction`), `Protect team:["update"]`,
+opens an **"Add {person} to a team"** dialog — the mirror of
+`AdminModule_AddTeamMember_Dialog` (team fixed, person picked) with the roles
+swapped: the **person is fixed**, a **team** is picked.
+
+- New component `AdminModule_AddPersonToTeam_Dialog` in
+  `src/components/admin/personnel/`, driven by `?action=add-to-team` per
+  `docs/patterns/mutation-dialog.md`.
+- Team picker: `<SearchableSelect>` (`components/ui/searchable-select`) over
+  `teams.listTeams`, options `{ value: team.id, label: team.name }`, with the
+  teams the person is already in **disabled** (from the same
+  `listTeamMemberships({ personId })` the card already has).
+- Mutation: `teams.createTeamMembership({ teamId, personId, create: { tags: [], properties: {} } })`,
+  `meta: { effects: teamsEffects.createTeamMembership }` — that effect already
+  invalidates both the team- and person-keyed membership lists.
+
+### 7.5 Person picker on the existing add dialog
+
+`AdminModule_AddTeamMember_Dialog` (`add-team-member.tsx`) currently uses a plain
+`<Select>` for the person. Swap it to `<SearchableSelect>` (search by name;
+already-assigned people disabled) so a large roster is usable. Same options shape
+`{ value: person.id, label: person.name }`. No behaviour change otherwise.
 
 ---
 
@@ -372,10 +399,13 @@ so a reader knows it was considered.
 | `src/components/admin/teams/d4h-member-status-badge.tsx` _(new)_ | `<D4HMemberStatusBadge>` (§4)                                                                                     |
 | `src/components/admin/teams/membership-source-badge.tsx` _(new)_ | `<MembershipSourceBadge>` (§5)                                                                                    |
 | `src/components/admin/teams/team-personnel-content.tsx`          | rewrite on `Kaga` (§6)                                                                                            |
-| `src/components/admin/personnel/team-memberships.tsx`            | richer rows, count, empty state (§7)                                                                              |
+| `src/components/admin/personnel/team-memberships.tsx`            | richer rows, count, empty state, `+` add-to-team action (§7)                                                      |
+| `src/components/admin/personnel/add-person-to-team.tsx` _(new)_  | `AdminModule_AddPersonToTeam_Dialog` — person fixed, team picker (§7.4)                                           |
+| `src/components/admin/teams/add-team-member.tsx`                 | swap the person `<Select>` for `<SearchableSelect>` (§7.5)                                                        |
 | `src/trpc/routers/teams-router.test.ts`                          | cover the new `listTeamMemberships` shape + ordering                                                              |
 
-No migration. No permission changes. No new tRPC procedures.
+Phase 1 adds no migration and no permission changes. Phase 2 adds the
+`teams.getTeamMembership` procedure (§8.4).
 
 ---
 
@@ -390,7 +420,9 @@ No migration. No permission changes. No new tRPC procedures.
 | No "Joined" column                | `createdAt` is the AVUT row-creation time, easily misread as a D4H join date — omitted.                                                                                |
 | Manual vs D4H-managed distinction | `<MembershipSourceBadge>` — "D4H" / "Manual" (linked teams only), driven by `TeamMembership_D4H` presence.                                                             |
 | Where sorting happens             | Server (`orderBy person.name`); consumers stop calling `.sort()`.                                                                                                      |
-| Person card: add-to-team action   | Out of scope — display-only spec; separate mutation-dialog change.                                                                                                     |
+| Person card: add-to-team action   | **In scope** (§7.4) — `+` in the card header, dialog with a team picker (person fixed).                                                                                |
+| Person picker                     | `<SearchableSelect>` (search box + list), replacing the plain `<Select>` on the existing add-member dialog and used on the new add-to-team dialog.                     |
+| Roster on narrow screens          | Below `md`: Name (+ email) and the `>` chevron only; D4H Position / D4H Status / Source / Status get `hidden md:table-cell` (§6.6).                                    |
 | Team detail "Related" count card  | Unchanged — out of scope.                                                                                                                                              |
 | Team-membership detail page       | Phase 2 (§8). Route `teams/[team_id]/personnel/[person_id]`. v1 = D4H drill-down + deep-link target + Remove action; editable metadata and the Activity feed deferred. |
 | Roster → membership affordance    | Right-chevron link in the actions column, replacing the delete button.                                                                                                 |

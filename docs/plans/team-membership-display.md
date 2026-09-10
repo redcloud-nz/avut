@@ -493,3 +493,85 @@ changes from
 6. `feat(teams): getTeamMembership query` (Step 7 + tests)
 7. `feat(teams): team-membership detail page` (Steps 8–9)
 8. `refactor(teams): roster row links to the membership page; move Remove there` (Steps 10–11)
+
+---
+
+# Phase 3 — refinements
+
+Small polish on the Phase 1 surfaces (spec §6.6, §7.4, §7.5). Independent of
+Phase 2, but Step 15's mobile hiding assumes the actions column is the `>`
+chevron from Phase 2 Step 10 — sequence Phase 3 **after** Phase 2, or keep the
+`w-9` actions cell visible whatever it currently holds.
+
+## Step 13 — person picker on the existing add-member dialog
+
+`src/components/admin/teams/add-team-member.tsx` — replace the person `<Select>`
+(and its `Select*` imports) with `<SearchableSelect>`
+(`@/components/ui/searchable-select`):
+
+- `options={personnel.map((p) => ({ value: p.id, label: p.name }))}` — already
+  sorted by the existing `.sort()`.
+- `SearchableSelect` has no per-option `disabled`; to keep already-assigned
+  people unselectable either (a) filter them out of `options` entirely (simplest
+  — they're already members, no reason to show them), or (b) add an optional
+  `disabledValues?: string[]` prop to `SearchableSelect`. Prefer (a).
+- Keep the `react-hook-form` `Controller` wiring; `SearchableSelect` is
+  `value` / `onValueChange`, so `field.value ?? ""` / `field.onChange`.
+
+## Step 14 — add-to-team dialog on the person card
+
+`src/components/admin/personnel/add-person-to-team.tsx` _(new)_ —
+`AdminModule_AddPersonToTeam_Dialog`, mirror of `AdminModule_AddTeamMember_Dialog`
+with person/team swapped. Driven by `?action=add-to-team` (nuqs,
+`parseAsStringLiteral`), per `docs/patterns/mutation-dialog.md`.
+
+- Props: `{ person: PersonRef }` (or `personId` + name).
+- Queries: `teams.listTeams({ organizationId })` for the picker;
+  `teams.listTeamMemberships({ organizationId, personId })` for the exclude set
+  (the person card already holds this — pass it in rather than re-query).
+- `<SearchableSelect>` over teams **not** already joined.
+- Mutation: `teams.createTeamMembership.mutationOptions({ meta: { effects: teamsEffects.createTeamMembership }, … })`,
+  `create: { tags: [], properties: {} }`. `onSuccess` → toast + close.
+
+`src/components/admin/personnel/team-memberships.tsx` — add a `<CardAction>` (or
+header slot) with a `Protect team:["update"]`-gated `+` icon `Button` that opens
+`?action=add-to-team`, and mount `<AdminModule_AddPersonToTeam_Dialog person={person} …>`.
+The card gets the person from its existing `personId` prop — it may need the
+person **name** too for the dialog title; either pass `person` into the card from
+`person-content.tsx` (it already has it) or have the dialog take just the id and
+render the title from a `usePerson`/existing query.
+
+## Step 15 — roster: hide D4H columns below `md`
+
+`src/components/admin/teams/team-personnel-content.tsx` — on the D4H Position,
+D4H Status, Source and (record) Status column defs add:
+
+```ts
+meta: {
+  headerProps: { className: "hidden md:table-cell" },
+  cellProps: { className: "hidden md:table-cell" },
+  // (Status column keeps its existing columnOptions in the same meta object)
+}
+```
+
+Name and the actions (`>` chevron) column stay visible at all widths. The
+toolbar's filter menu is unaffected — the D4H Status / Status facets remain
+reachable on mobile even though the columns are hidden. Verify the
+`Kaga` `meta` type already allows `headerProps` / `cellProps` (it does — used by
+`numericColumnMeta`).
+
+## Step 16 — verification
+
+- `npx tsc --noEmit`, `npm run lint`, `npm run test:run`.
+- `npm run update-ui-readme` **not** needed (no `ui/*.tsx` change) unless Step 13
+  option (b) is taken (`SearchableSelect` gains a prop).
+- Browser:
+  - add-member dialog: type to filter a long roster, already-members absent.
+  - person card `+`: opens, team picker excludes current teams, add → row appears.
+  - roster at ~375px wide: only Name + email + `>` visible; toolbar filters still
+    open and apply.
+
+## Commit breakdown (Phase 3)
+
+9. `feat(teams): searchable person picker on add-member; add-to-team from the person card`
+10. `feat(teams): collapse the roster to name + link on narrow screens`
