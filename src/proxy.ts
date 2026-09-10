@@ -24,6 +24,7 @@ export async function proxy(request: NextRequest) {
     if (
         pathname == "/" ||
         pathname.startsWith("/auth") ||
+        pathname.startsWith("/docs") ||
         pathname.startsWith("/policies") ||
         pathname.startsWith("/public")
     ) {

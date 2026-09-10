@@ -2,6 +2,7 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+import { withContentCollections } from "@content-collections/next";
 import type { NextConfig } from "next";
 
 interface PackageData {
@@ -55,4 +56,4 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
 };
 
-export default nextConfig;
+export default withContentCollections(nextConfig);
