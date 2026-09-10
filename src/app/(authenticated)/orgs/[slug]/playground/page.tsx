@@ -22,8 +22,8 @@ export default async function Playground_Index_Page(props: PageProps<"/orgs/[slu
         <Std.SidebarInset>
             <Std.Navbar breadcrumbs={["Playground"]} />
             <Std.ScrollContainer>
-                <div className="mx-auto w-full max-w-3xl space-y-6 p-6">
-                    <header className="space-y-1">
+                <div className="mx-auto w-full max-w-3xl space-y-4">
+                    <header className="space-y-0.5">
                         <h1 className="text-xl font-semibold">UI component playground</h1>
                         <p className="text-sm text-muted-foreground">
                             Live sandboxes for exercising components against the real app runtime —
@@ -31,12 +31,12 @@ export default async function Playground_Index_Page(props: PageProps<"/orgs/[slu
                         </p>
                     </header>
 
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                         {playgroundRegistry.map((entry) => (
                             <li key={entry.slug}>
                                 <Link
                                     href={`/orgs/${slug}/playground/${entry.slug}` as Route}
-                                    className="block rounded-lg border p-4 transition-colors hover:bg-accent"
+                                    className="block rounded-lg border p-3 transition-colors hover:bg-accent"
                                 >
                                     <div className="font-medium">{entry.title}</div>
                                     <div className="text-sm text-muted-foreground">

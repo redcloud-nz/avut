@@ -57,15 +57,15 @@ export function Harness({
     }
 
     return (
-        <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
-            <header className="space-y-1">
+        <div className="mx-auto w-full max-w-5xl space-y-4">
+            <header className="space-y-0.5">
                 <h1 className="text-xl font-semibold">{title}</h1>
                 {description ? (
                     <p className="text-sm text-muted-foreground">{description}</p>
                 ) : null}
             </header>
 
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
                 <ToggleGroup
                     type="single"
                     value={width}
@@ -101,13 +101,13 @@ export function Harness({
             </div>
 
             {controls ? (
-                <div className="space-y-3 rounded-lg border p-4">
+                <div className="space-y-2 rounded-lg border p-3">
                     <h2 className="text-sm font-medium text-muted-foreground">Controls</h2>
                     {controls}
                 </div>
             ) : null}
 
-            <div className="rounded-lg border border-dashed p-6">
+            <div className="rounded-lg border border-dashed p-4">
                 <div
                     className={cn("mx-auto transition-[max-width]", maxWidth && "border-x px-4")}
                     style={maxWidth ? { maxWidth } : undefined}
