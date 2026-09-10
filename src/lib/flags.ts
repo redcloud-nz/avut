@@ -41,3 +41,12 @@ export const structuredDocumentsModuleFlag = flag<boolean>({
     description: "Is the structured documents module available.",
     options: booleanOptions,
 });
+
+export const playgroundFlag = flag<boolean>({
+    key: "playground",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description:
+        "Is the UI component playground area available (dev tooling, not a registry module).",
+    options: booleanOptions,
+});
