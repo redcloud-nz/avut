@@ -99,7 +99,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                     ? columnHelper.accessor((row) => row.d4h?.d4hPosition ?? "", {
                           id: "position",
                           header: "Position",
-                          cell: (ctx) => ctx.row.original.d4h?.d4hPosition ?? "—",
+                          cell: (ctx) => ctx.row.original.d4h?.d4hPosition || "—",
                           enableSorting: true,
                           enableColumnFilter: false,
                           enableGlobalFilter: false,
