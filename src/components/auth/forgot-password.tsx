@@ -80,7 +80,7 @@ export function Auth_ForgotPassword_Card() {
                                 form="forgot-password-form"
                                 status={mutation.status}
                                 text={{
-                                    idle: "Send reset link",
+                                    idle: "Send reset code",
                                     pending: "Sending...",
                                     success: "Sent!",
                                 }}
