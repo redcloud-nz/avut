@@ -228,7 +228,6 @@ export type UserWhereInput = {
     banExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
     sessions?: Prisma.SessionListRelationFilter;
     accounts?: Prisma.AccountListRelationFilter;
-    teamUsers?: Prisma.TeamUserListRelationFilter;
     organizationUsers?: Prisma.OrganizationUserListRelationFilter;
     invitations?: Prisma.OrganizationInvitationListRelationFilter;
     d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
@@ -254,7 +253,6 @@ export type UserOrderByWithRelationInput = {
     banExpires?: Prisma.SortOrderInput | Prisma.SortOrder;
     sessions?: Prisma.SessionOrderByRelationAggregateInput;
     accounts?: Prisma.AccountOrderByRelationAggregateInput;
-    teamUsers?: Prisma.TeamUserOrderByRelationAggregateInput;
     organizationUsers?: Prisma.OrganizationUserOrderByRelationAggregateInput;
     invitations?: Prisma.OrganizationInvitationOrderByRelationAggregateInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenOrderByRelationAggregateInput;
@@ -284,7 +282,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
         banExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
         sessions?: Prisma.SessionListRelationFilter;
         accounts?: Prisma.AccountListRelationFilter;
-        teamUsers?: Prisma.TeamUserListRelationFilter;
         organizationUsers?: Prisma.OrganizationUserListRelationFilter;
         invitations?: Prisma.OrganizationInvitationListRelationFilter;
         d4hAccessTokens?: Prisma.D4hAccessTokenListRelationFilter;
@@ -346,7 +343,6 @@ export type UserCreateInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -372,7 +368,6 @@ export type UserUncheckedCreateInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -398,7 +393,6 @@ export type UserUpdateInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -424,7 +418,6 @@ export type UserUncheckedUpdateInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -603,32 +596,6 @@ export type UserUpdateOneRequiredWithoutAccountsNestedInput = {
             Prisma.UserUpdateWithoutAccountsInput
         >,
         Prisma.UserUncheckedUpdateWithoutAccountsInput
-    >;
-};
-
-export type UserCreateNestedOneWithoutTeamUsersInput = {
-    create?: Prisma.XOR<
-        Prisma.UserCreateWithoutTeamUsersInput,
-        Prisma.UserUncheckedCreateWithoutTeamUsersInput
-    >;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTeamUsersInput;
-    connect?: Prisma.UserWhereUniqueInput;
-};
-
-export type UserUpdateOneRequiredWithoutTeamUsersNestedInput = {
-    create?: Prisma.XOR<
-        Prisma.UserCreateWithoutTeamUsersInput,
-        Prisma.UserUncheckedCreateWithoutTeamUsersInput
-    >;
-    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTeamUsersInput;
-    upsert?: Prisma.UserUpsertWithoutTeamUsersInput;
-    connect?: Prisma.UserWhereUniqueInput;
-    update?: Prisma.XOR<
-        Prisma.XOR<
-            Prisma.UserUpdateToOneWithWhereWithoutTeamUsersInput,
-            Prisma.UserUpdateWithoutTeamUsersInput
-        >,
-        Prisma.UserUncheckedUpdateWithoutTeamUsersInput
     >;
 };
 
@@ -891,7 +858,6 @@ export type UserCreateWithoutSessionsInput = {
     banReason?: string | null;
     banExpires?: Date | string | null;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -916,7 +882,6 @@ export type UserUncheckedCreateWithoutSessionsInput = {
     banReason?: string | null;
     banExpires?: Date | string | null;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -969,7 +934,6 @@ export type UserUpdateWithoutSessionsInput = {
     banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -994,7 +958,6 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -1019,7 +982,6 @@ export type UserCreateWithoutAccountsInput = {
     banReason?: string | null;
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -1044,7 +1006,6 @@ export type UserUncheckedCreateWithoutAccountsInput = {
     banReason?: string | null;
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -1097,7 +1058,6 @@ export type UserUpdateWithoutAccountsInput = {
     banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -1122,135 +1082,6 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
-    organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
-    invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
-    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
-    authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
-    formInstances?: Prisma.FormInstanceUncheckedUpdateManyWithoutUserNestedInput;
-    logEntries?: Prisma.LogEntryUncheckedUpdateManyWithoutUserNestedInput;
-    ownedLogEntries?: Prisma.LogEntryUncheckedUpdateManyWithoutOwnerNestedInput;
-    impersonatedLogEntries?: Prisma.LogEntryUncheckedUpdateManyWithoutImpersonatorNestedInput;
-    logBatches?: Prisma.LogBatchUncheckedUpdateManyWithoutUserNestedInput;
-};
-
-export type UserCreateWithoutTeamUsersInput = {
-    id: string;
-    name: string;
-    email: string;
-    emailVerified?: boolean;
-    image?: string | null;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    role?: string | null;
-    banned?: boolean | null;
-    banReason?: string | null;
-    banExpires?: Date | string | null;
-    sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
-    accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
-    invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
-    d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
-    authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
-    formInstances?: Prisma.FormInstanceCreateNestedManyWithoutUserInput;
-    logEntries?: Prisma.LogEntryCreateNestedManyWithoutUserInput;
-    ownedLogEntries?: Prisma.LogEntryCreateNestedManyWithoutOwnerInput;
-    impersonatedLogEntries?: Prisma.LogEntryCreateNestedManyWithoutImpersonatorInput;
-    logBatches?: Prisma.LogBatchCreateNestedManyWithoutUserInput;
-};
-
-export type UserUncheckedCreateWithoutTeamUsersInput = {
-    id: string;
-    name: string;
-    email: string;
-    emailVerified?: boolean;
-    image?: string | null;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    role?: string | null;
-    banned?: boolean | null;
-    banReason?: string | null;
-    banExpires?: Date | string | null;
-    sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
-    accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
-    invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
-    d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
-    authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
-    formInstances?: Prisma.FormInstanceUncheckedCreateNestedManyWithoutUserInput;
-    logEntries?: Prisma.LogEntryUncheckedCreateNestedManyWithoutUserInput;
-    ownedLogEntries?: Prisma.LogEntryUncheckedCreateNestedManyWithoutOwnerInput;
-    impersonatedLogEntries?: Prisma.LogEntryUncheckedCreateNestedManyWithoutImpersonatorInput;
-    logBatches?: Prisma.LogBatchUncheckedCreateNestedManyWithoutUserInput;
-};
-
-export type UserCreateOrConnectWithoutTeamUsersInput = {
-    where: Prisma.UserWhereUniqueInput;
-    create: Prisma.XOR<
-        Prisma.UserCreateWithoutTeamUsersInput,
-        Prisma.UserUncheckedCreateWithoutTeamUsersInput
-    >;
-};
-
-export type UserUpsertWithoutTeamUsersInput = {
-    update: Prisma.XOR<
-        Prisma.UserUpdateWithoutTeamUsersInput,
-        Prisma.UserUncheckedUpdateWithoutTeamUsersInput
-    >;
-    create: Prisma.XOR<
-        Prisma.UserCreateWithoutTeamUsersInput,
-        Prisma.UserUncheckedCreateWithoutTeamUsersInput
-    >;
-    where?: Prisma.UserWhereInput;
-};
-
-export type UserUpdateToOneWithWhereWithoutTeamUsersInput = {
-    where?: Prisma.UserWhereInput;
-    data: Prisma.XOR<
-        Prisma.UserUpdateWithoutTeamUsersInput,
-        Prisma.UserUncheckedUpdateWithoutTeamUsersInput
-    >;
-};
-
-export type UserUpdateWithoutTeamUsersInput = {
-    id?: Prisma.StringFieldUpdateOperationsInput | string;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    banned?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null;
-    banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
-    accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
-    invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
-    d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
-    authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
-    formInstances?: Prisma.FormInstanceUpdateManyWithoutUserNestedInput;
-    logEntries?: Prisma.LogEntryUpdateManyWithoutUserNestedInput;
-    ownedLogEntries?: Prisma.LogEntryUpdateManyWithoutOwnerNestedInput;
-    impersonatedLogEntries?: Prisma.LogEntryUpdateManyWithoutImpersonatorNestedInput;
-    logBatches?: Prisma.LogBatchUpdateManyWithoutUserNestedInput;
-};
-
-export type UserUncheckedUpdateWithoutTeamUsersInput = {
-    id?: Prisma.StringFieldUpdateOperationsInput | string;
-    name?: Prisma.StringFieldUpdateOperationsInput | string;
-    email?: Prisma.StringFieldUpdateOperationsInput | string;
-    emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-    image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-    role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    banned?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null;
-    banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-    banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
-    sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
-    accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -1276,7 +1107,6 @@ export type UserCreateWithoutOrganizationUsersInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
@@ -1301,7 +1131,6 @@ export type UserUncheckedCreateWithoutOrganizationUsersInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
@@ -1354,7 +1183,6 @@ export type UserUpdateWithoutOrganizationUsersInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
@@ -1379,7 +1207,6 @@ export type UserUncheckedUpdateWithoutOrganizationUsersInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
@@ -1404,7 +1231,6 @@ export type UserCreateWithoutInvitationsInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
@@ -1429,7 +1255,6 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
@@ -1482,7 +1307,6 @@ export type UserUpdateWithoutInvitationsInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
@@ -1507,7 +1331,6 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
@@ -1532,7 +1355,6 @@ export type UserCreateWithoutOwnedLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -1557,7 +1379,6 @@ export type UserUncheckedCreateWithoutOwnedLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -1590,7 +1411,6 @@ export type UserCreateWithoutLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -1615,7 +1435,6 @@ export type UserUncheckedCreateWithoutLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -1648,7 +1467,6 @@ export type UserCreateWithoutImpersonatedLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -1673,7 +1491,6 @@ export type UserUncheckedCreateWithoutImpersonatedLogEntriesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -1726,7 +1543,6 @@ export type UserUpdateWithoutOwnedLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -1751,7 +1567,6 @@ export type UserUncheckedUpdateWithoutOwnedLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -1796,7 +1611,6 @@ export type UserUpdateWithoutLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -1821,7 +1635,6 @@ export type UserUncheckedUpdateWithoutLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -1866,7 +1679,6 @@ export type UserUpdateWithoutImpersonatedLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -1891,7 +1703,6 @@ export type UserUncheckedUpdateWithoutImpersonatedLogEntriesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -1916,7 +1727,6 @@ export type UserCreateWithoutLogBatchesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -1941,7 +1751,6 @@ export type UserUncheckedCreateWithoutLogBatchesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -1994,7 +1803,6 @@ export type UserUpdateWithoutLogBatchesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -2019,7 +1827,6 @@ export type UserUncheckedUpdateWithoutLogBatchesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -2044,7 +1851,6 @@ export type UserCreateWithoutD4hAccessTokensInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     authoredNotes?: Prisma.NoteCreateNestedManyWithoutAuthorInput;
@@ -2069,7 +1875,6 @@ export type UserUncheckedCreateWithoutD4hAccessTokensInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     authoredNotes?: Prisma.NoteUncheckedCreateNestedManyWithoutAuthorInput;
@@ -2122,7 +1927,6 @@ export type UserUpdateWithoutD4hAccessTokensInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     authoredNotes?: Prisma.NoteUpdateManyWithoutAuthorNestedInput;
@@ -2147,7 +1951,6 @@ export type UserUncheckedUpdateWithoutD4hAccessTokensInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     authoredNotes?: Prisma.NoteUncheckedUpdateManyWithoutAuthorNestedInput;
@@ -2172,7 +1975,6 @@ export type UserCreateWithoutAuthoredNotesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -2197,7 +1999,6 @@ export type UserUncheckedCreateWithoutAuthoredNotesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -2250,7 +2051,6 @@ export type UserUpdateWithoutAuthoredNotesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -2275,7 +2075,6 @@ export type UserUncheckedUpdateWithoutAuthoredNotesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -2300,7 +2099,6 @@ export type UserCreateWithoutFormInstancesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenCreateNestedManyWithoutUserInput;
@@ -2325,7 +2123,6 @@ export type UserUncheckedCreateWithoutFormInstancesInput = {
     banExpires?: Date | string | null;
     sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
     accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-    teamUsers?: Prisma.TeamUserUncheckedCreateNestedManyWithoutUserInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedCreateNestedManyWithoutUserInput;
     invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInviterInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedCreateNestedManyWithoutUserInput;
@@ -2378,7 +2175,6 @@ export type UserUpdateWithoutFormInstancesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUpdateManyWithoutUserNestedInput;
@@ -2403,7 +2199,6 @@ export type UserUncheckedUpdateWithoutFormInstancesInput = {
     banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
     accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-    teamUsers?: Prisma.TeamUserUncheckedUpdateManyWithoutUserNestedInput;
     organizationUsers?: Prisma.OrganizationUserUncheckedUpdateManyWithoutUserNestedInput;
     invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInviterNestedInput;
     d4hAccessTokens?: Prisma.D4hAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
@@ -2421,7 +2216,6 @@ export type UserUncheckedUpdateWithoutFormInstancesInput = {
 export type UserCountOutputType = {
     sessions: number;
     accounts: number;
-    teamUsers: number;
     organizationUsers: number;
     invitations: number;
     d4hAccessTokens: number;
@@ -2438,7 +2232,6 @@ export type UserCountOutputTypeSelect<
 > = {
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs;
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs;
-    teamUsers?: boolean | UserCountOutputTypeCountTeamUsersArgs;
     organizationUsers?: boolean | UserCountOutputTypeCountOrganizationUsersArgs;
     invitations?: boolean | UserCountOutputTypeCountInvitationsArgs;
     d4hAccessTokens?: boolean | UserCountOutputTypeCountD4hAccessTokensArgs;
@@ -2478,15 +2271,6 @@ export type UserCountOutputTypeCountAccountsArgs<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
     where?: Prisma.AccountWhereInput;
-};
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountTeamUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
-> = {
-    where?: Prisma.TeamUserWhereInput;
 };
 
 /**
@@ -2587,7 +2371,6 @@ export type UserSelect<
         banExpires?: boolean;
         sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
         accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
-        teamUsers?: boolean | Prisma.User$teamUsersArgs<ExtArgs>;
         organizationUsers?: boolean | Prisma.User$organizationUsersArgs<ExtArgs>;
         invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
         d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
@@ -2675,7 +2458,6 @@ export type UserInclude<
 > = {
     sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
     accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
-    teamUsers?: boolean | Prisma.User$teamUsersArgs<ExtArgs>;
     organizationUsers?: boolean | Prisma.User$organizationUsersArgs<ExtArgs>;
     invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
     d4hAccessTokens?: boolean | Prisma.User$d4hAccessTokensArgs<ExtArgs>;
@@ -2701,7 +2483,6 @@ export type $UserPayload<
     objects: {
         sessions: Prisma.$SessionPayload<ExtArgs>[];
         accounts: Prisma.$AccountPayload<ExtArgs>[];
-        teamUsers: Prisma.$TeamUserPayload<ExtArgs>[];
         organizationUsers: Prisma.$OrganizationUserPayload<ExtArgs>[];
         invitations: Prisma.$OrganizationInvitationPayload<ExtArgs>[];
         d4hAccessTokens: Prisma.$D4hAccessTokenPayload<ExtArgs>[];
@@ -3276,17 +3057,6 @@ export interface Prisma__UserClient<
     ): Prisma.PrismaPromise<
         | runtime.Types.Result.GetResult<
               Prisma.$AccountPayload<ExtArgs>,
-              T,
-              "findMany",
-              GlobalOmitOptions
-          >
-        | Null
-    >;
-    teamUsers<T extends Prisma.User$teamUsersArgs<ExtArgs> = {}>(
-        args?: Prisma.Subset<T, Prisma.User$teamUsersArgs<ExtArgs>>,
-    ): Prisma.PrismaPromise<
-        | runtime.Types.Result.GetResult<
-              Prisma.$TeamUserPayload<ExtArgs>,
               T,
               "findMany",
               GlobalOmitOptions
@@ -3903,32 +3673,6 @@ export type User$accountsArgs<
     take?: number;
     skip?: number;
     distinct?: Prisma.AccountScalarFieldEnum | Prisma.AccountScalarFieldEnum[];
-};
-
-/**
- * User.teamUsers
- */
-export type User$teamUsersArgs<
-    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
-> = {
-    /**
-     * Select specific fields to fetch from the TeamUser
-     */
-    select?: Prisma.TeamUserSelect<ExtArgs> | null;
-    /**
-     * Omit specific fields from the TeamUser
-     */
-    omit?: Prisma.TeamUserOmit<ExtArgs> | null;
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: Prisma.TeamUserInclude<ExtArgs> | null;
-    where?: Prisma.TeamUserWhereInput;
-    orderBy?: Prisma.TeamUserOrderByWithRelationInput | Prisma.TeamUserOrderByWithRelationInput[];
-    cursor?: Prisma.TeamUserWhereUniqueInput;
-    take?: number;
-    skip?: number;
-    distinct?: Prisma.TeamUserScalarFieldEnum | Prisma.TeamUserScalarFieldEnum[];
 };
 
 /**

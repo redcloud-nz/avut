@@ -90,11 +90,6 @@ export type Team_D4H = Prisma.Team_D4HModel;
  */
 export type TeamConfig = Prisma.TeamConfigModel;
 /**
- * Model TeamUser
- *
- */
-export type TeamUser = Prisma.TeamUserModel;
-/**
  * Model OrganizationUser
  *
  */

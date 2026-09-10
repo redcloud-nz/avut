@@ -251,3 +251,70 @@ describe("teamsRouter.syncronizeD4HTeam — batching", () => {
         });
     });
 });
+
+// Teams are managed directly through Prisma (no better-auth team plugin), so create
+// and delete are plain `$transaction([write, logEvent])` pairs.
+describe("teamsRouter.createTeam / deleteTeam", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]>) {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("creates a team and records a Create log entry", async () => {
+        const { created } = await makeCaller({ team: ["create"] }).createTeam({
+            organizationId: T.org,
+            create: { name: "Rescue", description: "R", tags: [], properties: {} },
+        });
+
+        expect(created.name).toBe("Rescue");
+        const row = await db.team.findUnique({ where: { id: created.id } });
+        expect(row).toMatchObject({ organizationId: T.org, name: "Rescue" });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: created.id },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({ action: "Create", organizationId: T.org });
+    });
+
+    it("deletes a team and records a Delete log entry", async () => {
+        const { created } = await makeCaller({ team: ["create"] }).createTeam({
+            organizationId: T.org,
+            create: { name: "Doomed", description: "", tags: [], properties: {} },
+        });
+
+        await makeCaller({ team: ["delete"] }).deleteTeam({
+            organizationId: T.org,
+            teamId: created.id,
+        });
+
+        expect(await db.team.findUnique({ where: { id: created.id } })).toBeNull();
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: created.id, action: "Delete" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("deleteTeam throws NOT_FOUND for an unknown team", async () => {
+        await expect(
+            makeCaller({ team: ["delete"] }).deleteTeam({
+                organizationId: T.org,
+                teamId: TeamId.create(),
+            }),
+        ).rejects.toThrow(/not found/i);
+    });
+});

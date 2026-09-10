@@ -151,12 +151,6 @@ export const auth = betterAuth({
                         },
                     },
                 },
-                team: {
-                    modelName: "team",
-                },
-                teamMember: {
-                    modelName: "teamUser",
-                },
             },
             async sendInvitationEmail({ invitation, email, organization, inviter }) {
                 console.log(
@@ -172,10 +166,6 @@ export const auth = betterAuth({
                         inviter,
                     }),
                 });
-            },
-            teams: {
-                enabled: true,
-                allowRemovingAllTeams: true,
             },
         }),
     ],

@@ -400,7 +400,6 @@ export const ModelName = {
     Team: "Team",
     Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
-    TeamUser: "TeamUser",
     OrganizationUser: "OrganizationUser",
     OrganizationInvitation: "OrganizationInvitation",
     LogEntry: "LogEntry",
@@ -454,7 +453,6 @@ export type TypeMap<
             | "team"
             | "team_D4H"
             | "teamConfig"
-            | "teamUser"
             | "organizationUser"
             | "organizationInvitation"
             | "logEntry"
@@ -1162,82 +1160,6 @@ export type TypeMap<
                     args: Prisma.TeamConfigCountArgs<ExtArgs>;
                     result:
                         | runtime.Types.Utils.Optional<Prisma.TeamConfigCountAggregateOutputType>
-                        | number;
-                };
-            };
-        };
-        TeamUser: {
-            payload: Prisma.$TeamUserPayload<ExtArgs>;
-            fields: Prisma.TeamUserFieldRefs;
-            operations: {
-                findUnique: {
-                    args: Prisma.TeamUserFindUniqueArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload> | null;
-                };
-                findUniqueOrThrow: {
-                    args: Prisma.TeamUserFindUniqueOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                findFirst: {
-                    args: Prisma.TeamUserFindFirstArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload> | null;
-                };
-                findFirstOrThrow: {
-                    args: Prisma.TeamUserFindFirstOrThrowArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                findMany: {
-                    args: Prisma.TeamUserFindManyArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
-                };
-                create: {
-                    args: Prisma.TeamUserCreateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                createMany: {
-                    args: Prisma.TeamUserCreateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                createManyAndReturn: {
-                    args: Prisma.TeamUserCreateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
-                };
-                delete: {
-                    args: Prisma.TeamUserDeleteArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                update: {
-                    args: Prisma.TeamUserUpdateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                deleteMany: {
-                    args: Prisma.TeamUserDeleteManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateMany: {
-                    args: Prisma.TeamUserUpdateManyArgs<ExtArgs>;
-                    result: BatchPayload;
-                };
-                updateManyAndReturn: {
-                    args: Prisma.TeamUserUpdateManyAndReturnArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>[];
-                };
-                upsert: {
-                    args: Prisma.TeamUserUpsertArgs<ExtArgs>;
-                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamUserPayload>;
-                };
-                aggregate: {
-                    args: Prisma.TeamUserAggregateArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamUser>;
-                };
-                groupBy: {
-                    args: Prisma.TeamUserGroupByArgs<ExtArgs>;
-                    result: runtime.Types.Utils.Optional<Prisma.TeamUserGroupByOutputType>[];
-                };
-                count: {
-                    args: Prisma.TeamUserCountArgs<ExtArgs>;
-                    result:
-                        | runtime.Types.Utils.Optional<Prisma.TeamUserCountAggregateOutputType>
                         | number;
                 };
             };
@@ -3196,7 +3118,6 @@ export const TeamScalarFieldEnum = {
     description: "description",
     tags: "tags",
     properties: "properties",
-    memberCount: "memberCount",
     organizationId: "organizationId",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
@@ -3223,17 +3144,6 @@ export const TeamConfigScalarFieldEnum = {
 
 export type TeamConfigScalarFieldEnum =
     (typeof TeamConfigScalarFieldEnum)[keyof typeof TeamConfigScalarFieldEnum];
-
-export const TeamUserScalarFieldEnum = {
-    id: "id",
-    teamId: "teamId",
-    userId: "userId",
-    createdAt: "createdAt",
-    membershipKey: "membershipKey",
-} as const;
-
-export type TeamUserScalarFieldEnum =
-    (typeof TeamUserScalarFieldEnum)[keyof typeof TeamUserScalarFieldEnum];
 
 export const OrganizationUserScalarFieldEnum = {
     id: "id",
@@ -3880,7 +3790,6 @@ export type GlobalOmitConfig = {
     team?: Prisma.TeamOmit;
     team_D4H?: Prisma.Team_D4HOmit;
     teamConfig?: Prisma.TeamConfigOmit;
-    teamUser?: Prisma.TeamUserOmit;
     organizationUser?: Prisma.OrganizationUserOmit;
     organizationInvitation?: Prisma.OrganizationInvitationOmit;
     logEntry?: Prisma.LogEntryOmit;

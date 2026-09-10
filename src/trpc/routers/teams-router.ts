@@ -14,7 +14,6 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
-import { auth } from "@/server/auth";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
@@ -40,21 +39,20 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { organizationId, create } }) => {
-            // Create the team via the auth API
-            const data = await auth.api.createTeam({
-                body: {
-                    name: create.name,
-                    organizationId,
-                },
-            });
+            const teamId = TeamId.create();
 
             const changes = diffObject({ tags: [], properties: {} }, create);
 
             const [createdTeam] = await ctx.prisma.$transaction([
-                // Update additional fields
-                ctx.prisma.team.update({
-                    where: { organizationId: organizationId, id: data.id },
-                    data: pick(create, ["description", "tags", "properties"]),
+                ctx.prisma.team.create({
+                    data: {
+                        id: teamId,
+                        organizationId,
+                        name: create.name,
+                        description: create.description,
+                        tags: create.tags,
+                        properties: create.properties,
+                    },
                     include: {
                         d4h: true,
                     },
@@ -62,7 +60,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Create",
                     objectType: "Team",
-                    objectId: data.id,
+                    objectId: teamId,
                     changes,
                 }),
             ]);
@@ -194,19 +192,29 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            // auth.api.removeTeam isn't a Prisma operation, so it can't join a $transaction with
-            // the log entry — log only after the removal succeeds.
-            await auth.api.removeTeam({
-                body: {
-                    teamId,
-                    organizationId: ctx.organizationId,
-                },
+            const existing = await ctx.prisma.team.findUnique({
+                where: { id: teamId, organizationId: ctx.organizationId },
+                select: { id: true },
             });
-            await ctx.logEvent({
-                action: "Delete",
-                objectType: "Team",
-                objectId: teamId,
-            });
+
+            if (!existing) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
+                });
+            }
+
+            await ctx.prisma.$transaction([
+                // TeamConfig / Team_D4H / TeamMembership rows cascade away with the team.
+                ctx.prisma.team.delete({
+                    where: { id: teamId, organizationId: ctx.organizationId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "Team",
+                    objectId: teamId,
+                }),
+            ]);
         }),
 
     /**
@@ -332,13 +340,11 @@ export const teamsRouter = createTrpcRouter({
 
             const d4hTeam = await getD4HTeam(accessToken, d4hTeamId);
 
-            // The batch row must exist before any entry can reference it, and
-            // `auth.api.createTeam` is not a Prisma operation, so neither can join a
-            // `$transaction` with the other. Cost of that: if `createTeam` throws, this
-            // `log_batches` row is already committed and is orphaned — a batch with no
-            // entries. Harmless (nothing reads a batch except through its entries) and
-            // accepted here; a reader of the batch table should not assume every row has
-            // entries.
+            // The batch row must exist before any entry can reference it. If the
+            // transaction below throws, this `log_batches` row is already committed and
+            // orphaned — a batch with no entries. Harmless (nothing reads a batch except
+            // through its entries); a reader of the batch table should not assume every
+            // row has entries.
             const batch = await createLogBatch(
                 {
                     operationKey: "d4h-team-import",
@@ -349,20 +355,16 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            const data = await auth.api.createTeam({
-                body: {
-                    name: create.name,
-                    organizationId: ctx.organizationId,
-                },
-            });
+            const teamId = TeamId.create();
 
             const changes = diffObject({}, { ...create, properties: { d4hTeamId } });
 
             const [createdTeam] = await ctx.prisma.$transaction([
-                // Update additional fields
-                ctx.prisma.team.update({
-                    where: { organizationId: ctx.organizationId, id: data.id },
+                ctx.prisma.team.create({
                     data: {
+                        id: teamId,
+                        organizationId: ctx.organizationId,
+                        name: create.name,
                         description: create.description,
                         tags: create.tags,
 
@@ -381,7 +383,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Create",
                     objectType: "Team",
-                    objectId: data.id,
+                    objectId: teamId,
                     changes,
                     batchId: batch.id,
                 }),

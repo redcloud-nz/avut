@@ -310,7 +310,6 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.account.deleteMany({ where: { userId: input.userId } }),
-                ctx.prisma.teamUser.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.organizationUser.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.organizationInvitation.deleteMany({
                     where: { inviterId: input.userId },
