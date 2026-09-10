@@ -863,5 +863,21 @@ async function getTeam(
         },
     });
 
-    return team ? TeamData.fromRecord(team) : null;
+    if (!team) return null;
+
+    // Resolve the D4H organisation name from the org-level cache (at most one
+    // `Organization_D4H` per org) so the detail view can show it alongside the id.
+    const orgD4H = team.d4h
+        ? await ctx.prisma.organization_D4H.findUnique({
+              where: { organizationId: ctx.organizationId },
+              select: { d4hOrganisationName: true },
+          })
+        : null;
+
+    return TeamData.fromRecord({
+        ...team,
+        d4h: team.d4h
+            ? { ...team.d4h, d4hOrganisationName: orgD4H?.d4hOrganisationName ?? null }
+            : null,
+    });
 }

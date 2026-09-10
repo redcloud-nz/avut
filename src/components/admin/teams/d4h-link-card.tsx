@@ -73,15 +73,25 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                             <DLTerm>D4H Team</DLTerm>
                             <DLDetails>
                                 {team.d4h.d4hTeamName}{" "}
-                                <span className="text-muted-foreground">#{team.d4h.d4hTeamId}</span>
+                                <span className="text-muted-foreground">
+                                    (ID: {team.d4h.d4hTeamId})
+                                </span>
                             </DLDetails>
                             <DLTerm>Server</DLTerm>
                             <DLDetails>{getD4HServer(team.d4h.d4hServerCode).name}</DLDetails>
                             <DLTerm>D4H Organisation</DLTerm>
                             <DLDetails>
-                                {team.d4h.d4hOrganisationId
-                                    ? `#${team.d4h.d4hOrganisationId}`
-                                    : "None (org-less team)"}
+                                {team.d4h.d4hOrganisationId ? (
+                                    <>
+                                        {team.d4h.d4hOrganisationName}
+                                        {team.d4h.d4hOrganisationName && " "}
+                                        <span className="text-muted-foreground">
+                                            (ID: {team.d4h.d4hOrganisationId})
+                                        </span>
+                                    </>
+                                ) : (
+                                    "None (org-less team)"
+                                )}
                             </DLDetails>
                             <DLTerm>Last synced</DLTerm>
                             {team.d4h.lastSyncedAt ? (
