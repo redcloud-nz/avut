@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { docsHref, type DocsNavSection } from "@/lib/docs";
+import { docsHref, type DocsNavSection } from "@/lib/docs-sections";
 import { cn } from "@/lib/utils";
 
 /** Left-hand navigation for the public `/docs` site, built from the compiled collection. */
@@ -21,7 +21,7 @@ export function DocsSidebar({ nav }: { nav: DocsNavSection[] }) {
                 href={docsHref("")}
                 className={cn(
                     "font-semibold hover:underline",
-                    pathname === "/docs" && "text-primary",
+                    pathname === docsHref("") && "text-primary",
                 )}
             >
                 Overview

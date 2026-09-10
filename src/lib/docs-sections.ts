@@ -3,7 +3,32 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import type { Route } from "next";
+
 import { orgModules } from "@/lib/modules";
+
+/**
+ * Href for a docs page by slug. Doc slugs are data-driven (from `content/docs`),
+ * so typed routes can't enumerate them — this is the one sanctioned cast. Lives
+ * here, not in `@/lib/docs`, so client components can link to docs without
+ * pulling the compiled `content-collections` corpus into the browser bundle.
+ */
+export function docsHref(slug: string): Route {
+    return (slug === "" ? "/docs" : `/docs/${slug}`) as Route;
+}
+
+/** A single page within a section of the docs sidebar. */
+export interface DocsNavPage {
+    slug: string;
+    title: string;
+}
+
+/** A section of the docs sidebar with its pages, in display order. */
+export interface DocsNavSection {
+    id: string;
+    title: string;
+    pages: DocsNavPage[];
+}
 
 /**
  * A top-level section of the end-user documentation. The taxonomy mirrors

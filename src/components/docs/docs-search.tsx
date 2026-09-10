@@ -11,7 +11,7 @@ import MiniSearch from "minisearch";
 
 import type { DocsSearchRecord } from "@/app/(public)/docs/search-index.json/route";
 import { Input } from "@/components/ui/input";
-import { docsHref } from "@/lib/docs";
+import { docsHref } from "@/lib/docs-sections";
 import { cn } from "@/lib/utils";
 
 type Result = Pick<DocsSearchRecord, "slug" | "title" | "section" | "description">;
@@ -38,6 +38,7 @@ export function DocsSearch() {
         if (records) return;
         try {
             const res = await fetch("/docs/search-index.json");
+            if (!res.ok) throw new Error(`search index ${res.status}`);
             setRecords((await res.json()) as DocsSearchRecord[]);
         } catch {
             setRecords([]);
@@ -48,8 +49,15 @@ export function DocsSearch() {
         function onClick(e: MouseEvent) {
             if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
         }
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") setOpen(false);
+        }
         document.addEventListener("mousedown", onClick);
-        return () => document.removeEventListener("mousedown", onClick);
+        document.addEventListener("keydown", onKeyDown);
+        return () => {
+            document.removeEventListener("mousedown", onClick);
+            document.removeEventListener("keydown", onKeyDown);
+        };
     }, []);
 
     const results: Result[] = useMemo(() => {

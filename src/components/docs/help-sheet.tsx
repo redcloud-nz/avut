@@ -23,7 +23,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import type { DocsHelpPayload } from "@/app/(public)/docs/help/[...slug]/route";
-import { docsHref } from "@/lib/docs";
+import { docsHref } from "@/lib/docs-sections";
 
 // The sheet header already shows the doc title, so drop the body's leading <h1>.
 const sheetMdxComponents = { ...docsMdxComponents, h1: () => null };

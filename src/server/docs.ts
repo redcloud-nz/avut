@@ -47,7 +47,11 @@ export async function getVisibleDocBySlug(slug: string): Promise<Doc | undefined
     return (await isVisible(doc)) ? doc : undefined;
 }
 
-/** Slugs to statically generate — every doc in a visible section, including the `""` home. */
+/**
+ * Every doc slug whose section is visible for the current deployment environment,
+ * including the `""` home. Drives the client search corpus
+ * (`/docs/search-index.json`); static generation uses `getAllDocSlugs` from `@/lib/docs`.
+ */
 export async function getVisibleDocSlugs(): Promise<string[]> {
     const hidden = await hiddenDocsSectionIds();
     return allDocs.filter((d) => !hidden.has(d.section)).map((d) => d.slug);

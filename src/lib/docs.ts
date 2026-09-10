@@ -7,34 +7,13 @@
  * server components and route handlers (no `server-only` deps).
  */
 
-import type { Route } from "next";
-
 import { allDocs, type Doc } from "content-collections";
 
-import { docsSections } from "@/lib/docs-sections";
+import { docsSections, type DocsNavPage, type DocsNavSection } from "@/lib/docs-sections";
 
 export type { Doc };
-
-/**
- * Href for a docs page by slug. Doc slugs are data-driven (from `content/docs`),
- * so typed routes can't enumerate them — this is the one sanctioned cast.
- */
-export function docsHref(slug: string): Route {
-    return (slug === "" ? "/docs" : `/docs/${slug}`) as Route;
-}
-
-/** A single page within a section of the docs sidebar. */
-export interface DocsNavPage {
-    slug: string;
-    title: string;
-}
-
-/** A section of the docs sidebar with its pages, in display order. */
-export interface DocsNavSection {
-    id: string;
-    title: string;
-    pages: DocsNavPage[];
-}
+export { docsHref } from "@/lib/docs-sections";
+export type { DocsNavPage, DocsNavSection };
 
 function byOrderThenTitle(a: Doc, b: Doc): number {
     return a.order - b.order || a.title.localeCompare(b.title);
