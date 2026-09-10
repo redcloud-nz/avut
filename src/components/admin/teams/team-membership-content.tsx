@@ -94,9 +94,32 @@ export function AdminModule_TeamMembership_Content({
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Person</DLTerm>
-                                        <DLDetails>{membership.person.name}</DLDetails>
+                                        <DLDetails>
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/admin/personnel/[person_id]",
+                                                    {
+                                                        slug: organization.slug,
+                                                        person_id: membership.person.id,
+                                                    },
+                                                )}
+                                                className="hover:underline"
+                                            >
+                                                {membership.person.name}
+                                            </Link>
+                                        </DLDetails>
                                         <DLTerm>Team</DLTerm>
-                                        <DLDetails>{team.name}</DLDetails>
+                                        <DLDetails>
+                                            <Link
+                                                href={route("/orgs/[slug]/admin/teams/[team_id]", {
+                                                    slug: organization.slug,
+                                                    team_id: teamId,
+                                                })}
+                                                className="hover:underline"
+                                            >
+                                                {team.name}
+                                            </Link>
+                                        </DLDetails>
                                         <DLTerm>Status</DLTerm>
                                         <DLDetails>{membership.status}</DLDetails>
                                         <DLTerm>Joined</DLTerm>
@@ -165,61 +188,13 @@ export function AdminModule_TeamMembership_Content({
 
                         <Saratoga.Column slot="secondary">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Related</CardTitle>
-                                </CardHeader>
-                                <CardContent className="px-2 -my-2">
-                                    <Item className="px-2" size="sm" asChild>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/admin/personnel/[person_id]",
-                                                {
-                                                    slug: organization.slug,
-                                                    person_id: membership.person.id,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>{membership.person.name}</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ItemLinkActionIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                    <Item className="px-2" size="sm" asChild>
-                                        <Link
-                                            href={route("/orgs/[slug]/admin/teams/[team_id]", {
-                                                slug: organization.slug,
-                                                team_id: teamId,
-                                            })}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>{team.name}</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ItemLinkActionIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                    <Item className="px-2" size="sm" asChild>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/admin/teams/[team_id]/personnel",
-                                                {
-                                                    slug: organization.slug,
-                                                    team_id: teamId,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>Team roster</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ItemLinkActionIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
+                                <CardContent>
+                                    <DL>
+                                        <DLTerm>Created</DLTerm>
+                                        <DLDateDetails date={membership.createdAt} />
+                                        <DLTerm>Updated</DLTerm>
+                                        <DLDateDetails date={membership.updatedAt} />
+                                    </DL>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

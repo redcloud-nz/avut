@@ -349,9 +349,11 @@ drill-down, a deep-link target, and the Remove action. **Deferred:** editable
 (Steps 10–11 + Step 15's mobile hiding folded in). Deviations from the plan
 below:
 
-- The sidebar "created / updated" card was dropped — a membership's `createdAt`
-  _is_ its "Joined", so showing both was redundant. The Membership card keeps
-  "Joined".
+- The "Related" sidebar card (person / team / roster links) was dropped in a
+  later pass — the Membership card now carries Person and Team as inline links,
+  and the roster is one breadcrumb up. The `secondary` slot holds the
+  "created / updated" card (membership `createdAt` / `updatedAt`); the Membership
+  card also keeps "Joined" (`createdAt`).
 - `onRemoved` on `AdminModule_RemoveTeamMember_Dialog`: when provided, the dialog
   **does not** auto-close on success — the caller owns what happens next.
   Auto-closing (a nuqs `setAction(null)`) raced the membership page's
@@ -413,10 +415,9 @@ another org is `NOT_FOUND`).
 
   | Card              | Slot        | Content                                                                                                                                                                                         |
   | ----------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | Details           | `main`      | `DL`: joined (`createdAt` via `DLDateDetails`), Status (`membership.status`)                                                                                                                    |
+  | Membership        | `main`      | `DL`: Person (link → person page), Team (link → team page), Status (`membership.status`), Joined (`createdAt` via `DLDateDetails`)                                                              |
   | D4H integration   | `main`      | shown when `membership.d4h`: member id, `<D4HMemberStatusBadge>`, position, ref, role id, team `lastSyncedAt`; `Item`/link → `route("/orgs/[slug]/d4h-views/members/[team_id]/[member_id]", …)` |
-  | Related           | `secondary` | `Item` links → person page, → team page, → team roster                                                                                                                                          |
-  | created / updated | `secondary` | `DLDateDetails` for `createdAt` / `updatedAt` — copy from `person-content.tsx`                                                                                                                  |
+  | created / updated | `secondary` | `DLDateDetails` for membership `createdAt` / `updatedAt`                                                                                                                                        |
 
 ## Step 9 — `AdminModule_TeamMembershipMenu` + relocate Remove
 

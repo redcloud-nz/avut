@@ -340,7 +340,7 @@ tail crumb is likewise "Members", not "Personnel".)
 - **Person page Teams card** (`team-memberships.tsx`) — each row's `<Link>`
   **retargets from the team page to the membership page**
   (`teams/[team_id]/personnel/[person_id]`). Onward navigation to the team is via
-  the membership page's Related card.
+  the Team link in the membership page's Details section.
 
 ### 8.4 API — `teams.getTeamMembership` (new)
 
@@ -357,12 +357,11 @@ Header title _{person.name}_; the breadcrumb tail carries the team.
 `Saratoga.Actions` holds a `⋯` dropdown menu (`AdminModule_TeamMembershipMenu`,
 same shape as `AdminModule_PersonMenu` / `AdminModule_TeamMenu`).
 
-| Section             | Slot        | Content                                                                                                                                 |
-| ------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Details             | `main`      | joined (`createdAt`), record status (`Active` / `Archived`) — read-only; no `tags` / `properties` in v1                                 |
-| D4H                 | `main`      | member id, `<D4HMemberStatusBadge>`, position, ref, role id, team last-synced; link to the D4H member view — omitted when `d4h == null` |
-| Related             | `secondary` | `Item` list: → person page · → team page · → team roster                                                                                |
-| _created / updated_ | `secondary` | `createdAt` / `updatedAt` with relative times, matching the person / team detail pages                                                  |
+| Section             | Slot        | Content                                                                                                                                                       |
+| ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Membership          | `main`      | Person (link → person page), Team (link → team page), record status (`Active` / `Archived`), joined (`createdAt`) — read-only; no `tags` / `properties` in v1 |
+| D4H                 | `main`      | member id, `<D4HMemberStatusBadge>`, position, ref, role id, team last-synced; link to the D4H member view — omitted when `d4h == null`                       |
+| _created / updated_ | `secondary` | membership `createdAt` / `updatedAt` with relative times, matching the person / team detail pages                                                             |
 
 **Actions menu** (`⋯` dropdown): **Remove from team** — `Protect team:["update"]`,
 opens `AdminModule_RemoveTeamMember_Dialog` (reused as-is) via `?action=remove`;
