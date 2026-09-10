@@ -111,7 +111,7 @@ async function main() {
     }
 
     const sorted = Object.fromEntries(Object.entries(index).sort(([a], [b]) => a.localeCompare(b)));
-    await writeFile(INDEX_PATH, JSON.stringify(sorted, null, 4) + "\n");
+    await writeFile(INDEX_PATH, JSON.stringify(sorted, null, 2) + "\n");
     console.log(`Wrote ${path.relative(process.cwd(), INDEX_PATH)} — stage & commit it.`);
 }
 

@@ -10,8 +10,8 @@
       "width": 500,
       "height": 384
     },
-    "alt": "The Forgot Password screen with a single email field and a Send reset link button",
-    "capturedAt": "2026-09-10T06:16:21.093Z"
+    "alt": "The Forgot Password screen with a single email field and a Send reset code button",
+    "capturedAt": "2026-09-10T06:21:20.502Z"
   },
   "getting-started/reset-password": {
     "light": {
