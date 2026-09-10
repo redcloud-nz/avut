@@ -1,13 +1,13 @@
 name: Increment Build Number
 
-# Increments `nz.avut.build` in package.json on every push to master so each
+# Increments `nz.avut.build` in package.json on every push to integration so each
 # merge gets a unique, monotonically increasing build number
 # (displayed as `{version}-build.{build}`, see next.config.ts).
 
 on:
   push:
     branches:
-      - master
+      - integration
     paths-ignore:
       - ".github/workflows/**"
 
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: integration
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Increment build number
@@ -46,16 +46,16 @@ jobs:
           git add package.json
           git commit -m "chore: increment build number [skip ci]"
 
-          # `master` may have moved since checkout (e.g. a push that landed
+          # `integration` may have moved since checkout (e.g. a push that landed
           # outside this workflow's own concurrency group). Rebase onto the
-          # latest master and retry on a non-fast-forward push rejection.
+          # latest integration and retry on a non-fast-forward push rejection.
           for i in 1 2 3 4 5; do
-            if git push origin HEAD:master; then
+            if git push origin HEAD:integration; then
               exit 0
             fi
             echo "Push rejected, retrying (attempt $i)..."
-            git fetch origin master
-            git rebase origin/master
+            git fetch origin integration
+            git rebase origin/integration
           done
           echo "Failed to push after 5 attempts" >&2
           exit 1
