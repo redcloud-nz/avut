@@ -6,7 +6,7 @@
 
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -42,7 +42,9 @@ export function CommonProviders({ children }: Readonly<{ children: ReactNode }>)
                             <SidebarProvider>{children}</SidebarProvider>
                         </TooltipProvider>
                         <HotkeyHelp />
-                        <HelpSheet />
+                        <Suspense fallback={null}>
+                            <HelpSheet />
+                        </Suspense>
                     </HotkeysProvider>
                 </NuqsAdapter>
             </QueryClientProvider>
