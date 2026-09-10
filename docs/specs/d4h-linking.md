@@ -382,6 +382,15 @@ shows "already in sync".
   back `stalePreview`, show a non-blocking notice and the recomputed counts.
 - **Create-from-D4H** replaces the current import dialog wiring, calling
   `createTeamFromD4H`.
+- **Admin → Organization page** gains a read-mostly "D4H Integration" card
+  (behind `integrations.d4h.enabled` and `Protect organization:["update"]`),
+  shown only when an `Organization_D4H` row exists — it is created as a
+  by-product of the first team link and is never user-created, so there is no
+  "Link" action. Surfaces the bound D4H organisation (name + id, or "org-less"),
+  server, cached timezone / currency / reporting-year start, linked-team count
+  and `lastSyncedAt`, plus an **Unlink** action disabled (with explanation)
+  while any `Team_D4H` remains — `unlinkOrganizationFromD4H`. Backed by a
+  `teams.getOrganizationD4H` query.
 
 ---
 

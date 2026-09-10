@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
@@ -427,6 +428,22 @@ export const teamsRouter = createTrpcRouter({
                     ],
                 }),
             ]);
+        }),
+
+    /**
+     * The org-level D4H link (`Organization_D4H`) for the current org, or `null`
+     * if the org has never linked a team to D4H. Read model for the admin
+     * organisation page's D4H card. See docs/specs/d4h-linking.md §3.1.
+     */
+    getOrganizationD4H: organizationProcedure({ organization: ["view"] })
+        .output(OrganizationD4HData.schema.nullable())
+        .query(async ({ ctx, input: { organizationId } }) => {
+            const [orgD4H, linkedTeamCount] = await Promise.all([
+                ctx.prisma.organization_D4H.findUnique({ where: { organizationId } }),
+                ctx.prisma.team_D4H.count({ where: { team: { organizationId } } }),
+            ]);
+
+            return orgD4H ? OrganizationD4HData.fromRecord(orgD4H, linkedTeamCount) : null;
         }),
 
     /**

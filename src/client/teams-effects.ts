@@ -25,6 +25,9 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
             teamId: vars.teamId,
         }),
     ),
+    // D4H team link/unlink/sync also creates, drops, or refreshes the org-level
+    // `Organization_D4H` row and its cached metadata.
+    invalidate(trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId })),
 ];
 
 export const teamsEffects = createEffects<"teams">()({
@@ -34,6 +37,11 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),
     unlinkTeamFromD4H: (vars) => teamCaches(vars),
+    unlinkOrganizationFromD4H: (vars) => [
+        invalidate(
+            trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
     createTeamMembership: (vars) => [
         invalidate(
             trpc.teams.listTeamMemberships.queryFilter({

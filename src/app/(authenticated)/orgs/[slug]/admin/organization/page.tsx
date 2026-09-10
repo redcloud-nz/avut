@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 
+import { AdminModule_Organization_D4HCard } from "@/components/admin/organization/d4h-org-card";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
@@ -80,6 +81,7 @@ export default async function AdminModule_Organization_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
+                            <AdminModule_Organization_D4HCard />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
