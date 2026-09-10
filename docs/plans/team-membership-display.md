@@ -345,6 +345,20 @@ Implements spec §8. Route `A`:
 drill-down, a deep-link target, and the Remove action. **Deferred:** editable
 `tags` / `properties`, and the Activity feed (no log-entry read path exists yet).
 
+**Implemented** — commits `f6a314f` (Step 7), `7c7573f` (Steps 8–9), `709eba7`
+(Steps 10–11 + Step 15's mobile hiding folded in). Deviations from the plan
+below:
+
+- The sidebar "created / updated" card was dropped — a membership's `createdAt`
+  _is_ its "Joined", so showing both was redundant. The Membership card keeps
+  "Joined".
+- `onRemoved` on `AdminModule_RemoveTeamMember_Dialog`: when provided, the dialog
+  **does not** auto-close on success — the caller owns what happens next.
+  Auto-closing (a nuqs `setAction(null)`) raced the membership page's
+  `router.push` and won, leaving the user on a now-404 page.
+- A membership URL for a deleted pair renders Next's 404 (the `fetchQuery` in
+  `generateMetadata` throws `NOT_FOUND`) — acceptable, no custom handling.
+
 ## What the base branch already gives us
 
 - `TeamMembershipData.d4h` **already carries `d4hRef` and `d4hRoleId`** — the
@@ -502,6 +516,10 @@ Small polish on the Phase 1 surfaces (spec §6.6, §7.4, §7.5). Independent of
 Phase 2, but Step 15's mobile hiding assumes the actions column is the `>`
 chevron from Phase 2 Step 10 — sequence Phase 3 **after** Phase 2, or keep the
 `w-9` actions cell visible whatever it currently holds.
+
+**Implemented** — Step 15 landed inside commit `709eba7`; Steps 13–14 in
+`ffa43e7`. The person Teams card now takes `person` (not `personId`) so the
+add-to-team dialog has a name for its title; `person-content.tsx` passes it.
 
 ## Step 13 — person picker on the existing add-member dialog
 
