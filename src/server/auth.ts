@@ -43,6 +43,23 @@ export const auth = betterAuth({
         },
     },
     baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    /*
+     * better-auth only trusts `baseURL` by default, which rejects origin-checked
+     * requests coming from Vercel preview deploys (unique per-branch hosts) and
+     * from local dev servers on a non-3000 port. `src/trpc/client.ts` and the
+     * email templates already special-case `VERCEL_URL`; mirror that here.
+     */
+    trustedOrigins: [
+        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+        ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
+        ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
+            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+            : []),
+        ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
+        ...(process.env.NODE_ENV === "development"
+            ? ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
+            : []),
+    ],
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
