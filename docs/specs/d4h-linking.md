@@ -69,7 +69,10 @@ single token _may_ span more than one D4H organisation.
 1. **A sidecar relation table for every link** — anything sync reads, writes, or
    filters on. `properties` JSON is for free-form user annotation only. (Pattern
    already used by `Team_D4H`, `I3Template_D4H`, `I3TemplateVariant_D4H`.)
-2. **One AVUT organisation links to at most one D4H organisation.**
+2. **An AVUT organisation is in one of three link states:** unlinked; linked to
+   exactly one D4H organisation (any number of that org's teams); or linked to a
+   single **org-less** D4H team (and nothing else). The three are mutually
+   exclusive — see §4, §5.
 3. **D4H is authoritative for membership existence and its own snapshot fields.
    AVUT is authoritative for everything else**, including a `Person`'s `name` and
    `email` once the person exists.
@@ -86,22 +89,28 @@ org's D4H attributes. **Distinct from `integrations.d4h` settings**, which hold
 _policy_ (`enabled`, `teamSync`); this holds _resolved foreign identity + fetched
 data_, which does not belong in a JSON config blob.
 
-| Field                    | Type        | Notes                                                               |
-| ------------------------ | ----------- | ------------------------------------------------------------------- |
-| `organizationId`         | `String`    | `@unique`, FK → `Organization`, `onDelete: Cascade`                 |
-| `serverCode`             | `String`    | `ap` / `eu` / `us`. Fixed on first link.                            |
-| `d4hOrganisationId`      | `Int?`      | Nullable for schema safety; in practice always set (see §5).        |
-| `d4hOrganisationName`    | `String?`   | Cache                                                               |
-| `d4hTimezone`            | `String?`   | Cache                                                               |
-| `d4hCurrency`            | `String?`   | Cache                                                               |
-| `d4hReportingStartDay`   | `Int?`      | Cache                                                               |
-| `d4hReportingStartMonth` | `Int?`      | Cache                                                               |
-| `syncTokenId`            | `String?`   | FK → `D4hAccessToken` (an org token), `onDelete: SetNull`. Phase 2. |
-| `orgSyncedAt`            | `DateTime?` | Last refresh of the cached attributes above                         |
+| Field                    | Type        | Notes                                                                         |
+| ------------------------ | ----------- | ----------------------------------------------------------------------------- |
+| `organizationId`         | `String`    | `@unique`, FK → `Organization`, `onDelete: Cascade`                           |
+| `serverCode`             | `String`    | `ap` / `eu` / `us`. Fixed on first link.                                      |
+| `d4hOrganisationId`      | `Int?`      | Set → org-linked mode. `null` while the row exists → org-less-team mode (§5). |
+| `d4hOrganisationName`    | `String?`   | Cache                                                                         |
+| `d4hTimezone`            | `String?`   | Cache                                                                         |
+| `d4hCurrency`            | `String?`   | Cache                                                                         |
+| `d4hReportingStartDay`   | `Int?`      | Cache                                                                         |
+| `d4hReportingStartMonth` | `Int?`      | Cache                                                                         |
+| `syncTokenId`            | `String?`   | FK → `D4hAccessToken` (an org token), `onDelete: SetNull`. Phase 2.           |
+| `orgSyncedAt`            | `DateTime?` | Last refresh of the cached attributes above                                   |
 
-Created lazily on the first `linkTeamToD4H`. **Sticky** — `d4hOrganisationId` is
-cleared only by an explicit `unlinkOrganizationFromD4H` admin action, which
-refuses while any `Team_D4H` rows remain in the org.
+Created lazily on the first `linkTeamToD4H`.
+
+- **Org-linked mode** (`d4hOrganisationId` set): **sticky** — the id and cached
+  attributes survive after the last `Team_D4H` is unlinked, and are cleared only
+  by an explicit `unlinkOrganizationFromD4H` admin action (which refuses while
+  any `Team_D4H` row remains).
+- **Org-less-team mode** (`d4hOrganisationId` null): not sticky — there is
+  nothing to cache, so `unlinkTeamFromD4H` of the sole org-less team also
+  deletes this row, returning the org to the unlinked state.
 
 ### 3.2 `Team_D4H` (exists — extend)
 
@@ -145,42 +154,56 @@ sync path is removed.
 `linkTeamToD4H` resolves the D4H team through the acting token, reads its
 `owner` (D4H organisation, or none), and then:
 
+Let the org's current state be one of **(a)** no `Organization_D4H`;
+**(b)** org-linked mode (`d4hOrganisationId = Oₓ`, ≥ 1 `Team_D4H`);
+**(c)** org-less-team mode (`d4hOrganisationId = null`, exactly 1 `Team_D4H`).
+
 1. **Server consistency.** The token's `serverCode` must equal
    `Organization_D4H.serverCode` if that row already exists; otherwise it is set
    from the token now.
-2. **D4H team has organisation `O`:**
-   - `Organization_D4H` missing → create it with `d4hOrganisationId = O`, fetch
-     and cache `O`'s attributes.
-   - `d4hOrganisationId == O` → OK.
-   - `d4hOrganisationId == null` → set it to `O` and cache attributes. (Only
-     reachable if org-less teams were linked first — see §5.)
-   - `d4hOrganisationId == O'`, `O' != O` → **reject**:
-     _"This organization is linked to D4H organisation ‹O'›; that team belongs to ‹O›."_
-3. **D4H team has no organisation** → reject in Phase 1:
-   _"This D4H team is not owned by a D4H organisation, which is not supported."_
-   The column stays nullable so this can be relaxed later without a migration.
-4. **Visibility.** The token must be able to see the D4H team
+2. **Visibility.** The token must be able to see the D4H team
    (`getD4HTokenMetadata` check, kept from today's `getD4HTeam`).
+3. **D4H team has organisation `O`:**
+   - **(a)** → create `Organization_D4H` with `d4hOrganisationId = O`, fetch and
+     cache `O`'s attributes.
+   - **(b)** with `Oₓ == O` → OK. With `Oₓ != O` → **reject**:
+     _"This organization is linked to D4H organisation ‹Oₓ›; that team belongs to ‹O›."_
+   - **(c)** → **reject**:
+     _"This organization is linked to an org-less D4H team, which blocks all other D4H links. Unlink it first."_
+4. **D4H team has no organisation (org-less):**
+   - **(a)** → create `Organization_D4H` with `d4hOrganisationId = null`. This
+     link is now the org's only permitted D4H link.
+   - **(b)** → **reject**:
+     _"This organization is linked to D4H organisation ‹Oₓ›; an org-less D4H team cannot also be linked."_
+   - **(c)** → **reject**:
+     _"This organization already has an org-less D4H team linked; only one is allowed."_
 5. **One D4H team per AVUT team and vice versa** — `Team_D4H.teamId` is unique;
-   add `@@unique` on `[organizationId-scoped]` `d4hTeamId` is enforced in
-   application code against the org's teams (a D4H team is linked at most once
-   per AVUT org).
+   a given `d4hTeamId` is linked at most once per AVUT org (enforced in
+   application code against the org's teams).
 
-Net effect: every organisation-bearing `Team_D4H` in one AVUT org necessarily
-shares one D4H organisation. A multi-org token is handled for free — it may
-_see_ other D4H orgs; their teams simply cannot be linked into this AVUT org.
+Net effect: an AVUT org holds either N `Team_D4H` rows all under one D4H
+organisation, or exactly one org-less `Team_D4H` row, or none. A multi-org token
+is handled for free — it may _see_ other D4H orgs; their teams simply cannot be
+linked into this AVUT org.
 
 ---
 
 ## 5. Org-less D4H teams
 
-The D4H API models `Team.owner` as optional, so org-less teams may exist. We
-have none today and Phase 1 **rejects** linking them (§4.3). The schema keeps
-`d4hOrganisationId` nullable on both `Organization_D4H` and `Team_D4H` so support
-can be added later as pure application logic:
+The D4H API models `Team.owner` as optional, so a D4H team may have no owning
+organisation. Supported from Phase 1, with one restriction: **an org-less D4H
+team link is exclusive.** If an AVUT org has an org-less D4H team linked, no
+other team in that org can be linked to any D4H team (§4.3c, §4.4b, §4.4c).
 
-- an org-less D4H team links without touching `Organization_D4H.d4hOrganisationId`;
-- the "single D4H org per AVUT org" rule then applies only to org-bearing teams.
+Rationale: with no D4H organisation there is no shared parent to anchor a "these
+teams belong together" guarantee, and no org-level attributes (timezone,
+currency, reporting calendar) to cache. Rather than reason about a mixed bag of
+unrelated org-less teams, we allow exactly one.
+
+Representation: `Organization_D4H` exists with `d4hOrganisationId = null`; the
+single `Team_D4H` row also has `d4hOrganisationId = null`. Unlinking that team
+(`unlinkTeamFromD4H`) deletes `Organization_D4H` too — org-less mode is not
+sticky (§3.1).
 
 ---
 
@@ -217,7 +240,11 @@ title.
 `{ team: ["update"] }`. Deletes the `Team_D4H` row; `TeamMembership_D4H` rows
 cascade away but the `TeamMembership` rows themselves stay (they become
 manually-managed). `logEvent` `Update` on `Team`.
-`Organization_D4H.d4hOrganisationId` is **not** cleared (sticky, §3.1).
+
+- Org-linked mode → `Organization_D4H` is left intact (sticky, §3.1), even when
+  this was the last linked team.
+- Org-less-team mode → this _is_ the org's only link, so `Organization_D4H` is
+  deleted in the same transaction.
 
 ### 6.4 `unlinkOrganizationFromD4H()`
 
@@ -397,16 +424,16 @@ it.
 
 ## Appendix B — resolved decisions
 
-| Question                           | Decision                                             |
-| ---------------------------------- | ---------------------------------------------------- |
-| `Person` name/email after creation | AVUT authoritative — sync never overwrites           |
-| Removed memberships                | hard delete                                          |
-| `TeamType` enum                    | remove; infer from `Team_D4H`                        |
-| Multi-org tokens                   | assume possible; handled by the single-org-slot rule |
-| `importTeamFromD4H`                | retire                                               |
-| AVUT org ↔ D4H org                 | at most 1:1, sticky until explicit removal           |
-| Org-less D4H teams                 | hypothetical; reject on link, schema stays nullable  |
-| `teamSync` vs `teamMemberSync`     | single `teamSync` setting                            |
-| Email collision on create          | reuse the existing `Person`                          |
-| Sync UX                            | preview `SyncPlan` → user applies                    |
-| Scheduled sync                     | Phase 2, deferred                                    |
+| Question                           | Decision                                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Person` name/email after creation | AVUT authoritative — sync never overwrites                                                    |
+| Removed memberships                | hard delete                                                                                   |
+| `TeamType` enum                    | remove; infer from `Team_D4H`                                                                 |
+| Multi-org tokens                   | assume possible; handled by the single-org-slot rule                                          |
+| `importTeamFromD4H`                | retire                                                                                        |
+| AVUT org ↔ D4H org                 | at most 1:1, sticky until explicit removal                                                    |
+| Org-less D4H teams                 | supported from Phase 1; an org-less link is exclusive (blocks all other D4H links in the org) |
+| `teamSync` vs `teamMemberSync`     | single `teamSync` setting                                                                     |
+| Email collision on create          | reuse the existing `Person`                                                                   |
+| Sync UX                            | preview `SyncPlan` → user applies                                                             |
+| Scheduled sync                     | Phase 2, deferred                                                                             |
