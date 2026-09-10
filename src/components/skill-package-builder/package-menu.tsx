@@ -4,8 +4,12 @@
  */
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { toast } from "sonner";
+
+import { useQueryClient } from "@tanstack/react-query";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -27,6 +31,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_ArchivePackage_Dialog } from "./archive-package";
 import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
@@ -34,19 +39,69 @@ import { SkillPackageBuilder_PublishPackage_Dialog } from "./publish-package";
 import { SkillPackageBuilder_RestorePackage_Dialog } from "./restore-package";
 import { SkillPackageBuilder_UnpublishPackage_Dialog } from "./unpublish-package";
 
+function slugify(value: string): string {
+    return (
+        value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "skill-package"
+    );
+}
+
 export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackage: SkillPackage }) {
     const organization = useOrganization();
+    const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["delete", "archive", "restore", "publish", "unpublish"] as const),
     );
 
+    const canView = useHasPermission({ skillPackageBuilder: ["view"] });
     const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
     const canPublish = useHasPermission({ skillPackageBuilder: ["publish"] });
     const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
 
-    const actions: MenuActionProps[] = [];
+    const [exporting, setExporting] = useState(false);
+
+    async function exportPackage() {
+        if (exporting) return;
+        setExporting(true);
+        try {
+            const envelope = await queryClient.fetchQuery(
+                trpc.skillPackageBuilder.exportPackage.queryOptions({
+                    organizationId: organization.id,
+                    skillPackageId: skillPackage.id,
+                }),
+            );
+
+            const blob = new Blob([JSON.stringify(envelope, null, 2)], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `${slugify(skillPackage.name)}.json`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            toast.error(
+                `Export failed: ${error instanceof Error ? error.message : "unknown error"}`,
+            );
+        } finally {
+            setExporting(false);
+        }
+    }
+
+    const actions: MenuActionProps[] = [
+        {
+            verb: "export",
+            label: "Export .json",
+            icon: <ObjectIcons.Export />,
+            onSelect: () => void exportPackage(),
+            disabled: !canView || exporting,
+        },
+    ];
     if (skillPackage.status == "Active") {
         actions.push({
             verb: "archive",

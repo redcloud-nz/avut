@@ -9,8 +9,9 @@ See issue #115 and `docs/ideas/2026-09-10-skill-package-export-import.md`.
 ## Adding a package
 
 1. Author the package in the `skill-package-builder` module on some instance.
-2. Export it: call `skillPackageBuilder.exportPackage` (returns the `SkillPackageExport`
-   envelope) and save the JSON here, e.g. `water-rescue.json`.
+2. Export it: use the **Export .json** action in the package menu (or call
+   `skillPackageBuilder.exportPackage`, which returns the `SkillPackageExport` envelope) and
+   save the JSON here, e.g. `water-rescue.json`.
 3. Register it in `RAW_LIBRARY` in [`index.ts`](./index.ts) — a static `import` so the
    bundler traces the file.
 
