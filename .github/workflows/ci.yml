@@ -1,16 +1,16 @@
 name: CI
 
-# Type checks and runs the test suite on every PR and on master. The Vercel
+# Type checks and runs the test suite on every PR and on integration. The Vercel
 # deployment already covers `prisma migrate deploy && next build`, so this
 # deliberately doesn't build — it covers the two things nothing else did.
 
 on:
   pull_request:
     branches:
-      - master
+      - integration
   push:
     branches:
-      - master
+      - integration
 
 concurrency:
   # A new push to the same PR makes the in-flight run irrelevant.

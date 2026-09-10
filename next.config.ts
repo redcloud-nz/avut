@@ -30,7 +30,7 @@ if (!appMetadata) {
 }
 
 // Deployments off the `production` branch ship a bare product version (e.g. `0.7`);
-// every other branch (chiefly `master`) displays the build number alongside it
+// every other branch (chiefly `integration`) displays the build number alongside it
 // (e.g. `0.7-build.41`) so in-progress builds remain distinguishable.
 const branchName = process.env.VERCEL_GIT_COMMIT_REF ?? process.env.GITHUB_REF_NAME;
 const appVersion =
