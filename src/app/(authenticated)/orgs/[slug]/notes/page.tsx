@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { requireOrganization } from "@/server/organization-access";
 
@@ -15,7 +16,7 @@ export default async function Notes_Index_Page(props: PageProps<"/orgs/[slug]/no
 
     return (
         <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={["Notes"]} />
+            <Std.Navbar breadcrumbs={["Notes"]} actions={<HelpButton slug="notes" />} />
             <Std.ScrollContainer>
                 <div>Notes Module Index Page</div>
             </Std.ScrollContainer>

@@ -9,6 +9,7 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import {
     Item,
@@ -29,7 +30,10 @@ export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>)
 
     return (
         <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={[{ href: route("/orgs/[slug]/i3", { slug }), label: "I3" }]} />
+            <Std.Navbar
+                breadcrumbs={[{ href: route("/orgs/[slug]/i3", { slug }), label: "I3" }]}
+                actions={<HelpButton slug="i3" />}
+            />
             <Std.ScrollContainer>
                 <Std.IndexPage title="I3 Module">
                     <ItemGroup>

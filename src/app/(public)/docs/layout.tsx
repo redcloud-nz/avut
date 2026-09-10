@@ -13,10 +13,11 @@ import Link from "next/link";
 
 import { DocsSearch } from "@/components/docs/docs-search";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
-import { docsHref, getDocsNav } from "@/lib/docs";
+import { docsHref } from "@/lib/docs";
+import { getVisibleDocsNav } from "@/server/docs";
 
-export default function DocsLayout({ children }: { children: ReactNode }) {
-    const nav = getDocsNav();
+export default async function DocsLayout({ children }: { children: ReactNode }) {
+    const nav = await getVisibleDocsNav();
 
     return (
         <div className="mx-auto flex min-h-svh max-w-6xl flex-col px-4">

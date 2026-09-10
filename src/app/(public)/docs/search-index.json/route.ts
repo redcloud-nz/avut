@@ -4,13 +4,15 @@
  *
  * Path: /docs/search-index.json
  *
- * Statically-built search corpus for the docs site. The client fetches this
- * once and queries it in-browser with MiniSearch — no server-side search cost.
+ * Search corpus for the docs site. The client fetches this once and queries it
+ * in-browser with MiniSearch — no server-side search cost. Flag-hidden sections
+ * are excluded, so the response varies by deployment environment.
  */
 
 import { allDocs } from "content-collections";
 
 import { docsSectionById } from "@/lib/docs-sections";
+import { getVisibleDocSlugs } from "@/server/docs";
 
 /** Rough plain-text extraction from an MDX body for indexing purposes. */
 function toPlainText(mdx: string): string {
@@ -33,19 +35,19 @@ export interface DocsSearchRecord {
     body: string;
 }
 
-async function buildIndex(): Promise<DocsSearchRecord[]> {
-    "use cache";
-
-    return allDocs.map((doc) => ({
-        id: doc.slug,
-        slug: doc.slug,
-        title: doc.title,
-        section: docsSectionById[doc.section]?.title ?? doc.section,
-        description: doc.description ?? "",
-        body: toPlainText(doc.content),
-    }));
-}
-
 export async function GET() {
-    return Response.json(await buildIndex());
+    const visible = new Set(await getVisibleDocSlugs());
+
+    const records: DocsSearchRecord[] = allDocs
+        .filter((doc) => visible.has(doc.slug))
+        .map((doc) => ({
+            id: doc.slug,
+            slug: doc.slug,
+            title: doc.title,
+            section: docsSectionById[doc.section]?.title ?? doc.section,
+            description: doc.description ?? "",
+            body: toPlainText(doc.content),
+        }));
+
+    return Response.json(records);
 }

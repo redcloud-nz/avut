@@ -7,6 +7,7 @@
 
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { route } from "@/lib/routes";
 import { SkillPackageBuilder_Packages_List } from "@/components/skill-package-builder/packages-list";
@@ -33,6 +34,7 @@ export default async function SkillPackageBuilder_Index_Page(
                             href: route("/orgs/[slug]/skill-package-builder", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-package-builder" />}
                 />
                 <Std.ScrollContainer>
                     <div className="flex flex-col items-center my-4 gap-4">

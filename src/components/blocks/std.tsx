@@ -87,12 +87,14 @@ type NavbarProps = {
 } & (
     | {
           breadcrumbs?: (BreadcrumbItem | string)[];
+          /** Right-aligned controls (e.g. `<HelpButton>`), pinned to the far edge of the navbar. */
+          actions?: ReactNode;
           children?: never;
       }
-    | { children?: ReactNode; breadcrumbs?: never }
+    | { children?: ReactNode; breadcrumbs?: never; actions?: never }
 );
 
-function Navbar({ breadcrumbs, children, sidebarTrigger = true }: NavbarProps) {
+function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: NavbarProps) {
     return (
         <header
             slot="header"
@@ -106,6 +108,7 @@ function Navbar({ breadcrumbs, children, sidebarTrigger = true }: NavbarProps) {
             )}
             {breadcrumbs && <Breadcrumbs breadcrumbs={breadcrumbs} />}
             {children}
+            {actions && <div className="ml-auto flex items-center gap-1 pr-1">{actions}</div>}
         </header>
     );
 }
