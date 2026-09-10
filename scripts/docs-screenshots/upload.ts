@@ -22,6 +22,11 @@ const INDEX_PATH = path.join(process.cwd(), "src/components/docs/screenshots.gen
 
 const ID_PATTERN = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 
+// The Blob store's RW token. Vercel names it BLOB_READ_WRITE_TOKEN for the
+// default store, or <STORE>_READ_WRITE_TOKEN otherwise (here: the "screenshots"
+// store). The runtime never needs this — capture/upload only.
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN ?? process.env.SCREENSHOTS_READ_WRITE_TOKEN;
+
 interface ScreenshotSource {
     url: string;
     width: number;
@@ -65,6 +70,7 @@ async function uploadOne(
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "image/webp",
+        token: BLOB_TOKEN,
     });
     console.log(`  ${variant}: ${blob.url} (${width}×${height})`);
     return { url: blob.url, width, height };
@@ -83,8 +89,10 @@ async function main() {
         console.error(`Invalid id "${id}" — must match ${ID_PATTERN}`);
         process.exit(1);
     }
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        console.error("BLOB_READ_WRITE_TOKEN is not set (expected from .env.local).");
+    if (!BLOB_TOKEN) {
+        console.error(
+            "No Blob token — set BLOB_READ_WRITE_TOKEN or SCREENSHOTS_READ_WRITE_TOKEN in .env.local.",
+        );
         process.exit(1);
     }
 
