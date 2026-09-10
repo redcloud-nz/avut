@@ -57,7 +57,12 @@ export const auth = betterAuth({
             : []),
         ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
         ...(process.env.NODE_ENV === "development"
-            ? ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
+            ? [
+                  "http://localhost:3000",
+                  "http://localhost:3001",
+                  "http://localhost:3002",
+                  "http://localhost:3100", // worktree dev servers
+              ]
             : []),
     ],
     database: prismaAdapter(prisma, {
