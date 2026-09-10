@@ -13,9 +13,6 @@ import { MDXContent } from "@content-collections/mdx/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { docsMdxComponents } from "@/components/docs/mdx-components";
-
-// The sheet header already shows the doc title, so drop the body's leading <h1>.
-const sheetMdxComponents = { ...docsMdxComponents, h1: () => null };
 import { Spinner } from "@/components/ui/spinner";
 import {
     Sheet,
@@ -27,6 +24,9 @@ import {
 } from "@/components/ui/sheet";
 import type { DocsHelpPayload } from "@/app/(public)/docs/help/[...slug]/route";
 import { docsHref } from "@/lib/docs";
+
+// The sheet header already shows the doc title, so drop the body's leading <h1>.
+const sheetMdxComponents = { ...docsMdxComponents, h1: () => null };
 
 /**
  * Global contextual-help sheet. Reads `?help=<slug>` (written by `<HelpButton>`),
@@ -82,6 +82,8 @@ export function HelpSheet() {
                     <SheetFooter className="border-t">
                         <Link
                             href={docsHref(query.data?.slug ?? help)}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
                         >
                             Open the full guide
