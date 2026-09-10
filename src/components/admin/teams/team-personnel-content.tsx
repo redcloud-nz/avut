@@ -5,7 +5,6 @@
 "use client";
 
 import Link from "next/link";
-import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useMemo } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -20,9 +19,8 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
+import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -33,9 +31,15 @@ import { RouterOutput, trpc } from "@/trpc/client";
 import { AdminModule_AddTeamMember_Dialog } from "./add-team-member";
 import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
 import { MembershipSourceBadge } from "./membership-source-badge";
-import { AdminModule_RemoveTeamMember_Dialog } from "./remove-team-member";
 
 type MembershipRow = RouterOutput["teams"]["listTeamMemberships"][number];
+
+// D4H columns don't fit at phone width — hide them below `md`; Name and the
+// chevron link stay visible. Filters remain reachable in the toolbar menu.
+const hideBelowMd = {
+    headerProps: { className: "hidden md:table-cell" },
+    cellProps: { className: "hidden md:table-cell" },
+} as const;
 
 export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
@@ -49,24 +53,6 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
             }),
         ],
     });
-
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["remove-member"] as const),
-    );
-    const [memberId, setMemberId] = useQueryState("memberId", parseAsString);
-
-    const activeMember = teamMembers.find((tm) => tm.personId === memberId) ?? null;
-
-    function openRemoveMember(id: string) {
-        void setMemberId(id, { history: "push" });
-        void setAction("remove-member", { history: "push" });
-    }
-
-    function closeRemoveMember() {
-        void setAction(null, { history: "replace" });
-        void setMemberId(null, { history: "replace" });
-    }
 
     const teamIsD4HLinked = team.d4h != null;
     const lastSyncedAt = team.d4h?.lastSyncedAt ?? null;
@@ -102,6 +88,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                           enableSorting: true,
                           enableColumnFilter: false,
                           enableGlobalFilter: false,
+                          meta: hideBelowMd,
                       })
                     : null,
                 teamIsD4HLinked
@@ -119,6 +106,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                           enableGlobalFilter: false,
                           filterFn: Kaga.filterFns.oneOf,
                           meta: {
+                              ...hideBelowMd,
                               columnOptions: D4HMemberStatus.values.map((value) => ({
                                   label: formatD4HMemberStatus(value),
                                   value,
@@ -137,6 +125,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                                   lastSyncedAt={lastSyncedAt}
                               />
                           ),
+                          meta: hideBelowMd,
                       })
                     : null,
                 teamIsD4HLinked
@@ -149,6 +138,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                           enableGlobalFilter: false,
                           filterFn: Kaga.filterFns.oneOf,
                           meta: {
+                              ...hideBelowMd,
                               columnOptions: [
                                   { label: "Active", value: "Active" },
                                   { label: "Archived", value: "Archived" },
@@ -160,25 +150,29 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                     id: "actions",
                     header: "",
                     cell: (ctx) => (
-                        <Protect permissions={{ team: ["update"] }}>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openRemoveMember(ctx.row.original.personId)}
-                            >
-                                <ObjectIcons.Delete />
-                            </Button>
-                        </Protect>
+                        <Link
+                            href={route(
+                                "/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]",
+                                {
+                                    slug: organization.slug,
+                                    team_id: teamId,
+                                    person_id: ctx.row.original.person.id,
+                                },
+                            )}
+                            aria-label="View membership"
+                            className="text-muted-foreground hover:text-foreground flex justify-center"
+                        >
+                            <ItemLinkActionIcon className="size-4" />
+                        </Link>
                     ),
                     enableHiding: false,
                     meta: { cellProps: { className: "w-9 p-0" } },
                 }),
             ]),
-        // openRemoveMember is a stable closure over setState setters
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [organization.slug, teamIsD4HLinked, lastSyncedAt],
+        [organization.slug, teamId, teamIsD4HLinked, lastSyncedAt],
     );
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable<MembershipRow>({
         data: teamMembers,
         columns,
@@ -231,16 +225,6 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                         <Kaga.Table table={table} />
                         <Kaga.TablePagination table={table} />
                     </div>
-
-                    {activeMember && (
-                        <AdminModule_RemoveTeamMember_Dialog
-                            organizationId={organization.id}
-                            team={team}
-                            person={activeMember.person}
-                            open={action === "remove-member"}
-                            onOpenChange={(open) => (open ? undefined : closeRemoveMember())}
-                        />
-                    )}
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
