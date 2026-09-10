@@ -509,14 +509,14 @@ chevron from Phase 2 Step 10 — sequence Phase 3 **after** Phase 2, or keep the
 (and its `Select*` imports) with `<SearchableSelect>`
 (`@/components/ui/searchable-select`):
 
-- `options={personnel.map((p) => ({ value: p.id, label: p.name }))}` — already
-  sorted by the existing `.sort()`.
-- `SearchableSelect` has no per-option `disabled`; to keep already-assigned
-  people unselectable either (a) filter them out of `options` entirely (simplest
-  — they're already members, no reason to show them), or (b) add an optional
-  `disabledValues?: string[]` prop to `SearchableSelect`. Prefer (a).
+- `options` = `personnel`, **filtered to exclude `assignedIds`** (the existing
+  member set), mapped to `{ value: p.id, label: p.name }` — already sorted by the
+  current `.sort()`. `SearchableSelect` has no per-option `disabled`, and there's
+  no reason to show people who are already members, so filtering is the whole
+  answer — no new prop on the primitive.
 - Keep the `react-hook-form` `Controller` wiring; `SearchableSelect` is
   `value` / `onValueChange`, so `field.value ?? ""` / `field.onChange`.
+- `ui/*.tsx` is untouched, so no `update-ui-readme`.
 
 ## Step 14 — add-to-team dialog on the person card
 
@@ -563,8 +563,6 @@ reachable on mobile even though the columns are hidden. Verify the
 ## Step 16 — verification
 
 - `npx tsc --noEmit`, `npm run lint`, `npm run test:run`.
-- `npm run update-ui-readme` **not** needed (no `ui/*.tsx` change) unless Step 13
-  option (b) is taken (`SearchableSelect` gains a prop).
 - Browser:
   - add-member dialog: type to filter a long roster, already-members absent.
   - person card `+`: opens, team picker excludes current teams, add → row appears.
