@@ -1106,6 +1106,12 @@ describe("systemAdmin.importSkillPackage", () => {
     it("lists the bundled library", async () => {
         const { packages } = await makeCaller().listSkillPackageLibrary();
         expect(packages.some((p) => p.fileName === "example-starter-package.json")).toBe(true);
+
+        const lightRescue = packages.find((p) => p.fileName === "light-rescue.json");
+        expect(lightRescue).toBeDefined();
+        expect(lightRescue?.name).toBe("Light Rescue");
+        expect(lightRescue?.groupCount).toBeGreaterThan(0);
+        expect(lightRescue?.skillCount).toBeGreaterThan(0);
     });
 
     it("dryRun computes a plan without writing", async () => {

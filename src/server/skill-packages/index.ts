@@ -11,6 +11,7 @@ import {
 } from "@/lib/schemas/skill-package-export";
 
 import exampleStarterPackage from "./example-starter-package.json";
+import lightRescue from "./light-rescue.json";
 
 /**
  * Bundled skill-package library.
@@ -22,6 +23,7 @@ import exampleStarterPackage from "./example-starter-package.json";
  */
 const RAW_LIBRARY: Record<string, unknown> = {
     "example-starter-package.json": exampleStarterPackage,
+    "light-rescue.json": lightRescue,
 };
 
 export interface SkillPackageLibraryEntry {
