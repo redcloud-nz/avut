@@ -8,12 +8,10 @@ import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { ItemLinkActionIcon } from "@/components/icons";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -158,29 +156,6 @@ export function AdminModule_TeamMembership_Content({
                                                 <DLDetails>Never</DLDetails>
                                             )}
                                         </DL>
-                                        {team.d4h && (
-                                            <Item className="mt-2 px-2" size="sm" asChild>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/d4h-views/members/[team_id]/[member_id]",
-                                                        {
-                                                            slug: organization.slug,
-                                                            team_id: String(team.d4h.d4hTeamId),
-                                                            member_id: String(
-                                                                membership.d4h.d4hMemberId,
-                                                            ),
-                                                        },
-                                                    )}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>View in D4H data</ItemTitle>
-                                                    </ItemContent>
-                                                    <ItemActions>
-                                                        <ItemLinkActionIcon className="size-4" />
-                                                    </ItemActions>
-                                                </Link>
-                                            </Item>
-                                        )}
                                     </CardContent>
                                 </Card>
                             )}

@@ -304,7 +304,9 @@ A dedicated page for **one person's membership of one team** — the record that
 Four motivations. **v1 delivers two of them**; the other two are deferred:
 
 1. **D4H drill-down.** _(v1)_ The full snapshot (`d4hRef`, `d4hRoleId`, team
-   last-synced) plus a jump to `/d4h-views/members/[team_id]/[member_id]`.
+   last-synced). A jump to `/d4h-views/members/[team_id]/[member_id]` was cut —
+   the `d4h-views` module is disabled for the initial release; add the link back
+   when it ships.
 2. **A deep-link target.** _(v1)_ `logEvent` writes `objectType: "TeamMembership"`
    on create / delete / every D4H sync add-archive-update, and today those
    entries point at nothing.
@@ -360,7 +362,7 @@ same shape as `AdminModule_PersonMenu` / `AdminModule_TeamMenu`).
 | Section             | Slot        | Content                                                                                                                                                       |
 | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Membership          | `main`      | Person (link → person page), Team (link → team page), record status (`Active` / `Archived`), joined (`createdAt`) — read-only; no `tags` / `properties` in v1 |
-| D4H                 | `main`      | member id, `<D4HMemberStatusBadge>`, position, ref, role id, team last-synced; link to the D4H member view — omitted when `d4h == null`                       |
+| D4H                 | `main`      | member id, `<D4HMemberStatusBadge>`, position, ref, role id, team last-synced — omitted when `d4h == null` (no `d4h-views` link in v1: module disabled)       |
 | _created / updated_ | `secondary` | membership `createdAt` / `updatedAt` with relative times, matching the person / team detail pages                                                             |
 
 **Actions menu** (`⋯` dropdown): **Remove from team** — `Protect team:["update"]`,

@@ -416,7 +416,7 @@ another org is `NOT_FOUND`).
   | Card              | Slot        | Content                                                                                                                                                                                         |
   | ----------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
   | Membership        | `main`      | `DL`: Person (link → person page), Team (link → team page), Status (`membership.status`), Joined (`createdAt` via `DLDateDetails`)                                                              |
-  | D4H integration   | `main`      | shown when `membership.d4h`: member id, `<D4HMemberStatusBadge>`, position, ref, role id, team `lastSyncedAt`; `Item`/link → `route("/orgs/[slug]/d4h-views/members/[team_id]/[member_id]", …)` |
+  | D4H integration   | `main`      | shown when `membership.d4h`: member id, `<D4HMemberStatusBadge>`, position, ref, role id, team `lastSyncedAt` (the `d4h-views` deep link was removed — module disabled for the initial release) |
   | created / updated | `secondary` | `DLDateDetails` for membership `createdAt` / `updatedAt`                                                                                                                                        |
 
 ## Step 9 — `AdminModule_TeamMembershipMenu` + relocate Remove
@@ -495,7 +495,7 @@ changes from
 - Browser (`test-in-browser`, dev server against `avut_d4h_linking`):
   - roster chevron → membership page; breadcrumbs correct.
   - membership page on a **D4H-linked** team — D4H card with ref / role id / last
-    synced, link to the D4H member view resolves.
+    synced.
   - membership page on a **plain** team — no D4H card.
   - **Remove from team** from the `⋯` menu → confirms → redirects to the roster,
     row gone.
