@@ -65,8 +65,8 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                     </button>
                 </DialogTrigger>
                 <DialogContent
-                    className="w-fit max-w-[95vw] p-2 sm:max-w-[95vw]"
-                    style={{ width: maxWidth + 16 }}
+                    className="w-fit max-w-[95vw] gap-0 overflow-hidden p-0 sm:max-w-[95vw]"
+                    style={{ width: maxWidth }}
                 >
                     <DialogTitle className="sr-only">{resolvedAlt}</DialogTitle>
                     {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
@@ -75,7 +75,7 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                         width={entry.light.width}
                         height={entry.light.height}
                         alt={resolvedAlt}
-                        className="block h-auto w-full rounded dark:hidden"
+                        className="block h-auto w-full dark:hidden"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
                     <img
@@ -83,8 +83,13 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                         width={dark.width}
                         height={dark.height}
                         alt={resolvedAlt}
-                        className="hidden h-auto w-full rounded dark:block"
+                        className="hidden h-auto w-full dark:block"
                     />
+                    {caption && (
+                        <figcaption className="text-muted-foreground border-t px-3 py-2 text-center text-sm">
+                            {caption}
+                        </figcaption>
+                    )}
                 </DialogContent>
             </Dialog>
             {caption && (

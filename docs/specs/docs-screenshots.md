@@ -119,8 +119,10 @@ Behaviour:
 - Light/dark: render both sources, swap with CSS (`hidden dark:block` /
   `block dark:hidden`) so it follows the app theme with no JS. If an id has only
   a `light` entry, use it for both.
-- Click-to-zoom: clicking opens the image full-size in a shared `Dialog`.
-  Important in the `?help=` sheet, which is only `sm:max-w-lg` wide.
+- Click-to-zoom: clicking opens the image full-size in a shared `Dialog` —
+  the image bleeds to the dialog edges (no padding), with the caption on a
+  bordered strip beneath it. Important in the `?help=` sheet, which is only
+  `sm:max-w-lg` wide.
 - Responsive down to ~380px (help sheet on a narrow viewport).
 - Plain Markdown `![]()` images are **not** supported in docs MDX — add an `img`
   override that renders a build-time warning, or document that authors must use
@@ -137,8 +139,9 @@ index (`getScreenshot(id)` from `src/lib/screenshots.ts`), but:
 - `next/image` (not a raw `<img>`) for a responsive `srcset`; the Blob host is
   allow-listed in `next.config.ts` `images.remotePatterns`.
 - A plain rounded border, **no browser-chrome frame**.
-- Light/dark swap by CSS, and click-to-zoom in a `Dialog` — the same as
-  `<Screenshot>` (so it is a client component).
+- Light/dark swap by CSS, and click-to-zoom in a `Dialog` — the same
+  edge-to-edge image + caption strip as `<Screenshot>` (so it is a client
+  component). `caption` defaults to the index's `alt`.
 
 ---
 
