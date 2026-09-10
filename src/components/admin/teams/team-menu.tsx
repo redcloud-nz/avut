@@ -4,10 +4,9 @@
  */
 "use client";
 
-import { CableIcon, RefreshCwIcon, Unlink2Icon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { D4HIcons, DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -80,13 +79,13 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                                     disabled={!canUpdate || linked}
                                     onClick={() => void setAction("d4h-link", { history: "push" })}
                                 >
-                                    <CableIcon /> Link to D4H
+                                    <D4HIcons.Link /> Link to D4H
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     disabled={!canUpdate || !linked}
                                     onClick={() => void setAction("d4h-sync", { history: "push" })}
                                 >
-                                    <RefreshCwIcon /> Sync with D4H
+                                    <D4HIcons.Sync /> Sync with D4H
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     disabled={!canUpdate || !linked}
@@ -95,7 +94,7 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                                         void setAction("d4h-unlink", { history: "push" })
                                     }
                                 >
-                                    <Unlink2Icon /> Unlink from D4H
+                                    <D4HIcons.Unlink /> Unlink from D4H
                                 </DropdownMenuItem>
                             </DropdownMenuGroup>
                         </>

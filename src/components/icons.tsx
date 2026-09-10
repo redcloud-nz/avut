@@ -31,12 +31,14 @@ import {
     PencilIcon,
     PencilRulerIcon,
     PlusIcon,
+    RefreshCwIcon,
     ScanEyeIcon,
     SendIcon,
     SettingsIcon,
     ShieldHalfIcon,
     TrashIcon,
     TriangleAlertIcon,
+    UnlinkIcon,
     UsersIcon,
     XIcon,
     XLineTopIcon,
@@ -98,6 +100,12 @@ export const ObjectIcons = {
     Restore: ArchiveRestoreIcon,
     Unlink: Link2OffIcon,
     Unpublish: BookXIcon,
+};
+
+export const D4HIcons = {
+    Link: LinkIcon,
+    Sync: RefreshCwIcon,
+    Unlink: UnlinkIcon,
 };
 
 export const SkillsIcons = {

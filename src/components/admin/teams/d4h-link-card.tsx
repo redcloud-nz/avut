@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,11 +56,13 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                     {team.d4h && (
                         <CardAction>
                             <Button
-                                variant="outline"
-                                size="sm"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Sync with D4H"
+                                title="Sync with D4H"
                                 onClick={() => void setAction("d4h-sync", { history: "push" })}
                             >
-                                Sync…
+                                <D4HIcons.Sync />
                             </Button>
                         </CardAction>
                     )}
