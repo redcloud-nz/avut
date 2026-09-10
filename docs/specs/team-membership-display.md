@@ -176,10 +176,10 @@ personnel index and other rosters.
 ### 6.2 Columns (`Kaga.defineColumns`)
 
 | Column       | Shown when         | Content                                                                                        |
-| ------------ | ------------------ | ---------------------------------------------------------------------------------------------- | --- | ---- |
+| ------------ | ------------------ | ---------------------------------------------------------------------------------------------- |
 | Name         | always             | `person.name`, linking to the person detail page; `person.email` as a muted sub-line           |
-| D4H Position | team is D4H-linked | `d4h?.position                                                                                 |     | "—"` |
-| D4H Status   | team is D4H-linked | `<D4HMemberStatusBadge>` or `—` for manual rows                                                |
+| D4H Position | team is D4H-linked | the D4H position, or an em dash when blank                                                     |
+| D4H Status   | team is D4H-linked | `<D4HMemberStatusBadge>`, or an em dash for a manual row                                       |
 | Source       | team is D4H-linked | `<MembershipSourceBadge>`                                                                      |
 | Status       | team is D4H-linked | `TeamMembership.status` (`Active` / `Archived`) — the record status other tables call "Status" |
 | _(actions)_  | always             | `Protect team:["update"]` → remove-member button (unchanged behaviour)                         |
