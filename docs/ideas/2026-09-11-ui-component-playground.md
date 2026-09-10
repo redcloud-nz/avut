@@ -13,7 +13,9 @@ client, nav shell. The index page lists one route per component
 bespoke controls that twiddle props/state, nothing persisted. Gated by a single
 global boolean feature flag (`playgroundFlag`), on in dev, off elsewhere until
 flipped. Not a registry module and not linked from anywhere — you reach the index
-by URL, then navigate within it via a contextual sidebar.
+by URL, then navigate within it via a contextual sidebar. Access is flag-only:
+when the flag is on, any signed-in org member can reach it, and playground pages
+stay non-sensitive by discipline.
 
 ## Context / motivation
 
@@ -49,19 +51,16 @@ by URL, then navigate within it via a contextual sidebar.
   live sandbox.
 - **Generic prop-introspection engine** vs. **bespoke controls per page** — chose
   bespoke; each subpage is a hand-written `page.tsx` with its own control panel.
-- **Access when the flag is on**: any signed-in org member (stated preference) vs.
-  also gating on the `system-admin` role in production (recommended as the safer
-  default, since the flag is then the only thing between a plain member and
-  whatever a playground page renders — e.g. the person-picker page exposes the
-  org's full people list). Left as an open question.
+- **Access when the flag is on**: chose **flag-only** — any signed-in org member
+  can reach it. Considered and rejected also gating on the `system-admin` role in
+  production; the flag being off everywhere but dev is deemed enough, and
+  playground pages are kept non-sensitive by discipline (the person-picker page
+  exposes the org's people list, which members can already see). If a future page
+  needs to render something a plain member shouldn't, it adds its own `<Protect>`
+  rather than locking down the whole area.
 
 ## Open questions
 
-- **Access gate**: flag-only (any org member) or flag + `system-admin` role in
-  production? Flag-only is simpler and matches the stated intent; the role gate is
-  safer once a playground page renders something a plain member shouldn't see.
-  Middle option: flag-only on the layout, individual pages add their own
-  `<Protect>` where needed.
 - **"On in dev" mechanism**: rely on setting the flag's value in the Vercel
   `development` environment (`vercel flags enable playground-module --environment
 development`), matching how the existing module flags are described, or add a
