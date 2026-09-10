@@ -17,6 +17,7 @@ export function SystemAdmin_Sidebar_Menu() {
             <SidebarMenu>
                 <NavItem label="Organizations" href="/system-admin/organizations" />
                 <NavItem label="Users" href="/system-admin/users" />
+                <NavItem label="Skill Packages" href="/system-admin/skill-packages" />
             </SidebarMenu>
         </SidebarGroup>
     );

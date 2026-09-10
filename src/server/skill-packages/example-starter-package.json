@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "exportedAt": "2026-09-10T00:00:00.000Z",
+  "package": {
+    "id": "Exmpl0PkgStarter",
+    "name": "Example Starter Package",
+    "description": "A small demonstration package. Replace this with real library packages exported from an authoring instance.",
+    "tags": ["example"],
+    "properties": {},
+    "groups": [
+      {
+        "id": "GrpFoundations01",
+        "name": "Foundations",
+        "description": "Baseline skills expected of every member.",
+        "tags": [],
+        "properties": {},
+        "sequence": 1,
+        "defaultInclude": true,
+        "skills": [
+          {
+            "id": "SklBasicSafety01",
+            "name": "Basic Safety",
+            "description": "Understands and applies core safety procedures.",
+            "tags": [],
+            "properties": {},
+            "sequence": 1,
+            "frequency": 12,
+            "defaultInclude": true,
+            "defaultRequired": true
+          },
+          {
+            "id": "SklBasicComms002",
+            "name": "Basic Communications",
+            "description": "Operates a handheld radio using standard protocol.",
+            "tags": [],
+            "properties": {},
+            "sequence": 2,
+            "frequency": 12,
+            "defaultInclude": true,
+            "defaultRequired": false
+          }
+        ]
+      },
+      {
+        "id": "GrpAdvancedSkl02",
+        "name": "Advanced",
+        "description": "Skills for members taking on specialist roles.",
+        "tags": [],
+        "properties": {},
+        "sequence": 2,
+        "defaultInclude": false,
+        "skills": [
+          {
+            "id": "SklAdvRescue0003",
+            "name": "Advanced Rescue",
+            "description": "Leads a rescue operation in complex terrain.",
+            "tags": [],
+            "properties": {},
+            "sequence": 1,
+            "frequency": 24,
+            "defaultInclude": true,
+            "defaultRequired": false
+          }
+        ]
+      }
+    ]
+  }
+}

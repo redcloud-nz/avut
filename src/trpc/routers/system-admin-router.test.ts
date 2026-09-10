@@ -1063,3 +1063,109 @@ describe("systemAdmin.deleteUser — the deletion's own audit entry", () => {
         expect(entries[0].description).toContain("Kim Park <kim@example.com>");
     });
 });
+
+describe("systemAdmin.importSkillPackage", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        admin: UserId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: `acme-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: {
+                id: T.otherOrg,
+                name: "Other",
+                slug: `other-${nanoId16()}`,
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+    });
+
+    function makeCaller() {
+        return systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("lists the bundled library", async () => {
+        const { packages } = await makeCaller().listSkillPackageLibrary();
+        expect(packages.some((p) => p.fileName === "example-starter-package.json")).toBe(true);
+    });
+
+    it("dryRun computes a plan without writing", async () => {
+        const result = await makeCaller().importSkillPackage({
+            fileName: "example-starter-package.json",
+            targetOrganizationId: T.org,
+            dryRun: true,
+        });
+        expect(result.applied).toBe(false);
+        expect(result.plan.packageAction).toBe("Create");
+        expect(await db.skillPackage.findMany({ where: { organizationId: T.org } })).toHaveLength(
+            0,
+        );
+    });
+
+    it("imports the tree unpublished and writes one SkillPackage log entry", async () => {
+        const result = await makeCaller().importSkillPackage({
+            fileName: "example-starter-package.json",
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+        expect(result.applied).toBe(true);
+
+        const stored = await db.skillPackage.findUnique({
+            where: { id: result.plan.package.id },
+            include: { groups: true, skills: true },
+        });
+        expect(stored?.organizationId).toBe(T.org);
+        expect(stored?.published).toBe(false);
+        expect(stored?.groups.length).toBeGreaterThan(0);
+        expect(stored?.skills.length).toBeGreaterThan(0);
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId: result.plan.package.id },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            action: "Create",
+        });
+    });
+
+    it("refuses a package ID already owned by another organization", async () => {
+        await expect(
+            makeCaller().importSkillPackage({
+                fileName: "example-starter-package.json",
+                targetOrganizationId: T.otherOrg,
+                dryRun: true,
+            }),
+        ).rejects.toThrow(/different organization/i);
+    });
+
+    it("rejects an unknown file name", async () => {
+        await expect(
+            makeCaller().importSkillPackage({
+                fileName: "does-not-exist.json",
+                targetOrganizationId: T.org,
+                dryRun: true,
+            }),
+        ).rejects.toThrow(/no bundled skill package/i);
+    });
+});

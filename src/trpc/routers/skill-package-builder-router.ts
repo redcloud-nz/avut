@@ -9,8 +9,10 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { Skill, SkillId } from "@/lib/schemas/skill";
+import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import { buildSkillPackageExport } from "@/server/skill-package-io";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -370,6 +372,32 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 }),
             ]);
             return { deleted: skill };
+        }),
+
+    /**
+     * Export a skill package's authoring tree (`SkillPackage → SkillGroup → Skill`) as a
+     * portable envelope for moving it to another AVUT instance or into the bundled library.
+     * Carries the authoring tree only — no checks, sessions, subscriptions, or overrides.
+     * @param skillPackageId The ID of the skill package to export.
+     * @throws TRPCError(NOT_FOUND) if the package does not exist or does not belong to the organization.
+     */
+    exportPackage: organizationProcedure({ skillPackageBuilder: ["view"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(SkillPackageExport.schema)
+        .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
+            const pkg = await ctx.prisma.skillPackage.findUnique({
+                where: { id: skillPackageId, organizationId },
+                include: { groups: true, skills: true },
+            });
+
+            if (!pkg) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillPackageNotFound(skillPackageId),
+                });
+            }
+
+            return buildSkillPackageExport(pkg, pkg.groups, pkg.skills);
         }),
 
     /**
