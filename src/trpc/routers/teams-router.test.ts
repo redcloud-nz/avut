@@ -392,6 +392,160 @@ describe("teamsRouter.listTeamMemberships", () => {
     });
 });
 
+describe("teamsRouter.getTeamMembership", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        d4hPerson: PersonId.create(),
+        manualPerson: PersonId.create(),
+        strangerPerson: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.d4hPerson,
+                organizationId: T.org,
+                name: "Dana D4H",
+                email: "dana@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.manualPerson,
+                organizationId: T.org,
+                name: "Manny Manual",
+                email: "manny@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.strangerPerson,
+                organizationId: T.org,
+                name: "Stan Stranger",
+                email: "stan@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: TeamMembershipId.create(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.d4hPerson,
+                tags: [],
+                properties: {},
+                status: "Active",
+                d4h: {
+                    create: {
+                        d4hMemberId: 12,
+                        d4hStatus: "OPERATIONAL",
+                        d4hPosition: "Lead",
+                        d4hRef: "R-12",
+                        d4hRoleId: 3,
+                    },
+                },
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: TeamMembershipId.create(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.manualPerson,
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns the row with the D4H snapshot (incl. ref / roleId)", async () => {
+        const row = await makeCaller().getTeamMembership({
+            organizationId: T.org,
+            teamId: T.team,
+            personId: T.d4hPerson,
+        });
+
+        expect(row.person).toMatchObject({ name: "Dana D4H", email: "dana@example.com" });
+        expect(row.team).toMatchObject({ id: T.team, name: "Alpha" });
+        expect(row.d4h).toMatchObject({
+            d4hMemberId: 12,
+            d4hStatus: "OPERATIONAL",
+            d4hPosition: "Lead",
+            d4hRef: "R-12",
+            d4hRoleId: 3,
+        });
+    });
+
+    it("returns d4h: null for a manually-added membership", async () => {
+        const row = await makeCaller().getTeamMembership({
+            organizationId: T.org,
+            teamId: T.team,
+            personId: T.manualPerson,
+        });
+
+        expect(row.d4h).toBeNull();
+    });
+
+    it("throws NOT_FOUND when the pair has no membership", async () => {
+        await expect(
+            makeCaller().getTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.strangerPerson,
+            }),
+        ).rejects.toThrow(/not found/i);
+    });
+
+    it("is organization-scoped", async () => {
+        await expect(
+            makeCaller().getTeamMembership({
+                organizationId: T.otherOrg,
+                teamId: T.team,
+                personId: T.d4hPerson,
+            }),
+        ).rejects.toThrow(/not found/i);
+    });
+});
+
 // Teams are managed directly through Prisma (no better-auth team plugin), so create
 // and delete are plain `$transaction([write, logEvent])` pairs.
 describe("teamsRouter.createTeam / deleteTeam", () => {

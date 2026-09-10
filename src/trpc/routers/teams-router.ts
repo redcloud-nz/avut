@@ -28,6 +28,23 @@ import {
     upsertOrganizationD4H,
 } from "./teams-router.d4h";
 
+/**
+ * A team-membership row as returned by `listTeamMemberships` and
+ * `getTeamMembership` — the membership plus a thin `team` / `person` ref. The
+ * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
+ * `TeamMembershipData.schema`.
+ */
+const teamMembershipRowSchema = TeamMembershipData.schema.extend({
+    team: TeamData.schema.pick({ id: true, name: true }),
+    person: PersonData.schema.pick({ id: true, name: true, email: true }),
+});
+
+const teamMembershipRowInclude = {
+    d4h: true,
+    team: { select: { id: true, name: true } },
+    person: { select: { id: true, name: true, email: true } },
+} as const;
+
 export const teamsRouter = createTrpcRouter({
     /**
      * Apply a previewed D4H team sync. Re-fetches and re-plans server-side; if the
@@ -472,6 +489,34 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a single team membership by (teamId, personId). See
+     * docs/specs/team-membership-display.md §8.4.
+     * @throws TRPCError(NOT_FOUND) if the pair has no membership in the organization.
+     */
+    getTeamMembership: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamId: TeamId.schema, personId: PersonId.schema }))
+        .output(teamMembershipRowSchema)
+        .query(async ({ ctx, input: { organizationId, teamId, personId } }) => {
+            const record = await ctx.prisma.teamMembership.findUnique({
+                where: { organizationId, teamId_personId: { teamId, personId } },
+                include: teamMembershipRowInclude,
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamMembershipNotFound({ teamId, personId }),
+                });
+            }
+
+            return {
+                ...TeamMembershipData.fromRecord(record),
+                team: record.team,
+                person: record.person,
+            };
+        }),
+
+    /**
      * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
      * D4H link and running the first membership sync. See docs/specs/d4h-linking.md §6.1.
      */
@@ -586,14 +631,7 @@ export const teamsRouter = createTrpcRouter({
                 teamId: TeamId.schema.optional(),
             }),
         )
-        .output(
-            z.array(
-                TeamMembershipData.schema.extend({
-                    team: TeamData.schema.pick({ id: true, name: true }),
-                    person: PersonData.schema.pick({ id: true, name: true, email: true }),
-                }),
-            ),
-        )
+        .output(z.array(teamMembershipRowSchema))
         .query(async ({ ctx, input: { organizationId, personId, teamId } }) => {
             const teamMembershipRecords = await ctx.prisma.teamMembership.findMany({
                 where: {
@@ -601,22 +639,7 @@ export const teamsRouter = createTrpcRouter({
                     personId,
                     teamId,
                 },
-                include: {
-                    d4h: true,
-                    team: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                    person: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        },
-                    },
-                },
+                include: teamMembershipRowInclude,
                 orderBy: {
                     person: { name: "asc" },
                 },
