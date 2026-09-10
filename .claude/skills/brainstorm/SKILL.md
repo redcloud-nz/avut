@@ -14,6 +14,20 @@ is the opposite — a deliberate, unhurried conversation that ends in a well-dev
 
 The topic: $ARGUMENTS
 
+## First: new idea or expanding an existing one?
+
+If `$ARGUMENTS` names or clearly points at an existing file in `.ideas/` (a slug,
+a partial title, or a path), this is an **expansion session**:
+
+- Read that file first. Open the conversation from where it left off — summarise
+  what's already captured and ask what's changed or what the user wants to dig into.
+- At the end, update that same file in place: revise `## Idea` if the thinking has
+  moved, extend the other sections, resolve or add `## Open questions`. Leave any
+  `## Review` section untouched (it belongs to `/review-ideas`).
+- Add a line under the header: `**Expanded:** <YYYY-MM-DD>`.
+
+Otherwise it's a new idea — follow the flow below and write a fresh file at the end.
+
 ## How to operate
 
 **Stay in conversation.** Do not write code, enter plan mode, design an implementation,
@@ -41,7 +55,8 @@ works, go look rather than guessing, then bring back what you found.
 
 When the user signals they're done (or the idea is clearly fully formed and they
 agree), distill the whole conversation into an idea file — do this immediately, then
-tell them the path in one line.
+tell them the path in one line. (For an expansion session, update the existing file
+in place instead of creating a new one — see the top of this skill.)
 
 1. Create `.ideas/` in the project root if missing. Ensure `.ideas/` is in
    `.gitignore` (append once, don't duplicate).
