@@ -182,6 +182,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                             </Button>
                         </Protect>
                     ),
+                    enableHiding: false,
                     meta: { cellProps: { className: "w-9 p-0" } },
                 }),
             ]),
