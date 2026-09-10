@@ -38,7 +38,7 @@ import { SyncPlan, isSyncPlanEmpty } from "@/lib/schemas/d4h-sync-plan";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-const ACTIONS = ["d4h-link", "d4h-sync"] as const;
+const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
 export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
     const organization = useOrganization();
@@ -52,8 +52,8 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
             <Card>
                 <CardHeader>
                     <CardTitle>D4H Integration</CardTitle>
-                    <CardAction>
-                        {team.d4h ? (
+                    {team.d4h && (
+                        <CardAction>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -61,16 +61,8 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                             >
                                 Sync…
                             </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => void setAction("d4h-link", { history: "push" })}
-                            >
-                                Link to D4H…
-                            </Button>
-                        )}
-                    </CardAction>
+                        </CardAction>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {team.d4h ? (
@@ -113,14 +105,25 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                 open={action === "d4h-sync"}
                 onClose={() => void setAction(null, { history: "replace" })}
             />
-            {team.d4h && <UnlinkButton team={team} />}
+            <UnlinkDialog
+                team={team}
+                open={action === "d4h-unlink"}
+                onClose={() => void setAction(null, { history: "replace" })}
+            />
         </Protect>
     );
 }
 
-function UnlinkButton({ team }: { team: TeamData }) {
+function UnlinkDialog({
+    team,
+    open,
+    onClose,
+}: {
+    team: TeamData;
+    open: boolean;
+    onClose: () => void;
+}) {
     const organization = useOrganization();
-    const [confirming, setConfirming] = useState(false);
 
     const mutation = useMutation(
         trpc.teams.unlinkTeamFromD4H.mutationOptions({
@@ -128,18 +131,29 @@ function UnlinkButton({ team }: { team: TeamData }) {
             onError: (error) => toast.error(`Failed to unlink: ${error.message}`),
             onSuccess: () => {
                 toast.success("Unlinked from D4H");
-                setConfirming(false);
+                onClose();
             },
         }),
     );
 
+    useEffect(() => {
+        if (open) mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
     return (
-        <div className="mt-2">
-            {confirming ? (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm">Unlink this team from D4H?</span>
+        <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Unlink {team.name} from D4H</DialogTitle>
+                    <DialogDescription>
+                        Removes the D4H link and cached team data. Personnel and their memberships
+                        stay in AVUT — they just stop being D4H-managed.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
-                        size="sm"
                         variant="destructive"
                         status={mutation.status}
                         text={{ idle: "Unlink", pending: "Unlinking…", success: "Unlinked" }}
@@ -147,16 +161,9 @@ function UnlinkButton({ team }: { team: TeamData }) {
                             mutation.mutate({ organizationId: organization.id, teamId: team.id })
                         }
                     />
-                    <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
-                        Cancel
-                    </Button>
-                </div>
-            ) : (
-                <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
-                    Unlink from D4H
-                </Button>
-            )}
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
