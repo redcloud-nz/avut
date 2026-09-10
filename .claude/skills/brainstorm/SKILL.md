@@ -14,6 +14,10 @@ is the opposite — a deliberate, unhurried conversation that ends in a well-dev
 
 The topic: $ARGUMENTS
 
+`$ARGUMENTS` may also contain `--push` (force the branch-push flow) or `--local`
+(force a plain local commit) — see "Committing / getting the file home" below.
+Strip these before treating the rest as the topic or an existing-idea reference.
+
 ## First: new idea or expanding an existing one?
 
 If `$ARGUMENTS` names or clearly points at an existing file in `.ideas/` (a slug,
@@ -58,10 +62,10 @@ agree), distill the whole conversation into an idea file — do this immediately
 tell them the path in one line. (For an expansion session, update the existing file
 in place instead of creating a new one — see the top of this skill.)
 
-1. Create `.ideas/` in the project root if missing. Ensure `.ideas/` is in
-   `.gitignore` (append once, don't duplicate).
+1. `.ideas/` is a tracked directory in this repo. Create it if missing; never add
+   it to `.gitignore`.
 2. Filename: `.ideas/YYYY-MM-DD-short-slug.md` — today's date, a 3-5 word kebab-case
-   slug.
+   slug. (Expansion session: keep the existing filename.)
 3. Write this format:
 
 ```
@@ -94,3 +98,29 @@ in place instead of creating a new one — see the top of this skill.)
 
 Omit `## Options considered` or `## Notes` only if the conversation genuinely produced
 nothing for them. Never add a `## Review` section — that belongs to `/review-ideas`.
+
+## Committing / getting the file home
+
+`.ideas/` is tracked, so the file needs to reach the user's main checkout. How
+depends on where this session is running — check `CLAUDE_CODE_ENTRYPOINT`:
+
+**Local session** (`cli`, `claude-vscode`, `claude-jetbrains*`) — stage and commit
+on the current branch, don't push (repo rule: commit locally, sharing needs
+approval). Show the commit message. Done.
+
+**Cloud / remote session** (any other entrypoint — a session started from the web
+or mobile app, whose working tree is thrown away when it ends), or when the user
+passes `--push`:
+
+1. `slug` = the idea filename without date or extension.
+2. `git checkout -b brainstorm/<slug>` (or `git checkout brainstorm/<slug>` if it
+   already exists from an earlier expansion).
+3. Commit **only** the `.ideas/` file. End the commit subject with `[skip ci]` so
+   Vercel doesn't deploy the branch (`vercel.json`'s `ignoreCommand` also skips
+   `brainstorm/*`, this is belt-and-braces). Do not open a PR.
+4. `git push -u origin brainstorm/<slug>`.
+5. Tell the user the branch name and this one-liner to pull it into their main
+   checkout:
+   `git fetch origin && git checkout origin/brainstorm/<slug> -- .ideas/<file> && git branch -D brainstorm/<slug> 2>/dev/null; git push origin --delete brainstorm/<slug>`
+
+If `--local` is passed, always take the local path regardless of entrypoint.
