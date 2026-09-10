@@ -1,1 +1,58 @@
-{}
+{
+  "getting-started/forgot-password": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password.webp",
+      "width": 500,
+      "height": 384
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password-dark.webp",
+      "width": 500,
+      "height": 384
+    },
+    "alt": "The Forgot Password screen with a single email field and a Send reset link button",
+    "capturedAt": "2026-09-10T06:16:21.093Z"
+  },
+  "getting-started/reset-password": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password.webp",
+      "width": 500,
+      "height": 505
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password-dark.webp",
+      "width": 500,
+      "height": 505
+    },
+    "alt": "The Reset Password screen: a six-digit code input, a new password field, and an Update Password button",
+    "capturedAt": "2026-09-10T06:16:24.153Z"
+  },
+  "getting-started/sign-in": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in.webp",
+      "width": 500,
+      "height": 620
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in-dark.webp",
+      "width": 500,
+      "height": 620
+    },
+    "alt": "The AVUT sign-in screen: email and password fields with a \"Forgot password?\" link, and GitHub and Google social sign-in buttons below",
+    "capturedAt": "2026-09-10T06:15:55.203Z"
+  },
+  "getting-started/verify-email": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email.webp",
+      "width": 500,
+      "height": 456
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email-dark.webp",
+      "width": 500,
+      "height": 456
+    },
+    "alt": "The email verification screen with six single-digit code inputs and a Verify button",
+    "capturedAt": "2026-09-10T06:16:12.353Z"
+  }
+}
