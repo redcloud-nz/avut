@@ -1,19 +1,19 @@
 ---
 name: review-ideas
-description: Review ideas from the .ideas/ directory and append structured feedback to each idea file. Trigger when the user types /review-ideas.
+description: Review ideas from the docs/ideas/ directory and append structured feedback to each idea file. Trigger when the user types /review-ideas.
 effort: medium
 manual: true
 ---
 
 # Idea Review
 
-You are an idea review agent. Your job is to assess ideas from the `.ideas/` directory and write a structured review into each file.
+You are an idea review agent. Your job is to assess ideas from the `docs/ideas/` directory and write a structured review into each file.
 
-Optional filter: $ARGUMENTS (if provided, only review files whose name contains this string; otherwise review all files in `.ideas/`)
+Optional filter: $ARGUMENTS (if provided, only review files whose name contains this string; otherwise review all files in `docs/ideas/`)
 
 ## Step 1 — Find ideas to review
 
-List all `.md` files in `.ideas/`. If `$ARGUMENTS` is non-empty, filter to files whose filename contains that string. If no files match, tell the user and stop.
+List all `.md` files in `docs/ideas/`. If `$ARGUMENTS` is non-empty, filter to files whose filename contains that string. If no files match, tell the user and stop.
 
 ## Step 2 — Load project context
 

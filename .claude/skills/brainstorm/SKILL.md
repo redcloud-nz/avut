@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Extended back-and-forth exploration of a big idea or problem, ending in a rich .ideas/ file. Trigger only when the user types /brainstorm.
+description: Extended back-and-forth exploration of a big idea or problem, ending in a rich docs/ideas/ file. Trigger only when the user types /brainstorm.
 effort: medium
 manual: true
 ---
@@ -10,7 +10,7 @@ manual: true
 You are a thinking partner for an extended exploration of a big idea or problem.
 `/idea` is for capturing a small idea mid-session without breaking flow; `/brainstorm`
 is the opposite — a deliberate, unhurried conversation that ends in a well-developed
-`.ideas/` entry ready for `/review-ideas`.
+`docs/ideas/` entry ready for `/review-ideas`.
 
 The topic: $ARGUMENTS
 
@@ -20,7 +20,7 @@ Strip these before treating the rest as the topic or an existing-idea reference.
 
 ## First: new idea or expanding an existing one?
 
-If `$ARGUMENTS` names or clearly points at an existing file in `.ideas/` (a slug,
+If `$ARGUMENTS` names or clearly points at an existing file in `docs/ideas/` (a slug,
 a partial title, or a path), this is an **expansion session**:
 
 - Read that file first. Open the conversation from where it left off — summarise
@@ -62,9 +62,9 @@ agree), distill the whole conversation into an idea file — do this immediately
 tell them the path in one line. (For an expansion session, update the existing file
 in place instead of creating a new one — see the top of this skill.)
 
-1. `.ideas/` is a tracked directory in this repo. Create it if missing; never add
+1. `docs/ideas/` is a tracked directory in this repo. Create it if missing; never add
    it to `.gitignore`.
-2. Filename: `.ideas/YYYY-MM-DD-short-slug.md` — today's date, a 3-5 word kebab-case
+2. Filename: `docs/ideas/YYYY-MM-DD-short-slug.md` — today's date, a 3-5 word kebab-case
    slug. (Expansion session: keep the existing filename.)
 3. Write this format:
 
@@ -101,7 +101,7 @@ nothing for them. Never add a `## Review` section — that belongs to `/review-i
 
 ## Committing / getting the file home
 
-`.ideas/` is tracked, so the file needs to reach the user's main checkout. How
+`docs/ideas/` is tracked, so the file needs to reach the user's main checkout. How
 depends on where this session is running — check `CLAUDE_CODE_ENTRYPOINT`:
 
 **Local session** (`cli`, `claude-vscode`, `claude-jetbrains*`) — stage and commit
@@ -115,12 +115,12 @@ passes `--push`:
 1. `slug` = the idea filename without date or extension.
 2. `git checkout -b brainstorm/<slug>` (or `git checkout brainstorm/<slug>` if it
    already exists from an earlier expansion).
-3. Commit **only** the `.ideas/` file. End the commit subject with `[skip ci]` so
+3. Commit **only** the `docs/ideas/` file. End the commit subject with `[skip ci]` so
    Vercel doesn't deploy the branch (`vercel.json`'s `ignoreCommand` also skips
    `brainstorm/*`, this is belt-and-braces). Do not open a PR.
 4. `git push -u origin brainstorm/<slug>`.
 5. Tell the user the branch name and this one-liner to pull it into their main
    checkout:
-   `git fetch origin && git checkout origin/brainstorm/<slug> -- .ideas/<file> && git branch -D brainstorm/<slug> 2>/dev/null; git push origin --delete brainstorm/<slug>`
+   `git fetch origin && git checkout origin/brainstorm/<slug> -- docs/ideas/<file> && git branch -D brainstorm/<slug> 2>/dev/null; git push origin --delete brainstorm/<slug>`
 
 If `--local` is passed, always take the local path regardless of entrypoint.
