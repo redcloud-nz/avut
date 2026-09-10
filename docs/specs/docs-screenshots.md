@@ -134,11 +134,11 @@ index fails `next build` rather than shipping a broken image.
 `src/components/marketing/product-shot.tsx`, used from `src/app/page.tsx`. Same
 index (`getScreenshot(id)` from `src/lib/screenshots.ts`), but:
 
-- A **server component** — no dialog, no client JS.
 - `next/image` (not a raw `<img>`) for a responsive `srcset`; the Blob host is
   allow-listed in `next.config.ts` `images.remotePatterns`.
 - A plain rounded border, **no browser-chrome frame**.
-- Light/dark swap by CSS, same as `<Screenshot>`.
+- Light/dark swap by CSS, and click-to-zoom in a `Dialog` — the same as
+  `<Screenshot>` (so it is a client component).
 
 ---
 
