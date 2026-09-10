@@ -590,7 +590,7 @@ export const teamsRouter = createTrpcRouter({
             z.array(
                 TeamMembershipData.schema.extend({
                     team: TeamData.schema.pick({ id: true, name: true }),
-                    person: PersonData.schema.pick({ id: true, name: true }),
+                    person: PersonData.schema.pick({ id: true, name: true, email: true }),
                 }),
             ),
         )
@@ -602,6 +602,7 @@ export const teamsRouter = createTrpcRouter({
                     teamId,
                 },
                 include: {
+                    d4h: true,
                     team: {
                         select: {
                             id: true,
@@ -612,8 +613,12 @@ export const teamsRouter = createTrpcRouter({
                         select: {
                             id: true,
                             name: true,
+                            email: true,
                         },
                     },
+                },
+                orderBy: {
+                    person: { name: "asc" },
                 },
             });
 

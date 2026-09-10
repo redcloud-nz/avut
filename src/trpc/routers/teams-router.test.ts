@@ -267,6 +267,131 @@ describe("teamsRouter.applyD4HTeamSync", () => {
     });
 });
 
+describe("teamsRouter.listTeamMemberships", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        zoe: PersonId.create(),
+        amy: PersonId.create(),
+        amyMembership: TeamMembershipId.create(),
+        zoeMembership: TeamMembershipId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        // Seeded Zoe-before-Amy so the name ordering assertion is meaningful.
+        await db.person.create({
+            data: {
+                id: T.zoe,
+                organizationId: T.org,
+                name: "Zoe Zebra",
+                email: "zoe@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.amy,
+                organizationId: T.org,
+                name: "Amy Adams",
+                email: "amy@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.zoeMembership,
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.zoe,
+                tags: [],
+                properties: {},
+                status: "Active",
+                d4h: {
+                    create: {
+                        d4hMemberId: 77,
+                        d4hStatus: "NON_OPERATIONAL",
+                        d4hPosition: "Medic",
+                    },
+                },
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.amyMembership,
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.amy,
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns rows ordered by person name", async () => {
+        const rows = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(rows.map((r) => r.person.name)).toEqual(["Amy Adams", "Zoe Zebra"]);
+    });
+
+    it("includes the person email", async () => {
+        const [amy] = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(amy.person.email).toBe("amy@example.com");
+    });
+
+    it("maps the D4H snapshot when present and null otherwise", async () => {
+        const rows = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        const byName = Object.fromEntries(rows.map((r) => [r.person.name, r]));
+
+        expect(byName["Amy Adams"].d4h).toBeNull();
+        expect(byName["Zoe Zebra"].d4h).toMatchObject({
+            d4hMemberId: 77,
+            d4hStatus: "NON_OPERATIONAL",
+            d4hPosition: "Medic",
+        });
+    });
+});
+
 // Teams are managed directly through Prisma (no better-auth team plugin), so create
 // and delete are plain `$transaction([write, logEvent])` pairs.
 describe("teamsRouter.createTeam / deleteTeam", () => {
