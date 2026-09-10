@@ -16,13 +16,21 @@ membership `status`) all already exist on the base branch. This work is code-onl
 Checked against `worktree-d4h-linking` HEAD — several spec assumptions are already
 real, and a few are slightly different:
 
-| Spec said                                                 | Actual on branch                                                                                                                                                                     |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Add `D4HMemberStatus` enum                                | **Exists** — `src/lib/schemas/d4h/member.ts` (`D4HMemberStatus.values` / `.schema`). Only the formatter + badge are new.                                                             |
-| Add a `d4h` sub-object to `TeamMembershipData`            | **Exists** — `{ d4hMemberId, d4hStatus: z.string(), d4hPosition, d4hRef, d4hRoleId }`. Note `d4hStatus` is a raw string, and there is **no per-membership `lastSyncedAt`**.          |
-| `listTeamMemberships` output needs a `d4h` field          | Output schema already spreads `TeamMembershipData.schema`, so `d4h` is already in the **type** — but the query does not `include: { d4h: true }`, so it is always `null` at runtime. |
-| Source badge tooltip: "last synced ‹per-membership time›" | Use the **team-level** `team.d4h.lastSyncedAt` instead (`Team_D4H.lastSyncedAt`). There is no membership-level sync timestamp.                                                       |
-| —                                                         | `TeamMembership.status` (`RecordStatus` = `Active                                                                                                                                    | Archived | Deleted`) is now real: D4H sync **archives** a membership when the member drops out of the `OPERATIONAL`/`NON_OPERATIONAL` fetch set. The roster must account for archived rows. |
+- **`D4HMemberStatus` enum already exists** — `src/lib/schemas/d4h/member.ts`
+  (`D4HMemberStatus.values` / `.schema`). Only the formatter + badge are new.
+- **A `d4h` sub-object on `TeamMembershipData` already exists** —
+  `{ d4hMemberId, d4hStatus: z.string(), d4hPosition, d4hRef, d4hRoleId }`.
+  Note `d4hStatus` is a raw string, and there is **no per-membership
+  `lastSyncedAt`**.
+- **`listTeamMemberships` output already types `d4h`** — the schema spreads
+  `TeamMembershipData.schema`, so `d4h` is in the type; but the query does not
+  `include: { d4h: true }`, so it is always `null` at runtime.
+- **Source-badge "last synced" time is team-level** — use `team.d4h.lastSyncedAt`
+  (`Team_D4H.lastSyncedAt`); there is no membership-level sync timestamp.
+- **`TeamMembership.status` is now real** — `RecordStatus`
+  (`Active` / `Archived` / `Deleted`). D4H sync **archives** a membership when the
+  member drops out of the `OPERATIONAL` / `NON_OPERATIONAL` fetch set, so the
+  roster must account for archived rows.
 
 Net: the model/schema layer is mostly done. The work is the query tweak, two
 small display helpers, and the two UI rewrites.
