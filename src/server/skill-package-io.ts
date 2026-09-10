@@ -33,9 +33,14 @@ export function buildSkillPackageExport(
     groups: SkillGroup[],
     skills: Skill[],
 ): SkillPackageExportType {
-    const sortedGroups = [...groups].sort((a, b) => a.sequence - b.sequence);
+    // Export only the live tree — archived groups/skills are kept in the DB to
+    // preserve SkillCheck history, and the envelope has no `status` field, so
+    // importing them would silently reactivate them.
+    const activeGroups = groups.filter((group) => group.status === "Active");
+    const sortedGroups = [...activeGroups].sort((a, b) => a.sequence - b.sequence);
     const skillsByGroup = new Map<string, Skill[]>();
     for (const skill of skills) {
+        if (skill.status !== "Active") continue;
         const list = skillsByGroup.get(skill.skillGroupId) ?? [];
         list.push(skill);
         skillsByGroup.set(skill.skillGroupId, list);

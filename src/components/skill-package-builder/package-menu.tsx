@@ -68,12 +68,14 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
         if (exporting) return;
         setExporting(true);
         try {
-            const envelope = await queryClient.fetchQuery(
-                trpc.skillPackageBuilder.exportPackage.queryOptions({
+            const envelope = await queryClient.fetchQuery({
+                ...trpc.skillPackageBuilder.exportPackage.queryOptions({
                     organizationId: organization.id,
                     skillPackageId: skillPackage.id,
                 }),
-            );
+                // Always export the current state — never a cached envelope.
+                staleTime: 0,
+            });
 
             const blob = new Blob([JSON.stringify(envelope, null, 2)], {
                 type: "application/json",
@@ -83,7 +85,9 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             anchor.href = url;
             anchor.download = `${slugify(skillPackage.name)}.json`;
             anchor.click();
-            URL.revokeObjectURL(url);
+            // Defer the revoke — revoking in the same tick as click() aborts
+            // the download in Firefox and intermittently elsewhere.
+            setTimeout(() => URL.revokeObjectURL(url), 0);
         } catch (error) {
             toast.error(
                 `Export failed: ${error instanceof Error ? error.message : "unknown error"}`,
