@@ -6,27 +6,34 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { ItemLinkActionIcon } from "@/components/icons";
 import { MembershipSourceBadge } from "@/components/admin/teams/membership-source-badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { route } from "@/lib/routes";
-import { PersonId } from "@/lib/schemas/person";
+import { PersonRef } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_Person_TeamMemberships_Card({ personId }: { personId: PersonId }) {
+import { AdminModule_AddPersonToTeam_Dialog } from "./add-person-to-team";
+
+export function AdminModule_Person_TeamMemberships_Card({ person }: { person: PersonRef }) {
     const organization = useOrganization();
+
+    const [, setAction] = useQueryState("action", parseAsStringLiteral(["add-to-team"] as const));
 
     const { data: teamMemberships } = useSuspenseQuery(
         trpc.teams.listTeamMemberships.queryOptions({
             organizationId: organization.id,
-            personId: personId,
+            personId: person.id,
         }),
     );
 
@@ -44,6 +51,18 @@ export function AdminModule_Person_TeamMemberships_Card({ personId }: { personId
                         </span>
                     )}
                 </CardTitle>
+                <Protect permissions={{ team: ["update"] }}>
+                    <CardAction>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Add to team"
+                            onClick={() => setAction("add-to-team", { history: "push" })}
+                        >
+                            <ObjectIcons.Create />
+                        </Button>
+                    </CardAction>
+                </Protect>
             </CardHeader>
             <CardContent className="px-2 -my-2">
                 {memberships.length === 0 && (
@@ -59,7 +78,7 @@ export function AdminModule_Person_TeamMemberships_Card({ personId }: { personId
                                 {
                                     slug: organization.slug,
                                     team_id: membership.teamId,
-                                    person_id: personId,
+                                    person_id: person.id,
                                 },
                             )}
                         >
@@ -82,6 +101,8 @@ export function AdminModule_Person_TeamMemberships_Card({ personId }: { personId
                     </Item>
                 ))}
             </CardContent>
+
+            <AdminModule_AddPersonToTeam_Dialog person={person} />
         </Card>
     );
 }

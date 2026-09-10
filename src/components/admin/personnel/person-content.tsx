@@ -124,7 +124,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Suspense fallback={<CardLoadingFallback />}>
-                                <AdminModule_Person_TeamMemberships_Card personId={person.id} />
+                                <AdminModule_Person_TeamMemberships_Card person={person} />
                             </Suspense>
                             <Card>
                                 <CardContent>
