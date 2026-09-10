@@ -407,7 +407,7 @@ another org is `NOT_FOUND`).
   won't typecheck until then (and `rm -rf .next/dev/types && npx next typegen` if
   the dev server's types went stale, per AGENTS).
 - `team-membership-content.tsx` — `useSuspenseQueries([getTeam, getTeamMembership])`,
-  `Std.Navbar` breadcrumbs (Admin › Teams › _team_ › Personnel › _person_),
+  `Std.Navbar` breadcrumbs (Admin › Teams › _team_ › Members › _person_),
   `Saratoga.Root` / `Saratoga.Header` (title `person.name`, `Saratoga.Actions` →
   `<AdminModule_TeamMembershipMenu>`), `Saratoga.Columns`:
 

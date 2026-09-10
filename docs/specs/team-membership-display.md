@@ -325,7 +325,8 @@ id in the URL.
 `docs/patterns/detail-page-data-fetching.md`. Run `npx next typegen` after adding
 the page.
 
-Breadcrumbs: Admin › Teams › _{team}_ › Personnel › _{person}_.
+Breadcrumbs: Admin › Teams › _{team}_ › Members › _{person}_. (The roster page's
+tail crumb is likewise "Members", not "Personnel".)
 
 ### 8.3 Navigation wiring
 

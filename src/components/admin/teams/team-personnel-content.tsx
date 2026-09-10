@@ -207,7 +207,7 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                             team_id: teamId,
                         }),
                     },
-                    "Personnel",
+                    "Members",
                 ]}
             />
             <Std.ScrollContainer>

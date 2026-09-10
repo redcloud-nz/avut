@@ -64,7 +64,7 @@ export function AdminModule_TeamMembership_Content({
                         }),
                     },
                     {
-                        label: "Personnel",
+                        label: "Members",
                         href: route("/orgs/[slug]/admin/teams/[team_id]/personnel", {
                             slug: organization.slug,
                             team_id: teamId,
