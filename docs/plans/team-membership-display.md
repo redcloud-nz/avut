@@ -9,6 +9,14 @@ Implements [`docs/specs/team-membership-display.md`](../specs/team-membership-di
 membership `status`) all already exist on the base branch. This work is code-only
 — shared `avut` is fine, no `db:branch`.
 
+**Two phases:**
+
+- **Phase 1 (Steps 1–6)** — the list surfaces (roster page + person Teams card).
+  **Implemented** (commits `765577c` … `50d63aa`). The step text below is the
+  original plan; "Post-review adjustments" records where the build diverged.
+- **Phase 2 (Steps 7–12)** — the team-membership detail page (spec §8). **Not
+  started.**
+
 ---
 
 ## What the base branch already gives us (spec deltas)
@@ -317,7 +325,7 @@ structure and the per-team `Link` to the team page. Changes:
 
 ---
 
-## Commit breakdown
+## Commit breakdown (Phase 1)
 
 1. `feat(teams): listTeamMemberships returns d4h snapshot, email, ordered by name` (Step 1 + tests)
 2. `feat(d4h): formatD4HMemberStatus + status badge` (Step 2)
@@ -327,3 +335,161 @@ structure and the per-team `Link` to the team page. Changes:
 
 Steps 2–3 can fold into 4 if kept small. Keep 1 separate — it is the only change
 touching the API surface and its tests.
+
+---
+
+# Phase 2 — Team-membership detail page
+
+Implements spec §8. Route `A`:
+`/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]`. v1 scope: D4H
+drill-down, a deep-link target, and the Remove action. **Deferred:** editable
+`tags` / `properties`, and the Activity feed (no log-entry read path exists yet).
+
+## What the base branch already gives us
+
+- `TeamMembershipData.d4h` **already carries `d4hRef` and `d4hRoleId`** — the
+  roster just doesn't render them. So the membership page needs **no schema
+  change** for the D4H card; `getTeamMembership` returns the same row shape as a
+  `listTeamMemberships` element.
+- `AdminModule_RemoveTeamMember_Dialog`
+  (`src/components/admin/teams/remove-team-member.tsx`) already takes
+  `{ organizationId, team, person, ...AlertDialog }` and fires
+  `deleteTeamMembership` with `teamsEffects.deleteTeamMembership`. Reused as-is —
+  just mounted on a different page.
+- `AdminModule_TeamMenu` (`src/components/admin/teams/team-menu.tsx`) and
+  `AdminModule_PersonMenu` are the pattern for the `⋯` actions menu.
+
+## Step 7 — `teams.getTeamMembership` (new query)
+
+`src/trpc/routers/teams-router.ts`, alphabetical — directly after `getTeam`.
+
+- `organizationProcedure({ team: ["view"] })`, input `{ teamId, personId }`.
+- `findUnique` on `teamId_personId`, scoped to `organizationId`, with the same
+  `include` as `listTeamMemberships` (`d4h`, `team {id,name}`, `person
+{id,name,email}`).
+- Output: the `listTeamMemberships` row schema (reuse it — extract a shared
+  `const teamMembershipRowSchema` in the router if it isn't one already).
+- `throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamMembershipNotFound({ teamId, personId }) })`
+  when absent (that message helper already exists — it's used by
+  `deleteTeamMembership`).
+
+The team's `lastSyncedAt` for the D4H card comes from a parallel `getTeam` query
+on the page (same as the roster), **not** from this procedure.
+
+**Tests** (`teams-router.test.ts`, new `describe`): returns the row with `d4h`
+populated / `null`; `NOT_FOUND` for a non-member pair; org-scoped (a membership in
+another org is `NOT_FOUND`).
+
+## Step 8 — the page
+
+`src/app/(authenticated)/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]/page.tsx`
+\+ `src/components/admin/teams/team-membership-content.tsx`, per
+`docs/patterns/detail-page-data-fetching.md`.
+
+- `page.tsx` — `requireOrganization`, parse `TeamId` / `PersonId`, `prefetch`
+  `getTeam` + `getTeamMembership`, `generateMetadata` titled
+  `{person.name} — {team.name}`.
+- **Run `npx next typegen`** after creating the file — `route()` for the new path
+  won't typecheck until then (and `rm -rf .next/dev/types && npx next typegen` if
+  the dev server's types went stale, per AGENTS).
+- `team-membership-content.tsx` — `useSuspenseQueries([getTeam, getTeamMembership])`,
+  `Std.Navbar` breadcrumbs (Admin › Teams › _team_ › Personnel › _person_),
+  `Saratoga.Root` / `Saratoga.Header` (title `person.name`, `Saratoga.Actions` →
+  `<AdminModule_TeamMembershipMenu>`), `Saratoga.Columns`:
+
+  | Card              | Slot        | Content                                                                                                                                                                                         |
+  | ----------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Details           | `main`      | `DL`: joined (`createdAt` via `DLDateDetails`), Status (`membership.status`)                                                                                                                    |
+  | D4H integration   | `main`      | shown when `membership.d4h`: member id, `<D4HMemberStatusBadge>`, position, ref, role id, team `lastSyncedAt`; `Item`/link → `route("/orgs/[slug]/d4h-views/members/[team_id]/[member_id]", …)` |
+  | Related           | `secondary` | `Item` links → person page, → team page, → team roster                                                                                                                                          |
+  | created / updated | `secondary` | `DLDateDetails` for `createdAt` / `updatedAt` — copy from `person-content.tsx`                                                                                                                  |
+
+## Step 9 — `AdminModule_TeamMembershipMenu` + relocate Remove
+
+`src/components/admin/teams/team-membership-menu.tsx` _(new)_ — model on
+`team-menu.tsx`:
+
+- `DropdownMenu` with a `DropdownMenuTriggerIcon` trigger.
+- One item for now: **Remove from team**, wrapped in
+  `<Protect permissions={{ team: ["update"] }}>`, `onSelect` opens
+  `?action=remove` (nuqs `parseAsStringLiteral(["remove"])`, `history: "push"`).
+
+In `team-membership-content.tsx`: the `?action` state, and mount
+`AdminModule_RemoveTeamMember_Dialog` with `person={membership.person}`,
+`team={team}`, `open={action === "remove"}`. `onSuccess` (add an `onOpenChange`
+that, on close-after-success, does) `router.push(route("/orgs/[slug]/admin/teams/[team_id]/personnel", …))` —
+the membership no longer exists, so stay is not an option. Simplest: pass an
+`onRemoved` callback into the dialog, or watch the mutation status. Check how
+`remove-team-member.tsx`'s `onSuccess` is structured — it currently calls
+`props.onOpenChange?.(false)`; add the redirect in the page's `onOpenChange`
+handler when it was a successful close, or give the dialog an explicit
+`onRemoved` prop (cleaner — one-line change to the dialog).
+
+## Step 10 — roster actions column → chevron link
+
+`src/components/admin/teams/team-personnel-content.tsx`:
+
+- Replace the `actions` display column cell (currently the `Protect` + ghost
+  delete `Button`) with a right-chevron **link**:
+
+  ```tsx
+  col.display({
+    id: "actions",
+    header: "",
+    cell: (ctx) => (
+      <Link
+        href={route("/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]", {
+          slug: organization.slug,
+          team_id: teamId,
+          person_id: ctx.row.original.person.id,
+        })}
+        className="flex justify-center text-muted-foreground hover:text-foreground"
+        aria-label="View membership"
+      >
+        <ChevronRightIcon className="size-4" />
+      </Link>
+    ),
+    enableHiding: false,
+    meta: { cellProps: { className: "w-9 p-0" } },
+  }),
+  ```
+
+  (`ChevronRightIcon` from `lucide-react`; check `@/components/icons` first for a
+  named export.)
+
+- **Delete** from this file: the `?action` / `?memberId` `useQueryState` calls,
+  `activeMember`, `openRemoveMember`, `closeRemoveMember`, the
+  `<AdminModule_RemoveTeamMember_Dialog>` mount, and the
+  `AdminModule_RemoveTeamMember_Dialog` / `parseAsString` / `parseAsStringLiteral`
+  / `ObjectIcons` / `Button` imports if now unused. `useMemo` deps for `columns`
+  lose `openRemoveMember` (drop the `exhaustive-deps` disable if it's no longer
+  needed).
+- `AdminModule_AddTeamMember_Dialog` stays.
+
+## Step 11 — person card retargets to the membership page
+
+`src/components/admin/personnel/team-memberships.tsx` — the row `<Link href>`
+changes from
+`route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id })` to
+`route("/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]", { slug, team_id: membership.teamId, person_id: personId })`
+(`personId` is the component prop). Everything else on the card is unchanged.
+
+## Step 12 — verification
+
+- `npx next typegen`, `npx tsc --noEmit`, `npm run lint`, `npm run test:run`.
+- Browser (`test-in-browser`, dev server against `avut_d4h_linking`):
+  - roster chevron → membership page; breadcrumbs correct.
+  - membership page on a **D4H-linked** team — D4H card with ref / role id / last
+    synced, link to the D4H member view resolves.
+  - membership page on a **plain** team — no D4H card.
+  - **Remove from team** from the `⋯` menu → confirms → redirects to the roster,
+    row gone.
+  - person page Teams card row → membership page (not the team page).
+  - as a `member` (no `team:["update"]`): page loads, chevron works, `⋯` menu
+    has no Remove item.
+
+## Commit breakdown (Phase 2)
+
+6. `feat(teams): getTeamMembership query` (Step 7 + tests)
+7. `feat(teams): team-membership detail page` (Steps 8–9)
+8. `refactor(teams): roster row links to the membership page; move Remove there` (Steps 10–11)
