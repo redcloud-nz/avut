@@ -215,9 +215,13 @@ GitHub Action, `workflow_dispatch`:
 
 ## 5. Environment variables
 
-| Variable                | Where                        | Purpose                        |
-| ----------------------- | ---------------------------- | ------------------------------ |
-| `BLOB_READ_WRITE_TOKEN` | `.env.local`, Actions secret | Capture script uploads to Blob |
+| Variable                       | Where                        | Purpose                             |
+| ------------------------------ | ---------------------------- | ----------------------------------- |
+| `SCREENSHOTS_READ_WRITE_TOKEN` | `.env.local`, Actions secret | Capture script uploads to the store |
+
+The screenshots live in a **dedicated** Blob store, separate from the default
+one — the helper uses the store-specific `SCREENSHOTS_READ_WRITE_TOKEN`, not
+`BLOB_READ_WRITE_TOKEN`.
 
 The Blob store's public host is embedded in the URLs in
 `screenshots.generated.json`; the runtime needs no Blob configuration.

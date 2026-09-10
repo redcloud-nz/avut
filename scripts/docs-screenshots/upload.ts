@@ -9,7 +9,7 @@
  * Converts the given PNG/JPEG/WebP file(s) to WebP, uploads them to Vercel Blob
  * at a deterministic pathname, and rewrites
  * `src/components/docs/screenshots.generated.json` with the resulting entry.
- * Requires BLOB_READ_WRITE_TOKEN (loaded from .env.local by the npm script).
+ * Requires SCREENSHOTS_READ_WRITE_TOKEN (loaded from .env.local by the npm script).
  */
 
 import { readFile, writeFile } from "node:fs/promises";
@@ -22,10 +22,10 @@ const INDEX_PATH = path.join(process.cwd(), "src/components/docs/screenshots.gen
 
 const ID_PATTERN = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 
-// The Blob store's RW token. Vercel names it BLOB_READ_WRITE_TOKEN for the
-// default store, or <STORE>_READ_WRITE_TOKEN otherwise (here: the "screenshots"
-// store). The runtime never needs this — capture/upload only.
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN ?? process.env.SCREENSHOTS_READ_WRITE_TOKEN;
+// The screenshots Blob store's RW token. This is a dedicated store — prefer its
+// store-specific token and don't reach for the default BLOB_READ_WRITE_TOKEN,
+// which belongs to a different store. The runtime never needs this — upload only.
+const BLOB_TOKEN = process.env.SCREENSHOTS_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN;
 
 interface ScreenshotSource {
     url: string;
@@ -90,9 +90,7 @@ async function main() {
         process.exit(1);
     }
     if (!BLOB_TOKEN) {
-        console.error(
-            "No Blob token — set BLOB_READ_WRITE_TOKEN or SCREENSHOTS_READ_WRITE_TOKEN in .env.local.",
-        );
+        console.error("No Blob token — set SCREENSHOTS_READ_WRITE_TOKEN in .env.local.");
         process.exit(1);
     }
 
