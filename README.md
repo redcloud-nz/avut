@@ -3,7 +3,8 @@
 A Next.js web application providing organisational management tools for teams,
 with optional integration to the [D4H](https://d4h.com/) platform.
 
-[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fredcloud-nz%2Favut%2Fproduction%2Fpackage.json&query=%24%5B%27nz.avut%27%5D.version&label=AVUT&prefix=v&suffix=%20Philomel&color=blue)](package.json)
+[![Production](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.avut.nz%2Fapi%2Fversion%3Fformat%3Dshields)](https://www.avut.nz)
+[![Integration](https://img.shields.io/endpoint?url=https%3A%2F%2Fintegration.avut.nz%2Fapi%2Fversion%3Fformat%3Dshields)](https://integration.avut.nz)
 [![CI](https://github.com/redcloud-nz/avut/actions/workflows/ci.yml/badge.svg)](https://github.com/redcloud-nz/avut/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/github/package-json/dependency-version/redcloud-nz/avut/next?label=Next.js&color=black)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)

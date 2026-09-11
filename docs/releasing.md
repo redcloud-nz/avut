@@ -109,9 +109,12 @@ extended first.
 
 ## Notes
 
-- The README version badge reads `nz.avut.version` from `production` — it only
-  moves when a release lands. The CI badge follows the default branch
-  (`integration`).
+- The README carries two live badges — **Production** and **Integration** —
+  backed by [`/api/version`](../src/app/api/version/route.ts) on each
+  environment's own domain (`www.avut.nz`, `integration.avut.nz`). Each
+  deployment reports its own running version, so the Production badge moves only
+  when a release lands and the Integration badge tracks every merge. The CI badge
+  follows the default branch (`integration`).
 - `manage-release-version.yml` is idempotent: re-pushing `production` at an
   already-released version does nothing.
 - If a release needs to be re-cut at the same version (tag already exists),
