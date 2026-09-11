@@ -232,10 +232,7 @@ function KagaFilterMenuItems<TData extends RowData>({
 
 function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
     return (
-        <div
-            className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2"
-            data-slot="table-toolbar"
-        >
+        <div className="flex items-center gap-2" data-slot="table-toolbar">
             <KagaSearchHotkey />
             <InputGroup className={cn("grow bg-background")}>
                 <InputGroupInput
