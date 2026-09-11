@@ -42,7 +42,7 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
