@@ -9,6 +9,7 @@
  */
 
 import type { Route } from "next";
+import { ChevronDownIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
@@ -21,6 +22,12 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -54,11 +61,40 @@ interface BreadcrumbsProps {
 
 function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
     const normalizedBreadcrumbs = normalizeBreadcrumbs(breadcrumbs);
+    const ancestors = normalizedBreadcrumbs.slice(0, -1);
+    const current = normalizedBreadcrumbs[normalizedBreadcrumbs.length - 1];
 
     return (
         <Breadcrumb className="px-2">
-            <BreadcrumbList>
-                {normalizedBreadcrumbs.slice(0, -1).map((breadcrumb, idx) => (
+            <BreadcrumbList className="flex-nowrap">
+                {/* Mobile: the whole trail collapses to the current page label + a
+                    dropdown of every ancestor crumb, so there's still a way back up. */}
+                {ancestors.length > 0 && (
+                    <BreadcrumbItem className="md:hidden">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center gap-1 font-normal text-foreground">
+                                {current.label}
+                                <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                {ancestors.map((ancestor, idx) =>
+                                    ancestor.href ? (
+                                        <DropdownMenuItem key={idx} asChild>
+                                            <Link href={ancestor.href}>{ancestor.label}</Link>
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem key={idx} disabled>
+                                            {ancestor.label}
+                                        </DropdownMenuItem>
+                                    ),
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </BreadcrumbItem>
+                )}
+
+                {/* Desktop: full inline trail. */}
+                {ancestors.map((breadcrumb, idx) => (
                     <Fragment key={idx}>
                         <BreadcrumbItem className="hidden md:block">
                             {breadcrumb.href ? (
@@ -72,10 +108,8 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
                         <BreadcrumbSeparator className="hidden md:block" />
                     </Fragment>
                 ))}
-                <BreadcrumbItem>
-                    <BreadcrumbPage>
-                        {normalizedBreadcrumbs[normalizedBreadcrumbs.length - 1].label}
-                    </BreadcrumbPage>
+                <BreadcrumbItem className={ancestors.length > 0 ? "hidden md:block" : undefined}>
+                    <BreadcrumbPage>{current.label}</BreadcrumbPage>
                 </BreadcrumbItem>
             </BreadcrumbList>
         </Breadcrumb>
