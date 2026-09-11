@@ -12,6 +12,13 @@ import { ensureSession } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
 import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 
+// This layout reads the session (via `requireSession()`) at the top of every authenticated
+// route, which can't be part of the static prerender shell. The full fix is pushing that read
+// behind a `<Suspense>` boundary with `use cache: private` per Next's Cache Components auth
+// guide — an app-wide restructuring. Until that migration happens, opt this segment out of
+// instant-navigation validation so it's allowed to keep blocking on the server.
+export const instant = false;
+
 export default async function AuthenticatedLayout(props: {
     modal: ReactNode;
     children: ReactNode;
