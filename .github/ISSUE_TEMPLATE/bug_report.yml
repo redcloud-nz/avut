@@ -39,6 +39,19 @@ body:
     validations:
       required: false
 
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did you see this?
+      options:
+        - Local dev server
+        - Preview deployment (Vercel)
+        - Production (avut.nz)
+        - Other / not sure
+    validations:
+      required: false
+
   - type: textarea
     id: context
     attributes:
