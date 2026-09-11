@@ -21,6 +21,7 @@ export function PersonPicker_Sandbox() {
 
     const [value, setValue] = useState<PersonId | null>(null);
     const [disabled, setDisabled] = useState(false);
+    const [ariaInvalid, setAriaInvalid] = useState(false);
     const [placeholder, setPlaceholder] = useState("Select a person");
 
     const code = [
@@ -29,6 +30,7 @@ export function PersonPicker_Sandbox() {
         `    onValueChange={setValue}`,
         `    organizationId={organization.id}`,
         ...(disabled ? [`    disabled`] : []),
+        ...(ariaInvalid ? [`    aria-invalid`] : []),
         ...(placeholder !== "Select a person"
             ? [`    placeholder=${JSON.stringify(placeholder)}`]
             : []),
@@ -42,6 +44,7 @@ export function PersonPicker_Sandbox() {
             onReset={() => {
                 setValue(null);
                 setDisabled(false);
+                setAriaInvalid(false);
                 setPlaceholder("Select a person");
             }}
             controls={
@@ -49,6 +52,14 @@ export function PersonPicker_Sandbox() {
                     <div className="flex items-center gap-2">
                         <Switch id="pp-disabled" checked={disabled} onCheckedChange={setDisabled} />
                         <Label htmlFor="pp-disabled">Disabled</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            id="pp-aria-invalid"
+                            checked={ariaInvalid}
+                            onCheckedChange={setAriaInvalid}
+                        />
+                        <Label htmlFor="pp-aria-invalid">Aria invalid</Label>
                     </div>
                     <div className="space-y-1">
                         <Label htmlFor="pp-placeholder">Placeholder</Label>
@@ -71,6 +82,7 @@ export function PersonPicker_Sandbox() {
                 onValueChange={setValue}
                 organizationId={organization.id}
                 disabled={disabled}
+                aria-invalid={ariaInvalid}
                 placeholder={placeholder}
             />
         </Harness>

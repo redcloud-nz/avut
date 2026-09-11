@@ -23,4 +23,10 @@ export const playgroundRegistry: readonly PlaygroundEntry[] = [
         description:
             "Select a person from an organization's personnel. Exercises the org-scoped personnel.listPersonnel query against the live runtime.",
     },
+    {
+        slug: "select",
+        title: "Select",
+        description:
+            "Native shadcn Select next to the custom SearchableSelect, for comparing their styling side-by-side.",
+    },
 ];

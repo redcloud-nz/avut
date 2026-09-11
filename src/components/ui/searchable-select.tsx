@@ -9,6 +9,7 @@ import { useId, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { Badge } from "@/components/ui/badge";
 import {
     Command,
     CommandEmpty,
@@ -22,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export type SearchableSelectOption = {
     value: string;
     label: string;
+    subtitle?: string;
+    badge?: string;
 };
 
 type SearchableSelectProps = {
@@ -34,6 +37,7 @@ type SearchableSelectProps = {
     disabled?: boolean;
     "aria-invalid"?: boolean;
     className?: string;
+    id?: string;
 };
 
 export function SearchableSelect({
@@ -46,6 +50,7 @@ export function SearchableSelect({
     disabled,
     "aria-invalid": ariaInvalid,
     className,
+    id: providedId,
 }: SearchableSelectProps) {
     const [open, setOpen] = useState(false);
 
@@ -59,6 +64,7 @@ export function SearchableSelect({
                 <button
                     type="button"
                     role="combobox"
+                    id={providedId}
                     aria-controls={`searchable-select-${id}-content`}
                     aria-expanded={open}
                     aria-invalid={ariaInvalid}
@@ -66,9 +72,9 @@ export function SearchableSelect({
                     className={cn(
                         "border-input",
                         "dark:bg-input/30 dark:hover:bg-input/50",
-                        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1",
-                        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 aria-invalid:ring-1",
-                        "flex h-8 w-full items-center justify-between gap-1.5 rounded-none border bg-transparent py-2 pr-2 pl-2.5 text-xs whitespace-nowrap transition-colors outline-none select-none",
+                        "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                        "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+                        "flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none",
                         "disabled:cursor-not-allowed disabled:opacity-50",
                         className,
                     )}
@@ -76,7 +82,7 @@ export function SearchableSelect({
                     <span className={cn(!selectedLabel && "text-muted-foreground")}>
                         {selectedLabel ?? placeholder}
                     </span>
-                    <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0" />
+                    <ChevronDownIcon className="pointer-events-none size-4 shrink-0 text-muted-foreground" />
                 </button>
             </PopoverTrigger>
             <PopoverContent
@@ -92,14 +98,28 @@ export function SearchableSelect({
                             {options.map((option) => (
                                 <CommandItem
                                     key={option.value}
-                                    value={option.label}
+                                    value={`${option.label} ${option.subtitle ?? ""}`}
                                     data-checked={value === option.value}
                                     onSelect={() => {
                                         onValueChange(option.value);
                                         setOpen(false);
                                     }}
                                 >
-                                    {option.label}
+                                    <div className="flex min-w-0 flex-col">
+                                        <span className="flex items-center gap-1.5 truncate">
+                                            <span className="truncate">{option.label}</span>
+                                            {option.badge && (
+                                                <Badge variant="outline" className="shrink-0">
+                                                    {option.badge}
+                                                </Badge>
+                                            )}
+                                        </span>
+                                        {option.subtitle && (
+                                            <span className="text-muted-foreground truncate text-xs">
+                                                {option.subtitle}
+                                            </span>
+                                        )}
+                                    </div>
                                 </CommandItem>
                             ))}
                         </CommandGroup>
