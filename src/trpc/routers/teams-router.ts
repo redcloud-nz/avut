@@ -14,9 +14,9 @@ import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
-import { auth } from "@/server/auth";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { D4HListResponse, getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -39,21 +39,20 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { organizationId, create } }) => {
-            // Create the team via the auth API
-            const data = await auth.api.createTeam({
-                body: {
-                    name: create.name,
-                    organizationId,
-                },
-            });
+            const teamId = TeamId.create();
 
-            const changes = diffObject({}, create);
+            const changes = diffObject({ tags: [], properties: {} }, create);
 
             const [createdTeam] = await ctx.prisma.$transaction([
-                // Update additional fields
-                ctx.prisma.team.update({
-                    where: { organizationId: organizationId, id: data.id },
-                    data: pick(create, ["description", "tags", "properties"]),
+                ctx.prisma.team.create({
+                    data: {
+                        id: teamId,
+                        organizationId,
+                        name: create.name,
+                        description: create.description,
+                        tags: create.tags,
+                        properties: create.properties,
+                    },
                     include: {
                         d4h: true,
                     },
@@ -61,7 +60,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Create",
                     objectType: "Team",
-                    objectId: data.id,
+                    objectId: teamId,
                     changes,
                 }),
             ]);
@@ -166,7 +165,11 @@ export const teamsRouter = createTrpcRouter({
                     action: "Create",
                     objectType: "TeamMembership",
                     objectId: teamMembershipId,
-                    changes: diffObject({}, create),
+                    changes: diffObject({ tags: [], properties: {} }, create),
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
 
@@ -189,19 +192,29 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            // auth.api.removeTeam isn't a Prisma operation, so it can't join a $transaction with
-            // the log entry — log only after the removal succeeds.
-            await auth.api.removeTeam({
-                body: {
-                    teamId,
-                    organizationId: ctx.organizationId,
-                },
+            const existing = await ctx.prisma.team.findUnique({
+                where: { id: teamId, organizationId: ctx.organizationId },
+                select: { id: true },
             });
-            await ctx.logEvent({
-                action: "Delete",
-                objectType: "Team",
-                objectId: teamId,
-            });
+
+            if (!existing) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamNotFound(teamId),
+                });
+            }
+
+            await ctx.prisma.$transaction([
+                // TeamConfig / Team_D4H / TeamMembership rows cascade away with the team.
+                ctx.prisma.team.delete({
+                    where: { id: teamId, organizationId: ctx.organizationId },
+                }),
+                ctx.logEvent({
+                    action: "Delete",
+                    objectType: "Team",
+                    objectId: teamId,
+                }),
+            ]);
         }),
 
     /**
@@ -269,7 +282,11 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Delete",
                     objectType: "TeamMembership",
-                    objectId: `${teamId}_${personId}`,
+                    objectId: existing.id,
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
         }),
@@ -323,20 +340,31 @@ export const teamsRouter = createTrpcRouter({
 
             const d4hTeam = await getD4HTeam(accessToken, d4hTeamId);
 
-            const data = await auth.api.createTeam({
-                body: {
-                    name: create.name,
-                    organizationId: ctx.organizationId,
+            // The batch row must exist before any entry can reference it. If the
+            // transaction below throws, this `log_batches` row is already committed and
+            // orphaned — a batch with no entries. Harmless (nothing reads a batch except
+            // through its entries); a reader of the batch table should not assume every
+            // row has entries.
+            const batch = await createLogBatch(
+                {
+                    operationKey: "d4h-team-import",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: `Imported team "${create.name}" and its members from D4H`,
                 },
-            });
+                ctx.prisma,
+            );
+
+            const teamId = TeamId.create();
 
             const changes = diffObject({}, { ...create, properties: { d4hTeamId } });
 
             const [createdTeam] = await ctx.prisma.$transaction([
-                // Update additional fields
-                ctx.prisma.team.update({
-                    where: { organizationId: ctx.organizationId, id: data.id },
+                ctx.prisma.team.create({
                     data: {
+                        id: teamId,
+                        organizationId: ctx.organizationId,
+                        name: create.name,
                         description: create.description,
                         tags: create.tags,
 
@@ -355,8 +383,9 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Create",
                     objectType: "Team",
-                    objectId: data.id,
+                    objectId: teamId,
                     changes,
+                    batchId: batch.id,
                 }),
             ]);
 
@@ -365,14 +394,19 @@ export const teamsRouter = createTrpcRouter({
                     const existingPerson = await getPersonByEmail(ctx, member.email.value);
                     if (existingPerson) return { member, person: existingPerson };
 
-                    const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
-                        name: member.name,
-                        email: member.email.value,
-                        tags: [],
-                        properties: {
-                            d4hId: member.id,
+                    const { created: newPerson } = await createPerson(
+                        ctx,
+                        PersonId.create(),
+                        {
+                            name: member.name,
+                            email: member.email.value,
+                            tags: [],
+                            properties: {
+                                d4hId: member.id,
+                            },
                         },
-                    });
+                        batch.id,
+                    );
                     return { member, person: newPerson };
                 }),
             );
@@ -402,7 +436,15 @@ export const teamsRouter = createTrpcRouter({
                             action: "Create",
                             objectType: "TeamMembership",
                             objectId: teamMembershipId,
-                            changes: diffObject({}, memberCreate),
+                            changes: diffObject(
+                                { tags: [], properties: {} },
+                                pick(memberCreate, ["tags", "properties"]),
+                            ),
+                            batchId: batch.id,
+                            refs: [
+                                { objectType: "Person", objectId: person.id, role: "context" },
+                                { objectType: "Team", objectId: createdTeam.id, role: "context" },
+                            ],
                         }),
                     ];
                 }),
@@ -520,7 +562,22 @@ export const teamsRouter = createTrpcRouter({
                     message: "No personal D4H Access Token found for user",
                 });
 
-            const d4hTeam = await getD4HTeam(accessToken, team.properties.d4hTeamId);
+            // Read from the `Team_D4H` relation, which is what the guard above tested. The
+            // legacy `properties.d4hTeamId` is not written anywhere in `src/`, so a team
+            // linked through the relation alone would pass the guard and then fail on a
+            // missing property.
+            const d4hTeam = await getD4HTeam(accessToken, team.d4h.d4hTeamId);
+
+            // Same orphan-batch trade-off as `importTeamFromD4H` above.
+            const batch = await createLogBatch(
+                {
+                    operationKey: "d4h-team-sync",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: "Synchronized memberships from linked D4H team",
+                },
+                ctx.prisma,
+            );
 
             // Find members that are in our system but have been removed.
             for (const member of members) {
@@ -539,8 +596,13 @@ export const teamsRouter = createTrpcRouter({
                     await ctx.logEvent({
                         action: "Delete",
                         objectType: "TeamMembership",
-                        objectId: `${teamId}_${member.personId}`,
+                        objectId: member.id,
                         description: `Member ${member.personId} removed from team as they are no longer in the linked D4H team.`,
+                        batchId: batch.id,
+                        refs: [
+                            { objectType: "Person", objectId: member.personId, role: "context" },
+                            { objectType: "Team", objectId: teamId, role: "context" },
+                        ],
                     });
                 }
             }
@@ -551,14 +613,19 @@ export const teamsRouter = createTrpcRouter({
                     // This member is in D4H but not in our system, add them.
                     let person = await getPersonByEmail(ctx, d4hMember.email.value);
                     if (!person) {
-                        const { created: newPerson } = await createPerson(ctx, PersonId.create(), {
-                            name: d4hMember.name,
-                            email: d4hMember.email.value,
-                            tags: [],
-                            properties: {
-                                d4hId: d4hMember.id,
+                        const { created: newPerson } = await createPerson(
+                            ctx,
+                            PersonId.create(),
+                            {
+                                name: d4hMember.name,
+                                email: d4hMember.email.value,
+                                tags: [],
+                                properties: {
+                                    d4hId: d4hMember.id,
+                                },
                             },
-                        });
+                            batch.id,
+                        );
                         person = newPerson;
                     }
 
@@ -585,7 +652,15 @@ export const teamsRouter = createTrpcRouter({
                         objectType: "TeamMembership",
                         objectId: teamMembershipId,
                         description: `Member ${person.id} added to team as they are in the linked D4H team but not in our system.`,
-                        changes: diffObject({}, memberCreate),
+                        changes: diffObject(
+                            { tags: [], properties: {} },
+                            pick(memberCreate, ["tags", "properties"]),
+                        ),
+                        batchId: batch.id,
+                        refs: [
+                            { objectType: "Person", objectId: person.id, role: "context" },
+                            { objectType: "Team", objectId: teamId, role: "context" },
+                        ],
                     });
                 }
             }
@@ -611,6 +686,7 @@ export const teamsRouter = createTrpcRouter({
                         { d4hLastSync: syncedAt },
                     ),
                     description: "Synchronized team membership from linked D4H team.",
+                    batchId: batch.id,
                 }),
             ]);
         }),
@@ -712,7 +788,10 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const diff = diffObject(TeamMembershipData.schema.parse(existing), update);
+            const diff = diffObject(
+                TeamMembershipData.modifiableSchema.parse(TeamMembershipData.fromRecord(existing)),
+                update,
+            );
 
             if (diff.length == 0) return { updated: TeamMembershipData.fromRecord(existing) };
 
@@ -731,8 +810,12 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({
                     action: "Update",
                     objectType: "TeamMembership",
-                    objectId: `${teamId}_${personId}`,
+                    objectId: existing.id,
                     changes: diff,
+                    refs: [
+                        { objectType: "Person", objectId: personId, role: "context" },
+                        { objectType: "Team", objectId: teamId, role: "context" },
+                    ],
                 }),
             ]);
 

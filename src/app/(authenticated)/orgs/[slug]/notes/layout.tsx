@@ -5,7 +5,10 @@
  * Path: /orgs/[slug]/notes
  */
 
+import { notFound } from "next/navigation";
+
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
+import { notesModuleFlag } from "@/lib/flags";
 import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
@@ -15,6 +18,8 @@ export const metadata = {
 export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/notes`>) {
     const { slug } = await props.params;
     const { settings } = await requireOrganization(slug);
+
+    if (!(await notesModuleFlag())) notFound();
 
     if (!settings.modules.notes.enabled) {
         throw new Error("Notes module is not enabled for this organization.");

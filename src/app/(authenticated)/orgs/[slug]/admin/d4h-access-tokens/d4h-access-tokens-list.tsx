@@ -28,13 +28,13 @@ import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
-interface AdminModule_D4hAccessTokensListProps {
+interface AdminModule_D4HAccessTokensListProps {
     organization: OrganizationData;
 }
 
-export function AdminModule_D4hAccessTokensList({
+export function AdminModule_D4HAccessTokensList({
     organization,
-}: AdminModule_D4hAccessTokensListProps) {
+}: AdminModule_D4HAccessTokensListProps) {
     const { data: d4hAccessTokens } = useSuspenseQuery(
         trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
             organizationId: organization.id,

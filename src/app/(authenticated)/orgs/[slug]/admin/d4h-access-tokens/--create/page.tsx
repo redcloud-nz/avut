@@ -10,14 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { route } from "@/lib/routes";
 
-import { AdminModule_CreateD4hAccessToken_Form } from "./create-d4h-access-token";
+import { AdminModule_CreateD4HAccessToken_Form } from "./create-d4h-access-token";
 import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: `Create D4H Access Token`,
 };
 
-export default async function AdminModule_CreateD4hAccessToken_Page(
+export default async function AdminModule_CreateD4HAccessToken_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/--create`>,
 ) {
     const { slug } = await props.params;
@@ -41,7 +41,7 @@ export default async function AdminModule_CreateD4hAccessToken_Page(
                         <CardTitle>New D4H Access Token</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <AdminModule_CreateD4hAccessToken_Form organization={organization} />
+                        <AdminModule_CreateD4HAccessToken_Form organization={organization} />
                     </CardContent>
                 </Card>
             </Std.ScrollContainer>

@@ -100,20 +100,20 @@ import * as z from "zod";
 //     | "OBSERVER"
 //     | "RETIRED";
 
-// export type BasicD4hMember = Pick<
+// export type BasicD4HMember = Pick<
 //     D4HMember,
 //     "id" | "email" | "name" | "owner" | "position" | "ref" | "status"
 // >;
 
 // export function toTeamMembershipStatus(
 //     d4hMemberStatus: D4HMember["status"],
-// ): TeamMembershipD4hInfo["d4hStatus"] {
+// ): TeamMembershipD4HInfo["d4hStatus"] {
 //     const mapping = {
 //         OPERATIONAL: "Operational",
 //         NON_OPERATIONAL: "NonOperational",
 //         OBSERVER: "Observer",
 //         RETIRED: "Retired",
-//     } satisfies Record<MemberStatusType, TeamMembershipD4hInfo["d4hStatus"]>;
+//     } satisfies Record<MemberStatusType, TeamMembershipD4HInfo["d4hStatus"]>;
 
 //     return mapping[d4hMemberStatus];
 // }

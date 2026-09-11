@@ -162,7 +162,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, create);
+                const diff = diffObject({ tags: [], properties: {} }, create);
 
                 const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skillGroup.create({
@@ -200,7 +200,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .output(z.object({ created: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillPackageId, create } }) => {
-            const diff = diffObject({}, create);
+            const diff = diffObject({ tags: [], properties: {} }, create);
 
             const [created] = await ctx.prisma.$transaction([
                 ctx.prisma.skillPackage.create({
@@ -269,7 +269,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     0,
                 );
 
-                const diff = diffObject({}, create);
+                const diff = diffObject({ tags: [], properties: {} }, create);
 
                 const [created] = await ctx.prisma.$transaction([
                     ctx.prisma.skill.create({
@@ -650,31 +650,52 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: Messages.skillPackageNotFound(skillPackageId),
                 });
 
-            const toUpdate: { id: SkillGroupId; prevSequence: number; sequence: number }[] = [];
+            const toUpdate: { id: SkillGroupId; sequence: number }[] = [];
 
             newOrder.forEach((groupId, index) => {
                 const group = skillPackage.groups.find((g) => g.id === groupId);
 
                 if (group && group.sequence != index + 1) {
-                    toUpdate.push({ id: groupId, prevSequence: group.sequence, sequence: index + 1 });
+                    toUpdate.push({ id: groupId, sequence: index + 1 });
                 }
             });
 
             if (toUpdate.length > 0) {
-                await ctx.prisma.$transaction(
-                    toUpdate.flatMap(({ id, prevSequence, sequence }) => [
+                const prevOrder = [...skillPackage.groups]
+                    .sort((a, b) => a.sequence - b.sequence)
+                    .map((g) => g.id);
+
+                // Only IDs that are actually children of this package belong in the audit
+                // record — a foreign ID in newOrder is skipped by the .find() guard above and
+                // never gets an update, so recording it in curr would assert an ordering the
+                // system does not hold. A partial newOrder (fewer IDs than groups) is still a
+                // faithful record of what the caller asked for, so it is kept as-is.
+                const curr = newOrder.filter((groupId) =>
+                    skillPackage.groups.some((g) => g.id === groupId),
+                );
+
+                await ctx.prisma.$transaction([
+                    ...toUpdate.map(({ id, sequence }) =>
                         ctx.prisma.skillGroup.update({
                             where: { id },
                             data: { sequence },
                         }),
-                        ctx.logEvent({
-                            action: "Update",
-                            objectType: "SkillGroup",
-                            objectId: id,
-                            changes: diffObject({ sequence: prevSequence }, { sequence }),
-                        }),
-                    ]),
-                );
+                    ),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillPackage",
+                        objectId: skillPackageId,
+                        changes: [
+                            {
+                                type: "arr_ord",
+                                path: ["groups"],
+                                prev: prevOrder,
+                                curr,
+                            },
+                        ],
+                        description: "Reordered skill groups.",
+                    }),
+                ]);
             }
 
             return { success: true };
@@ -717,31 +738,52 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     message: Messages.skillGroupNotFound(skillGroupId),
                 });
 
-            const toUpdate: { id: SkillId; prevSequence: number; sequence: number }[] = [];
+            const toUpdate: { id: SkillId; sequence: number }[] = [];
 
             newOrder.forEach((skillId, index) => {
                 const skill = group.skills.find((s) => s.id === skillId);
 
                 if (skill && skill.sequence != index + 1) {
-                    toUpdate.push({ id: skillId, prevSequence: skill.sequence, sequence: index + 1 });
+                    toUpdate.push({ id: skillId, sequence: index + 1 });
                 }
             });
 
             if (toUpdate.length > 0) {
-                await ctx.prisma.$transaction(
-                    toUpdate.flatMap(({ id, prevSequence, sequence }) => [
+                const prevOrder = [...group.skills]
+                    .sort((a, b) => a.sequence - b.sequence)
+                    .map((s) => s.id);
+
+                // Only IDs that are actually children of this group belong in the audit
+                // record — a foreign ID in newOrder is skipped by the .find() guard above and
+                // never gets an update, so recording it in curr would assert an ordering the
+                // system does not hold. A partial newOrder (fewer IDs than skills) is still a
+                // faithful record of what the caller asked for, so it is kept as-is.
+                const curr = newOrder.filter((skillId) =>
+                    group.skills.some((s) => s.id === skillId),
+                );
+
+                await ctx.prisma.$transaction([
+                    ...toUpdate.map(({ id, sequence }) =>
                         ctx.prisma.skill.update({
                             where: { id },
                             data: { sequence },
                         }),
-                        ctx.logEvent({
-                            action: "Update",
-                            objectType: "Skill",
-                            objectId: id,
-                            changes: diffObject({ sequence: prevSequence }, { sequence }),
-                        }),
-                    ]),
-                );
+                    ),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillGroup",
+                        objectId: skillGroupId,
+                        changes: [
+                            {
+                                type: "arr_ord",
+                                path: ["skills"],
+                                prev: prevOrder,
+                                curr,
+                            },
+                        ],
+                        description: "Reordered skills within the group.",
+                    }),
+                ]);
             }
 
             return { success: true };

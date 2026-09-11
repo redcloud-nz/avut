@@ -12,11 +12,12 @@ import * as z from "zod";
 
 import { D4HAccessToken_ServerOnly, D4HAccessTokenMetadata } from "@/lib/schemas/d4h-access-token";
 
+import { D4HActivityAttendance } from "../../lib/schemas/d4h/activity-attendance";
 import { D4HMember } from "../../lib/schemas/d4h/member";
 import { D4HOrganisation } from "../../lib/schemas/d4h/organisation";
 import type { paths } from "./schema";
 import { getD4HServer } from "../../lib/d4h-servers";
-import { D4HTeamRef } from "../../lib/schemas/d4h/team";
+import { D4HTeamDetail, D4HTeamRef } from "../../lib/schemas/d4h/team";
 import { D4HWhoami } from "../../lib/schemas/d4h/whoami";
 
 export type D4HListResponse = {
@@ -173,4 +174,80 @@ export async function getD4HTeamsWithMembers(
     );
 
     return teamsWithMembers;
+}
+
+/**
+ * D4H's OpenAPI spec omits the `{context}/{contextId}` path parameters on a handful
+ * of GET endpoints (team detail, attendance), so the generated types reject
+ * `params.path` for them even though the request URL needs it. These helpers call
+ * those endpoints with the path filled in at runtime, isolating the unavoidable cast.
+ */
+function d4hGetWithUntypedPath(
+    fetchClient: ReturnType<typeof getD4HFetchClient>,
+    url: string,
+    params: { path: Record<string, unknown>; query?: Record<string, unknown> },
+) {
+    return (fetchClient.GET as (u: string, init: unknown) => ReturnType<typeof fetchClient.GET>)(
+        url,
+        { params },
+    );
+}
+
+/**
+ * Fetch a team's detail record (including its IANA `timezone`) via the given token.
+ * Cached for hours — a team's timezone effectively never changes.
+ */
+export async function fetchD4HTeamDetailCached(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<D4HTeamDetail> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-detail`);
+
+    const fetchClient = getD4HFetchClient(token);
+
+    const { data, response } = await d4hGetWithUntypedPath(
+        fetchClient,
+        "/v3/{context}/{contextId}/teams/{teamId}",
+        { path: { context: "team", contextId: d4hTeamId, teamId: d4hTeamId } },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
+    return D4HTeamDetail.schema.parse(data);
+}
+
+/**
+ * Fetch the given member's activity attendance records that overlap the given window,
+ * for one team.
+ */
+export async function fetchD4HMemberAttendance(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    args: { memberId: number; startsBefore: string; endsAfter: string },
+): Promise<D4HActivityAttendance[]> {
+    const fetchClient = getD4HFetchClient(token);
+
+    const { data, response } = await d4hGetWithUntypedPath(
+        fetchClient,
+        "/v3/{context}/{contextId}/attendance",
+        {
+            path: { context: "team", contextId: d4hTeamId },
+            query: {
+                member_id: args.memberId,
+                starts_before: args.startsBefore,
+                ends_after: args.endsAfter,
+                size: 250,
+            },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H attendance for team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
+    return z.object({ results: D4HActivityAttendance.schema.array() }).parse(data).results;
 }

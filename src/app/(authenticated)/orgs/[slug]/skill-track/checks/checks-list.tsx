@@ -19,7 +19,9 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
+import { SkillTrack_CreateCheck_Dialog } from "@/components/skill-track/create-check";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { ClipboardCheckIcon } from "lucide-react";
 
@@ -129,6 +131,11 @@ export default function SkillTrack_ChecksList() {
         <Saratoga.Root>
             <Saratoga.Header>
                 <Saratoga.Title>Recent Skill Checks</Saratoga.Title>
+                <Saratoga.Actions>
+                    <Protect permissions={{ skillCheck: ["create"], person: ["view"] }}>
+                        <SkillTrack_CreateCheck_Dialog />
+                    </Protect>
+                </Saratoga.Actions>
             </Saratoga.Header>
             <Show
                 when={checks.length > 0}

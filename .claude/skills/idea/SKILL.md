@@ -26,13 +26,12 @@ Ask the user 1-2 short, focused questions to make the idea more actionable. Keep
 
 Once they've answered, do all of the following:
 
-**a) Create the `.ideas/` directory** in the project root if it doesn't exist yet.
+**a) Create the `docs/ideas/` directory** if it doesn't exist yet. It's a tracked
+part of the repo — do not add it to `.gitignore`.
 
-**b) Update `.gitignore`** — check if `.ideas/` is already listed. If not, append it. Don't duplicate it.
+**b) Generate a filename** in the format `YYYY-MM-DD-short-slug.md` using today's date and a 3-5 word kebab-case slug summarising the idea (e.g. `2025-06-16-refactor-auth-middleware.md`).
 
-**c) Generate a filename** in the format `YYYY-MM-DD-short-slug.md` using today's date and a 3-5 word kebab-case slug summarising the idea (e.g. `2025-06-16-refactor-auth-middleware.md`).
-
-**d) Write the idea file** at `.ideas/<filename>` using this format:
+**c) Write the idea file** at `docs/ideas/<filename>` using this format:
 
 ```
 # <Short descriptive title>

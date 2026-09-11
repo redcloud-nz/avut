@@ -16,6 +16,7 @@ interface PackageData {
         displayName: string;
         repositoryUrl: string;
         version: string;
+        build: number;
         versionName: string;
     };
 }
@@ -24,14 +25,26 @@ import packageDataJson from "./package.json" with { type: "json" };
 const packageData = packageDataJson as unknown as PackageData;
 
 const appMetadata = packageData["nz.avut"];
+if (!appMetadata) {
+    throw new Error("Missing required 'nz.avut' metadata in package.json");
+}
+
+// Only production renders a real version and codename (e.g. `v0.7 (Philomel)`).
+// Every other environment is transient, so it shows `DEV.{build}` and nothing
+// else — the build number is the only identifier that matters there. Keep this
+// rule in sync with `src/app/api/version/route.ts`.
+const branchName = process.env.VERCEL_GIT_COMMIT_REF ?? process.env.GITHUB_REF_NAME;
+const isProduction = process.env.VERCEL_ENV === "production" || branchName === "production";
+const appVersion = isProduction ? `v${appMetadata.version}` : `DEV.${appMetadata.build}`;
+const appVersionName = isProduction ? appMetadata.versionName : "";
 
 const nextConfig: NextConfig = {
     cacheComponents: true,
     env: {
-        NEXT_PUBLIC_APP_VERSION: appMetadata?.version,
-        NEXT_PUBLIC_APP_VERSION_NAME: appMetadata?.versionName,
-        NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata?.displayName,
-        NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata?.repositoryUrl,
+        NEXT_PUBLIC_APP_VERSION: appVersion,
+        NEXT_PUBLIC_APP_VERSION_NAME: appVersionName,
+        NEXT_PUBLIC_APP_DISPLAY_NAME: appMetadata.displayName,
+        NEXT_PUBLIC_APP_REPOSITORY_URL: appMetadata.repositoryUrl,
     },
     experimental: {
         // Enables `forbidden()` / `forbidden.tsx`. Server-thrown errors lose their class

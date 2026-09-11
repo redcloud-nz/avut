@@ -62,11 +62,6 @@ export type Team_D4H = Prisma.Team_D4HModel;
  */
 export type TeamConfig = Prisma.TeamConfigModel;
 /**
- * Model TeamUser
- *
- */
-export type TeamUser = Prisma.TeamUserModel;
-/**
  * Model OrganizationUser
  *
  */
@@ -77,15 +72,25 @@ export type OrganizationUser = Prisma.OrganizationUserModel;
  */
 export type OrganizationInvitation = Prisma.OrganizationInvitationModel;
 /**
- * Model OrganizationLogEntry
+ * Model LogEntry
  *
  */
-export type OrganizationLogEntry = Prisma.OrganizationLogEntryModel;
+export type LogEntry = Prisma.LogEntryModel;
 /**
- * Model D4hAccessToken
+ * Model LogEntryObject
  *
  */
-export type D4hAccessToken = Prisma.D4hAccessTokenModel;
+export type LogEntryObject = Prisma.LogEntryObjectModel;
+/**
+ * Model LogBatch
+ *
+ */
+export type LogBatch = Prisma.LogBatchModel;
+/**
+ * Model D4HAccessToken
+ *
+ */
+export type D4HAccessToken = Prisma.D4HAccessTokenModel;
 /**
  * Model Person
  *

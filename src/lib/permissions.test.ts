@@ -39,6 +39,10 @@ describe("Roles", () => {
             expect(can("skills-assessor", { skillCheck: ["delete"] })).toBe(true);
         });
 
+        it("can read personnel to pick assessee and assessor", () => {
+            expect(can("skills-assessor", { person: ["view"] })).toBe(true);
+        });
+
         // approveSession requires both halves.
         it("can approve a session", () => {
             expect(

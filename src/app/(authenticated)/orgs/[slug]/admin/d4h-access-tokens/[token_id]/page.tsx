@@ -13,7 +13,7 @@ import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { requireOrganization } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-import { AdminModule_D4hAccessToken_Content } from "./access-token-content";
+import { AdminModule_D4HAccessToken_Content } from "./access-token-content";
 
 type Props = PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]`>;
 
@@ -32,7 +32,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     return { title: accessToken.label || `Access Token: ${accessToken.id}` };
 }
 
-export default async function AdminModule_D4hAccessToken_Page(props: Props) {
+export default async function AdminModule_D4HAccessToken_Page(props: Props) {
     const { slug, token_id } = await props.params;
     const { organization } = await requireOrganization(slug);
 
@@ -48,7 +48,7 @@ export default async function AdminModule_D4hAccessToken_Page(props: Props) {
     return (
         <HydrateClient>
             <Std.SidebarInset>
-                <AdminModule_D4hAccessToken_Content tokenId={tokenId} />
+                <AdminModule_D4HAccessToken_Content tokenId={tokenId} />
             </Std.SidebarInset>
         </HydrateClient>
     );

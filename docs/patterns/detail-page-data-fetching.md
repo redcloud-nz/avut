@@ -97,6 +97,32 @@ Key points:
 - **No breadcrumbs, no `Std.Navbar`, no `Std.ScrollContainer` here** — those move into
   the content component (next section).
 
+### Variant: full-height reports (`skill-track/reports/*`)
+
+The skill-track competency reports keep `Std.Navbar` **in `page.tsx`** and wrap only
+the report component in their own `<Suspense fallback={<PageLoadingSpinner />}>`:
+
+```tsx
+<Std.SidebarInset>
+  <Std.Navbar breadcrumbs={[…]} />
+  <Suspense fallback={<PageLoadingSpinner />}>
+    <SkillTrack_SkillCoverageReport />
+  </Suspense>
+</Std.SidebarInset>
+```
+
+This is deliberate and differs from the default above on two points:
+
+- **Breadcrumbs are static** — they don't name a fetched entity (the report's scope
+  comes from a `?…=` search param, not a path segment), so there's no sync-with-mutations
+  reason to move `Std.Navbar` into the client component.
+- **The inner `<Suspense>` is load-bearing** — it keeps the navbar painted while the
+  report suspends, instead of replacing the whole inset with the spinner. The report
+  body is a `Glorious.Root` full-height layout, so a page-level fallback would collapse
+  the shell.
+
+Use this shape only for that family of pages; a normal detail page follows the default.
+
 ---
 
 ## `<entity>-content.tsx`
@@ -176,7 +202,7 @@ export const teamsEffects = createEffects<"teams">()({
   procedure in `src/client/<domain>-effects.ts` via `createEffects<"router">()({...})`,
   not repeated at each call site.
 - `write(queryKey, data)` writes the mutation's response straight into the cache the
-  content component reads from — use it when the response *is* the detail query's full
+  content component reads from — use it when the response _is_ the detail query's full
   new value (as `updateTeam`'s is here). No `router.refresh()` needed — `useSuspenseQuery`
   picks up the write on its own.
 - `invalidate(filter)` covers queries the response can't fully determine, typically

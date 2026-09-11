@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { D4hAccessToken as D4hAccessTokenRecord } from "@/generated/prisma/client";
+import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
@@ -75,7 +75,7 @@ export const D4HAccessToken = {
         metadata: D4HAccessTokenMetadata.schema,
     }),
 
-    fromRecord: (record: D4hAccessTokenRecord) =>
+    fromRecord: (record: D4HAccessTokenRecord) =>
         D4HAccessToken.schema.parse({
             ...record,
             expiresAt: record.expiresAt.toISOString(),
@@ -96,7 +96,7 @@ export const D4HAccessToken_ServerOnly = {
         metadata: D4HAccessTokenMetadata.schema,
     }),
 
-    fromRecord: (record: D4hAccessTokenRecord) =>
+    fromRecord: (record: D4HAccessTokenRecord) =>
         D4HAccessToken_ServerOnly.schema.parse({
             ...record,
             token: decryptDBValue(record.token),

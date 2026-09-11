@@ -49,6 +49,7 @@ export function AdminModule_Settings_Content() {
                     <OrganizationSettingsForm
                         organizationId={organization.id}
                         settings={settings}
+                        moduleFlags={organization.moduleFlags}
                     />
                 </Saratoga.Root>
             </Std.ScrollContainer>

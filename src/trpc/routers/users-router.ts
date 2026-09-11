@@ -7,10 +7,12 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import { auth } from "@/server/auth";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
+import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
 
 import { FieldConflictError } from "../errors";
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
@@ -96,22 +98,23 @@ export const usersRouter = createTrpcRouter({
                     ),
                 });
 
-            await ctx.prisma.organizationUser.update({
-                where: {
-                    organizationId_userId: {
-                        organizationId: ctx.organizationId,
-                        userId: input.userId,
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: {
+                        organizationId_userId: {
+                            organizationId: ctx.organizationId,
+                            userId: input.userId,
+                        },
                     },
-                },
-                data: { personId: input.personId },
-            });
-
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "OrganizationMembership",
-                objectId: orgUser.id,
-                description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
-            });
+                    data: { personId: input.personId },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: orgUser.id,
+                    description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
+                }),
+            ]);
         }),
 
     /**
@@ -171,6 +174,74 @@ export const usersRouter = createTrpcRouter({
         }),
 
     /**
+     * Lists the authenticated user's active sessions, for the security settings card.
+     *
+     * Read straight from the session table rather than through Better Auth's
+     * `/list-sessions`, which is guarded by a freshness check that blanks the card 24h
+     * after sign-in. Revocation still goes through Better Auth (see `revokeSession`), so
+     * the only thing bypassed here is a read gate on the user's own data.
+     *
+     * @param ctx The authenticated context.
+     * @returns The user's unexpired sessions, newest first, each flagged if it is the caller.
+     */
+    listSessions: authenticatedProcedure
+        .output(z.array(UserSessionData.schema))
+        .query(async ({ ctx }) => {
+            const sessions = await ctx.prisma.session.findMany({
+                where: {
+                    userId: ctx.userId,
+                    expiresAt: { gt: new Date() },
+                },
+                orderBy: { createdAt: "desc" },
+            });
+
+            return sessions.map((session) =>
+                UserSessionData.fromRecord(session, session.id === ctx.auth.session.id),
+            );
+        }),
+
+    /**
+     * Revokes one of the authenticated user's other sessions, signing that device out.
+     *
+     * Takes a session id rather than a token so tokens never have to reach the browser.
+     * The lookup is scoped to the caller's own sessions, so another user's session is
+     * indistinguishable from a nonexistent one.
+     *
+     * @param ctx The authenticated context.
+     * @param input The id of the session to revoke.
+     * @throws TRPCError(NOT_FOUND) if the session isn't one of the caller's.
+     * @throws TRPCError(BAD_REQUEST) if it is the caller's current session.
+     */
+    revokeSession: authenticatedProcedure
+        .input(z.object({ sessionId: UserSessionId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const session = await ctx.prisma.session.findFirst({
+                where: { id: input.sessionId, userId: ctx.userId },
+            });
+
+            if (!session)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Session not found.",
+                });
+
+            // Signing yourself out is a different action with different cleanup — it has to
+            // clear the cookie and tear down the client caches, which this can't do.
+            if (session.id === ctx.auth.session.id)
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Use sign out to end the current session.",
+                });
+
+            // Delegated rather than deleting the row, so Better Auth invalidates whatever
+            // session caching it has configured.
+            await auth.api.revokeSession({
+                body: { token: session.token },
+                headers: ctx.headers,
+            });
+        }),
+
+    /**
      * Unlinks the personnel record currently associated with a user account.
      *
      * @param ctx The authenticated organization context.
@@ -197,22 +268,23 @@ export const usersRouter = createTrpcRouter({
                     message: Messages.userNotFound(input.userId),
                 });
 
-            await ctx.prisma.organizationUser.update({
-                where: {
-                    organizationId_userId: {
-                        organizationId: ctx.organizationId,
-                        userId: input.userId,
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: {
+                        organizationId_userId: {
+                            organizationId: ctx.organizationId,
+                            userId: input.userId,
+                        },
                     },
-                },
-                data: { personId: null },
-            });
-
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "OrganizationMembership",
-                objectId: orgUser.id,
-                description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
-            });
+                    data: { personId: null },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: orgUser.id,
+                    description: `Unlinked person (${orgUser.personId}) from user (${input.userId}).`,
+                }),
+            ]);
 
             return { personId: orgUser.personId as PersonId | null };
         }),

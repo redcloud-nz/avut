@@ -19,15 +19,19 @@ import {
 } from "@/components/ui/item";
 import Link from "next/link";
 import { orgModules } from "@/lib/modules";
+import { resolveModuleFlags } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 
 export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
     const { organization, settings } = await requireOrganization(slug);
     const { modules } = settings;
+    const moduleFlags = await resolveModuleFlags();
 
     const availableModules = orgModules.filter(
-        (mod) => mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled),
+        (mod) =>
+            moduleFlags[mod.id] !== false &&
+            (mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled)),
     );
 
     return (

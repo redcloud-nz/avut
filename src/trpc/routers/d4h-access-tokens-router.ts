@@ -4,13 +4,14 @@
  */
 
 import { addYears } from "date-fns";
+import * as R from "remeda";
 import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
-import { diffObject } from "@/lib/diff";
+import { diffObject, DiffChange } from "@/lib/diff";
 import {
     D4HAccessToken,
     D4HAccessToken_ServerOnly,
@@ -67,10 +68,13 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganisations: [] };
 
-            const changes = diffObject({}, create);
+            const changes: DiffChange[] = [
+                ...diffObject({}, R.omit(create, ["token"])),
+                { type: "obj_mask", path: ["token"] },
+            ];
 
             const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.d4hAccessToken.create({
+                ctx.prisma.d4HAccessToken.create({
                     data: {
                         ...token,
                         token: encryptDBValue(token.token),
@@ -81,7 +85,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 }),
                 ctx.logEvent({
                     action: "Create",
-                    objectType: "D4hAccessToken",
+                    objectType: "D4HAccessToken",
                     objectId: tokenId,
                     changes,
                 }),
@@ -123,10 +127,13 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                   })
                 : { d4HTeams: [], d4HOrganizations: [] };
 
-            const changes = diffObject({}, create);
+            const changes: DiffChange[] = [
+                ...diffObject({}, R.omit(create, ["token"])),
+                { type: "obj_mask", path: ["token"] },
+            ];
 
             const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.d4hAccessToken.create({
+                ctx.prisma.d4HAccessToken.create({
                     data: {
                         ...token,
                         token: encryptDBValue(token.token),
@@ -137,7 +144,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 }),
                 ctx.logEvent({
                     action: "Create",
-                    objectType: "D4hAccessToken",
+                    objectType: "D4HAccessToken",
                     objectId: tokenId,
                     changes,
                 }),
@@ -160,7 +167,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input, ctx }) => {
-            const existing = await ctx.prisma.d4hAccessToken.findUnique({
+            const existing = await ctx.prisma.d4HAccessToken.findUnique({
                 where: { id: input.tokenId },
             });
 
@@ -172,12 +179,12 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }
 
             await ctx.prisma.$transaction([
-                ctx.prisma.d4hAccessToken.delete({
+                ctx.prisma.d4HAccessToken.delete({
                     where: { id: input.tokenId },
                 }),
                 ctx.logEvent({
                     action: "Delete",
-                    objectType: "D4hAccessToken",
+                    objectType: "D4HAccessToken",
                     objectId: existing.id,
                 }),
                 // Delete any organization config entries that reference this token
@@ -200,7 +207,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     deletePersonalAccessToken: organizationProcedure({
         organization: ["view"],
     }).mutation(async ({ ctx }) => {
-        const existing = await ctx.prisma.d4hAccessToken.findFirst({
+        const existing = await ctx.prisma.d4HAccessToken.findFirst({
             where: {
                 organizationId: ctx.organizationId,
                 userId: ctx.auth.user.id,
@@ -215,13 +222,13 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         }
 
         await ctx.prisma.$transaction([
-            ctx.prisma.d4hAccessToken.delete({
+            ctx.prisma.d4HAccessToken.delete({
                 where: { id: existing.id },
             }),
 
             ctx.logEvent({
                 action: "Delete",
-                objectType: "D4hAccessToken",
+                objectType: "D4HAccessToken",
                 objectId: existing.id,
             }),
         ]);
@@ -242,7 +249,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         )
         .output(D4HAccessToken.schema)
         .query(async ({ input, ctx }) => {
-            const record = await ctx.prisma.d4hAccessToken.findUnique({
+            const record = await ctx.prisma.d4HAccessToken.findUnique({
                 where: {
                     id: input.tokenId,
                     organizationId: ctx.organizationId,
@@ -265,7 +272,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     getPersonalAccessToken: organizationProcedure({})
         .output(D4HAccessToken.schema.nullable())
         .query(async ({ ctx }) => {
-            const record = await ctx.prisma.d4hAccessToken.findFirst({
+            const record = await ctx.prisma.d4HAccessToken.findFirst({
                 where: {
                     organizationId: ctx.organizationId,
                     userId: ctx.auth.user.id,
@@ -296,7 +303,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .output(z.array(D4HAccessToken.schema))
         .query(async ({ ctx }) => {
-            const records = await ctx.prisma.d4hAccessToken.findMany({
+            const records = await ctx.prisma.d4HAccessToken.findMany({
                 where: { organizationId: ctx.organizationId, userId: null },
             });
 
@@ -319,7 +326,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const records = await ctx.prisma.d4hAccessToken.findMany({
+            const records = await ctx.prisma.d4HAccessToken.findMany({
                 where: { userId: ctx.auth.user.id },
                 include: { organization: true },
             });
@@ -339,7 +346,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input, ctx }) => {
-            const record = await ctx.prisma.d4hAccessToken.findUnique({
+            const record = await ctx.prisma.d4HAccessToken.findUnique({
                 where: {
                     id: input.tokenId,
                     organizationId: ctx.organizationId,
@@ -364,7 +371,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 : { d4HTeams: [], d4HOrganisations: [] };
 
             await ctx.prisma.$transaction([
-                ctx.prisma.d4hAccessToken.update({
+                ctx.prisma.d4HAccessToken.update({
                     where: { id: input.tokenId },
                     data: {
                         metadata,
@@ -373,7 +380,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 }),
                 ctx.logEvent({
                     action: "Update",
-                    objectType: "D4hAccessToken",
+                    objectType: "D4HAccessToken",
                     objectId: input.tokenId,
                     changes: diffObject({ status: record.status }, { status: response.statusText }),
                     description: "Refreshed D4H access token metadata.",

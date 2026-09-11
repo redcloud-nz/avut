@@ -29,7 +29,7 @@ export default async function D4HViewsModule_Teams_Page(
     if (!accessTokenId)
         throw new Error("D4H Views module is not configured properly. No sync token found.");
 
-    const record = await prisma.d4hAccessToken.findUnique({
+    const record = await prisma.d4HAccessToken.findUnique({
         where: {
             id: accessTokenId,
             organizationId: organization.id,

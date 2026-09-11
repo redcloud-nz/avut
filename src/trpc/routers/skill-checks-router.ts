@@ -65,14 +65,13 @@ export const skillChecksRouter = createTrpcRouter({
                     where: { id: sessionId, organizationId: ctx.organizationId },
                     data: { status: "Include" },
                 }),
+                ctx.logEvent({
+                    action: "Approve",
+                    objectType: "SkillCheckSession",
+                    objectId: sessionId,
+                    description: `Approved session "${session.name}".`,
+                }),
             ]);
-
-            await ctx.logEvent({
-                action: "Approve",
-                objectType: "SkillCheckSession",
-                objectId: sessionId,
-                description: `Approved session "${session.name}".`,
-            });
 
             return {
                 updated: SkillCheckSession.fromRecord({
@@ -207,7 +206,8 @@ export const skillChecksRouter = createTrpcRouter({
                         checkId: SkillCheckId.schema,
                         result: SkillCheckResultValue.schema,
                         checkedAt: z.iso.datetime(),
-                        expiresAt: z.iso.datetime(),
+                        // Null when the skill has no reassessment interval (frequency <= 0).
+                        expiresAt: z.iso.datetime().nullable(),
                         isCurrent: z.boolean(),
                     }),
                 ),
@@ -342,20 +342,52 @@ export const skillChecksRouter = createTrpcRouter({
             const now = new Date();
             const competencies = [...latestByKey.values()].map((check) => {
                 const skill = skillMap.get(check.skillId)!;
-                const expiresAt = new Date(check.createdAt);
-                expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+                // A frequency of 0 (or less) means the skill never needs reassessment, so a
+                // passing check stays current forever and has no expiry date.
+                const neverExpires = skill.frequency <= 0;
+                let expiresAt: Date | null = null;
+                if (!neverExpires) {
+                    expiresAt = new Date(check.createdAt);
+                    expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
+                }
                 return {
                     assesseeId: check.assesseeId as PersonId,
                     skillId: check.skillId as SkillId,
                     checkId: check.id as SkillCheckId,
                     result: check.result,
                     checkedAt: check.createdAt.toISOString(),
-                    expiresAt: expiresAt.toISOString(),
-                    isCurrent: expiresAt > now,
+                    expiresAt: expiresAt ? expiresAt.toISOString() : null,
+                    isCurrent: neverExpires || expiresAt! > now,
                 };
             });
 
             return { personnel, skillPackages, skillGroups, skills, competencies };
+        }),
+
+    /**
+     * Returns a single skill check by id, with the assessor's name resolved. Used by the
+     * competency reports to populate the "check details" popover on demand.
+     */
+    getSkillCheck: organizationProcedure({ skillCheck: ["view"] })
+        .input(z.object({ skillCheckId: SkillCheckId.schema }))
+        .output(SkillCheck.schema.extend({ assessor: PersonRef.schema }))
+        .query(async ({ ctx, input }) => {
+            const check = await ctx.prisma.skillCheck.findFirst({
+                where: { id: input.skillCheckId, organizationId: ctx.organizationId },
+                include: { assessor: { select: { id: true, name: true } } },
+            });
+
+            if (!check) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckNotFound(input.skillCheckId),
+                });
+            }
+
+            return {
+                ...SkillCheck.fromRecord(check),
+                assessor: PersonRef.schema.parse(check.assessor),
+            };
         }),
 
     /**

@@ -8,7 +8,10 @@ export default defineConfig({
         globals: true,
         setupFiles: ["./src/test/setup.ts"],
         include: ["**/*.{test,spec}.{ts,tsx}"],
-        exclude: ["node_modules", ".next", "dist"],
+        // `.claude/worktrees` holds git worktrees of this same repo, so the include glob
+        // would otherwise collect a second copy of every test — which then fails on a
+        // missing node_modules rather than for any real reason.
+        exclude: ["node_modules", ".next", "dist", ".claude/worktrees"],
         env: {
             NODE_ENV: "test",
         },

@@ -1,1 +1,11 @@
 package-lock.json
+
+# Vendored agent skills — upstream content managed by `npx skills`.
+# lint-staged runs prettier over `**/*`, which would otherwise rewrite these
+# files (quotes, semicolons, table alignment) and break the `computedHash`
+# entries in skills-lock.json.
+.agents
+.claude/skills
+
+# Nested checkouts — each worktree formats its own staged files.
+.claude/worktrees

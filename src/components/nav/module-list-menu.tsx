@@ -69,12 +69,10 @@ export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) 
 function OrganizationModuleOptions() {
     const organization = useOrganization();
 
-    const modules = organization.settings.modules;
-
     return (
         <>
             {orgModules.map((mod) => {
-                const enabled = mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled);
+                const enabled = organization.isModuleEnabled(mod.id);
                 const Icon = mod.icon;
 
                 return (

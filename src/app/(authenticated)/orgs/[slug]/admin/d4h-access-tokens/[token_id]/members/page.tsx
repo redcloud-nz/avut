@@ -19,7 +19,7 @@ import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-
 /**
  * DEVELOPMENT ONLY PAGE
  */
-export default async function Admin_D4hAccessToken_Members_Page(
+export default async function Admin_D4HAccessToken_Members_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members`>,
 ) {
     const { slug, token_id } = await props.params;

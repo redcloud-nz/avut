@@ -5,24 +5,42 @@
  * Path: /orgs/[slug]/skill-track/reports/person
  */
 
-import { Std } from "@/components/blocks/std";
-import { SkillTrack_PersonPicker } from "@/components/skill-track/reports/person-picker";
+import { Suspense } from "react";
 
-import { requireOrganization } from "@/server/organization-access";
+import { Std } from "@/components/blocks/std";
+import { SkillTrack_PersonCompetencyReport } from "@/components/skill-track/reports/person-competency-report";
+import { PageLoadingSpinner } from "@/components/ui/loading";
+
 import { route } from "@/lib/routes";
+import { PersonId } from "@/lib/schemas/person";
+import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
-    title: `Personnel Competency`,
+    title: `Personnel Competency Report`,
 };
 
-export default async function SkillTrack_ReportsPersonPicker_Page(
+export default async function SkillTrack_ReportsPersonCompetency_Page(
     props: PageProps<"/orgs/[slug]/skill-track/reports/person">,
 ) {
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
+    const { person } = await props.searchParams;
 
     prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
+
+    // Only prefetch the competency matrix for a well-formed person id — an invalid `?person=`
+    // falls back to the picker client-side, so fetching a matrix here is wasted work.
+    const parsedPersonId =
+        typeof person === "string" ? PersonId.schema.safeParse(person) : undefined;
+    if (parsedPersonId?.success) {
+        prefetch(
+            trpc.skillChecks.getCompetencyMatrix.queryOptions({
+                organizationId: organization.id,
+                personId: parsedPersonId.data,
+            }),
+        );
+    }
 
     return (
         <HydrateClient>
@@ -43,9 +61,9 @@ export default async function SkillTrack_ReportsPersonPicker_Page(
                         },
                     ]}
                 />
-                <Std.ScrollContainer>
-                    <SkillTrack_PersonPicker />
-                </Std.ScrollContainer>
+                <Suspense fallback={<PageLoadingSpinner />}>
+                    <SkillTrack_PersonCompetencyReport />
+                </Suspense>
             </Std.SidebarInset>
         </HydrateClient>
     );

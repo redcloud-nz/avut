@@ -8,6 +8,7 @@
 import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
+import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";
 import { requireOrganization } from "@/server/organization-access";
 import { OrganizationProvider } from "@/hooks/use-organization";
@@ -30,9 +31,15 @@ export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Prom
 export default async function Organization_Layout(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
     const { organization, settings, roles } = await requireOrganization(slug);
+    const moduleFlags = await resolveModuleFlags();
 
     return (
-        <OrganizationProvider organization={organization} settings={settings} roles={roles}>
+        <OrganizationProvider
+            organization={organization}
+            settings={settings}
+            roles={roles}
+            moduleFlags={moduleFlags}
+        >
             {props.children}
         </OrganizationProvider>
     );

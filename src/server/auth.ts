@@ -9,6 +9,7 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
 
+import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
 
@@ -19,19 +20,51 @@ import { ac, Roles } from "@/lib/permissions";
 import { revalidateOrganization } from "./organization";
 import prisma from "./prisma";
 
+/**
+ * Bridges better-auth's `beforeEmailVerification` and `afterEmailVerification`
+ * hooks within a single change-email request: `before` stashes the address the
+ * account had, `after` reads it back to notify that address. Keyed by the
+ * request object (identical across both calls in one route invocation), so it
+ * is request-scoped and garbage-collected with the request.
+ */
+const previousEmailByRequest = new WeakMap<Request, string>();
+
 export const auth = betterAuth({
     account: {
         accountLinking: {
             enabled: true,
         },
-        modelName: "Account",
+        modelName: "account",
     },
     advanced: {
         database: {
             generateId: nanoId16,
+            joins: true,
         },
     },
     baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    /*
+     * better-auth only trusts `baseURL` by default, which rejects origin-checked
+     * requests coming from Vercel preview deploys (unique per-branch hosts) and
+     * from local dev servers on a non-3000 port. `src/trpc/client.ts` and the
+     * email templates already special-case `VERCEL_URL`; mirror that here.
+     */
+    trustedOrigins: [
+        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+        ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
+        ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
+            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+            : []),
+        ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
+        ...(process.env.NODE_ENV === "development"
+            ? [
+                  "http://localhost:3000",
+                  "http://localhost:3001",
+                  "http://localhost:3002",
+                  "http://localhost:3100", // worktree dev servers
+              ]
+            : []),
+    ],
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
@@ -41,11 +74,30 @@ export const auth = betterAuth({
     },
     emailVerification: {
         autoSignInAfterVerification: true,
-    },
-    experimental: {
-        joins: true,
-    },
+        async beforeEmailVerification(user, request) {
+            if (request) previousEmailByRequest.set(request, user.email);
+        },
+        async afterEmailVerification(user, request) {
+            const previousEmail = request ? previousEmailByRequest.get(request) : undefined;
 
+            // Same hook pair also fires on signup verification, where the
+            // address is unchanged - only notify on an actual change.
+            if (!previousEmail || previousEmail.toLowerCase() === user.email.toLowerCase()) {
+                return;
+            }
+
+            sendEmail({
+                from: NoReplyEmailAddress,
+                to: previousEmail,
+                subject: "Your AVUT email address was changed",
+                react: EmailAddressChangedTemplate({
+                    name: user.name,
+                    previousEmail,
+                    newEmail: user.email,
+                }),
+            });
+        },
+    },
     plugins: [
         admin(),
         emailOTP({
@@ -99,10 +151,10 @@ export const auth = betterAuth({
             roles: Roles,
             schema: {
                 organization: {
-                    modelName: "Organization",
+                    modelName: "organization",
                 },
                 member: {
-                    modelName: "OrganizationUser",
+                    modelName: "organizationUser",
                     additionalFields: {
                         personId: {
                             type: "string",
@@ -112,7 +164,7 @@ export const auth = betterAuth({
                     },
                 },
                 invitation: {
-                    modelName: "OrganizationInvitation",
+                    modelName: "organizationInvitation",
                     additionalFields: {
                         personId: {
                             type: "string",
@@ -120,12 +172,6 @@ export const auth = betterAuth({
                             required: false,
                         },
                     },
-                },
-                team: {
-                    modelName: "Team",
-                },
-                teamMember: {
-                    modelName: "TeamUser",
                 },
             },
             async sendInvitationEmail({ invitation, email, organization, inviter }) {
@@ -142,10 +188,6 @@ export const auth = betterAuth({
                         inviter,
                     }),
                 });
-            },
-            teams: {
-                enabled: true,
-                allowRemovingAllTeams: true,
             },
         }),
     ],
@@ -168,10 +210,10 @@ export const auth = betterAuth({
     },
 
     user: {
-        modelName: "User",
+        modelName: "user",
     },
     verification: {
-        modelName: "Verification",
+        modelName: "verification",
     },
 } satisfies BetterAuthOptions);
 

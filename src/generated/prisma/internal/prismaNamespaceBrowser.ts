@@ -57,11 +57,12 @@ export const ModelName = {
     Team: "Team",
     Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
-    TeamUser: "TeamUser",
     OrganizationUser: "OrganizationUser",
     OrganizationInvitation: "OrganizationInvitation",
-    OrganizationLogEntry: "OrganizationLogEntry",
-    D4hAccessToken: "D4hAccessToken",
+    LogEntry: "LogEntry",
+    LogEntryObject: "LogEntryObject",
+    LogBatch: "LogBatch",
+    D4HAccessToken: "D4HAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
     Note: "Note",
@@ -216,16 +217,6 @@ export const TeamConfigScalarFieldEnum = {
 export type TeamConfigScalarFieldEnum =
     (typeof TeamConfigScalarFieldEnum)[keyof typeof TeamConfigScalarFieldEnum];
 
-export const TeamUserScalarFieldEnum = {
-    id: "id",
-    teamId: "teamId",
-    userId: "userId",
-    createdAt: "createdAt",
-} as const;
-
-export type TeamUserScalarFieldEnum =
-    (typeof TeamUserScalarFieldEnum)[keyof typeof TeamUserScalarFieldEnum];
-
 export const OrganizationUserScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
@@ -255,23 +246,51 @@ export const OrganizationInvitationScalarFieldEnum = {
 export type OrganizationInvitationScalarFieldEnum =
     (typeof OrganizationInvitationScalarFieldEnum)[keyof typeof OrganizationInvitationScalarFieldEnum];
 
-export const OrganizationLogEntryScalarFieldEnum = {
+export const LogEntryScalarFieldEnum = {
     id: "id",
+    sequence: "sequence",
+    scope: "scope",
     organizationId: "organizationId",
+    ownerId: "ownerId",
     userId: "userId",
+    actorLabel: "actorLabel",
+    impersonatorId: "impersonatorId",
+    batchId: "batchId",
     action: "action",
     objectType: "objectType",
     objectId: "objectId",
-    metadata: "metadata",
     changes: "changes",
     description: "description",
     timestamp: "timestamp",
 } as const;
 
-export type OrganizationLogEntryScalarFieldEnum =
-    (typeof OrganizationLogEntryScalarFieldEnum)[keyof typeof OrganizationLogEntryScalarFieldEnum];
+export type LogEntryScalarFieldEnum =
+    (typeof LogEntryScalarFieldEnum)[keyof typeof LogEntryScalarFieldEnum];
 
-export const D4hAccessTokenScalarFieldEnum = {
+export const LogEntryObjectScalarFieldEnum = {
+    id: "id",
+    logEntryId: "logEntryId",
+    objectType: "objectType",
+    objectId: "objectId",
+    role: "role",
+} as const;
+
+export type LogEntryObjectScalarFieldEnum =
+    (typeof LogEntryObjectScalarFieldEnum)[keyof typeof LogEntryObjectScalarFieldEnum];
+
+export const LogBatchScalarFieldEnum = {
+    id: "id",
+    operationKey: "operationKey",
+    userId: "userId",
+    actorLabel: "actorLabel",
+    description: "description",
+    startedAt: "startedAt",
+} as const;
+
+export type LogBatchScalarFieldEnum =
+    (typeof LogBatchScalarFieldEnum)[keyof typeof LogBatchScalarFieldEnum];
+
+export const D4HAccessTokenScalarFieldEnum = {
     id: "id",
     organizationId: "organizationId",
     userId: "userId",
@@ -285,8 +304,8 @@ export const D4hAccessTokenScalarFieldEnum = {
     updatedAt: "updatedAt",
 } as const;
 
-export type D4hAccessTokenScalarFieldEnum =
-    (typeof D4hAccessTokenScalarFieldEnum)[keyof typeof D4hAccessTokenScalarFieldEnum];
+export type D4HAccessTokenScalarFieldEnum =
+    (typeof D4HAccessTokenScalarFieldEnum)[keyof typeof D4HAccessTokenScalarFieldEnum];
 
 export const PersonScalarFieldEnum = {
     id: "id",

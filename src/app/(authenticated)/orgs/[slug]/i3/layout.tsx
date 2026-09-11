@@ -5,7 +5,10 @@
  * Path: /orgs/[slug]/i3
  */
 
+import { notFound } from "next/navigation";
+
 import { ModuleSidebar } from "@/components/nav/module-sidebar";
+import { i3ModuleFlag } from "@/lib/flags";
 
 import { I3_Sidebar_Menu } from "./sidebar-menu";
 import { requireOrganization } from "@/server/organization-access";
@@ -13,6 +16,8 @@ import { requireOrganization } from "@/server/organization-access";
 export default async function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
     const { slug } = await props.params;
     const { settings } = await requireOrganization(slug);
+
+    if (!(await i3ModuleFlag())) notFound();
 
     if (settings.modules["i3"].enabled === false)
         throw new Error("I3 module is not enabled for this organization.");

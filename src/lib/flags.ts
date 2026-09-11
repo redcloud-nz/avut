@@ -4,42 +4,49 @@
  */
 
 import { flag } from "flags/next";
-import { edgeConfigAdapter } from "@flags-sdk/edge-config";
+import { vercelAdapter } from "@flags-sdk/vercel";
 
-export const objectTagsFeatureFlag = flag({
-    key: "object-tags-enabled",
+/**
+ * Feature flags backed by Vercel's hosted flags store. Each flag can carry a
+ * different value per deployment environment (production / preview / development),
+ * set in the Vercel dashboard or via `vercel flags enable <key> --environment <env>`.
+ * The code only declares the flags; environment differentiation lives on the platform.
+ */
+
+const booleanOptions = [
+    { value: true, label: "On" },
+    { value: false, label: "Off" },
+];
+
+export const i3ModuleFlag = flag<boolean>({
+    key: "i3-module",
+    adapter: vercelAdapter(),
     defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-// Module availability flags
-
-export const availabilityModuleFlag = flag<boolean>({
-    key: "availability-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const checklistsModuleFlag = flag<boolean>({
-    key: "checklists-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const d4hViewsModuleFlag = flag<boolean>({
-    key: "d4h-views-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
-});
-
-export const fogModuleFlag = flag<boolean>({
-    key: "fog-module",
-    defaultValue: false,
-    adapter: edgeConfigAdapter(),
+    description: "Is the i3 module available.",
+    options: booleanOptions,
 });
 
 export const notesModuleFlag = flag<boolean>({
     key: "notes-module",
+    adapter: vercelAdapter(),
     defaultValue: false,
-    adapter: edgeConfigAdapter(),
+    description: "Is the notes module available.",
+    options: booleanOptions,
+});
+
+export const structuredDocumentsModuleFlag = flag<boolean>({
+    key: "structured-documents-module",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description: "Is the structured documents module available.",
+    options: booleanOptions,
+});
+
+export const playgroundFlag = flag<boolean>({
+    key: "playground",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description:
+        "Is the UI component playground area available (dev tooling, not a registry module).",
+    options: booleanOptions,
 });

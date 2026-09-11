@@ -53,7 +53,7 @@ async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
 /**
  * DEVELOPMENT ONLY PAGE
  */
-export default async function Admin_D4hAccessToken_EquipmentKinds_Page(
+export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-kinds`>,
 ) {
     const { slug, token_id } = await props.params;

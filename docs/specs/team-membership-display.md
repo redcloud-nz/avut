@@ -1,0 +1,297 @@
+# Spec: Team membership display
+
+**Date:** 2026-09-10
+**Status:** Draft
+**Supersedes:** the ad-hoc membership rendering in
+`src/components/admin/teams/team-personnel-content.tsx` and
+`src/components/admin/personnel/team-memberships.tsx`.
+
+How AVUT presents team membership on the two surfaces where it matters: the
+**team roster page** (`/orgs/[slug]/admin/teams/[team_id]/personnel`) and the
+**Teams card** on the person detail page
+(`/orgs/[slug]/admin/personnel/[person_id]`).
+
+This spec is about display. It does **not** add a native "role within team"
+concept — the only role/position/status data shown is D4H's, surfaced read-only
+and only when the team (or the specific membership) is D4H-linked.
+
+**Dependency:** this builds on `docs/specs/d4h-linking.md` landing first. It
+assumes:
+
+- `TeamMembership_D4H` exists (spec §3.3): `d4hMemberId`, `d4hStatus`,
+  `d4hPosition`, `d4hRef`, `d4hRoleId`, `d4hLastSyncedAt`. Its **presence marks a
+  membership as D4H-managed**; its absence means the membership was added
+  manually and sync never touches it.
+- `TeamData.d4h` is non-null exactly when the team is D4H-linked (`Team_D4H`
+  row present).
+- `TeamMembershipData` has gained a nullable `d4h` sub-object (d4h-linking spec
+  §10 item 4).
+
+---
+
+## 1. Problems with what exists today
+
+### 1.1 Team roster page (`team-personnel-content.tsx`)
+
+- A hand-rolled `<Table>` with two columns: person name and a remove button.
+  No use of the `Kaga` data-table block that every other roster/list in the app
+  uses — so no column sorting, no text filter, no pagination, no empty state.
+- Sorted client-side in render (`teamMembers.sort(...)` — mutates the query
+  cache array in place, a latent bug).
+- Nothing about the membership itself is shown: not when the person joined, not
+  their D4H position/status on a linked team, not whether the row is D4H-managed
+  or manual.
+- A dead `SyncD4HTeamDialog` is parked at the bottom of the file
+  (`eslint-disable no-unused-vars`).
+
+### 1.2 Teams card (`team-memberships.tsx`)
+
+- A bare list of team-name links. No secondary information, no membership
+  status, no indication that a membership comes from D4H.
+- No empty state — a person on no teams renders an empty card with just the
+  "Teams" title.
+- `Card` + `Item` layout is fine; the content is the gap.
+
+### 1.3 Shared API gap
+
+`teams.listTeamMemberships` returns `team` and `person` as `{ id, name }` only.
+Both consumers need more (email on the roster, D4H snapshot on both), and both
+re-derive sort order. The query should return display-ready, ordered rows.
+
+---
+
+## 2. Principles
+
+1. **`Kaga` for the roster, `Card`/`Item` for the card.** Match the rest of
+   admin: rosters are data tables, sidebar cards are item lists.
+2. **D4H columns/fields appear only when they can carry data.** On a non-linked
+   team, the roster shows no Position/Status/Source columns at all — not empty
+   ones. On the person card, a membership shows a D4H status line only when that
+   membership has a `d4h` sub-object.
+3. **Manual vs D4H-managed is always legible on a linked team.** An admin
+   looking at a linked team's roster must be able to tell, per row, which
+   memberships the next sync will reconcile and which it will leave alone.
+4. **Display-only for D4H fields.** Position and status are never editable in
+   AVUT; they are snapshots refreshed by sync. The only membership mutations
+   remain add-member and remove-member.
+5. **Server sorts; the client renders.** `listTeamMemberships` returns rows in a
+   stable order; no consumer calls `.sort()` on the result.
+
+---
+
+## 3. API changes — `teams.listTeamMemberships`
+
+Extend the output row (additive; existing consumers keep working):
+
+```ts
+TeamMembershipData.schema.extend({
+  team: TeamData.schema.pick({ id: true, name: true }),
+  person: PersonData.schema.pick({ id: true, name: true, email: true }),
+  d4h: z
+    .object({
+      d4hMemberId: z.number(),
+      status: D4HMemberStatus.schema, // see §4
+      position: z.string().nullable(),
+      ref: z.string().nullable(),
+      lastSyncedAt: z.iso.datetime(),
+    })
+    .nullable(),
+});
+```
+
+- `person.email` added to the `select`.
+- `d4h` is mapped from the `TeamMembership_D4H` relation (`include: { d4h: true }`
+  on the `teamMembership.findMany`), `null` when absent.
+- **Ordering:** `orderBy: { person: { name: "asc" } }` in the Prisma query.
+  Remove the `.sort()` calls in `team-personnel-content.tsx` and
+  `add-team-member.tsx` (the latter can keep its own sort or drop it — the
+  server order is already what it wants).
+- `team-links.tsx` (count only) and `session-personnel-content.tsx` are
+  unaffected. The `getTeamMembershipsCollection` schema
+  (`src/lib/collections/team-memberships.ts`) omits `id`/`organizationId`; it
+  should also `.omit({ d4h: true })` or widen its schema — pick whichever keeps
+  its `react-db` typing happy, since it does not use the field.
+
+No permission change — still `{ team: ["view"] }`.
+
+---
+
+## 4. D4H status vocabulary & formatting
+
+D4H `Member.status` is `OPERATIONAL | NON_OPERATIONAL | OBSERVER | RETIRED`
+(`src/lib/schemas/d4h/member.ts`). Add a small display module —
+`src/lib/schemas/d4h/member-status.ts` (or fold into `member.ts`):
+
+| D4H value         | Label           | Badge variant             |
+| ----------------- | --------------- | ------------------------- |
+| `OPERATIONAL`     | Operational     | `default` / success-toned |
+| `NON_OPERATIONAL` | Non-operational | `secondary`               |
+| `OBSERVER`        | Observer        | `outline`                 |
+| `RETIRED`         | Retired         | `outline` muted           |
+
+Exports:
+
+- `D4HMemberStatus` — a zod enum + `values` array (reused by the API schema in
+  §3 and by a Kaga faceted filter).
+- `formatD4HMemberStatus(status)` → label string.
+- `<D4HMemberStatusBadge status={...} />` — a thin wrapper over
+  `components/ui/badge`.
+
+This replaces the commented-out `toTeamMembershipStatus` /`MemberStatusType`
+sketch in `member.ts`.
+
+---
+
+## 5. Membership source indicator
+
+A shared presentational component —
+`src/components/admin/teams/membership-source-badge.tsx`:
+
+```tsx
+<MembershipSourceBadge membership={row} />
+```
+
+- `row.d4h != null` → a small badge/icon reading **"D4H"** with a tooltip:
+  _"Managed by D4H sync — last synced ‹relative time›."_
+- `row.d4h == null` **and the team is D4H-linked** → a muted **"Manual"** badge,
+  tooltip: _"Added in AVUT — not affected by D4H sync."_
+- team **not** D4H-linked → renders nothing (every membership is manual; the
+  distinction carries no information).
+
+Used by both surfaces (§6, §7).
+
+---
+
+## 6. Team roster page
+
+Rewrite `team-personnel-content.tsx` to use the `Kaga` block, matching the
+personnel index and other rosters.
+
+### 6.1 Layout
+
+`Saratoga.Root` → `Saratoga.Header` (title `Members of {team.name}`,
+`Saratoga.Actions` with the gated `AdminModule_AddTeamMember_Dialog`) →
+`Kaga.TableToolbar` / `Kaga.Table` / `Kaga.TablePagination`.
+
+### 6.2 Columns (`Kaga.defineColumns`)
+
+| Column      | Shown when         | Content                                                                                    |
+| ----------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| Name        | always             | `person.name`, linking to the person detail page; `person.email` as a muted sub-line       |
+| Position    | team is D4H-linked | `d4h?.position ?? "—"`                                                                     |
+| Status      | team is D4H-linked | `<D4HMemberStatusBadge>` or `—` for manual rows                                            |
+| Source      | team is D4H-linked | `<MembershipSourceBadge>`                                                                  |
+| Joined      | always             | `formatRelativeDateTime(createdAt)`, full timestamp on hover (`DLDateDetails`-style title) |
+| _(actions)_ | always             | `Protect team:["update"]` → remove-member button (unchanged behaviour)                     |
+
+The D4H columns are built into the array conditionally on `team.d4h != null` so
+they are absent, not blank, on a plain team.
+
+Default sort: Name ascending (server already returns this order; Kaga's initial
+sort state mirrors it). Name, Position, Status, Joined are sortable.
+
+### 6.3 Toolbar
+
+- Text filter over name + email (`Kaga.filterFns` global filter).
+- On a D4H-linked team: a faceted Status filter (`D4HMemberStatus.values`).
+- Nothing else — no per-column visibility menu needed at this size.
+
+### 6.4 Pagination
+
+Standard `Kaga.TablePagination`, page size 25. Most teams are smaller; this
+keeps a 200-person team usable.
+
+### 6.5 Empty state
+
+No members → a centred empty state inside the table area: _"No one is on this
+team yet."_ plus the same "New Member" button (gated). A D4H-linked team with
+zero members additionally shows a hint: _"Run a D4H sync to pull members from
+the linked team."_ (link to the D4H card / sync dialog from the d4h-linking
+spec).
+
+### 6.6 Cleanup
+
+Delete the parked `SyncD4HTeamDialog` from this file — the sync UI is owned by
+`docs/specs/d4h-linking.md` §8 and lives on the team detail page.
+
+---
+
+## 7. Teams card (person detail page)
+
+Rewrite `team-memberships.tsx`. Still a `Card` titled "Teams", still `Item`
+rows, still a link per team to the team detail page.
+
+### 7.1 Row content
+
+Per membership:
+
+- **Primary:** `membership.team.name`.
+- **Secondary line** (only when `membership.d4h != null`):
+  `formatD4HMemberStatus(status)` + `· {position}` when position is set, muted.
+- **Trailing:** `<MembershipSourceBadge>` (renders only for D4H rows here —
+  there is no team context to say "Manual" against, so the badge component's
+  team-not-linked branch is used by passing no "linked" flag; on the person
+  card we only ever show the positive "D4H" badge). Then the existing
+  `ItemLinkActionIcon`.
+
+### 7.2 Ordering
+
+Server returns rows ordered by `person.name`; for this card re-key by team name.
+Since a single person's memberships are few, sort in the component by
+`team.name` (this is not the query-cache array — it is already this person's
+slice — but still copy before sorting: `[...memberships].sort(...)`).
+
+### 7.3 Header count + empty state
+
+- `CardTitle` gains a count: "Teams" + a muted `({n})` when `n > 0`.
+- `n === 0` → card body shows _"Not a member of any team."_ (muted, small),
+  not an empty card.
+
+### 7.4 Out of scope (noted for a follow-up)
+
+Adding a person to a team **from** this card (an "Add to team…" action mirroring
+`AdminModule_AddTeamMember_Dialog`, gated `team:["update"]`) is a natural
+extension but is a mutation-dialog task, not display. Left for a separate change
+so this spec stays display-only.
+
+---
+
+## 8. Team detail "Related" card — unchanged
+
+`team-links.tsx` keeps showing the `"{n} Personnel"` count link. Replacing that
+count with a member preview is explicitly **out of scope** for this spec (the
+roster page is one click away and now carries all the detail). Flagged here only
+so a reader knows it was considered.
+
+---
+
+## 9. Files touched
+
+| File                                                                    | Change                                                                                                         |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `src/trpc/routers/teams-router.ts`                                      | `listTeamMemberships` — `include d4h`, select `person.email`, `orderBy person.name`, extend output schema (§3) |
+| `src/lib/schemas/team-membership.ts`                                    | export the `d4h` sub-schema used by the row output                                                             |
+| `src/lib/schemas/d4h/member-status.ts` _(new)_                          | `D4HMemberStatus` enum, `formatD4HMemberStatus`, `<D4HMemberStatusBadge>` (§4)                                 |
+| `src/components/admin/teams/membership-source-badge.tsx` _(new)_        | `<MembershipSourceBadge>` (§5)                                                                                 |
+| `src/components/admin/teams/team-personnel-content.tsx`                 | rewrite on `Kaga` (§6); delete `SyncD4HTeamDialog`                                                             |
+| `src/components/admin/personnel/team-memberships.tsx`                   | richer rows, count, empty state (§7)                                                                           |
+| `src/components/admin/teams/add-team-member.tsx`                        | drop the now-redundant `.sort()` (server-ordered)                                                              |
+| `src/lib/collections/team-memberships.ts`                               | widen/omit schema for the new `d4h` field                                                                      |
+| `src/components/admin/teams/team-personnel-content.test`? / router test | cover the new `listTeamMemberships` shape + ordering                                                           |
+
+No migration. No permission changes. No new tRPC procedures.
+
+---
+
+## 10. Decisions
+
+| Question                          | Decision                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Native "role within team" field?  | **No.** Display D4H `position`/`status` read-only; nothing editable added.                                 |
+| Roster table implementation       | `Kaga` data table, replacing the hand-rolled `<Table>`.                                                    |
+| D4H columns on a non-linked team  | Absent entirely, not shown empty.                                                                          |
+| Manual vs D4H-managed distinction | `<MembershipSourceBadge>` — "D4H" / "Manual" (linked teams only), driven by `TeamMembership_D4H` presence. |
+| Where sorting happens             | Server (`orderBy person.name`); consumers stop calling `.sort()`.                                          |
+| Person card: add-to-team action   | Out of scope — display-only spec; separate mutation-dialog change.                                         |
+| Team detail "Related" count card  | Unchanged — out of scope.                                                                                  |
+| Dependency                        | Assumes `docs/specs/d4h-linking.md` (`TeamMembership_D4H`, `TeamMembershipData.d4h`) lands first.          |

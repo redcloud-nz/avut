@@ -6,6 +6,7 @@
 "use client";
 
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,6 +67,12 @@ function ChangePassword_Card() {
                     path: ["confirmNewPassword"],
                 }),
         ),
+        defaultValues: {
+            currentPassword: "",
+            newPassword: "",
+            confirmNewPassword: "",
+            revokeOtherSessions: false,
+        },
     });
 
     const mutation = useMutation({
@@ -74,11 +81,19 @@ function ChangePassword_Card() {
             newPassword: string;
             revokeOtherSessions: boolean;
         }) {
-            await authClient.changePassword({
+            const { error } = await authClient.changePassword({
                 currentPassword: formData.currentPassword,
                 newPassword: formData.newPassword,
                 revokeOtherSessions: formData.revokeOtherSessions,
             });
+            if (error) {
+                throw new Error(error.message ?? "Could not change your password.");
+            }
+        },
+        onSuccess() {
+            toast.success("Your password has been changed.");
+            form.reset();
+            mutation.reset();
         },
     });
 
@@ -157,6 +172,9 @@ function ChangePassword_Card() {
                                 </Field>
                             )}
                         />
+                        {mutation.isError && (
+                            <Alert variant="error">{mutation.error.message}</Alert>
+                        )}
                         <Field orientation="horizontal">
                             <MutationButton
                                 form="change-password-form"
@@ -166,7 +184,7 @@ function ChangePassword_Card() {
                                     pending: "Changing...",
                                     success: "Password Changed!",
                                 }}
-                                disabled={mutation.status !== "idle"}
+                                disabled={mutation.isPending}
                             />
                         </Field>
                     </FieldGroup>
