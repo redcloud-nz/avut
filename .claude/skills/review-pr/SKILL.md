@@ -13,6 +13,8 @@ Reviews one GitHub pull request end-to-end and posts the result as a single comm
 
 > Note: if the user says "D4H" when asking for this, they mean GitHub — the PR lives on `redcloud-nz/avut`.
 
+> Identity note: the review is posted as `claude-avut`, a separate GitHub account registered as a second `gh` identity, not as the PR author. GitHub refuses a review where author == reviewer; this is what makes a real (not just commented) review possible. See Step 5 for how the token is scoped in.
+
 ## Step 1 — Identify the PR and confirm
 
 ```bash
@@ -51,9 +53,9 @@ Run two passes over the diff:
 
 For each finding note: severity, `file:line`, what's wrong, and the concrete fix.
 
-## Step 4 — Compose the review comment
+## Step 4 — Compose the review body
 
-Write a single markdown comment with this structure:
+Write a single markdown review body with this structure:
 
 ```markdown
 ## Review of #<n> — <title>
@@ -78,21 +80,31 @@ Write a single markdown comment with this structure:
 
 Omit any section that has no items. If nothing blocking was found, say so plainly at the top.
 
+Decide the verdict from the findings:
+
+- Any `### Blocking` item → **Request changes**
+- No blocking items → **Approve**
+- Use **Comment** only if explicitly asked for feedback without a formal verdict (e.g. a WIP/draft PR)
+
 ## Step 5 — Confirm and post
 
-Show the full drafted comment to the user and get explicit approval before posting — this is public state on someone's PR. A quick "here's the review, posting unless you want changes" is fine.
+Show the full drafted review and the verdict to the user and get explicit approval before posting — this is public state on someone's PR. A quick "here's the review, posting as a [verdict] unless you want changes" is fine.
 
-Once approved, write the body to a tempfile and post it:
+Once approved, write the body to a tempfile and post it as an actual GitHub review under the `claude-avut` identity — scope the bot's token to just this command via `GH_TOKEN`, never `gh auth switch` (that would leave the wrong account active in this session):
 
 ```bash
-gh pr comment "$ARGUMENTS" --repo redcloud-nz/avut --body-file <tmpfile>
+GH_TOKEN=$(gh auth token --user claude-avut) gh pr review "$ARGUMENTS" --repo redcloud-nz/avut \
+  --request-changes \   # or --approve / --comment, per the verdict above
+  --body-file <tmpfile>
 ```
 
-Use `--body-file`, never inline `--body` — the body is multi-paragraph markdown. Report back the comment URL that `gh` prints.
+Use `--body-file`, never inline `--body` — the body is multi-paragraph markdown. Report back the review URL that `gh` prints.
 
 ## Common mistakes
 
 - Skipping the Step 1 confirmation and reviewing the wrong PR
 - Reviewing only the diff hunks without reading the surrounding code
-- Posting without showing the user the drafted comment first
+- Posting without showing the user the drafted review first
 - Running only the generic pass and missing AVUT-specific convention violations
+- Posting under the default `gh` account (`alexwestphal`) instead of `claude-avut` via scoped `GH_TOKEN` — besides missing the point, GitHub silently downgrades a same-author review request or rejects it outright
+- Using `gh auth switch` instead of a scoped `GH_TOKEN` prefix, leaving the wrong account active for later commands in the session

@@ -24,6 +24,14 @@ already marked used, flag that and ask before continuing.
 
 Work happens in the main checkout, not a worktree.
 
+> Identity note: both PRs this skill opens (the version-bump PR and the release
+> PR) are authored as `claude-avut`, a separate GitHub account registered as a
+> second `gh` identity — not as your default account. Scope its token to each
+> `git push`/`gh pr create` via `GH_TOKEN=$(gh auth token --user claude-avut)`,
+> never `gh auth switch` (that would leave the wrong account active for the
+> rest of the session). Everything else in this skill (merges, `gh pr view`,
+> reads) uses your default account as normal.
+
 ## Step 0 — Preflight
 
 ```bash
@@ -71,8 +79,9 @@ the user and let them edit before committing.
 
 ```bash
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
-git push -u origin "release/v$NEW"
-gh pr create --repo redcloud-nz/avut --base integration --head "release/v$NEW" \
+BOT_TOKEN=$(gh auth token --user claude-avut)
+GH_TOKEN="$BOT_TOKEN" git push -u origin "release/v$NEW"
+GH_TOKEN="$BOT_TOKEN" gh pr create --repo redcloud-nz/avut --base integration --head "release/v$NEW" \
   --title "chore(release): v$NEW ($CODENAME)" \
   --body "Step 1 of docs/releasing.md. Bumps nz.avut.version. Nothing tags or deploys from this PR."
 ```
@@ -92,7 +101,7 @@ git show origin/integration:package.json | grep -A5 '"nz.avut"'   # confirm the 
 
 ```bash
 git fetch origin -q
-gh pr create --repo redcloud-nz/avut --base production --head integration \
+GH_TOKEN=$(gh auth token --user claude-avut) gh pr create --repo redcloud-nz/avut --base production --head integration \
   --title "Release v$NEW ($CODENAME)" \
   --body "$(git log --oneline origin/production..origin/integration | head -60)"
 ```
@@ -101,17 +110,20 @@ If the payload is more than ~60 commits, summarise in the body and give the
 count rather than pasting hundreds of lines. Sanity-check the diff — this is the
 whole payload going live.
 
-## Step 3 — Hand off the merge (STOP here)
+## Step 3 — Hand off the review and merge (STOP here)
 
-The release PR will show **BLOCKED**: `production-protection` requires one
-approving review with no bypass actors, and `gh pr merge --admin` is refused by
-the local command classifier. This is deliberately a human step.
+This PR is authored by `claude-avut`, so it's a genuine second-party artifact
+for you to review like anyone else's PR — not a rubber stamp. Note:
+`production-protection`'s required-approval count is currently 0, so GitHub
+won't structurally block a merge without your review; treat this as the
+workflow rule to honor regardless. `gh pr merge --admin` is refused by the
+local command classifier either way — merging is deliberately a human step.
 
 Tell the user, in these words:
 
-> Release PR #<n> is open and BLOCKED pending review. Merge it **in the GitHub
-> UI** with **"Create a merge commit"** — not squash, not rebase. Approve it or
-> use the admin override. Tell me once it's merged and Vercel has deployed.
+> Release PR #<n> is open, authored by `claude-avut`. Please review it and
+> merge **in the GitHub UI** with **"Create a merge commit"** — not squash,
+> not rebase. Tell me once it's merged and Vercel has deployed.
 
 Then stop and wait. Do not poll.
 
