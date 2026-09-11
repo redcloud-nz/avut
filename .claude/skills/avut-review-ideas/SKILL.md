@@ -1,6 +1,6 @@
 ---
-name: review-ideas
-description: Review ideas from the docs/ideas/ directory and append structured feedback to each idea file. Trigger when the user types /review-ideas.
+name: avut-review-ideas
+description: Review ideas from the docs/ideas/ directory and append structured feedback to each idea file. Trigger when the user types /avut-review-ideas.
 effort: medium
 manual: true
 ---

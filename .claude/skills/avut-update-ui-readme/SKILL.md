@@ -1,6 +1,6 @@
 ---
-name: update-ui-readme
-description: Regenerate src/components/ui/README.md, the component catalogue for src/components/ui/. Trigger when the user types /update-ui-readme, or when a pre-commit warning flags that ui/*.tsx changed without a matching README.md update.
+name: avut-update-ui-readme
+description: Regenerate src/components/ui/README.md, the component catalogue for src/components/ui/. Trigger when the user types /avut-update-ui-readme, or when a pre-commit warning flags that ui/*.tsx changed without a matching README.md update.
 effort: medium
 manual: true
 ---

@@ -1,6 +1,6 @@
 ---
-name: idea
-description: Capture, refine, and save a project improvement idea with clarifying questions. Trigger when the user types /idea or says they have an idea to capture.
+name: avut-idea
+description: Capture, refine, and save a project improvement idea with clarifying questions. Trigger when the user types /avut-idea or says they have an idea to capture.
 effort: low
 manual: true
 ---

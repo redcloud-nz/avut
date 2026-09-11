@@ -1,6 +1,6 @@
 ---
-name: review-pr
-description: Review a GitHub pull request for this repo and post the review as a single PR comment. Trigger when the user types /review-pr with a PR number.
+name: avut-review-pr
+description: Review a GitHub pull request for this repo and post the review as a single PR comment. Trigger when the user types /avut-review-pr with a PR number.
 effort: high
 manual: true
 ---

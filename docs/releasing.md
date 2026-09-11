@@ -6,7 +6,7 @@ How a version of AVUT gets from `integration` to a tagged, deployed release.
 > 2026-09-11 (PRs [#125](https://github.com/redcloud-nz/avut/pull/125) then
 > [#126](https://github.com/redcloud-nz/avut/pull/126)) — tag `v0.8`, GitHub
 > Release **0.8 - Philomel**, first `production` deploy. The [`release`
-> skill](../.claude/skills/release/SKILL.md) automates the mechanical steps;
+> skill](../.claude/skills/avut-release/SKILL.md) automates the mechanical steps;
 > this doc is the rationale.
 
 ## The model
@@ -52,7 +52,7 @@ Write the release notes: [`docs/releases/v0.8.md`](releases/README.md), the
 hand-written top of the GitHub Release. The workflow **fails the release if this
 file is missing**, so it has to land in this PR. Keep it to a couple of
 sentences plus highlights — GitHub's full PR list gets appended automatically.
-The `/release` skill drafts it from the commit range.
+The `/avut-release` skill drafts it from the commit range.
 
 ```bash
 git commit -am "chore(release): v0.8 (Laburnum)"

@@ -9,7 +9,7 @@ passes it as `body_path` and appends GitHub's auto-generated PR list below it
 **The file must exist before `production` is pushed** — the workflow fails the
 release if `docs/releases/v{version}.md` is missing or empty. Add it in the
 same PR that bumps the version onto `integration` (step 1 of
-[`releasing.md`](../releasing.md)); the `/release` skill drafts it for you.
+[`releasing.md`](../releasing.md)); the `/avut-release` skill drafts it for you.
 
 ## Format
 

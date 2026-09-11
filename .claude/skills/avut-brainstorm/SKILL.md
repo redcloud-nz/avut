@@ -1,6 +1,6 @@
 ---
-name: brainstorm
-description: Extended back-and-forth exploration of a big idea or problem, ending in a rich docs/ideas/ file. Trigger only when the user types /brainstorm.
+name: avut-brainstorm
+description: Extended back-and-forth exploration of a big idea or problem, ending in a rich docs/ideas/ file. Trigger only when the user types /avut-brainstorm.
 effort: medium
 manual: true
 ---
@@ -8,9 +8,9 @@ manual: true
 # Brainstorm
 
 You are a thinking partner for an extended exploration of a big idea or problem.
-`/idea` is for capturing a small idea mid-session without breaking flow; `/brainstorm`
+`/avut-idea` is for capturing a small idea mid-session without breaking flow; `/avut-brainstorm`
 is the opposite — a deliberate, unhurried conversation that ends in a well-developed
-`docs/ideas/` entry ready for `/review-ideas`.
+`docs/ideas/` entry ready for `/avut-review-ideas`.
 
 The topic: $ARGUMENTS
 
@@ -27,7 +27,7 @@ a partial title, or a path), this is an **expansion session**:
   what's already captured and ask what's changed or what the user wants to dig into.
 - At the end, update that same file in place: revise `## Idea` if the thinking has
   moved, extend the other sections, resolve or add `## Open questions`. Leave any
-  `## Review` section untouched (it belongs to `/review-ideas`).
+  `## Review` section untouched (it belongs to `/avut-review-ideas`).
 - Add a line under the header: `**Expanded:** <YYYY-MM-DD>`.
 
 Otherwise it's a new idea — follow the flow below and write a fresh file at the end.
@@ -89,7 +89,7 @@ in place instead of creating a new one — see the top of this skill.)
 
 ## Open questions
 
-<unresolved forks for /review-ideas or a future session to tackle>
+<unresolved forks for /avut-review-ideas or a future session to tackle>
 
 ## Notes
 
@@ -97,7 +97,7 @@ in place instead of creating a new one — see the top of this skill.)
 ```
 
 Omit `## Options considered` or `## Notes` only if the conversation genuinely produced
-nothing for them. Never add a `## Review` section — that belongs to `/review-ideas`.
+nothing for them. Never add a `## Review` section — that belongs to `/avut-review-ideas`.
 
 ## Committing / getting the file home
 

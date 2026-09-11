@@ -1,5 +1,5 @@
 ---
-name: draft-feature
+name: avut-draft-feature
 description: Use when drafting or filing a GitHub feature request issue for this repo, before running gh issue create for an enhancement
 ---
 

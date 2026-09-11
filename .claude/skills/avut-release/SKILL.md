@@ -1,6 +1,6 @@
 ---
-name: release
-description: Cut an AVUT release — bump the version on integration, open the integration→production release PR, then verify the tag/Release/deploy after the admin merges. Trigger when the user types /release with a version.
+name: avut-release
+description: Cut an AVUT release — bump the version on integration, open the integration→production release PR, then verify the tag/Release/deploy after the admin merges. Trigger when the user types /avut-release with a version.
 effort: high
 manual: true
 ---
