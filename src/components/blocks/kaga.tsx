@@ -13,7 +13,7 @@ import {
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    EyeIcon,
+    EllipsisVerticalIcon,
     SearchIcon,
 } from "lucide-react";
 import { ComponentProps } from "react";
@@ -40,7 +40,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 import {
     Table,
     TableBody,
@@ -228,7 +233,7 @@ function KagaFilterMenuItems<TData extends RowData>({
 function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
     return (
         <div
-            className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center"
+            className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2"
             data-slot="table-toolbar"
         >
             <KagaSearchHotkey />
@@ -244,9 +249,8 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
                 <InputGroupAddon align="inline-end" className="text-muted-foreground">
                     {table.getRowCount()} results
                 </InputGroupAddon>
+                <KagaColumnVisibilityControl table={table} />
             </InputGroup>
-
-            <KagaColumnVisibilityControl table={table} />
         </div>
     );
 }
@@ -263,28 +267,30 @@ function KagaColumnVisibilityControl<TData extends RowData>({
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                    <EyeIcon className="size-4" />
-                    <ChevronDownIcon className="size-3.5" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-50" align="end">
-                <DropdownMenuGroup>
-                    <DropdownMenuLabel>Show columns</DropdownMenuLabel>
-                    {hidableColumns.map((column) => (
-                        <DropdownMenuCheckboxItem
-                            key={column.id}
-                            checked={column.getIsVisible()}
-                            onCheckedChange={(checked) => column.toggleVisibility(checked)}
-                        >
-                            {getColumnDisplayName(column.columnDef)}
-                        </DropdownMenuCheckboxItem>
-                    ))}
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <InputGroupAddon align="inline-end">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <InputGroupButton size="icon-xs" aria-label="Show/hide columns">
+                        <EllipsisVerticalIcon className="size-4" />
+                    </InputGroupButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-50" align="end">
+                    <DropdownMenuGroup>
+                        <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+                        {hidableColumns.map((column) => (
+                            <DropdownMenuCheckboxItem
+                                key={column.id}
+                                checked={column.getIsVisible()}
+                                onSelect={(ev) => ev.preventDefault()}
+                                onCheckedChange={(checked) => column.toggleVisibility(checked)}
+                            >
+                                {getColumnDisplayName(column.columnDef)}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                    </DropdownMenuGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </InputGroupAddon>
     );
 }
 
