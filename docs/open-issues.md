@@ -41,3 +41,16 @@ logEvent])`. Whole-sync atomicity isn't achievable and isn't the goal:
 - [ ] Add hotkey support to the system-admin users and organisations pages
       (extends the personnel keyboard-shortcuts pilot).
 - [ ] System-admin role assignment doesn't support assigning multiple roles.
+
+## Skill package builder
+
+- [ ] Better skill-package **import flow, driven from the packages list** itself
+      (`src/components/skill-package-builder/packages-list.tsx`) — an "Import"
+      action next to "Create" that takes an uploaded/pasted `.json` envelope,
+      rather than the current detour through the system-admin bundled-library
+      screen. Makes the export→import round-trip usable without shipping a file
+      in the repo or branching the DB by hand.
+- [ ] The packages list should **show unpublished packages by default**. It
+      currently seeds `columnFilters` with `published: [true]`, so a freshly
+      created or freshly imported (always `published: false`) package is hidden
+      until the user clears the filter.
