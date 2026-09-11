@@ -35,7 +35,7 @@ interface AdminModule_PersonnelListProps {
 /**
  * List of personnel in the organization.
  */
-export function AdminModule_PersonnelList({ organization }: AdminModule_PersonnelListProps) {
+export function AdminModule_Personnel_List({ organization }: AdminModule_PersonnelListProps) {
     const { data: personnel } = useSuspenseQuery(
         trpc.personnel.listPersonnel.queryOptions({
             organizationId: organization.id,

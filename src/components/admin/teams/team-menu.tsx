@@ -35,7 +35,7 @@ interface AdminModule_TeamMenuProps {
 
 const ACTIONS = ["delete", "d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
-export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
+export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
     const d4hEnabled = useOrganization().settings.integrations.d4h.enabled;

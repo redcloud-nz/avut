@@ -9,7 +9,7 @@ import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
 
-import { AdminModule_TeamsList } from "@/components/admin/teams/teams-list";
+import { AdminModule_Teams_List } from "@/components/admin/teams/teams-list";
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -35,7 +35,7 @@ export default async function AdminModule_TeamsList_Page(
                     ]}
                 />
                 <Std.ScrollContainer>
-                    <AdminModule_TeamsList />
+                    <AdminModule_Teams_List />
                 </Std.ScrollContainer>
             </Std.SidebarInset>
         </HydrateClient>

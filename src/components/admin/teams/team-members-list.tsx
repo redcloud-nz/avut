@@ -42,7 +42,7 @@ const hideBelowMd = {
     cellProps: { className: "hidden md:table-cell" },
 } as const;
 
-export function AdminModule_Team_Members_List({ teamId }: { teamId: TeamId }) {
+export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
 
     const [{ data: team }, { data: teamMembers }] = useSuspenseQueries({

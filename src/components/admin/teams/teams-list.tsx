@@ -33,7 +33,7 @@ import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 /**
  * List of teams in the organization.
  */
-export function AdminModule_TeamsList() {
+export function AdminModule_Teams_List() {
     const organization = useOrganization();
 
     const { data: teams } = useSuspenseQuery(
