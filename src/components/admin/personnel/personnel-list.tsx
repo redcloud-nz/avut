@@ -18,6 +18,7 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { Protect } from "@/components/protect";
 
 import { route } from "@/lib/routes";
@@ -114,7 +115,10 @@ export function AdminModule_PersonnelList({ organization }: AdminModule_Personne
             </Saratoga.Header>
 
             <div>
-                <Kaga.TableToolbar table={table} />
+                <Kaga.TableToolbar
+                    table={table}
+                    query={<TablePseudoQuery table={table} config={{ table: "Personnel" }} />}
+                />
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
             </div>

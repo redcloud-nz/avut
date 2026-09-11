@@ -28,6 +28,7 @@ import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateTeam_Dialog } from "./create-team";
+import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 
 /**
  * List of teams in the organization.
@@ -99,7 +100,10 @@ export function AdminModule_TeamsList() {
                 </Saratoga.Actions>
             </Saratoga.Header>
             <div>
-                <Kaga.TableToolbar table={table} />
+                <Kaga.TableToolbar
+                    table={table}
+                    query={<TablePseudoQuery table={table} config={{ table: "Teams" }} />}
+                />
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
             </div>

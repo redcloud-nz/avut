@@ -10,16 +10,14 @@
 import {
     ArrowDownAZIcon,
     ArrowDownZAIcon,
-    CheckIcon,
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    CopyIcon,
     EllipsisVerticalIcon,
     SearchIcon,
     TerminalIcon,
 } from "lucide-react";
-import { ComponentProps, useState } from "react";
+import { cloneElement, ComponentProps, ReactElement, useState } from "react";
 import {
     ColumnDef,
     ColumnHelper,
@@ -35,14 +33,6 @@ import {
 import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -68,6 +58,9 @@ import { cn } from "@/lib/utils";
 interface KagaTableProps<TData extends RowData> {
     table: TanstackTable<TData>;
 }
+
+/** Props Kaga.TableToolbar injects into whatever's passed as `query` (e.g. `<TablePseudoQuery />`). */
+type KagaQueryElement = ReactElement<{ open?: boolean; onOpenChange?: (open: boolean) => void }>;
 
 function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
     const isEmpty = table.getRowCount() == 0;
@@ -238,7 +231,14 @@ function KagaFilterMenuItems<TData extends RowData>({
     );
 }
 
-function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
+function KagaTableToolbar<TData extends RowData>({
+    table,
+    query,
+}: {
+    table: TanstackTable<TData>;
+    /** A rendered `<TablePseudoQuery table={table} query={{...}} />` — enables "Show query" when provided. */
+    query?: KagaQueryElement;
+}) {
     return (
         <ButtonGroup className="w-full" data-slot="table-toolbar">
             <KagaSearchHotkey />
@@ -256,14 +256,24 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
                 </InputGroupAddon>
             </InputGroup>
 
-            <KagaTableOptionsMenu table={table} />
+            <KagaTableOptionsMenu table={table} query={query} />
         </ButtonGroup>
     );
 }
 
-function KagaTableOptionsMenu<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
+function KagaTableOptionsMenu<TData extends RowData>({
+    table,
+    query,
+}: {
+    table: TanstackTable<TData>;
+    query?: KagaQueryElement;
+}) {
     const [queryDialogOpen, setQueryDialogOpen] = useState(false);
     const hidableColumns = table.getAllColumns().filter((column) => column.getCanHide());
+
+    if (hidableColumns.length === 0 && !query) {
+        return null;
+    }
 
     return (
         <>
@@ -291,114 +301,23 @@ function KagaTableOptionsMenu<TData extends RowData>({ table }: { table: Tanstac
                                     </DropdownMenuCheckboxItem>
                                 ))}
                             </DropdownMenuGroup>
-                            <DropdownMenuSeparator />
+                            {query && <DropdownMenuSeparator />}
                         </>
                     )}
-                    <DropdownMenuItem onSelect={() => setQueryDialogOpen(true)}>
-                        <TerminalIcon />
-                        Show query
-                    </DropdownMenuItem>
+                    {query && (
+                        <DropdownMenuItem onSelect={() => setQueryDialogOpen(true)}>
+                            <TerminalIcon />
+                            Show query
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
-            <KagaQueryDialog
-                table={table}
-                open={queryDialogOpen}
-                onOpenChange={setQueryDialogOpen}
-            />
+            {query &&
+                cloneElement(query, {
+                    open: queryDialogOpen,
+                    onOpenChange: setQueryDialogOpen,
+                })}
         </>
-    );
-}
-
-/**
- * A pseudo-SQL rendering of the table's current sort/filter/search/pagination
- * state, built only from what TanStack Table's own state exposes — not a real,
- * executable query, and not necessarily how the data is actually fetched.
- */
-function buildPseudoQuery<TData extends RowData>(table: TanstackTable<TData>): string {
-    const state = table.getState();
-    const whereClauses: string[] = [];
-
-    const globalFilter = state.globalFilter as string | undefined;
-    if (globalFilter) {
-        const escaped = globalFilter.replace(/'/g, "''");
-        const searchableColumns = table
-            .getAllColumns()
-            .filter((column) => column.getCanGlobalFilter());
-        const clause = searchableColumns
-            .map((column) => `${column.id} ILIKE '%${escaped}%'`)
-            .join(" OR ");
-        if (searchableColumns.length > 0) {
-            whereClauses.push(searchableColumns.length > 1 ? `(${clause})` : clause);
-        }
-    }
-
-    for (const filter of state.columnFilters) {
-        const values = (Array.isArray(filter.value) ? filter.value : [filter.value]) as unknown[];
-        const formatted = values
-            .map((value) => `'${String(value).replace(/'/g, "''")}'`)
-            .join(", ");
-        whereClauses.push(`${filter.id} IN (${formatted})`);
-    }
-
-    const lines = ["SELECT *", "FROM rows"];
-    if (whereClauses.length > 0) {
-        lines.push(`WHERE ${whereClauses.join("\n  AND ")}`);
-    }
-    if (state.sorting.length > 0) {
-        const clause = state.sorting.map((s) => `${s.id} ${s.desc ? "DESC" : "ASC"}`).join(", ");
-        lines.push(`ORDER BY ${clause}`);
-    }
-    lines.push(
-        `LIMIT ${state.pagination.pageSize} OFFSET ${state.pagination.pageIndex * state.pagination.pageSize}`,
-    );
-
-    return lines.join("\n");
-}
-
-function KagaQueryDialog<TData extends RowData>({
-    table,
-    open,
-    onOpenChange,
-}: {
-    table: TanstackTable<TData>;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
-    const [copied, setCopied] = useState(false);
-    const query = buildPseudoQuery(table);
-
-    return (
-        <Dialog
-            open={open}
-            onOpenChange={(next) => {
-                onOpenChange(next);
-                if (!next) setCopied(false);
-            }}
-        >
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Query</DialogTitle>
-                    <DialogDescription>
-                        A rough approximation of the current sort, filter and search state — not the
-                        real query behind this table.
-                    </DialogDescription>
-                </DialogHeader>
-                <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs leading-relaxed">
-                    <code>{query}</code>
-                </pre>
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            void navigator.clipboard?.writeText(query).then(() => setCopied(true));
-                        }}
-                    >
-                        {copied ? <CheckIcon /> : <CopyIcon />}
-                        {copied ? "Copied" : "Copy"}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     );
 }
 
@@ -462,7 +381,7 @@ function KagaTablePagination<TData extends RowData>({
     );
 }
 
-function getColumnDisplayName<TData extends RowData>(column: ColumnDef<TData>): string {
+export function getColumnDisplayName<TData extends RowData>(column: ColumnDef<TData>): string {
     return (
         column.meta?.columnName ??
         (typeof column.header === "string" ? column.header : column.id) ??
