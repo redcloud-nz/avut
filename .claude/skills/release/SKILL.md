@@ -55,6 +55,20 @@ indented and the pre-commit hook runs prettier; do **not** hand-reformat). If th
 codename advances, also set `nz.avut.versionName` and mark that name used in
 `docs/version-names.md` in the same commit.
 
+Write `docs/releases/v$NEW.md` — the workflow **fails the release if it's
+missing**. Draft it from the payload and the format in
+[`docs/releases/README.md`](../../../docs/releases/README.md):
+
+```bash
+git log --oneline --no-merges origin/production..origin/integration
+```
+
+Group the noteworthy commits into `### Highlights` (skip `chore: increment build
+number`, pure-internal refactors, and doc-only churn — GitHub appends the full
+list anyway). Add `### Upgrade notes` only if there's a migration / env var /
+config action. Two or three sentences of framing at the top. Show the draft to
+the user and let them edit before committing.
+
 ```bash
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
 git push -u origin "release/v$NEW"

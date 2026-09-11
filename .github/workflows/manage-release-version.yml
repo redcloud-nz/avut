@@ -2,7 +2,8 @@ name: Manage Release Version
 
 # Runs on every push to `production`. Reads the version and versionName from
 # package.json, creates a `v{version}` git tag, and publishes a GitHub Release
-# for it.
+# for it — body taken from `docs/releases/v{version}.md` with GitHub's
+# auto-generated commit/PR list appended.
 
 on:
   push:
@@ -32,6 +33,7 @@ jobs:
           VERSION_NAME=$(node -e "console.log(require('./package.json')['nz.avut'].versionName)")
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "notes_file=docs/releases/v${VERSION}.md" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag already exists
         id: check_tag
@@ -41,6 +43,15 @@ jobs:
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require release notes
+        if: steps.check_tag.outputs.exists != 'true'
+        run: |
+          NOTES="${{ steps.get_version.outputs.notes_file }}"
+          if [ ! -s "$NOTES" ]; then
+            echo "::error::Missing release notes: ${NOTES}. Add it in the version-bump PR (see docs/releasing.md)."
+            exit 1
           fi
 
       - name: Create git tag
@@ -57,6 +68,8 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           name: ${{ steps.get_version.outputs.version }} - ${{ steps.get_version.outputs.version_name }}
+          body_path: ${{ steps.get_version.outputs.notes_file }}
+          generate_release_notes: true
           draft: false
           prerelease: false
         env:

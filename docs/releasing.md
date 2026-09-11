@@ -48,6 +48,12 @@ Edit [`package.json`](../package.json) → `nz.avut.version` (and `versionName` 
 the codename advances — pick the next unused name from the top of
 [`version-names.md`](version-names.md), and mark it used there in the same PR).
 
+Write the release notes: [`docs/releases/v0.8.md`](releases/README.md), the
+hand-written top of the GitHub Release. The workflow **fails the release if this
+file is missing**, so it has to land in this PR. Keep it to a couple of
+sentences plus highlights — GitHub's full PR list gets appended automatically.
+The `/release` skill drafts it from the commit range.
+
 ```bash
 git commit -am "chore(release): v0.8 (Laburnum)"
 git push -u origin release/v0.8
@@ -90,8 +96,10 @@ check it — this is the whole payload going live.
 
 - Vercel deploys production.
 - `manage-release-version.yml` sees no matching tag, creates the annotated tag
-  and publishes the GitHub Release (`{version} - {versionName}`). For v0.8 this
-  run took ~15s.
+  and publishes the GitHub Release (`{version} - {versionName}`). The body is
+  `docs/releases/v{version}.md` with GitHub's auto-generated PR list appended
+  below it (categorised by [`.github/release.yml`](../.github/release.yml)). The
+  run fails if that notes file is missing. For v0.8 the run took ~15s.
 
 Confirm:
 
