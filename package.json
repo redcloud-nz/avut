@@ -18,6 +18,7 @@
     "db:unbranch": "bash scripts/db-unbranch.sh",
     "worktree:remove": "bash scripts/worktree-remove.sh",
     "seed:demo": "dotenv -e .env.local -- tsx prisma/seed-demo.ts",
+    "screenshot": "dotenv -e .env.local -- tsx scripts/screenshots/upload.ts",
     "build": "dotenv -e .env.local -- prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",
@@ -34,6 +35,9 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@content-collections/core": "^0.15.2",
+    "@content-collections/mdx": "^0.2.2",
+    "@content-collections/next": "^0.2.11",
     "@date-fns/utc": "^2.1.1",
     "@dnd-kit/react": "^0.3.2",
     "@flags-sdk/vercel": "^1.4.7",
@@ -67,6 +71,7 @@
     "flags": "^4.0.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.577.0",
+    "minisearch": "^7.2.0",
     "nanoid": "^5.1.0",
     "next": "^16.3.4",
     "next-themes": "^0.4.6",
@@ -100,6 +105,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@content-collections/cli": "^0.1.9",
     "@eslint/eslintrc": "^3.3.1",
     "@react-email/preview-server": "^5.2.5",
     "@tailwindcss/postcss": "^4.1.10",
@@ -112,6 +118,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "@vercel/blob": "^2.8.0",
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/ui": "^3.2.4",
     "baseline-browser-mapping": "^2.9.19",
@@ -128,6 +135,7 @@
     "prisma": "^7.8.0",
     "prisma-mock": "^1.1.0",
     "react-email": "^5.2.5",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.23.13",
     "tw-animate-css": "^1.4.0",

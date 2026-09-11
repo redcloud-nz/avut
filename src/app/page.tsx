@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Cable, Tag } from "lucide-react";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
+import { ProductShot } from "@/components/marketing/product-shot";
 import { Button } from "@/components/ui/button";
 import { CopyrightString } from "@/components/ui/copyright";
 import { ExternalLink } from "@/components/ui/link";
@@ -45,18 +46,10 @@ const NEEDS_D4H = new Set(["d4h-views", "i3"]);
 
 /**
  * Hero product screenshot — the "Assess by Person" recording view from the
- * seeded demo org (`prisma/seed-demo.ts`), captured at 1440×900.
+ * seeded demo org (`prisma/seed-demo.ts`). Managed via `npm run screenshot`;
+ * see `docs/specs/docs-screenshots.md`.
  */
-const PRODUCT_SHOT: {
-    src: string;
-    alt: string;
-    /** Fake address-bar path shown in the browser chrome. */
-    urlPath: string;
-} | null = {
-    src: "/marketing/skill-track-session.png",
-    alt: "Skill Track: recording a Rope Rescue Technician assessment session",
-    urlPath: "avut.app/orgs/your-team/skill-track/sessions/…/by-person",
-};
+const PRODUCT_SHOT_ID = "marketing/skill-track-session";
 
 const FAQ: { q: string; a: ReactNode }[] = [
     {
@@ -272,25 +265,9 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {PRODUCT_SHOT && (
-                <section className="mx-auto max-w-[1120px] px-6 pb-16 md:px-10">
-                    <div className="overflow-hidden rounded-lg border border-border">
-                        <div className="flex h-10 items-center gap-2 border-b border-border bg-muted px-3.5 font-mono text-[11px] text-muted-foreground">
-                            <span className="size-2 rounded-full bg-border" />
-                            <span className="size-2 rounded-full bg-border" />
-                            <span className="size-2 rounded-full bg-border" />
-                            <span className="ml-2.5 truncate">{PRODUCT_SHOT.urlPath}</span>
-                        </div>
-                        <Image
-                            src={PRODUCT_SHOT.src}
-                            alt={PRODUCT_SHOT.alt}
-                            width={1440}
-                            height={900}
-                            className="w-full"
-                        />
-                    </div>
-                </section>
-            )}
+            <section className="mx-auto max-w-[1120px] px-6 pb-16 md:px-10">
+                <ProductShot id={PRODUCT_SHOT_ID} />
+            </section>
 
             <div id="d4h" className="scroll-mt-20 border-y border-border bg-muted/40">
                 <section className="mx-auto grid max-w-[1120px] grid-cols-1 gap-10 px-6 py-14 md:grid-cols-2 md:px-10">

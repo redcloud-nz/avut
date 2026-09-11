@@ -6,12 +6,13 @@
 
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { HelpSheet } from "@/components/docs/help-sheet";
 import { HotkeyHelp } from "@/components/hotkey-help";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { installDevTools } from "@/client/dev-tools";
@@ -41,6 +42,9 @@ export function CommonProviders({ children }: Readonly<{ children: ReactNode }>)
                             <SidebarProvider>{children}</SidebarProvider>
                         </TooltipProvider>
                         <HotkeyHelp />
+                        <Suspense fallback={null}>
+                            <HelpSheet />
+                        </Suspense>
                     </HotkeysProvider>
                 </NuqsAdapter>
             </QueryClientProvider>

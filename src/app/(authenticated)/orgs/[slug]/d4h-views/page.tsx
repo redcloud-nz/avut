@@ -8,6 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import Link from "next/link";
 
 import {
@@ -28,7 +29,7 @@ export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]
 
     return (
         <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={["D4H Views"]} />
+            <Std.Navbar breadcrumbs={["D4H Views"]} actions={<HelpButton slug="d4h-views" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H Views Module">
                     <ItemGroup>
