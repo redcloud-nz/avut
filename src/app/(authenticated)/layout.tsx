@@ -15,9 +15,17 @@ import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 // This layout reads the session (via `requireSession()`) at the top of every authenticated
 // route, which can't be part of the static prerender shell. The full fix is pushing that read
 // behind a `<Suspense>` boundary with `use cache: private` per Next's Cache Components auth
-// guide — an app-wide restructuring. Until that migration happens, opt this segment out of
-// instant-navigation validation so it's allowed to keep blocking on the server.
-export const instant = false;
+// guide — an app-wide restructuring tracked by #135.
+//
+// This is a suppression, not a fix. Note that `instant = false` (what this replaced) does not
+// work here: it opts out only *this* segment and does not halt the tree walk, so every page
+// beneath still picks up implicit validation and reports this layout's blocking read as E1437.
+// `unstable_disableValidation` is the one form that disables validation for the whole subtree.
+// Scoped to this layout deliberately — public routes don't include it, so they keep validating
+// (which #96 depends on). Remove this once the session read moves behind a boundary.
+//
+// See docs/reviews/suspense-boundaries.md §1 for the walk-through of Next's own source.
+export const instant = { unstable_disableValidation: true } as const;
 
 export default async function AuthenticatedLayout(props: {
     modal: ReactNode;
