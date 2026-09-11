@@ -14,13 +14,13 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     EyeIcon,
-    FunnelIcon,
     SearchIcon,
 } from "lucide-react";
-import { ComponentProps, Fragment } from "react";
+import { ComponentProps } from "react";
 import {
     ColumnDef,
     ColumnHelper,
+    Column,
     createColumnHelper,
     flexRender,
     Header,
@@ -31,15 +31,13 @@ import {
 
 import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -51,7 +49,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { cn } from "@/lib/utils";
 
@@ -68,7 +65,7 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} className="">
                         {headerGroup.headers.map((header) => (
-                            <KagaTableHeadCell key={header.id} header={header} table={table} />
+                            <KagaTableHeadCell key={header.id} header={header} />
                         ))}
                     </TableRow>
                 ))}
@@ -105,86 +102,133 @@ function KagaTableHeadCell<TData extends RowData>({
     header,
 }: ComponentProps<typeof TableHeadCell> & {
     header: Header<TData, unknown>;
-    table: TanstackTable<TData>;
 }) {
-    const { columnDef } = header.column;
+    const { column } = header;
+    const { columnDef } = column;
 
-    //const canFilter = header.column.getCanFilter();
-    //const canSort = header.column.getCanSort();
-    const isSorted = header.column.getIsSorted();
+    const canSort = column.getCanSort();
+    const canFilter = column.getCanFilter() && !!columnDef.meta?.columnOptions?.length;
+    const isSorted = column.getIsSorted();
+    const label = flexRender(columnDef.header, header.getContext());
+
+    if (!canSort && !canFilter) {
+        return (
+            <TableHeadCell data-column-id={column.id} {...(columnDef.meta?.headerProps ?? {})}>
+                <div data-slot="table-head-cell-content">{label}</div>
+            </TableHeadCell>
+        );
+    }
+
+    const activeFilterCount = (column.getFilterValue() as unknown[] | undefined)?.length ?? 0;
+
     return (
         <TableHeadCell
-            key={header.id}
-            data-column-id={header.column.id}
+            data-column-id={column.id}
             {...(columnDef.meta?.headerProps ?? {})}
+            className={cn("p-0", columnDef.meta?.headerProps?.className)}
         >
-            <div className="flex items-center">
-                <div data-slot="table-head-cell-content">
-                    {flexRender(columnDef.header, header.getContext())}
-                </div>
-                <div data-slot="table-head-cell-indicators" className="flex items-center">
-                    {isSorted == "asc" && (
-                        <ArrowDownAZIcon className="size-4 ml-2 inline-block text-muted-foreground" />
-                    )}
-                    {isSorted == "desc" && (
-                        <ArrowDownZAIcon className="size-4 ml-2 inline-block text-muted-foreground" />
-                    )}
-                    {/* <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreVerticalIcon className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50" align="end">
-                            <DropdownMenuGroup>
-                                {canFilter && (
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Filter</DropdownMenuLabel>
-                                        <DropdownMenuItem></DropdownMenuItem>
-                                    </DropdownMenuGroup>
-                                )}
-                                {canSort && (
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Sort</DropdownMenuLabel>
-                                        <DropdownMenuCheckboxItem
-                                            onSelect={() => {
-                                                if (isSorted != "asc")
-                                                    header.column.toggleSorting(false);
-                                                else header.column.clearSorting();
-                                            }}
-                                            checked={isSorted === "asc"}
-                                        >
-                                            <ArrowDownAZIcon />
-                                            Ascending
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            onSelect={() => {
-                                                if (isSorted != "desc")
-                                                    header.column.toggleSorting(true);
-                                                else header.column.clearSorting();
-                                            }}
-                                            checked={isSorted === "desc"}
-                                        >
-                                            <ArrowDownZAIcon />
-                                            Descending
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuGroup>
-                                )}
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu> */}
-                </div>
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        data-slot="table-head-cell-content"
+                        className="flex h-10 w-full items-center gap-1.5 px-2 text-left font-medium outline-none select-none hover:bg-muted/50 focus-visible:bg-muted/50"
+                    >
+                        <span className="truncate">{label}</span>
+                        {isSorted == "asc" && (
+                            <ArrowDownAZIcon className="size-4 shrink-0 text-muted-foreground" />
+                        )}
+                        {isSorted == "desc" && (
+                            <ArrowDownZAIcon className="size-4 shrink-0 text-muted-foreground" />
+                        )}
+                        {activeFilterCount > 0 && (
+                            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                        <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-50" align="start">
+                    {canSort && <KagaSortMenuItems column={column} isSorted={isSorted} />}
+                    {canSort && canFilter && <DropdownMenuSeparator />}
+                    {canFilter && <KagaFilterMenuItems column={column} />}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </TableHeadCell>
     );
 }
 
-function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
-    //const columns = table.getAllColumns();
+function KagaSortMenuItems<TData extends RowData>({
+    column,
+    isSorted,
+}: {
+    column: Column<TData, unknown>;
+    isSorted: false | "asc" | "desc";
+}) {
+    return (
+        <DropdownMenuGroup>
+            <DropdownMenuLabel>Sort</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+                checked={isSorted === "asc"}
+                onSelect={(ev) => {
+                    ev.preventDefault();
+                    if (isSorted === "asc") column.clearSorting();
+                    else column.toggleSorting(false);
+                }}
+            >
+                <ArrowDownAZIcon />
+                Ascending
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+                checked={isSorted === "desc"}
+                onSelect={(ev) => {
+                    ev.preventDefault();
+                    if (isSorted === "desc") column.clearSorting();
+                    else column.toggleSorting(true);
+                }}
+            >
+                <ArrowDownZAIcon />
+                Descending
+            </DropdownMenuCheckboxItem>
+        </DropdownMenuGroup>
+    );
+}
+
+function KagaFilterMenuItems<TData extends RowData>({
+    column,
+}: {
+    column: Column<TData, unknown>;
+}) {
+    const current = (column.getFilterValue() ?? []) as unknown[];
 
     return (
+        <DropdownMenuGroup>
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            {column.columnDef.meta?.columnOptions?.map((option) => (
+                <DropdownMenuCheckboxItem
+                    key={option.label}
+                    checked={current.includes(option.value)}
+                    onSelect={(ev) => ev.preventDefault()}
+                    onCheckedChange={(checked) => {
+                        column.setFilterValue(
+                            checked
+                                ? [...current, option.value]
+                                : current.filter((v) => v !== option.value),
+                        );
+                    }}
+                >
+                    {option.label}
+                </DropdownMenuCheckboxItem>
+            ))}
+        </DropdownMenuGroup>
+    );
+}
+
+function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
+    return (
         <div
-            className="flex flex-col sm:flex-row sm:items-center gap-2 bg-accent/50 p-2 border rounded-lg"
+            className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center"
             data-slot="table-toolbar"
         >
             <KagaSearchHotkey />
@@ -197,145 +241,13 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
                 <InputGroupAddon>
                     <SearchIcon className="size-4" />
                 </InputGroupAddon>
-                <InputGroupAddon align="inline-end">{table.getRowCount()} results</InputGroupAddon>
+                <InputGroupAddon align="inline-end" className="text-muted-foreground">
+                    {table.getRowCount()} results
+                </InputGroupAddon>
             </InputGroup>
 
-            <div className="flex items-center gap-2">
-                <KagaColumnSortingControl table={table} />
-                <KagaColumnFilterControl table={table} />
-                <KagaColumnVisibilityControl table={table} />
-            </div>
+            <KagaColumnVisibilityControl table={table} />
         </div>
-    );
-}
-
-function KagaColumnSortingControl<TData extends RowData>({
-    table,
-}: {
-    table: TanstackTable<TData>;
-}) {
-    const sortableColumns = table.getAllColumns().filter((column) => column.getCanSort());
-
-    if (sortableColumns.length === 0) {
-        return null;
-    }
-
-    const currentSortedColumn =
-        sortableColumns.find((column) => column.getIsSorted()) ?? sortableColumns[0];
-
-    function handleSortChange(columnId: string) {
-        const column = sortableColumns.find((col) => col.id === columnId);
-
-        column?.toggleSorting(column.getIsSorted() === "asc" ? true : false);
-    }
-
-    function handleSortDirectionChange() {
-        const currentDirection = currentSortedColumn.getIsSorted();
-        currentSortedColumn.toggleSorting(currentDirection == "asc");
-    }
-
-    return (
-        <ButtonGroup>
-            <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                                {getColumnDisplayName(currentSortedColumn.columnDef)}
-                                <ChevronDownIcon className="size-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        Select column to sort by. <br /> Currently sorted by{" "}
-                        {getColumnDisplayName(currentSortedColumn.columnDef)}.
-                    </TooltipContent>
-                </Tooltip>
-
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup
-                            value={currentSortedColumn.id}
-                            onValueChange={handleSortChange}
-                        >
-                            {sortableColumns.map((column) => (
-                                <DropdownMenuRadioItem value={column.id} key={column.id}>
-                                    {getColumnDisplayName(column.columnDef)}
-                                </DropdownMenuRadioItem>
-                            ))}
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={handleSortDirectionChange}>
-                        {currentSortedColumn.getIsSorted() == "asc" ? (
-                            <ArrowDownAZIcon className="size-4" />
-                        ) : (
-                            <ArrowDownZAIcon className="size-4" />
-                        )}
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    Toggle sort direction. <br /> Currently{" "}
-                    {currentSortedColumn.getIsSorted() == "asc" ? "Ascending" : "Descending"}
-                </TooltipContent>
-            </Tooltip>
-        </ButtonGroup>
-    );
-}
-
-function KagaColumnFilterControl<TData extends RowData>({
-    table,
-}: {
-    table: TanstackTable<TData>;
-}) {
-    const filterableColumns = table.getAllColumns().filter((column) => column.getCanFilter());
-
-    if (filterableColumns.length === 0) {
-        return null;
-    }
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                    <FunnelIcon className="size-4" />
-                    <ChevronDownIcon className="size-3.5" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-50" align="end">
-                {filterableColumns.map((column) => {
-                    const current = (column.getFilterValue() ?? []) as unknown[];
-                    return (
-                        <DropdownMenuGroup key={column.id}>
-                            <DropdownMenuLabel>
-                                {getColumnDisplayName(column.columnDef)}
-                            </DropdownMenuLabel>
-                            {column.columnDef.meta?.columnOptions?.map((option) => (
-                                <DropdownMenuCheckboxItem
-                                    key={option.label}
-                                    checked={current.includes(option.value)}
-                                    onCheckedChange={(checked) => {
-                                        if (checked)
-                                            column.setFilterValue([...current, option.value]);
-                                        else
-                                            column.setFilterValue(
-                                                current.filter((v) => v != option.value),
-                                            );
-                                    }}
-                                >
-                                    {option.label}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuGroup>
-                    );
-                })}
-            </DropdownMenuContent>
-        </DropdownMenu>
     );
 }
 
@@ -461,7 +373,11 @@ const oneOfFilterFn = <TData extends RowData>(
     filterValue: unknown[],
 ) => filterValue.includes(row.getValue<unknown>(columnId));
 
-oneOfFilterFn.autoRemove = () => false;
+// Unchecking the last option of a column filter leaves its filterValue as `[]`. Without
+// this, the filter entry stays in table state and `[].includes(...)` hides every row
+// instead of clearing back to "show all" — so treat an empty array as "remove the filter".
+oneOfFilterFn.autoRemove = (filterValue: unknown) =>
+    !Array.isArray(filterValue) || filterValue.length === 0;
 
 oneOfFilterFn.resolveFilterValue = (filterValue: unknown) =>
     Array.isArray(filterValue) ? filterValue : [filterValue];
@@ -471,7 +387,7 @@ oneOfFilterFn.resolveFilterValue = (filterValue: unknown) =>
  * values, and render digits with `tabular-nums` so they line up column-wise.
  */
 const numericColumnMeta = {
-    headerProps: { className: "[&>div:first-child]:justify-center" },
+    headerProps: { className: "*:data-[slot=table-head-cell-content]:justify-center" },
     cellProps: { className: "text-center tabular-nums" },
 } as const;
 
