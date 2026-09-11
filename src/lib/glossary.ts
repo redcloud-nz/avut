@@ -17,8 +17,8 @@ export interface GlossaryEntry {
     shortDefinition: string;
     /** Shown on the full glossary page. */
     longDefinition: string;
-    /** Optional module badge on the glossary page. */
-    module?: ModuleId;
+    /** Optional module badges on the glossary page. */
+    modules?: ModuleId[];
     /** Slugs of other entries, rendered as "See also" on the glossary page. */
     relatedTerms?: string[];
 }
@@ -47,7 +47,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "What a user is allowed to do within an organization.",
         longDefinition:
             "Decides what a signed-in user can do inside an organization. `owner` and `admin` can manage the organization itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
-        module: "admin",
+        modules: ["admin"],
         relatedTerms: ["organization", "person"],
     },
     {
@@ -57,7 +57,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "A personnel record for someone in the organization, with or without a login.",
         longDefinition:
             "A record representing someone in the organization — a member, volunteer, or contact. A person record can exist on its own, or be linked to a user account that can sign in. Personnel are managed from the Admin module.",
-        module: "admin",
+        modules: ["admin"],
         relatedTerms: ["role", "team"],
     },
     {
@@ -66,7 +66,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "A grouping of people, used across other modules.",
         longDefinition:
             "A grouping of people within an organization, managed from the Admin module and referenced by other modules — for example, to scope who a skill session or equipment issue applies to.",
-        module: "admin",
+        modules: ["admin"],
         relatedTerms: ["person"],
     },
     {
@@ -76,7 +76,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "A standard set of items an I3 issue is built from, with optional size/config variants.",
         longDefinition:
             "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
-        module: "i3",
+        modules: ["i3"],
         relatedTerms: ["d4h"],
     },
     {
@@ -85,7 +85,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "A reusable collection of skill groups and skills that can be assessed.",
         longDefinition:
             "A collection of skill groups and skills that defines what can be assessed. Packages are authored in the Skill Package Builder and published into the Skill Track catalogue, where other organizations can adopt them. Packages aren't versioned — the published package always reflects its current state.",
-        module: "skill-track",
+        modules: ["skill-track"],
         relatedTerms: ["catalogue", "skill-check"],
     },
     {
@@ -95,7 +95,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "A record that a person was assessed on a skill, with an outcome and a date.",
         longDefinition:
             "A single record that a person was assessed on a skill, with an outcome and a date. Checks done together are grouped into a session — for example, one assessor working through a group of people on a training day. Assessing requires the `skills-assessor` role.",
-        module: "skill-track",
+        modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
     {
@@ -104,7 +104,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "The set of skill packages available to an organization in Skill Track.",
         longDefinition:
             "The set of skill packages available to an organization's Skill Track module, drawn from packages published by skill package authors.",
-        module: "skill-track",
+        modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
     {
@@ -114,7 +114,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
             "D4H is an external team- and equipment-management platform. Connecting an organization's D4H access token unlocks read-only D4H Views and lets I3 PPE templates link to D4H equipment. D4H integration is optional — organizations without a token simply don't see D4H-backed data.",
-        module: "d4h-views",
+        modules: ["d4h-views", "i3"],
         relatedTerms: ["ppe-template"],
     },
 ] as const;

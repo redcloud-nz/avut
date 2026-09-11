@@ -36,9 +36,11 @@ export default function GlossaryPage() {
                     <div key={entry.slug} id={entry.slug} className="scroll-mt-20">
                         <dt className="flex items-center gap-2">
                             <span className="text-xl font-semibold">{entry.term}</span>
-                            {entry.module && (
-                                <Badge variant="outline">{Modules[entry.module].label}</Badge>
-                            )}
+                            {entry.modules?.map((moduleId) => (
+                                <Badge key={moduleId} variant="outline">
+                                    {Modules[moduleId].label}
+                                </Badge>
+                            ))}
                         </dt>
                         <dd className="mt-1 leading-7">
                             <p>{entry.longDefinition}</p>
