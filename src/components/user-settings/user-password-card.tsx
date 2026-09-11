@@ -51,9 +51,6 @@ function SetPassword_Card() {
             setCodeSent(true);
             toast.success("We sent a 6-digit code to your email.");
         },
-        onError(error) {
-            toast.error(error.message ?? "Could not send a verification code.");
-        },
     });
 
     const form = useForm({
@@ -82,14 +79,14 @@ function SetPassword_Card() {
 
     const setPassword = useMutation({
         async mutationFn(formData: { code: string; newPassword: string }) {
-            const { error } = await authClient.emailOtp.resetPassword({
-                email: email!,
-                otp: formData.code,
-                password: formData.newPassword,
-            });
-            if (error) {
-                throw new Error(error.message ?? "Could not set your password.");
-            }
+            await authClient.emailOtp.resetPassword(
+                {
+                    email: email!,
+                    otp: formData.code,
+                    password: formData.newPassword,
+                },
+                { throw: true },
+            );
         },
         onSuccess() {
             toast.success("Your password has been set. You can now sign in with it.");
@@ -215,8 +212,12 @@ function SetPassword_Card() {
                                 {setPassword.isError && (
                                     <Alert variant="error">{setPassword.error.message}</Alert>
                                 )}
+                                {sendCode.isError && (
+                                    <Alert variant="error">{sendCode.error.message}</Alert>
+                                )}
                                 <Field orientation="horizontal">
                                     <MutationButton
+                                        type="submit"
                                         form="set-password-form"
                                         status={setPassword.status}
                                         text={{
