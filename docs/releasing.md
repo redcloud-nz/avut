@@ -2,9 +2,12 @@
 
 How a version of AVUT gets from `integration` to a tagged, deployed release.
 
-> **Status:** procedure, not yet exercised. No release has been cut. Follow this
-> for the first one and correct it from what actually happens; once it's proven,
-> it should become a `release` skill.
+> **Status:** exercised once. **v0.8 (Philomel)** was cut this way on
+> 2026-09-11 (PRs [#125](https://github.com/redcloud-nz/avut/pull/125) then
+> [#126](https://github.com/redcloud-nz/avut/pull/126)) — tag `v0.8`, GitHub
+> Release **0.8 - Philomel**, first `production` deploy. The [`release`
+> skill](../.claude/skills/release/SKILL.md) automates the mechanical steps;
+> this doc is the rationale.
 
 ## The model
 
@@ -45,6 +48,12 @@ Edit [`package.json`](../package.json) → `nz.avut.version` (and `versionName` 
 the codename advances — pick the next unused name from the top of
 [`version-names.md`](version-names.md), and mark it used there in the same PR).
 
+Write the release notes: [`docs/releases/v0.8.md`](releases/README.md), the
+hand-written top of the GitHub Release. The workflow **fails the release if this
+file is missing**, so it has to land in this PR. Keep it to a couple of
+sentences plus highlights — GitHub's full PR list gets appended automatically.
+The `/release` skill drafts it from the commit range.
+
 ```bash
 git commit -am "chore(release): v0.8 (Laburnum)"
 git push -u origin release/v0.8
@@ -72,19 +81,37 @@ check it — this is the whole payload going live.
 
 - **Merge commit — not squash, not rebase.** `integration` and `production` must
   keep shared history; squashing makes them diverge and every subsequent release
-  PR shows spurious conflicts.
-- Merging is admin-only and auto-merge is disabled, so an admin does this
-  deliberately in the GitHub UI.
+  PR shows spurious conflicts. (`production-protection` currently still _allows_
+  all three merge methods — the discipline is manual. Pick "Create a merge
+  commit" in the UI.)
+- The PR will sit at **BLOCKED** — `production-protection` requires one approving
+  review and has no bypass actors. An admin approves it (or uses the admin
+  override) and merges **in the GitHub UI**. `gh pr merge --admin` is refused by
+  the local command classifier, so this step is not scriptable from here.
+- Expect the first release PR to be enormous — for v0.8 it was the entire ~203
+  commit history, because `production` had only ever held the initial scaffold.
+  Every release after that is a normal-sized diff.
 
 ### 4. Automated, on the push to `production`
 
 - Vercel deploys production.
-- `manage-release-version.yml` sees no `v0.8` tag, creates the annotated tag
-  `v0.8` and publishes the GitHub Release **0.8 - Laburnum**.
+- `manage-release-version.yml` sees no matching tag, creates the annotated tag
+  and publishes the GitHub Release (`{version} - {versionName}`). The body is
+  `docs/releases/v{version}.md` with GitHub's auto-generated PR list appended
+  below it (categorised by [`.github/release.yml`](../.github/release.yml)). The
+  run fails if that notes file is missing. For v0.8 the run took ~15s.
 
-Confirm: `gh release list --repo redcloud-nz/avut` and the production site's
-footer version string (`AVUT v0.8 (Laburnum)` — production is the only place it
-appears).
+Confirm:
+
+```bash
+gh release list --repo redcloud-nz/avut          # {version} - {versionName}, Latest
+git ls-remote --tags origin | grep v0.8          # tag pushed
+curl -s https://www.avut.nz/api/version          # "environment":"production","display":"v0.8 (Philomel)"
+curl -s "https://www.avut.nz/api/version?format=shields"   # "color":"brightgreen"
+```
+
+and the production site's footer version string (`AVUT v0.8 (Philomel)` —
+production is the only place it appears).
 
 ## Hotfixes
 
