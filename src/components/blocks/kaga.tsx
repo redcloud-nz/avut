@@ -31,6 +31,7 @@ import {
 
 import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -40,12 +41,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import {
     Table,
     TableBody,
@@ -232,7 +228,7 @@ function KagaFilterMenuItems<TData extends RowData>({
 
 function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTable<TData> }) {
     return (
-        <div className="flex items-center gap-2" data-slot="table-toolbar">
+        <ButtonGroup className="w-full" data-slot="table-toolbar">
             <KagaSearchHotkey />
             <InputGroup className={cn("grow bg-background")}>
                 <InputGroupInput
@@ -246,9 +242,10 @@ function KagaTableToolbar<TData extends RowData>({ table }: { table: TanstackTab
                 <InputGroupAddon align="inline-end" className="text-muted-foreground">
                     {table.getRowCount()} results
                 </InputGroupAddon>
-                <KagaColumnVisibilityControl table={table} />
             </InputGroup>
-        </div>
+
+            <KagaColumnVisibilityControl table={table} />
+        </ButtonGroup>
     );
 }
 
@@ -264,30 +261,28 @@ function KagaColumnVisibilityControl<TData extends RowData>({
     }
 
     return (
-        <InputGroupAddon align="inline-end">
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <InputGroupButton size="icon-xs" aria-label="Show/hide columns">
-                        <EllipsisVerticalIcon className="size-4" />
-                    </InputGroupButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        <DropdownMenuLabel>Show columns</DropdownMenuLabel>
-                        {hidableColumns.map((column) => (
-                            <DropdownMenuCheckboxItem
-                                key={column.id}
-                                checked={column.getIsVisible()}
-                                onSelect={(ev) => ev.preventDefault()}
-                                onCheckedChange={(checked) => column.toggleVisibility(checked)}
-                            >
-                                {getColumnDisplayName(column.columnDef)}
-                            </DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </InputGroupAddon>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Show/hide columns">
+                    <EllipsisVerticalIcon className="size-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-50" align="end">
+                <DropdownMenuGroup>
+                    <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+                    {hidableColumns.map((column) => (
+                        <DropdownMenuCheckboxItem
+                            key={column.id}
+                            checked={column.getIsVisible()}
+                            onSelect={(ev) => ev.preventDefault()}
+                            onCheckedChange={(checked) => column.toggleVisibility(checked)}
+                        >
+                            {getColumnDisplayName(column.columnDef)}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
 
