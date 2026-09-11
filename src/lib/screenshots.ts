@@ -33,8 +33,13 @@ export const screenshotIndex = indexJson as Record<string, ScreenshotEntry>;
 
 /**
  * Look up a screenshot by id. Throws if the id is missing so a stale reference
- * fails `next build` rather than shipping a broken image — capture it with
- * `npm run screenshot` before referencing a new `id`.
+ * is loud rather than shipping a broken image — capture it with `npm run
+ * screenshot` before referencing a new `id`. Both callers are client
+ * components, so this actually fails `next build` only where the caller is
+ * statically rendered (`<ProductShot>` on the home page); on the dynamically-
+ * rendered `/docs/*` routes (`<Screenshot>`) a bad id instead throws in the
+ * browser at request time. See `docs/specs/docs-screenshots.md` for the Phase 2
+ * plan to catch that case with a build-time coverage lint check.
  */
 export function getScreenshot(id: string): ScreenshotEntry {
     const entry = screenshotIndex[id];

@@ -5,17 +5,62 @@
  * `<ProductShot id="…" />` — a screenshot on the public marketing site. Reads the
  * same committed index as the docs `<Screenshot>` (see `@/lib/screenshots` and
  * `docs/specs/docs-screenshots.md`), rendered with `next/image` and no
- * browser-chrome frame. Light/dark sources swap by CSS; clicking opens the image
- * full-size in a dialog, the same as the docs `<Screenshot>`.
+ * browser-chrome frame. Light/dark sources are art-directed via `<picture>`
+ * (`getImageProps` + a `prefers-color-scheme` `<source>`) so the browser fetches
+ * only the variant it needs, not both. The trigger image is on the hero's LCP
+ * path, so it's marked `priority`.
  */
 
 "use client";
 
-import Image from "next/image";
+import { getImageProps } from "next/image";
 
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getScreenshot } from "@/lib/screenshots";
 import { cn } from "@/lib/utils";
+
+function ThemedPicture({
+    light,
+    dark,
+    alt,
+    sizes,
+    priority,
+    className,
+}: {
+    light: { url: string; width: number; height: number };
+    dark: { url: string; width: number; height: number };
+    alt: string;
+    sizes: string;
+    priority?: boolean;
+    className?: string;
+}) {
+    const {
+        props: { srcSet: darkSrcSet },
+    } = getImageProps({
+        src: dark.url,
+        alt,
+        width: dark.width,
+        height: dark.height,
+        sizes,
+        priority,
+    });
+    const { props: lightImgProps } = getImageProps({
+        src: light.url,
+        alt,
+        width: light.width,
+        height: light.height,
+        sizes,
+        priority,
+    });
+
+    return (
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcSet={darkSrcSet} />
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- `alt` is in the getImageProps() spread; the rule can't see through it */}
+            <img {...lightImgProps} className={className} />
+        </picture>
+    );
+}
 
 export function ProductShot({
     id,
@@ -42,21 +87,13 @@ export function ProductShot({
                         className,
                     )}
                 >
-                    <Image
-                        src={entry.light.url}
+                    <ThemedPicture
+                        light={entry.light}
+                        dark={dark}
                         alt={entry.alt}
-                        width={entry.light.width}
-                        height={entry.light.height}
                         sizes="(min-width: 1120px) 1040px, 100vw"
-                        className="w-full dark:hidden"
-                    />
-                    <Image
-                        src={dark.url}
-                        alt={entry.alt}
-                        width={dark.width}
-                        height={dark.height}
-                        sizes="(min-width: 1120px) 1040px, 100vw"
-                        className="hidden w-full dark:block"
+                        priority
+                        className="w-full"
                     />
                 </button>
             </DialogTrigger>
@@ -65,21 +102,12 @@ export function ProductShot({
                 style={{ width: maxWidth }}
             >
                 <DialogTitle className="sr-only">{entry.alt}</DialogTitle>
-                <Image
-                    src={entry.light.url}
+                <ThemedPicture
+                    light={entry.light}
+                    dark={dark}
                     alt={entry.alt}
-                    width={entry.light.width}
-                    height={entry.light.height}
                     sizes="95vw"
-                    className="h-auto w-full dark:hidden"
-                />
-                <Image
-                    src={dark.url}
-                    alt={entry.alt}
-                    width={dark.width}
-                    height={dark.height}
-                    sizes="95vw"
-                    className="hidden h-auto w-full dark:block"
+                    className="h-auto w-full"
                 />
                 {dialogCaption && (
                     <figcaption className="text-muted-foreground border-t px-3 py-2 text-center text-sm">

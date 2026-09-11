@@ -4,9 +4,10 @@
  *
  * `<Screenshot id="…" />` — the only sanctioned way to put an image in docs MDX.
  * Resolves the id against the committed index (`screenshots.generated.json`),
- * renders a framed figure with light/dark sources swapped by CSS, and opens the
- * image full-size in a dialog on click (it is often shown in the narrow `?help=`
- * sheet). See `docs/specs/docs-screenshots.md`.
+ * renders a framed figure with light/dark sources art-directed via `<picture>`
+ * (a `prefers-color-scheme` `<source>`, so the browser fetches only the variant
+ * it needs), and opens the image full-size in a dialog on click (it is often
+ * shown in the narrow `?help=` sheet). See `docs/specs/docs-screenshots.md`.
  */
 
 "use client";
@@ -14,8 +15,42 @@
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getScreenshot } from "@/lib/screenshots";
 
+function ThemedPicture({
+    light,
+    dark,
+    alt,
+    loading,
+    className,
+}: {
+    light: { url: string; width: number; height: number };
+    dark: { url: string; width: number; height: number };
+    alt: string;
+    loading?: "lazy" | "eager";
+    className?: string;
+}) {
+    return (
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcSet={dark.url} />
+            <img
+                src={light.url}
+                width={light.width}
+                height={light.height}
+                alt={alt}
+                loading={loading}
+                className={className}
+            />
+        </picture>
+    );
+}
+
 interface ScreenshotProps {
-    /** Key into `screenshots.generated.json`. Unknown id → build-time error. */
+    /**
+     * Key into `screenshots.generated.json`. An unknown id throws when resolved —
+     * this component is client-rendered on a dynamically-rendered `/docs/*` route,
+     * so that surfaces in the browser at request time, not at `next build`. Only
+     * the statically-rendered `<ProductShot>` on the home page actually fails the
+     * build.
+     */
     id: string;
     /** Optional `<figcaption>` shown under the frame. */
     caption?: string;
@@ -44,23 +79,12 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                         type="button"
                         className="ring-border block w-full cursor-zoom-in overflow-hidden rounded-lg ring-1"
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
-                        <img
-                            src={entry.light.url}
-                            width={entry.light.width}
-                            height={entry.light.height}
+                        <ThemedPicture
+                            light={entry.light}
+                            dark={dark}
                             alt={resolvedAlt}
                             loading="lazy"
-                            className="block h-auto w-full dark:hidden"
-                        />
-                        {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
-                        <img
-                            src={dark.url}
-                            width={dark.width}
-                            height={dark.height}
-                            alt={resolvedAlt}
-                            loading="lazy"
-                            className="hidden h-auto w-full dark:block"
+                            className="block h-auto w-full"
                         />
                     </button>
                 </DialogTrigger>
@@ -69,21 +93,11 @@ export function Screenshot({ id, caption, alt }: ScreenshotProps) {
                     style={{ width: maxWidth }}
                 >
                     <DialogTitle className="sr-only">{resolvedAlt}</DialogTitle>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
-                    <img
-                        src={entry.light.url}
-                        width={entry.light.width}
-                        height={entry.light.height}
+                    <ThemedPicture
+                        light={entry.light}
+                        dark={dark}
                         alt={resolvedAlt}
-                        className="block h-auto w-full dark:hidden"
-                    />
-                    {/* eslint-disable-next-line @next/next/no-img-element -- deliberate: blob-hosted docs images, explicit dimensions, CSS theme swap (see docs/specs/docs-screenshots.md) */}
-                    <img
-                        src={dark.url}
-                        width={dark.width}
-                        height={dark.height}
-                        alt={resolvedAlt}
-                        className="hidden h-auto w-full dark:block"
+                        className="block h-auto w-full"
                     />
                     {caption && (
                         <figcaption className="text-muted-foreground border-t px-3 py-2 text-center text-sm">

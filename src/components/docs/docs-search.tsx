@@ -5,7 +5,8 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MiniSearch from "minisearch";
 
@@ -18,9 +19,12 @@ type Result = Pick<DocsSearchRecord, "slug" | "title" | "section" | "description
 
 /** Client-side docs search. Loads the static index lazily on first focus. */
 export function DocsSearch() {
+    const router = useRouter();
+    const listboxId = useId();
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
     const [records, setRecords] = useState<DocsSearchRecord[] | null>(null);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const engine = useMemo(() => {
@@ -65,10 +69,30 @@ export function DocsSearch() {
         return engine.search(query).slice(0, 8) as unknown as Result[];
     }, [engine, query]);
 
+    // Keep the active option in range as the result set changes underneath it.
+    useEffect(() => {
+        setActiveIndex(results.length === 0 ? -1 : 0);
+    }, [results]);
+
+    function select(r: Result) {
+        setOpen(false);
+        setQuery("");
+        router.push(docsHref(r.slug));
+    }
+
+    const showPopover = open && query.trim().length >= 2;
+
     return (
         <div ref={containerRef} className="relative">
             <Input
                 type="search"
+                role="combobox"
+                aria-expanded={showPopover}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                    showPopover && activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined
+                }
                 placeholder="Search docs…"
                 className="h-8 w-40 sm:w-56"
                 value={query}
@@ -80,21 +104,45 @@ export function DocsSearch() {
                     setQuery(e.target.value);
                     setOpen(true);
                 }}
+                onKeyDown={(e) => {
+                    if (!showPopover || results.length === 0) return;
+                    if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setActiveIndex((i) => (i + 1) % results.length);
+                    } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setActiveIndex((i) => (i - 1 + results.length) % results.length);
+                    } else if (e.key === "Enter" && activeIndex >= 0) {
+                        e.preventDefault();
+                        select(results[activeIndex]);
+                    }
+                }}
             />
-            {open && query.trim().length >= 2 && (
-                <div className="bg-popover absolute right-0 z-50 mt-1 w-80 rounded-md border p-1 shadow-md">
+            {showPopover && (
+                <div
+                    id={listboxId}
+                    role="listbox"
+                    className="bg-popover absolute right-0 z-50 mt-1 w-80 rounded-md border p-1 shadow-md"
+                >
                     {results.length === 0 ? (
                         <p className="text-muted-foreground px-2 py-3 text-sm">No matches.</p>
                     ) : (
-                        results.map((r) => (
+                        results.map((r, i) => (
                             <Link
                                 key={r.slug}
+                                id={`${listboxId}-${i}`}
+                                role="option"
+                                aria-selected={i === activeIndex}
                                 href={docsHref(r.slug)}
+                                onMouseEnter={() => setActiveIndex(i)}
                                 onClick={() => {
                                     setOpen(false);
                                     setQuery("");
                                 }}
-                                className={cn("hover:bg-muted block rounded px-2 py-1.5 text-sm")}
+                                className={cn(
+                                    "block rounded px-2 py-1.5 text-sm",
+                                    i === activeIndex ? "bg-muted" : "hover:bg-muted",
+                                )}
                             >
                                 <span className="font-medium">{r.title}</span>
                                 <span className="text-muted-foreground ml-2 text-xs">
