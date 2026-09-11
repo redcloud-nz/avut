@@ -52,6 +52,11 @@ export type OrganizationConfig = Prisma.OrganizationConfigModel;
  */
 export type Team = Prisma.TeamModel;
 /**
+ * Model Organization_D4H
+ *
+ */
+export type Organization_D4H = Prisma.Organization_D4HModel;
+/**
  * Model Team_D4H
  *
  */
@@ -101,6 +106,11 @@ export type Person = Prisma.PersonModel;
  *
  */
 export type TeamMembership = Prisma.TeamMembershipModel;
+/**
+ * Model TeamMembership_D4H
+ *
+ */
+export type TeamMembership_D4H = Prisma.TeamMembership_D4HModel;
 /**
  * Model Note
  *

@@ -7,13 +7,15 @@
 
 import Link from "next/link";
 
+import { AdminModule_Organization_D4HCard } from "@/components/admin/organization/d4h-org-card";
+import { AdminModule_OrganizationMenu } from "@/components/admin/organization/organization-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
@@ -40,17 +42,6 @@ export default async function AdminModule_Organization_Page(
                         <Saratoga.Title>Organization</Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ organization: ["update"] }}>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        href={route("/orgs/[slug]/admin/organization/--update", {
-                                            slug,
-                                        })}
-                                    >
-                                        <ObjectIcons.Edit />
-                                    </Link>
-                                </Button>
-                            </Protect>
-                            <Protect permissions={{ organization: ["update"] }}>
                                 <Button variant="outline" size="icon" asChild>
                                     <Link
                                         href={route("/orgs/[slug]/admin/organization/settings", {
@@ -61,6 +52,7 @@ export default async function AdminModule_Organization_Page(
                                     </Link>
                                 </Button>
                             </Protect>
+                            <AdminModule_OrganizationMenu slug={slug} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -68,6 +60,20 @@ export default async function AdminModule_Organization_Page(
                             <Card>
                                 <CardHeader>
                                     <CardTitle>{organization.name}</CardTitle>
+                                    <CardAction>
+                                        <Protect permissions={{ organization: ["update"] }}>
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/admin/organization/--update",
+                                                        { slug },
+                                                    )}
+                                                >
+                                                    <ObjectIcons.Edit />
+                                                </Link>
+                                            </Button>
+                                        </Protect>
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DL>
@@ -80,6 +86,7 @@ export default async function AdminModule_Organization_Page(
                                     </DL>
                                 </CardContent>
                             </Card>
+                            <AdminModule_Organization_D4HCard />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>

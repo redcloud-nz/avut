@@ -221,6 +221,66 @@ export async function fetchD4HTeamDetailCached(
 }
 
 /**
+ * Fetch a D4H organisation's detail record (title, timezone, currency, reporting
+ * calendar), addressed through one of its teams. Cached for hours.
+ */
+export async function fetchD4HOrganisationCached(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    d4hOrganisationId: number,
+): Promise<D4HOrganisation> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${token.id}-organisations-${d4hOrganisationId}`);
+
+    const fetchClient = getD4HFetchClient(token);
+
+    const { data, response } = await fetchClient.GET(
+        "/v3/{context}/{contextId}/organisations/{organisationId}",
+        {
+            params: {
+                path: {
+                    context: "team",
+                    contextId: d4hTeamId,
+                    organisationId: d4hOrganisationId,
+                },
+            },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H organisation ${d4hOrganisationId}: ${response.status} ${response.statusText}`,
+        );
+    }
+    return D4HOrganisation.schema.parse(data);
+}
+
+/**
+ * Fetch a linked team's D4H members, filtered to the operational set that sync
+ * reconciles against (`OPERATIONAL` + `NON_OPERATIONAL`). Not cached — sync wants
+ * the current roster.
+ */
+export async function fetchD4HTeamMembersForSync(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<D4HMember[]> {
+    const fetchClient = getD4HFetchClient(token);
+
+    const { data, response } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
+        params: {
+            path: { context: "team", contextId: d4hTeamId },
+            query: { status: ["OPERATIONAL", "NON_OPERATIONAL"] },
+        },
+    });
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch members of D4H team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
+    return z.object({ results: D4HMember.schema.array() }).parse(data).results;
+}
+
+/**
  * Fetch the given member's activity attendance records that overlap the given window,
  * for one team.
  */

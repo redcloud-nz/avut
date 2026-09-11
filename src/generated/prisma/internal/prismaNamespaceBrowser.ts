@@ -55,6 +55,7 @@ export const ModelName = {
     Organization: "Organization",
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
+    Organization_D4H: "Organization_D4H",
     Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
     OrganizationUser: "OrganizationUser",
@@ -65,6 +66,7 @@ export const ModelName = {
     D4HAccessToken: "D4HAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
+    TeamMembership_D4H: "TeamMembership_D4H",
     Note: "Note",
     SkillPackage: "SkillPackage",
     SkillGroup: "SkillGroup",
@@ -197,12 +199,31 @@ export const TeamScalarFieldEnum = {
 
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
 
+export const Organization_D4HScalarFieldEnum = {
+    organizationId: "organizationId",
+    serverCode: "serverCode",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hOrganisationName: "d4hOrganisationName",
+    d4hTimezone: "d4hTimezone",
+    d4hCurrency: "d4hCurrency",
+    d4hReportingStartDay: "d4hReportingStartDay",
+    d4hReportingStartMonth: "d4hReportingStartMonth",
+    syncTokenId: "syncTokenId",
+    lastSyncedAt: "lastSyncedAt",
+} as const;
+
+export type Organization_D4HScalarFieldEnum =
+    (typeof Organization_D4HScalarFieldEnum)[keyof typeof Organization_D4HScalarFieldEnum];
+
 export const Team_D4HScalarFieldEnum = {
     teamId: "teamId",
     d4hTeamId: "d4hTeamId",
     d4hTeamName: "d4hTeamName",
-    d4hServer: "d4hServer",
-    d4hLastSyncedAt: "d4hLastSyncedAt",
+    d4hServerCode: "d4hServerCode",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hTimezone: "d4hTimezone",
+    linkTokenId: "linkTokenId",
+    lastSyncedAt: "lastSyncedAt",
 } as const;
 
 export type Team_D4HScalarFieldEnum =
@@ -329,12 +350,25 @@ export const TeamMembershipScalarFieldEnum = {
     personId: "personId",
     tags: "tags",
     properties: "properties",
+    status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
 } as const;
 
 export type TeamMembershipScalarFieldEnum =
     (typeof TeamMembershipScalarFieldEnum)[keyof typeof TeamMembershipScalarFieldEnum];
+
+export const TeamMembership_D4HScalarFieldEnum = {
+    teamMembershipId: "teamMembershipId",
+    d4hMemberId: "d4hMemberId",
+    d4hStatus: "d4hStatus",
+    d4hPosition: "d4hPosition",
+    d4hRef: "d4hRef",
+    d4hRoleId: "d4hRoleId",
+} as const;
+
+export type TeamMembership_D4HScalarFieldEnum =
+    (typeof TeamMembership_D4HScalarFieldEnum)[keyof typeof TeamMembership_D4HScalarFieldEnum];
 
 export const NoteScalarFieldEnum = {
     id: "id",

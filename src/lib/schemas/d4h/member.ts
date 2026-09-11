@@ -118,6 +118,14 @@ import * as z from "zod";
 //     return mapping[d4hMemberStatus];
 // }
 
+/** The `status` field of a D4H member, stored verbatim on `TeamMembership_D4H.d4hStatus`. */
+export const D4HMemberStatus = {
+    values: ["OPERATIONAL", "NON_OPERATIONAL", "OBSERVER", "RETIRED"] as const,
+    schema: z.enum(["OPERATIONAL", "NON_OPERATIONAL", "OBSERVER", "RETIRED"] as const),
+} as const;
+
+export type D4HMemberStatus = z.infer<typeof D4HMemberStatus.schema>;
+
 export const D4HMember = {
     schema: z.object({
         id: z.number(),
@@ -137,7 +145,7 @@ export const D4HMember = {
             id: z.number().nullable(),
             resourceType: z.literal("Role"),
         }),
-        status: z.enum(["OPERATIONAL", "NON_OPERATIONAL", "OBSERVER", "RETIRED"] as const),
+        status: D4HMemberStatus.schema,
     }),
 } as const;
 

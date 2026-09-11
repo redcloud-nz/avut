@@ -465,7 +465,10 @@ export async function getPersonByEmail(
     email: string,
 ): Promise<PersonData | null> {
     const person = await ctx.prisma.person.findFirst({
-        where: { organizationId: ctx.organizationId, email },
+        where: {
+            organizationId: ctx.organizationId,
+            email: { equals: email, mode: "insensitive" },
+        },
     });
 
     return person ? PersonData.fromRecord(person) : null;

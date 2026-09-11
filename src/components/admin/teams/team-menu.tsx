@@ -4,17 +4,17 @@
  */
 "use client";
 
-import { CableIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
+import { D4HIcons, DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/menu-action";
 
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
@@ -32,10 +33,15 @@ interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
-export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+const ACTIONS = ["delete", "d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
+export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
+
+    const d4hEnabled = useOrganization().settings.integrations.d4h.enabled;
+    const canUpdate = useHasPermission({ team: ["update"] });
     const canDelete = useHasPermission({ team: ["delete"] });
+    const linked = team.d4h !== null;
 
     const actions: MenuActionProps[] = [
         {
@@ -58,19 +64,51 @@ export function AdminModule_TeamMenu({ team }: AdminModule_TeamMenuProps) {
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="end">
+                <DropdownMenuContent className="w-44" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <Protect
-                        permissions={{ team: ["update"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem disabled={!allowed}>
-                                <CableIcon /> Link to D4H
-                            </DropdownMenuItem>
-                        )}
-                    />
                     {actions.map((a) => (
                         <MenuAction key={a.verb} {...a} />
                     ))}
+
+                    {d4hEnabled && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>D4H</DropdownMenuLabel>
+                            <DropdownMenuGroup>
+                                {!linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        onClick={() =>
+                                            void setAction("d4h-link", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Link /> Link to D4H
+                                    </DropdownMenuItem>
+                                )}
+                                {linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        onClick={() =>
+                                            void setAction("d4h-sync", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Sync /> Sync with D4H
+                                    </DropdownMenuItem>
+                                )}
+                                {linked && (
+                                    <DropdownMenuItem
+                                        disabled={!canUpdate}
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() =>
+                                            void setAction("d4h-unlink", { history: "push" })
+                                        }
+                                    >
+                                        <D4HIcons.Unlink /> Unlink from D4H
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuGroup>
+                        </>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 

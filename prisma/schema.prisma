@@ -111,6 +111,7 @@ model Organization {
   invitations OrganizationInvitation[] @relation("organization_invitation_to_organization")
   teams       Team[]                   @relation("team_to_organization")
   users       OrganizationUser[]       @relation("organization_user_to_organization")
+  d4h         Organization_D4H?        @relation("organization_d4h_to_organization")
 
   // Owned records
   logEntries                LogEntry[]                 @relation("log_entry_to_organization")
@@ -123,9 +124,9 @@ model Organization {
   d4hAccessTokens           D4HAccessToken[]           @relation("d4h_access_token_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
-  i3IssuedItems             I3IssuedItem[]             @relation("i3_issued_item_to_organization")
-  i3Templates               I3Template[]               @relation("i3_template_to_organization")
-  formInstances             FormInstance[]             @relation("form_instance_to_organization")
+  i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
+  i3Templates   I3Template[]   @relation("i3_template_to_organization")
+  formInstances FormInstance[] @relation("form_instance_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -160,19 +161,52 @@ model Team {
   @@map("teams")
 }
 
-enum TeamType {
-  General
-  D4HDefined
+// The resolved D4H-organisation identity for an AVUT organisation, plus a cache of
+// that org's D4H attributes. Distinct from `integrations.d4h` settings (policy);
+// this is resolved foreign identity + fetched data. Created lazily on the first
+// `linkTeamToD4H`. See docs/specs/d4h-linking.md §3.1.
+model Organization_D4H {
+  organizationId String
+  organization   Organization @relation("organization_d4h_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  serverCode        String
+  // Set → org-linked mode. null while the row exists → org-less-team mode (§5).
+  d4hOrganisationId Int?
+
+  // Cache of the D4H organisation's attributes (null in org-less-team mode).
+  d4hOrganisationName    String?
+  d4hTimezone            String?
+  d4hCurrency            String?
+  d4hReportingStartDay   Int?
+  d4hReportingStartMonth Int?
+
+  // The organisation access token a scheduled sync should use (Phase 2).
+  syncTokenId String?
+  syncToken   D4HAccessToken? @relation("organization_d4h_sync_token", fields: [syncTokenId], references: [id], onDelete: SetNull)
+
+  // Pure sync bookkeeping — last refresh of the cached attributes above. Not a D4H value.
+  lastSyncedAt DateTime?
+
+  @@unique([organizationId])
+  @@map("organization_d4h")
 }
 
 model Team_D4H {
   teamId String
   team   Team   @relation("team_d4h_to_team", fields: [teamId], references: [id], onDelete: Cascade)
 
-  d4hTeamId    Int
-  d4hTeamName  String
-  d4hServer    String
-  d4hLastSyncedAt DateTime?
+  d4hTeamId         Int
+  d4hTeamName       String
+  d4hServerCode     String
+  d4hOrganisationId Int?
+  d4hTimezone       String?
+
+  // Informational — the token that created the link.
+  linkTokenId String?
+  linkToken   D4HAccessToken? @relation("team_d4h_link_token", fields: [linkTokenId], references: [id], onDelete: SetNull)
+
+  // Pure sync bookkeeping — set on every apply and on the first pull at link time.
+  lastSyncedAt DateTime?
 
   @@unique([teamId])
   @@map("team_d4h")
@@ -198,11 +232,11 @@ model OrganizationUser {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now()) @updatedAt
 
-  personId      String?       @unique
-  person        Person?       @relation("person_to_organization_user", fields: [personId], references: [id], onDelete: SetNull)
+  personId String? @unique
+  person   Person? @relation("person_to_organization_user", fields: [personId], references: [id], onDelete: SetNull)
 
-  @@index([organizationId])
   @@unique([organizationId, userId])
+  @@index([organizationId])
   @@map("organization_users")
 }
 
@@ -324,9 +358,8 @@ enum RecordStatus {
   Deleted
 }
 
-
 model D4HAccessToken {
-  id             String       @id
+  id             String        @id
   organizationId String?
   organization   Organization? @relation("d4h_access_token_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
@@ -336,9 +369,12 @@ model D4HAccessToken {
   serverCode     String
   status         String
   expiresAt      DateTime
-  metadata       Json         @default("{}")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  metadata       Json          @default("{}")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
+  syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
 
   @@index([organizationId])
   @@map("d4h_access_tokens")
@@ -348,24 +384,23 @@ model Person {
   id             String       @id
   organizationId String
   organization   Organization @relation("person_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  
-  name           String
-  email          String
-  tags           String[]     @default([])
-  properties     Json         @default("{}")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  status         RecordStatus @default(Active)
 
-  issuedItems                  I3IssuedItem[]      @relation("i3_issued_item_to_person")
+  name       String
+  email      String
+  tags       String[]     @default([])
+  properties Json         @default("{}")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  status     RecordStatus @default(Active)
+
+  issuedItems                  I3IssuedItem[]          @relation("i3_issued_item_to_person")
   organizationInvitation       OrganizationInvitation? @relation("organization_invitation_to_person")
-  organizationUser             OrganizationUser?   @relation("person_to_organization_user")
-  skillChecksAsAssessee        SkillCheck[]        @relation("skill_check_assessee")
-  skillChecksAsAssessor        SkillCheck[]        @relation("skill_check_assessor")
-  skillCheckSessionsAsAssessee SkillCheckSession[] @relation("skill_check_session_assessees")
-  skillCheckSessionsAsAssessor SkillCheckSession[] @relation("skill_check_session_assessors")
-  teamMemberships              TeamMembership[]    @relation("team_membership_to_person")
+  organizationUser             OrganizationUser?       @relation("person_to_organization_user")
+  skillChecksAsAssessee        SkillCheck[]            @relation("skill_check_assessee")
+  skillChecksAsAssessor        SkillCheck[]            @relation("skill_check_assessor")
+  skillCheckSessionsAsAssessee SkillCheckSession[]     @relation("skill_check_session_assessees")
+  skillCheckSessionsAsAssessor SkillCheckSession[]     @relation("skill_check_session_assessors")
+  teamMemberships              TeamMembership[]        @relation("team_membership_to_person")
 
   @@unique([organizationId, email]) // Only one person per email address in an organization
   @@index([organizationId])
@@ -373,22 +408,44 @@ model Person {
 }
 
 model TeamMembership {
-  id         String   @id
+  id             String       @id
   organizationId String
   organization   Organization @relation("team_membership_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  teamId     String
-  team       Team     @relation("team_membership_to_team", fields: [teamId], references: [id], onDelete: Cascade)
-  personId   String
-  person     Person   @relation("team_membership_to_person", fields: [personId], references: [id], onDelete: Cascade)
-  tags       String[] @default([])
-  properties Json     @default("{}")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  teamId         String
+  team           Team         @relation("team_membership_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  personId       String
+  person         Person       @relation("team_membership_to_person", fields: [personId], references: [id], onDelete: Cascade)
+  tags           String[]     @default([])
+  properties     Json         @default("{}")
+  status         RecordStatus @default(Active)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  d4h TeamMembership_D4H? @relation("team_membership_d4h_to_team_membership")
 
   @@unique([teamId, personId])
   @@index([teamId])
   @@index([personId])
+  @@index([teamId, status])
   @@map("team_memberships")
+}
+
+// Presence of this row marks a membership as D4H-managed. Memberships without it
+// were added manually and are never touched by sync. See docs/specs/d4h-linking.md §3.3.
+model TeamMembership_D4H {
+  teamMembershipId String
+  teamMembership   TeamMembership @relation("team_membership_d4h_to_team_membership", fields: [teamMembershipId], references: [id], onDelete: Cascade)
+
+  d4hMemberId Int
+  // Raw D4H value: OPERATIONAL / NON_OPERATIONAL / OBSERVER / RETIRED.
+  d4hStatus   String
+  d4hPosition String?
+  d4hRef      String?
+  d4hRoleId   Int?
+
+  @@unique([teamMembershipId])
+  @@index([d4hMemberId])
+  @@map("team_membership_d4h")
 }
 
 // Notes models
@@ -434,18 +491,18 @@ model SkillPackage {
 }
 
 model SkillGroup {
-  id              String       @id
-  skillPackageId  String
-  skillPackage    SkillPackage @relation("skill_group_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
-  name            String
-  description     String
-  tags            String[]     @default([])
-  properties      Json         @default("{}")
-  sequence        Int          @default(0)
-  defaultInclude  Boolean      @default(true)
-  status          RecordStatus @default(Active)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id
+  skillPackageId String
+  skillPackage   SkillPackage @relation("skill_group_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  tags           String[]     @default([])
+  properties     Json         @default("{}")
+  sequence       Int          @default(0)
+  defaultInclude Boolean      @default(true)
+  status         RecordStatus @default(Active)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   skills                Skill[]              @relation("skill_to_skill_group")
   subscriptionOverrides SkillGroupOverride[] @relation("skill_group_override_to_skill_group")
@@ -459,7 +516,7 @@ model Skill {
   skillPackageId  String
   skillPackage    SkillPackage @relation("skill_to_skill_package", fields: [skillPackageId], references: [id], onDelete: Cascade)
   skillGroupId    String
-  skillGroup      SkillGroup  @relation("skill_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
+  skillGroup      SkillGroup   @relation("skill_to_skill_group", fields: [skillGroupId], references: [id], onDelete: Cascade)
   name            String
   description     String
   tags            String[]     @default([])
@@ -515,7 +572,7 @@ model SkillCheckSession {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  skillChecks    SkillCheck[]     @relation("skill_check_session_checks")
+  skillChecks SkillCheck[] @relation("skill_check_session_checks")
 
   @@unique([organizationId, sessionNumber])
   @@index([organizationId])
@@ -619,63 +676,61 @@ model I3Template {
   organization   Organization @relation("i3_template_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   description    String
-  
-  status         RecordStatus @default(Active)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
 
-  d4h             I3Template_D4H? @relation("i3_template_d4h_to_i3_template")
-  variants        I3TemplateVariant[] @relation("i3_template_variant_to_i3_template")
+  status    RecordStatus @default(Active)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  d4h      I3Template_D4H?     @relation("i3_template_d4h_to_i3_template")
+  variants I3TemplateVariant[] @relation("i3_template_variant_to_i3_template")
 
   @@index([organizationId])
   @@map("i3_templates")
 }
 
 model I3Template_D4H {
-  templateId    String
-  template      I3Template @relation("i3_template_d4h_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  template   I3Template @relation("i3_template_d4h_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
 
   categoryId    Int
   categoryTitle String
   kindId        Int
-  kindTitle       String
+  kindTitle     String
 
   outputRefFormat String
   requireSN       Boolean
 
-  @@unique([templateId])  
+  @@unique([templateId])
   @@map("i3_template_d4h")
 }
 
-
 model I3TemplateVariant {
-  id            String       @id
-  templateId   String
-  template     I3Template   @relation("i3_template_variant_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
-  name           String
-  
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id         String     @id
+  templateId String
+  template   I3Template @relation("i3_template_variant_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
+  name       String
 
-  d4h             I3TemplateVariant_D4H? @relation("i3_template_variant_d4h_to_i3_template_variant")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  d4h I3TemplateVariant_D4H? @relation("i3_template_variant_d4h_to_i3_template_variant")
 
   @@index([templateId])
   @@map("i3_template_variants")
 }
 
 model I3TemplateVariant_D4H {
-  variantId     String
-  variant       I3TemplateVariant @relation("i3_template_variant_d4h_to_i3_template_variant", fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   I3TemplateVariant @relation("i3_template_variant_d4h_to_i3_template_variant", fields: [variantId], references: [id], onDelete: Cascade)
 
-  brandId       Int
-  brandTitle    String
-  modelId       Int
-  modelTitle    String
+  brandId    Int
+  brandTitle String
+  modelId    Int
+  modelTitle String
 
-  @@unique([variantId])  
+  @@unique([variantId])
   @@map("i3_template_variant_d4h")
 }
-
 
 model FormInstance {
   id             String       @id
@@ -685,30 +740,30 @@ model FormInstance {
   userId         String?
   user           User?        @relation("form_instance_to_user", fields: [userId], references: [id], onDelete: SetNull)
 
-  formData       Json         @default("{}")
-  formStatus     String       @default("Draft")
+  formData   Json   @default("{}")
+  formStatus String @default("Draft")
 
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items          FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+  items FormInstanceItem[] @relation("form_instance_item_to_form_instance")
 
   @@index([formKey, organizationId, userId])
   @@map("form_instances")
 }
 
 model FormInstanceItem {
-  id             String             @id
+  id             String       @id
   formInstanceId String
-  formInstance   FormInstance       @relation("form_instance_item_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
-  
-  parentItemId   String?            
-  parentItem     FormInstanceItem?  @relation("form_instance_item_to_parent_item", fields: [parentItemId], references: [id], onDelete: Cascade)
+  formInstance   FormInstance @relation("form_instance_item_to_form_instance", fields: [formInstanceId], references: [id], onDelete: Cascade)
 
-  collectionKey  String
-  formData       Json               @default("{}")
+  parentItemId String?
+  parentItem   FormInstanceItem? @relation("form_instance_item_to_parent_item", fields: [parentItemId], references: [id], onDelete: Cascade)
 
-  children       FormInstanceItem[] @relation("form_instance_item_to_parent_item")
+  collectionKey String
+  formData      Json   @default("{}")
+
+  children FormInstanceItem[] @relation("form_instance_item_to_parent_item")
 
   @@index([formInstanceId])
   @@map("form_instance_items")

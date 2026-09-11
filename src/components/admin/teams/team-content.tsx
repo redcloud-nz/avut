@@ -8,18 +8,16 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
+import { AdminModule_Team_D4HCard } from "./d4h-link-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_TeamMenu } from "./team-menu";
 import { AdminModule_UpdateTeam_Dialog } from "./update-team";
@@ -78,39 +76,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                 </CardContent>
                             </Card>
 
-                            {team.d4h && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>D4H Integration</CardTitle>
-                                        <CardAction>
-                                            <Protect permissions={{ team: ["update"] }}>
-                                                <Button variant="ghost">
-                                                    <ObjectIcons.Edit />
-                                                </Button>
-                                            </Protect>
-                                        </CardAction>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DL>
-                                            <DLTerm>D4H Team ID</DLTerm>
-                                            <DLDetails>{team.d4h.d4hTeamId}</DLDetails>
-                                            <DLTerm>D4H Team Name</DLTerm>
-                                            <DLDetails>{team.d4h.d4hTeamName}</DLDetails>
-                                            <DLTerm>D4H Server</DLTerm>
-                                            <DLDetails>
-                                                {getD4HServer(team.d4h.d4hServer).name}
-                                            </DLDetails>
-                                            <DLTerm>D4H Last Sync</DLTerm>
-
-                                            {team.d4h.d4hLastSyncedAt ? (
-                                                <DLDateDetails date={team.d4h.d4hLastSyncedAt} />
-                                            ) : (
-                                                <DLDetails>Never</DLDetails>
-                                            )}
-                                        </DL>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <AdminModule_Team_D4HCard team={team} />
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">

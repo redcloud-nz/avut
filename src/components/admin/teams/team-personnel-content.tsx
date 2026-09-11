@@ -5,25 +5,14 @@
 "use client";
 
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { ComponentProps } from "react";
-import { toast } from "sonner";
 
-import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogCloseButton,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
     Table,
     TableBody,
@@ -35,7 +24,7 @@ import {
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { TeamData, TeamId } from "@/lib/schemas/team";
+import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_AddTeamMember_Dialog } from "./add-team-member";
@@ -151,71 +140,5 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
-    );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function SyncD4HTeamDialog({ team, ...props }: ComponentProps<typeof Dialog> & { team: TeamData }) {
-    const syncMutation = useMutation(
-        trpc.teams.syncronizeD4HTeam.mutationOptions({
-            onError(error) {
-                console.error("Failed to synchronize with D4H:", error);
-                toast.error(`Failed to synchronize with D4H: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success("Team synchronized with D4H");
-
-                handleOpenChange(false);
-            },
-            onSettled(result, error, variables, _onMutateResult, context) {
-                // Invalidate team memberships to reflect any changes from the sync
-                context.client.invalidateQueries(
-                    trpc.teams.listTeamMemberships.queryFilter({
-                        organizationId: team.organizationId,
-                        teamId: team.id,
-                    }),
-                );
-            },
-        }),
-    );
-
-    function handleOpenChange(open: boolean) {
-        if (!open) {
-            syncMutation.reset();
-        }
-        props.onOpenChange?.(open);
-    }
-
-    return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Synchronize with D4H</DialogTitle>
-                    <DialogDescription>
-                        This will synchronize the team with its linked D4H team, adding and removing
-                        personnel as needed to match the D4H team composition. Are you sure you want
-                        to proceed?
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="button"
-                        status={syncMutation.status}
-                        text={{
-                            idle: "Synchronize",
-                            pending: "Synchronizing",
-                            success: "Synchronized",
-                        }}
-                        onClick={() =>
-                            syncMutation.mutate({
-                                teamId: team.id,
-                                organizationId: team.organizationId,
-                            })
-                        }
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     );
 }
