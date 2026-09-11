@@ -15,7 +15,8 @@ import { glossaryBySlug } from "@/lib/glossary";
 export function KeyTerms({ slugs }: { slugs: string[] }) {
     const entries = slugs
         .map((slug) => glossaryBySlug.get(slug))
-        .filter((entry) => entry !== undefined);
+        .filter((entry) => entry !== undefined)
+        .sort((a, b) => a.term.localeCompare(b.term));
     if (entries.length === 0) return null;
 
     return (

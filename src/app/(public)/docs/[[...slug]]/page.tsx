@@ -42,8 +42,9 @@ export default async function DocsPage({ params }: DocsPageProps) {
 
     return (
         <article>
-            <MDXContent code={doc.mdx} components={docsMdxComponents} />
+            <MDXContent code={doc.introMdx} components={docsMdxComponents} />
             <KeyTerms slugs={doc.keyTerms} />
+            {doc.restMdx && <MDXContent code={doc.restMdx} components={docsMdxComponents} />}
         </article>
     );
 }

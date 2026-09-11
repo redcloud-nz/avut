@@ -48,7 +48,16 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         longDefinition:
             "Decides what a signed-in user can do inside an organization. `owner` and `admin` can manage the organization itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
         modules: ["admin"],
-        relatedTerms: ["organization", "person"],
+        relatedTerms: ["organization", "user", "person"],
+    },
+    {
+        slug: "user",
+        term: "User",
+        shortDefinition: "An account that can sign in, and the role it holds.",
+        longDefinition:
+            "An account that can sign in to AVUT, with a role that decides what it can do in an organization. A user is distinct from a person: a person record can exist without a user account attached, and one user can belong to several organizations.",
+        modules: ["admin"],
+        relatedTerms: ["person", "role"],
     },
     {
         slug: "person",
@@ -56,17 +65,15 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "A personnel record for someone in the organization, with or without a login.",
         longDefinition:
-            "A record representing someone in the organization — a member, volunteer, or contact. A person record can exist on its own, or be linked to a user account that can sign in. Personnel are managed from the Admin module.",
-        modules: ["admin"],
-        relatedTerms: ["role", "team"],
+            "A record representing someone in the organization — a member, volunteer, or contact. A person record can exist on its own, or be linked to a user account that can sign in.",
+        relatedTerms: ["user", "role", "team"],
     },
     {
         slug: "team",
         term: "Team",
         shortDefinition: "A grouping of people, used across other modules.",
         longDefinition:
-            "A grouping of people within an organization, managed from the Admin module and referenced by other modules — for example, to scope who a skill session or equipment issue applies to.",
-        modules: ["admin"],
+            "A grouping of people within an organization, referenced by other modules — for example, to scope who a skill session or equipment issue applies to.",
         relatedTerms: ["person"],
     },
     {
@@ -85,8 +92,26 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "A reusable collection of skill groups and skills that can be assessed.",
         longDefinition:
             "A collection of skill groups and skills that defines what can be assessed. Packages are authored in the Skill Package Builder and published into the Skill Track catalogue, where other organizations can adopt them. Packages aren't versioned — the published package always reflects its current state.",
-        modules: ["skill-track"],
-        relatedTerms: ["catalogue", "skill-check"],
+        modules: ["skill-track", "skill-package-builder"],
+        relatedTerms: ["catalogue", "skill", "skill-group", "skill-check"],
+    },
+    {
+        slug: "skill",
+        term: "Skill",
+        shortDefinition: "A single assessable capability within a skill package.",
+        longDefinition:
+            "A single assessable capability defined inside a skill package. Skills are organized into skill groups and are what a skill check actually records an outcome against.",
+        modules: ["skill-track", "skill-package-builder"],
+        relatedTerms: ["skill-group", "skill-package", "skill-check"],
+    },
+    {
+        slug: "skill-group",
+        term: "Skill group",
+        shortDefinition: "A named grouping of related skills within a skill package.",
+        longDefinition:
+            "A named grouping of related skills within a skill package, used to organize a package's skills and structure how reports roll checks up.",
+        modules: ["skill-track", "skill-package-builder"],
+        relatedTerms: ["skill", "skill-package"],
     },
     {
         slug: "skill-check",
@@ -94,13 +119,40 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "A record that a person was assessed on a skill, with an outcome and a date.",
         longDefinition:
-            "A single record that a person was assessed on a skill, with an outcome and a date. Checks done together are grouped into a session — for example, one assessor working through a group of people on a training day. Assessing requires the `skills-assessor` role.",
+            "A single record that a person was assessed on a skill, with an outcome and a date. Checks done together are grouped into a skill check session. Assessing requires the `skills-assessor` role.",
         modules: ["skill-track"],
-        relatedTerms: ["skill-package"],
+        relatedTerms: ["skill-package", "skill-check-session", "assessor", "assessee"],
+    },
+    {
+        slug: "skill-check-session",
+        term: "Skill check session",
+        shortDefinition: "A group of skill checks done together, e.g. on one training day.",
+        longDefinition:
+            "Groups the skill checks done together — for example, one assessor working through a group of people on a training day. Reports roll a session's checks up into a matrix so gaps are visible at a glance.",
+        modules: ["skill-track"],
+        relatedTerms: ["skill-check", "assessor"],
+    },
+    {
+        slug: "assessor",
+        term: "Assessor",
+        shortDefinition: "The person carrying out a skill check on an assessee.",
+        longDefinition:
+            "The person carrying out a skill check on an assessee. Assessing requires the `skills-assessor` role. One assessor typically records several checks in a single skill check session.",
+        modules: ["skill-track"],
+        relatedTerms: ["assessee", "skill-check"],
+    },
+    {
+        slug: "assessee",
+        term: "Assessee",
+        shortDefinition: "The person being assessed in a skill check.",
+        longDefinition:
+            "The person a skill check is recorded against — the one being assessed by an assessor. An assessee can view their own results and the reports their role allows.",
+        modules: ["skill-track"],
+        relatedTerms: ["assessor", "skill-check"],
     },
     {
         slug: "catalogue",
-        term: "Catalogue",
+        term: "Skill package catalogue",
         shortDefinition: "The set of skill packages available to an organization in Skill Track.",
         longDefinition:
             "The set of skill packages available to an organization's Skill Track module, drawn from packages published by skill package authors.",
@@ -114,7 +166,6 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
             "D4H is an external team- and equipment-management platform. Connecting an organization's D4H access token unlocks read-only D4H Views and lets I3 PPE templates link to D4H equipment. D4H integration is optional — organizations without a token simply don't see D4H-backed data.",
-        modules: ["d4h-views", "i3"],
         relatedTerms: ["ppe-template"],
     },
 ] as const;
