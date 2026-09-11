@@ -13,8 +13,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { ObjectIcons } from "@/components/icons";
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -23,7 +22,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -31,69 +29,59 @@ import { ObjectName } from "@/components/ui/typography";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
-import { PersonId } from "@/lib/schemas/person";
-import { TeamData } from "@/lib/schemas/team";
+import { PersonRef } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
+export function AdminModule_AddPersonToTeam_Dialog({ person }: { person: PersonRef }) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["add-member"] as const),
+        parseAsStringLiteral(["add-to-team"] as const),
     );
-    const dialogOpen = action === "add-member";
+    const dialogOpen = action === "add-to-team";
 
-    const personnelQuery = useQuery(
-        trpc.personnel.listPersonnel.queryOptions({
-            organizationId: organization.id,
-        }),
+    const teamsQuery = useQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
-    const personnel = (personnelQuery.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
-
-    const teamMembershipsQuery = useQuery(
+    const membershipsQuery = useQuery(
         trpc.teams.listTeamMemberships.queryOptions({
             organizationId: organization.id,
-            teamId: team.id,
+            personId: person.id,
         }),
     );
-    const teamMemberships = teamMembershipsQuery.data ?? [];
 
-    const assignedIds = new Set(teamMemberships.map((tm) => tm.personId));
-    const personOptions = personnel
-        .filter((person) => !assignedIds.has(person.id))
-        .map((person) => ({ value: person.id, label: person.name }));
+    const joinedTeamIds = new Set((membershipsQuery.data ?? []).map((m) => m.teamId));
+    const teamOptions = (teamsQuery.data ?? [])
+        .filter((team) => !joinedTeamIds.has(team.id))
+        .map((team) => ({ value: team.id, label: team.name }));
 
     const form = useForm({
-        resolver: zodResolver(
-            z.object({
-                personId: PersonId.schema,
-            }),
-        ),
+        resolver: zodResolver(z.object({ teamId: TeamId.schema })),
     });
 
     const mutation = useMutation(
         trpc.teams.createTeamMembership.mutationOptions({
             meta: { effects: teamsEffects.createTeamMembership },
             onError(error) {
-                console.error("Failed to add team member:", error);
-                toast.error(`Failed to add team member: ${error.message}`);
+                console.error("Failed to add person to team:", error);
+                toast.error(`Failed to add person to team: ${error.message}`);
             },
             onSuccess({ created }) {
                 toast.success(
                     <>
-                        <ObjectName>{created.person.name}</ObjectName> added to team{" "}
-                        <ObjectName>{team.name}</ObjectName>.
+                        <ObjectName>{person.name}</ObjectName> added to team{" "}
+                        <ObjectName>{created.team.name}</ObjectName>.
                     </>,
                 );
-
                 handleOpenChange(false);
             },
         }),
     );
 
     function handleOpenChange(open: boolean) {
-        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
+        void setAction(open ? "add-to-team" : null, { history: open ? "push" : "replace" });
     }
 
     useEffect(() => {
@@ -104,54 +92,41 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [dialogOpen]);
 
-    const handleSubmit = form.handleSubmit(
-        (formData) => {
-            mutation.mutate({
-                organizationId: organization.id,
-                teamId: team.id,
-                personId: formData.personId,
-                create: {
-                    tags: [],
-                    properties: {},
-                },
-            });
-        },
-        (errors) => {
-            console.error("Form validation errors:", errors);
-        },
-    );
+    const handleSubmit = form.handleSubmit((formData) => {
+        mutation.mutate({
+            organizationId: organization.id,
+            teamId: formData.teamId,
+            personId: person.id,
+            create: { tags: [], properties: {} },
+        });
+    });
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Member</span>
-                </Button>
-            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add Person to Team</DialogTitle>
+                    <DialogTitle>Add to Team</DialogTitle>
                     <DialogDescription>
-                        Select a person to add to <ObjectName>{team.name}</ObjectName>.
+                        Add <ObjectName>{person.name}</ObjectName> to a team.
                     </DialogDescription>
                 </DialogHeader>
                 <form id="add-person-to-team-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             control={form.control}
-                            name="personId"
+                            name="teamId"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Person</FieldLabel>
+                                    <FieldLabel>Team</FieldLabel>
                                     <SearchableSelect
                                         value={field.value ?? null}
                                         onValueChange={(value) =>
-                                            field.onChange((value as PersonId) || null)
+                                            field.onChange((value as TeamId) || null)
                                         }
-                                        options={personOptions}
-                                        placeholder="Select a person"
-                                        searchPlaceholder="Search personnel..."
-                                        emptyMessage="No personnel found."
+                                        options={teamOptions}
+                                        placeholder="Select a team"
+                                        searchPlaceholder="Search teams..."
+                                        emptyMessage="No teams found."
                                         aria-invalid={fieldState.invalid}
                                     />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
@@ -166,11 +141,7 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
                         type="submit"
                         form="add-person-to-team-form"
                         status={mutation.status}
-                        text={{
-                            idle: "Add",
-                            pending: "Adding",
-                            success: "Added",
-                        }}
+                        text={{ idle: "Add", pending: "Adding", success: "Added" }}
                     />
                 </DialogFooter>
             </DialogContent>

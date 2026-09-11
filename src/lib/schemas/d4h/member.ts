@@ -5,119 +5,6 @@
 
 import * as z from "zod";
 
-// export interface D4HMember {
-//     id: number;
-//     resourceType: "Member";
-
-//     alertActivityApproval: boolean;
-//     alertAllQualifications: boolean;
-//     alertGear: boolean;
-//     alertQualifications: boolean;
-//     chatAutosubscribe: boolean;
-//     chatDailyDigest: boolean;
-//     contactUpdateMail: boolean;
-//     costPerHour: number;
-//     costPerUse: number;
-//     countReportingEvent: number;
-//     countReportingExercise: number;
-//     countReportingHours: number;
-//     countReportingIncident: number;
-//     countRollingHours: number;
-//     countRollingHoursEvent: number;
-//     countRollingHoursExercise: number;
-//     countRollingHoursIncident: number;
-//     //createdAt: DateString;
-//     credits: number;
-//     //customFields: Record<string, CustomField>;
-//     //customStatus: ResourceId<"CustomMemberStatus">;
-//     defaultDuty: "ON" | "OFF";
-//     //defaultEquipmentLocation: ResourceId<"MemberLocation">;
-//     email: {
-//         value: string;
-//         verified: boolean;
-//     };
-//     //endsAt: DateString;
-//     home: {
-//         phone: string;
-//         verified: boolean;
-//     };
-//     idTag: string;
-//     //startsAt: DateString;
-//     //lastLogin: DateString;
-//     location: {
-//         type: "Point";
-//         coordinates: [number, number];
-//     };
-//     //locationBookmark: ResourceId<"LocationBookmark">;
-//     mobile: {
-//         phone: string;
-//         verified: boolean;
-//     };
-//     name: string;
-//     notes: string;
-//     pager: {
-//         phone: string;
-//         email: string;
-//     };
-//     percReportingEvent: number;
-//     percReportingExercise: number;
-//     percReportingIncident: number;
-//     percRollingEvent: number;
-//     percRollingExercise: number;
-//     percRollingIncident: number;
-//     permission: number;
-//     position: string;
-//     primaryEmergencyContact: EmergencyContact;
-//     ref: string;
-//     //retiredReason: ResourceId<"RetiredReason", number | null>;
-//     //role: ResourceId<"Role">;
-//     secondaryEmergencyContact: EmergencyContact;
-//     //signedTandC: DateString | null;
-//     status: MemberStatusType;
-//     teamAgreementSigned: string | null;
-//     owner: D4HResource<"Team">;
-//     updatedAt: string;
-//     weeklyDayOfWeek: number;
-//     weeklyDayOfWeekUtc: number;
-//     weeklyHourOfDay: number;
-//     weeklyHourOfDayUtc: number;
-//     weeklyMail: true;
-//     work: {
-//         phone: string;
-//     };
-// }
-
-// export interface EmergencyContact {
-//     name: string;
-//     primaryPhone: string;
-//     secondaryPhone: string;
-//     relation: string;
-// }
-
-// export type MemberStatusType =
-//     | "OPERATIONAL"
-//     | "NON_OPERATIONAL"
-//     | "OBSERVER"
-//     | "RETIRED";
-
-// export type BasicD4HMember = Pick<
-//     D4HMember,
-//     "id" | "email" | "name" | "owner" | "position" | "ref" | "status"
-// >;
-
-// export function toTeamMembershipStatus(
-//     d4hMemberStatus: D4HMember["status"],
-// ): TeamMembershipD4HInfo["d4hStatus"] {
-//     const mapping = {
-//         OPERATIONAL: "Operational",
-//         NON_OPERATIONAL: "NonOperational",
-//         OBSERVER: "Observer",
-//         RETIRED: "Retired",
-//     } satisfies Record<MemberStatusType, TeamMembershipD4HInfo["d4hStatus"]>;
-
-//     return mapping[d4hMemberStatus];
-// }
-
 /** The `status` field of a D4H member, stored verbatim on `TeamMembership_D4H.d4hStatus`. */
 export const D4HMemberStatus = {
     values: ["OPERATIONAL", "NON_OPERATIONAL", "OBSERVER", "RETIRED"] as const,
@@ -125,6 +12,26 @@ export const D4HMemberStatus = {
 } as const;
 
 export type D4HMemberStatus = z.infer<typeof D4HMemberStatus.schema>;
+
+/**
+ * Human-readable label for a D4H member status. Takes a raw string (the value is
+ * stored verbatim from D4H) and falls back to the raw value for anything outside
+ * the known set, so a future D4H status never renders as a blank.
+ */
+export function formatD4HMemberStatus(status: string): string {
+    switch (status) {
+        case "OPERATIONAL":
+            return "Operational";
+        case "NON_OPERATIONAL":
+            return "Non-operational";
+        case "OBSERVER":
+            return "Observer";
+        case "RETIRED":
+            return "Retired";
+        default:
+            return status;
+    }
+}
 
 export const D4HMember = {
     schema: z.object({

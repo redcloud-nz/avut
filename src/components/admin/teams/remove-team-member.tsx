@@ -31,11 +31,14 @@ export function AdminModule_RemoveTeamMember_Dialog({
     organizationId,
     team,
     person,
+    onRemoved,
     ...props
 }: {
     organizationId: OrganizationId;
     team: TeamData;
     person: PersonRef | null;
+    /** Called after a successful removal, before the dialog closes — e.g. to navigate away. */
+    onRemoved?: () => void;
 } & ComponentProps<typeof AlertDialog>) {
     const mutation = useMutation(
         trpc.teams.deleteTeamMembership.mutationOptions({
@@ -47,7 +50,11 @@ export function AdminModule_RemoveTeamMember_Dialog({
             onSuccess() {
                 toast.success("Team member removed");
 
-                props.onOpenChange?.(false);
+                // When the caller handles what happens next (e.g. navigating away
+                // from a now-deleted membership page), let it — closing the dialog
+                // here would race a `router.push` against nuqs's URL update.
+                if (onRemoved) onRemoved();
+                else props.onOpenChange?.(false);
             },
         }),
     );
