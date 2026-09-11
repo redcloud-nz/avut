@@ -12,19 +12,21 @@ Two long-lived branches:
 
 - **`integration`** — every feature PR merges here. Vercel deploys it as a
   pre-production environment. [`increment-build-number.yml`](../.github/workflows/increment-build-number.yml)
-  bumps `nz.avut.build` on every push, so builds are identified as
-  `{version}-build.{build}` (e.g. `0.7-build.61`).
+  bumps `nz.avut.build` on every push. Non-production environments don't render
+  the version or codename at all — they show just `DEV.{build}` (see
+  [`next.config.ts`](../next.config.ts) and
+  [`version-string.tsx`](../src/components/ui/version-string.tsx)).
 - **`production`** — the release target. Admin-only pushes, no auto-merge (see
-  [`branch-protection.md`](branch-protection.md)). Vercel deploys it as
-  production, rendering a bare `v{version}` (no build suffix — see
-  [`next.config.ts`](../next.config.ts)). A push here runs
+  [`branch-protection.md`](branch-protection.md)). The only environment that
+  renders a real version: `v{version} ({versionName})`. A push here runs
   [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml),
   which tags `v{version}` and publishes a GitHub Release **if that tag doesn't
   already exist**.
 
 The single source of truth for the version is the `nz.avut` block in
 [`package.json`](../package.json): `version` (e.g. `0.7`) and `versionName`, the
-codename (e.g. `Philomel`).
+codename (e.g. `Philomel`). `nz.avut.build` is a separate monotonic counter that
+only appears as `DEV.{build}` outside production.
 
 **The rule:** `package.json`'s version is only ever edited by a PR into
 `integration`. `production` only ever receives it by merging `integration` (or a
@@ -49,11 +51,10 @@ git push -u origin release/v0.8
 gh pr create --base integration --title "chore(release): v0.8 (Laburnum)"
 ```
 
-Get it reviewed and merged like any other PR. After it lands, `integration`
-builds immediately read `0.8-build.N` — that's the signal the bump is in place.
-
-Nothing tags or releases at this point; `v0.8` only exists once it reaches
-`production`.
+Get it reviewed and merged like any other PR. Nothing tags or releases at this
+point — `integration` still just renders `DEV.{build}`, and `v0.8` only comes
+into existence once it reaches `production`. Confirm the bump landed with
+`git show origin/integration:package.json`.
 
 ### 2. Open the release PR
 
@@ -82,7 +83,8 @@ check it — this is the whole payload going live.
   `v0.8` and publishes the GitHub Release **0.8 - Laburnum**.
 
 Confirm: `gh release list --repo redcloud-nz/avut` and the production site's
-footer version string (`AVUT v0.8 (Laburnum)`, no `-build.` suffix).
+footer version string (`AVUT v0.8 (Laburnum)` — production is the only place it
+appears).
 
 ## Hotfixes
 
@@ -109,12 +111,16 @@ extended first.
 
 ## Notes
 
-- The README carries two live badges — **Production** and **Integration** —
-  backed by [`/api/version`](../src/app/api/version/route.ts) on each
-  environment's own domain (`www.avut.nz`, `integration.avut.nz`). Each
-  deployment reports its own running version, so the Production badge moves only
-  when a release lands and the Integration badge tracks every merge. The CI badge
-  follows the default branch (`integration`).
+- The README's **Production** badge is served live by
+  [`/api/version?format=shields`](../src/app/api/version/route.ts) on
+  `www.avut.nz`, so it always reflects what's actually deployed and moves only
+  when a release lands. The **Integration** badge reads `nz.avut.build` straight
+  off `integration`'s `package.json` on GitHub and shows `DEV.{build}` (the
+  integration deployment sits behind Vercel auth, so shields can't reach its
+  endpoint). The CI badge follows the default branch.
+- `curl https://www.avut.nz/api/version` (or the local dev server) returns the
+  ground-truth `version` / `versionName` / `build` / `branch` / `commit` as JSON
+  regardless of environment — handy for support.
 - `manage-release-version.yml` is idempotent: re-pushing `production` at an
   already-released version does nothing.
 - If a release needs to be re-cut at the same version (tag already exists),
