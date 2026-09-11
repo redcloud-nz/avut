@@ -77,10 +77,7 @@ export function PersonPicker({
                     value: person.id,
                     label: person.name,
                     subtitle: person.email,
-                    badge:
-                        statusFilter === "all" && person.status === "Archived"
-                            ? "Archived"
-                            : undefined,
+                    badge: person.status === "Archived" ? "Archived" : undefined,
                 })),
         [personnelQuery.data, statusFilter, filter],
     );

@@ -27,6 +27,23 @@ export type SearchableSelectOption = {
     badge?: string;
 };
 
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+    if (!query) return text;
+
+    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) return text;
+
+    return (
+        <>
+            {text.slice(0, index)}
+            <mark className="rounded-xs bg-yellow-300/60 text-inherit dark:bg-yellow-300/25">
+                {text.slice(index, index + query.length)}
+            </mark>
+            {text.slice(index + query.length)}
+        </>
+    );
+}
+
 type SearchableSelectProps = {
     value: string | null | undefined;
     onValueChange: (value: string) => void;
@@ -53,13 +70,20 @@ export function SearchableSelect({
     id: providedId,
 }: SearchableSelectProps) {
     const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
 
     const selectedLabel = options.find((o) => o.value === value)?.label;
 
     const id = useId();
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+            open={open}
+            onOpenChange={(next) => {
+                setOpen(next);
+                if (!next) setSearch("");
+            }}
+        >
             <PopoverTrigger asChild>
                 <button
                     type="button"
@@ -90,8 +114,16 @@ export function SearchableSelect({
                 className="min-w-(--radix-popover-trigger-width) p-0"
                 id={`searchable-select-${id}-content`}
             >
-                <Command>
-                    <CommandInput placeholder={searchPlaceholder} />
+                <Command
+                    filter={(value, search) =>
+                        value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                    }
+                >
+                    <CommandInput
+                        placeholder={searchPlaceholder}
+                        value={search}
+                        onValueChange={setSearch}
+                    />
                     <CommandList>
                         <CommandEmpty>{emptyMessage}</CommandEmpty>
                         <CommandGroup>
@@ -107,7 +139,12 @@ export function SearchableSelect({
                                 >
                                     <div className="flex min-w-0 flex-col">
                                         <span className="flex items-center gap-1.5 truncate">
-                                            <span className="truncate">{option.label}</span>
+                                            <span className="truncate">
+                                                <HighlightMatch
+                                                    text={option.label}
+                                                    query={search}
+                                                />
+                                            </span>
                                             {option.badge && (
                                                 <Badge variant="outline" className="shrink-0">
                                                     {option.badge}
@@ -116,7 +153,10 @@ export function SearchableSelect({
                                         </span>
                                         {option.subtitle && (
                                             <span className="text-muted-foreground truncate text-xs">
-                                                {option.subtitle}
+                                                <HighlightMatch
+                                                    text={option.subtitle}
+                                                    query={search}
+                                                />
                                             </span>
                                         )}
                                     </div>
