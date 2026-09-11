@@ -34,6 +34,8 @@ const docs = defineCollection({
         section: z.string(),
         /** Sort order within the section (section index pages should use 0). */
         order: z.number().default(100),
+        /** Glossary slugs to show as a `<KeyTerms>` callout on this page. */
+        keyTerms: z.array(z.string()).default([]),
     }),
     transform: async (doc, ctx) => {
         const mdx = await compileMDX(ctx, doc);

@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MDXContent } from "@content-collections/mdx/react";
 
+import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
 import { getAllDocSlugs } from "@/lib/docs";
 import { getVisibleDocBySlug } from "@/server/docs";
@@ -42,6 +43,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
     return (
         <article>
             <MDXContent code={doc.mdx} components={docsMdxComponents} />
+            <KeyTerms slugs={doc.keyTerms} />
         </article>
     );
 }

@@ -26,6 +26,15 @@ export function DocsSidebar({ nav }: { nav: DocsNavSection[] }) {
             >
                 Overview
             </Link>
+            <Link
+                href="/docs/glossary"
+                className={cn(
+                    "hover:text-foreground text-muted-foreground -mx-2 rounded px-2 py-1",
+                    pathname === "/docs/glossary" && "bg-muted text-foreground font-medium",
+                )}
+            >
+                Glossary
+            </Link>
             {nav.map((section) => (
                 <div key={section.id} className="flex flex-col gap-1">
                     <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
