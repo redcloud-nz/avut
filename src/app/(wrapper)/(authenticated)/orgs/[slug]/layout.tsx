@@ -12,6 +12,7 @@ import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";
 import { requireOrganization } from "@/server/organization-access";
 import { OrganizationProvider } from "@/hooks/use-organization";
+import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 // NOTE: metadata generation deliberately uses the plain cached lookup rather than
 // `requireOrganization` — `generateMetadata` must not redirect. The access check lives in
@@ -33,17 +34,37 @@ export default async function Organization_Layout(props: LayoutProps<"/orgs/[slu
     const { organization, settings, roles } = await requireOrganization(slug);
     const moduleFlags = await resolveModuleFlags();
 
+    // `requireOrganization` already did the real fetch (it has to, for the permission check),
+    // so seed the query cache with its result directly rather than re-fetching through
+    // `prefetch` — `useOrganization`'s `useSuspenseQueries` then hits these on the client
+    // instead of firing its own request. `@sidebar/orgs/[slug]/layout.tsx` has no such data to
+    // seed (it only calls the plain `getOrganizationBySlug` lookup), so its own `useOrganization`
+    // reads either land on these same cache entries or fetch lazily — both fine.
+    const queryClient = getServerQueryClient();
+    queryClient.setQueryData(
+        trpc.organizations.getOrganization.queryKey({ organizationId: organization.id }),
+        organization,
+    );
+    queryClient.setQueryData(
+        trpc.settings.getOrganizationSettings.queryKey({ organizationId: organization.id }),
+        settings,
+    );
+    queryClient.setQueryData(
+        trpc.organizations.getOrganizationUserSelf.queryKey({ organizationId: organization.id }),
+        roles,
+    );
+
     return (
-        // This is a *separate* `OrganizationProvider` instance from the one the lifted
-        // `@sidebar` slot sets up in `(authenticated)/@sidebar/orgs/[slug]/layout.tsx` — see the
-        // suspense-boundary-review discussion for the tradeoffs and the plan to dedupe them.
-        <OrganizationProvider
-            organization={organization}
-            settings={settings}
-            roles={roles}
-            moduleFlags={moduleFlags}
-        >
-            {props.children}
-        </OrganizationProvider>
+        <HydrateClient>
+            {/*
+             * This is a *separate* `OrganizationProvider` instance from the one the lifted
+             * `@sidebar` slot sets up in `(authenticated)/@sidebar/orgs/[slug]/layout.tsx` — both
+             * key their `useOrganization` reads by the same `organizationId`, so they share one
+             * query-cache entry per query rather than each fetching their own copy.
+             */}
+            <OrganizationProvider organizationId={organization.id} moduleFlags={moduleFlags}>
+                {props.children}
+            </OrganizationProvider>
+        </HydrateClient>
     );
 }

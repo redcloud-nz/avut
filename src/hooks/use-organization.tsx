@@ -11,56 +11,60 @@ import { Modules, type ModuleDef, type OrganizationModuleId } from "@/lib/module
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { useQueries } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
-const OrganizationContext = createContext<OrganizationClient | null>(null);
-
-export function OrganizationProvider({
-    children,
-    organization: initialOrganization,
-    settings: initialSettings,
-    roles: initialRoles,
-    moduleFlags,
-}: {
-    children: ReactNode;
-    organization: OrganizationData;
-    settings: OrganizationSettings;
-    roles: OrganizationRole[];
+interface OrganizationIdentity {
+    organizationId: OrganizationId;
     /** Environment-level module availability, resolved server-side (fixed per deployment). */
     moduleFlags: ModuleFlagState;
-}) {
-    const [{ data: organization }, { data: settings }, { data: roles }] = useQueries({
-        queries: [
-            trpc.organizations.getOrganization.queryOptions(
-                { organizationId: initialOrganization.id },
-                { initialData: initialOrganization },
-            ),
-            trpc.settings.getOrganizationSettings.queryOptions(
-                { organizationId: initialOrganization.id },
-                { initialData: initialSettings },
-            ),
-            trpc.organizations.getOrganizationUserSelf.queryOptions(
-                { organizationId: initialOrganization.id },
-                { initialData: initialRoles },
-            ),
-        ],
-    });
+}
 
-    const client = useMemo(
-        () => new OrganizationClient(organization, settings, roles, moduleFlags),
-        [organization, settings, roles, moduleFlags],
+const OrganizationContext = createContext<OrganizationIdentity | null>(null);
+
+/**
+ * Provides the org-scoped subtree just enough to key its own queries: the organization id and
+ * the (unfetched, env-computed) module flags. `useOrganization` does the actual data reads via
+ * `useSuspenseQueries`, so this carries no fetched data itself — a caller that already has the
+ * full organization/settings/roles (`requireOrganization`) should seed the query cache directly
+ * (`queryClient.setQueryData`) rather than pass them through here as props.
+ *
+ * Rendered independently in more than one subtree (the main org layout and the `@sidebar` slot
+ * layout) is expected and fine: both key their queries identically, so they share one cache
+ * entry per query rather than each fetching their own copy.
+ */
+export function OrganizationProvider({
+    children,
+    organizationId,
+    moduleFlags,
+}: OrganizationIdentity & { children: ReactNode }) {
+    const identity = useMemo(
+        () => ({ organizationId, moduleFlags }),
+        [organizationId, moduleFlags],
     );
 
-    return <OrganizationContext.Provider value={client}>{children}</OrganizationContext.Provider>;
+    return <OrganizationContext.Provider value={identity}>{children}</OrganizationContext.Provider>;
 }
 
 export function useOrganization(): OrganizationClient {
-    const context = useContext(OrganizationContext);
-    if (!context) {
+    const identity = useContext(OrganizationContext);
+    if (!identity) {
         throw new Error("useOrganization must be used within an OrganizationProvider");
     }
-    return context;
+    const { organizationId, moduleFlags } = identity;
+
+    const [{ data: organization }, { data: settings }, { data: roles }] = useSuspenseQueries({
+        queries: [
+            trpc.organizations.getOrganization.queryOptions({ organizationId }),
+            trpc.settings.getOrganizationSettings.queryOptions({ organizationId }),
+            trpc.organizations.getOrganizationUserSelf.queryOptions({ organizationId }),
+        ],
+    });
+
+    return useMemo(
+        () => new OrganizationClient(organization, settings, roles, moduleFlags),
+        [organization, settings, roles, moduleFlags],
+    );
 }
 
 export class OrganizationClient {
