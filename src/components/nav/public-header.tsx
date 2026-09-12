@@ -62,6 +62,9 @@ export function PublicHeader({
                     />
                 </Link>
                 <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <Link href="/tools" className="hidden hover:text-foreground sm:inline">
+                        Tools
+                    </Link>
                     <Link href={docsHref("")} className="hidden hover:text-foreground sm:inline">
                         Docs
                     </Link>
