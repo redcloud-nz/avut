@@ -24,7 +24,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { OrganizationId } from "@/lib/schemas/organization";
-import { PersonData, PersonId } from "@/lib/schemas/person";
+import { PersonId } from "@/lib/schemas/person";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
@@ -37,8 +37,6 @@ interface PersonPickerProps {
     disabled?: boolean;
     placeholder?: string;
     className?: string;
-    /** Extra predicate a person must satisfy to appear, e.g. excluding people already assigned elsewhere. */
-    filter?: (person: PersonData) => boolean;
     id?: string;
     "aria-invalid"?: boolean;
 }
@@ -55,7 +53,6 @@ export function PersonPicker({
     disabled,
     placeholder = "Select a person",
     className,
-    filter,
     id,
     "aria-invalid": ariaInvalid,
 }: PersonPickerProps) {
@@ -67,10 +64,9 @@ export function PersonPicker({
             [...(personnelQuery.data ?? [])]
                 .filter(
                     (person) =>
-                        (statusFilter === "all" ||
-                            (statusFilter === "active" && person.status === "Active") ||
-                            (statusFilter === "archived" && person.status === "Archived")) &&
-                        (!filter || filter(person)),
+                        statusFilter === "all" ||
+                        (statusFilter === "active" && person.status === "Active") ||
+                        (statusFilter === "archived" && person.status === "Archived"),
                 )
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((person) => ({
@@ -79,7 +75,7 @@ export function PersonPicker({
                     subtitle: person.email,
                     badge: person.status === "Archived" ? "Archived" : undefined,
                 })),
-        [personnelQuery.data, statusFilter, filter],
+        [personnelQuery.data, statusFilter],
     );
 
     if (personnelQuery.isPending) {

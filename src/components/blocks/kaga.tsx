@@ -178,6 +178,7 @@ function KagaSortMenuItems<TData extends RowData>({
             <DropdownMenuCheckboxItem
                 checked={isSorted === "asc"}
                 onSelect={(ev) => {
+                    // Keep the dropdown open after toggling — a checkbox item shouldn't close the menu.
                     ev.preventDefault();
                     if (isSorted === "asc") column.clearSorting();
                     else column.toggleSorting(false);
