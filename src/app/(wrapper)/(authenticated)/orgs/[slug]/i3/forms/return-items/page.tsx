@@ -16,7 +16,7 @@ export default function I3_Return_Page() {
     const organization = useOrganization();
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
@@ -27,6 +27,6 @@ export default function I3_Return_Page() {
             <Std.ScrollContainer>
                 <UnderConstruction />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

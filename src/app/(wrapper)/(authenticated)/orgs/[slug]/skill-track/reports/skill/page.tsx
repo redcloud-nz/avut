@@ -48,7 +48,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
@@ -65,7 +65,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillCoverageReport />
                 </Suspense>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

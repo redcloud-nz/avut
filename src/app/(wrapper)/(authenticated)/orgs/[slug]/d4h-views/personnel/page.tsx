@@ -42,7 +42,7 @@ export default async function D4HViewsModules_Personnel_Page(
     const members = teams.flatMap((t) => t.members.map((m) => ({ ...m, team: t })));
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/orgs/[slug]/d4h-views", { slug }) },
@@ -52,6 +52,6 @@ export default async function D4HViewsModules_Personnel_Page(
             <Std.ScrollContainer>
                 <D4HViewsModules_Personnel_List members={members} teams={teams} />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

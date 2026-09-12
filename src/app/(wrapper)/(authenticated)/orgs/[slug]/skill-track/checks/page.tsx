@@ -27,7 +27,7 @@ export default async function SkillTrack_Checks_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
@@ -40,7 +40,7 @@ export default async function SkillTrack_Checks_Page(
                 <Std.ScrollContainer>
                     <SkillTrack_ChecksList />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

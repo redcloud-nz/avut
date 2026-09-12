@@ -43,7 +43,7 @@ export default function D4HViewsModule_EquipmentBrand_Page(
     if (!brand) throw new Error(`Brand(${brandId}) not found`);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     {
@@ -95,6 +95,6 @@ export default function D4HViewsModule_EquipmentBrand_Page(
                     <D4HViewsModule_EquipmentBrand_Models_List brandId={brand.id} />
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

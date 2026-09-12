@@ -9,6 +9,7 @@ import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NavSkeleton } from "@/components/nav/nav-skeleton";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
@@ -87,7 +88,7 @@ export default async function AuthenticatedLayout(props: {
                     <SidebarRail />
                 </Sidebar>
                 {props.modal}
-                {props.children}
+                <Std.SidebarInset>{props.children}</Std.SidebarInset>
             </AppProviders>
         </HydrateClient>
     );

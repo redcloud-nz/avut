@@ -7,7 +7,6 @@
 
 import { Metadata } from "next";
 
-import { Std } from "@/components/blocks/std";
 import { SystemAdmin_OrganizationSettings_Content } from "@/components/system-admin/organizations/organization-settings-content";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
@@ -46,12 +45,10 @@ export default async function SystemAdmin_OrganizationSettings_Page(props: Props
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <SystemAdmin_OrganizationSettings_Content
-                    organizationId={organizationId}
-                    moduleFlags={moduleFlags}
-                />
-            </Std.SidebarInset>
+            <SystemAdmin_OrganizationSettings_Content
+                organizationId={organizationId}
+                moduleFlags={moduleFlags}
+            />
         </HydrateClient>
     );
 }

@@ -127,7 +127,7 @@ export default function D4HViewsModule_Member_Page(
     });
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     {
@@ -188,6 +188,6 @@ export default function D4HViewsModule_Member_Page(
                     </Show>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

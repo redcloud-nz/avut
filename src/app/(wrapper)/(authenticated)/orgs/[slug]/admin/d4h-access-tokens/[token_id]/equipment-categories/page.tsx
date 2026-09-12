@@ -72,7 +72,7 @@ export default async function Admin_D4HAccessToken_EquipmentCategories_Page(
     const successCount = categories.filter((i) => i.parsed.success).length;
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -105,6 +105,6 @@ export default async function Admin_D4HAccessToken_EquipmentCategories_Page(
                     ))}
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

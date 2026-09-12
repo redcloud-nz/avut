@@ -60,7 +60,7 @@ export default async function Admin_D4HAccessToken_Members_Page(
     ).flat();
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -109,67 +109,67 @@ export default async function Admin_D4HAccessToken_Members_Page(
                     ))}
 
                     {/* {teams.map((team) => (
-                            <Card key={team.id}>
-                                <CardHeader>
-                                    <CardTitle>{team.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHeadCell className="text-center">
-                                                    ID
-                                                </TableHeadCell>
-                                                <TableHeadCell>
-                                                    Name
-                                                </TableHeadCell>
-                                                <TableHeadCell className="text-center">
-                                                    Operational
-                                                </TableHeadCell>
-                                                <TableHeadCell>
-                                                    Role
-                                                </TableHeadCell>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {team.members.map((member) => (
-                                                <TableRow key={member.id}>
-                                                    <TableCell className="text-center">
-                                                        {member.id}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {member.name}
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        {member.status ===
-                                                        "OPERATIONAL"
-                                                            ? "Yes"
-                                                            : ""}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        ))}
-                        {teams.length === 0 && (
-                            <Alert title="No teams found." />
-                        )} */}
-
-                    {/* <Card>
+                        <Card key={team.id}>
                             <CardHeader>
-                                <CardTitle>Whoami</CardTitle>
+                                <CardTitle>{team.title}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <pre>{JSON.stringify(whoami, null, 2)}</pre>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHeadCell className="text-center">
+                                                ID
+                                            </TableHeadCell>
+                                            <TableHeadCell>
+                                                Name
+                                            </TableHeadCell>
+                                            <TableHeadCell className="text-center">
+                                                Operational
+                                            </TableHeadCell>
+                                            <TableHeadCell>
+                                                Role
+                                            </TableHeadCell>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {team.members.map((member) => (
+                                            <TableRow key={member.id}>
+                                                <TableCell className="text-center">
+                                                    {member.id}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {member.name}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    {member.status ===
+                                                    "OPERATIONAL"
+                                                        ? "Yes"
+                                                        : ""}
+                                                </TableCell>
+                                                <TableCell>
+                                                    
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </CardContent>
-                        </Card> */}
+                        </Card>
+                    ))}
+                    {teams.length === 0 && (
+                        <Alert title="No teams found." />
+                    )} */}
+
+                    {/* <Card>
+                        <CardHeader>
+                            <CardTitle>Whoami</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <pre>{JSON.stringify(whoami, null, 2)}</pre>
+                        </CardContent>
+                    </Card> */}
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

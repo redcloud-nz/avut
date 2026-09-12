@@ -28,7 +28,7 @@ export default async function SkillTrack_Catalogue_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         {
@@ -44,7 +44,7 @@ export default async function SkillTrack_Catalogue_Page(
                 <Std.ScrollContainer>
                     <SkillTrack_CataloguePackages_List />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

@@ -23,7 +23,7 @@ export default async function SystemAdmin_SkillPackages_Page() {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "System Admin", href: "/system-admin" },
@@ -33,7 +33,7 @@ export default async function SystemAdmin_SkillPackages_Page() {
                 <Std.ScrollContainer>
                     <SystemAdmin_SkillPackageLibrary_Content />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

@@ -26,7 +26,7 @@ export default async function SkillTrack_Sessions_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         {
@@ -42,7 +42,7 @@ export default async function SkillTrack_Sessions_Page(
                 <Std.ScrollContainer>
                     <SkillTrack_Sessions_List />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

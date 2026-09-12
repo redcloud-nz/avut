@@ -26,7 +26,7 @@ export default async function SkillPackageBuilder_Index_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         {
@@ -43,7 +43,7 @@ export default async function SkillPackageBuilder_Index_Page(
                     </div>
                     <SkillPackageBuilder_Packages_List organization={organization} />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

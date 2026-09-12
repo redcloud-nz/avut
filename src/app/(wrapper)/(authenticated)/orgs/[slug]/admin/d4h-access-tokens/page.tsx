@@ -31,7 +31,7 @@ export default async function AdminModule_D4HAccessTokens_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -41,7 +41,7 @@ export default async function AdminModule_D4HAccessTokens_Page(
                 <Std.ScrollContainer>
                     <AdminModule_D4HAccessTokensList organization={organization} />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

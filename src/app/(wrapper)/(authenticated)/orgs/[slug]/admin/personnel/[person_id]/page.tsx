@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { AdminModule_Person_Content } from "@/components/admin/personnel/person-content";
-import { Std } from "@/components/blocks/std";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
@@ -47,9 +46,7 @@ export default async function AdminModule_Person_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <AdminModule_Person_Content personId={personId} />
-            </Std.SidebarInset>
+            <AdminModule_Person_Content personId={personId} />
         </HydrateClient>
     );
 }

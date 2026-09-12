@@ -48,7 +48,7 @@ export default async function I3Module_MembersList_SelectTeam_Page(
     }
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -82,6 +82,6 @@ export default async function I3Module_MembersList_SelectTeam_Page(
                     </ItemGroup>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

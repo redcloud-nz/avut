@@ -28,7 +28,7 @@ export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["D4H Views"]} actions={<HelpButton slug="d4h-views" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H Views Module">
@@ -58,6 +58,6 @@ export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

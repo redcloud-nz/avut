@@ -45,7 +45,7 @@ export default async function D4HViewsModule_Teams_Page(
     const teams = await getD4HTeamsAccessibleWithToken(token);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/orgs/[slug]/d4h-views", { slug }) },
@@ -55,6 +55,6 @@ export default async function D4HViewsModule_Teams_Page(
             <Std.ScrollContainer>
                 <D4HViewsModule_Teams_List teams={teams} />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

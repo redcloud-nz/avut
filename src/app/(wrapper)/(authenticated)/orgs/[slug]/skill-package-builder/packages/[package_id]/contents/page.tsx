@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { SkillPackageBuilder_PackageContents_Content } from "@/components/skill-package-builder/package-contents-content";
-import { Std } from "@/components/blocks/std";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -59,9 +58,7 @@ export default async function SkillPackageBuilder_PackageContents_Page(props: Pr
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <SkillPackageBuilder_PackageContents_Content skillPackageId={skillPackageId} />
-            </Std.SidebarInset>
+            <SkillPackageBuilder_PackageContents_Content skillPackageId={skillPackageId} />
         </HydrateClient>
     );
 }

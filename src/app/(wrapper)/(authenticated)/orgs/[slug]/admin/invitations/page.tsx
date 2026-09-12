@@ -22,7 +22,7 @@ export default async function AdminModule_Invitations_Page(
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -35,6 +35,6 @@ export default async function AdminModule_Invitations_Page(
             <Std.ScrollContainer>
                 <AdminModule_Invitations_List />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

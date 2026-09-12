@@ -126,7 +126,7 @@ export default function D4HViewsModule_EquipmentCategories_Page() {
     });
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     {
@@ -154,6 +154,6 @@ export default function D4HViewsModule_EquipmentCategories_Page() {
                     </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

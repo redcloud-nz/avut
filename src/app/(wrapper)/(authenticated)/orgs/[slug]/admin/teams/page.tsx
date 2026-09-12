@@ -27,7 +27,7 @@ export default async function AdminModule_TeamsList_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -37,7 +37,7 @@ export default async function AdminModule_TeamsList_Page(
                 <Std.ScrollContainer>
                     <AdminModule_TeamsList />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

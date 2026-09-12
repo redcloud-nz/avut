@@ -93,7 +93,7 @@ export default function I3Module_Team_EquipmentKindItems_Page(
     });
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
@@ -286,6 +286,6 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                     </Table>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

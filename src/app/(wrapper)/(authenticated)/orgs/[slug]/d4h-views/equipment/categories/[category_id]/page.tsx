@@ -42,7 +42,7 @@ export default function D4HViewsModule_EquipmentCategory_Page(
     if (!category) throw new Error(`Category(${categoryId}) not found`);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     {
@@ -92,6 +92,6 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                     <D4HViewsModule_EquipmentCategory_Kinds_List categoryId={category.id} />
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

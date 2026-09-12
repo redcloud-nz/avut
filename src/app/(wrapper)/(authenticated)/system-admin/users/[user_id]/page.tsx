@@ -7,7 +7,6 @@
 
 import { Metadata } from "next";
 
-import { Std } from "@/components/blocks/std";
 import { SystemAdmin_User_Content } from "@/components/system-admin/users/user-content";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
@@ -40,9 +39,7 @@ export default async function SystemAdmin_User_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <SystemAdmin_User_Content userId={userId} />
-            </Std.SidebarInset>
+            <SystemAdmin_User_Content userId={userId} />
         </HydrateClient>
     );
 }

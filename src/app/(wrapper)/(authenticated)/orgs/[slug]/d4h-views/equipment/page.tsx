@@ -28,7 +28,7 @@ export default async function D4HViewsModule_Equipment_Page(
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H Views", href: route("/orgs/[slug]/d4h-views", { slug }) },
@@ -71,6 +71,6 @@ export default async function D4HViewsModule_Equipment_Page(
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

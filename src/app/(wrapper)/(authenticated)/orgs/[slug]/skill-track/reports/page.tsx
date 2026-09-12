@@ -30,7 +30,7 @@ export default async function SkillsTrack_Reports_Page(
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
@@ -60,8 +60,8 @@ export default async function SkillsTrack_Reports_Page(
                             </Item>
                         </Protect>
                         {/* These three also list teams for their scope picker/filter, so they
-                            need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
-                            a link that then hits a FORBIDDEN error when it loads. */}
+                        need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
+                        a link that then hits a FORBIDDEN error when it loads. */}
                         <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
                             <Item asChild>
                                 <Link
@@ -115,6 +115,6 @@ export default async function SkillsTrack_Reports_Page(
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

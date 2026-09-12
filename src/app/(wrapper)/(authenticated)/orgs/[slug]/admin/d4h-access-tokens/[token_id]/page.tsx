@@ -7,8 +7,6 @@
 
 import { Metadata } from "next";
 
-import { Std } from "@/components/blocks/std";
-
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { requireOrganization } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -47,9 +45,7 @@ export default async function AdminModule_D4HAccessToken_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <AdminModule_D4HAccessToken_Content tokenId={tokenId} />
-            </Std.SidebarInset>
+            <AdminModule_D4HAccessToken_Content tokenId={tokenId} />
         </HydrateClient>
     );
 }

@@ -14,11 +14,11 @@ export default async function AdminScripts_Page(props: PageProps<"/orgs/[slug]/a
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["Admin", "Scripts"]} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Scripts" />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

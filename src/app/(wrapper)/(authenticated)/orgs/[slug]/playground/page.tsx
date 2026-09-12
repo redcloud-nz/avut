@@ -19,7 +19,7 @@ export default async function Playground_Index_Page(props: PageProps<"/orgs/[slu
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["Playground"]} />
             <Std.ScrollContainer>
                 <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -48,6 +48,6 @@ export default async function Playground_Index_Page(props: PageProps<"/orgs/[slu
                     </ul>
                 </div>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

@@ -29,7 +29,7 @@ export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>)
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[{ href: route("/orgs/[slug]/i3", { slug }), label: "I3" }]}
                 actions={<HelpButton slug="i3" />}
@@ -107,6 +107,6 @@ export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>)
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

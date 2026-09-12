@@ -44,7 +44,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         {
@@ -64,7 +64,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_PersonCompetencyReport />
                 </Suspense>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

@@ -86,7 +86,7 @@ export default function I3Module_Issue_FormInstanceList_Page() {
     }
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
@@ -171,6 +171,6 @@ export default function I3Module_Issue_FormInstanceList_Page() {
                     </Show>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

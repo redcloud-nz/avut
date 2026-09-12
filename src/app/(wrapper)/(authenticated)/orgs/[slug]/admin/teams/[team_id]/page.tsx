@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { AdminModule_Team_Content } from "@/components/admin/teams/team-content";
-import { Std } from "@/components/blocks/std";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { TeamId } from "@/lib/schemas/team";
@@ -41,9 +40,7 @@ export default async function AdminModule_Team_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <AdminModule_Team_Content teamId={teamId} />
-            </Std.SidebarInset>
+            <AdminModule_Team_Content teamId={teamId} />
         </HydrateClient>
     );
 }

@@ -28,29 +28,29 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton slug="admin" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
                         {/* <Protect permissions={{ d4hAccessToken: ["view"] }}>
-                            <Item asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>D4H Access Tokens</ItemTitle>
-                                        <ItemDescription>
-                                            Manage the shared D4H access tokens for your
-                                            organisation.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect> */}
+                        <Item asChild>
+                            <Link
+                                href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>D4H Access Tokens</ItemTitle>
+                                    <ItemDescription>
+                                        Manage the shared D4H access tokens for your
+                                        organisation.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                    </Protect> */}
                         <Protect permissions={{ invitation: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/invitations", { slug })}>
@@ -130,6 +130,6 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

@@ -23,7 +23,7 @@ export default function AdminModule_PersonHistory_Page(
     const person = usePerson(person_id);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -41,6 +41,6 @@ export default function AdminModule_PersonHistory_Page(
             <Std.ScrollContainer>
                 <NotImplemented />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

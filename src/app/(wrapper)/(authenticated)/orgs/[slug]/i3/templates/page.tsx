@@ -27,7 +27,7 @@ export default async function I3Module_TemplateList_Page(
 
     return (
         <>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
@@ -47,7 +47,7 @@ export default async function I3Module_TemplateList_Page(
                         <I3Module_TemplateList />
                     </Saratoga.Root>
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </>
     );
 }

@@ -43,7 +43,7 @@ export default function I3Module_Team_Page(props: PageProps<"/orgs/[slug]/i3/tea
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
@@ -96,6 +96,6 @@ export default function I3Module_Team_Page(props: PageProps<"/orgs/[slug]/i3/tea
                     </ItemGroup>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

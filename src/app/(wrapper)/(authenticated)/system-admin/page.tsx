@@ -24,7 +24,7 @@ export default async function SystemAdmin_Index_Page() {
     await requireGlobalAdmin();
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["System Admin"]} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="System Administration">
@@ -59,6 +59,6 @@ export default async function SystemAdmin_Index_Page() {
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

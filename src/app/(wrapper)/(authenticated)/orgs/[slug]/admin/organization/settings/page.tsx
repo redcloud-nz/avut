@@ -5,8 +5,6 @@
  * Paths: /orgs/[slug]/admin/settings/--update
  */
 
-import { Std } from "@/components/blocks/std";
-
 import { requireOrganization } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -23,9 +21,7 @@ export default async function AdminModule_Settings_Page(
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <AdminModule_Settings_Content />
-            </Std.SidebarInset>
+            <AdminModule_Settings_Content />
         </HydrateClient>
     );
 }

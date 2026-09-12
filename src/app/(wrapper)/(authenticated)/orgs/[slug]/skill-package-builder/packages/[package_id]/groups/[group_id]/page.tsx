@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { SkillPackageBuilder_Group_Content } from "@/components/skill-package-builder/group-content";
-import { Std } from "@/components/blocks/std";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -48,9 +47,7 @@ export default async function SkillPackageBuilder_Group_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <SkillPackageBuilder_Group_Content groupId={skillGroupId} />
-            </Std.SidebarInset>
+            <SkillPackageBuilder_Group_Content groupId={skillGroupId} />
         </HydrateClient>
     );
 }

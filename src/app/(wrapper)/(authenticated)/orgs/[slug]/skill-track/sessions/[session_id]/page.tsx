@@ -7,7 +7,6 @@
 
 import { Metadata } from "next";
 
-import { Std } from "@/components/blocks/std";
 import { SkillTrack_Session_Content } from "@/components/skill-track/session-content";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
@@ -69,9 +68,7 @@ export default async function SkillTrack_Session_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
-                <SkillTrack_Session_Content sessionId={skillCheckSessionId} />
-            </Std.SidebarInset>
+            <SkillTrack_Session_Content sessionId={skillCheckSessionId} />
         </HydrateClient>
     );
 }

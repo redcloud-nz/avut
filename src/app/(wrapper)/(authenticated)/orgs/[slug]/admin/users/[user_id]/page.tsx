@@ -78,7 +78,7 @@ export default function AdminModule_User_Page(
     );
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -267,6 +267,6 @@ export default function AdminModule_User_Page(
                     }
                 />
             )}
-        </Std.SidebarInset>
+        </>
     );
 }

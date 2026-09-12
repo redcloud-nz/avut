@@ -50,7 +50,7 @@ export default async function Admin_D4HAccessToken_Whoami_Page(
     };
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -78,6 +78,6 @@ export default async function Admin_D4HAccessToken_Whoami_Page(
                     </Eagle.Section>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

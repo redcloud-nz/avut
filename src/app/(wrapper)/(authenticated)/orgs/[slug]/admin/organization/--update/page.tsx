@@ -25,7 +25,7 @@ export default function AdminModule_OrganizationUpdate_Page(
     const organization = useOrganization();
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -46,6 +46,6 @@ export default function AdminModule_OrganizationUpdate_Page(
                     </CardContent>
                 </Card>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

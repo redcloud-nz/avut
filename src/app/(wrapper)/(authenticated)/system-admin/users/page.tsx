@@ -22,7 +22,7 @@ export default async function SystemAdmin_Users_Page() {
 
     return (
         <HydrateClient>
-            <Std.SidebarInset>
+            <>
                 <Std.Navbar
                     breadcrumbs={[
                         { label: "System Admin", href: "/system-admin" },
@@ -32,7 +32,7 @@ export default async function SystemAdmin_Users_Page() {
                 <Std.ScrollContainer>
                     <SystemAdmin_Users_List />
                 </Std.ScrollContainer>
-            </Std.SidebarInset>
+            </>
         </HydrateClient>
     );
 }

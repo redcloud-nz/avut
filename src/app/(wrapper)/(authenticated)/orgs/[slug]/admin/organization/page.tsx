@@ -29,7 +29,7 @@ export default async function AdminModule_Organization_Page(
     const { organization } = await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -106,6 +106,6 @@ export default async function AdminModule_Organization_Page(
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

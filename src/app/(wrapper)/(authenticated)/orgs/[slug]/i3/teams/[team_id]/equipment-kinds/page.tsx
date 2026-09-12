@@ -66,7 +66,7 @@ export default function I3Module_Team_EquipmentKindsList_Page(
     const usedKinds = kinds.filter((kind) => memberEquipment.some((eq) => eq.kind.id === kind.id));
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
@@ -134,6 +134,6 @@ export default function I3Module_Team_EquipmentKindsList_Page(
                     </Table>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

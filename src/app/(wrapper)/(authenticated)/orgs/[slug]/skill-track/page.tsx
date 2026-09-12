@@ -29,7 +29,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
@@ -102,6 +102,6 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

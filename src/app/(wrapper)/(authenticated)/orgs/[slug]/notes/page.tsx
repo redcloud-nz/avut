@@ -15,11 +15,11 @@ export default async function Notes_Index_Page(props: PageProps<"/orgs/[slug]/no
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["Notes"]} actions={<HelpButton slug="notes" />} />
             <Std.ScrollContainer>
                 <div>Notes Module Index Page</div>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

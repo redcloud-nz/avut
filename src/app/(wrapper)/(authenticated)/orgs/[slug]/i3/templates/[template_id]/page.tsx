@@ -29,7 +29,7 @@ export default function I3Module_Template_Page(
     const template = useI3Template(template_id);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
@@ -107,6 +107,6 @@ export default function I3Module_Template_Page(
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }

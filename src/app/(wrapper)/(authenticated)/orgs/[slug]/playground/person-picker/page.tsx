@@ -18,11 +18,11 @@ export default async function Playground_PersonPicker_Page(
     await requireOrganization(slug);
 
     return (
-        <Std.SidebarInset>
+        <>
             <Std.Navbar breadcrumbs={["Playground", "Person picker"]} />
             <Std.ScrollContainer>
                 <PersonPicker_Sandbox />
             </Std.ScrollContainer>
-        </Std.SidebarInset>
+        </>
     );
 }
