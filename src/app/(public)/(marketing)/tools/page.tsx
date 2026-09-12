@@ -6,7 +6,6 @@
  */
 
 import { TOOLS_CONTENT, type ToolStatus } from "@/components/marketing/tools-content";
-import { Modules } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Tools" };
@@ -58,15 +57,14 @@ export default function ToolsPage() {
 
             <div className="mx-auto flex max-w-[1120px] flex-col divide-y divide-border px-6 md:px-10">
                 {TOOLS_CONTENT.map((section) => {
-                    const mod = Modules[section.id];
-                    const Icon = mod.icon;
+                    const Icon = section.icon;
                     return (
                         <section key={section.id} className="flex flex-col gap-5 py-12">
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-3">
                                     <Icon className="size-5 shrink-0 opacity-75" />
                                     <h2 className="text-2xl font-semibold tracking-tight">
-                                        {mod.label}
+                                        {section.label}
                                     </h2>
                                     <StatusBadge status={section.status} />
                                 </div>
