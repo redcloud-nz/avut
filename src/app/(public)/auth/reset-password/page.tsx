@@ -18,7 +18,6 @@ export default function Auth_ResetPassword_Page(props: PageProps<"/auth/reset-pa
     return (
         <Argus.Root>
             <Argus.Column className="max-w-xs">
-                <Argus.AppLogo />
                 <Suspense fallback={<AuthCard_Skeleton fields={2} />}>
                     <ResetPassword_CardFromParams searchParams={props.searchParams} />
                 </Suspense>

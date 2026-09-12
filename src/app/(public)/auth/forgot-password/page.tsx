@@ -14,7 +14,6 @@ export default function Auth_ForgotPassword_Page() {
     return (
         <Argus.Root>
             <Argus.Column>
-                <Argus.AppLogo />
                 <Auth_ForgotPassword_Card />
             </Argus.Column>
         </Argus.Root>

@@ -21,7 +21,6 @@ export default function SignIn_Page(props: PageProps<"/auth/sign-in">) {
     return (
         <Argus.Root>
             <Argus.Column>
-                <Argus.AppLogo />
                 <Suspense fallback={<AuthCard_Skeleton fields={2} />}>
                     <SignIn_CardFromParams searchParams={props.searchParams} />
                 </Suspense>

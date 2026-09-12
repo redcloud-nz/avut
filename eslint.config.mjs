@@ -35,7 +35,7 @@ const config = [
     //
     // Restricting only the `auth` binding keeps `import type { AuthSession }` working.
     files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
-    ignores: ["src/app/trpc/**", "src/app/auth/**", "src/app/api/**"],
+    ignores: ["src/app/trpc/**", "src/app/(public)/auth/**", "src/app/api/**"],
     rules: {
       "no-restricted-imports": [
         "error",

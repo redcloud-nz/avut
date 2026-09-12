@@ -15,7 +15,6 @@ export default async function SignOut_Page() {
     return (
         <Argus.Root>
             <Argus.Column>
-                <Argus.AppLogo />
                 <SignOut />
             </Argus.Column>
         </Argus.Root>

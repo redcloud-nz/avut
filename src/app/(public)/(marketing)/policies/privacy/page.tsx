@@ -13,7 +13,6 @@ export default function PrivacyPolicy_Page() {
     return (
         <Argus.Root>
             <Argus.Column width="md">
-                <Argus.AppLogo />
                 <main className="mt-8">
                     <h1 className="text-3xl md:text-4xl font-bold mb-6">Privacy Policy</h1>
                     <p className="text-lg mb-4">Last updated: 12 April, 2025</p>
