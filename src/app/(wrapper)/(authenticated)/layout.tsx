@@ -7,6 +7,7 @@
 
 import { ReactNode } from "react";
 
+import { AppProviders } from "@/components/providers/app-providers";
 import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
 import { ensureSession } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
@@ -33,9 +34,11 @@ export default async function AuthenticatedLayout(props: {
 
     return (
         <HydrateClient>
-            <ImpersonationBanner />
-            {props.modal}
-            {props.children}
+            <AppProviders>
+                <ImpersonationBanner />
+                {props.modal}
+                {props.children}
+            </AppProviders>
         </HydrateClient>
     );
 }

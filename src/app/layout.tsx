@@ -10,7 +10,7 @@ import localFont from "next/font/local";
 import { Jersey_10, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
-import { CommonProviders } from "@/components/providers";
+import { RootProviders } from "@/components/providers/root-providers";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -49,7 +49,7 @@ export default function Root_Layout(props: LayoutProps<"/">) {
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
-                <CommonProviders>{props.children}</CommonProviders>
+                <RootProviders>{props.children}</RootProviders>
                 <Toaster richColors />
             </body>
         </html>

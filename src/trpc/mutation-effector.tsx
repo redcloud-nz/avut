@@ -76,6 +76,12 @@ function isInvalidateEffect(
     return effect.type === "invalidate";
 }
 
+function isWriteEffect(
+    effect: MutationEffect,
+): effect is Extract<MutationEffect, { type: "write" }> {
+    return effect.type === "write";
+}
+
 type EffectsFn<TVars, TData> = (vars: TVars, data: TData) => MutationEffect[];
 
 /**
@@ -140,7 +146,7 @@ declare module "@tanstack/query-core" {
  *
  * Mount once as a sibling of `QueryClientProvider`'s children.
  */
-export function MutationInvalidator() {
+export function MutationEffector() {
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -159,7 +165,7 @@ export function MutationInvalidator() {
             const effects = mutation.meta?.effects?.(variables, data) ?? [];
 
             for (const effect of effects) {
-                if (effect.type === "write") queryClient.setQueryData(effect.queryKey, effect.data);
+                if (isWriteEffect(effect)) queryClient.setQueryData(effect.queryKey, effect.data);
             }
 
             await Promise.all(

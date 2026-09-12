@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
 
-import { invalidate, MutationInvalidator, write } from "./mutation-effector";
+import { invalidate, MutationEffector, write } from "./mutation-effector";
 
 function makeClient() {
     return new QueryClient({
@@ -37,7 +37,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -62,7 +62,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -104,7 +104,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -149,7 +149,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -185,7 +185,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -213,7 +213,7 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationInvalidator />
+                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
