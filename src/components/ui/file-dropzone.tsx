@@ -61,6 +61,7 @@ export function FileDropzone({
             role="button"
             tabIndex={disabled ? -1 : 0}
             aria-disabled={disabled}
+            aria-invalid={invalid}
             data-invalid={invalid}
             data-slot="file-dropzone"
             onClick={openPicker}
