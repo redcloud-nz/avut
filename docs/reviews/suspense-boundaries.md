@@ -27,30 +27,43 @@ place: they sit **inside** the code that blocks, not around it. Every
 authenticated page awaits four layers of session and organization checks before
 returning any JSX, so the boundaries in `Std.SidebarInset` and
 `Std.ScrollContainer` are never reached during the prerender. The single
-boundary that _is_ above all that blocking is the root `src/app/loading.tsx`,
-which is why removing it breaks the `/orgs/[slug]` build (#96's experiment).
+boundary that _is_ above all that blocking is the app-level `loading.tsx`, which
+is why removing it breaks the `/orgs/[slug]` build (#96's experiment).
 
-Two things turned out to be narrower than first described, both corrected in §3
-after implementation:
+**Both issues are now closed.** The fix for each was one file, and neither was
+the fix this review originally proposed — see §1's resolution and §3's
+Correction 3.
 
-- **`loading.tsx` is not interchangeable with `<Suspense>`.** It sits above its
-  own segment's page and outside its own layout, so it satisfies the prerender
-  check but not instant-navigation validation. Prefer an explicit `<Suspense>`
-  in `page.tsx`.
-- **The root `loading.tsx` only obstructs `/`**, not the other public routes.
+Three things turned out to be narrower or simply wrong, all corrected in §1 and
+§3 after implementation. They are recorded inline rather than silently edited,
+because each cost real time:
+
+- **`loading.tsx` is not interchangeable with `<Suspense>` _for its own
+  segment's page_.** It sits above that page's validation boundary and outside
+  its own layout, so there it satisfies the prerender check but not
+  instant-navigation validation. For segments _below_ it, it is an ordinary
+  ancestor boundary and does satisfy validation.
+- **The root `loading.tsx` only obstructed `/`**, not the other public routes.
   `/policies/*` and the synchronous `/auth/*` pages have been prerendering at
-  26–35KB all along. `/` is affected because it is the one page sharing a
-  segment with `loading.tsx`.
+  26–35KB all along.
+- **`/` was not blocked by segment mechanics at all.** It was `new Date()` in a
+  Client Component — a hard build error that the boundary above it had been
+  silently absorbing. Three structural hypotheses were tested against the
+  resulting spinner and none could be falsified, because the evidence was being
+  eaten. See Correction 3.
 
 `export const instant = false` does not fix #135 because it does not cascade.
-That is confirmed in framework source, not inferred.
+That is confirmed in framework source, not inferred. The eventual fix needed
+neither that nor `unstable_disableValidation`: moving the loading boundary into
+a `(wrapper)` route group put it above the authenticated layout's session read,
+which satisfies validation honestly.
 
 ---
 
 ## 1. Why `instant = false` doesn't silence #135
 
-[`src/app/(authenticated)/layout.tsx:20`](<../../src/app/(authenticated)/layout.tsx>)
-sets `export const instant = false`, added in `bad7e99` precisely to suppress
+[`src/app/(wrapper)/(authenticated)/layout.tsx`](<../../src/app/(wrapper)/(authenticated)/layout.tsx>)
+set `export const instant = false`, added in `bad7e99` precisely to suppress
 this error. It has no effect on the pages beneath it, and the reason is visible
 in `node_modules/next/dist/server/app-render/instant-validation/instant-config.js`.
 
@@ -88,14 +101,41 @@ does something narrower.
 
 ### Options
 
-|     | Approach                                                                                  | Blast radius                                                                                                                             | Verdict                                                                                              |
-| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 1   | `export const instant = { unstable_disableValidation: true }` on the authenticated layout | Kills validation for the authenticated tree only — `disabled` short-circuits the whole walk, and public routes never include that layout | **Take this now.** One line, correctly scoped, and the `unstable_` prefix is honest about what it is |
-| 2   | `experimental.instantInsights.validationLevel: 'manual-warning'` in `next.config.ts`      | App-wide; also silences the public routes we _want_ validated for #96                                                                    | Reject — throws away the signal we need                                                              |
-| 3   | `use cache: private` + push the session read behind a boundary                            | Correct and permanent                                                                                                                    | The real fix, but see §2 — it's bigger than the layout                                               |
+|     | Approach                                                                                  | Blast radius                                                                                                                             | Verdict                                           |
+| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | `export const instant = { unstable_disableValidation: true }` on the authenticated layout | Kills validation for the authenticated tree only — `disabled` short-circuits the whole walk, and public routes never include that layout | Taken in `ae00561`, **since removed** — see below |
+| 2   | `experimental.instantInsights.validationLevel: 'manual-warning'` in `next.config.ts`      | App-wide; also silences the public routes we _want_ validated for #96                                                                    | Reject — throws away the signal we need           |
+| 3   | `use cache: private` + push the session read behind a boundary                            | Correct and permanent                                                                                                                    | Turned out to be unnecessary — see below          |
 
-Option 1 is a suppression and should say so in its comment, referencing #135, in
-the same spirit as the existing comment it replaces.
+### Resolution: a boundary above the layout, not a suppression
+
+> **Added 2026-09-12, after step 4.** The options above framed this as a choice
+> between suppressing validation and restructuring the session read. There was a
+> third thing, missed at the time, and step 4 landed it by accident.
+
+`unstable_disableValidation` was removed in `681a153` and **nothing replaced
+it**. Step 4 moved the loading boundary to `(wrapper)/loading.tsx`, which put a
+`<Suspense>` boundary _above_ `(authenticated)/layout.tsx` — and therefore above
+its `requireSession()`. The blocking read now happens inside a boundary, so
+validation is satisfied honestly rather than switched off.
+
+This was verified by control, not assumed. Removing `(wrapper)/loading.tsx`
+fails the build on every `/orgs/[slug]/…` route:
+
+```
+Error: Route "/orgs/[slug]/admin/d4h-access-tokens": Next.js encountered
+uncached or runtime data during prerendering.
+    at <unknown> (src/components/providers.tsx:23:35)
+```
+
+Restoring it passes. Option 3 — the `use cache: private` migration — was also
+tried and measured: it builds green, but a control run with the directive
+reverted and the suppression still absent **also** builds green. The private
+cache is not what retires the suppression, and was not kept for that reason.
+
+The practical consequence is that `(wrapper)/loading.tsx` is load-bearing in a
+way its filename does not advertise. Both it and the authenticated layout carry
+comments pointing at each other.
 
 ---
 
@@ -153,17 +193,27 @@ Two consequences follow, and neither is obvious from that sentence:
    outside the boundary that `loading.tsx` creates. This is why a
    `docs/loading.tsx` could not rescue `/docs`: the layout's
    `getVisibleDocsNav()` still blocked.
-2. **It does not satisfy instant-navigation validation for its own page.**
-   Validation honours a `<Suspense>` only when it sits _below_ the segment's
-   validation boundary (the component-stack index comparison in
-   `dynamic-rendering.js`). A `loading.tsx` sits above it. So it satisfies the
-   prerender/static-shell check but **not** instant validation — E1430 kept
-   firing at [`docs.ts:34`](../../src/server/docs.ts) with a `loading.tsx` in
-   place, and stopped only once the boundary moved inside `page.tsx`.
+2. **It does not satisfy instant-navigation validation for its _own_ segment's
+   page.** Validation honours a `<Suspense>` only when it sits _below_ the
+   segment's validation boundary (the component-stack index comparison in
+   `dynamic-rendering.js`). A `loading.tsx` sits above its own page's boundary.
+   So for that page it satisfies the prerender/static-shell check but **not**
+   instant validation — E1430 kept firing at
+   [`docs.ts:34`](../../src/server/docs.ts) with a `docs/loading.tsx` in place,
+   and stopped only once the boundary moved inside `page.tsx`.
 
-**`loading.tsx` is therefore the weaker of the two tools.** Prefer an explicit
-`<Suspense>` inside `page.tsx`. Reach for `loading.tsx` only as a prerender
-backstop for a whole subtree.
+> **Narrowed 2026-09-12, after step 4.** Point 2 is about a `loading.tsx` and a
+> `page.tsx` in the **same segment**. It does not generalise: for segments
+> _below_ it, a `loading.tsx` is an ordinary ancestor boundary and does satisfy
+> validation. That is precisely what `(wrapper)/loading.tsx` now does for the
+> whole authenticated tree (§1). Stating point 2 as a general rule — which an
+> earlier draft of this section did — is what made the suppression look
+> permanent when it was not.
+
+**`loading.tsx` is therefore the weaker of the two tools _for its own page_.**
+Prefer an explicit `<Suspense>` inside `page.tsx` when the blocking read is in
+that page. As an ancestor boundary for a subtree it is the right tool, and
+cheaper than threading a boundary through every layout beneath it.
 
 ### Correction 2: #96's premise was half wrong
 
@@ -186,15 +236,48 @@ The pages that were already synchronous have been prerendering fully all along.
 A boundary above static content does not prevent prerendering; it only becomes a
 cut point where something beneath it actually blocks.
 
-`/` is the exception because **`app/loading.tsx` and `app/page.tsx` are in the
-same segment**. The loading boundary wraps that page directly and becomes its
-static-shell cut, regardless of the page's own nested boundaries. `HomePage` is
-correctly structured — synchronous, with both session reads isolated at
-[`page.tsx:173`](../../src/app/page.tsx) and `:201` — and still contributes
-nothing to the shell: the prerendered `index.html` has 8 divs, 3 of them the
-rainbow spinner, and none of the page's text. Child segments are unaffected,
-which `/auth/sign-in` proves by prerendering its logo and skeleton with no
-spinner at all.
+`/` is the exception. At the time of writing this section the explanation on
+offer was that **`app/loading.tsx` and `app/page.tsx` share a segment**, so the
+loading boundary wraps the page directly and becomes its static-shell cut. The
+prerendered `index.html` had 8 divs, 3 of them the rainbow spinner, and none of
+the page's text, while child segments were unaffected — `/auth/sign-in`
+prerendered its logo and skeleton with no spinner at all.
+
+### Correction 3: what was actually wrong with `/`
+
+> **Added 2026-09-12, after step 4.** The same-segment explanation above was
+> never confirmed, and it was not the cause. It is left in place because the
+> shape of the mistake matters more than the conclusion.
+
+Moving the boundary out of `/`'s segment did not make the landing page
+prerender. It made it **fail the build**:
+
+```
+Error: Route "/": Next.js encountered the unstable value `new Date()` in a
+Client Component.
+    at src/components/ui/copyright.tsx:8:26
+```
+
+`CopyrightString` was a `"use client"` component calling
+`new Date().getFullYear()` during render. Under Cache Components that is an
+unstable value and a hard build error. The root `loading.tsx` had been absorbing
+it for as long as the page existed — which is why `/` rendered a spinner, why
+`HomePage` being correctly structured made no difference, and why every
+structural hypothesis about segments and route groups failed to move it.
+
+The fix was to hoist the year to module scope, where it is evaluated once at
+build time. `/` then went from **4,354 bytes** (8 divs, 3 spinners, no text) to
+**25,049 bytes** (55 divs, 0 spinners, full content), classified `◐`. All other
+public routes were unchanged: `auth/sign-in` 6,080, `policies/privacy` 29,939,
+`policies/terms-of-service` 33,460, `docs` 8,124.
+
+**The lesson is about method, not about `new Date()`.** A Suspense boundary
+above a failing subtree converts a build error into a silent spinner. Three
+successive structural hypotheses were tested against that spinner and none could
+be falsified, because the boundary was hiding the evidence that would have
+settled them. When a page renders a fallback and nothing you change affects it,
+suspect that something beneath is erroring and the boundary is eating it —
+remove the boundary to surface the error before theorising about the structure.
 
 This also resolves the question §4 previously left open. The earlier suspicion
 that `CommonProviders` was bailing the tree out is **ruled out**:
@@ -203,29 +286,42 @@ calling it, and nuqs wraps its own `NavigationSpy` in a `<Suspense>`.
 
 ### What the routes needed
 
-| Route(s)                                                 | Problem                                        | Fix                                        |
-| -------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------ |
-| `/policies/*`, `/auth/forgot-password`, `/auth/sign-out` | None — already fully prerendered               | None                                       |
-| `/auth/sign-in`, `/auth/sign-up`, `/auth/reset-password` | Top-level `await searchParams` → E1439         | Sync shell + async child in `<Suspense>`   |
-| `/auth/verify-email/[email]`                             | Top-level `await params` → same class          | Same                                       |
-| `/docs/[[...slug]]`                                      | Flag reads block in **both** layout and page   | A `<Suspense>` in each — not `loading.tsx` |
-| `/`                                                      | Root `loading.tsx` cuts its own segment's page | Move `loading.tsx` down (step 4)           |
+| Route(s)                                                 | Problem                                                             | Fix                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `/policies/*`, `/auth/forgot-password`, `/auth/sign-out` | None — already fully prerendered                                    | None                                                                |
+| `/auth/sign-in`, `/auth/sign-up`, `/auth/reset-password` | Top-level `await searchParams` → E1439                              | Sync shell + async child in `<Suspense>`                            |
+| `/auth/verify-email/[email]`                             | Top-level `await params` → same class                               | Same                                                                |
+| `/docs/[[...slug]]`                                      | Flag reads block in **both** layout and page                        | A `<Suspense>` in each — not `loading.tsx`                          |
+| `/`                                                      | `new Date()` in a Client Component, masked by the boundary above it | Hoist to module scope + move the boundary into `(wrapper)` (step 4) |
 
 The `/docs` fix deliberately sidesteps the open product question of whether flag
 overrides should apply to public docs. That decision is no longer on the
 critical path for #96.
 
-### Effect on the authenticated tree: none
+### Effect on the authenticated tree
 
-92 pages plus `@modal` keep the boundary directly above them, still absorbing
-the blocking chain. But note what §1 established: that boundary does nothing for
-instant validation of the pages beneath it. It is a prerender backstop, not a
-validation fix — which is exactly why #135 needed `unstable_disableValidation`
-rather than a boundary.
+92 pages plus `@modal` keep a boundary above them — now `(wrapper)/loading.tsx`
+rather than `app/loading.tsx` — so the blocking chain is still absorbed and
+nothing regressed.
 
-One forward-looking caveat: the root boundary currently also covers
-`src/app/layout.tsx`'s own render. That file is clean today (fonts and metadata
-only), but after the move nothing catches a blocking await added there later.
+> **Revised 2026-09-12.** This subsection previously concluded that the boundary
+> "does nothing for instant validation of the pages beneath it… which is exactly
+> why #135 needed `unstable_disableValidation` rather than a boundary." That is
+> wrong, and it is the generalisation Correction 1 above now narrows. The
+> boundary does satisfy validation for the segments below it, and once it moved
+> into `(wrapper)` it sat above `(authenticated)/layout.tsx` for the first time.
+> #135's suppression was redundant from that moment and was removed in `681a153`.
+
+The route group is doing real work here. `(wrapper)` is transparent to routing,
+so it costs nothing in the URL, but it lets one boundary cover the entire
+authenticated tree while stopping short of `/`. That is the whole difference
+between the boundary being a fix and being the thing that masked Correction 3.
+
+The forward-looking caveat from before still stands, now narrowed: the boundary
+no longer covers `src/app/layout.tsx`'s own render, so a blocking await added
+there later is caught by nothing. `Root_Layout` is `async` but awaits nothing
+(§4) — dropping the `async` would make that regression impossible to introduce
+by accident.
 
 ---
 
@@ -237,7 +333,7 @@ app actually wants. Either adopt it as the house pattern or delete it; leaving
 it is a trap for the next person who greps for one.
 
 **Only two error boundaries exist** — `src/app/error.tsx` and
-`src/app/(authenticated)/orgs/[slug]/error.tsx`. Every `useSuspenseQuery` in a
+`src/app/(wrapper)/(authenticated)/orgs/[slug]/error.tsx`. Every `useSuspenseQuery` in a
 list or content component throws to one of those two, so a single failed tRPC
 query blanks the entire org shell rather than the one card that failed. Suspense
 boundaries without matching error boundaries is a larger day-to-day UX gap than
@@ -272,29 +368,47 @@ spinner. Adding `priority` is a cheap follow-up.
 
 Ordered. Each step is independently shippable. Status as of 2026-09-12.
 
-| #   | Action                                                                                                                         | Addresses          | Status               |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------ | -------------------- |
-| 1   | `instant = { unstable_disableValidation: true }` on the authenticated layout                                                   | #135 (suppression) | **Done** — `ae00561` |
-| 2   | Sync shell + async child in `<Suspense>` on the 4 `/auth/*` pages                                                              | Prereq for #96     | **Done** — `d7ae72d` |
-| 3   | `<Suspense>` around the docs nav (layout) and article (page)                                                                   | Prereq for #96     | **Done** — `0604e08` |
-| 4   | Move `loading.tsx` → `(authenticated)/loading.tsx`; confirm `index.html` carries real content                                  | #96                | Next — one file      |
-| 5   | Migrate the session read to `use cache: private` behind a boundary; then hoist `requireOrganization` out of the 59 page bodies | #135 (properly)    | Large                |
-| 6   | Decide `Boundary`'s fate; add card/list-level error boundaries                                                                 | §4                 | Medium               |
+| #   | Action                                                                                        | Addresses          | Status                                                   |
+| --- | --------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------- |
+| #   | Action                                                                                        | Addresses          | Status                                                   |
+| --- | --------------------------------------------------------------------------------------------- | ------------------ | ------------------------------                           |
+| 1   | `instant = { unstable_disableValidation: true }` on the authenticated layout                  | #135 (suppression) | Done `ae00561`, **reverted** `681a153` — superseded by 4 |
+| 2   | Sync shell + async child in `<Suspense>` on the 4 `/auth/*` pages                             | Prereq for #96     | **Done** — `d7ae72d`                                     |
+| 3   | `<Suspense>` around the docs nav (layout) and article (page)                                  | Prereq for #96     | **Done** — `0604e08`                                     |
+| 4   | Move `(authenticated)` and `loading.tsx` into a `(wrapper)` group; fix `copyright.tsx`        | #96 **and** #135   | **Done** — `fd77866`                                     |
+| 5   | ~~Migrate the session read to `use cache: private` behind a boundary~~                        | #135 (properly)    | **Not needed** — see §1                                  |
+| 5a  | Give the session read a cache lifetime so the App Shell can carry it                          | Latency only       | Open — needs measurement                                 |
+| 5b  | The 29 authenticated pages with no guard of their own                                         | Correctness        | Open — unrelated to caching                              |
+| 6   | Decide `Boundary`'s fate; add card/list-level error boundaries                                | §4                 | Open — medium                                            |
 
-Steps 1–3 are verified: #135's E1437 is gone from both the dev overlay and the
-dev server output, and `npx next build` passes with the public routes prerending
-as §3's table records.
+Steps 1–4 are verified by `npx next build`: exit 0, no E1437 in either the build
+output or the dev overlay, `/` classified `◐` with 25,049 bytes of real content,
+and every authenticated route `◐`.
 
-**Step 4's expected effect is now precise:** it changes exactly one route. `/`
-should go from a 4.3KB spinner-only shell to real landing-page content. Nothing
-else moves, because every other public route already prerenders (§3). Verify by
-rebuilding and checking `index.html` for page text rather than by its size alone.
+**Step 5 as originally written no longer exists.** It bundled three unrelated
+things under one heading: retiring the suppression (done by step 4), giving the
+session read a cache lifetime (a latency question, 5a), and hoisting
+`requireOrganization` out of 59 page bodies (a correctness question, 5b). The
+first is complete; the other two are split out because neither depends on the
+other and only one of them is about caching.
+
+**5b deserves its own issue.** Of 92 authenticated pages, 59 call
+`requireOrganization` and 5 call `requireSession`; **29 call neither** and are
+gated entirely by an ancestor layout. That is fine while the layouts block, but
+it is the constraint that makes any future "push the session read below a
+boundary" work risky: a boundary lets `{children}` render in parallel with the
+guard, and for those 29 pages nothing else would stop them. The original step 5
+proposed hoisting _more_ guards into layouts, which points the wrong way.
 
 Use `npx next build`, not `npm run build` — the latter runs `prisma migrate
 deploy` first, which per AGENTS.md must not touch the shared database without
 explicit permission.
 
-Step 5 is what retires the step-1 suppression and turns `Std.SidebarInset`'s
-existing boundary from decorative into the real partial-prerender cut point. The
-first four steps are worth doing on their own merits, but they are also the
-groundwork for it.
+One claim from the first draft is worth retracting explicitly: that step 5 would
+turn `Std.SidebarInset`'s boundary "from decorative into the real
+partial-prerender cut point." That overstated the prize. `requireOrganization`
+is not only a guard — it supplies the `organization`, `settings` and `roles`
+that feed `OrganizationProvider`, and therefore the sidebar, the nav switcher
+and module gating. All of that is session-derived, so even a perfect
+restructuring leaves `/orgs/[slug]/*` prerendering the `Std` chrome and little
+else. Worth knowing before anyone budgets time against it.
