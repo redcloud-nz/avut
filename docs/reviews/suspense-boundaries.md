@@ -434,11 +434,28 @@ for a 0.02 ms saving is a bad trade.
 
 **5b deserves its own issue.** Of 92 authenticated pages, 59 call
 `requireOrganization` and 5 call `requireSession`; **29 call neither** and are
-gated entirely by an ancestor layout. That is fine while the layouts block, but
-it is the constraint that makes any future "push the session read below a
-boundary" work risky: a boundary lets `{children}` render in parallel with the
-guard, and for those 29 pages nothing else would stop them. The original step 5
-proposed hoisting _more_ guards into layouts, which points the wrong way.
+gated entirely by an ancestor layout.
+
+To be precise, because an earlier draft of this paragraph overstated it:
+**nothing is currently unprotected.** Of the 29, **21 are `"use client"` pages**
+that cannot hold a server guard by construction and are authorized at the data
+layer by tRPC on every procedure call; the other **8 are Server Components**, 7
+covered by `system-admin/layout.tsx`'s `requireGlobalAdmin()` and one
+(`orgs/--select-org`) by the authenticated layout's `requireSession()`. The chain
+holds everywhere today.
+
+What makes it worth an issue is that the invariant — "a page may omit its own
+guard because an ancestor layout blocks before it renders" — is load-bearing and
+written down nowhere, and Cache Components pushes directly against it: Next's own
+guidance is to move the session read out of a layout's top level, and a boundary
+lets `{children}` render in parallel with the guard. The original step 5
+compounded this by proposing to hoist _more_ guards into layouts, which would have
+taken the count from 29 to ~88 while making the layout gate non-blocking. That
+points the wrong way.
+
+Separately, `requireOrganizationWith` has **zero usages in any page**: every
+org-scoped route is gated at `organization:view`, with everything finer enforced
+in tRPC procedures. Defensible, but never explicitly decided.
 
 Use `npx next build`, not `npm run build` — the latter runs `prisma migrate
 deploy` first, which per AGENTS.md must not touch the shared database without
