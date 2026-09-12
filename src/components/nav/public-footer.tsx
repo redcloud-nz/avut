@@ -14,15 +14,15 @@ import { CopyrightString } from "@/components/ui/copyright";
 export function PublicFooter() {
     return (
         <footer className="border-t border-border">
-            <div className="mx-auto flex max-w-[1120px] flex-col justify-between gap-4 px-6 py-6 pb-10 text-[13px] text-muted-foreground sm:flex-row sm:items-center md:px-10">
+            <div className="mx-auto flex max-w-[1120px] flex-col items-center gap-2 px-6 py-4 text-[13px] text-muted-foreground sm:flex-row sm:justify-between md:px-10">
                 <Image
                     src="/avut-logo.svg"
                     alt="A.V.U.T."
                     width={72}
                     height={24}
-                    className="h-auto w-[72px] opacity-60 dark:invert"
+                    className="hidden h-auto w-[72px] opacity-60 dark:invert sm:block"
                 />
-                <div className="flex flex-wrap items-center gap-5">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center">
                     <Link href="/policies/privacy" className="hover:text-foreground">
                         Privacy Policy
                     </Link>
