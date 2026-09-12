@@ -13,7 +13,7 @@ export const metadata = { title: "Sign Out" };
 
 export default async function SignOut_Page() {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column>
                 <SignOut />
             </Argus.Column>

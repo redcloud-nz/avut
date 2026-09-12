@@ -11,7 +11,7 @@ export const metadata = { title: "Terms of Service" };
 
 export default function TermsOfService_Page() {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column width="md">
                 <main className="mt-8">
                     <h1 className="text-3xl md:text-4xl font-bold mb-6">Terms of Service</h1>

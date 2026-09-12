@@ -16,7 +16,7 @@ export const metadata = { title: "Reset Password" };
 // Not `async` — see the note in /auth/sign-in/page.tsx.
 export default function Auth_ResetPassword_Page(props: PageProps<"/auth/reset-password">) {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column className="max-w-xs">
                 <Suspense fallback={<AuthCard_Skeleton fields={2} />}>
                     <ResetPassword_CardFromParams searchParams={props.searchParams} />

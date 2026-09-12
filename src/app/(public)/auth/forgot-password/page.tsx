@@ -12,7 +12,7 @@ export const metadata = { title: "Forgot Password" };
 
 export default function Auth_ForgotPassword_Page() {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column>
                 <Auth_ForgotPassword_Card />
             </Argus.Column>
