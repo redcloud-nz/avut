@@ -14,7 +14,7 @@ import { route } from "@/lib/routes";
 
 import { useOrganization } from "@/hooks/use-organization";
 
-import { playgroundRegistry } from "./_registry";
+import { playgroundRegistry } from "@/app/(wrapper)/(authenticated)/orgs/[slug]/playground/_registry";
 
 export function Playground_Sidebar_Menu() {
     const { slug } = useOrganization();

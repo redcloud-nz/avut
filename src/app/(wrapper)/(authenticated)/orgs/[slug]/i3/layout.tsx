@@ -4,30 +4,17 @@
  *
  * Path: /orgs/[slug]/i3
  */
+"use client";
 
-import { notFound } from "next/navigation";
+import { useOrganization } from "@/hooks/use-organization";
+import { NotEnabledError } from "@/lib/errors";
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
-import { i3ModuleFlag } from "@/lib/flags";
+export default function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
+    const organization = useOrganization();
 
-import { I3_Sidebar_Menu } from "./sidebar-menu";
-import { requireOrganization } from "@/server/organization-access";
+    if (!organization.isModuleEnabled("i3")) {
+        throw new NotEnabledError("The I3 module is not enabled for this organization.");
+    }
 
-export default async function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
-    const { slug } = await props.params;
-    const { settings } = await requireOrganization(slug);
-
-    if (!(await i3ModuleFlag())) notFound();
-
-    if (settings.modules["i3"].enabled === false)
-        throw new Error("I3 module is not enabled for this organization.");
-
-    return (
-        <>
-            <ModuleSidebar scope="organization">
-                <I3_Sidebar_Menu />
-            </ModuleSidebar>
-            {props.children}
-        </>
-    );
+    return props.children;
 }

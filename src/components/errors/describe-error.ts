@@ -6,6 +6,7 @@
 import { TRPCClientError } from "@trpc/client";
 
 import type { ArtiePose } from "@/components/art/artie";
+import { NotEnabledError } from "@/lib/errors";
 
 export interface ErrorDescription {
     title: string;
@@ -35,6 +36,11 @@ export const ErrorDescriptions = {
         description: "Your session has expired. Sign in again to continue.",
         pose: "Login",
     },
+    NotEnabled: {
+        title: "Not enabled",
+        description: "This module is not enabled for this organization.",
+        pose: "NotFound",
+    },
 } as const satisfies Record<string, ErrorDescription>;
 
 /** Read tRPC's string error code off a client error, if this is one. */
@@ -55,8 +61,14 @@ function trpcErrorCode(error: unknown): string | undefined {
  * server components across the RSC boundary with the class dropped and, in production, the
  * message replaced. Server-side permission failures use `forbidden()` instead, which
  * reaches its own boundary with the description intact.
+ *
+ * `NotEnabledError` is the one class check here, and it's safe: every module layout that
+ * throws it is itself a client component, so the throw and this catch happen on the same
+ * side of the RSC boundary — no serialization involved.
  */
 export function describeError(error: unknown): ErrorDescription {
+    if (error instanceof NotEnabledError) return ErrorDescriptions.NotEnabled;
+
     switch (trpcErrorCode(error)) {
         case "FORBIDDEN":
             return ErrorDescriptions.Forbidden;

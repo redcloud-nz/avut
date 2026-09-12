@@ -17,6 +17,10 @@ export function Admin_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
+    if (!organization.isModuleEnabled("admin")) {
+        return null;
+    }
+
     return (
         <SidebarGroup>
             <SidebarMenu>

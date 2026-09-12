@@ -13,7 +13,12 @@ import { route } from "@/lib/routes";
 import { useOrganization } from "@/hooks/use-organization";
 
 export function D4HViews_Sidebar_Menu() {
-    const { slug } = useOrganization();
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    if (!organization.isModuleEnabled("d4h-views")) {
+        return null;
+    }
 
     return (
         <SidebarGroup>

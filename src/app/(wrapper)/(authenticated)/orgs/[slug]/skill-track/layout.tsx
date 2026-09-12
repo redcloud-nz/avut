@@ -5,22 +5,17 @@
  * Path: /orgs/[slug]/skill-track
  */
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
+"use client";
 
-import { requireOrganization } from "@/server/organization-access";
+import { useOrganization } from "@/hooks/use-organization";
+import { NotEnabledError } from "@/lib/errors";
 
-import { SkillTrack_Sidebar_Menu } from "./sidebar-menu";
+export default function SkillTrack_Layout(props: LayoutProps<"/orgs/[slug]/skill-track">) {
+    const organization = useOrganization();
 
-export default async function SkillTrack_Layout(props: LayoutProps<"/orgs/[slug]/skill-track">) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
+    if (!organization.isModuleEnabled("skill-track")) {
+        throw new NotEnabledError("The Skill Track module is not enabled for this organization.");
+    }
 
-    return (
-        <>
-            <ModuleSidebar scope="organization">
-                <SkillTrack_Sidebar_Menu />
-            </ModuleSidebar>
-            {props.children}
-        </>
-    );
+    return props.children;
 }

@@ -15,6 +15,10 @@ import { useOrganization } from "@/hooks/use-organization";
 export function SkillTrack_Sidebar_Menu() {
     const organization = useOrganization();
 
+    if (!organization.isModuleEnabled("skill-track")) {
+        return null;
+    }
+
     return (
         <SidebarGroup>
             <SidebarMenu>

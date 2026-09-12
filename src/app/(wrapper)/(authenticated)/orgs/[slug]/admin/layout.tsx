@@ -5,22 +5,17 @@
  * Path: /orgs/[slug]/admin
  */
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
+"use client";
 
-import { requireOrganization } from "@/server/organization-access";
+import { useOrganization } from "@/hooks/use-organization";
+import { NotEnabledError } from "@/lib/errors";
 
-import { Admin_Sidebar_Menu } from "./sidebar-menu";
+export default function Admin_Layout(props: LayoutProps<"/orgs/[slug]/admin">) {
+    const organization = useOrganization();
 
-export default async function Admin_Layout(props: LayoutProps<"/orgs/[slug]/admin">) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
+    if (!organization.isModuleEnabled("admin")) {
+        throw new NotEnabledError("The Admin module is not enabled for this organization.");
+    }
 
-    return (
-        <>
-            <ModuleSidebar scope="organization">
-                <Admin_Sidebar_Menu />
-            </ModuleSidebar>
-            {props.children}
-        </>
-    );
+    return props.children;
 }

@@ -17,6 +17,10 @@ export function I3_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
+    if (!organization.isModuleEnabled("i3")) {
+        return null;
+    }
+
     return (
         <SidebarGroup>
             <SidebarMenu>

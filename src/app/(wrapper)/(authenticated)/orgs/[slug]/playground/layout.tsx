@@ -7,17 +7,15 @@
 
 import { notFound } from "next/navigation";
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
-
 import { playgroundFlag } from "@/lib/flags";
 import { requireOrganization } from "@/server/organization-access";
-
-import { Playground_Sidebar_Menu } from "./sidebar-menu";
 
 export const metadata = {
     title: "Playground",
 };
 
+// PROTOTYPE — the sidebar menu now comes from `../@sidebar/playground/page.tsx`, hoisted up to
+// `orgs/[slug]/layout.tsx`.
 export default async function Playground_Layout(props: LayoutProps<"/orgs/[slug]/playground">) {
     const { slug } = await props.params;
     await requireOrganization(slug);
@@ -28,12 +26,5 @@ export default async function Playground_Layout(props: LayoutProps<"/orgs/[slug]
     // if they need to render something a plain member shouldn't.
     if (!(await playgroundFlag())) notFound();
 
-    return (
-        <>
-            <ModuleSidebar scope="organization">
-                <Playground_Sidebar_Menu />
-            </ModuleSidebar>
-            {props.children}
-        </>
-    );
+    return props.children;
 }

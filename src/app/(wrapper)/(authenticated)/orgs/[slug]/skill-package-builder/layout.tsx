@@ -5,31 +5,21 @@
  * Paths: /orgs/[slug]/skill-package-builder
  */
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
+"use client";
 
-import { SkillPackageBuilder_Sidebar_Menu } from "./sidebar-menu";
-import { requireOrganization } from "@/server/organization-access";
+import { useOrganization } from "@/hooks/use-organization";
+import { NotEnabledError } from "@/lib/errors";
 
-export const metadata = {
-    title: "Skill Package Builder",
-};
-
-export default async function SkillPackageBuilder_Layout(
+export default function SkillPackageBuilder_Layout(
     props: LayoutProps<`/orgs/[slug]/skill-package-builder`>,
 ) {
-    const { slug } = await props.params;
-    const { settings } = await requireOrganization(slug);
+    const organization = useOrganization();
 
-    if (!settings.modules["skill-package-builder"].enabled) {
-        throw new Error("Skill Package Builder module is not enabled for this organization.");
+    if (!organization.isModuleEnabled("skill-package-builder")) {
+        throw new NotEnabledError(
+            "The Skill Package Builder module is not enabled for this organization.",
+        );
     }
 
-    return (
-        <>
-            <ModuleSidebar scope="organization">
-                <SkillPackageBuilder_Sidebar_Menu />
-            </ModuleSidebar>
-            {props.children}
-        </>
-    );
+    return props.children;
 }
