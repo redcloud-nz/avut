@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `skillChecks` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const skillChecksEffects = createEffects<"skillChecks">()({
     approveSession: (vars, { updated }) => [

@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `personnel` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  * Kept next to the mutations they cover rather than duplicated at each call site, since several
  * personnel actions (link/unlink in particular) touch queries owned by other routers.
  */

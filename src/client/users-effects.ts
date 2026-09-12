@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `users` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  * `linkPerson`/`unlinkPerson` reach into the `personnel` router's cache too, which is the case
  * this pattern is meant for: a call site adding a new place to link a person no longer needs to
  * remember all five affected queries.

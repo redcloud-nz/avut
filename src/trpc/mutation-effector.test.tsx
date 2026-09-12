@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
 
-import { invalidate, MutationEffector, write } from "./mutation-effector";
+import { invalidate, useMutationEffector, write } from "./mutation-effector";
 
 function makeClient() {
     return new QueryClient({
@@ -16,13 +16,14 @@ function makeClient() {
     });
 }
 
-describe("MutationInvalidator", () => {
+describe("useMutationEffector", () => {
     it("invalidates queries declared with invalidate() in meta.effects after a mutation succeeds", async () => {
         const queryClient = makeClient();
         const queryFn = vi.fn().mockResolvedValue("value");
         queryClient.setQueryData(["thing", "1"], "stale");
 
         function Harness() {
+            useMutationEffector(queryClient);
             useQuery({ queryKey: ["thing", "1"], queryFn, staleTime: Infinity });
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1" }),
@@ -37,7 +38,6 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -55,6 +55,7 @@ describe("MutationInvalidator", () => {
         queryClient.setQueryData(["other"], "stale");
 
         function Harness() {
+            useMutationEffector(queryClient);
             useQuery({ queryKey: ["other"], queryFn, staleTime: Infinity });
             const mutation = useMutation({ mutationFn: () => Promise.resolve() });
             return <button onClick={() => mutation.mutate()}>mutate</button>;
@@ -62,7 +63,6 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -81,6 +81,7 @@ describe("MutationInvalidator", () => {
         queryClient.setQueryData(["thing", "1"], "stale");
 
         function Harness() {
+            useMutationEffector(queryClient);
             const { data } = useQuery({
                 queryKey: ["thing", "1"],
                 queryFn: () => Promise.resolve("stale"),
@@ -104,7 +105,6 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -121,6 +121,7 @@ describe("MutationInvalidator", () => {
         queryClient.setQueryData(["thing", "1"], { name: "Alice", role: "admin" });
 
         function Harness() {
+            useMutationEffector(queryClient);
             const { data } = useQuery<{ name: string; role: string }>({
                 queryKey: ["thing", "1"],
                 queryFn: () => Promise.resolve({ name: "Alice", role: "admin" }),
@@ -149,7 +150,6 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -169,6 +169,7 @@ describe("MutationInvalidator", () => {
         queryClient.setQueryData(["thing", "1"], "stale");
 
         function Harness() {
+            useMutationEffector(queryClient);
             useQuery({ queryKey: ["thing", "1"], queryFn, staleTime: Infinity });
             const mutation = useMutation({
                 mutationFn: () => Promise.resolve({ id: "1", value: "from-write" }),
@@ -185,7 +186,6 @@ describe("MutationInvalidator", () => {
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
@@ -207,13 +207,13 @@ describe("MutationInvalidator", () => {
         queryClient.getMutationCache().config.onSuccess = previousOnSuccess;
 
         function Harness() {
+            useMutationEffector(queryClient);
             const mutation = useMutation({ mutationFn: () => Promise.resolve("done") });
             return <button onClick={() => mutation.mutate()}>mutate</button>;
         }
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MutationEffector />
                 <Harness />
             </QueryClientProvider>,
         );
