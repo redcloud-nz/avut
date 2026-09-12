@@ -16,7 +16,7 @@ import { ProductShot } from "@/components/marketing/product-shot";
 import { Button } from "@/components/ui/button";
 import { VersionString } from "@/components/ui/version-string";
 import { orgModules } from "@/lib/modules";
-import { getSession } from "@/server/session";
+import { hasActiveSession } from "@/server/session";
 
 /**
  * Marketing copy per module. Names and icons come from the `Modules` registry.
@@ -72,18 +72,6 @@ const FAQ: { q: string; a: ReactNode }[] = [
     },
 ];
 
-/**
- * `getSession()` is wrapped in React `cache()`, so this shares the lookup the header's own
- * CTA already makes for the same request. Deliberately the real, DB-validated check rather
- * than the cheap `getSessionCookie()` presence check — a stale or revoked cookie must not show
- * "Open AVUT" for a session that's actually dead. Owns its own `<Suspense>` boundary so this is
- * the *only* dynamic part of the page; see #96 for why that doesn't yet buy a cached static
- * shell for the rest of it.
- */
-async function hasActiveSession(): Promise<boolean> {
-    return (await getSession()) != null;
-}
-
 function SignedOutHeroCta() {
     return (
         <>
@@ -97,6 +85,11 @@ function SignedOutHeroCta() {
     );
 }
 
+/**
+ * Owns its own `<Suspense>` boundary so this is the *only* dynamic part of the page; see
+ * #96 for why that doesn't yet buy a cached static shell for the rest of it. `hasActiveSession()`
+ * shares the header's own `cache()`-wrapped lookup for the same request.
+ */
 async function HeroCta() {
     if (!(await hasActiveSession())) return <SignedOutHeroCta />;
     return (
