@@ -18,7 +18,7 @@ export const metadata = { title: "Verify Email" };
 // but it's the same class of URL read and the same fix.
 export default function Auth_VerifyEmail_Page(props: PageProps<"/auth/verify-email/[email]">) {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column>
                 <Suspense fallback={<AuthCard_Skeleton fields={0} />}>
                     <VerifyEmail_CardFromParams params={props.params} />
