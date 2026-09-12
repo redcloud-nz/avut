@@ -19,17 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "@/components/ui/link";
 import { docsHref } from "@/lib/docs-sections";
 import { REPO_URL } from "@/lib/site";
-import { getSession } from "@/server/session";
-
-/**
- * Wrapped in React `cache()` by `getSession()` itself, so checking it here doesn't cost an
- * extra lookup beyond whatever else on the page already checks it. Deliberately the real,
- * DB-validated check rather than the cheap `getSessionCookie()` presence check — a stale or
- * revoked cookie must not show "Open AVUT" for a session that's actually dead.
- */
-async function hasActiveSession(): Promise<boolean> {
-    return (await getSession()) != null;
-}
+import { hasActiveSession } from "@/server/session";
 
 function SignedOutCta() {
     return (
