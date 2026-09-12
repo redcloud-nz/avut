@@ -377,7 +377,7 @@ Ordered. Each step is independently shippable. Status as of 2026-09-12.
 | 3   | `<Suspense>` around the docs nav (layout) and article (page)                                  | Prereq for #96     | **Done** — `0604e08`                                     |
 | 4   | Move `(authenticated)` and `loading.tsx` into a `(wrapper)` group; fix `copyright.tsx`        | #96 **and** #135   | **Done** — `fd77866`                                     |
 | 5   | ~~Migrate the session read to `use cache: private` behind a boundary~~                        | #135 (properly)    | **Not needed** — see §1                                  |
-| 5a  | Give the session read a cache lifetime so the App Shell can carry it                          | Latency only       | Open — needs measurement                                 |
+| 5a  | Give the session read a cache lifetime so the App Shell can carry it                          | Latency only       | **Closed — measured, no win.** See below                 |
 | 5b  | The 29 authenticated pages with no guard of their own                                         | Correctness        | Open — unrelated to caching                              |
 | 6   | Decide `Boundary`'s fate; add card/list-level error boundaries                                | §4                 | Open — medium                                            |
 
@@ -391,6 +391,46 @@ session read a cache lifetime (a latency question, 5a), and hoisting
 `requireOrganization` out of 59 page bodies (a correctness question, 5b). The
 first is complete; the other two are split out because neither depends on the
 other and only one of them is about caching.
+
+### 5a: why there is no performance win in `requireSession`
+
+Tried and rejected on measurement, 2026-09-12. Recorded so it is not reopened on
+the strength of the Next guide alone.
+
+**1. There is no database round trip to save.** better-auth's
+[`cookieCache`](../../src/server/auth.ts) is already enabled with
+`maxAge: 5 * 60` — the same five minutes `cacheLife({ stale: 300 })` would have
+set. Its `/get-session` endpoint returns straight from the signed `session_data`
+cookie and never reaches the adapter while that cookie is valid. A private cache
+would be a five-minute cache layered on a five-minute cache.
+
+**2. What remains to save is 0.02 ms.** The cookie-cache path is a base64
+decode, an HMAC-SHA256 verify and a `JSON.parse`. Benchmarked on a
+representative 499-byte session payload: **0.0235 ms per call**, and React
+`cache()` already dedupes it to one call per request.
+
+**3. The App Shell argument doesn't reach this codebase.** The real prize in the
+Next guide is skipping a server round trip, not CPU. But for the App Shell to
+carry an authenticated route, everything from root to page must be static or
+privately cached. `requireOrganization` still calls
+`auth.api.hasPermission({ headers })` — an uncached runtime read that _does_ hit
+the database — plus `getOrganizationUserById` and `resolveModuleFlags()`. The
+session is not the binding constraint, so caching it alone changes nothing.
+Making it change something means privately caching the permission check too,
+which is the large restructuring whose prize is small (see the retraction
+below), and which would put permission data behind a plain-text cache key.
+
+A build with the directive applied produced **byte-identical** prerendered
+shells (`orgs/[slug]/admin.html` 4,722 b, 8 divs, before and after) — expected,
+since `use cache: private` is excluded from static shell generation, and a
+reminder that its benefit is not locally observable.
+
+**The risk side is not zero**, which matters when the gain is. This app supports
+impersonation (`window.avut.impersonateUser`, `ImpersonationBanner`). A second
+five-minute identity cache is another place a stale identity can survive an
+identity change. Both `impersonateUser` and `stopImpersonating` do a full page
+load, which drops a private cache, so it is probably safe — but "probably safe"
+for a 0.02 ms saving is a bad trade.
 
 **5b deserves its own issue.** Of 92 authenticated pages, 59 call
 `requireOrganization` and 5 call `requireSession`; **29 call neither** and are
