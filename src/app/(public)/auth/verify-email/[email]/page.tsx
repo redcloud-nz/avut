@@ -20,7 +20,6 @@ export default function Auth_VerifyEmail_Page(props: PageProps<"/auth/verify-ema
     return (
         <Argus.Root>
             <Argus.Column>
-                <Argus.AppLogo />
                 <Suspense fallback={<AuthCard_Skeleton fields={0} />}>
                     <VerifyEmail_CardFromParams params={props.params} />
                 </Suspense>

@@ -10,19 +10,12 @@ import { Suspense, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cable, Tag } from "lucide-react";
-import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { ProductShot } from "@/components/marketing/product-shot";
 import { Button } from "@/components/ui/button";
-import { CopyrightString } from "@/components/ui/copyright";
-import { ExternalLink } from "@/components/ui/link";
 import { VersionString } from "@/components/ui/version-string";
 import { orgModules } from "@/lib/modules";
 import { getSession } from "@/server/session";
-
-const REPO_URL =
-    process.env.NEXT_PUBLIC_APP_REPOSITORY_URL ?? "https://github.com/redcloud-nz/avut";
-const REPO_SLUG = REPO_URL.replace(/^https?:\/\/github\.com\//, "");
 
 /**
  * Marketing copy per module. Names and icons come from the `Modules` registry.
@@ -79,38 +72,15 @@ const FAQ: { q: string; a: ReactNode }[] = [
 ];
 
 /**
- * `getSession()` is wrapped in React `cache()`, so checking it twice per request
- * (header + hero) costs one lookup, not two. Deliberately the real, DB-validated
- * check rather than the cheap `getSessionCookie()` presence check — a stale or
- * revoked cookie must not show "Open AVUT" for a session that's actually dead.
- * Each call site owns its own `<Suspense>` boundary so this is the *only*
- * dynamic part of the page; see #96 for why that doesn't yet buy a cached
- * static shell for the rest of it.
+ * `getSession()` is wrapped in React `cache()`, so this shares the lookup the header's own
+ * CTA already makes for the same request. Deliberately the real, DB-validated check rather
+ * than the cheap `getSessionCookie()` presence check — a stale or revoked cookie must not show
+ * "Open AVUT" for a session that's actually dead. Owns its own `<Suspense>` boundary so this is
+ * the *only* dynamic part of the page; see #96 for why that doesn't yet buy a cached static
+ * shell for the rest of it.
  */
 async function hasActiveSession(): Promise<boolean> {
     return (await getSession()) != null;
-}
-
-function SignedOutHeaderCta() {
-    return (
-        <>
-            <Button asChild variant="outline">
-                <Link href="/auth/sign-in">Sign In</Link>
-            </Button>
-            <Button asChild>
-                <Link href="/auth/sign-up">Sign Up</Link>
-            </Button>
-        </>
-    );
-}
-
-async function HeaderCta() {
-    if (!(await hasActiveSession())) return <SignedOutHeaderCta />;
-    return (
-        <Button asChild>
-            <Link href="/orgs/--select-org">Open AVUT</Link>
-        </Button>
-    );
 }
 
 function SignedOutHeroCta() {
@@ -140,44 +110,7 @@ async function HeroCta() {
 
 export default function HomePage() {
     return (
-        <div className="min-h-svh w-full bg-background text-foreground">
-            <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-                <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-6 px-6 py-3.5 md:px-10">
-                    <Link href="#top" className="shrink-0">
-                        <Image
-                            src="/avut-logo.svg"
-                            alt="A.V.U.T."
-                            width={96}
-                            height={32}
-                            className="h-auto w-24 dark:invert"
-                        />
-                    </Link>
-                    <nav className="flex items-center gap-5 text-sm text-muted-foreground">
-                        <a href="#tools" className="hidden sm:inline hover:text-foreground">
-                            Tools
-                        </a>
-                        <a href="#d4h" className="hidden sm:inline hover:text-foreground">
-                            D4H
-                        </a>
-                        <a href="#questions" className="hidden sm:inline hover:text-foreground">
-                            Questions
-                        </a>
-                        <ExternalLink
-                            href={REPO_URL}
-                            noDecoration
-                            className="hidden sm:inline hover:text-foreground"
-                        >
-                            GitHub
-                        </ExternalLink>
-                        <div className="flex items-center gap-1.5">
-                            <Suspense fallback={<SignedOutHeaderCta />}>
-                                <HeaderCta />
-                            </Suspense>
-                        </div>
-                    </nav>
-                </div>
-            </header>
-
+        <>
             <div id="top" className="scroll-mt-20 border-b border-border bg-muted/40">
                 <div className="mx-auto grid max-w-[1120px] grid-cols-1 items-center gap-10 px-6 py-12 md:grid-cols-[1.15fr_0.85fr] md:px-10 md:py-16">
                     <div className="flex flex-col gap-5">
@@ -331,47 +264,6 @@ export default function HomePage() {
                     ))}
                 </div>
             </section>
-
-            <div className="bg-foreground text-background">
-                <section className="mx-auto flex max-w-[1120px] flex-col justify-between gap-6 px-6 py-9 sm:flex-row sm:items-center md:px-10">
-                    <div className="flex flex-col gap-1.5">
-                        <div className="text-lg font-medium">Open source, MIT licensed.</div>
-                        <p className="text-sm leading-relaxed text-background/70">
-                            Read the code, file an issue, or run your own copy. Next.js, Postgres,
-                            tRPC — nothing exotic.
-                        </p>
-                    </div>
-                    <ExternalLink
-                        href={REPO_URL}
-                        noDecoration
-                        className="inline-flex h-9 shrink-0 items-center gap-2 self-start whitespace-nowrap rounded-md bg-background/10 px-3.5 text-sm font-medium text-background hover:bg-background/20 sm:self-auto"
-                    >
-                        <SiGithub className="size-4" />
-                        {REPO_SLUG}
-                    </ExternalLink>
-                </section>
-            </div>
-
-            <footer className="border-t border-border">
-                <div className="mx-auto flex max-w-[1120px] flex-col justify-between gap-4 px-6 py-6 pb-10 text-[13px] text-muted-foreground sm:flex-row sm:items-center md:px-10">
-                    <Image
-                        src="/avut-logo.svg"
-                        alt="A.V.U.T."
-                        width={72}
-                        height={24}
-                        className="h-auto w-[72px] opacity-60 dark:invert"
-                    />
-                    <div className="flex flex-wrap items-center gap-5">
-                        <Link href="/policies/privacy" className="hover:text-foreground">
-                            Privacy Policy
-                        </Link>
-                        <Link href="/policies/terms-of-service" className="hover:text-foreground">
-                            Terms of Service
-                        </Link>
-                        <CopyrightString />
-                    </div>
-                </div>
-            </footer>
-        </div>
+        </>
     );
 }

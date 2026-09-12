@@ -5,7 +5,9 @@
  * Path: /docs
  *
  * Public, unauthenticated shell for the end-user documentation site. Prospective
- * organizations can browse this before signing up (mirrors `(public)/policies`).
+ * organizations can browse this before signing up (mirrors `(public)/policies`). Sits inside
+ * the shared `(public)/(marketing)/layout.tsx` header/footer — this only adds the docs-specific
+ * sub-bar (title + search) and the sidebar/main split.
  */
 
 import { Suspense, type ReactNode } from "react";
@@ -19,22 +21,17 @@ import { getVisibleDocsNav } from "@/server/docs";
 
 // Not `async`. `getVisibleDocsNav()` resolves module flags, which read headers, so awaiting it
 // here would block the whole `/docs` subtree — the chrome below would never reach the static
-// shell. The read lives in `<DocsNav>` behind a boundary instead, leaving the header, search and
-// main frame prerenderable. See docs/reviews/suspense-boundaries.md §3.
+// shell. The read lives in `<DocsNav>` behind a boundary instead, leaving the sub-bar and main
+// frame prerenderable. See docs/reviews/suspense-boundaries.md §3.
 export default function DocsLayout({ children }: { children: ReactNode }) {
     return (
-        <div className="mx-auto flex min-h-svh max-w-6xl flex-col px-4">
-            <header className="flex h-14 items-center justify-between gap-4 border-b">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4">
+            <div className="flex h-14 items-center justify-between gap-4 border-b">
                 <Link href={docsHref("")} className="font-semibold">
                     {process.env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? "AVUT"} Docs
                 </Link>
-                <div className="flex items-center gap-4">
-                    <DocsSearch />
-                    <Link href="/" className="text-muted-foreground text-sm hover:underline">
-                        Back to app
-                    </Link>
-                </div>
-            </header>
+                <DocsSearch />
+            </div>
             <div className="flex flex-1 gap-10 py-8">
                 <aside className="hidden w-56 shrink-0 md:block">
                     <div className="sticky top-8">
