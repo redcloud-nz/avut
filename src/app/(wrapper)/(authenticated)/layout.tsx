@@ -5,10 +5,23 @@
  *  Path: /
  */
 
-import { ReactNode } from "react";
+import Image from "next/image";
+import { ReactNode, Suspense } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { ModeToggle } from "@/components/nav/mode-toggle";
+import { NavSkeleton } from "@/components/nav/nav-skeleton";
+import { NotificationsMenu } from "@/components/nav/notifications-menu";
+import { UserMenu } from "@/components/nav/user-menu";
 import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarRail,
+} from "@/components/ui/sidebar";
+import { VersionString } from "@/components/ui/version-string";
 import { ensureSession } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
 import { getServerQueryClient, HydrateClient } from "@/trpc/server";
@@ -22,6 +35,7 @@ import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 // as a boundary stays above it.
 export default async function AuthenticatedLayout(props: {
     modal: ReactNode;
+    sidebar: ReactNode;
     children: ReactNode;
 }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
@@ -36,6 +50,42 @@ export default async function AuthenticatedLayout(props: {
         <HydrateClient>
             <AppProviders>
                 <ImpersonationBanner />
+                {/*
+                 * PROTOTYPE — this used to be a separate `ModuleSidebar` component, rendered
+                 * inside `orgs/[slug]/layout.tsx`, `system-admin/layout.tsx`, and
+                 * `notes/layout.tsx`. It's inlined here so every authenticated route shares one
+                 * sidebar shell; the `@sidebar` slot (mirroring the main tree's structure under
+                 * this same directory) supplies the per-route menu content. See the
+                 * suspense-boundary-review discussion for the tradeoffs.
+                 */}
+                <Sidebar>
+                    <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
+                        <div className="w-[100px]">
+                            <Image
+                                src="/avut-logo.svg"
+                                alt="A.V.U.T. Logo"
+                                width={100}
+                                height={100 / 3}
+                                loading="eager"
+                                className="dark:invert"
+                            />
+                        </div>
+                        <div>
+                            <NotificationsMenu />
+                            <ModeToggle />
+                        </div>
+                    </SidebarHeader>
+                    <SidebarContent>
+                        <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
+                    </SidebarContent>
+                    <SidebarFooter>
+                        <div className="py-1 text-center text-xs text-muted-foreground">
+                            <VersionString />
+                        </div>
+                        <UserMenu />
+                    </SidebarFooter>
+                    <SidebarRail />
+                </Sidebar>
                 {props.modal}
                 {props.children}
             </AppProviders>

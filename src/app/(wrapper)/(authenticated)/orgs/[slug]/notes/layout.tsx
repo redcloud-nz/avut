@@ -7,7 +7,6 @@
 
 import { notFound } from "next/navigation";
 
-import { ModuleSidebar } from "@/components/nav/module-sidebar";
 import { notesModuleFlag } from "@/lib/flags";
 import { requireOrganization } from "@/server/organization-access";
 
@@ -25,5 +24,5 @@ export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/note
         throw new Error("Notes module is not enabled for this organization.");
     }
 
-    return <ModuleSidebar scope="organization">{props.children}</ModuleSidebar>;
+    return props.children;
 }

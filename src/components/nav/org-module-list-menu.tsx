@@ -25,13 +25,13 @@ import { globalModules, moduleBySegment, orgModules } from "@/lib/modules";
 import { useUser } from "@/client/auth-queries";
 
 function useCurrentModule() {
-    // Org paths are /orgs/<slug>/<module>/...; global paths are /<module>/... (e.g. /system-admin).
-    const parts = usePathname().split("/");
-    const segment = parts[1] === "orgs" ? parts[3] : parts[1];
+    // Org paths are /orgs/<slug>/<module>/...
+    const segment = usePathname().split("/")[3];
     return segment ? moduleBySegment[segment] : undefined;
 }
 
-export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) {
+/** Module switcher for the org scope — only usable within an `OrganizationProvider`. */
+export function OrgModuleListMenu() {
     const currentModule = useCurrentModule();
     const CurrentIcon = currentModule?.icon;
 
@@ -54,10 +54,10 @@ export function ModuleListMenu({ scope }: { scope: "global" | "organization" }) 
                     <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg">
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Modules</DropdownMenuLabel>
-                            {scope === "organization" && <OrganizationModuleOptions />}
-                            {/* Global modules are reachable from any scope (admin-only);
-                                inside an org they follow the org modules under a divider. */}
-                            <GlobalModuleOptions separated={scope === "organization"} />
+                            <OrganizationModuleOptions />
+                            {/* Global modules are admin-only; they follow the org modules
+                                under a divider. */}
+                            <GlobalModuleOptions separated />
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
