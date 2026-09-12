@@ -8,7 +8,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Jersey_10, Inter } from "next/font/google";
-import { Toaster } from "sonner";
 
 import { RootProviders } from "@/components/providers/root-providers";
 import { cn } from "@/lib/utils";
@@ -50,7 +49,6 @@ export default function Root_Layout(props: LayoutProps<"/">) {
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
                 <RootProviders>{props.children}</RootProviders>
-                <Toaster richColors />
             </body>
         </html>
     );
