@@ -4,14 +4,14 @@
  */
 import "server-only";
 
-import { cacheTag, revalidateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import * as z from "zod";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { UserId } from "@/lib/schemas/user";
 
+import { organizationUserCacheTag } from "./organization-user-cache";
 import prisma from "./prisma";
 
 /**
@@ -33,7 +33,7 @@ export async function getOrganizationUserRoles(
     user_id: string,
 ): Promise<OrganizationRole[]> {
     "use cache";
-    cacheTag(`organization-user-${user_id}`);
+    cacheTag(organizationUserCacheTag(user_id));
 
     const orgUser = await prisma.organizationUser.findUnique({
         where: { organizationId_userId: { organizationId, userId: user_id } },
@@ -42,12 +42,4 @@ export async function getOrganizationUserRoles(
 
     if (!orgUser) return notFound();
     return z.array(OrganizationRole.schema).parse(orgUser.role.split(","));
-}
-
-/**
- * Revalidate the cache for an organization user.
- * @param user_id The ID of the user.
- */
-export async function revalidateOrganizationUser(user_id: UserId) {
-    revalidateTag(`organization-user-${user_id}`, { expire: 0 });
 }

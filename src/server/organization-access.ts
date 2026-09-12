@@ -70,16 +70,15 @@ export async function assertPermission(
  * beyond `organization:view`.
  */
 export const requireOrganization = cache(async (slug: string): Promise<OrganizationAccess> => {
-    // Session first, so an expired session redirects to sign-in rather than surfacing as
-    // an authorization failure from Better Auth.
-    const session = await requireSession();
+    const [session, organization] = await Promise.all([
+        requireSession(),
+        getOrganizationBySlug(slug),
+    ]);
 
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
-
-    await assertPermission(organization.id, { organization: ["view"] });
-
-    const roles = await getOrganizationUserRoles(organization.id, session.user.id);
+    const [settings, roles] = await Promise.all([
+        getOrganizationSettings(organization.id),
+        getOrganizationUserRoles(organization.id, session.user.id),
+    ]);
 
     return { session, organization, settings, roles };
 });

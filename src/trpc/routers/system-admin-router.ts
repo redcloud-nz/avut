@@ -21,6 +21,7 @@ import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
+import { revalidateOrganizationUser } from "@/server/organization-user-cache";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 import { getSkillPackageLibraryEntry, listSkillPackageLibrary } from "@/server/skill-packages";
 
@@ -138,6 +139,8 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
             ]);
 
+            await revalidateOrganizationUser(input.userId);
+
             return { id };
         }),
 
@@ -203,6 +206,10 @@ export const systemAdminRouter = createTrpcRouter({
                     changes: [],
                 }),
             ]);
+
+            if (input.addSelfAsOwner) {
+                await revalidateOrganizationUser(userId);
+            }
 
             return { id: organizationId, slug: input.slug };
         }),
@@ -328,6 +335,8 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.user.delete({ where: { id: input.userId } }),
             ]);
+
+            await revalidateOrganizationUser(input.userId);
 
             return { id: input.userId };
         }),
@@ -602,6 +611,8 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
             ]);
 
+            await revalidateOrganizationUser(input.userId);
+
             return { ok: true as const };
         }),
 
@@ -648,6 +659,8 @@ export const systemAdminRouter = createTrpcRouter({
                     description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
                 }),
             ]);
+
+            await revalidateOrganizationUser(input.userId);
 
             return { id: updated.id, role: updated.role };
         }),
