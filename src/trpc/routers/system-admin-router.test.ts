@@ -11,6 +11,13 @@ import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
+import {
+    SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+    type SkillPackageExport,
+} from "@/lib/schemas/skill-package-export";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 
@@ -1072,6 +1079,44 @@ describe("systemAdmin.importSkillPackage", () => {
     };
     const db = createMockPrisma();
 
+    function makeEnvelope(): SkillPackageExport {
+        return {
+            formatVersion: SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            package: {
+                id: SkillPackageId.create(),
+                name: "Starter Package",
+                description: "A starter package for tests.",
+                tags: [],
+                properties: {},
+                groups: [
+                    {
+                        id: SkillGroupId.create(),
+                        name: "Group 1",
+                        description: "",
+                        tags: [],
+                        properties: {},
+                        sequence: 0,
+                        defaultInclude: true,
+                        skills: [
+                            {
+                                id: SkillId.create(),
+                                name: "Skill 1",
+                                description: "",
+                                tags: [],
+                                properties: {},
+                                sequence: 0,
+                                frequency: 12,
+                                defaultInclude: true,
+                                defaultRequired: true,
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+    }
+
     beforeAll(async () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: `acme-${nanoId16()}`, createdAt: new Date() },
@@ -1103,20 +1148,9 @@ describe("systemAdmin.importSkillPackage", () => {
         );
     }
 
-    it("lists the bundled library", async () => {
-        const { packages } = await makeCaller().listSkillPackageLibrary();
-        expect(packages.some((p) => p.fileName === "example-starter-package.json")).toBe(true);
-
-        const lightRescue = packages.find((p) => p.fileName === "light-rescue.json");
-        expect(lightRescue).toBeDefined();
-        expect(lightRescue?.name).toBe("Light Rescue");
-        expect(lightRescue?.groupCount).toBeGreaterThan(0);
-        expect(lightRescue?.skillCount).toBeGreaterThan(0);
-    });
-
     it("dryRun computes a plan without writing", async () => {
         const result = await makeCaller().importSkillPackage({
-            fileName: "example-starter-package.json",
+            envelope: makeEnvelope(),
             targetOrganizationId: T.org,
             dryRun: true,
         });
@@ -1129,7 +1163,7 @@ describe("systemAdmin.importSkillPackage", () => {
 
     it("imports the tree unpublished and writes one SkillPackage log entry", async () => {
         const result = await makeCaller().importSkillPackage({
-            fileName: "example-starter-package.json",
+            envelope: makeEnvelope(),
             targetOrganizationId: T.org,
             dryRun: false,
         });
@@ -1156,22 +1190,19 @@ describe("systemAdmin.importSkillPackage", () => {
     });
 
     it("refuses a package ID already owned by another organization", async () => {
+        const envelope = makeEnvelope();
+        await makeCaller().importSkillPackage({
+            envelope,
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+
         await expect(
             makeCaller().importSkillPackage({
-                fileName: "example-starter-package.json",
+                envelope,
                 targetOrganizationId: T.otherOrg,
                 dryRun: true,
             }),
         ).rejects.toThrow(/different organization/i);
-    });
-
-    it("rejects an unknown file name", async () => {
-        await expect(
-            makeCaller().importSkillPackage({
-                fileName: "does-not-exist.json",
-                targetOrganizationId: T.org,
-                dryRun: true,
-            }),
-        ).rejects.toThrow(/no bundled skill package/i);
     });
 });
