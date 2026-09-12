@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     description: "Assorted Vaguely Useful Tools",
 };
 
-export default async function Root_Layout(props: LayoutProps<"/">) {
+export default function Root_Layout(props: LayoutProps<"/">) {
     return (
         <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
             <body
