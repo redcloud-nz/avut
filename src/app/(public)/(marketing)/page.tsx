@@ -153,10 +153,18 @@ export default function HomePage() {
                             Six modules. Turn on the ones you need.
                         </h2>
                     </div>
-                    <p className="max-w-[32ch] text-sm leading-relaxed text-muted-foreground">
-                        Every module is scoped to an organisation. Admin is always on; the rest are
-                        switched per org in settings.
-                    </p>
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                        <p className="max-w-[32ch] text-sm leading-relaxed text-muted-foreground">
+                            Every module is scoped to an organisation. Admin is always on; the rest
+                            are switched per org in settings.
+                        </p>
+                        <Link
+                            href="/tools"
+                            className="text-sm font-medium underline underline-offset-4 hover:text-foreground"
+                        >
+                            See all tools
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
