@@ -12,7 +12,7 @@ import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";
 import { requireOrganization } from "@/server/organization-access";
 import { OrganizationProvider } from "@/hooks/use-organization";
-import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
+import { getServerQueryClient, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // NOTE: metadata generation deliberately uses the plain cached lookup rather than
 // `requireOrganization` — `generateMetadata` must not redirect. The access check lives in
@@ -31,15 +31,17 @@ export async function generateMetadata(props: LayoutProps<"/orgs/[slug]">): Prom
 
 export default async function Organization_Layout(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const { organization, settings, roles } = await requireOrganization(slug);
+    const { organization, settings } = await requireOrganization(slug);
     const moduleFlags = await resolveModuleFlags();
 
-    // `requireOrganization` already did the real fetch (it has to, for the permission check),
-    // so seed the query cache with its result directly rather than re-fetching through
-    // `prefetch` — `useOrganization`'s `useSuspenseQueries` then hits these on the client
-    // instead of firing its own request. `@sidebar/orgs/[slug]/layout.tsx` has no such data to
-    // seed (it only calls the plain `getOrganizationBySlug` lookup), so its own `useOrganization`
-    // reads either land on these same cache entries or fetch lazily — both fine.
+    // `requireOrganization` already did the real fetch for organization/settings (it has to,
+    // for the permission check), so seed the query cache with its result directly rather than
+    // re-fetching through `prefetch` — `useOrganization`'s `useSuspenseQueries` then hits these
+    // on the client instead of firing its own request. Roles weren't part of that fetch (nothing
+    // else needed them), so they're a plain `prefetch` instead. `@sidebar/orgs/[slug]/layout.tsx`
+    // has none of this to seed (it only calls the plain `getOrganizationBySlug` lookup), so its
+    // own `useOrganization` reads either land on these same cache entries or fetch lazily — both
+    // fine.
     const queryClient = getServerQueryClient();
     queryClient.setQueryData(
         trpc.organizations.getOrganization.queryKey({ organizationId: organization.id }),
@@ -49,10 +51,7 @@ export default async function Organization_Layout(props: LayoutProps<"/orgs/[slu
         trpc.settings.getOrganizationSettings.queryKey({ organizationId: organization.id }),
         settings,
     );
-    queryClient.setQueryData(
-        trpc.organizations.getOrganizationUserSelf.queryKey({ organizationId: organization.id }),
-        roles,
-    );
+    prefetch(trpc.organizations.getMyRoles.queryOptions({ organizationId: organization.id }));
 
     return (
         <HydrateClient>

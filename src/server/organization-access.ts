@@ -10,20 +10,17 @@ import { cache } from "react";
 
 import { Permissions } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { auth, AuthSession } from "./auth";
 import { getOrganizationBySlug } from "./organization";
 import { getOrganizationSettings } from "./organization-settings";
-import { getOrganizationUserById } from "./organization-user";
 import { requireSession } from "./session";
 
 export interface OrganizationAccess {
     session: AuthSession;
     organization: OrganizationData;
     settings: OrganizationSettings;
-    roles: OrganizationRole[];
 }
 
 /**
@@ -67,6 +64,10 @@ export async function assertPermission(
  * because React `cache` keys by argument identity and a fresh object literal per call
  * would defeat deduplication every time. Use `requireOrganizationWith` for anything
  * beyond `organization:view`.
+ *
+ * Doesn't return the caller's roles — `Organization_Layout` is the only caller that ever
+ * needed them, and it now prefetches `trpc.organizations.getMyRoles` for that instead, so
+ * `useOrganization()` reads roles the same way as everything else it reads.
  */
 export const requireOrganization = cache(async (slug: string): Promise<OrganizationAccess> => {
     // Session first, so an expired session redirects to sign-in rather than surfacing as
@@ -78,9 +79,7 @@ export const requireOrganization = cache(async (slug: string): Promise<Organizat
 
     await assertPermission(organization.id, { organization: ["view"] });
 
-    const orgUser = await getOrganizationUserById(organization.id, session.user.id);
-
-    return { session, organization, settings, roles: orgUser.roles };
+    return { session, organization, settings };
 });
 
 /** As `requireOrganization`, additionally requiring `permissions`. */

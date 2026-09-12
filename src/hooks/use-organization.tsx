@@ -57,7 +57,7 @@ export function useOrganization(): OrganizationClient {
         queries: [
             trpc.organizations.getOrganization.queryOptions({ organizationId }),
             trpc.settings.getOrganizationSettings.queryOptions({ organizationId }),
-            trpc.organizations.getOrganizationUserSelf.queryOptions({ organizationId }),
+            trpc.organizations.getMyRoles.queryOptions({ organizationId }),
         ],
     });
 
