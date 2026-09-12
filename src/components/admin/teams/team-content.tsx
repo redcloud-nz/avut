@@ -19,7 +19,7 @@ import { trpc } from "@/trpc/client";
 
 import { AdminModule_Team_D4HCard } from "./d4h-link-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
-import { AdminModule_TeamMenu } from "./team-menu";
+import { AdminModule_Team_Menu } from "./team-menu";
 import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
@@ -49,7 +49,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                     <Saratoga.Header>
                         <Saratoga.Title>{team.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_TeamMenu team={team} />
+                            <AdminModule_Team_Menu team={team} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 

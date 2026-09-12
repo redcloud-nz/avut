@@ -25,7 +25,7 @@ import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_RemoveTeamMember_Dialog } from "./remove-team-member";
 
-export function AdminModule_TeamMembershipMenu({
+export function AdminModule_TeamMembership_Menu({
     team,
     person,
 }: {
