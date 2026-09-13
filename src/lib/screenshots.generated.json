@@ -79,8 +79,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "The session Personnel page: everyone grouped by team, each with a checkbox marking who is being assessed in this session",
-    "capturedAt": "2026-09-13T07:23:37.510Z"
+    "alt": "The session Personnel page: the Erehwon Response Team roster, each person with a checkbox marking who is being assessed, showing 20 of 32 selected",
+    "capturedAt": "2026-09-13T08:21:32.455Z"
   },
   "skill-track/session-skills": {
     "light": {
@@ -88,7 +88,7 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "The session Skills page: catalogue skills grouped by package and skill group, each with a checkbox, showing 7 of 7 selected",
-    "capturedAt": "2026-09-13T07:23:35.531Z"
+    "alt": "The session Skills page: catalogue skills grouped by package and skill group, each with a checkbox, showing the Flood Response package fully selected at 15 of 15",
+    "capturedAt": "2026-09-13T08:21:24.155Z"
   }
 }
