@@ -22,6 +22,19 @@ function pathToSlug(metaPath: string): string {
     return metaPath.replace(/(^|\/)index$/, "");
 }
 
+/**
+ * Split a doc's raw markdown into its opening block (heading + first
+ * paragraph) and everything after, so the full `/docs/<slug>` page can render
+ * the `<KeyTerms>` callout between them. Assumes the usual `# Title` followed
+ * by a lead paragraph; a doc with fewer than two blocks has no "rest".
+ */
+function splitIntro(content: string): { intro: string; rest: string } {
+    const blocks = content.split(/\n{2,}/);
+    if (blocks.length <= 2) return { intro: content, rest: "" };
+    const [heading, leadParagraph, ...remaining] = blocks;
+    return { intro: `${heading}\n\n${leadParagraph}`, rest: remaining.join("\n\n") };
+}
+
 const docs = defineCollection({
     name: "docs",
     directory: "content/docs",
@@ -34,13 +47,20 @@ const docs = defineCollection({
         section: z.string(),
         /** Sort order within the section (section index pages should use 0). */
         order: z.number().default(100),
+        /** Glossary slugs to show as a `<KeyTerms>` callout on this page. */
+        keyTerms: z.array(z.string()).default([]),
     }),
     transform: async (doc, ctx) => {
         const mdx = await compileMDX(ctx, doc);
+        const { intro, rest } = splitIntro(doc.content);
+        const introMdx = await compileMDX(ctx, { ...doc, content: intro });
+        const restMdx = rest ? await compileMDX(ctx, { ...doc, content: rest }) : null;
         const slug = pathToSlug(doc._meta.path);
         return {
             ...doc,
             mdx,
+            introMdx,
+            restMdx,
             slug,
             /** `true` for a section landing page (`<section>/index.mdx`). */
             isSectionIndex: doc._meta.path.endsWith("index") && slug !== "",

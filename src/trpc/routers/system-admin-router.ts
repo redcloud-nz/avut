@@ -14,6 +14,7 @@ import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
 import { formatActorLabel } from "@/server/log-entry";
 import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
@@ -23,7 +24,6 @@ import {
 } from "@/server/organization-settings-store";
 import { revalidateOrganizationUser } from "@/server/organization-user-cache";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
-import { getSkillPackageLibraryEntry, listSkillPackageLibrary } from "@/server/skill-packages";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
 
@@ -469,11 +469,12 @@ export const systemAdminRouter = createTrpcRouter({
     health: systemAdminProcedure.query(() => ({ ok: true as const })),
 
     /**
-     * Import a bundled skill-package library file into a target organization.
+     * Import a skill-package export envelope (produced by `skillPackageBuilder.exportPackage`)
+     * into a target organization, moving a package across AVUT instances.
      *
-     * Create-or-sync keyed on the record IDs in the file (see `prepareSkillPackageImport`):
-     * the tree is created if new, otherwise groups/skills are upserted and anything the file
-     * omits is archived. A package ID that already belongs to another organization is
+     * Create-or-sync keyed on the record IDs in the envelope (see `prepareSkillPackageImport`):
+     * the tree is created if new, otherwise groups/skills are upserted and anything the
+     * envelope omits is archived. A package ID that already belongs to another organization is
      * rejected. Imported packages always land `published: false`.
      *
      * `dryRun: true` computes and returns the plan without writing — the UI shows it for
@@ -485,25 +486,24 @@ export const systemAdminRouter = createTrpcRouter({
     importSkillPackage: systemAdminProcedure
         .input(
             z.object({
-                fileName: z.string().min(1),
+                envelope: SkillPackageExport.schema,
                 targetOrganizationId: OrganizationId.schema,
                 dryRun: z.boolean().default(false),
             }),
         )
-        .mutation(async ({ ctx, input: { fileName, targetOrganizationId, dryRun } }) => {
+        .mutation(async ({ ctx, input: { envelope, targetOrganizationId, dryRun } }) => {
             await assertOrganizationExists(ctx.prisma, targetOrganizationId);
 
-            const entry = getSkillPackageLibraryEntry(fileName);
             const { plan, buildWrites } = await prepareSkillPackageImport(
                 ctx.prisma,
-                entry.envelope,
+                envelope,
                 targetOrganizationId,
             );
 
             if (dryRun) return { plan, applied: false as const };
 
             const { counts } = plan;
-            const description = `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${entry.name}" from ${fileName} (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`;
+            const description = `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`;
 
             await ctx.prisma.$transaction([
                 ...buildWrites(ctx.prisma),
@@ -511,7 +511,7 @@ export const systemAdminRouter = createTrpcRouter({
                     organizationId: targetOrganizationId,
                     action: plan.packageAction,
                     objectType: "SkillPackage",
-                    objectId: entry.packageId,
+                    objectId: envelope.package.id,
                     description,
                 }),
             ]);
@@ -545,11 +545,6 @@ export const systemAdminRouter = createTrpcRouter({
             })),
         };
     }),
-
-    /** The bundled skill-package library files available to import (`importSkillPackage`). */
-    listSkillPackageLibrary: systemAdminProcedure.query(() => ({
-        packages: listSkillPackageLibrary().map(({ envelope: _envelope, ...meta }) => meta),
-    })),
 
     listUsers: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.user.findMany({

@@ -7,7 +7,7 @@
 
 import { Metadata } from "next";
 
-import { AdminModule_Team_Personnel_Content } from "@/components/admin/teams/team-personnel-content";
+import { AdminModule_TeamMembers_List } from "@/components/admin/teams/team-members-list";
 
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
@@ -43,7 +43,7 @@ export default async function AdminModule_Team_Personnel_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <AdminModule_Team_Personnel_Content teamId={teamId} />
+            <AdminModule_TeamMembers_List teamId={teamId} />
         </HydrateClient>
     );
 }

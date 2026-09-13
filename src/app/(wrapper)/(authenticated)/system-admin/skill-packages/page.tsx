@@ -6,7 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { SystemAdmin_SkillPackageLibrary_Content } from "@/components/system-admin/skill-packages/skill-package-library-content";
+import { SystemAdmin_SkillPackageImport_Content } from "@/components/system-admin/skill-packages/skill-package-import-content";
 
 import { requireGlobalAdmin } from "@/server/system-admin-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -18,7 +18,6 @@ export const metadata = {
 export default async function SystemAdmin_SkillPackages_Page() {
     await requireGlobalAdmin();
 
-    prefetch(trpc.systemAdmin.listSkillPackageLibrary.queryOptions());
     prefetch(trpc.systemAdmin.listOrganizations.queryOptions());
 
     return (
@@ -31,7 +30,7 @@ export default async function SystemAdmin_SkillPackages_Page() {
                     ]}
                 />
                 <Std.ScrollContainer>
-                    <SystemAdmin_SkillPackageLibrary_Content />
+                    <SystemAdmin_SkillPackageImport_Content />
                 </Std.ScrollContainer>
             </>
         </HydrateClient>
