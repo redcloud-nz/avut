@@ -204,7 +204,11 @@ function LinkDialog({
             meta: { effects: teamsEffects.linkTeamToD4H },
             onError: (error) => toast.error(error.message),
             onSuccess: ({ plan }) => {
-                toast.success(`Linked to D4H — ${plan.counts.additions} member(s) imported`);
+                const skippedSuffix =
+                    plan.counts.skipped > 0 ? `, ${plan.counts.skipped} skipped (no email)` : "";
+                toast.success(
+                    `Linked to D4H — ${plan.counts.additions} member(s) imported${skippedSuffix}`,
+                );
                 onClose();
             },
         }),
@@ -305,7 +309,8 @@ function SyncDialog({
             onSuccess: ({ plan }) => {
                 toast.success(
                     `Synced: +${plan.counts.additions} ~${plan.counts.updates} ` +
-                        `archived ${plan.counts.archivals} reactivated ${plan.counts.reactivations}`,
+                        `archived ${plan.counts.archivals} reactivated ${plan.counts.reactivations} ` +
+                        `skipped ${plan.counts.skipped}`,
                 );
                 onClose();
             },
@@ -365,8 +370,16 @@ function SyncDialog({
 }
 
 function SyncPlanView({ plan }: { plan: SyncPlan }) {
+    const skippedGroup = (
+        <Group title="Skipped (no email in D4H)" rows={plan.skipped.map((s) => s.name)} />
+    );
     if (isSyncPlanEmpty(plan)) {
-        return <p className="text-muted-foreground text-sm">Already in sync.</p>;
+        return (
+            <div className="space-y-3 text-sm">
+                <p className="text-muted-foreground text-sm">Already in sync.</p>
+                {skippedGroup}
+            </div>
+        );
     }
     return (
         <div className="space-y-3 text-sm">
@@ -380,6 +393,7 @@ function SyncPlanView({ plan }: { plan: SyncPlan }) {
                     rows={[`${plan.teamMetadataChanges.length} field(s) changed`]}
                 />
             )}
+            {skippedGroup}
         </div>
     );
 }

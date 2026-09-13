@@ -85,6 +85,24 @@ describe("buildSyncPlan — additions", () => {
         );
         expect(plan.additions[0].adoptsMembership).toBe(true);
     });
+
+    it("skips a member with a blank email instead of adding it", () => {
+        const plan = buildSyncPlan(
+            base({
+                d4hMembers: [
+                    member({ id: 1, email: { value: "", verified: false } }),
+                    member({ id: 2, email: { value: "   ", verified: false } }),
+                    member({ id: 3 }),
+                ],
+            }),
+        );
+        expect(plan.additions).toHaveLength(1);
+        expect(plan.additions[0].d4hMemberId).toBe(3);
+        expect(plan.skipped).toHaveLength(2);
+        expect(plan.skipped.map((s) => s.d4hMemberId).sort()).toEqual([1, 2]);
+        expect(plan.skipped[0]).toMatchObject({ reason: "missing-email" });
+        expect(plan.counts.skipped).toBe(2);
+    });
 });
 
 describe("buildSyncPlan — updates", () => {

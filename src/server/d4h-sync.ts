@@ -113,6 +113,7 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
     }> = [];
     const reactivations: typeof updates = [];
     const archivals: Array<{ teamMembershipId: string; personName: string }> = [];
+    const skipped: Array<{ d4hMemberId: number; name: string; reason: "missing-email" }> = [];
 
     for (const member of input.d4hMembers) {
         seenMemberIds.add(member.id);
@@ -120,7 +121,15 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
         const incoming = snapshotFromD4HMember(member);
 
         if (!existing) {
-            const email = member.email.value.toLowerCase();
+            const email = member.email.value.trim().toLowerCase();
+            if (!email) {
+                skipped.push({
+                    d4hMemberId: member.id,
+                    name: member.name,
+                    reason: "missing-email",
+                });
+                continue;
+            }
             additions.push({
                 d4hMemberId: member.id,
                 name: member.name,
@@ -178,6 +187,7 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
     archivals.sort(
         (a, b) => byNameThenId(a, b) || a.teamMembershipId.localeCompare(b.teamMembershipId),
     );
+    skipped.sort((a, b) => byNameThenId(a, b) || a.d4hMemberId - b.d4hMemberId);
 
     const teamMetadataChanges = diffObject(input.teamMetadata.current, input.teamMetadata.incoming);
 
@@ -189,12 +199,14 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
             incomingMetadata: input.teamMetadata.incoming,
         }),
         additions,
+        skipped,
         updates,
         archivals,
         reactivations,
         teamMetadataChanges,
         counts: {
             additions: additions.length,
+            skipped: skipped.length,
             updates: updates.length,
             archivals: archivals.length,
             reactivations: reactivations.length,

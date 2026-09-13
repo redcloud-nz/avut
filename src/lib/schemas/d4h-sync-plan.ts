@@ -38,6 +38,15 @@ const syncPlanSchema = z.object({
         }),
     ),
 
+    /** D4H member with no D4H-managed AVUT membership yet, excluded as bad data. */
+    skipped: z.array(
+        z.object({
+            d4hMemberId: z.number(),
+            name: z.string(),
+            reason: z.literal("missing-email"),
+        }),
+    ),
+
     /** Active D4H-managed membership whose snapshot fields changed in D4H. */
     updates: z.array(
         z.object({
@@ -71,6 +80,7 @@ const syncPlanSchema = z.object({
 
     counts: z.object({
         additions: z.number(),
+        skipped: z.number(),
         updates: z.number(),
         archivals: z.number(),
         reactivations: z.number(),
