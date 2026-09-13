@@ -40,3 +40,13 @@ export async function requireSession(): Promise<AuthSession> {
 
     return session;
 }
+
+/**
+ * Whether there's a currently active, DB-validated session — deliberately not the cheap
+ * `getSessionCookie()` presence check, so a stale or revoked cookie doesn't read as active.
+ * Shares `getSession()`'s `cache()` wrapper, so calling this alongside another session lookup
+ * on the same request doesn't cost an extra DB round trip.
+ */
+export async function hasActiveSession(): Promise<boolean> {
+    return (await getSession()) != null;
+}
