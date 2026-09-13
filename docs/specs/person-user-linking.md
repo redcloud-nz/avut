@@ -70,15 +70,28 @@ A person is **linkable** to a user when *all* of:
 
 1. Same organization.
 2. `Person.status === "Active"`.
-3. `Person.email` equals `User.email`, compared case-insensitively.
+3. `Person.email` lowercased equals `User.email` exactly.
 4. `Person.organizationUser` is `null` — the person is not already linked.
 5. That user's `OrganizationUser` for the org has `personId === null` — the user is not
    already linked to a different person there.
 
-Rule 3 uses `{ equals: email, mode: "insensitive" }`, matching the existing
-`getPersonByEmail` (`personnel-router.ts:466`). Neither `Person.email` nor `User.email` is
-normalised at write time; normalising the columns is a separate change and **out of scope**
-(see §9).
+**Rule 3 lowercases the needle rather than using `mode: "insensitive"`** (revised during
+Part 1; the original draft said the opposite). `User.email` is lowercase by construction —
+better-auth normalises it at sign-up (`api/routes/sign-up.mjs:165`) and in the OAuth link
+path (`oauth2/link-account.mjs:92`), which then compares `userInfo.email.toLowerCase()`
+against the stored value. `Person.email` is admin-typed and unnormalised, so only the needle
+needs lowering. Three reasons this is better than a case-insensitive comparison:
+
+- it uses the unique index on `users.email`, which `mode: "insensitive"` cannot;
+- it is testable — `prisma-mock` ignores the `{ equals: … }` filter object entirely (not
+  just `mode`), so any query written that way silently returns `null` in tests;
+- it does not depend on database collation.
+
+The reverse direction — finding a **person** from a known user email — genuinely needs
+`mode: "insensitive"`, because it is the *column* that may be mixed case. That is what the
+existing `getPersonByEmail` (`personnel-router.ts`) does, and it is therefore not
+unit-testable against `prisma-mock`. Normalising `Person.email` at write time would fix both
+and remains **out of scope** (see §8).
 
 Rules 4 and 5 are also the two `@unique` constraints, so violating them is a P2002 rather
 than a silent overwrite. Every automation below checks them explicitly and **no-ops** on
@@ -186,8 +199,9 @@ case (§1), and linking is what the admin actually wanted.
 
 - `prisma/schema.prisma` — the §2 constraint change + migration.
 - `personnel.getInviteState` — new `organizationProcedure({ invitation: ["view"], member: ["view"], person: ["view"] })` query returning
-  `{ kind: "no-user" } | { kind: "member"; userId } | { kind: "user-not-member"; userId } | { kind: "linked" }`.
-  Alphabetical position: between `getLinkedUser` and `getPerson`.
+  `{ state: "Linked" | "AlreadyMember" | "UserExists" | "NoUser"; user; pendingInvitation }`.
+  A flat object rather than a discriminated union, so the dialog can show the pending-invitation
+  warning alongside any state. Alphabetical position: before `getLinkedUser`.
 - `src/components/admin/personnel/invite-person.tsx` — the dialog.
 - `person-menu.tsx` — the action, `["update", "delete", "invite"]` added to the
   `parseAsStringLiteral` literal, `useHasPermission({ invitation: ["create"] })`.
@@ -306,12 +320,15 @@ render wrong and do nothing when clicked. Not touched by this spec; worth its ow
 `src/server/person-user-link.test.ts` against `createMockPrisma()` — the matching rule
 (§3.1) row by row, and `tryLinkPersonToMember`'s no-op on a lost race.
 
-**Risk:** `prisma-mock` may not implement `mode: "insensitive"`. Check this first; if it
-does not, the helper takes a small comparison seam the tests can exercise, rather than the
-tests silently passing on an exact match.
+**Confirmed during Part 1:** `prisma-mock` does not implement `mode: "insensitive"` — and in
+fact ignores the whole `{ equals: … }` filter object on a string field, matching only the
+bare-scalar shorthand. A query written either way returns `null` in tests while working in
+Postgres, which is worse than a plain failure. §3.1's lowercase-the-needle rule exists partly
+to keep these paths testable.
 
-Router tests extend `personnel-router.test.ts` — `createPerson` links / does not link across
-the setting and the member-vs-non-member cases; `getInviteState`'s four results.
+Router tests live in `personnel-router.test.ts` — `getInviteState`'s four states plus the
+mixed-case and pending-invitation cases (**done**); later, `createPerson` links / does not
+link across the setting and the member-vs-non-member cases.
 
 `auth.ts`'s hook is not directly testable (it imports `server-only` transitively), which is
 the argument for keeping its logic entirely in `person-user-link.ts` and leaving the hook as
@@ -341,7 +358,8 @@ Phases 2–4 are independent of each other once 0 and 1 land, so they can be sep
 | Part 3, user exists but is not a member | Do nothing. Invite via Part 1. |
 | Membership offers at signup | **Dropped** — complexity out of proportion to the benefit (§8). |
 | Default setting values | Both `false`. |
-| Email comparison | Case-insensitive query; no column normalisation. |
+| Email comparison | Lowercase the needle, match the column exactly (§3.1). No column normalisation. |
+| `getInviteState` output shape | Flat `{ state, user, pendingInvitation }`, not a discriminated union. |
 | `OrganizationInvitation.personId @unique` | Dropped, replaced by a plain index (§2). |
 | Audit batching | None — both automations have a human actor. D4H-import links join the import's existing batch. |
 | Invitation creation audit entries | Still none, unchanged from today. |

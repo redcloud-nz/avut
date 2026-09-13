@@ -10,7 +10,9 @@ import { TRPCError } from "@trpc/server";
 import { diffObject } from "@/lib/diff";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 
+import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { PersonData, PersonId } from "@/lib/schemas/person";
+import { UserData } from "@/lib/schemas/user";
 
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
@@ -197,6 +199,107 @@ export const personnelRouter = createTrpcRouter({
                     ...person,
                     status: "Deleted",
                 }),
+            };
+        }),
+
+    /**
+     * Describes what inviting this person to AVUT would mean right now, so the invite dialog can
+     * offer the right action.
+     *
+     * The `AlreadyMember` case is not cosmetic: better-auth's `createInvitation` rejects an invite
+     * outright when a member already holds that email
+     * (`USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION`), so the dialog has to link instead of
+     * invite.
+     *
+     * Emails are matched by lowercasing the needle and comparing exactly, NOT with
+     * `mode: "insensitive"`. `User.email` is lowercase by construction — better-auth lowercases it
+     * on sign-up (`api/routes/sign-up.mjs`) and in the OAuth link path
+     * (`oauth2/link-account.mjs`), which also compares `userInfo.email.toLowerCase()` against the
+     * stored value. `Person.email` is admin-typed and not normalised, so only the needle needs it.
+     * An exact match also uses the unique index on `users.email`, which a case-insensitive
+     * comparison could not.
+     *
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The invite state, the matching user account if one exists, and any pending invitation.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    getInviteState: organizationProcedure({
+        invitation: ["view"],
+        member: ["view"],
+        person: ["view"],
+    })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(
+            z.object({
+                /**
+                 * `Linked` — already attached to a user here, nothing to do.
+                 * `AlreadyMember` — a user with this email is already in the org; link, don't invite.
+                 * `UserExists` — the person has an AVUT account but is not a member here; invite.
+                 * `NoUser` — no account anywhere; invite.
+                 */
+                state: z.enum(["Linked", "AlreadyMember", "UserExists", "NoUser"]),
+                user: UserData.schema.nullable(),
+                pendingInvitation: z
+                    .object({ id: InvitationId.schema, createdAt: z.iso.datetime() })
+                    .nullable(),
+            }),
+        )
+        .query(async ({ ctx, input: { personId } }) => {
+            const person = await ctx.prisma.person.findUnique({
+                where: { organizationId: ctx.organizationId, id: personId },
+                include: { organizationUser: { select: { id: true } } },
+            });
+
+            if (!person)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            const email = person.email.toLowerCase();
+
+            const [user, pendingInvitation] = await Promise.all([
+                ctx.prisma.user.findFirst({
+                    where: { email },
+                    include: {
+                        organizationUsers: {
+                            where: { organizationId: ctx.organizationId },
+                            select: { id: true },
+                        },
+                    },
+                }),
+                // Matches what the invite dialog writes, which lowercases for the same reason.
+                // An invitation typed mixed-case on the Invitations page will not be found here —
+                // it is also invisible to `getEntryControl`, which is a pre-existing gap in that
+                // flow rather than something this query should paper over.
+                ctx.prisma.organizationInvitation.findFirst({
+                    where: { organizationId: ctx.organizationId, email, status: "pending" },
+                    orderBy: { createdAt: "desc" },
+                }),
+            ]);
+
+            const state = person.organizationUser
+                ? "Linked"
+                : !user
+                  ? "NoUser"
+                  : user.organizationUsers.length > 0
+                    ? "AlreadyMember"
+                    : "UserExists";
+
+            return {
+                state,
+                user: user ? UserData.fromRecord(user) : null,
+                pendingInvitation: pendingInvitation
+                    ? {
+                          id: InvitationId.schema.parse(pendingInvitation.id),
+                          createdAt: pendingInvitation.createdAt.toISOString(),
+                      }
+                    : null,
             };
         }),
 

@@ -65,7 +65,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     <Saratoga.Header>
                         <Saratoga.Title>{person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_PersonMenu person={person} />
+                            <AdminModule_PersonMenu person={person} linked={linkedUser !== null} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 

@@ -35,21 +35,25 @@ import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
+import { AdminModule_InvitePerson_Dialog } from "./invite-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
+    /** Whether a user account is already attached — hides the invite action when it is. */
+    linked: boolean;
 }
 
-export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
+export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["update", "delete"] as const),
+        parseAsStringLiteral(["update", "delete", "invite"] as const),
     );
 
     const canUpdate = useHasPermission({ person: ["update"] });
     const canDelete = useHasPermission({ person: ["delete"] });
+    const canInvite = useHasPermission({ invitation: ["create"] });
 
     const archiveMutation = useMutation(
         trpc.personnel.archivePerson.mutationOptions({
@@ -101,6 +105,15 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             disabled: !canUpdate,
         },
     ];
+    if (person.status === "Active" && !linked) {
+        actions.push({
+            verb: "invite",
+            label: "Invite to AVUT",
+            icon: <ObjectIcons.Invite />,
+            onSelect: () => setAction("invite", { history: "push" }),
+            disabled: !canInvite,
+        });
+    }
     if (person.status === "Active") {
         actions.push({
             verb: "archive",
@@ -164,6 +177,17 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Invite Person dialog */}
+            <AdminModule_InvitePerson_Dialog
+                person={person}
+                open={action === "invite"}
+                onOpenChange={(open) =>
+                    setAction(open ? "invite" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
 
             {/* Delete Person dialog*/}
             <AdminModule_DeletePerson_Dialog
