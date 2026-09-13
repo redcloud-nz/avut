@@ -8,6 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import Link from "next/link";
 
@@ -36,6 +37,7 @@ export default async function SkillsTrack_Reports_Page(
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                     { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
                 ]}
+                actions={<HelpButton slug="skill-track/reports" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skills Reports">

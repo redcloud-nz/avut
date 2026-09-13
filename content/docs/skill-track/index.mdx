@@ -18,10 +18,47 @@ keyTerms:
 # Skill Track
 
 Skill Track records who has been assessed on which skills, and when. It covers
-running assessment sessions, the skill catalogue your organization works from,
-and the reports that summarize competency across your people.
+the skill catalogue your organization works from, running assessment sessions,
+one-off checks outside a session, and the reports that summarize competency
+across your people.
+
+## What's here
+
+- **[Catalogue](/docs/skill-track/catalogue)** — the skill packages your
+  organization has subscribed to, and what they contain.
+- **[Sessions](/docs/skill-track/sessions)** — the usual way to run
+  assessments: pick who and what, record results, then review and approve.
+- **[Checks](/docs/skill-track/checks)** — recording a single check on the
+  spot, outside any session.
+- **[Reports](/docs/skill-track/reports)** — competency and currency, viewed
+  by person, by team, by skill, or as one big matrix.
+
+## Skill checks
+
+A **skill check** is a single record that someone was assessed on a skill,
+with a result and a date. The possible results are:
+
+- **Fail tiers** — Low Fail, Fail, High Fail
+- **Pass tiers** — Weak Pass, Pass, Strong Pass
+- **Other statuses** — Not Taught, Exempt, Expired, Provisional
+
+Only the three pass tiers count as competent — everything else, including
+Fail and Not Taught, means the person isn't yet competent in that skill (see
+[Reports](/docs/skill-track/reports) for how that rolls up).
+
+Your organization can turn individual results on or off and rename them, from
+**Admin → Organization Settings → Skill Track Module → Skill Check Result
+Options**. Turning a result off only hides it from the recording screens — it
+doesn't delete anything already recorded against it.
+
+<Callout>
+  Exempt, Expired, and Provisional aren't configurable yet — only the other seven results can be
+  toggled and renamed today.
+</Callout>
 
 ## Roles
 
-Assessing requires the `skills-assessor` role. Everyday members can view their
-own results and the reports their role allows.
+Assessing requires the `skills-assessor` role — it covers sessions, checks, and
+reports. Building or publishing skill packages is a separate `skill-package-author`
+role. Everyday members without either role only see the catalogue; ask an
+assessor or admin if you need to know your own results.

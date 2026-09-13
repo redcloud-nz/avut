@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import SkillTrack_Sessions_List from "@/components/skill-track/sessions-list";
 import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
@@ -38,6 +39,7 @@ export default async function SkillTrack_Sessions_Page(
                             href: route("/orgs/[slug]/skill-track/sessions", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-track/sessions" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_Sessions_List />

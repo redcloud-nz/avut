@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 
@@ -40,6 +41,7 @@ export default async function SkillTrack_Catalogue_Page(
                             href: route("/orgs/[slug]/skill-track/catalogue", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-track/catalogue" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_CataloguePackages_List />

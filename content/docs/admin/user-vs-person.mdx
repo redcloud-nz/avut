@@ -1,0 +1,46 @@
+---
+title: Users vs Personnel
+description: The difference between a User (login) and a Person (roster record), and how to link them.
+section: admin
+order: 10
+keyTerms: ["user", "person"]
+---
+
+# Users vs Personnel
+
+Admin has two separate lists — **Users** and **Personnel** — for two related
+but distinct concepts.
+
+## User
+
+A **user** is a login account: an email address, a password (or social
+sign-in), and a session. It's the thing someone signs in with, and one user
+can belong to more than one organization.
+
+## Person
+
+A **person** is a personnel record scoped to a single organization — a name,
+contact details, and whatever else your organization tracks about its people.
+A person can exist with no login attached at all, which is normal for tracking
+someone who isn't given app access.
+
+## How they connect
+
+Within an organization, a user can be linked to at most one person, and a
+person to at most one user — but neither side requires the other:
+
+- A person with no linked user is on the roster but can't sign in.
+- A user with no linked person can sign in (for example, an admin-only
+  account) but won't appear in personnel-based screens like sessions or
+  reports.
+
+Linking isn't part of the invite flow — it's a manual step. From a user's
+detail page (**Admin → Users**), use **Link Person** to search and attach an
+unlinked personnel record; **Unlink Person** removes the connection without
+deleting either record.
+
+<Callout>
+  Several places in the app — recording a skill check yourself, for example — require you to have a
+  linked person before you can act. If you see a warning about a "linked personal record," this is
+  what it means.
+</Callout>

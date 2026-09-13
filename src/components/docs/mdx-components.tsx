@@ -11,6 +11,8 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 
+import { DocsAssessmentRowDemo } from "@/components/docs/demo-assessment-row";
+import { DocsIcon } from "@/components/docs/icon-swatch";
 import { Screenshot, UnsupportedImg } from "@/components/docs/screenshot";
 import { Alert } from "@/components/ui/alert";
 import { Kbd } from "@/components/ui/kbd";
@@ -114,4 +116,6 @@ export const docsMdxComponents = {
     Callout,
     Keys,
     Screenshot,
+    DocsAssessmentRowDemo,
+    DocsIcon,
 };

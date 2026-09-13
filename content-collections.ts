@@ -9,7 +9,12 @@
 
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";
+import remarkGfm from "remark-gfm";
 import { z } from "zod";
+
+// GFM adds table syntax (among other things) — `docsMdxComponents` already
+// styles `table`/`th`/`td`, so wire the plugin in to match.
+const mdxOptions = { remarkPlugins: [remarkGfm] };
 
 /**
  * Turn a source file's path (relative to `content/docs`, without extension) into
@@ -51,10 +56,10 @@ const docs = defineCollection({
         keyTerms: z.array(z.string()).default([]),
     }),
     transform: async (doc, ctx) => {
-        const mdx = await compileMDX(ctx, doc);
+        const mdx = await compileMDX(ctx, doc, mdxOptions);
         const { intro, rest } = splitIntro(doc.content);
-        const introMdx = await compileMDX(ctx, { ...doc, content: intro });
-        const restMdx = rest ? await compileMDX(ctx, { ...doc, content: rest }) : null;
+        const introMdx = await compileMDX(ctx, { ...doc, content: intro }, mdxOptions);
+        const restMdx = rest ? await compileMDX(ctx, { ...doc, content: rest }, mdxOptions) : null;
         const slug = pathToSlug(doc._meta.path);
         return {
             ...doc,

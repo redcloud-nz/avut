@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
@@ -36,6 +37,7 @@ export default async function SkillTrack_Checks_Page(
                             href: route("/orgs/[slug]/skill-track/checks", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-track/checks" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_ChecksList />
