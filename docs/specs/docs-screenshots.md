@@ -189,11 +189,10 @@ way to show the desktop shot on `/docs` and the phone shot in the help sheet —
 page carrying both gets both in both places.
 
 The sidebar is **collapsed** for desktop captures unless the navigation is itself
-the subject. It reopens on every hard page load: `SidebarProvider` is mounted
-uncontrolled in `app-providers.tsx`, so `defaultOpen` is always `true`, and while
-it writes the `sidebar_state` cookie it never reads it back. Capture must collapse
-it (⌘B, or the trigger) after each full navigation; it does survive client-side
-navigation between captures.
+the subject. Collapsing it once per browser profile is enough — the authenticated
+layout reads the `sidebar_state` cookie to seed `SidebarProvider`'s `defaultOpen`,
+so the choice survives a hard page load. (It did not until the fix that made the
+layout read that cookie; before it, every full navigation re-expanded it.)
 
 #### Crop ladder
 
@@ -307,7 +306,10 @@ The Blob store's public host is embedded in the URLs in
 model, and the manual upload helper
 `npm run screenshot -- <id> <light> [dark] --alt "…"`
 (`scripts/screenshots/upload.ts` — sharp → WebP, `put()` to Blob, rewrites
-the index). A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
+the index). The operational loop around that helper — which browser tool to
+drive, how to get a clean frame, which account to sign in as — is the
+`avut-doc-screenshots` skill; Phase 2's capture script should encode the same
+steps. A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
 Captured so far: the sign-in / verification flow (docs) and the Skill Track
 hero (`marketing/skill-track-session`, light only — the dark variant needs the
 demo seed).
