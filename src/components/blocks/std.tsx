@@ -92,7 +92,11 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
                                         </span>
                                     );
                                     return crumb === current ? (
-                                        <DropdownMenuItem key={idx} disabled className="font-medium text-foreground">
+                                        <DropdownMenuItem
+                                            key={idx}
+                                            disabled
+                                            className="font-normal text-foreground opacity-100"
+                                        >
                                             {content}
                                         </DropdownMenuItem>
                                     ) : crumb.href ? (
@@ -100,7 +104,11 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
                                             <Link href={crumb.href}>{content}</Link>
                                         </DropdownMenuItem>
                                     ) : (
-                                        <DropdownMenuItem key={idx} disabled>
+                                        <DropdownMenuItem
+                                            key={idx}
+                                            disabled
+                                            className="text-muted-foreground opacity-100"
+                                        >
                                             {content}
                                         </DropdownMenuItem>
                                     );
