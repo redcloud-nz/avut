@@ -52,3 +52,16 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
       currently seeds `columnFilters` with `published: [true]`, so a freshly
       created or freshly imported (always `published: false`) package is hidden
       until the user clears the filter.
+
+## Navigation / shell
+
+- [ ] The sidebar's collapsed/expanded state **doesn't survive a page load**.
+      `SidebarProvider` is mounted uncontrolled in
+      `src/components/providers/app-providers.tsx`, so `defaultOpen` is always
+      `true`; `setOpen` writes the `sidebar_state` cookie
+      (`src/components/ui/sidebar.tsx`) but nothing ever reads it back. A user who
+      collapses the sidebar gets it re-expanded on every hard navigation. Fix by
+      reading the cookie in a server component and passing it as `defaultOpen`
+      (the shadcn pattern). Also a papercut for docs screenshot capture, which has
+      to re-collapse the sidebar after each full navigation — see
+      `docs/specs/docs-screenshots.md` §4.1.

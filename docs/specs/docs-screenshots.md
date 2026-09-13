@@ -162,7 +162,7 @@ interface ScreenshotSpec {
   role?: OrgRole; // impersonate a user with this role; default owner
   selector?: string; // capture just this element; default full page
   themes?: ("light" | "dark")[]; // default both
-  viewport?: { width: number; height: number }; // default { width: 1280, height: 900 }
+  viewport?: "desktop" | "phone" | { width: number; height: number }; // default "desktop"
   mask?: string[]; // locators to blur (volatile content)
   alt: string; // written into the index
 }
@@ -171,6 +171,52 @@ interface ScreenshotSpec {
 The manifest is the single source of truth for what to capture — a capture
 concern, kept in one auditable list rather than scattered across MDX
 frontmatter. MDX authors only reference an `id` from it.
+
+#### Viewport presets
+
+Full-page captures use one of two named viewports. Both numbers are pinned to the
+app's own thresholds rather than to round figures — changing either means
+re-checking the layout it was chosen to land on.
+
+| Preset              | Viewport       | Chosen because                                                                                                                                                                                    |
+| ------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `desktop` (default) | **1280 × 800** | Above `lg` (1024), so `Saratoga.Columns` shows its real 2/1 split instead of stacking. With the sidebar collapsed the 1024px `Saratoga.Root` column sits centred with ~128px gutters either side. |
+| `phone`             | **390 × 844**  | iPhone 14/15 logical viewport. Below `md` (768), so the sidebar is an off-canvas `Sheet`; below `sm` (640), so content stacks to one column.                                                      |
+
+Capture both only where the difference between them is the point. Both surfaces
+render the same MDX (`help-sheet.tsx` reuses `docsMdxComponents`), so there is no
+way to show the desktop shot on `/docs` and the phone shot in the help sheet — a
+page carrying both gets both in both places.
+
+The sidebar is **collapsed** for desktop captures unless the navigation is itself
+the subject. It reopens on every hard page load: `SidebarProvider` is mounted
+uncontrolled in `app-providers.tsx`, so `defaultOpen` is always `true`, and while
+it writes the `sidebar_state` cookie it never reads it back. Capture must collapse
+it (⌘B, or the trigger) after each full navigation; it does survive client-side
+navigation between captures.
+
+#### Crop ladder
+
+Not every screenshot is a full page. The two render targets are the `/docs` prose
+column (`max-w-3xl` = **768px**) and the in-app `?help=` sheet (`max-w-lg` less
+`px-4` = **480px**). `<Screenshot>` caps the figure at the captured width and never
+upscales, so the capture width is what decides legibility. Take the narrowest rung
+that still shows what the surrounding prose is about:
+
+| Rung      | Width      | Renders at                      | Use for                                                     |
+| --------- | ---------- | ------------------------------- | ----------------------------------------------------------- |
+| Detail    | 500px      | 1:1 on both surfaces            | Dialogs, forms, cards, a single panel or toolbar            |
+| Region    | 768px      | 1:1 in docs, 0.63× in the sheet | A table with its toolbar, a session header, one report card |
+| Full view | 1280 × 800 | 0.6× / 0.375×                   | Only when the whole shell matters — leans on click-to-zoom  |
+
+A `phone` capture is 390px wide, so it renders 1:1 on both surfaces; phone shots
+are the crispest thing the docs can carry and need no rung of their own.
+
+Crop height to content — nothing downstream constrains aspect ratio. Capture at
+**DPR 1**: `upload.ts` records intrinsic pixel dimensions and `<Screenshot>` treats
+them as CSS px, so a 2× capture of a 500px card would store `width: 1000` and then
+render it 768px wide, a 1.5× upscale. Retina support would need a scale factor in
+the index — a Phase 2 concern at most.
 
 ### 4.2 Coverage lint check
 
@@ -280,6 +326,7 @@ enough that manual upkeep is painful.
 | Catching a `<Screenshot id>` with no capture spec? | Lint check (§4.2) greps MDX against the manifest; errors at lint time   |
 | Where does `alt` text come from?                   | The capture manifest → the index; MDX may override                      |
 | Light/dark handling                                | Capture both, swap with CSS, follow app theme                           |
+| Standard capture sizes?                            | Yes — `desktop` 1280×800 / `phone` 390×844, plus the crop ladder (§4.1) |
 | Does capture run in the Vercel build?              | No — on demand locally or a dispatched GitHub Action                    |
 | Auth for capture                                   | `window.avut` dev tools + impersonation; non-production builds only     |
 | Biggest prerequisite for Phase 2                   | Deterministic `seed:demo` (fixed IDs, clock, ordering, per-role users)  |
