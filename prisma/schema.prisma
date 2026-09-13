@@ -252,11 +252,19 @@ model OrganizationInvitation {
   createdAt      DateTime     @default(now())
   inviterId      String
   inviter        User         @relation("organization_invitation_to_inviter", fields: [inviterId], references: [id], onDelete: Cascade)
-  personId       String?      @unique
+  // Deliberately NOT @unique. Invitation rows are never deleted — better-auth's
+  // `cancelPendingInvitationsOnReInvite` only flips `status` to "canceled", and accepted
+  // invitations persist too — so a global unique here makes the SECOND person-scoped
+  // invite for a person (a re-invite, or an invite after an unlink) fail on a constraint
+  // nobody can clear. The real rule is "at most one PENDING invitation per person",
+  // which is a partial index and not expressible here; it is enforced in application
+  // code, on top of better-auth's one-pending-invitation-per-email-per-org guarantee.
+  personId       String?
   person         Person?      @relation("organization_invitation_to_person", fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([email])
+  @@index([personId])
   @@map("organization_invitations")
 }
 
@@ -393,14 +401,14 @@ model Person {
   updatedAt  DateTime     @updatedAt
   status     RecordStatus @default(Active)
 
-  issuedItems                  I3IssuedItem[]          @relation("i3_issued_item_to_person")
-  organizationInvitation       OrganizationInvitation? @relation("organization_invitation_to_person")
-  organizationUser             OrganizationUser?       @relation("person_to_organization_user")
-  skillChecksAsAssessee        SkillCheck[]            @relation("skill_check_assessee")
-  skillChecksAsAssessor        SkillCheck[]            @relation("skill_check_assessor")
-  skillCheckSessionsAsAssessee SkillCheckSession[]     @relation("skill_check_session_assessees")
-  skillCheckSessionsAsAssessor SkillCheckSession[]     @relation("skill_check_session_assessors")
-  teamMemberships              TeamMembership[]        @relation("team_membership_to_person")
+  issuedItems                  I3IssuedItem[]           @relation("i3_issued_item_to_person")
+  organizationInvitations      OrganizationInvitation[] @relation("organization_invitation_to_person")
+  organizationUser             OrganizationUser?        @relation("person_to_organization_user")
+  skillChecksAsAssessee        SkillCheck[]             @relation("skill_check_assessee")
+  skillChecksAsAssessor        SkillCheck[]             @relation("skill_check_assessor")
+  skillCheckSessionsAsAssessee SkillCheckSession[]      @relation("skill_check_session_assessees")
+  skillCheckSessionsAsAssessor SkillCheckSession[]      @relation("skill_check_session_assessors")
+  teamMemberships              TeamMembership[]         @relation("team_membership_to_person")
 
   @@unique([organizationId, email]) // Only one person per email address in an organization
   @@index([organizationId])
