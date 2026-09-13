@@ -30,10 +30,10 @@ export default function PrivacyPolicy_Page() {
                         in this policy, including access and correction requests and privacy
                         complaints, contact{" "}
                         <a
-                            href="mailto:alexwestphal@avut.nz"
+                            href="mailto:support@avut.nz"
                             className="text-blue-500 hover:underline"
                         >
-                            alexwestphal@avut.nz
+                            support@avut.nz
                         </a>
                         . Alex Westphal is also the privacy officer for the purposes of section 201
                         of the <span className="italic">Privacy Act 2020</span>.

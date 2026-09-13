@@ -29,10 +29,10 @@ export default function TermsOfService_Page() {
                         AVUT is operated by Alex Westphal, Christchurch, New Zealand
                         (&ldquo;we&rdquo;, &ldquo;us&rdquo;). You can reach us at{" "}
                         <a
-                            href="mailto:alexwestphal@avut.nz"
+                            href="mailto:support@avut.nz"
                             className="text-blue-500 hover:underline"
                         >
-                            alexwestphal@avut.nz
+                            support@avut.nz
                         </a>
                         .
                     </p>
@@ -244,10 +244,10 @@ export default function TermsOfService_Page() {
                     <p className="mb-4">
                         If you have any questions about these Terms of Service, please contact us at{" "}
                         <a
-                            href="mailto:alexwestphal@avut.nz"
+                            href="mailto:support@avut.nz"
                             className="text-blue-500 hover:underline"
                         >
-                            alexwestphal@avut.nz
+                            support@avut.nz
                         </a>
                         .
                     </p>
