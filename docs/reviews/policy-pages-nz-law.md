@@ -7,6 +7,15 @@ information the app actually holds (`prisma/schema.prisma`), the third parties i
 sends that information to (`package.json`, `src/server/`), and the sign-up flow
 that is meant to bind users to the terms.
 
+> **Status (2026-09-14):** both pages have since been rewritten on this branch,
+> addressing recommendations 1, 3, 4, 5, 7 and 8 below. Two decisions taken after
+> this review was written supersede parts of the analysis: the operating entity is
+> **Alex Westphal** (Christchurch, New Zealand), not Redcloud Development Ltd,
+> pending permission to use the company; and health information is now **prohibited**
+> outright rather than accommodated. Recommendations 2 (legal sign-off on the
+> liability clause) and 6 (clickwrap at sign-up) remain open. The findings below are
+> left as written, as the snapshot that motivated the rewrite.
+
 > **Not legal advice.** This is an engineering-side reading of the two documents
 > against the statutes named below, written to brief a New Zealand tech/privacy
 > lawyer rather than to replace one. Every statutory claim below is cited so it
