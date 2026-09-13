@@ -13,3 +13,13 @@ export const TITLE_SEPARATOR = "•";
  * to go in order to build a `?redirectTo=` sign-in URL.
  */
 export const CURRENT_PATH_HEADER = "x-avut-pathname";
+
+/**
+ * Cookie the sidebar persists its collapsed/expanded state to.
+ *
+ * Lives here rather than in `components/ui/sidebar.tsx` because the authenticated layout — a
+ * server component — has to read it to seed `SidebarProvider`'s `defaultOpen`. A `"use client"`
+ * module's exports become client references when imported from a server component, so the
+ * literal would not survive the trip.
+ */
+export const SIDEBAR_COOKIE_NAME = "sidebar_state";
