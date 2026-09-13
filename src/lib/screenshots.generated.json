@@ -13,6 +13,15 @@
     "alt": "The Forgot Password screen with a single email field and a Send reset code button",
     "capturedAt": "2026-09-10T06:21:20.502Z"
   },
+  "getting-started/module-switcher": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/module-switcher.webp",
+      "width": 255,
+      "height": 48
+    },
+    "alt": "The module switcher at the top of the sidebar, showing the current module, Skill Track, with an up-down chevron on the right",
+    "capturedAt": "2026-09-13T08:59:53.509Z"
+  },
   "getting-started/reset-password": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password.webp",
@@ -40,6 +49,15 @@
     },
     "alt": "The AVUT sign-in screen: email and password fields with a \"Forgot password?\" link, and GitHub and Google social sign-in buttons below",
     "capturedAt": "2026-09-10T06:15:55.203Z"
+  },
+  "getting-started/user-menu": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/user-menu.webp",
+      "width": 239,
+      "height": 48
+    },
+    "alt": "The user menu button in the sidebar footer, unopened: an avatar with the signed-in user's name and email and an up-down chevron on the right",
+    "capturedAt": "2026-09-13T08:59:55.433Z"
   },
   "getting-started/verify-email": {
     "light": {
