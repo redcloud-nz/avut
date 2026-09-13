@@ -1,0 +1,46 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /orgs/[slug]/admin/personnel
+ */
+
+import { Std } from "@/components/blocks/std";
+
+import { route } from "@/lib/routes";
+
+import { AdminModule_Personnel_List } from "@/components/admin/personnel/personnel-list";
+import { requireOrganization } from "@/server/organization-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
+
+export const metadata = {
+    title: `Personnel`,
+};
+
+export default async function AdminModule_PersonnelList_Page(
+    props: PageProps<"/orgs/[slug]/admin/personnel">,
+) {
+    const { slug } = await props.params;
+    const { organization } = await requireOrganization(slug);
+
+    prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
+
+    return (
+        <HydrateClient>
+            <>
+                <Std.Navbar
+                    breadcrumbs={[
+                        { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
+                        {
+                            label: "Personnel",
+                            href: route("/orgs/[slug]/admin/personnel", { slug }),
+                        },
+                    ]}
+                />
+                <Std.ScrollContainer>
+                    <AdminModule_Personnel_List organization={organization} />
+                </Std.ScrollContainer>
+            </>
+        </HydrateClient>
+    );
+}

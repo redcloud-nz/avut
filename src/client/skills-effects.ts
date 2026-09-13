@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `skills` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  * `createSession`'s response matches `getSession` exactly, so it writes wholesale. `updateSession`
  * and the session halves of `updateSessionAssessees`/`updateSessionSkills` return a bare
  * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into

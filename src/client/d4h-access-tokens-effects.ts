@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `d4hAccessTokens` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
     refreshToken: (vars) => [

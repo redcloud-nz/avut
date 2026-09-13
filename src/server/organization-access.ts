@@ -16,7 +16,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { auth, AuthSession } from "./auth";
 import { getOrganizationBySlug } from "./organization";
 import { getOrganizationSettings } from "./organization-settings";
-import { getOrganizationUserById } from "./organization-user";
+import { getOrganizationUserRoles } from "./organization-user";
 import { requireSession } from "./session";
 
 export interface OrganizationAccess {
@@ -61,7 +61,8 @@ export async function assertPermission(
 
 /**
  * Resolve an organization by slug, verifying that the current user is signed in and can
- * view it. Returns the session, organization and settings so callers need only one call.
+ * view it. Returns the session, organization, settings and the caller's roles so callers
+ * need only one call.
  *
  * Cached per request on the slug alone — deliberately not parameterised by permissions,
  * because React `cache` keys by argument identity and a fresh object literal per call
@@ -69,18 +70,17 @@ export async function assertPermission(
  * beyond `organization:view`.
  */
 export const requireOrganization = cache(async (slug: string): Promise<OrganizationAccess> => {
-    // Session first, so an expired session redirects to sign-in rather than surfacing as
-    // an authorization failure from Better Auth.
-    const session = await requireSession();
+    const [session, organization] = await Promise.all([
+        requireSession(),
+        getOrganizationBySlug(slug),
+    ]);
 
-    const organization = await getOrganizationBySlug(slug);
-    const settings = await getOrganizationSettings(organization.id);
+    const [settings, roles] = await Promise.all([
+        getOrganizationSettings(organization.id),
+        getOrganizationUserRoles(organization.id, session.user.id),
+    ]);
 
-    await assertPermission(organization.id, { organization: ["view"] });
-
-    const orgUser = await getOrganizationUserById(organization.id, session.user.id);
-
-    return { session, organization, settings, roles: orgUser.roles };
+    return { session, organization, settings, roles };
 });
 
 /** As `requireOrganization`, additionally requiring `permissions`. */

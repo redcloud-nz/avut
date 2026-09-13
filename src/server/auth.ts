@@ -18,6 +18,7 @@ import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 
 import { revalidateOrganization } from "./organization";
+import { revalidateOrganizationUser } from "./organization-user-cache";
 import prisma from "./prisma";
 
 /**
@@ -142,6 +143,12 @@ export const auth = betterAuth({
                             },
                         });
                     }
+
+                    // Better Auth creates the membership (and its initial role) internally as
+                    // part of accepting the invitation, before this hook runs — this is the one
+                    // place that happens outside our own tRPC mutations, so it needs the same
+                    // cache revalidation they do.
+                    await revalidateOrganizationUser(user.id);
                 },
                 async afterUpdateOrganization({ organization }) {
                     // Revalidate organization cache
