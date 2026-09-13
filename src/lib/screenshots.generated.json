@@ -100,6 +100,24 @@
     "alt": "The Personnel x Skill Matrix report: skills down the left, people across the top with rotated name headers, and a colored status icon in every cell",
     "capturedAt": "2026-09-13T20:18:27.870Z"
   },
+  "skill-track/report-matrix-cell": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-matrix-cell.webp",
+      "width": 288,
+      "height": 168
+    },
+    "alt": "The popover from clicking a matrix cell: the recorded result, when it was assessed and when it expires with relative dates, the assessor, and the note left with the check",
+    "capturedAt": "2026-09-13T20:25:30.423Z"
+  },
+  "skill-track/report-matrix-skill": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-matrix-skill.webp",
+      "width": 288,
+      "height": 108
+    },
+    "alt": "The popover from clicking a skill name in the matrix: the skill's name, its description, and how often it needs reassessing",
+    "capturedAt": "2026-09-13T20:25:28.482Z"
+  },
   "skill-track/report-person": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-person.webp",

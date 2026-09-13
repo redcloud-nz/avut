@@ -58,13 +58,31 @@ skill your team is falling behind on.
 
 A grid with every person in scope down one side and every skill across the
 top, each cell colored by status. Pick a team or the whole organization from
-the scope dialog, then click a cell to see the check behind it — this is the
-report to reach for when you want the full picture at once, rather than one
-person or one skill at a time.
+the scope dialog — this is the report to reach for when you want the full
+picture at once, rather than one person or one skill at a time.
 
 <Screenshot
   id="skill-track/report-matrix"
   caption="Skills down the side, people across the top, one status icon per pairing."
+/>
+
+Two things in the grid are clickable. A **skill name** down the left opens
+its description and how often it needs reassessing — useful when a row's
+colour makes you ask what the skill actually demands.
+
+<Screenshot
+  id="skill-track/report-matrix-skill"
+  caption="Clicking a skill name: what it covers, and its reassessment interval."
+/>
+
+A **cell** opens the check behind it: the result, when it was assessed and
+when it expires (with both as plain dates and as "10 months ago"), who
+assessed it, and any note they left. The popover shows the check, not the
+pairing, so it doesn't repeat the person and skill you clicked.
+
+<Screenshot
+  id="skill-track/report-matrix-cell"
+  caption="Clicking a cell: the recorded check, its dates, the assessor, and their note."
 />
 
 ## Skill Coverage
