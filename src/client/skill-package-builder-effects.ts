@@ -101,6 +101,28 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
+    importPackage: (vars, { applied, plan }) =>
+        applied
+            ? [
+                  invalidate(
+                      trpc.skillPackageBuilder.listPackages.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillPackageBuilder.listGroups.queryFilter({
+                          organizationId: vars.organizationId,
+                          skillPackageId: plan.package.id,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillPackageBuilder.listSkills.queryFilter({
+                          organizationId: vars.organizationId,
+                          skillPackageId: plan.package.id,
+                      }),
+                  ),
+              ]
+            : [],
     moveSkill: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({

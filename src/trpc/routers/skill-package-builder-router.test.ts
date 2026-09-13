@@ -11,8 +11,13 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { nanoId16 } from "@/lib/id";
+import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
+import {
+    SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+    type SkillPackageExport,
+} from "@/lib/schemas/skill-package-export";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -140,6 +145,147 @@ describe("skillPackageBuilderRouter.getPackage / getGroup / getSkill", () => {
         await expect(
             makeCaller().getSkill({ organizationId: T.org, skillId: SkillId.create() }),
         ).rejects.toThrow(/not found/i);
+    });
+});
+
+describe("skillPackageBuilderRouter.importPackage", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+    };
+    const db = createMockPrisma();
+
+    function makeEnvelope(): SkillPackageExport {
+        return {
+            formatVersion: SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            package: {
+                id: SkillPackageId.create(),
+                name: "Starter Package",
+                description: "A starter package for tests.",
+                tags: [],
+                properties: {},
+                groups: [
+                    {
+                        id: SkillGroupId.create(),
+                        name: "Group 1",
+                        description: "",
+                        tags: [],
+                        properties: {},
+                        sequence: 0,
+                        defaultInclude: true,
+                        skills: [
+                            {
+                                id: SkillId.create(),
+                                name: "Skill 1",
+                                description: "",
+                                tags: [],
+                                properties: {},
+                                sequence: 0,
+                                frequency: 12,
+                                defaultInclude: true,
+                                defaultRequired: true,
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: `acme-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: {
+                id: T.otherOrg,
+                name: "Other",
+                slug: `other-${nanoId16()}`,
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    function makeCaller(
+        permissions: Permissions = { skillPackageBuilder: ["create"], organization: ["view"] },
+    ) {
+        return skillPackageBuilderRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions,
+                prisma: db,
+            }),
+        );
+    }
+
+    it("dryRun computes a plan without writing", async () => {
+        const result = await makeCaller().importPackage({
+            organizationId: T.org,
+            envelope: makeEnvelope(),
+            dryRun: true,
+        });
+        expect(result.applied).toBe(false);
+        expect(result.plan.packageAction).toBe("Create");
+        expect(await db.skillPackage.findMany({ where: { organizationId: T.org } })).toHaveLength(
+            0,
+        );
+    });
+
+    it("imports the tree unpublished into the caller's organization and writes one log entry", async () => {
+        const result = await makeCaller().importPackage({
+            organizationId: T.org,
+            envelope: makeEnvelope(),
+            dryRun: false,
+        });
+        expect(result.applied).toBe(true);
+
+        const stored = await db.skillPackage.findUnique({
+            where: { id: result.plan.package.id },
+            include: { groups: true, skills: true },
+        });
+        expect(stored?.organizationId).toBe(T.org);
+        expect(stored?.published).toBe(false);
+        expect(stored?.groups.length).toBeGreaterThan(0);
+        expect(stored?.skills.length).toBeGreaterThan(0);
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId: result.plan.package.id },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            action: "Create",
+        });
+    });
+
+    it("refuses a package ID already owned by another organization", async () => {
+        const envelope = makeEnvelope();
+        await makeCaller().importPackage({
+            organizationId: T.org,
+            envelope,
+            dryRun: false,
+        });
+
+        await expect(
+            makeCaller().importPackage({
+                organizationId: T.otherOrg,
+                envelope,
+                dryRun: true,
+            }),
+        ).rejects.toThrow(/different organization/i);
+    });
+
+    it("requires the skillPackageBuilder create permission", async () => {
+        await expect(
+            makeCaller({}).importPackage({
+                organizationId: T.org,
+                envelope: makeEnvelope(),
+                dryRun: true,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
 

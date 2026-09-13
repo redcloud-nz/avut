@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { MDXContent } from "@content-collections/mdx/react";
 
 import { DocsArticle_Skeleton } from "@/components/docs/docs-article-skeleton";
+import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
 import { getAllDocSlugs } from "@/lib/docs";
 import { getVisibleDocBySlug } from "@/server/docs";
@@ -56,7 +57,9 @@ async function DocsArticle({ params }: DocsPageProps) {
 
     return (
         <article>
-            <MDXContent code={doc.mdx} components={docsMdxComponents} />
+            <MDXContent code={doc.introMdx} components={docsMdxComponents} />
+            <KeyTerms slugs={doc.keyTerms} />
+            {doc.restMdx && <MDXContent code={doc.restMdx} components={docsMdxComponents} />}
         </article>
     );
 }

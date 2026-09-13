@@ -33,6 +33,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": resolve(__dirname, "./src"),
+            "content-collections": resolve(__dirname, "./.content-collections/generated"),
         },
     },
     define: {

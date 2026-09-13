@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
@@ -41,7 +42,7 @@ const hideBelowMd = {
     cellProps: { className: "hidden md:table-cell" },
 } as const;
 
-export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId }) {
+export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
 
     const [{ data: team }, { data: teamMembers }] = useSuspenseQueries({
@@ -221,7 +222,32 @@ export function AdminModule_Team_Personnel_Content({ teamId }: { teamId: TeamId 
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div>
-                        <Kaga.TableToolbar table={table} />
+                        <Kaga.TableToolbar
+                            table={table}
+                            query={
+                                <TablePseudoQuery
+                                    table={table}
+                                    config={{
+                                        table: "Team_Memberships",
+                                        joins: [
+                                            { table: "Personnel", on: "PersonId" },
+                                            ...(teamIsD4HLinked
+                                                ? [
+                                                      {
+                                                          table: "Team_Membership_D4H",
+                                                          on: "TeamMembershipId",
+                                                      },
+                                                  ]
+                                                : []),
+                                        ],
+                                        extraWhere: [
+                                            `OrganizationId = '${organization.id}'`,
+                                            `TeamId = '${teamId}'`,
+                                        ],
+                                    }}
+                                />
+                            }
+                        />
                         <Kaga.Table table={table} />
                         <Kaga.TablePagination table={table} />
                     </div>

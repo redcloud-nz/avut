@@ -12,6 +12,7 @@ import { parseAsString, useQueryState } from "nuqs";
 import { MDXContent } from "@content-collections/mdx/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -74,7 +75,19 @@ export function HelpSheet() {
                             No help content is available for this page yet.
                         </p>
                     ) : (
-                        <MDXContent code={query.data.code} components={sheetMdxComponents} />
+                        <>
+                            <MDXContent
+                                code={query.data.introCode}
+                                components={sheetMdxComponents}
+                            />
+                            <KeyTerms slugs={query.data.keyTerms} />
+                            {query.data.restCode && (
+                                <MDXContent
+                                    code={query.data.restCode}
+                                    components={sheetMdxComponents}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
 

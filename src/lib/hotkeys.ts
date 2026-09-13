@@ -25,6 +25,7 @@ export const ActionHotkey = {
     unpublish: "Alt+U",
     move: "Alt+M",
     export: "Alt+X",
+    import: "Alt+I",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;

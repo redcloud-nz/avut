@@ -20,7 +20,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
-import { AdminModule_TeamMembershipMenu } from "./team-membership-menu";
+import { AdminModule_TeamMembership_Menu } from "./team-membership-menu";
 
 export function AdminModule_TeamMembership_Content({
     teamId,
@@ -76,7 +76,7 @@ export function AdminModule_TeamMembership_Content({
                     <Saratoga.Header>
                         <Saratoga.Title>{membership.person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_TeamMembershipMenu
+                            <AdminModule_TeamMembership_Menu
                                 team={team}
                                 person={membership.person}
                             />
