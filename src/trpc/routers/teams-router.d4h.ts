@@ -374,7 +374,12 @@ async function applyD4HSyncPlan(
                     where: { id: existing.id },
                     data: {
                         status: "Active",
-                        d4h: { create: { d4hMemberId: add.d4hMemberId, ...snap } },
+                        d4h: {
+                            upsert: {
+                                create: { d4hMemberId: add.d4hMemberId, ...snap },
+                                update: { d4hMemberId: add.d4hMemberId, ...snap },
+                            },
+                        },
                     },
                 }),
                 ctx.logEvent({
