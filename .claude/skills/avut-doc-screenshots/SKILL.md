@@ -34,12 +34,19 @@ in MDX → verify → clean up.
 
 | | |
 | --- | --- |
-| Organization | `Erehwon Response Team` — slug **`demo`**, so URLs are `/orgs/demo/…` (note the spelling: *Erehwon*) |
-| Accounts | `owner@demo.avut.nz`, `assessor@demo.avut.nz`, `member@demo.avut.nz` |
+| Organization | `Erehwon CDEM` — slug **`demo`**, so URLs are `/orgs/demo/…` (note the spelling: *Erehwon*) |
+| Team | `Erehwon Response Team` — the org's only team, holding all 32 personnel |
+| Accounts | `owner@demo.avut.nz` (owner), `assessor@demo.avut.nz` (skills-assessor), `responder@demo.avut.nz` (member, on the roster), `member@demo.avut.nz` (member, **no** person record) |
 | Password | `erehwon-demo` (the `DEMO_SEED_PASSWORD` default in `prisma/seed-demo.ts`) |
+| Skill catalogue | The demo org authors no package of its own — it **subscribes** to the three published packages owned by `nzrt-sg`: `NZRT Foundation`, `Light Rescue`, `Flood Response` (13 groups, 84 skills) |
+| Sessions | 15 monthly "… Training Night" sessions, oldest ~14 months back. Each has **one** assessor and covers 3 rotating skill groups; the newest is partially filled and still in progress — that's the hero shot |
 
 Personnel are synthetic (`@demo.avut.nz`), so there is nothing to redact. **Never** shoot the other
 orgs — `Christchurch CDEM` and `NZRT Steering Group` hold real-looking data.
+
+One consequence of subscribing rather than authoring: catalogue and package pages in the demo org
+legitimately show **`NZRT Steering Group`** as the publisher. That is the real cross-org shape, not a
+leak — but don't follow a link out of the demo org and shoot `nzrt-sg`'s own pages.
 
 ## Step 1 — Choose the id, the rung, and the viewport
 

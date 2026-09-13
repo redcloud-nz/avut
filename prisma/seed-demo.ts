@@ -5,7 +5,7 @@
 
 /**
  * Local development seed: a self-contained demo organisation populated for Skill
- * Track screenshots (session view + currency report).
+ * Track screenshots (session views + currency reports) and day-to-day manual testing.
  *
  *   npm run seed:demo
  *
@@ -14,6 +14,12 @@
  * seeded PRNG so the generated grid is identical each time. Nothing else in the
  * database is touched. Refuses to run against a production-looking database
  * unless `--force` is passed.
+ *
+ * NOTE: this seed does NOT author its own skill package. It subscribes the demo org
+ * to the published packages owned by the `nzrt-sg` organisation, which is how a real
+ * org consumes a package. That makes the seed dependent on `nzrt-sg` and its packages
+ * already existing in the target database — on a fresh database it fails with a clear
+ * error rather than inventing a package. It never writes to `nzrt-sg`.
  */
 
 import "dotenv/config";
@@ -26,19 +32,50 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
-import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import prisma from "@/server/prisma";
 
 const DEMO_SLUG = "demo";
-const DEMO_ORG_NAME = "Erehwon Response Team";
+const DEMO_ORG_NAME = "Erehwon CDEM";
+const DEMO_TEAM_NAME = "Erehwon Response Team";
 const EMAIL_DOMAIN = "demo.avut.nz";
 const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD ?? "erehwon-demo";
+
+/** The organisation whose published packages the demo org subscribes to. */
+const PACKAGE_PUBLISHER_SLUG = "nzrt-sg";
+
+/** One session per month, this month back through `SESSION_COUNT - 1` months ago. */
+const SESSION_COUNT = 15;
+
+/** Skill groups covered by each monthly session. Coprime with the group count so the
+ *  rotation walks every group evenly instead of revisiting a subset. */
+const GROUPS_PER_SESSION = 3;
+
+/**
+ * Responders who have drifted — indices into `PERSONNEL_NAMES` who stopped turning up
+ * `DRIFT_MONTHS` ago and have attended nothing since.
+ *
+ * Named explicitly rather than left to emerge from the PRNG. Without them the roster is
+ * uniformly current: the rotation revisits every group roughly every four months, well
+ * inside the 12-month reassessment frequency, so a responder would have to miss the same
+ * group three times running to lapse. These five give the currency report whole lapsed
+ * rows — legible in a screenshot, and a real case to test filters and reports against.
+ */
+const DRIFTED_INDICES = [7, 13, 20, 26, 30];
+
+/** How long ago the drifted cohort stopped attending. Longer than the 12-month
+ *  frequency on all but four skills would be total dropout; this leaves them partly
+ *  current and partly lapsed, which is the more interesting shape. */
+const DRIFT_MONTHS = 9;
+
+/** Share of a session's planned skills that never actually get run — the night overruns,
+ *  the weather turns, the trainer is short-handed. They stay attached to the session
+ *  because they were on the plan, so they read as an uncovered column rather than
+ *  vanishing from the record. */
+const MISSED_SKILL_RATE = 0.15;
 
 /** Deterministic PRNG (mulberry32) so re-runs produce an identical dataset. */
 function makeRng(seed: number) {
@@ -62,121 +99,95 @@ function pickWeighted<T>(entries: [T, number][]): T {
     return entries[entries.length - 1][0];
 }
 
-function monthsAgo(months: number): Date {
+function pick<T>(items: T[]): T {
+    return items[Math.floor(rng() * items.length)];
+}
+
+/** A training night: the 12th of the month, 19:00 local. */
+function sessionDate(monthsAgo: number): Date {
     const d = new Date();
-    d.setMonth(d.getMonth() - months);
+    d.setMonth(d.getMonth() - monthsAgo);
+    d.setDate(12);
+    d.setHours(19, 0, 0, 0);
     return d;
 }
 
 // --- Fictional personnel -----------------------------------------------------
 
-const FIRST_NAMES = [
-    "Ari",
-    "Bex",
-    "Cai",
-    "Devi",
-    "Esa",
-    "Finn",
-    "Goro",
-    "Hana",
-    "Ivo",
-    "Juno",
-    "Kaia",
-    "Lio",
-    "Mira",
-    "Noa",
-    "Otis",
-    "Priya",
-    "Quin",
-    "Rangi",
-    "Suki",
-    "Tama",
-];
-const LAST_NAMES = [
-    "Ashford",
-    "Beckett",
-    "Calder",
-    "Doyle",
-    "Elms",
-    "Frost",
-    "Greer",
-    "Holt",
-    "Innes",
-    "Jarrah",
-    "Keeling",
-    "Lund",
-    "Mercer",
-    "Nash",
-    "Okafor",
-    "Pratt",
-    "Quill",
-    "Rowe",
-    "Sowden",
-    "Trent",
-];
+/**
+ * 32 responders — a mix of English, New Zealand and European names, so the roster
+ * looks like a real CDEM team rather than a generated grid. Written out literally
+ * rather than assembled from name pools: the pairings stay plausible, and the list
+ * is stable without depending on the PRNG.
+ */
+const PERSONNEL_NAMES = [
+    "Harriet Blackwood",
+    "Aroha Te Whata",
+    "Douglas Renshaw",
+    "Lukas Brandt",
+    "Oliver Pennington",
+    "Rewi Panapa",
+    "Sofia Marchetti",
+    "Rosie Fairbairn",
+    "Mereana Kingi",
+    "Anneke de Vries",
+    "Callum Hartley",
+    "Tama Ropata",
+    "Mateusz Kowalczyk",
+    "Imogen Radcliffe",
+    "Kahurangi Waititi",
+    "Camille Fourcade",
+    "Toby Winslow",
+    "Manaia Tukaki",
+    "Jonas Lindqvist",
+    "Eleanor Whitcombe",
+    "Hine Paraone",
+    "Marek Dvorak",
+    "George Ashworth",
+    "Rangi Ngawaka",
+    "Ines Oliveira",
+    "Freya Milburn",
+    "Anaru Heremaia",
+    "Katarina Novak",
+    "Martha Sedgwick",
+    "Moana Rahui",
+    "Pieter Janssen",
+    "Wiremu Tahau",
+] as const;
+
+/** Indices into `PERSONNEL_NAMES` who assess. One of them runs each session. */
+const ASSESSOR_INDICES = [0, 1, 2, 3];
 
 interface PersonSpec {
     id: string;
     name: string;
     email: string;
     isAssessor: boolean;
+    /** Stopped attending `DRIFT_MONTHS` ago — see `DRIFTED_INDICES`. */
+    hasDrifted: boolean;
+}
+
+/** `Aroha Te Whata` -> `aroha.tewhata` — diacritics stripped, surname spaces closed up. */
+function emailLocalPart(name: string): string {
+    const [first, ...rest] = name.split(" ");
+    const ascii = (s: string) =>
+        s
+            .normalize("NFD")
+            .replace(/[̀-ͯ]/g, "")
+            .replace(/[^a-zA-Z]/g, "")
+            .toLowerCase();
+    return `${ascii(first)}.${ascii(rest.join(""))}`;
 }
 
 function buildPersonnel(): PersonSpec[] {
-    const used = new Set<string>();
-    const people: PersonSpec[] = [];
-    // First two are the assessors — they get linked to the owner/assessor logins.
-    for (let i = 0; i < 14; i++) {
-        let first: string, last: string, key: string;
-        do {
-            first = FIRST_NAMES[Math.floor(rng() * FIRST_NAMES.length)];
-            last = LAST_NAMES[Math.floor(rng() * LAST_NAMES.length)];
-            key = `${first} ${last}`;
-        } while (used.has(key));
-        used.add(key);
-        people.push({
-            id: PersonId.create(),
-            name: key,
-            email: `${first.toLowerCase()}.${last.toLowerCase()}@${EMAIL_DOMAIN}`,
-            isAssessor: i < 2,
-        });
-    }
-    return people;
+    return PERSONNEL_NAMES.map((name, i) => ({
+        id: PersonId.create(),
+        name,
+        email: `${emailLocalPart(name)}@${EMAIL_DOMAIN}`,
+        isAssessor: ASSESSOR_INDICES.includes(i),
+        hasDrifted: DRIFTED_INDICES.includes(i),
+    }));
 }
-
-// --- Skill package ----------------------------------------------------------
-
-const SKILL_GROUPS: {
-    name: string;
-    description: string;
-    skills: { name: string; frequency: number }[];
-}[] = [
-    {
-        name: "Anchors & Rigging",
-        description: "Building and evaluating anchor systems.",
-        skills: [
-            { name: "Natural & artificial anchors", frequency: 12 },
-            { name: "Load-sharing anchors", frequency: 12 },
-            { name: "Mechanical advantage systems", frequency: 24 },
-        ],
-    },
-    {
-        name: "Ascending & Descending",
-        description: "Personal rope movement under load.",
-        skills: [
-            { name: "Controlled descent", frequency: 12 },
-            { name: "Rope ascent & changeovers", frequency: 12 },
-        ],
-    },
-    {
-        name: "Rescue Systems",
-        description: "Moving a subject on rope.",
-        skills: [
-            { name: "Pick-off rescue", frequency: 12 },
-            { name: "Litter attendant on steep ground", frequency: 24 },
-        ],
-    },
-];
 
 // --- Seed steps ------------------------------------------------------------
 
@@ -233,7 +244,7 @@ async function createOrg(): Promise<string> {
                 id: organizationId,
                 name: DEMO_ORG_NAME,
                 slug: DEMO_SLUG,
-                createdAt: new Date(),
+                createdAt: sessionDate(SESSION_COUNT),
             },
         }),
         ...configRows.map((data) => prisma.organizationConfig.create({ data })),
@@ -244,10 +255,10 @@ async function createOrg(): Promise<string> {
 
 async function createUsers(
     organizationId: string,
-    ownerPersonId: string,
-    assessorPersonId: string,
-) {
+    personnel: PersonSpec[],
+): Promise<Map<string, string>> {
     const passwordHash = await hashPassword(DEMO_PASSWORD);
+    const byName = new Map(personnel.map((p) => [p.name, p.id]));
 
     async function createLogin(email: string, name: string) {
         const userId = nanoId16();
@@ -275,39 +286,56 @@ async function createUsers(
         return userId;
     }
 
-    const logins: { email: string; name: string; role: string; personId: string | null }[] = [
+    const logins: { email: string; name: string; role: string; personName: string | null }[] = [
         {
             email: `owner@${EMAIL_DOMAIN}`,
             name: "Demo Owner",
             role: "owner",
-            personId: ownerPersonId,
+            personName: "Harriet Blackwood",
         },
         {
             email: `assessor@${EMAIL_DOMAIN}`,
             name: "Demo Assessor",
             role: "skills-assessor",
-            personId: assessorPersonId,
+            personName: "Aroha Te Whata",
         },
-        { email: `member@${EMAIL_DOMAIN}`, name: "Demo Member", role: "member", personId: null },
+        {
+            // A member who IS on the roster — the "my own skills" case.
+            email: `responder@${EMAIL_DOMAIN}`,
+            name: "Demo Responder",
+            role: "member",
+            personName: "Toby Winslow",
+        },
+        {
+            // A member with no Person record — the user-vs-person edge case.
+            email: `member@${EMAIL_DOMAIN}`,
+            name: "Demo Member",
+            role: "member",
+            personName: null,
+        },
     ];
 
+    const userIdByEmail = new Map<string, string>();
     for (const login of logins) {
         const userId = await createLogin(login.email, login.name);
+        userIdByEmail.set(login.email, userId);
         await prisma.organizationUser.create({
             data: {
                 id: OrganizationUserId.create(),
                 organizationId,
                 userId,
                 role: login.role,
-                personId: login.personId,
+                personId: login.personName ? (byName.get(login.personName) ?? null) : null,
                 createdAt: new Date(),
             },
         });
-        console.log(`  login ${login.email} (${login.role}) — password: ${DEMO_PASSWORD}`);
+        const linked = login.personName ? ` -> ${login.personName}` : " (no person record)";
+        console.log(`  login ${login.email} (${login.role})${linked} — password: ${DEMO_PASSWORD}`);
     }
+    return userIdByEmail;
 }
 
-async function createPeopleAndTeams(organizationId: string, personnel: PersonSpec[]) {
+async function createPeopleAndTeam(organizationId: string, personnel: PersonSpec[]) {
     await prisma.person.createMany({
         data: personnel.map((p) => ({
             id: p.id,
@@ -318,71 +346,107 @@ async function createPeopleAndTeams(organizationId: string, personnel: PersonSpe
         })),
     });
 
-    const teams = ["Rope Rescue", "Swiftwater", "USAR"].map((name) => ({
-        id: TeamId.create(),
-        name,
-    }));
-    await prisma.team.createMany({
-        data: teams.map((t) => ({ id: t.id, organizationId, name: t.name })),
-    });
-
-    await prisma.teamMembership.createMany({
-        data: personnel.map((p, i) => ({
-            id: TeamMembershipId.create(),
-            organizationId,
-            teamId: teams[i % teams.length].id,
-            personId: p.id,
-        })),
-    });
-    console.log(`  ${personnel.length} personnel across ${teams.length} teams`);
-}
-
-async function createSkillPackage(organizationId: string): Promise<string[]> {
-    const skillPackageId = SkillPackageId.create();
-    await prisma.skillPackage.create({
+    const teamId = TeamId.create();
+    await prisma.team.create({
         data: {
-            id: skillPackageId,
+            id: teamId,
             organizationId,
-            name: "Rope Rescue Technician",
-            description: "Core rope-rescue competencies assessed on a rolling cycle.",
-            published: true,
+            name: DEMO_TEAM_NAME,
+            description: "Erehwon's volunteer response team.",
         },
     });
 
-    const skillIds: string[] = [];
-    for (const [g, group] of SKILL_GROUPS.entries()) {
-        const skillGroupId = SkillGroupId.create();
-        await prisma.skillGroup.create({
-            data: {
-                id: skillGroupId,
-                skillPackageId,
-                name: group.name,
-                description: group.description,
-                sequence: g,
-            },
-        });
-        await prisma.skill.createMany({
-            data: group.skills.map((skill, s) => {
-                const id = SkillId.create();
-                skillIds.push(id);
-                return {
-                    id,
-                    skillPackageId,
-                    skillGroupId,
-                    name: skill.name,
-                    description: `Demonstrate: ${skill.name.toLowerCase()}.`,
-                    sequence: s,
-                    frequency: skill.frequency,
-                };
-            }),
-        });
+    await prisma.teamMembership.createMany({
+        data: personnel.map((p) => ({
+            id: TeamMembershipId.create(),
+            organizationId,
+            teamId,
+            personId: p.id,
+        })),
+    });
+    console.log(`  ${personnel.length} personnel, all in team "${DEMO_TEAM_NAME}"`);
+}
+
+interface SeedSkillGroup {
+    id: string;
+    name: string;
+    packageName: string;
+    skillIds: string[];
+}
+
+/**
+ * Subscribe the demo org to every published package owned by `nzrt-sg`, and return
+ * that catalogue's groups (each with its active skills) in package/sequence order.
+ */
+async function subscribeToPackages(organizationId: string): Promise<SeedSkillGroup[]> {
+    const publisher = await prisma.organization.findUnique({
+        where: { slug: PACKAGE_PUBLISHER_SLUG },
+        select: { id: true, name: true },
+    });
+    if (!publisher) {
+        throw new Error(
+            `This seed subscribes the demo org to the published skill packages owned by ` +
+                `"${PACKAGE_PUBLISHER_SLUG}", but no organisation with that slug exists in this ` +
+                `database. Restore or create it before seeding.`,
+        );
     }
 
-    await prisma.skillPackageSubscription.create({
-        data: { id: nanoId16(), organizationId, skillPackageId },
+    const packages = await prisma.skillPackage.findMany({
+        where: { organizationId: publisher.id, published: true, status: "Active" },
+        select: {
+            id: true,
+            name: true,
+            groups: {
+                where: { status: "Active" },
+                select: {
+                    id: true,
+                    name: true,
+                    sequence: true,
+                    skills: {
+                        where: { status: "Active" },
+                        select: { id: true },
+                        orderBy: { sequence: "asc" },
+                    },
+                },
+                orderBy: { sequence: "asc" },
+            },
+        },
+        orderBy: { name: "asc" },
     });
-    console.log(`  skill package "Rope Rescue Technician" — ${skillIds.length} skills`);
-    return skillIds;
+    if (packages.length === 0) {
+        throw new Error(
+            `Organisation "${publisher.name}" (${PACKAGE_PUBLISHER_SLUG}) has no published, ` +
+                `active skill packages to subscribe to.`,
+        );
+    }
+
+    await prisma.skillPackageSubscription.createMany({
+        data: packages.map((pkg) => ({
+            id: nanoId16(),
+            organizationId,
+            skillPackageId: pkg.id,
+        })),
+    });
+
+    const groups: SeedSkillGroup[] = [];
+    for (const pkg of packages) {
+        for (const group of pkg.groups) {
+            if (group.skills.length === 0) continue;
+            groups.push({
+                id: group.id,
+                name: group.name,
+                packageName: pkg.name,
+                skillIds: group.skills.map((s) => s.id),
+            });
+        }
+    }
+
+    const skillCount = groups.reduce((n, g) => n + g.skillIds.length, 0);
+    console.log(
+        `  subscribed to ${packages.length} package(s) from ${publisher.name}: ` +
+            `${packages.map((p) => p.name).join(", ")} — ${groups.length} groups, ${skillCount} skills`,
+    );
+    return groups;
 }
 
 const RESULT_WEIGHTS: [string, number][] = [
@@ -392,72 +456,110 @@ const RESULT_WEIGHTS: [string, number][] = [
     ["Fail", 12],
 ];
 
-async function createSessions(organizationId: string, personnel: PersonSpec[], skillIds: string[]) {
-    const assessors = personnel.filter((p) => p.isAssessor);
-    const assessees = personnel.filter((p) => !p.isAssessor);
+/** Short assessor remarks, attached only to checks that did not pass. */
+const FAIL_NOTES = [
+    "Ran out of time on the night — rebook.",
+    "Sequence correct, needs to be quicker under load.",
+    "Not covered this session.",
+    "Close. Reassess at the next training night.",
+    "Needs a refresher before signing off.",
+];
 
-    async function createSession(opts: {
-        name: string;
-        sessionNumber: number;
-        when: Date;
-        fillRatio: number;
-    }) {
+async function createSessions(
+    organizationId: string,
+    personnel: PersonSpec[],
+    groups: SeedSkillGroup[],
+) {
+    const assessorPool = personnel.filter((p) => p.isAssessor);
+
+    let totalChecks = 0;
+
+    for (let i = 0; i < SESSION_COUNT; i++) {
+        // Oldest first, so session numbers read chronologically.
+        const monthsAgo = SESSION_COUNT - 1 - i;
+        const when = sessionDate(monthsAgo);
+        const isCurrent = monthsAgo === 0;
+
+        // One assessor per session, rotating through the pool.
+        const assessor = assessorPool[i % assessorPool.length];
+
+        // Rotate a fixed-size window of groups. GROUPS_PER_SESSION is coprime with 13
+        // groups today, so the window walks the whole catalogue evenly.
+        const sessionGroups = Array.from(
+            { length: GROUPS_PER_SESSION },
+            (_, k) => groups[(i * GROUPS_PER_SESSION + k) % groups.length],
+        );
+        const plannedSkillIds = [...new Set(sessionGroups.flatMap((g) => g.skillIds))];
+
+        // A few planned skills never get run. They stay on the session (below), so the
+        // session view shows them uncovered rather than pretending they weren't planned.
+        const assessedSkillIds = plannedSkillIds.filter(() => rng() >= MISSED_SKILL_RATE);
+        // Guard the degenerate draw — a session that assessed nothing at all isn't useful.
+        if (assessedSkillIds.length === 0) assessedSkillIds.push(plannedSkillIds[0]);
+        const missedCount = plannedSkillIds.length - assessedSkillIds.length;
+
+        // Not everyone makes every training night, and the assessor doesn't assess themselves.
+        // The drifted cohort stops appearing once the session is inside their drift window.
+        const eligible = personnel.filter(
+            (p) => p.id !== assessor.id && !(p.hasDrifted && monthsAgo < DRIFT_MONTHS),
+        );
+        const attendanceRate = 0.6 + rng() * 0.25;
+        const assessees = eligible.filter(() => rng() < attendanceRate);
+
+        const name = `${when.toLocaleString("en-NZ", { month: "long" })} ${when.getFullYear()} Training Night`;
+
         const sessionId = SkillCheckSessionId.create();
         await prisma.skillCheckSession.create({
             data: {
                 id: sessionId,
                 organizationId,
-                name: opts.name,
-                sessionNumber: opts.sessionNumber,
+                name,
+                sessionNumber: i + 1,
                 status: "Include",
-                startsAt: opts.when,
-                endsAt: opts.fillRatio >= 1 ? opts.when : null,
+                startsAt: when,
+                endsAt: isCurrent ? null : when,
                 // Nullable in the DB, but the app's Zod schema requires a string.
-                notes: "",
+                notes: isCurrent ? "" : `Covered ${sessionGroups.map((g) => g.name).join(", ")}.`,
                 assessees: { connect: assessees.map((p) => ({ id: p.id })) },
-                assessors: { connect: assessors.map((p) => ({ id: p.id })) },
-                skills: { connect: skillIds.map((id) => ({ id })) },
+                assessors: { connect: [{ id: assessor.id }] },
+                skills: { connect: plannedSkillIds.map((id) => ({ id })) },
             },
         });
 
+        // A finished night is nearly complete; the current one is still being filled in —
+        // that partial grid is the in-progress hero shot.
+        const fillRatio = isCurrent ? 0.55 : 0.9 + rng() * 0.1;
+
         const checks: Prisma.SkillCheckCreateManyInput[] = [];
         for (const assessee of assessees) {
-            for (const skillId of skillIds) {
-                if (rng() > opts.fillRatio) continue;
+            for (const skillId of assessedSkillIds) {
+                if (rng() > fillRatio) continue;
+                const result = pickWeighted(RESULT_WEIGHTS);
                 checks.push({
                     id: SkillCheckId.create(),
                     organizationId,
                     sessionId,
                     assesseeId: assessee.id,
-                    assessorId: assessors[Math.floor(rng() * assessors.length)].id,
+                    assessorId: assessor.id,
                     skillId,
-                    result: pickWeighted(
-                        RESULT_WEIGHTS,
-                    ) as Prisma.SkillCheckCreateManyInput["result"],
-                    notes: "",
+                    result: result as Prisma.SkillCheckCreateManyInput["result"],
+                    notes: result === "Pass" || result === "StrongPass" ? "" : pick(FAIL_NOTES),
                     status: "Include",
-                    createdAt: opts.when,
+                    createdAt: when,
                 });
             }
         }
         await prisma.skillCheck.createMany({ data: checks });
-        console.log(`  session "${opts.name}" — ${checks.length} checks`);
+        totalChecks += checks.length;
+
+        console.log(
+            `  session ${i + 1}: "${name}" — ${assessees.length} assessees, ` +
+                `${plannedSkillIds.length} skills (${missedCount} not covered), ` +
+                `${checks.length} checks${isCurrent ? " (in progress)" : ""}`,
+        );
     }
 
-    // Historical: 14 months back, complete grid — 12-month skills have since lapsed.
-    await createSession({
-        name: "Autumn Rope Assessment",
-        sessionNumber: 1,
-        when: monthsAgo(14),
-        fillRatio: 1,
-    });
-    // In progress: today, partially filled — the hero screenshot.
-    await createSession({
-        name: "Rope Assessment Day",
-        sessionNumber: 2,
-        when: new Date(),
-        fillRatio: 0.6,
-    });
+    console.log(`  ${SESSION_COUNT} sessions, ${totalChecks} checks total`);
 }
 
 async function main() {
@@ -469,11 +571,11 @@ async function main() {
     const organizationId = await createOrg();
 
     const personnel = buildPersonnel();
-    await createPeopleAndTeams(organizationId, personnel);
-    await createUsers(organizationId, personnel[0].id, personnel[1].id);
+    await createPeopleAndTeam(organizationId, personnel);
+    await createUsers(organizationId, personnel);
 
-    const skillIds = await createSkillPackage(organizationId);
-    await createSessions(organizationId, personnel, skillIds);
+    const groups = await subscribeToPackages(organizationId);
+    await createSessions(organizationId, personnel, groups);
 
     console.log("\nDone. Sign in at /auth/sign-in as one of the demo logins above.");
 }
