@@ -19,9 +19,8 @@ export const metadata = { title: "Sign Up" };
 // Not `async` — see the note in /auth/sign-in/page.tsx.
 export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column>
-                <Argus.AppLogo />
                 <Suspense fallback={<AuthCard_Skeleton fields={3} />}>
                     <SignUp_CardFromParams searchParams={props.searchParams} />
                 </Suspense>

@@ -11,11 +11,24 @@ import { ComponentProps } from "react";
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { cn } from "@/lib/utils";
 
-function ArgusRoot({ className, ...props }: ComponentProps<"div">) {
+function ArgusRoot({
+    className,
+    fullHeight = true,
+    ...props
+}: ComponentProps<"div"> & {
+    /**
+     * Off when nested inside a shell that already provides the surrounding height (e.g. the
+     * shared public header/footer) — otherwise this forces `min-h-svh` on top of that shell's
+     * own height, pushing the page taller than the viewport regardless of how short the
+     * content is. Default on for the standalone full-page usages (`/orgs/--create`, etc.).
+     */
+    fullHeight?: boolean;
+}) {
     return (
         <div
             className={cn(
-                "bg-muted flex min-h-svh flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10",
+                "bg-muted flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10",
+                fullHeight && "min-h-svh",
                 className,
             )}
             {...props}

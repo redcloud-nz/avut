@@ -19,9 +19,8 @@ export const metadata = { title: "Sign In" };
 // it prerenders. Awaiting here would make the whole route block. See auth-card-skeleton.tsx.
 export default function SignIn_Page(props: PageProps<"/auth/sign-in">) {
     return (
-        <Argus.Root>
+        <Argus.Root fullHeight={false}>
             <Argus.Column>
-                <Argus.AppLogo />
                 <Suspense fallback={<AuthCard_Skeleton fields={2} />}>
                     <SignIn_CardFromParams searchParams={props.searchParams} />
                 </Suspense>

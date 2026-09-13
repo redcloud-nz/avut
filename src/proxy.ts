@@ -26,6 +26,7 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith("/auth") ||
         pathname.startsWith("/docs") ||
         pathname.startsWith("/policies") ||
+        pathname.startsWith("/tools") ||
         pathname.startsWith("/public")
     ) {
         // Public routes that don't require authentication, allow through
