@@ -73,6 +73,42 @@
     "alt": "The New Session dialog: a name field whose placeholder offers the next session number, a date defaulting to today, and a notes field",
     "capturedAt": "2026-09-13T08:24:52.879Z"
   },
+  "skill-track/session-by-person": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-person.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "Assess by Person on a laptop: a list of the session's assessees on the left with Douglas Renshaw selected, and his assigned skills on the right, each row carrying a fail button, a pass button, a note button and a menu",
+    "capturedAt": "2026-09-13T08:39:29.730Z"
+  },
+  "skill-track/session-by-person-phone": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-person-phone.webp",
+      "width": 390,
+      "height": 844
+    },
+    "alt": "Assess by Person on a phone: the assessee list has collapsed into a Person dropdown above the results, with Douglas Renshaw's skills listed below it",
+    "capturedAt": "2026-09-13T08:39:39.900Z"
+  },
+  "skill-track/session-by-skill": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-skill.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "Assess by Skill on a laptop: the session's skills on the left grouped by package and skill group with Effective sand bagging selected, and every person assigned to it on the right",
+    "capturedAt": "2026-09-13T08:39:31.736Z"
+  },
+  "skill-track/session-by-skill-phone": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-skill-phone.webp",
+      "width": 390,
+      "height": 844
+    },
+    "alt": "Assess by Skill on a phone: the skill list has collapsed into a Skill dropdown above the results, with everyone assigned to Effective sand bagging listed below it",
+    "capturedAt": "2026-09-13T08:39:41.902Z"
+  },
   "skill-track/session-page": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-page.webp",
