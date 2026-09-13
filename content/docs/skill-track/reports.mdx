@@ -21,9 +21,12 @@ Every report uses the same four-state status for a person/skill pairing:
 | Not Competent | The most recent recorded result wasn't a pass.           |
 | Not Assessed  | No check on record for this person/skill pairing.        |
 
-<Callout>
-  Personnel Competency needs the `skillCheck: view` permission; the other three also need `team:
-  view`, since they let you pick or list teams.
+<Callout type="warning">
+  Every report's **⋮** menu carries a **Use Synthetic Checks** toggle. Turning it on throws away the
+  recorded results and fills the report with generated ones, so the numbers stop being about your
+  people. Two things tell you it's on: a **Synthetic Data** button appears next to **Change scope**,
+  and the address bar picks up `?synthetic`. Untick it — or drop that from the URL — to get the real
+  data back.
 </Callout>
 
 ## Personnel Competency
@@ -33,6 +36,11 @@ subscribed to. Pick the person from the scope dialog; use it to see one
 person's full competency picture at a glance, or to prep for a
 re-assessment by spotting what's expired or missing.
 
+<Screenshot
+  id="skill-track/report-person"
+  caption="One person against the whole subscribed catalogue, with a status and a last-checked date per skill."
+/>
+
 ## Team Competency
 
 Summarizes competency **per skill** across a group of people — pick a
@@ -40,6 +48,11 @@ specific team or the whole organization from the scope dialog. Rather than
 listing every person, each skill shows how many people in scope are Current,
 Expired, Not Competent, or Not Assessed, so it's the quickest way to spot a
 skill your team is falling behind on.
+
+<Screenshot
+  id="skill-track/report-team"
+  caption="One row per skill: the bar splits the team by status, and the figure is how many are current."
+/>
 
 ## Personnel × Skill Matrix
 
@@ -49,9 +62,19 @@ the scope dialog, then click a cell to see the check behind it — this is the
 report to reach for when you want the full picture at once, rather than one
 person or one skill at a time.
 
+<Screenshot
+  id="skill-track/report-matrix"
+  caption="Skills down the side, people across the top, one status icon per pairing."
+/>
+
 ## Skill Coverage
 
 Flips the matrix around: pick one skill from the scope dialog (optionally
 narrowed to a team) and see everyone's status for it. Use this when the
 question is "who can do X" rather than "how is this person or team doing
 overall."
+
+<Screenshot
+  id="skill-track/report-skill"
+  caption="One skill, everyone's status for it — the people who need attention sort to the top."
+/>
