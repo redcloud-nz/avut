@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `teams` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 const teamCaches = (vars: { organizationId: string; teamId: string }) => [
     invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),

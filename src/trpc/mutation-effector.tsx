@@ -7,8 +7,8 @@
 import { useEffect } from "react";
 
 import {
-    useQueryClient,
     type InferDataFromTag,
+    type QueryClient,
     type QueryFilters,
     type QueryKey,
     type Updater,
@@ -76,6 +76,12 @@ function isInvalidateEffect(
     return effect.type === "invalidate";
 }
 
+function isWriteEffect(
+    effect: MutationEffect,
+): effect is Extract<MutationEffect, { type: "write" }> {
+    return effect.type === "write";
+}
+
 type EffectsFn<TVars, TData> = (vars: TVars, data: TData) => MutationEffect[];
 
 /**
@@ -114,7 +120,7 @@ declare module "@tanstack/query-core" {
         mutationMeta: {
             /**
              * Cache side-effects to apply after this mutation succeeds, as a function of its
-             * variables and result. Read and applied by `MutationInvalidator`: all `write()`
+             * variables and result. Read and applied by `useMutationEffector`: all `write()`
              * entries first (synchronous `setQueryData` calls), then all `invalidate()` entries
              * (may trigger a background refetch of any still-stale, still-active queries) —
              * regardless of the order they appear in the returned array.
@@ -138,11 +144,10 @@ declare module "@tanstack/query-core" {
  * queries). This runs and is awaited *before* a call site's own `onSuccess`, so ordering with
  * UI-level effects (toasts, `router.refresh()`) is unaffected.
  *
- * Mount once as a sibling of `QueryClientProvider`'s children.
+ * Call once with the same `QueryClient` instance passed to `QueryClientProvider` — typically
+ * right alongside it, since this patches that client's shared mutation cache.
  */
-export function MutationInvalidator() {
-    const queryClient = useQueryClient();
-
+export function useMutationEffector(queryClient: QueryClient) {
     useEffect(() => {
         const mutationCache = queryClient.getMutationCache();
         const previousOnSuccess = mutationCache.config.onSuccess;
@@ -159,7 +164,7 @@ export function MutationInvalidator() {
             const effects = mutation.meta?.effects?.(variables, data) ?? [];
 
             for (const effect of effects) {
-                if (effect.type === "write") queryClient.setQueryData(effect.queryKey, effect.data);
+                if (isWriteEffect(effect)) queryClient.setQueryData(effect.queryKey, effect.data);
             }
 
             await Promise.all(
@@ -173,6 +178,4 @@ export function MutationInvalidator() {
             mutationCache.config.onSuccess = previousOnSuccess;
         };
     }, [queryClient]);
-
-    return null;
 }

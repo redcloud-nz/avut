@@ -46,8 +46,8 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
-src/app/(authenticated)/orgs/\[slug\]/system/scratch/*
-!src/app/(authenticated)/orgs/\[slug\]/system/scratch/README.md
+src/app/(wrapper)/(authenticated)/orgs/\[slug\]/system/scratch/*
+!src/app/(wrapper)/(authenticated)/orgs/\[slug\]/system/scratch/README.md
 src/app/scratch/
 
 # claude code — personal overrides (.claude/settings.json IS shared)

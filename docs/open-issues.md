@@ -30,6 +30,16 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
       firing direct mutations.
 - [ ] Person **delete** should be available for an already-archived person.
 
+## Organizations
+
+- [ ] `OrganizationUser` (`src/lib/schemas/organization-user.ts`) conflates two different
+      records — the org membership row (`organization_users`) and its joined `User` row —
+      into one schema. That's why `requireOrganization`/`getMyRoles` fetch roles via a
+      separate, narrower `getOrganizationUserRoles` (`select: { role: true }`, no join)
+      instead of reusing `OrganizationUser`: fetching the full shape for a roles-only read
+      meant joining both tables just to discard everything but one field. Consider splitting
+      the schema along that seam instead of growing more of these narrow one-off queries.
+
 ## System admin
 
 - [ ] Add hotkey support to the system-admin users and organisations pages

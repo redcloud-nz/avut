@@ -8,17 +8,20 @@
  * organizations can browse this before signing up (mirrors `(public)/policies`).
  */
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 
+import { DocsNav_Skeleton } from "@/components/docs/docs-nav-skeleton";
 import { DocsSearch } from "@/components/docs/docs-search";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
 import { docsHref } from "@/lib/docs";
 import { getVisibleDocsNav } from "@/server/docs";
 
-export default async function DocsLayout({ children }: { children: ReactNode }) {
-    const nav = await getVisibleDocsNav();
-
+// Not `async`. `getVisibleDocsNav()` resolves module flags, which read headers, so awaiting it
+// here would block the whole `/docs` subtree — the chrome below would never reach the static
+// shell. The read lives in `<DocsNav>` behind a boundary instead, leaving the header, search and
+// main frame prerenderable. See docs/reviews/suspense-boundaries.md §3.
+export default function DocsLayout({ children }: { children: ReactNode }) {
     return (
         <div className="mx-auto flex min-h-svh max-w-6xl flex-col px-4">
             <header className="flex h-14 items-center justify-between gap-4 border-b">
@@ -35,11 +38,18 @@ export default async function DocsLayout({ children }: { children: ReactNode }) 
             <div className="flex flex-1 gap-10 py-8">
                 <aside className="hidden w-56 shrink-0 md:block">
                     <div className="sticky top-8">
-                        <DocsSidebar nav={nav} />
+                        <Suspense fallback={<DocsNav_Skeleton />}>
+                            <DocsNav />
+                        </Suspense>
                     </div>
                 </aside>
                 <main className="min-w-0 max-w-3xl flex-1">{children}</main>
             </div>
         </div>
     );
+}
+
+/** The flag-filtered nav. Isolated so its runtime read doesn't block the docs shell. */
+async function DocsNav() {
+    return <DocsSidebar nav={await getVisibleDocsNav()} />;
 }

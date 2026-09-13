@@ -5,23 +5,26 @@
  * Path: /auth/sign-up
  */
 
+import { Suspense } from "react";
+
 import Link from "next/link";
 
 import { Argus } from "@/components/blocks/argus";
 
+import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { SignUp_Card } from "@/components/auth/sign-up";
 
 export const metadata = { title: "Sign Up" };
 
-export default async function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
-    const params = await props.searchParams;
-    const email = Array.isArray(params.email) ? params.email[0] : params.email;
-
+// Not `async` — see the note in /auth/sign-in/page.tsx.
+export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
     return (
         <Argus.Root>
             <Argus.Column>
                 <Argus.AppLogo />
-                <SignUp_Card email={email ? decodeURIComponent(email) : undefined} />
+                <Suspense fallback={<AuthCard_Skeleton fields={3} />}>
+                    <SignUp_CardFromParams searchParams={props.searchParams} />
+                </Suspense>
                 <Argus.Footer>
                     By clicking continue, you agree to our{" "}
                     <Link href="/policies/terms-of-service" target="_blank">
@@ -36,4 +39,15 @@ export default async function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">
             </Argus.Column>
         </Argus.Root>
     );
+}
+
+async function SignUp_CardFromParams({
+    searchParams,
+}: {
+    searchParams: PageProps<"/auth/sign-up">["searchParams"];
+}) {
+    const params = await searchParams;
+    const email = Array.isArray(params.email) ? params.email[0] : params.email;
+
+    return <SignUp_Card email={email ? decodeURIComponent(email) : undefined} />;
 }

@@ -27,6 +27,10 @@ vi.mock("@/server/organization-settings-cache", () => ({
     organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
     revalidateOrganizationSettings: vi.fn(async () => {}),
 }));
+vi.mock("@/server/organization-user-cache", () => ({
+    organizationUserCacheTag: (id: string) => `organization-user-${id}`,
+    revalidateOrganizationUser: vi.fn(async () => {}),
+}));
 
 import { systemAdminRouter } from "./system-admin-router";
 
