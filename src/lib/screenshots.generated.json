@@ -70,8 +70,8 @@
       "width": 384,
       "height": 426
     },
-    "alt": "The New Session dialog: an optional name pre-filled with the next session number, a date defaulting to today, and a notes field",
-    "capturedAt": "2026-09-13T07:19:23.215Z"
+    "alt": "The New Session dialog: a name field whose placeholder offers the next session number, a date defaulting to today, and a notes field",
+    "capturedAt": "2026-09-13T08:24:52.879Z"
   },
   "skill-track/session-personnel": {
     "light": {
