@@ -77,18 +77,18 @@
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-personnel.webp",
       "width": 1280,
-      "height": 822
+      "height": 800
     },
     "alt": "The session Personnel page: everyone grouped by team, each with a checkbox marking who is being assessed in this session",
-    "capturedAt": "2026-09-13T07:19:33.205Z"
+    "capturedAt": "2026-09-13T07:23:37.510Z"
   },
   "skill-track/session-skills": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-skills.webp",
       "width": 1280,
-      "height": 545
+      "height": 800
     },
     "alt": "The session Skills page: catalogue skills grouped by package and skill group, each with a checkbox, showing 7 of 7 selected",
-    "capturedAt": "2026-09-13T07:19:30.865Z"
+    "capturedAt": "2026-09-13T07:23:35.531Z"
   }
 }

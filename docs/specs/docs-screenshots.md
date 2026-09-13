@@ -203,17 +203,23 @@ column (`max-w-3xl` = **768px**) and the in-app `?help=` sheet (`max-w-lg` less
 upscales, so the capture width is what decides legibility. Take the narrowest rung
 that still shows what the surrounding prose is about:
 
-| Rung      | Width      | Renders at                      | Use for                                                     |
-| --------- | ---------- | ------------------------------- | ----------------------------------------------------------- |
-| Detail    | 500px      | 1:1 on both surfaces            | Dialogs, forms, cards, a single panel or toolbar            |
-| Region    | 768px      | 1:1 in docs, 0.63× in the sheet | A table with its toolbar, a session header, one report card |
-| Full view | 1280 × 800 | 0.6× / 0.375×                   | Only when the whole shell matters — leans on click-to-zoom  |
+| Rung      | Width      | Renders at                      | Use for                                                                                                           |
+| --------- | ---------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Detail    | 500px      | 1:1 on both surfaces            | Dialogs, forms, cards, a single panel or toolbar                                                                  |
+| Region    | 768px      | 1:1 in docs, 0.63× in the sheet | A table with its toolbar, a session header, one report card                                                       |
+| Full view | 1280 × 800 | 0.6× / 0.375×                   | Only when the whole shell matters — leans on click-to-zoom. Keeps the full preset frame, never trimmed to content |
 
 A `phone` capture is 390px wide, so it renders 1:1 on both surfaces; phone shots
 are the crispest thing the docs can carry and need no rung of their own.
 
-Crop height to content — nothing downstream constrains aspect ratio. Capture at
-**DPR 1**: `upload.ts` records intrinsic pixel dimensions and `<Screenshot>` treats
+A full-page capture keeps the **whole preset frame** — 1280 × 800 or 390 × 844,
+never trimmed down to where the content happens to stop. Two page shots sitting
+in the same doc should be the same size, and a page whose content runs past the
+fold should look like it does in the app, scrollbar and all; trimming each shot
+to its own content height throws both away. Only element crops (the rungs above)
+are cut to their subject.
+
+Capture at **DPR 1**: `upload.ts` records intrinsic pixel dimensions and `<Screenshot>` treats
 them as CSS px, so a 2× capture of a 500px card would store `width: 1000` and then
 render it 768px wide, a 1.5× upscale. Retina support would need a scale factor in
 the index — a Phase 2 concern at most.
