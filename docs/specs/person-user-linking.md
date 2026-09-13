@@ -5,10 +5,12 @@
 
 How a `Person` record gets attached to a `User` account. Today this is a manual
 step buried on the user detail page; this spec adds an invite path from the
-person side and three email-match automations, each gated by a new
-organization setting.
+person side and two email-match automations, each gated by a new organization
+setting.
 
 Source idea: [`docs/ideas/2026-09-14-streamline-person-user-linking.md`](../ideas/2026-09-14-streamline-person-user-linking.md).
+That idea's fourth part — offering membership at signup on an email match — is
+**not** being built; see §9.
 
 ---
 
@@ -23,7 +25,6 @@ The link is `OrganizationUser.personId` — nullable, `@unique`, `onDelete: SetN
 | Invite accept | `organizationHooks.afterAcceptInvitation` (`src/server/auth.ts:130-145`) | **Already copies `invitation.personId` onto the new `OrganizationUser`.** Unguarded `updateMany`, no audit entry. |
 | Person detail page | `src/components/admin/personnel/person-content.tsx` | Renders a read-only "Linked User Account" card when `personnel.getLinkedUser` returns a row. No action to create the link. |
 | Person dropdown | `src/components/admin/personnel/person-menu.tsx` | Edit / Archive / Restore / Delete. |
-| Entry screen | `getEntryControl` (`src/server/entry-control.ts`) + `OrgSelector_Card` | Lists memberships and pending invitations at `/orgs/--select-org`. |
 
 Two facts verified against `node_modules/better-auth` (1.7.3) that the plan leans on:
 
@@ -99,12 +100,6 @@ export function findLinkablePerson(
   args: { organizationId: string; email: string },
 ): Promise<Person | null>;
 
-/** The orgs where `email` matches a linkable person. Powers Part 4. */
-export function findLinkableOrganizations(
-  prisma: PersonUserLinkPrisma,
-  args: { email: string },
-): Promise<{ organization: Organization; person: Person }[]>;
-
 /**
  * Set `OrganizationUser.personId`, but only if that row is still unlinked and the person
  * is still unlinked. Returns whether the link was made; never throws on a lost race.
@@ -129,29 +124,27 @@ module, so it is not a `modules.*` key:
 personnel: z.object({
     autoLinkOnInviteAccept: z.boolean().default(false),
     autoLinkOnPersonCreate: z.boolean().default(false),
-    offerMembershipOnEmailMatch: z.boolean().default(false),
 }),
 ```
 
 - Add `personnel: {}` to `OrganizationSettings.default()`. `flatten`/`fromRecords` are
   generic over the schema, so the store and the audit diff need no change.
 - New `Personnel_SettingsCard` (`src/components/admin-settings/personnel-card.tsx`),
-  modelled on `email-integration-card.tsx`: three `<Switch>` fields, own sub-form, own save
+  modelled on `email-integration-card.tsx`: two `<Switch>` fields, own sub-form, own save
   button, `useOrganizationSettingsMutation`. Slot it into `OrganizationSettingsForm` in a
   new "Personnel" section between General and Integrations.
-- **All three default to `false`** so no existing organization changes behaviour on deploy.
+- **Both default to `false`** so no existing organization changes behaviour on deploy.
 
 ### 3.4 Audit logging
 
-Every automatic link is a state change on `OrganizationMembership` and gets an entry. All
-three automations have a real human actor, so **no `LogBatch` is needed** (the idea file
-guessed otherwise):
+Every automatic link is a state change on `OrganizationMembership` and gets an entry. Both
+automations have a real human actor, so **no `LogBatch` is needed** (the idea file guessed
+otherwise):
 
 | Automation | Actor | Written via |
 | --- | --- | --- |
 | Part 2 — invite accept | the accepting user | `recordLogEntry` directly (the better-auth hook is outside any tRPC procedure) |
 | Part 3 — person create | the admin creating the person | `ctx.logEvent` inside the existing `$transaction` |
-| Part 4 — offer accepted | the accepting user | `recordLogEntry` directly (see §7.3) |
 
 Entries use `action: "Update"`, `objectType: "OrganizationMembership"`, `objectId` the
 `OrganizationUser.id`, and a description naming the person and the trigger, e.g.
@@ -243,8 +236,8 @@ this org whose user's email matches the new person's, case-insensitively, and wh
 `personId` is null — and link it.
 
 **Membership is never granted.** A user who exists but is not a member of the org is left
-alone; they still need Part 1's invite (or Part 4's offer). This is the decision from
-intake and is what keeps an email match from being an authorisation decision.
+alone; they still need Part 1's invite. This is the decision from intake and is what keeps
+an email match from being an authorisation decision.
 
 ### Work
 
@@ -266,79 +259,7 @@ correction, and silently binding an account to it is surprising. Revisit only if
 
 ---
 
-## 7. Part 4 — Standing join offers
-
-**Goal:** someone signs up (or signs in) and is offered membership of an organization that
-already has a person record with their email.
-
-### 7.1 Why not a fabricated invitation
-
-The obvious implementation — write an `OrganizationInvitation` at signup and let the
-existing accept flow do the rest — fails on two counts: `inviterId` is a required FK with
-no honest value, and `sendInvitationEmail` would fire a "someone invited you" email that
-nobody sent. Instead the offer is **computed on read**, and accepting it is its own
-mutation.
-
-A consequence worth naming: this makes offers *standing*, not signup-only. A user who
-signed up last year sees the offer the next time they hit the org selector, once the org
-turns the setting on. That is a superset of the requested behaviour and simpler than
-pinning it to the signup moment.
-
-### 7.2 Surfacing
-
-Extend `EntryControlSelect.data` with a third list:
-
-```ts
-offers: { organization: OrganizationData; personName: string }[];
-```
-
-`getEntryControl` populates it from `findLinkableOrganizations(prisma, { email: session.user.email })`,
-filtered to orgs with `personnel.offerMembershipOnEmailMatch` on and excluding orgs the
-user already belongs to or has a pending invitation for.
-
-`OrgSelector_Card` renders a "Join an organization" section below Pending Invitations:
-*"<Org> has a personnel record for <name> with your email address."* plus an **Accept** button.
-The section is absent when `offers` is empty, so nothing changes for the common case.
-
-> While here, fix the adjacent bug: the Pending Invitations `<Item asChild>` block wraps
-> multiple children and has no link, so those rows render wrong and do nothing.
-
-### 7.3 Accepting
-
-New `organizations.acceptMembershipOffer` — **`authenticatedProcedure`**, because the caller
-is by definition not yet a member and `organizationProcedure` would reject them. It takes
-`{ organizationId }` and re-derives everything server-side; the client sends no person id
-and no role.
-
-Guards, all re-checked inside the mutation (the read that produced the offer is not trusted):
-
-1. The org's `personnel.offerMembershipOnEmailMatch` is on.
-2. `findLinkablePerson(prisma, { organizationId, email: ctx.user.email })` returns a person.
-3. The caller's email is verified (`user.emailVerified`) — otherwise an unverified signup
-   with someone else's address could self-join.
-4. The caller has no existing `OrganizationUser` for that org.
-
-Then, in one `$transaction`: create the `OrganizationUser` with `role: "member"` and
-`personId` set (the `addOrganizationMember` shape at `system-admin-router.ts:122-140`), plus
-two log entries — `Create` on `OrganizationMembership` and the link description. Afterwards
-`revalidateOrganizationUser(ctx.userId)`.
-
-Because this is an `authenticatedProcedure`, `ctx.logEvent` would file the entry under the
-user's own timeline; the event belongs to the organization. Write it with `recordLogEntry`
-directly, `scope: "organization"`, actor = the calling user. **If a second case like this
-appears, give `authenticatedProcedure`'s `logEvent` an optional organization arm instead of
-repeating this.**
-
-### 7.4 Accepted tradeoff
-
-The offer tells the user that a named organization holds a person record with their email.
-That organization put the address there, and the behaviour is off by default and org
-opt-in, so this is acceptable. It is the reason the setting exists rather than the feature
-being unconditional.
-
----
-
-## 8. Conflict matrix
+## 7. Conflict matrix
 
 Every row is a no-op-and-move-on, never an error shown to an end user.
 
@@ -356,20 +277,31 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
 
 ---
 
-## 9. Out of scope
+## 8. Out of scope
 
+- **Membership offers at signup (the idea's part 4).** Dropped as disproportionate: it
+  needs a third list on `EntryControl`, new org-selector UI, and an `authenticatedProcedure`
+  that grants membership to a non-member — the only place in this design where an email
+  match becomes an authorisation decision, and so the only place carrying real security
+  weight. Parts 1–3 cover the common cases; someone who signs up without an invite still
+  gets linked the moment an admin invites them (Part 1) or the org's data catches up
+  (Part 2). Revisit if orgs actually ask for self-service joining.
 - Normalising `Person.email` / `User.email` at write time (or a citext column). The
   case-insensitive query is the whole mitigation here.
 - Auto-linking on `updatePerson` (§6).
-- A per-person opt-in flag for Part 4 — ruled out at intake in favour of the org setting alone.
-- Bulk "link all matching" admin action. Falls out cheaply from `findLinkableOrganizations`
-  if wanted later.
+- Bulk "link all matching" admin action.
 - Auditing invitation creation. No `OrganizationInvitation` value exists in `LogObjectType`
   and Part 1 does not add one — invitations remain unlogged, as they are today.
 
+### Unrelated bug noticed while reading
+
+`OrgSelector_Card` (`src/components/cards/org-selector.tsx`) renders each pending
+invitation as `<Item asChild>` wrapping three children and with no link, so those rows
+render wrong and do nothing when clicked. Not touched by this spec; worth its own fix.
+
 ---
 
-## 10. Testing
+## 9. Testing
 
 `src/server/person-user-link.test.ts` against `createMockPrisma()` — the matching rule
 (§3.1) row by row, and `tryLinkPersonToMember`'s no-op on a lost race.
@@ -378,12 +310,8 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
 does not, the helper takes a small comparison seam the tests can exercise, rather than the
 tests silently passing on an exact match.
 
-Router tests extend the existing files:
-
-- `personnel-router.test.ts` — `createPerson` links / does not link across the setting and
-  the member-vs-non-member cases; `getInviteState`'s four results.
-- A new `organizations-router` test for `acceptMembershipOffer`, one test per guard in §7.3
-  — especially the unverified-email and already-a-member rejections.
+Router tests extend `personnel-router.test.ts` — `createPerson` links / does not link across
+the setting and the member-vs-non-member cases; `getInviteState`'s four results.
 
 `auth.ts`'s hook is not directly testable (it imports `server-only` transitively), which is
 the argument for keeping its logic entirely in `person-user-link.ts` and leaving the hook as
@@ -391,32 +319,29 @@ a four-line call site.
 
 ---
 
-## 11. Implementation order
+## 10. Implementation order
 
 | Phase | Contents | Notes |
 | --- | --- | --- |
 | 0 | `db:branch person-user-linking`; §2 schema change + migration | Needs explicit go-ahead before `migrate dev` |
-| 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` | No behaviour change yet — all switches default off |
+| 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` | No behaviour change yet — both switches default off |
 | 2 | **Part 1** — `getInviteState`, invite dialog, menu action | Independently shippable and the highest-value piece |
 | 3 | **Part 2** — rewrite `afterAcceptInvitation` | Also fixes the unguarded `updateMany` and adds its missing audit entry |
 | 4 | **Part 3** — `createPerson` helper; collapse the duplicated procedure body | Gives D4H import auto-linking for free |
-| 5 | **Part 4** — `EntryControl.offers`, selector UI, `acceptMembershipOffer` | Largest and most security-sensitive; do it last |
 
-Phases 2–5 are independent of each other once 0 and 1 land, so they can be separate PRs.
+Phases 2–4 are independent of each other once 0 and 1 land, so they can be separate PRs.
 
 ---
 
-## 12. Decisions
+## 11. Decisions
 
 | Question | Decision |
 | --- | --- |
-| Does an email match ever grant membership? | **No** — except when the user themselves accepts an offer (Part 4). Parts 2 and 3 only fill in a link on a membership that already exists. |
-| Part 3, user exists but is not a member | Do nothing. Invite via Part 1, or let Part 4 offer it. |
-| Part 4 trust model | Org-level setting only; no per-person flag. Email must be verified. |
-| Part 4 mechanism | Computed offers, not fabricated invitations (§7.1). |
-| Default setting values | All three `false`. |
-| Role granted by Part 4 | `member`, matching the column default. Not configurable for now. |
+| Does an email match ever grant membership? | **No.** Parts 2 and 3 only fill in a link on a membership that already exists. |
+| Part 3, user exists but is not a member | Do nothing. Invite via Part 1. |
+| Membership offers at signup | **Dropped** — complexity out of proportion to the benefit (§8). |
+| Default setting values | Both `false`. |
 | Email comparison | Case-insensitive query; no column normalisation. |
 | `OrganizationInvitation.personId @unique` | Dropped, replaced by a plain index (§2). |
-| Audit batching | None — all three automations have a human actor. D4H-import links join the import's existing batch. |
+| Audit batching | None — both automations have a human actor. D4H-import links join the import's existing batch. |
 | Invitation creation audit entries | Still none, unchanged from today. |
