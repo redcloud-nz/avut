@@ -9,7 +9,7 @@
  */
 
 import type { Route } from "next";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, MinusIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
@@ -26,6 +26,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageLoadingSpinner, RainbowSpinner } from "@/components/ui/loading";
@@ -76,18 +77,34 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
                                 {current.label}
                                 <ChevronDownIcon className="size-3.5 text-muted-foreground" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                                {ancestors.map((ancestor, idx) =>
-                                    ancestor.href ? (
+                            <DropdownMenuContent align="start" className="min-w-64">
+                                <DropdownMenuLabel>Location</DropdownMenuLabel>
+                                {[...ancestors, current].map((crumb, idx) => {
+                                    const content = (
+                                        <span
+                                            className="flex items-center gap-1 whitespace-nowrap"
+                                            style={{ paddingLeft: Math.max(0, idx - 1) * 12 }}
+                                        >
+                                            {idx > 0 && (
+                                                <MinusIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                                            )}
+                                            {crumb.label}
+                                        </span>
+                                    );
+                                    return crumb === current ? (
+                                        <DropdownMenuItem key={idx} disabled className="font-medium text-foreground">
+                                            {content}
+                                        </DropdownMenuItem>
+                                    ) : crumb.href ? (
                                         <DropdownMenuItem key={idx} asChild>
-                                            <Link href={ancestor.href}>{ancestor.label}</Link>
+                                            <Link href={crumb.href}>{content}</Link>
                                         </DropdownMenuItem>
                                     ) : (
                                         <DropdownMenuItem key={idx} disabled>
-                                            {ancestor.label}
+                                            {content}
                                         </DropdownMenuItem>
-                                    ),
-                                )}
+                                    );
+                                })}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </BreadcrumbItem>
