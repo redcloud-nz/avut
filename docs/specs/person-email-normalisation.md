@@ -1,7 +1,7 @@
 # Spec: Normalise `Person.email`
 
 **Date:** 2026-09-14
-**Status:** Draft
+**Status:** Implemented 2026-09-15 on `feat/person-email-normalisation`
 
 Store `personnel.email` lowercased, so that "one person per email address per
 organization" — an invariant the schema already claims — becomes true.
@@ -45,7 +45,7 @@ identities, with no UI that reveals the split.
   object entirely — **cannot be unit-tested at all**.
 - `findLinkablePerson` (`src/server/person-user-link.ts`) loads every Active unlinked person
   in the organization and folds case in JS, for the same reason.
-- The person→user direction already lowercases its needle because `User.email` *is*
+- The person→user direction already lowercases its needle because `User.email` _is_
   normalised (better-auth does it at sign-up). The asymmetry is purely `Person.email`'s.
 
 ---
@@ -54,13 +54,13 @@ identities, with no UI that reveals the split.
 
 Everything that writes `Person.email` is in one file:
 
-| Site | `personnel-router.ts` | Change |
-| --- | --- | --- |
-| `createPerson` procedure — conflict check | `:90` | lowercase the needle |
-| `createPerson` procedure — write | `:113` | lowercase the value |
-| `createPerson` helper — write (the D4H import path) | `:533` | lowercase the value |
-| `updatePerson` — conflict check | `:479` | lowercase the needle |
-| `updatePerson` — write | — | lowercase the value |
+| Site                                                | `personnel-router.ts` | Change               |
+| --------------------------------------------------- | --------------------- | -------------------- |
+| `createPerson` procedure — conflict check           | `:90`                 | lowercase the needle |
+| `createPerson` procedure — write                    | `:113`                | lowercase the value  |
+| `createPerson` helper — write (the D4H import path) | `:533`                | lowercase the value  |
+| `updatePerson` — conflict check                     | `:479`                | lowercase the needle |
+| `updatePerson` — write                              | —                     | lowercase the value  |
 
 A Zod `.toLowerCase()` on `PersonData.modifiableSchema.email` is **not sufficient on its
 own**: the D4H team import builds its object in code and passes it to the `createPerson`
@@ -152,10 +152,12 @@ A `CHECK (email = lower(email))` would make it impossible for a future write sit
 reintroduce the problem. It is not expressible in PSL, so it would be raw SQL in the
 migration and invisible to `schema.prisma`.
 
-**Verify before committing to it:** confirm that a subsequent `prisma migrate dev` produces
-an empty diff rather than proposing to drop the constraint, and that `migrate reset` replays
-it. If Prisma is happy, add it; if it causes drift, rely on the schema transform plus the
-helper and note the convention in `AGENTS.md`.
+**Verified, and added** (2026-09-15). Against the branch database:
+`migrate status` reports the schema up to date; `migrate diff --from-config-datasource
+--to-schema` returns "This is an empty migration", so Prisma does **not** propose dropping the
+constraint; and a `migrate deploy` replay into a fresh empty database recreates it. An insert
+of `Mixed.Case@Example.COM` is rejected with
+`violates check constraint "personnel_email_lowercase"`.
 
 ---
 
@@ -165,7 +167,7 @@ This is the only hard part, and it is **not** a migration problem — it is a me
 human has to make. Two person rows for the same human may each own:
 
 - `TeamMembership` rows (and `TeamMembership_D4H` snapshots)
-- `SkillCheck` rows as assessee *and* as assessor
+- `SkillCheck` rows as assessee _and_ as assessor
 - `SkillCheckSession` assessee/assessor links
 - `I3IssuedItem` rows
 - at most one `OrganizationUser` link each
@@ -235,24 +237,29 @@ If it returns nothing, this spec is a same-day change.
 
 ## 10. Order
 
-| Step | Notes |
-| --- | --- |
-| 1 | Run §4's duplicate check against **production**. If it returns rows, stop and scope §5. |
-| 2 | Own branch + `npm run db:branch person-email-normalisation`. Not folded into the linking branch. |
-| 3 | Schema transform on `PersonData.modifiableSchema.email`, plus the helper and both conflict checks. |
-| 4 | Guarded migration (§4). Decide the `CHECK` constraint after verifying Prisma tolerates it. |
-| 5 | Simplify `getPersonByEmail` and `findLinkablePerson`; update the linking spec §3.1. |
-| 6 | Tests (§9). |
+| Step | Notes                                                                                                                                                                                          |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Run §4's duplicate check against **production**. If it returns rows, stop and scope §5. — **owner's, done manually outside this branch.** Dev copy: 148 personnel, 0 mixed-case, 0 collisions. |
+| 2    | Own branch + `npm run db:branch person-email-normalisation`. Not folded into the linking branch. ✅                                                                                            |
+| 3    | Schema transform on `PersonData.modifiableSchema.email`, plus the helper and both conflict checks. ✅                                                                                          |
+| 4    | Guarded migration (§4). Decide the `CHECK` constraint after verifying Prisma tolerates it. ✅ — added; no drift                                                                                |
+| 5    | Simplify `getPersonByEmail` and `findLinkablePerson`; update the linking spec §3.1. ✅                                                                                                         |
+| 6    | Tests (§9). ✅                                                                                                                                                                                 |
+
+**Branched from `feat/person-user-linking`, not `integration`** — §2's two write sites only
+become two once that branch collapses the duplicated `createPerson` body onto the shared
+helper, and §5 assumes its `OrganizationInvitation.personId` unique is already gone. Rebase
+onto `integration` once PR #153 merges.
 
 ---
 
 ## 11. Decisions
 
-| Question | Decision |
-| --- | --- |
+| Question                                          | Decision                                                                                                                                                                    |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Normalise, or make the database case-insensitive? | Normalise (store lowercase). `citext` is the better design in the abstract but is invisible to `prisma-mock`, which would cost the linking automations their test coverage. |
-| Where does normalisation happen? | Zod schema **and** the shared `createPerson` helper — the D4H import bypasses the schema. |
-| Enforce with a `CHECK` constraint? | Only if Prisma tolerates it without drift; verify first. |
-| What if production has case-duplicates? | Stop. Merging is a separate piece of work with a human decision in it; the migration must refuse rather than choose. |
-| Preserve original casing anywhere? | No. Accepted loss. |
-| Part of the person↔user linking branch? | No — independent value, own migration, own production check. |
+| Where does normalisation happen?                  | Zod schema **and** the shared `createPerson` helper — the D4H import bypasses the schema.                                                                                   |
+| Enforce with a `CHECK` constraint?                | **Yes** — verified drift-free and replayable (§4).                                                                                                                          |
+| What if production has case-duplicates?           | Stop. Merging is a separate piece of work with a human decision in it; the migration must refuse rather than choose.                                                        |
+| Preserve original casing anywhere?                | No. Accepted loss.                                                                                                                                                          |
+| Part of the person↔user linking branch?           | No — independent value, own migration, own production check.                                                                                                                |
