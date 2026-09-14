@@ -71,23 +71,28 @@ const config = [
     },
   },
   {
-    // en-NZ copy sweep guardrail (docs/ideas/2026-09-10-nz-english-and-te-reo.md). `warn`
-    // while the sweep is in progress; flip to `error` once it's clean. Scoped to rendered
-    // JSX text and a handful of text-bearing attributes — never code identifiers or class
-    // names, so it can safely cover all app/component/email source.
+    // en-NZ copy sweep guardrail (docs/ideas/2026-09-10-nz-english-and-te-reo.md). The sweep is
+    // clean as of the commit that flipped this to `error` — a regression should fail CI, not
+    // just warn. Scoped to rendered JSX text and a handful of text-bearing attributes — never
+    // code identifiers or class names — so it can safely cover all app/component/email source.
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/emails/**/*.tsx"],
     plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
     rules: {
-      "avut/nz-spelling": "warn",
+      "avut/nz-spelling": "error",
     },
   },
   {
     // Centralised label/description files — small and fully user-facing, so every string
     // literal (not just JSX text) is worth checking here.
-    files: ["src/lib/modules.ts", "src/lib/permissions.ts", "src/lib/schemas/organization-role.ts"],
+    files: [
+      "src/lib/modules.ts",
+      "src/lib/permissions.ts",
+      "src/lib/schemas/organization-role.ts",
+      "src/lib/glossary.ts",
+    ],
     plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
     rules: {
-      "avut/nz-spelling": ["warn", { checkLabelProperties: true }],
+      "avut/nz-spelling": ["error", { checkLabelProperties: true }],
     },
   },
 ];

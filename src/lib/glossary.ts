@@ -109,7 +109,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill group",
         shortDefinition: "A named grouping of related skills within a skill package.",
         longDefinition:
-            "A named grouping of related skills within a skill package, used to organize a package's skills and structure how reports roll checks up.",
+            "A named grouping of related skills within a skill package, used to organise a package's skills and structure how reports roll checks up.",
         modules: ["skill-track", "skill-package-builder"],
         relatedTerms: ["skill", "skill-package"],
     },

@@ -163,6 +163,9 @@ const TEXT_ATTRIBUTES = new Set([
   "errorMessage",
   "displayName",
   "message",
+  "term",
+  "shortDefinition",
+  "longDefinition",
 ]);
 
 /**
