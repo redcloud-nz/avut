@@ -6,6 +6,16 @@
 information the app actually holds (`prisma/schema.prisma`), the third parties it
 sends that information to (`package.json`, `src/server/`), and the sign-up flow
 that is meant to bind users to the terms.
+**Related:** [#152](https://github.com/redcloud-nz/avut/pull/152) (the rewrite this
+review motivated), and the V1 issues it opened —
+[#146](https://github.com/redcloud-nz/avut/issues/146),
+[#147](https://github.com/redcloud-nz/avut/issues/147),
+[#148](https://github.com/redcloud-nz/avut/issues/148),
+[#149](https://github.com/redcloud-nz/avut/issues/149),
+[#150](https://github.com/redcloud-nz/avut/issues/150),
+[#151](https://github.com/redcloud-nz/avut/issues/151).
+Recommendations 2 and 6 below remain open and are tracked in #147 and the
+legal sign-off noted in the status block.
 
 > **Status (2026-09-14):** both pages have since been rewritten on this branch,
 > addressing recommendations 1, 3, 4, 5, 7 and 8 below. Two decisions taken after
