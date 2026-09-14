@@ -310,8 +310,11 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
   weight. Parts 1–3 cover the common cases; someone who signs up without an invite still
   gets linked the moment an admin invites them (Part 1) or the org's data catches up
   (Part 2). Revisit if orgs actually ask for self-service joining.
-- Normalising `Person.email` / `User.email` at write time (or a citext column). The
-  case-insensitive query is the whole mitigation here.
+- Normalising `Person.email` at write time — now specced separately in
+  [`person-email-normalisation.md`](person-email-normalisation.md), which also records that
+  the `@@unique([organizationId, email])` invariant is currently false. Landing it collapses
+  §3.1's two-row strategy table to a single rule and removes `findLinkablePerson`'s scan.
+  `User.email` needs nothing; better-auth already normalises it.
 - Auto-linking on `updatePerson` (§6).
 - Bulk "link all matching" admin action.
 - Auditing invitation creation. No `OrganizationInvitation` value exists in `LogObjectType`
