@@ -159,6 +159,13 @@ export default function PrivacyPolicy_Page() {
                         Australia and New Zealand.
                     </p>
                     <p className="mb-4">
+                        One qualification, because it is true of every site served this way: your
+                        connection reaches us through a globally distributed network, so it is
+                        received at whichever of that network&rsquo;s locations is nearest you. The
+                        application code that reads and writes your information, and the database it
+                        talks to, run in Sydney.
+                    </p>
+                    <p className="mb-4">
                         Because these providers hold information on our behalf rather than for their
                         own purposes, this is not a cross-border disclosure under IPP 12. We remain
                         responsible under IPP 5 for the safeguards protecting it, and we have
