@@ -46,12 +46,27 @@ export default function TermsOfService_Page() {
                     </p>
                     <p className="mb-4">
                         <strong>
-                            AVUT is provided free of charge and is under active development.
+                            AVUT is pre-release software, provided free of charge and under active
+                            development.
                         </strong>{" "}
                         We do not promise any particular level of availability, we may change or
                         remove features, and some features are explicitly experimental. It is not a
                         system of record for anything you cannot afford to lose, and you should keep
                         your own copies of information that matters to you.
+                    </p>
+                    <p className="mb-4">
+                        Being pre-release has a consequence worth stating plainly: some of what
+                        these terms and our{" "}
+                        <Link href="/policies/privacy" className="text-blue-500 hover:underline">
+                            Privacy Policy
+                        </Link>{" "}
+                        commit us to is not built yet. Closing an account, exporting an
+                        organisation&rsquo;s data and deleting an organisation are all done by hand
+                        today, by the person named in section 1, in response to an email. We will
+                        honour those commitments at the scale we currently operate at, and we would
+                        rather tell you they are manual than imply a self-service button that does
+                        not exist. Where a section below promises something that is handled this
+                        way, it says so.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">3. Accepting these terms</h2>
@@ -70,6 +85,17 @@ export default function TermsOfService_Page() {
                         address above if you believe someone else has gained access to your account.
                         You are responsible for what happens under your account, except to the
                         extent it results from our own failure.
+                    </p>
+                    <p className="mb-4">
+                        You may sign in with an email address and password, or with a GitHub or
+                        Google account. If you use one of those, your relationship with that
+                        provider is governed by its terms, not ours, and losing access to it may
+                        mean losing the ability to sign in to AVUT. What we receive from them is set
+                        out in our{" "}
+                        <Link href="/policies/privacy" className="text-blue-500 hover:underline">
+                            Privacy Policy
+                        </Link>
+                        .
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">
@@ -160,7 +186,9 @@ export default function TermsOfService_Page() {
                         8. Suspension and termination
                     </h2>
                     <p className="mb-4">
-                        You may stop using AVUT and close your account at any time.
+                        You may stop using AVUT at any time. To have your account closed and your
+                        account information deleted, email us at the address in section 1 and we
+                        will action it — AVUT does not yet have a self-service way to do this.
                     </p>
                     <p className="mb-4">
                         We may terminate your access by giving you 30 days&rsquo; notice by email.
@@ -174,7 +202,10 @@ export default function TermsOfService_Page() {
                         <strong>Getting your data out.</strong> For 30 days after termination you
                         may ask us for a copy of your organisation&rsquo;s data and we will provide
                         it in a machine-readable format at no charge. After that period we delete
-                        it, as described in our Privacy Policy.
+                        it, as described in our Privacy Policy. There is no export button yet: ask
+                        at the address in section 1 and we will extract it for you by hand. We will
+                        not delete an organisation&rsquo;s data while a request for a copy of it is
+                        outstanding.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">9. Intellectual property</h2>

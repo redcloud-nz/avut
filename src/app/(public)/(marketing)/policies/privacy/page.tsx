@@ -72,8 +72,17 @@ export default function PrivacyPolicy_Page() {
                     <p className="mb-4">
                         <strong>Account information</strong> — your name, email address, and an
                         optional profile image, collected when you register or are invited. We also
-                        hold authentication records and active session details so you can stay
-                        signed in.
+                        hold authentication records and, for each active session, the IP address and
+                        browser user-agent it was created from, so you can stay signed in and so we
+                        can tell you which devices are signed in to your account.
+                    </p>
+                    <p className="mb-4">
+                        <strong>Signing in with GitHub or Google</strong> — if you choose to sign in
+                        that way instead of with a password, that provider gives us your name, email
+                        address and profile image so we can create or match your account. We never
+                        receive your password, and we get no other access to that account. Using a
+                        social provider is optional; an email address and password works just as
+                        well.
                     </p>
                     <p className="mb-4">
                         <strong>Organisation records</strong> — information an organisation enters
@@ -129,6 +138,13 @@ export default function PrivacyPolicy_Page() {
                             organisation&rsquo;s own arrangement with D4H.
                         </li>
                     </ul>
+                    <p className="mb-4">
+                        <strong>Sign-in providers are different.</strong> If you sign in with GitHub
+                        or Google, that provider is not acting on our behalf. It passes us the
+                        account details described in section 3, and it learns that you have signed
+                        in to AVUT. What it does with that is governed by its own privacy policy,
+                        not by this one. This only happens if you choose to use it.
+                    </p>
                     <p className="mb-4">
                         We may also disclose information where the law requires it, or where it is
                         necessary to prevent or lessen a serious threat to someone&rsquo;s life or
@@ -205,22 +221,33 @@ export default function PrivacyPolicy_Page() {
                         <strong>Organisation records</strong> are deleted within 30 days after an
                         organisation stops using AVUT, unless that organisation asks us to delete
                         them sooner. During those 30 days the organisation may request a copy of its
-                        data.
+                        data. AVUT is pre-release and neither of these is automated yet — both are
+                        done by hand, on request, by the person named in section 1. Email that
+                        address and we will action it.
                     </p>
                     <p className="mb-4">
                         <strong>Account information</strong> is deleted when you ask us to close
-                        your account. Email us at the address in section 1 and we will action it.
+                        your account. There is no self-service account closure yet — email us at the
+                        address in section 1 and we will action it.
                     </p>
                     <p className="mb-4">
                         <strong>
                             Audit log entries are retained after the account or record they describe
-                            has been deleted.
+                            has been deleted, and they still identify the person.
                         </strong>{" "}
                         An audit log that disappears along with its subject cannot serve its
                         purpose, which is to let an organisation establish what happened to its
-                        records. When an account is deleted, entries describing that account&rsquo;s
-                        actions are de-identified: the link to the account is removed and only a
-                        stored display label remains.
+                        records.
+                    </p>
+                    <p className="mb-4">
+                        When an account is deleted, the entries recording what that account did
+                        remain, and so do the name and email address as they stood when each entry
+                        was written. The link to the account itself is removed, but we do not
+                        describe what is left as anonymous, because it is not: the person is still
+                        identifiable from it, that information is still personal information, and
+                        this policy still applies to it. Entries recording things done{" "}
+                        <span className="italic">to</span> the account, as opposed to{" "}
+                        <span className="italic">by</span> it, are deleted along with the account.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">11. Your rights</h2>
