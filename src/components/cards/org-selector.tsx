@@ -34,7 +34,7 @@ export function OrgSelector_Card({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Select organization to use</CardTitle>
+                <CardTitle>Select organisation to use</CardTitle>
                 <CardDescription>
                     Signed in as <br />
                     {session.user.name} ({session.user.email}).
@@ -46,9 +46,9 @@ export function OrgSelector_Card({
                     fallback={
                         <Empty>
                             <EmptyHeader>
-                                <EmptyTitle>No Organization Memberships</EmptyTitle>
+                                <EmptyTitle>No Organisation Memberships</EmptyTitle>
                                 <EmptyDescription>
-                                    You do not have access to any organizations yet.
+                                    You do not have access to any organisations yet.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>

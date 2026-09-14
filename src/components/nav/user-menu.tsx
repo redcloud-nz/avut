@@ -119,7 +119,7 @@ export function UserMenu() {
                             <DropdownMenuItem asChild>
                                 <Link href="/orgs/--select-org">
                                     <SwitchOrganizationIcon />
-                                    <span>Switch Organization</span>
+                                    <span>Switch Organisation</span>
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleSignOut}>

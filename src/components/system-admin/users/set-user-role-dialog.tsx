@@ -84,7 +84,7 @@ export function SystemAdmin_SetUserRole_Dialog({
                         ) : (
                             <>
                                 Remove the <span className="font-mono">admin</span> system role from{" "}
-                                <ObjectName>{user.name}</ObjectName>. They keep their organization
+                                <ObjectName>{user.name}</ObjectName>. They keep their organisation
                                 memberships and roles.
                             </>
                         )}

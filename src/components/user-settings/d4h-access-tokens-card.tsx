@@ -278,14 +278,14 @@ function PersonalD4HAccessToken_Add_Dialog() {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="access-token-organization">
-                                        Organization
+                                        Organisation
                                     </FieldLabel>
                                     <Select {...field} onValueChange={field.onChange}>
                                         <SelectTrigger
                                             id="access-token-organization"
                                             aria-invalid={fieldState.invalid}
                                         >
-                                            <SelectValue placeholder="Select organization" />
+                                            <SelectValue placeholder="Select organisation" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {membershipsQuery.data?.map((membership) => (

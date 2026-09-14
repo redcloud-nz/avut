@@ -32,9 +32,9 @@ export default async function SystemAdmin_Index_Page() {
                         <Item asChild>
                             <Link href="/system-admin/organizations">
                                 <ItemContent>
-                                    <ItemTitle>Organizations</ItemTitle>
+                                    <ItemTitle>Organisations</ItemTitle>
                                     <ItemDescription>
-                                        Provision organizations, manage membership, and edit
+                                        Provision organisations, manage membership, and edit
                                         settings site-wide.
                                     </ItemDescription>
                                 </ItemContent>
@@ -48,7 +48,7 @@ export default async function SystemAdmin_Index_Page() {
                                 <ItemContent>
                                     <ItemTitle>Users</ItemTitle>
                                     <ItemDescription>
-                                        Inspect user accounts and their organization memberships.
+                                        Inspect user accounts and their organisation memberships.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>

@@ -66,7 +66,7 @@ export function UserOrganizationsSettings() {
     if (membershipsQuery.isError) {
         return (
             <Alert variant="error">
-                Failed to load organizations: {membershipsQuery.error.message}
+                Failed to load organisations: {membershipsQuery.error.message}
             </Alert>
         );
     }
@@ -75,7 +75,7 @@ export function UserOrganizationsSettings() {
         <div className="space-y-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Organizations</CardTitle>
+                    <CardTitle>Organisations</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {membershipsQuery.data.map((membership) => (
@@ -107,7 +107,7 @@ export function UserOrganizationsSettings() {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Leave Organization</AlertDialogTitle>
+                                            <AlertDialogTitle>Leave Organisation</AlertDialogTitle>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -43,7 +43,7 @@ export function AdminModule_Settings_Content() {
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>Organization Settings</Saratoga.Title>
+                        <Saratoga.Title>Organisation Settings</Saratoga.Title>
                     </Saratoga.Header>
 
                     <OrganizationSettingsForm

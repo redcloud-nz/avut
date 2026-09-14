@@ -67,7 +67,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                     <DialogTitle>Unsubscribe from Package</DialogTitle>
                     <DialogDescription>
                         You will be unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
-                        Skills from this package will no longer be available to your organization.
+                        Skills from this package will no longer be available to your organisation.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

@@ -139,7 +139,7 @@ export function SystemAdmin_Organizations_List() {
     return (
         <Saratoga.Root>
             <Saratoga.Header>
-                <Saratoga.Title>Organizations</Saratoga.Title>
+                <Saratoga.Title>Organisations</Saratoga.Title>
                 <Saratoga.Actions>
                     <SystemAdmin_CreateOrganization_Dialog />
                 </Saratoga.Actions>

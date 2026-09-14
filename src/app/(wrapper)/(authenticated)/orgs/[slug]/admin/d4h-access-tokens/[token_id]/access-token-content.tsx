@@ -164,7 +164,7 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAc
                                                     D4H ID
                                                 </TableHeadCell>
                                                 <TableHeadCell>Name</TableHeadCell>
-                                                <TableHeadCell>Organization</TableHeadCell>
+                                                <TableHeadCell>Organisation</TableHeadCell>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>

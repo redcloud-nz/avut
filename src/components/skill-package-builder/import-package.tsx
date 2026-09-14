@@ -102,7 +102,7 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                 <DialogHeader>
                     <DialogTitle>Import skill package</DialogTitle>
                     <DialogDescription>
-                        Import a skill-package export (from another organization or another AVUT
+                        Import a skill-package export (from another organisation or another AVUT
                         instance) into <strong>{organization.name}</strong>. Groups and skills are
                         matched by ID: an existing package is updated in place and anything the file
                         omits is archived. The package always lands unpublished.

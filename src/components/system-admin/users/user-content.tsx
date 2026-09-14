@@ -66,19 +66,19 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Organization Memberships</CardTitle>
+                                    <CardTitle>Organisation Memberships</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     {user.organizations.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
-                                            No organization memberships.
+                                            No organisation memberships.
                                         </p>
                                     ) : (
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="text-left text-muted-foreground">
                                                     <th className="py-1 pr-4 font-medium">
-                                                        Organization
+                                                        Organisation
                                                     </th>
                                                     <th className="py-1 pr-4 font-medium">Slug</th>
                                                     <th className="py-1 font-medium">Role</th>

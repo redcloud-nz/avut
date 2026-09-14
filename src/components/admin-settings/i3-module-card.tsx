@@ -57,7 +57,7 @@ export function I3Module_SettingsCard({
                 <CardTitle>I3 Module</CardTitle>
                 <CardDescription>
                     The I3 module provides tools to manage individually issued items (I3s) within
-                    your organization.
+                    your organisation.
                 </CardDescription>
                 <CardAction>
                     <Controller

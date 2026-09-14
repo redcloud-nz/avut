@@ -151,7 +151,7 @@ export function SkillPackageBuilder_Packages_List({
                         <EmptyHeader>
                             <EmptyTitle>No skill packages yet.</EmptyTitle>
                             <EmptyDescription>
-                                Your organization does not have any skill packages yet.
+                                Your organisation does not have any skill packages yet.
                             </EmptyDescription>
                         </EmptyHeader>
                     </Empty>

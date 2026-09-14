@@ -216,7 +216,7 @@ export function AdminModule_InvitePerson_Dialog({
                                 {inviteState?.state === "UserExists" && (
                                     <FieldDescription>
                                         They already have an AVUT account but are not a member of
-                                        this organization yet.
+                                        this organisation yet.
                                     </FieldDescription>
                                 )}
                                 {inviteState?.pendingInvitation && (

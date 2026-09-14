@@ -64,6 +64,12 @@ const WORD_PAIRS = [
   ["fulfillment", "fulfilment"],
   ["skillful", "skilful"],
   ["skillfully", "skilfully"],
+  // "practice" the noun is spelled the same in NZ and US English; only the verb differs
+  // ("practise"). "practiced"/"practicing" are unambiguously verb forms, so — unlike the bare
+  // word "practice" — they always need converting. See AMBIGUOUS_WORDS below for the noun/verb
+  // pair itself.
+  ["practiced", "practised"],
+  ["practicing", "practising"],
   // Single-vowel + "l" verbs that double the "l" before a vowel suffix in NZ English but not
   // in American English. Enumerated (not a general regex) — the doubling rule has enough
   // exceptions (e.g. "reveal", "appeal") that a blanket pattern produces false positives.
@@ -138,8 +144,10 @@ const IZE_EXCLUSIONS = new Set([
 const YZE_SUFFIX = /\b([a-z]+)yz(e|es|ed|ing|er|ers)\b/i;
 
 // Ambiguous words whose correct NZ spelling depends on whether they're used as a noun or a verb
-// (e.g. "licence" the noun vs. "license" the verb). Flagged for manual review, no suggestion.
-const AMBIGUOUS_WORDS = /\b(license|licensed|licensing|licenses|practice|practiced|practicing)\b/i;
+// (e.g. "licence" the noun vs. "license" the verb — "licensed"/"licensing" are unambiguously the
+// verb form and are always correct as-is, so are deliberately excluded here). Flagged for manual
+// review, no suggestion.
+const AMBIGUOUS_WORDS = /\b(licenses?|practices?)\b/i;
 
 /** JSX attributes whose string value is rendered as visible text, not a code-facing prop. */
 const TEXT_ATTRIBUTES = new Set([

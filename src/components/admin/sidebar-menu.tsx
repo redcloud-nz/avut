@@ -31,7 +31,7 @@ export function Admin_Sidebar_Menu() {
                     />
                 </Protect>
                 <NavItem
-                    label="Organization"
+                    label="Organisation"
                     href={route("/orgs/[slug]/admin/organization", { slug })}
                 />
                 <Protect permissions={{ person: ["view"] }}>

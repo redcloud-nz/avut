@@ -39,7 +39,7 @@ export default function AdminModule_OrganizationUpdate_Page(
             <Std.ScrollContainer>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Update Organization</CardTitle>
+                        <CardTitle>Update Organisation</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <AdminModule_UpdateOrganization_Form organizationId={organization.id} />

@@ -105,8 +105,8 @@ export function CreateOrganization_Card() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Create Organization</CardTitle>
-                <CardDescription>Use this form to create a new organization.</CardDescription>
+                <CardTitle>Create Organisation</CardTitle>
+                <CardDescription>Use this form to create a new organisation.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form id="create-organization-form" onSubmit={handleSubmit}>
@@ -116,7 +116,7 @@ export function CreateOrganization_Card() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="name">Organization Name</FieldLabel>
+                                    <FieldLabel htmlFor="name">Organisation Name</FieldLabel>
                                     <Input id={"name"} {...field} />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
@@ -153,7 +153,7 @@ export function CreateOrganization_Card() {
                                         </InputGroupAddon>
                                     </InputGroup>
                                     <FieldDescription>
-                                        The uniquer identifier for your organization for use in
+                                        The uniquer identifier for your organisation for use in
                                         URLs. Lowercase letters, numbers, and hyphens only.
                                     </FieldDescription>
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
@@ -162,7 +162,7 @@ export function CreateOrganization_Card() {
                         />
                         <Field>
                             <Button type="submit" form="create-organization-form">
-                                Create Organization
+                                Create Organisation
                             </Button>
                         </Field>
                     </FieldGroup>

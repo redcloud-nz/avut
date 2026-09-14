@@ -203,7 +203,7 @@ function SkillCoverageReportView({
                 {!skill ? (
                     <Empty>
                         <EmptyDescription>
-                            That skill is not in any of this organization&apos;s subscribed
+                            That skill is not in any of this organisation&apos;s subscribed
                             packages.
                         </EmptyDescription>
                     </Empty>

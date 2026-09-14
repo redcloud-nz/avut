@@ -31,7 +31,7 @@ export function UserSettings_Dialog() {
                 <DialogHeader>
                     <DialogTitle>User Settings</DialogTitle>
                     <DialogDescription>
-                        Manage your account, security, and organizations settings.
+                        Manage your account, security, and organisations settings.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogScrollableBody>

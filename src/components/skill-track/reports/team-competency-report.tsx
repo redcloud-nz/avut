@@ -77,7 +77,7 @@ export function SkillTrack_TeamCompetencyReport({
                 </Glorious.Header>
                 <Empty>
                     <EmptyDescription>
-                        Select a team, or the whole organization, to view competency gaps.
+                        Select a team, or the whole organisation, to view competency gaps.
                     </EmptyDescription>
                 </Empty>
             </Glorious.Root>

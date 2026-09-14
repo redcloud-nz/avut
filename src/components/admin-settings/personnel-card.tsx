@@ -102,7 +102,7 @@ export function Personnel_SettingsCard({
                                             When a person is added, attach them to the account of an
                                             existing member with the same email address. Someone who
                                             is not already a member is never added to the
-                                            organization — invite them from their person record
+                                            organisation — invite them from their person record
                                             instead.
                                         </FieldDescription>
                                     </FieldContent>

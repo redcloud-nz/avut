@@ -122,7 +122,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                 <DialogHeader>
                     <DialogTitle>Invite</DialogTitle>
                     <DialogDescription>
-                        Invite a new user to the organization{" "}
+                        Invite a new user to the organisation{" "}
                         <ObjectName>{organization.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
