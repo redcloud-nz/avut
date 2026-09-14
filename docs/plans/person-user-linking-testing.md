@@ -10,20 +10,25 @@ All three parts are committed with unit coverage. **None of it has run in a brow
 the sharpest gap — the end-to-end path the feature exists to serve — but Parts 2 and 3 and
 the new settings card are equally unobserved.
 
-| #   | Area                                              | Automated          | Needs a human/browser                  |
-| --- | ------------------------------------------------- | ------------------ | -------------------------------------- |
-| A   | Invite → accept → link, end to end                | ✗                  | **yes — the headline gap**             |
-| B   | The four `getInviteState` states in the dialog    | ✓ router           | yes (rendering)                        |
-| C   | Part 2 — auto-link on invitation accept           | ✓ helper           | yes (through real accept)              |
-| D   | Part 3 — auto-link on person create               | ✓ router           | yes                                    |
-| E   | D4H team import auto-links                        | ✗                  | **yes — no automated coverage at all** |
-| F   | Personnel settings card                           | ✓ store round-trip | yes (the card itself)                  |
-| G   | Audit entries                                     | ✓ shape            | yes, **by SQL — no UI exists**         |
-| H   | Invitations page after the role-fields extraction | ✗                  | yes                                    |
-| I   | Everything with both switches off                 | partly             | yes                                    |
-| J   | Re-invite (the dropped unique constraint)         | ✗ (SQL only)       | yes                                    |
-| K   | Permission gating and the new hotkey              | ✗                  | yes                                    |
-| §0  | Email delivery guard rail                         | ✓ unit             | yes — check the Resend dashboard       |
+| #   | Area                                              | Automated          | Browser-verified 2026-09-14         |
+| --- | ------------------------------------------------- | ------------------ | ----------------------------------- |
+| A   | Invite → accept → link, end to end                | ✗                  | ✅ A1–A4                            |
+| B   | The four `getInviteState` states in the dialog    | ✓ router           | ✅ all four + pending warning       |
+| C   | Part 2 — auto-link on invitation accept           | ✓ helper           | ✅ on and off                       |
+| D   | Part 3 — auto-link on person create               | ✓ router           | ✅ incl. the no-membership negative |
+| E   | D4H team import auto-links                        | ✓ **new**          | ✗ not exercisable — see §E          |
+| F   | Personnel settings card                           | ✓ store round-trip | ✅                                  |
+| G   | Audit entries                                     | ✓ shape            | ✅ by SQL, all three descriptions   |
+| H   | Invitations page after the role-fields extraction | ✗                  | ✅                                  |
+| I   | Everything with both switches off                 | partly             | ✅ both halves                      |
+| J   | Re-invite (the dropped unique constraint)         | ✗ (SQL only)       | ✅ through the app                  |
+| K   | Permission gating and the new hotkey              | ✗                  | ✅ incl. tRPC 403                   |
+| §0  | Email delivery guard rail                         | ✓ unit             | ✅ 7 sends, 7 redirected            |
+
+**Run on 2026-09-14** against `avut_person_user_linking` from this worktree on port 3100, in the
+`demo` organization (`@demo.avut.nz` — synthetic; `christchurch-cdem` holds real people and was
+left alone). **No defects found in the branch.** Details of what each section actually showed are
+recorded inline below, under **Result** headings.
 
 ---
 
@@ -82,7 +87,7 @@ plan never sets it.
 
 ---
 
-## A. Invite → accept → link (the unverified path)
+## A. Invite → accept → link
 
 The point of Part 1: the invitation carries `personId`, and
 `organizationHooks.afterAcceptInvitation` applies it. Both halves are believed correct from
@@ -168,6 +173,13 @@ should land on the membership.
 Turn `personnel.autoLinkOnInviteAccept` **off**, then run A1+A2. The link must still happen —
 an invitation sent from a person's record is an admin's decision, not an automation.
 
+**Result 2026-09-14 — passed.** better-auth **does** persist `personId` through `inviteMember`:
+the invitation came out with `personId` set and `email` lowercased, and accepting it wrote the
+link plus an audit entry reading `on invitation accept — the invitation named the person.` The
+auto-link setting was **off** for the whole of A1–A2, so A4 is proven by the same run. Afterwards
+the Linked User Account card rendered, **Invite to AVUT** disappeared from the ⋮ menu, and Alt+V
+correctly did nothing.
+
 ---
 
 ## B. The dialog's four states
@@ -199,6 +211,13 @@ LIMIT 5;
 **Pending-invitation warning:** invite a person, reopen the dialog without accepting. Expect
 _"An invitation is already pending (sent …). Sending a new one replaces it."_
 
+**Result 2026-09-14 — passed.** `NoUser` (role fields, Send Invitation), `UserExists` (adds
+_"They already have an AVUT account but are not a member of this organization yet."_),
+`AlreadyMember` (title _Link User Account_, **no role fields**, Link Account) and `Linked` (menu
+item absent). Link Account wrote the link and the Linked User Account card appeared **without a
+reload**, so the mutation's cache effects are wired correctly. The pending-invitation warning
+appeared on reopening the dialog, without a reload.
+
 ---
 
 ## C. Part 2 — auto-link on invitation accept
@@ -222,6 +241,11 @@ entry — and the invitation must still be accepted normally.
 committed when the hook runs. Hard to force deliberately — watch the dev-server console for
 `Failed to link a person to User(...)` and confirm the user still lands in the org if it ever
 appears.
+
+**Result 2026-09-14 — passed, both directions.** An invitation created from the Invitations page
+with `personId` NULL linked on accept purely by email match, with the audit entry reading
+`matched on email address.` With the setting off, an identical flow joined the org normally and
+was **not** linked, and wrote no membership entry.
 
 ---
 
@@ -254,20 +278,45 @@ SELECT * FROM organization_users WHERE "organizationId" = '<org_id>' AND "userId
 step rolls back the person too. There is no easy way to force this from the UI; if a create
 ever errors, confirm no orphan person row was left behind.
 
+**Result 2026-09-14 — passed, including the negative.** The person page showed the Linked User
+Account card immediately, and the email was typed as `Member@Demo.Avut.NZ` against a lowercase
+account, so the case-insensitive match is confirmed through the UI. The Users list agreed with
+Personnel. For the negative, a person created with the email of a user who is **not** a member
+produced no link, **no new `organization_users` row**, and no membership audit entry — that user
+still holds no membership anywhere.
+
 ---
 
-## E. D4H team import — no automated coverage at all
+## E. D4H team import — covered by tests, not by a run
 
 Part 3 put the auto-link in the shared `createPerson` helper, which the D4H team import also
-calls. **The import therefore auto-links as a side effect, and nothing in the test suite
-exercises that path.** It is also the only path that passes a `batchId`.
+calls, so **the import auto-links as a side effect**. It is also the only path that passes a
+`batchId`.
 
-1. An org with D4H configured and a valid sync token, **Link when a person is added** on.
-2. `/orgs/<slug>/admin/teams` → import a team whose D4H members include the email of an
-   existing AVUT member of that org.
-3. Confirm the import completes and creates people as before.
+**A manual run was attempted on 2026-09-14 and abandoned as vacuous**, for two reasons found in
+the branch database:
 
-**Verify both entries joined the import's batch:**
+- every team in `christchurch-cdem` (the only org with a D4H token) has a null `d4hTeamId`, so no
+  team is bound to a D4H team to import from;
+- both unlinked members there are `@resend.dev` test accounts, so no imported person's email could
+  match a member — the auto-link branch would never have been reached even if the import ran.
+
+Setting that up would have meant contriving both a team binding and a matching email, proving the
+path once. It was covered with tests instead (`personnel-router.test.ts`, "createPerson during a
+D4H team import"), which reach the batched path that **no tRPC procedure exposes** — `createPerson`
+takes a `batchId` that only the import passes, so `createCaller` cannot get there. That needed
+`createOrganizationMockContext` in `src/test/trpc-helpers.ts`, which builds the `organizationId` +
+`logEvent` context exactly as `organizationProcedure` does.
+
+Five cases: the link fires for an imported person; the person entry joins the batch; **the
+membership link entry carries the same batch** (verified to fail if the `batchId` is dropped, and
+nothing else fails with it); the org's opt-in is respected on an unattended run; and an imported
+email belonging to an outsider grants no membership.
+
+**Still unverified, and only a real run can show it:** the import loop now opens one interactive
+transaction per person instead of an array transaction. On a large team, watch for it slowing or
+hitting a transaction timeout. Worth doing opportunistically the next time a real D4H team is
+imported:
 
 ```sql
 SELECT e."objectType", e.action, e."batchId", b."operationKey"
@@ -278,10 +327,6 @@ ORDER BY e.sequence DESC LIMIT 20;
 
 The `OrganizationMembership` link entry should carry the same `batchId` as the `Person` create
 entries.
-
-**Watch for:** the import loop now opens one interactive transaction per person instead of an
-array transaction. On a large team, confirm it does not slow noticeably or hit a transaction
-timeout.
 
 ---
 
@@ -302,6 +347,15 @@ WHERE "organizationId" = '<org_id>' AND key LIKE 'personnel.%';
 ```
 
 Only the leaves that differ from the defaults should be materialised.
+
+**Result 2026-09-14 — passed.** Defaults read off; toggling revealed **Reset**, which restored the
+saved values; Save persisted and survived a reload. Only the non-default leaf was materialised,
+and the other 33 `organization_config` rows were untouched.
+
+Note the plan's "only the leaves that differ from the defaults" wording is loose: turning a
+setting back off stores an explicit `false` row rather than deleting it. That matches every other
+card (`modules.*.enabled` are stored as `false` too), so it is the settings store's existing
+behaviour, not a branch regression.
 
 ---
 
@@ -333,6 +387,11 @@ Run the §C-off and §D-no-match cases and confirm nothing new appears above.
 
 These entries are new — before this branch the explicit-`personId` path wrote none at all.
 
+**Result 2026-09-14 — passed.** All six entries written during the run carried the right
+`actorLabel` and the three descriptions are distinct exactly as tabulated. Part 3's entry is
+attributed to the **acting admin**, not the user being linked. No membership entry was written by
+either negative case.
+
 ---
 
 ## H. Regression — the Invitations page
@@ -349,6 +408,16 @@ These entries are new — before this branch the explicit-`personId` path wrote 
    in settings and re-open the dialog.
 5. Send one; it appears in the list with `personId` **null**.
 
+**Result 2026-09-14 — passed.** Email validation fired (_"Please enter a valid email address"_,
+dialog stayed open), primary radios and the Skills Assessor checkbox toggled and carried through
+to the created invitation, and the row appeared with `personId` NULL. Module gating held: with I3
+off there was no I3 Editor checkbox.
+
+**Pre-existing, not a regression:** `Skill Package Author` is gated on
+`modules["skill-track"].enabled`, not `modules["skill-package-builder"].enabled`, so it offers in
+an org that has the builder switched off. `git show integration:…/create-invitation.tsx` has the
+same gating, so the extraction is faithful — but the gate looks wrong and deserves its own fix.
+
 ---
 
 ## I. Regression — both switches off
@@ -359,6 +428,10 @@ The promise is that an organization that does not opt in behaves exactly as it d
 - Accept an invitation with no `personId` whose email matches a person → **not** linked.
 - No `OrganizationMembership` audit entries from either.
 - The D4H team import creates people and memberships as before, with no link entries.
+
+**Result 2026-09-14 — passed.** Creating a person whose email matched an unlinked member produced
+no link and no audit entry; accepting an invitation whose email matched a person produced no link
+and no audit entry. Both flows otherwise behaved exactly as before.
 
 ---
 
@@ -382,6 +455,16 @@ fails with a unique violation.
 3. Second shape: accept an invitation, unlink the person on the user page, invite again. Also
    previously a P2002.
 
+**Result 2026-09-14 — passed.** Inviting the same person twice with different roles succeeded;
+`organization_invitations` then held one `canceled` and one `pending` row **sharing a
+`personId`**, with no P2002 anywhere in the server log. This is the step that fails on
+`integration`.
+
+Shape 3 resolves differently than written: after unlinking on the user page, the person is still
+a **member**, so the dialog correctly offers `AlreadyMember` → Link Account rather than creating a
+second invitation. Link → unlink → link round-tripped cleanly. The P2002 shape itself is covered
+by step 2 above.
+
 ---
 
 ## K. Permission gating and the hotkey
@@ -398,14 +481,24 @@ fails with a unique violation.
   should appear under Personnel in the `?` help overlay. Confirm it does not collide with
   another registered chord.
 
+**Result 2026-09-14 — passed.** Impersonating a plain `member`: the sidebar dropped
+**Invitations**, every ⋮ action including **Invite to AVUT** rendered disabled, and Alt+V did
+nothing. The server-side guard is real, not just hidden UI — `personnel.getInviteState` called
+over tRPC as that member returned **HTTP 403 / `FORBIDDEN`**, naming the required permissions.
+
+The `?` help overlay opens and groups shortcuts under **Personnel**; `useMenuActionHotkeys(actions,
+"Personnel")` registers the invite entry on the same condition as the menu item, so Alt+V is listed
+exactly when the action is offered. `Alt+V` collides with nothing else in `ActionHotkey`.
+
 ---
 
 ## L. Automated coverage, and what it cannot reach
 
 **Covered:** `person-user-link.test.ts` (23 cases — both lookups, every no-op branch of the
-linker, and both Part 2 triggers); `personnel-router.test.ts` (14 — `getInviteState`'s four
-states, mixed case, pending invitations, and Part 3's link/no-link/no-membership cases);
-`organization-settings-store.test.ts` (the `personnel` group round-trip and its off defaults).
+linker, and both Part 2 triggers); `personnel-router.test.ts` (19 — `getInviteState`'s four
+states, mixed case, pending invitations, Part 3's link/no-link/no-membership cases, and the D4H
+import's batched path); `organization-settings-store.test.ts` (the `personnel` group round-trip
+and its off defaults); `email.test.ts` (20 — the delivery guard rail).
 
 **Not reachable by unit tests:**
 
@@ -414,7 +507,8 @@ states, mixed case, pending invitations, and Part 3's link/no-link/no-membership
 - `afterAcceptInvitation` itself. `src/server/auth.ts` imports `server-only` transitively, so
   the hook is not importable under jsdom — which is exactly why its logic lives in
   `person-user-link.ts` and the hook is a four-line call site. → §A2, §C.
-- The D4H import path end to end. → §E.
+- The D4H import path end to end. The batched `createPerson` call is now covered (§E), but only
+  a real import can show the per-person interactive transaction behaving on a large team.
 - Anything rendered. → §B, §F, §H.
 - `prisma-mock` ignores the `{ equals: … }` filter object on string fields, so queries written
   that way return `null` in tests while working in Postgres. The branch avoids that shape;
@@ -422,3 +516,13 @@ states, mixed case, pending invitations, and Part 3's link/no-link/no-membership
   [`person-email-normalisation.md`](../specs/person-email-normalisation.md).
 - `prisma-mock` reports an unset optional column as `undefined` rather than `null`, so assert
   on _what is linked_ rather than on a column's empty value.
+
+**Browser-testing notes, from the 2026-09-14 run:**
+
+- Clicking into an email or password field summons 1Password's overlay, which then swallows every
+  subsequent click, screenshot and script in the tab. Set those fields without focusing them, and
+  if the tab stops responding, navigating it clears the grab.
+- Element-reference clicks go stale across the frequent re-renders on these pages; coordinates
+  from a fresh screenshot are more reliable, and `.click()` from a script does not drive
+  react-hook-form submits (it does a native GET) — use a real click.
+- Sign-up needs the OTP from `user_verification`; it is never printed to the console.
