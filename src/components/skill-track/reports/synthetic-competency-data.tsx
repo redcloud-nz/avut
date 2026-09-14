@@ -143,11 +143,17 @@ export function generateSyntheticMatrix(
  * Wires the `?synthetic` search param into a report: when present, swaps the recorded
  * competencies for a generated matrix and returns the tuning dialog to drop into the report
  * header; when absent, passes the recorded competencies straight through and returns no dialog.
+ *
+ * `enabled` is the deployment's `syntheticChecksFlag` (dev tooling — see `src/lib/flags.ts`),
+ * resolved server-side and passed down by the caller. When it's off, this ignores `?synthetic`
+ * entirely and returns no menu item at all — a URL guess can't turn synthetic mode on in an
+ * environment where the flag is off.
  */
 export function useSyntheticCompetencies(
     skills: MatrixSkill[],
     personnel: { id: Competency["assesseeId"] }[],
     competencies: Competency[],
+    enabled: boolean,
 ): {
     competencies: Competency[];
     isSynthetic: boolean;
@@ -159,12 +165,22 @@ export function useSyntheticCompetencies(
     const [synthetic, setSynthetic] = useQueryState("synthetic");
     const [config, setConfig] = useState(DEFAULT_SYNTHETIC_CONFIG);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const isSynthetic = synthetic !== null;
+    const isSynthetic = enabled && synthetic !== null;
 
     const generated = useMemo(
         () => (isSynthetic ? generateSyntheticMatrix(skills, personnel, config) : null),
         [isSynthetic, skills, personnel, config],
     );
+
+    if (!enabled) {
+        return {
+            competencies,
+            isSynthetic: false,
+            syntheticActions: null,
+            syntheticMenuItem: null,
+            syntheticOpenMenuItem: null,
+        };
+    }
 
     // Drop straight into a report's "Show" dropdown so every report toggles synthetic mode
     // the same way. Writes the `?synthetic` search param the hook keys off.

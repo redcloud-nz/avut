@@ -47,7 +47,11 @@ import { PersonId } from "@/lib/schemas/person";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
-export function SkillTrack_PersonCompetencyReport() {
+export function SkillTrack_PersonCompetencyReport({
+    syntheticChecksEnabled,
+}: {
+    syntheticChecksEnabled: boolean;
+}) {
     const [personParam] = useQueryState("person");
     const parsedPersonId = personParam ? PersonId.schema.safeParse(personParam) : undefined;
 
@@ -71,7 +75,12 @@ export function SkillTrack_PersonCompetencyReport() {
         );
     }
 
-    return <PersonCompetencyReportView personId={parsedPersonId.data} />;
+    return (
+        <PersonCompetencyReportView
+            personId={parsedPersonId.data}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+        />
+    );
 }
 
 // Must match the rendered height of `headCell` below (`h-9` = 36px) — it's the offset the
@@ -82,7 +91,13 @@ const stickyFirstCol = "sticky left-0 z-10 bg-background";
 const headCell =
     "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
-function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
+function PersonCompetencyReportView({
+    personId,
+    syntheticChecksEnabled,
+}: {
+    personId: PersonId;
+    syntheticChecksEnabled: boolean;
+}) {
     const organization = useOrganization();
 
     const {
@@ -100,7 +115,7 @@ function PersonCompetencyReportView({ personId }: { personId: PersonId }) {
         syntheticActions,
         syntheticMenuItem,
         syntheticOpenMenuItem,
-    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies, syntheticChecksEnabled);
 
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);

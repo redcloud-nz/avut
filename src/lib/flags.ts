@@ -50,3 +50,12 @@ export const playgroundFlag = flag<boolean>({
         "Is the UI component playground area available (dev tooling, not a registry module).",
     options: booleanOptions,
 });
+
+export const syntheticChecksFlag = flag<boolean>({
+    key: "synthetic-checks",
+    adapter: vercelAdapter(),
+    defaultValue: false,
+    description:
+        "Is the 'Use Synthetic Checks' report toggle available (dev tooling, not a registry module).",
+    options: booleanOptions,
+});

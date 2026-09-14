@@ -55,7 +55,11 @@ const PERSON_HEADER_HEIGHT = 130;
 const SKILL_COL_WIDTH = 220;
 const PERSON_COL_WIDTH = 50;
 
-export function SkillTrack_SkillMatrixReport() {
+export function SkillTrack_SkillMatrixReport({
+    syntheticChecksEnabled,
+}: {
+    syntheticChecksEnabled: boolean;
+}) {
     const [team] = useQueryState("team");
 
     // An absent — or malformed — `?team=` means "nothing picked yet"; show the blank report
@@ -78,10 +82,18 @@ export function SkillTrack_SkillMatrixReport() {
         );
     }
 
-    return <SkillMatrixReportView teamParam={team} />;
+    return (
+        <SkillMatrixReportView teamParam={team} syntheticChecksEnabled={syntheticChecksEnabled} />
+    );
 }
 
-function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
+function SkillMatrixReportView({
+    teamParam,
+    syntheticChecksEnabled,
+}: {
+    teamParam: string;
+    syntheticChecksEnabled: boolean;
+}) {
     const organization = useOrganization();
 
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
@@ -113,7 +125,7 @@ function SkillMatrixReportView({ teamParam }: { teamParam: string }) {
         syntheticActions,
         syntheticMenuItem,
         syntheticOpenMenuItem,
-    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies, syntheticChecksEnabled);
 
     const competencyByKey = new Map(
         competencies.map((competency) => [

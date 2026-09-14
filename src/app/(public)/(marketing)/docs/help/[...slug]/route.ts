@@ -10,6 +10,7 @@
  * Respects flag-hidden sections.
  */
 
+import { syntheticChecksFlag } from "@/lib/flags";
 import { getVisibleDocBySlug } from "@/server/docs";
 
 export interface DocsHelpPayload {
@@ -22,6 +23,8 @@ export interface DocsHelpPayload {
     restCode: string | null;
     /** Glossary slugs to render in a `<KeyTerms>` callout between intro and rest. */
     keyTerms: string[];
+    /** Mirrors `syntheticChecksFlag` — feeds `<DocsFlagsProvider>` around the rendered MDX. */
+    syntheticChecksEnabled: boolean;
 }
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string[] }> }) {
@@ -39,6 +42,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         introCode: doc.introMdx,
         restCode: doc.restMdx,
         keyTerms: doc.keyTerms,
+        syntheticChecksEnabled: await syntheticChecksFlag(),
     };
     return Response.json(payload);
 }

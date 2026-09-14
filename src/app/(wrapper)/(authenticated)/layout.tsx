@@ -5,9 +5,11 @@
  *  Path: /
  */
 
+import { cookies } from "next/headers";
 import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
+import { SIDEBAR_COOKIE_NAME } from "@/lib/constants";
 import { AppProviders } from "@/components/providers/app-providers";
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
@@ -47,9 +49,13 @@ export default async function AuthenticatedLayout(props: {
     // `useSession()` below renders it on first paint with no fetch on mount.
     await ensureSession(getServerQueryClient());
 
+    // `SidebarProvider` persists the collapsed/expanded choice to this cookie but never reads it
+    // back, so the server has to seed it. Absent cookie = expanded, matching a first-time visitor.
+    const sidebarOpen = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
+
     return (
         <HydrateClient>
-            <AppProviders>
+            <AppProviders defaultSidebarOpen={sidebarOpen}>
                 <ImpersonationBanner />
                 {/*
                  * PROTOTYPE — this used to be a separate `ModuleSidebar` component, rendered

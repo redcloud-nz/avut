@@ -1,6 +1,6 @@
 # Spec: Documentation screenshots
 
-**Date:** 2026-09-10
+**Date:** 2026-09-13
 **Status:** Phase 1 implemented; Phase 2 pending
 
 Covers how screenshots are captured, stored, and rendered — in the end-user
@@ -162,7 +162,7 @@ interface ScreenshotSpec {
   role?: OrgRole; // impersonate a user with this role; default owner
   selector?: string; // capture just this element; default full page
   themes?: ("light" | "dark")[]; // default both
-  viewport?: { width: number; height: number }; // default { width: 1280, height: 900 }
+  viewport?: "desktop" | "phone" | { width: number; height: number }; // default "desktop"
   mask?: string[]; // locators to blur (volatile content)
   alt: string; // written into the index
 }
@@ -171,6 +171,57 @@ interface ScreenshotSpec {
 The manifest is the single source of truth for what to capture — a capture
 concern, kept in one auditable list rather than scattered across MDX
 frontmatter. MDX authors only reference an `id` from it.
+
+#### Viewport presets
+
+Full-page captures use one of two named viewports. Both numbers are pinned to the
+app's own thresholds rather than to round figures — changing either means
+re-checking the layout it was chosen to land on.
+
+| Preset              | Viewport       | Chosen because                                                                                                                                                                                    |
+| ------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `desktop` (default) | **1280 × 800** | Above `lg` (1024), so `Saratoga.Columns` shows its real 2/1 split instead of stacking. With the sidebar collapsed the 1024px `Saratoga.Root` column sits centred with ~128px gutters either side. |
+| `phone`             | **390 × 844**  | iPhone 14/15 logical viewport. Below `md` (768), so the sidebar is an off-canvas `Sheet`; below `sm` (640), so content stacks to one column.                                                      |
+
+Capture both only where the difference between them is the point. Both surfaces
+render the same MDX (`help-sheet.tsx` reuses `docsMdxComponents`), so there is no
+way to show the desktop shot on `/docs` and the phone shot in the help sheet — a
+page carrying both gets both in both places.
+
+The sidebar is **collapsed** for desktop captures unless the navigation is itself
+the subject. Collapsing it once per browser profile is enough — the authenticated
+layout reads the `sidebar_state` cookie to seed `SidebarProvider`'s `defaultOpen`,
+so the choice survives a hard page load. (It did not until the fix that made the
+layout read that cookie; before it, every full navigation re-expanded it.)
+
+#### Crop ladder
+
+Not every screenshot is a full page. The two render targets are the `/docs` prose
+column (`max-w-3xl` = **768px**) and the in-app `?help=` sheet (`max-w-lg` less
+`px-4` = **480px**). `<Screenshot>` caps the figure at the captured width and never
+upscales, so the capture width is what decides legibility. Take the narrowest rung
+that still shows what the surrounding prose is about:
+
+| Rung      | Width      | Renders at                      | Use for                                                                                                           |
+| --------- | ---------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Detail    | 500px      | 1:1 on both surfaces            | Dialogs, forms, cards, a single panel or toolbar                                                                  |
+| Region    | 768px      | 1:1 in docs, 0.63× in the sheet | A table with its toolbar, a session header, one report card                                                       |
+| Full view | 1280 × 800 | 0.6× / 0.375×                   | Only when the whole shell matters — leans on click-to-zoom. Keeps the full preset frame, never trimmed to content |
+
+A `phone` capture is 390px wide, so it renders 1:1 on both surfaces; phone shots
+are the crispest thing the docs can carry and need no rung of their own.
+
+A full-page capture keeps the **whole preset frame** — 1280 × 800 or 390 × 844,
+never trimmed down to where the content happens to stop. Two page shots sitting
+in the same doc should be the same size, and a page whose content runs past the
+fold should look like it does in the app, scrollbar and all; trimming each shot
+to its own content height throws both away. Only element crops (the rungs above)
+are cut to their subject.
+
+Capture at **DPR 1**: `upload.ts` records intrinsic pixel dimensions and `<Screenshot>` treats
+them as CSS px, so a 2× capture of a 500px card would store `width: 1000` and then
+render it 768px wide, a 1.5× upscale. Retina support would need a scale factor in
+the index — a Phase 2 concern at most.
 
 ### 4.2 Coverage lint check
 
@@ -255,7 +306,10 @@ The Blob store's public host is embedded in the URLs in
 model, and the manual upload helper
 `npm run screenshot -- <id> <light> [dark] --alt "…"`
 (`scripts/screenshots/upload.ts` — sharp → WebP, `put()` to Blob, rewrites
-the index). A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
+the index). The operational loop around that helper — which browser tool to
+drive, how to get a clean frame, which account to sign in as — is the
+`avut-doc-screenshots` skill; Phase 2's capture script should encode the same
+steps. A raw Markdown `![]()` renders a visible "use `<Screenshot>`" error.
 Captured so far: the sign-in / verification flow (docs) and the Skill Track
 hero (`marketing/skill-track-session`, light only — the dark variant needs the
 demo seed).
@@ -280,6 +334,7 @@ enough that manual upkeep is painful.
 | Catching a `<Screenshot id>` with no capture spec? | Lint check (§4.2) greps MDX against the manifest; errors at lint time   |
 | Where does `alt` text come from?                   | The capture manifest → the index; MDX may override                      |
 | Light/dark handling                                | Capture both, swap with CSS, follow app theme                           |
+| Standard capture sizes?                            | Yes — `desktop` 1280×800 / `phone` 390×844, plus the crop ladder (§4.1) |
 | Does capture run in the Vercel build?              | No — on demand locally or a dispatched GitHub Action                    |
 | Auth for capture                                   | `window.avut` dev tools + impersonation; non-production builds only     |
 | Biggest prerequisite for Phase 2                   | Deterministic `seed:demo` (fixed IDs, clock, ordering, per-role users)  |

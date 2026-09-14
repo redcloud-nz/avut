@@ -7,29 +7,19 @@ import {
     ArrowDownAZIcon,
     ArrowDownZAIcon,
     ChevronDownIcon,
-    ChevronsUpDown,
-    LogOutIcon,
     MoonIcon,
     PanelLeftIcon,
-    ShieldIcon,
     SunIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
-import {
-    DropdownMenuTriggerIcon,
-    FilterColumnValuesIcon,
-    ObjectIcons,
-    PersonalSettingsIcon,
-    SwitchOrganizationIcon,
-} from "@/components/icons";
+import { DropdownMenuTriggerIcon, FilterColumnValuesIcon, ObjectIcons } from "@/components/icons";
 
 // The app's actual icon for each control, not an approximation — keep this in sync if the
 // underlying icon changes in nav/, icons.tsx, or the Kaga table headers.
 const DOCS_ICONS = {
     sun: SunIcon,
     moon: MoonIcon,
-    "chevrons-up-down": ChevronsUpDown,
     pencil: ObjectIcons.Edit,
     "more-vertical": DropdownMenuTriggerIcon,
     "chevron-down": ChevronDownIcon,
@@ -37,10 +27,6 @@ const DOCS_ICONS = {
     "sort-desc": ArrowDownZAIcon,
     filter: FilterColumnValuesIcon,
     "panel-left": PanelLeftIcon,
-    "log-out": LogOutIcon,
-    shield: ShieldIcon,
-    settings: PersonalSettingsIcon,
-    "switch-org": SwitchOrganizationIcon,
 } as const satisfies Record<string, ComponentType<{ className?: string }>>;
 
 export type DocsIconName = keyof typeof DOCS_ICONS;
