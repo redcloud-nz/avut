@@ -279,18 +279,22 @@ this org whose user's email matches the new person's, case-insensitively, and wh
 alone; they still need Part 1's invite. This is the decision from intake and is what keeps
 an email match from being an authorisation decision.
 
-### Work
+### Work — **done**
 
-- `createPerson` gains the link step and a second `ctx.logEvent`, both inside the existing
-  `$transaction([...])`, with the `batchId` passed through.
-- **`personnel.createPerson` (the procedure at `personnel-router.ts:74`) currently duplicates
-  the helper's body instead of calling it.** Collapse it onto `createPerson(ctx, personId, create)`
-  so the new behaviour exists in one place — otherwise manual creation and D4H import diverge.
-  The procedure keeps its own email-conflict pre-check.
-- `teams-router.d4h.ts:357` needs no change; it already calls the helper, so a D4H team
-  import auto-links as a side effect and its entries join the import batch.
-- `personnelEffects.createPerson` — also invalidate `users.listPersonLinks` and
-  `personnel.getLinkedUser`.
+- `createPerson` gains the link step and a second `ctx.logEvent`, and its `$transaction`
+  becomes **interactive**. The link write is conditional on itself (`updateMany … where
+  personId: null` may match nothing), so an array transaction would commit an audit entry for
+  a link that did not happen. `ctx.logEvent` takes a transaction client as its second
+  argument, so both entries still go through the one sanctioned path.
+- **`personnel.createPerson` (the procedure) duplicated the helper's body** and now calls it,
+  so manual creation and D4H import cannot diverge. The procedure keeps its email-conflict
+  pre-check.
+- `teams-router.d4h.ts` needed no change; it already calls the helper, so a D4H team import
+  auto-links as a side effect and both entries carry the import's `batchId`.
+- `personnelEffects.createPerson` also invalidates `users.listPersonLinks` and the
+  better-auth organization-users key, since a create can now change a membership.
+- Dead `include: { organizationUser: { include: { user: true } } }` dropped from the create —
+  `PersonData.fromRecord` parses through a schema that strips it, so it was never read.
 
 ### Explicit non-goal
 
@@ -380,7 +384,7 @@ a four-line call site.
 | 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` ✅ | No behaviour change yet — both switches default off |
 | 2 | **Part 1** — `getInviteState`, invite dialog, menu action ✅ | Independently shippable and the highest-value piece |
 | 3 | **Part 2** — rewrite `afterAcceptInvitation` ✅ | Also fixes the unguarded `updateMany` and adds its missing audit entry |
-| 4 | **Part 3** — `createPerson` helper; collapse the duplicated procedure body | Gives D4H import auto-linking for free |
+| 4 | **Part 3** — `createPerson` helper; collapse the duplicated procedure body ✅ | Gives D4H import auto-linking for free |
 
 Phases 2–4 are independent of each other once 0 and 1 land, so they can be separate PRs.
 
@@ -400,6 +404,7 @@ Phases 2–4 are independent of each other once 0 and 1 land, so they can be sep
 | Audit batching | None — both automations have a human actor. D4H-import links join the import's existing batch. |
 | Does the explicit `personId` path check the setting? | No. An invitation sent from a person's record is an admin's decision, not an automation. |
 | Settings read for Part 2 | Uncached, so a just-flipped switch takes effect immediately. |
-| Link + audit atomicity | One interactive transaction — the write is conditional, so an array transaction would log a link that may not have happened. |
+| Link + audit atomicity | One interactive transaction, in both Part 2 and Part 3 — the write is conditional, so an array transaction would log a link that may not have happened. |
+| A failed auto-link on person create | Not swallowed: it shares the create's transaction, so the whole create rolls back. Unlike Part 2 there is no already-committed work to protect, and a create that silently half-succeeded would be worse. |
 | A linking failure on accept | Logged and swallowed. The membership is already committed; failing the accept would misreport a working invitation. |
 | Invitation creation audit entries | Still none, unchanged from today. |

@@ -234,3 +234,188 @@ describe("personnel.getInviteState", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });
+
+describe("personnel.createPerson auto-link", () => {
+    // memberUser is an existing member holding chris@example.com with no person attached.
+    // outsiderUser has an account and that email, but belongs to another organization.
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        adminUser: UserId.create(),
+        memberUser: UserId.create(),
+        offUser: UserId.create(),
+        outsiderUser: UserId.create(),
+        memberMembership: nanoId16(),
+        offMembership: nanoId16(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+
+        await db.user.create({
+            data: { id: T.adminUser, name: "Admin", email: "admin@example.com" },
+        });
+        await db.user.create({
+            data: { id: T.memberUser, name: "Chris", email: "chris@example.com" },
+        });
+        await db.user.create({
+            data: { id: T.offUser, name: "Dana", email: "dana@example.com" },
+        });
+        await db.user.create({
+            data: { id: T.outsiderUser, name: "Outsider", email: "outsider@example.com" },
+        });
+
+        await db.organizationUser.create({
+            data: { id: nanoId16(), organizationId: T.org, userId: T.adminUser, role: "admin" },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: T.memberMembership,
+                organizationId: T.org,
+                userId: T.memberUser,
+                role: "member",
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: T.offMembership,
+                organizationId: T.org,
+                userId: T.offUser,
+                role: "member",
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.otherOrg,
+                userId: T.outsiderUser,
+                role: "member",
+            },
+        });
+    });
+
+    async function setAutoLink(enabled: boolean) {
+        await db.organizationConfig.deleteMany({ where: { organizationId: T.org } });
+        await db.organizationConfig.create({
+            data: {
+                organizationId: T.org,
+                key: "personnel.autoLinkOnPersonCreate",
+                value: enabled,
+            },
+        });
+    }
+
+    function caller() {
+        return personnelRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.adminUser },
+                permissions: { organization: ["view"], person: ["create"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    function newPerson(name: string, email: string) {
+        return { name, email, tags: [], properties: {} };
+    }
+
+    it("does not link while the setting is off", async () => {
+        await setAutoLink(false);
+        const personId = PersonId.create();
+
+        await caller().createPerson({
+            organizationId: T.org,
+            personId,
+            create: newPerson("Dana Creator", "dana@example.com"),
+        });
+
+        // Assert on what is linked rather than on the column's empty value — prisma-mock
+        // reports an unset optional as undefined, not null.
+        expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
+
+        const membership = await db.organizationUser.findFirst({
+            where: { id: T.offMembership },
+        });
+        expect(membership?.personId ?? null).toBeNull();
+    });
+
+    it("links to an existing member once the setting is on", async () => {
+        await setAutoLink(true);
+        const personId = PersonId.create();
+
+        await caller().createPerson({
+            organizationId: T.org,
+            personId,
+            // Mixed case on the way in; User.email is stored lowercase.
+            create: newPerson("Chris Member", "Chris@Example.com"),
+        });
+
+        const membership = await db.organizationUser.findFirst({
+            where: { id: T.memberMembership },
+        });
+        expect(membership?.personId).toBe(personId);
+    });
+
+    it("writes a membership audit entry alongside the person entry", async () => {
+        const entries = await db.logEntry.findMany({ where: { objectId: T.memberMembership } });
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            userId: T.adminUser,
+            action: "Update",
+            objectType: "OrganizationMembership",
+        });
+        expect(entries[0].description).toContain("matched on email address");
+    });
+
+    it("does not link, or grant membership, to a user outside the organization", async () => {
+        await setAutoLink(true);
+        const personId = PersonId.create();
+
+        await caller().createPerson({
+            organizationId: T.org,
+            personId,
+            create: newPerson("Outsider Person", "outsider@example.com"),
+        });
+
+        // No membership created for them here, and no link anywhere.
+        const memberships = await db.organizationUser.findMany({
+            where: { organizationId: T.org, userId: T.outsiderUser },
+        });
+        expect(memberships).toHaveLength(0);
+
+        const linked = await db.organizationUser.findMany({ where: { personId } });
+        expect(linked).toHaveLength(0);
+    });
+
+    it("still creates the person when nothing matches", async () => {
+        await setAutoLink(true);
+        const personId = PersonId.create();
+
+        const { created } = await caller().createPerson({
+            organizationId: T.org,
+            personId,
+            create: newPerson("Nobody Here", "nobody@example.com"),
+        });
+
+        expect(created.id).toBe(personId);
+        expect(await db.logEntry.findMany({ where: { objectId: personId } })).toHaveLength(1);
+    });
+
+    it("attributes both entries to the acting admin, not the linked user", async () => {
+        const membershipEntry = (
+            await db.logEntry.findMany({ where: { objectId: T.memberMembership } })
+        )[0];
+
+        expect(membershipEntry.userId).toBe(T.adminUser);
+        expect(membershipEntry.userId).not.toBe(T.memberUser);
+    });
+});

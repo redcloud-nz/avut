@@ -14,6 +14,9 @@ import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData } from "@/lib/schemas/user";
 
+import { findLinkableMember } from "@/server/person-user-link";
+import { readOrganizationSettings } from "@/server/organization-settings-store";
+
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -82,15 +85,12 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ created: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId, create } }) => {
-            // Check for conflicts
-            const [emailConflict] = await Promise.all([
-                ctx.prisma.person.findFirst({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        email: create.email,
-                    },
-                }),
-            ]);
+            const emailConflict = await ctx.prisma.person.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    email: create.email,
+                },
+            });
 
             if (emailConflict)
                 throw new TRPCError({
@@ -101,30 +101,9 @@ export const personnelRouter = createTrpcRouter({
                     ),
                 });
 
-            // Calculate changes from empty record
-            const changes = diffObject({ tags: [], properties: {} }, create);
-
-            const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.person.create({
-                    data: {
-                        id: personId,
-                        organizationId: ctx.organizationId,
-                        name: create.name,
-                        email: create.email,
-                        tags: create.tags,
-                        properties: create.properties,
-                        status: "Active",
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "Person",
-                    objectId: personId,
-                    changes,
-                }),
-            ]);
-
-            return { created: PersonData.fromRecord(created) };
+            // Delegates to the shared helper so this path and the D4H team import behave
+            // identically — in particular, both auto-link.
+            return await createPerson(ctx, personId, create);
         }),
 
     /**
@@ -518,14 +497,39 @@ export async function createPerson(
     ctx: AuthenticatedOrganizationContext,
     personId: PersonId,
     create: z.infer<typeof PersonData.modifiableSchema>,
-    /** Set when this create is part of a multi-entry operation, so the entry joins its batch. */
+    /** Set when this create is part of a multi-entry operation, so the entries join its batch. */
     batchId?: string,
 ): Promise<{ created: PersonData }> {
     // Calculate changes from empty record
     const changes = diffObject({ tags: [], properties: {} }, create);
 
-    const [created] = await ctx.prisma.$transaction([
-        ctx.prisma.person.create({
+    /*
+     * Auto-link (spec Part 3): if the organization opted in and an existing *member* holds this
+     * email, attach them as the person is created.
+     *
+     * Only a member. A user with an AVUT account who does not belong to this organization is left
+     * alone — linking them would mean granting membership on the strength of an email address.
+     * They get invited from the person's own page instead.
+     *
+     * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
+     * anyway, so a link landing in between loses the race rather than corrupting anything.
+     */
+    const settings = await readOrganizationSettings(ctx.prisma, ctx.organizationId);
+    const linkable = settings.personnel.autoLinkOnPersonCreate
+        ? await findLinkableMember(ctx.prisma, {
+              organizationId: ctx.organizationId,
+              email: create.email,
+          })
+        : null;
+
+    /*
+     * Interactive rather than `$transaction([...])` because the link is conditional on its own
+     * write succeeding — an array would commit the audit entry even when `updateMany` matched
+     * nothing. `ctx.logEvent` takes the transaction client, so both entries still go through the
+     * one sanctioned path.
+     */
+    const created = await ctx.prisma.$transaction(async (tx) => {
+        const person = await tx.person.create({
             data: {
                 id: personId,
                 organizationId: ctx.organizationId,
@@ -535,22 +539,44 @@ export async function createPerson(
                 properties: create.properties,
                 status: "Active",
             },
-            include: {
-                organizationUser: {
-                    include: {
-                        user: true,
-                    },
-                },
+        });
+
+        await ctx.logEvent(
+            {
+                action: "Create",
+                objectType: "Person",
+                objectId: personId,
+                changes,
+                batchId,
             },
-        }),
-        ctx.logEvent({
-            action: "Create",
-            objectType: "Person",
-            objectId: personId,
-            changes,
-            batchId,
-        }),
-    ]);
+            tx,
+        );
+
+        if (linkable) {
+            const { count } = await tx.organizationUser.updateMany({
+                where: { id: linkable.organizationUserId, personId: null },
+                data: { personId },
+            });
+
+            if (count === 1) {
+                await ctx.logEvent(
+                    {
+                        action: "Update",
+                        objectType: "OrganizationMembership",
+                        objectId: linkable.organizationUserId,
+                        description: `Linked person (${personId}, ${create.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
+                        refs: [
+                            { objectType: "Person", objectId: personId, role: "context" },
+                        ],
+                        batchId,
+                    },
+                    tx,
+                );
+            }
+        }
+
+        return person;
+    });
 
     return {
         created: PersonData.fromRecord(created),
