@@ -32,6 +32,16 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
 
 ## Organizations
 
+- [ ] `writeOrganizationSettings` (`src/server/organization-settings-store.ts`) never deletes an
+      `OrganizationConfig` row, so a leaf set back to its default keeps a row holding that default.
+      It upserts every leaf whose value differs from the _resolved_ existing settings, which is
+      right on the way out from a default but not on the way back — the module's own doc comment
+      ("a config-less organization only materialises the leaves that differ from the defaults")
+      holds for the first write and is not maintained afterwards. The cost is not the extra row:
+      an explicitly stored default silently **pins** that org if the default ever changes, so orgs
+      that once toggled a setting and reverted it diverge from orgs that never touched it. Deleting
+      a leaf whose new value equals the default would restore the stated invariant.
+
 - [ ] `OrganizationUser` (`src/lib/schemas/organization-user.ts`) conflates two different
       records — the org membership row (`organization_users`) and its joined `User` row —
       into one schema. That's why `requireOrganization`/`getMyRoles` fetch roles via a
@@ -47,6 +57,16 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
 - [ ] System-admin role assignment doesn't support assigning multiple roles.
 
 ## Skill package builder
+
+- [ ] The **Skill Package Author** secondary role is gated on the _Skill Track_ module rather than
+      _Skill Package Builder_ (`src/components/admin/invitations/invitation-role-fields.tsx` —
+      `{ role: "skill-package-author", enabled: …modules["skill-track"].enabled }`). An org running
+      Skill Track with the builder switched off is still offered the role when inviting, and an org
+      running the builder without Skill Track is not offered it at all. Pre-existing — the same
+      gating is on `integration`, in `create-invitation.tsx` before the fields were extracted — so
+      it survived the extraction unchanged rather than being introduced by it. Noticed while
+      browser-testing person↔user linking, where the `demo` org has the builder off and the
+      checkbox appeared anyway.
 
 - [ ] The packages list should **show unpublished packages by default**. It
       currently seeds `columnFilters` with `published: [true]`, so a freshly
