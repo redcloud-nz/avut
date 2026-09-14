@@ -37,7 +37,7 @@ export function assertD4HLinkAllowed(input: AssertD4HLinkInput): D4HLinkAction {
     if (orgD4H && orgD4H.serverCode !== tokenServerCode) {
         throw new TRPCError({
             code: "CONFLICT",
-            message: `This organization's D4H link uses the "${orgD4H.serverCode}" server; that access token is for the "${tokenServerCode}" server.`,
+            message: `This organisation's D4H link uses the "${orgD4H.serverCode}" server; that access token is for the "${tokenServerCode}" server.`,
         });
     }
 
@@ -50,13 +50,13 @@ export function assertD4HLinkAllowed(input: AssertD4HLinkInput): D4HLinkAction {
             throw new TRPCError({
                 code: "CONFLICT",
                 message:
-                    "This organization is linked to an org-less D4H team, which blocks all other D4H links. Unlink it first.",
+                    "This organisation is linked to an org-less D4H team, which blocks all other D4H links. Unlink it first.",
             });
         }
         if (orgD4H.d4hOrganisationId !== owningOrgId) {
             throw new TRPCError({
                 code: "CONFLICT",
-                message: `This organization is linked to D4H organisation ${orgD4H.d4hOrganisationId}; that team belongs to ${owningOrgId}.`,
+                message: `This organisation is linked to D4H organisation ${orgD4H.d4hOrganisationId}; that team belongs to ${owningOrgId}.`,
             });
         }
         return { kind: "reuse" };
@@ -69,11 +69,11 @@ export function assertD4HLinkAllowed(input: AssertD4HLinkInput): D4HLinkAction {
     if (orgD4H.d4hOrganisationId !== null) {
         throw new TRPCError({
             code: "CONFLICT",
-            message: `This organization is linked to D4H organisation ${orgD4H.d4hOrganisationId}; an org-less D4H team cannot also be linked.`,
+            message: `This organisation is linked to D4H organisation ${orgD4H.d4hOrganisationId}; an org-less D4H team cannot also be linked.`,
         });
     }
     throw new TRPCError({
         code: "CONFLICT",
-        message: "This organization already has an org-less D4H team linked; only one is allowed.",
+        message: "This organisation already has an org-less D4H team linked; only one is allowed.",
     });
 }

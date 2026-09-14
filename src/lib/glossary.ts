@@ -26,27 +26,27 @@ export interface GlossaryEntry {
 export const glossaryEntries: readonly GlossaryEntry[] = [
     {
         slug: "organization",
-        term: "Organization",
+        term: "Organisation",
         shortDefinition:
             "The account boundary in AVUT — people, data, and modules all belong to one.",
         longDefinition:
-            "The top-level unit of access in AVUT. Every person, team, and record belongs to one organization, and the modules an organization has turned on decide what shows up in its sidebar. A user can belong to more than one organization and switch between them.",
+            "The top-level unit of access in AVUT. Every person, team, and record belongs to one organisation, and the modules an organisation has turned on decide what shows up in its sidebar. A user can belong to more than one organisation and switch between them.",
         relatedTerms: ["module", "role"],
     },
     {
         slug: "module",
         term: "Module",
-        shortDefinition: "A self-contained area of the app that an organization turns on or off.",
+        shortDefinition: "A self-contained area of the app that an organisation turns on or off.",
         longDefinition:
-            "A self-contained area of the app — equipment tracking, skill checks, notes, and so on. Each organization turns on the modules it needs; only enabled modules appear in its sidebar. The Admin module is the one exception: every organization always has it.",
+            "A self-contained area of the app — equipment tracking, skill checks, notes, and so on. Each organisation turns on the modules it needs; only enabled modules appear in its sidebar. The Admin module is the one exception: every organisation always has it.",
         relatedTerms: ["organization"],
     },
     {
         slug: "role",
         term: "Role",
-        shortDefinition: "What a user is allowed to do within an organization.",
+        shortDefinition: "What a user is allowed to do within an organisation.",
         longDefinition:
-            "Decides what a signed-in user can do inside an organization. `owner` and `admin` can manage the organization itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
+            "Decides what a signed-in user can do inside an organisation. `owner` and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
         modules: ["admin"],
         relatedTerms: ["organization", "user", "person"],
     },
@@ -55,7 +55,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "User",
         shortDefinition: "An account that can sign in, and the role it holds.",
         longDefinition:
-            "An account that can sign in to AVUT, with a role that decides what it can do in an organization. A user is distinct from a person: a person record can exist without a user account attached, and one user can belong to several organizations.",
+            "An account that can sign in to AVUT, with a role that decides what it can do in an organisation. A user is distinct from a person: a person record can exist without a user account attached, and one user can belong to several organisations.",
         modules: ["admin"],
         relatedTerms: ["person", "role"],
     },
@@ -63,9 +63,9 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         slug: "person",
         term: "Person",
         shortDefinition:
-            "A personnel record for someone in the organization, with or without a login.",
+            "A personnel record for someone in the organisation, with or without a login.",
         longDefinition:
-            "A record representing someone in the organization — a member, volunteer, or contact. A person record can exist on its own, or be linked to a user account that can sign in.",
+            "A record representing someone in the organisation — a member, volunteer, or contact. A person record can exist on its own, or be linked to a user account that can sign in.",
         relatedTerms: ["user", "role", "team"],
     },
     {
@@ -73,7 +73,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Team",
         shortDefinition: "A grouping of people, used across other modules.",
         longDefinition:
-            "A grouping of people within an organization, referenced by other modules — for example, to scope who a skill session or equipment issue applies to.",
+            "A grouping of people within an organisation, referenced by other modules — for example, to scope who a skill session or equipment issue applies to.",
         relatedTerms: ["person"],
     },
     {
@@ -91,7 +91,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill package",
         shortDefinition: "A reusable collection of skill groups and skills that can be assessed.",
         longDefinition:
-            "A collection of skill groups and skills that defines what can be assessed. Packages are authored in the Skill Package Builder and published into the Skill Track catalogue, where other organizations can adopt them. Packages aren't versioned — the published package always reflects its current state.",
+            "A collection of skill groups and skills that defines what can be assessed. Packages are authored in the Skill Package Builder and published into the Skill Track catalogue, where other organisations can adopt them. Packages aren't versioned — the published package always reflects its current state.",
         modules: ["skill-track", "skill-package-builder"],
         relatedTerms: ["catalogue", "skill", "skill-group", "skill-check"],
     },
@@ -100,7 +100,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill",
         shortDefinition: "A single assessable capability within a skill package.",
         longDefinition:
-            "A single assessable capability defined inside a skill package. Skills are organized into skill groups and are what a skill check actually records an outcome against.",
+            "A single assessable capability defined inside a skill package. Skills are organised into skill groups and are what a skill check actually records an outcome against.",
         modules: ["skill-track", "skill-package-builder"],
         relatedTerms: ["skill-group", "skill-package", "skill-check"],
     },
@@ -153,9 +153,9 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
     {
         slug: "catalogue",
         term: "Skill package catalogue",
-        shortDefinition: "The set of skill packages available to an organization in Skill Track.",
+        shortDefinition: "The set of skill packages available to an organisation in Skill Track.",
         longDefinition:
-            "The set of skill packages available to an organization's Skill Track module, drawn from packages published by skill package authors.",
+            "The set of skill packages available to an organisation's Skill Track module, drawn from packages published by skill package authors.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. Connecting an organization's D4H access token unlocks read-only D4H Views and lets I3 PPE templates link to D4H equipment. D4H integration is optional — organizations without a token simply don't see D4H-backed data.",
+            "D4H is an external team- and equipment-management platform. Connecting an organisation's D4H access token unlocks read-only D4H Views and lets I3 PPE templates link to D4H equipment. D4H integration is optional — organisations without a token simply don't see D4H-backed data.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;

@@ -210,7 +210,7 @@ describe("prepareSkillPackageImport", () => {
     it("rejects a package ID owned by a different organization", async () => {
         await apply(envelope(), T.orgA);
         await expect(prepareSkillPackageImport(db, envelope(), T.orgB)).rejects.toThrow(
-            /different organization/i,
+            /different organisation/i,
         );
     });
 

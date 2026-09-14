@@ -100,7 +100,7 @@ export async function upsertOrganizationD4H(
                 throw new TRPCError({
                     code: "CONFLICT",
                     message:
-                        "This organization was just linked to D4H — reload the page and try again.",
+                        "This organisation was just linked to D4H — reload the page and try again.",
                 });
             }
             throw e;
@@ -589,7 +589,7 @@ export async function syncOrganizationD4HCache(
     if (!orgD4H) {
         throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "This organization is not linked to D4H.",
+            message: "This organisation is not linked to D4H.",
         });
     }
     if (orgD4H.d4hOrganisationId == null) {

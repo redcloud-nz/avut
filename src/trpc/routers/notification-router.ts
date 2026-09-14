@@ -25,7 +25,7 @@ export const notificationsRouter = createTrpcRouter({
 
             return invitations.map((invitation) => ({
                 id: invitation.id,
-                title: "Organization Invite",
+                title: "Organisation Invite",
                 description: `${invitation.inviter.name} invited you to join ${invitation.organization.name}.`,
                 path: `/personal/invitations/${invitation.id}`,
                 date: invitation.createdAt,

@@ -97,7 +97,7 @@ export const personnelRouter = createTrpcRouter({
                     code: "CONFLICT",
                     cause: new FieldConflictError(
                         "email",
-                        "A person with this email address already exists in this organization.",
+                        "A person with this email address already exists in this organisation.",
                     ),
                 });
 

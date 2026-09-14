@@ -44,7 +44,7 @@ export const organizationsRouter = createTrpcRouter({
             if (!organization) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "Organization not found",
+                    message: "Organisation not found",
                 });
             }
 
