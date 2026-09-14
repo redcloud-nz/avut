@@ -20,6 +20,36 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
       list is the natural home, beside **New Team**) or delete both it and the
       procedure. Found while browser-testing the D4H import, 2026-09-15.
 
+- [ ] **Link to D4H gives no feedback when the user has no personal D4H token.**
+      The dialog (`src/components/admin/teams/d4h-link-card.tsx`) opens
+      unconditionally and swallows the query error —
+      `const { data: availableTeams = [] } = useQuery(...)` never reads `isError`
+      or `error`, and there is no `QueryCache.onError` in `makeQueryClient`. So
+      `listTeamsAccessibleToUser` throwing `NOT_FOUND "No personal D4H Access
+      Token found for user"` surfaces as a disabled, empty "Select a D4H team"
+      dropdown and a disabled **Link & sync** button, after ~3 default retries of
+      dead air — indistinguishable from "your token works but sees no teams".
+      `AdminModule_Teams_ImportTeamFromD4H_Dialog` has the identical swallow. The
+      **Sync** dialog on the same card does this right: it renders
+      `planQuery.error.message`. While fixing, note the token lives at
+      `/orgs/[slug]/admin/d4h-access-tokens`, so `getConfiguredD4HAccessToken`'s
+      "Please create one in your account settings" misdirects, and the
+      team-path messages give no location at all. Also worth saying in the UI
+      that the token is always the **acting user's** — a second admin cannot sync
+      a team the first admin linked until they add their own.
+
+- [ ] **The D4H team link/sync procedures don't check
+      `integrations.d4h.enabled` server-side.** `linkTeamToD4H`,
+      `planD4HTeamSync`, `applyD4HTeamSync` and `unlinkTeamFromD4H`
+      (`src/trpc/routers/teams-router.ts`) gate only on `team: ["update"]`, and
+      `d4hApi.listTeamsAccessibleToUser` reaches for
+      `getPersonalD4HAccessTokenForUser` directly. Every other procedure in
+      `d4h-api-router.ts` takes its token from `getConfiguredD4HAccessToken`,
+      which throws `NotConfiguredError` when the integration is off. So turning
+      D4H off hides the menu group and the card but leaves the whole team-link
+      path callable. Either route these through a settings check too, or decide
+      deliberately that the org setting is presentation-only and write that down.
+
 ## Skill Track
 
 - [ ] Skill package **unsubscribe** should be treated as a destructive action —
