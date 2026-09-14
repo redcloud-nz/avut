@@ -10,13 +10,13 @@ All three parts are committed with unit coverage. **None of it has run in a brow
 the sharpest gap — the end-to-end path the feature exists to serve — but Parts 2 and 3 and
 the new settings card are equally unobserved.
 
-| #   | Area                                              | Automated          | Browser-verified 2026-09-14         |
+| #   | Area                                              | Automated          | Browser-verified                    |
 | --- | ------------------------------------------------- | ------------------ | ----------------------------------- |
 | A   | Invite → accept → link, end to end                | ✗                  | ✅ A1–A4                            |
 | B   | The four `getInviteState` states in the dialog    | ✓ router           | ✅ all four + pending warning       |
 | C   | Part 2 — auto-link on invitation accept           | ✓ helper           | ✅ on and off                       |
 | D   | Part 3 — auto-link on person create               | ✓ router           | ✅ incl. the no-membership negative |
-| E   | D4H team import auto-links                        | ✓ **new**          | ✗ not exercisable — see §E          |
+| E   | D4H team import auto-links                        | ✓ **new**          | ✅ 2026-09-15, live D4H — see §E    |
 | F   | Personnel settings card                           | ✓ store round-trip | ✅                                  |
 | G   | Audit entries                                     | ✓ shape            | ✅ by SQL, all three descriptions   |
 | H   | Invitations page after the role-fields extraction | ✗                  | ✅                                  |
@@ -29,6 +29,11 @@ the new settings card are equally unobserved.
 `demo` organization (`@demo.avut.nz` — synthetic; `christchurch-cdem` holds real people and was
 left alone). **No defects found in the branch.** Details of what each section actually showed are
 recorded inline below, under **Result** headings.
+
+**§E was closed separately on 2026-09-15**, against live D4H in `christchurch-cdem` — the one
+section the first run could not reach. Still no defects in the branch. D4H is read-only from
+AVUT, so the import risked nothing on the D4H side, and every write landed in the branch
+database.
 
 ---
 
@@ -287,24 +292,15 @@ still holds no membership anywhere.
 
 ---
 
-## E. D4H team import — covered by tests, not by a run
+## E. D4H team import — covered by tests, and by a real run
 
 Part 3 put the auto-link in the shared `createPerson` helper, which the D4H team import also
 calls, so **the import auto-links as a side effect**. It is also the only path that passes a
 `batchId`.
 
-**A manual run was attempted on 2026-09-14 and abandoned as vacuous**, for two reasons found in
-the branch database:
-
-- every team in `christchurch-cdem` (the only org with a D4H token) has a null `d4hTeamId`, so no
-  team is bound to a D4H team to import from;
-- both unlinked members there are `@resend.dev` test accounts, so no imported person's email could
-  match a member — the auto-link branch would never have been reached even if the import ran.
-
-Setting that up would have meant contriving both a team binding and a matching email, proving the
-path once. It was covered with tests instead (`personnel-router.test.ts`, "createPerson during a
-D4H team import"), which reach the batched path that **no tRPC procedure exposes** — `createPerson`
-takes a `batchId` that only the import passes, so `createCaller` cannot get there. That needed
+It is covered by tests (`personnel-router.test.ts`, "createPerson during a D4H team import"),
+which reach the batched path that **no tRPC procedure exposes** — `createPerson` takes a `batchId`
+that only the import passes, so `createCaller` cannot get there. That needed
 `createOrganizationMockContext` in `src/test/trpc-helpers.ts`, which builds the `organizationId` +
 `logEvent` context exactly as `organizationProcedure` does.
 
@@ -313,20 +309,95 @@ membership link entry carries the same batch** (verified to fail if the `batchId
 nothing else fails with it); the org's opt-in is respected on an unattended run; and an imported
 email belonging to an outsider grants no membership.
 
-**Still unverified, and only a real run can show it:** the import loop now opens one interactive
-transaction per person instead of an array transaction. On a large team, watch for it slowing or
-hitting a transaction timeout. Worth doing opportunistically the next time a real D4H team is
-imported:
+**Result 2026-09-15 — passed, against live D4H.** A first attempt on 2026-09-14 was abandoned as
+vacuous: no team in `christchurch-cdem` was bound to a D4H team, and both unlinked members there
+were `@resend.dev` accounts, so no imported email could match a member. The run below closed that
+by making the overlap real rather than contrived.
 
-```sql
-SELECT e."objectType", e.action, e."batchId", b."operationKey"
-FROM log_entries e LEFT JOIN log_batches b ON b.id = e."batchId"
-WHERE e."organizationId" = '<org_id>'
-ORDER BY e.sequence DESC LIMIT 20;
+### What the run needed
+
+Three preconditions, each worth knowing for the next time:
+
+- **The acting user must own a *personal* D4H token.** `resolveD4HTeamForLink` calls
+  `getPersonalD4HAccessTokenForUser(organizationId, userId)` — the org's shared token does not
+  satisfy it. The run therefore had to act as the token's owner.
+- **Impersonation cannot reach a global admin.** better-auth refuses admin-on-admin
+  `impersonateUser` with `FORBIDDEN` (confirmed by impersonating a non-admin member successfully).
+  The owner account's `users.role` was dropped to `user` for the run and restored afterwards; the
+  import reads org roles, never the global flag, so nothing under test changed.
+- **Only a person the import *creates* can auto-link.** `applyD4HSyncPlan` calls `createPerson`
+  only when `getPersonByEmail` misses, and the auto-link lives inside `createPerson`. An email
+  already on file is skipped entirely.
+
+That last point has a sharp edge worth remembering: `getPersonByEmail` does **not** filter on
+`status`, and `deletePerson` soft-deletes anyone referenced by a skill check. So deleting a person
+through the UI does *not* free their email for re-import — the import finds the `Deleted` row,
+skips creation, never auto-links, and adopts that person as an active team member without
+un-deleting them. The run sidestepped this by moving the existing person's email aside instead.
+
+### The run
+
+Four teams linked through the team menu → **Link to D4H** → `linkTeamToD4H`, which runs the import
+itself. `organization_d4h` was empty beforehand, so the first link also exercised the
+`create-org-linked` path (D4H org 1, "CHCH").
+
+| AVUT team | D4H team | Imported | Note |
+| --------- | -------- | -------- | ---- |
+| NZ Response Team 11 | 6 | 25 | 20 manual memberships already present — 14 adopted |
+| NZ Response Team 10 | 5 | 33 | |
+| NZ Response Team 14 | 7 | 32 | |
+| Christchurch CDEM CDC Team | 8 | 42 | team created for the run; no manual members to adopt |
+
+Totals: 116 → 154 people, 141 team memberships (132 D4H-managed), four `d4h-team-link` batches of
+40 / 45 / 44 / 55 entries. No `P2002`, no unhandled error in the server log.
+
+**The auto-link fired exactly once, and correctly.** A person created *during* the Team 11 import
+(`PEDKqKw7gU0rywPW`, timestamped inside the run) was attached to the owner's membership, and the
+entry carries the batch:
+
+```
+action         | Update
+objectType     | OrganizationMembership
+batchId        | HfEXb3y0LGsOdRL6      <- same batch as the Person creates
+userId         | 7no0QqCwmeIdoehU
+impersonatorId | rFwZu27UCGpwlCnJ      <- impersonation attributed correctly
+description    | Linked person (PEDKqKw7gU0rywPW, Alex Westphal) to user (…) on creation — matched on email address.
 ```
 
-The `OrganizationMembership` link entry should carry the same `batchId` as the `Person` create
-entries.
+The other three members stayed unlinked, as they should — no D4H member carries their address.
+When counting these entries, scope the query to the run: an earlier auto-link from §D's `demo`-org
+testing also matches on description and is easily mistaken for a second link.
+
+### The per-person transaction — measured
+
+The open concern was that the import now opens one interactive transaction per person instead of
+an array transaction. Measured wall time for `POST /trpc/teams.linkTeamToD4H`:
+
+| Team | Members | Total |
+| ---- | ------- | ----- |
+| NZ Response Team 14 | 32 | ~0.60s |
+| NZ Response Team 11 | 25 | ~0.71s |
+| Christchurch CDEM CDC Team | 42 | ≤1.00s |
+| NZ Response Team 10 | 33 | ~1.08s |
+
+**Do not subtract the dev-mode artificial delay from these.** `artificialDelayInDevelopment`
+(`src/trpc/init.ts:64`) calls `opts.next(opts)` *without* awaiting it, so the delay runs
+concurrently and the logged total is `max(work, delay)` — not their sum. The CDC figure is capped
+rather than measured because its 968ms delay masks the true value.
+
+No timeout risk at these sizes, but the headroom is smaller than an array transaction would give.
+A team several times larger is still worth watching.
+
+### Incidental findings
+
+- The duplicate guard works: linking a second AVUT team to an already-linked D4H team returns the
+  friendly `CONFLICT` ("That D4H team is already linked to a team in this organization"), and does
+  so *before* `createLogBatch`, so no orphan batch is left behind.
+- `AdminModule_Teams_ImportTeamFromD4H_Dialog` (`src/components/admin/teams/import-team-from-d4h.tsx`,
+  the one-step `createTeamFromD4H` flow) is defined but mounted nowhere — on this branch and on
+  `integration` alike. Pre-existing dead code; the reachable path is the team menu's Link to D4H.
+- `integrations.d4h.syncToken` for `christchurch-cdem` points at `42fzNPtt3RzRIumn`, which is not a
+  row in `d4h_access_tokens`. Irrelevant to the interactive path, but it would bite scheduled sync.
 
 ---
 

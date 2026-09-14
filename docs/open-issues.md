@@ -11,6 +11,15 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
       has **Delete** and the D4H group — it should also offer **Edit** and
       **Archive** actions.
 
+- [ ] `AdminModule_Teams_ImportTeamFromD4H_Dialog`
+      (`src/components/admin/teams/import-team-from-d4h.tsx`) — the one-step
+      "create an AVUT team from a D4H team" flow behind `createTeamFromD4H` — is
+      defined but mounted nowhere, on this branch and on `integration` alike. So
+      `createTeamFromD4H` has no UI: the only reachable path is to create a team
+      first, then use the team menu's **Link to D4H**. Either mount it (the teams
+      list is the natural home, beside **New Team**) or delete both it and the
+      procedure. Found while browser-testing the D4H import, 2026-09-15.
+
 ## Skill Track
 
 - [ ] Skill package **unsubscribe** should be treated as a destructive action —
@@ -29,6 +38,17 @@ file a GitHub issue (`redcloud-nz/avut`) or an entry under `docs/ideas/` instead
 - [ ] Person archive and restore should go through confirm dialogs rather than
       firing direct mutations.
 - [ ] Person **delete** should be available for an already-archived person.
+
+- [ ] A **soft-deleted person is silently adopted by a D4H team import**. Neither
+      `getPersonByEmail` nor the `allPeople` read in `fetchD4HSyncInputs`
+      (`src/trpc/routers/teams-router.d4h.ts`) filters on `status`, and
+      `deletePerson` soft-deletes anyone referenced by a skill check. So importing
+      a D4H team containing that email finds the `Deleted` row, skips creating a
+      person (and therefore never auto-links them), and gives them an **Active**
+      team membership while the person record stays `Deleted`. Deleting a person
+      through the UI also does not free their email for re-import. *Found by
+      reading the code while testing the import on 2026-09-15 — not reproduced in
+      a run, so confirm before fixing.*
 
 ## Organizations
 
