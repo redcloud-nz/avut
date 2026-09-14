@@ -70,28 +70,26 @@ A person is **linkable** to a user when *all* of:
 
 1. Same organization.
 2. `Person.status === "Active"`.
-3. `Person.email` lowercased equals `User.email` exactly.
+3. their email addresses match, compared case-insensitively.
 4. `Person.organizationUser` is `null` — the person is not already linked.
 5. That user's `OrganizationUser` for the org has `personId === null` — the user is not
    already linked to a different person there.
 
-**Rule 3 lowercases the needle rather than using `mode: "insensitive"`** (revised during
-Part 1; the original draft said the opposite). `User.email` is lowercase by construction —
-better-auth normalises it at sign-up (`api/routes/sign-up.mjs:165`) and in the OAuth link
-path (`oauth2/link-account.mjs:92`), which then compares `userInfo.email.toLowerCase()`
-against the stored value. `Person.email` is admin-typed and unnormalised, so only the needle
-needs lowering. Three reasons this is better than a case-insensitive comparison:
+**Rule 3 is never implemented with `mode: "insensitive"`** (revised while building Parts 1
+and 3; the original draft said to use it). `prisma-mock` ignores the `{ equals: … }` filter
+object on a string field entirely — not just the `mode` key — so a query written that way
+returns `null` in every test while working in Postgres. That is a silent gap, not a failing
+test. How rule 3 is satisfied therefore depends on which side is the column:
 
-- it uses the unique index on `users.email`, which `mode: "insensitive"` cannot;
-- it is testable — `prisma-mock` ignores the `{ equals: … }` filter object entirely (not
-  just `mode`), so any query written that way silently returns `null` in tests;
-- it does not depend on database collation.
+| Direction | Implementation | Why |
+| --- | --- | --- |
+| user email → **person** (`findLinkablePerson`) | narrow to org + `Active` + unlinked in SQL, fold case in JS | `Person.email` is admin-typed and unnormalised, so the **column** may be mixed case. There is no functional index on `lower(personnel.email)`, so Postgres would scan that candidate set either way — the JS fold costs nothing extra and is testable. |
+| person email → **user** (`findLinkableMember`, `getInviteState`) | lowercase the needle, match the column exactly | `User.email` is lowercase by construction: better-auth normalises it at sign-up (`api/routes/sign-up.mjs:165`) and in the OAuth link path (`oauth2/link-account.mjs:92`), which then compares `userInfo.email.toLowerCase()` against the stored value. An exact match also uses the unique index on `users.email`. |
 
-The reverse direction — finding a **person** from a known user email — genuinely needs
-`mode: "insensitive"`, because it is the *column* that may be mixed case. That is what the
-existing `getPersonByEmail` (`personnel-router.ts`) does, and it is therefore not
-unit-testable against `prisma-mock`. Normalising `Person.email` at write time would fix both
-and remains **out of scope** (see §8).
+The pre-existing `getPersonByEmail` (`personnel-router.ts`) still uses `mode: "insensitive"`
+for the first direction and is therefore not unit-testable. Normalising `Person.email` at
+write time would collapse both rows into one index-backed exact match, and remains **out of
+scope** (see §8).
 
 Rules 4 and 5 are also the two `@unique` constraints, so violating them is a P2002 rather
 than a silent overwrite. Every automation below checks them explicitly and **no-ops** on
@@ -107,25 +105,37 @@ against `createMockPrisma()`.
 ```ts
 export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser" | "user">;
 
-/** The Active, unlinked person in `organizationId` whose email matches, or null. */
+/** The Active, unlinked person in `organizationId` whose email matches a user's, or null. */
 export function findLinkablePerson(
   prisma: PersonUserLinkPrisma,
   args: { organizationId: string; email: string },
 ): Promise<Person | null>;
 
 /**
- * Set `OrganizationUser.personId`, but only if that row is still unlinked and the person
- * is still unlinked. Returns whether the link was made; never throws on a lost race.
+ * The opposite direction, for Part 3: the existing **member** of `organizationId` whose email
+ * matches a person's and who is not already linked. A user who is not a member is never
+ * returned — linking them would mean granting membership on an email match.
+ */
+export function findLinkableMember(
+  prisma: PersonUserLinkPrisma,
+  args: { organizationId: string; email: string },
+): Promise<{ user: User; organizationUserId: string } | null>;
+
+/**
+ * Set `OrganizationUser.personId`, but only while both sides are still unlinked.
+ * Returns the membership id it wrote, or null if nothing was written.
  */
 export function tryLinkPersonToMember(
   prisma: PersonUserLinkPrisma,
   args: { organizationId: string; userId: string; personId: string },
-): Promise<boolean>;
+): Promise<string | null>;
 ```
 
-`tryLinkPersonToMember` writes with `updateMany({ where: { …, personId: null }, data: { personId } })`
-and treats `count === 0` as "already linked, do nothing", so a concurrent manual link wins
-rather than erroring.
+`tryLinkPersonToMember` re-reads both sides rather than trusting the caller, then writes with
+`updateMany({ where: { id, personId: null }, data: { personId } })` and treats `count === 0`
+as "already linked, do nothing" — so a manual link landing in between wins the race instead
+of raising P2002 from inside an unattended hook. It returns the membership id rather than a
+boolean because the caller needs it as the audit entry's `objectId`.
 
 ### 3.3 Settings
 
@@ -329,6 +339,13 @@ to keep these paths testable.
 Router tests live in `personnel-router.test.ts` — `getInviteState`'s four states plus the
 mixed-case and pending-invitation cases (**done**); later, `createPerson` links / does not
 link across the setting and the member-vs-non-member cases.
+
+**Done so far:** `src/server/person-user-link.test.ts` (16 cases covering both lookups and
+every no-op branch of the linker) and a `personnel` round-trip case in
+`organization-settings-store.test.ts` that also pins both switches defaulting off.
+
+The end-to-end path Part 1 serves is not reachable from unit tests at all — see
+[`docs/plans/person-user-linking-testing.md`](../plans/person-user-linking-testing.md).
 
 `auth.ts`'s hook is not directly testable (it imports `server-only` transitively), which is
 the argument for keeping its logic entirely in `person-user-link.ts` and leaving the hook as
