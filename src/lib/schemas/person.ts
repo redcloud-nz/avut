@@ -21,7 +21,16 @@ export type PersonId = string & z.BRAND<"PersonId">;
 const personSchema = z.object({
     id: PersonId.schema,
     name: z.string().min(5).max(100),
-    email: z.email(),
+    /*
+     * Lowercased on the way in. `personnel.email` is stored normalised so that
+     * `@@unique([organizationId, email])` means what its comment claims — Postgres unique
+     * indexes are case-sensitive, so without this two rows in one org may differ only by case.
+     * See docs/specs/person-email-normalisation.md.
+     *
+     * This covers every parsed path. The D4H import builds its person object in code and never
+     * parses it, so the shared `createPerson` helper normalises as well.
+     */
+    email: z.email().toLowerCase(),
     tags: tagsSchema,
     properties: propertiesSchema,
     createdAt: z.iso.datetime(),

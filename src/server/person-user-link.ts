@@ -56,34 +56,31 @@ export interface LinkActor {
 /**
  * Find the person in `organizationId` who should be linked to a user with `email`.
  *
- * `email` is a `User.email`, which better-auth stores lowercased. `Person.email` is admin-typed
- * and *not* normalised, so the comparison has to be case-insensitive on the column — which rules
- * out an index-backed exact match.
+ * Both sides are now lowercase in the database — `User.email` because better-auth normalises it,
+ * `Person.email` because we do (docs/specs/person-email-normalisation.md). So this is the same
+ * rule as `findLinkableMember` below: lowercase the needle, match the column exactly. The needle
+ * is still folded rather than trusted, since callers pass addresses that came from a form or from
+ * D4H.
  *
- * The candidate set is narrowed in SQL (this org, Active, not yet linked) and the email compared
- * in JS rather than with `mode: "insensitive"`. Two reasons: there is no functional index on
- * `lower(personnel.email)`, so Postgres would scan that candidate set either way; and
- * `prisma-mock` ignores the `{ equals: … }` filter object entirely, so a query written that way
- * returns `null` in every test while working in production — a silent gap rather than a failure.
+ * That exact match is index-backed via `@@unique([organizationId, email])`, and — unlike the
+ * `mode: "insensitive"` form — it behaves identically under `prisma-mock`, which ignores the
+ * whole `{ equals: … }` filter object on a string field. This used to load every Active unlinked
+ * person in the organization and fold case in JS to get around exactly that.
  *
- * `Person @@unique([organizationId, email])` means at most one row can match, so no tie-break is
- * needed beyond the case fold.
+ * `@@unique([organizationId, email])` means at most one row can match.
  */
 export async function findLinkablePerson(
     prisma: PersonUserLinkPrisma,
     { organizationId, email }: { organizationId: string; email: string },
 ): Promise<Person | null> {
-    const needle = email.toLowerCase();
-
-    const candidates = await prisma.person.findMany({
+    return await prisma.person.findFirst({
         where: {
             organizationId,
             status: "Active",
             organizationUser: { is: null },
+            email: email.toLowerCase(),
         },
     });
-
-    return candidates.find((person) => person.email.toLowerCase() === needle) ?? null;
 }
 
 /**
