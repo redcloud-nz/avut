@@ -47,6 +47,9 @@ import { trpc } from "@/trpc/client";
  * - **Link.** A user with this email is already a member of the organization. better-auth refuses
  *   an invitation in that case (`USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION`), and linking is
  *   what the admin wanted anyway, so the dialog offers `users.linkPerson` instead.
+ * - **Neither.** That member's account is already linked to a different person
+ *   (`MemberLinkedElsewhere`). An invitation would be refused and linking would steal the other
+ *   person's account, so the dialog explains and offers only Cancel.
  * - **Invite.** Otherwise send an invitation carrying `personId`, which
  *   `organizationHooks.afterAcceptInvitation` copies onto the membership when it is accepted.
  *
@@ -151,14 +154,30 @@ export function AdminModule_InvitePerson_Dialog({
     }, [props.open]);
 
     const alreadyMember = inviteState?.state === "AlreadyMember";
+    // A member holds this email, but their account is already linked to a different person.
+    // Neither action is available — see `getInviteState`'s output docs.
+    const linkedElsewhere = inviteState?.state === "MemberLinkedElsewhere";
 
     return (
         <Dialog {...props}>
             <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle>{alreadyMember ? "Link User Account" : "Invite to AVUT"}</DialogTitle>
+                    <DialogTitle>
+                        {linkedElsewhere
+                            ? "Account Already Linked"
+                            : alreadyMember
+                              ? "Link User Account"
+                              : "Invite to AVUT"}
+                    </DialogTitle>
                     <DialogDescription>
-                        {alreadyMember ? (
+                        {linkedElsewhere ? (
+                            <>
+                                <ObjectName>{person.email}</ObjectName> belongs to a member of{" "}
+                                <ObjectName>{organization.name}</ObjectName>, but that account is
+                                already linked to a different person record. Unlink it there first
+                                if it should belong to this person.
+                            </>
+                        ) : alreadyMember ? (
                             <>
                                 <ObjectName>{person.email}</ObjectName> already belongs to a member
                                 of <ObjectName>{organization.name}</ObjectName>. Link that account
@@ -180,7 +199,7 @@ export function AdminModule_InvitePerson_Dialog({
                     <FieldDescription>
                         This person is already linked to a user account.
                     </FieldDescription>
-                ) : alreadyMember ? (
+                ) : alreadyMember || linkedElsewhere ? (
                     <FieldDescription>
                         Account: <ObjectName>{inviteState.user?.name}</ObjectName>
                     </FieldDescription>
@@ -217,7 +236,7 @@ export function AdminModule_InvitePerson_Dialog({
 
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    {alreadyMember ? (
+                    {linkedElsewhere ? null : alreadyMember ? (
                         <MutationButton
                             type="button"
                             status={linkMutation.status}

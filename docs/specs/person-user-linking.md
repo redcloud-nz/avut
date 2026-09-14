@@ -198,7 +198,8 @@ On submit the dialog branches on a new query, `personnel.getInviteState`:
 | State | Dialog shows | Action |
 | --- | --- | --- |
 | No user account with that email | Normal invite form | `authClient.organization.inviteMember({ email, role, organizationId, personId, resend: false })` |
-| User exists, **already a member** of this org | "Dana already has an account in this organization" + a **Link** button, roles hidden | `users.linkPerson({ userId, personId })` — the existing mutation, no invitation |
+| User exists, **already a member** of this org, not linked to anyone | "Dana already has an account in this organization" + a **Link** button, roles hidden | `users.linkPerson({ userId, personId })` — the existing mutation, no invitation |
+| User exists, already a member, but **linked to a different person** | "That account is already linked to a different person record" — no action, Cancel only | none; someone has to unlink it first |
 | User exists, not a member | Normal invite form, note that they already have an AVUT account | invite as above |
 | Person already linked | Action not offered | — |
 
@@ -209,7 +210,7 @@ case (§1), and linking is what the admin actually wanted.
 
 - `prisma/schema.prisma` — the §2 constraint change + migration.
 - `personnel.getInviteState` — new `organizationProcedure({ invitation: ["view"], member: ["view"], person: ["view"] })` query returning
-  `{ state: "Linked" | "AlreadyMember" | "UserExists" | "NoUser"; user; pendingInvitation }`.
+  `{ state: "Linked" | "AlreadyMember" | "MemberLinkedElsewhere" | "UserExists" | "NoUser"; user; pendingInvitation }`.
   A flat object rather than a discriminated union, so the dialog can show the pending-invitation
   warning alongside any state. Alphabetical position: before `getLinkedUser`.
 - `src/components/admin/personnel/invite-person.tsx` — the dialog.
@@ -310,7 +311,7 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
 | Situation | Result |
 | --- | --- |
 | Person already linked to another user | Automation skips. Part 1 does not offer the action. |
-| User already linked to a different person in the org | Automation skips. Part 1's link button reports the conflict (`users.linkPerson` already throws `CONFLICT`). |
+| User already linked to a different person in the org | Automation skips. Part 1 reports `MemberLinkedElsewhere` and offers no action. **Corrected 2026-09-15** (PR #153 review): this row claimed `users.linkPerson` already threw `CONFLICT` here. It did not — it guarded only the *person* side, so linking overwrote `OrganizationUser.personId`, silently unlinking the previous person with no conflict and no audit entry. The mirror guard was added, making the claim true. |
 | Two people in one org with the same email | Impossible — `Person @@unique([organizationId, email])`. |
 | Emails differ only in case | Treated as a match (§3.1). |
 | Person is Archived or Deleted | Not linkable. |

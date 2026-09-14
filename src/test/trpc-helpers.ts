@@ -15,7 +15,7 @@ import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
-import { formatActorLabel, recordLogEntry } from "@/server/log-entry";
+import { recordLogEntry, resolveActor } from "@/server/log-entry";
 
 const mockDate = new Date("2020-01-01T00:00:00.000Z");
 const nowDate = new Date();
@@ -89,8 +89,9 @@ export const createAuthenticatedMockContext = ({
  * needs it: it calls `createPerson(ctx, id, create, batchId)` with a `batchId` that no procedure
  * ever passes, so the batched path is unreachable through a caller.
  *
- * `logEvent` is constructed the same way as in `src/trpc/init.ts`, including the impersonation
- * rule — an action taken while impersonating is attributed to the impersonator.
+ * `logEvent` shares `resolveActor` with `src/trpc/init.ts` rather than restating it, so the
+ * impersonation rule — an action taken while impersonating is attributed to the impersonator —
+ * cannot drift between the two.
  */
 export const createOrganizationMockContext = ({
     organizationId,
@@ -99,22 +100,9 @@ export const createOrganizationMockContext = ({
     const ctx = createAuthenticatedMockContext(overrides);
     const { auth } = ctx;
 
-    const impersonatedBy = (auth.session as { impersonatedBy?: string | null }).impersonatedBy;
-
     function logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
         return recordLogEntry(
-            {
-                scope: "organization",
-                organizationId,
-                actor: {
-                    userId: UserId.schema.parse(auth.user.id),
-                    impersonatorId: impersonatedBy
-                        ? UserId.schema.parse(impersonatedBy)
-                        : undefined,
-                },
-                actorLabel: formatActorLabel(auth.user.name, auth.user.email),
-                ...options,
-            },
+            { scope: "organization", organizationId, ...resolveActor(auth), ...options },
             tx,
         );
     }

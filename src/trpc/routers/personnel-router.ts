@@ -217,11 +217,22 @@ export const personnelRouter = createTrpcRouter({
             z.object({
                 /**
                  * `Linked` — already attached to a user here, nothing to do.
-                 * `AlreadyMember` — a user with this email is already in the org; link, don't invite.
+                 * `AlreadyMember` — a user with this email is already in the org and is not linked
+                 *   to anyone; link, don't invite.
+                 * `MemberLinkedElsewhere` — that member's account is already linked to a *different*
+                 *   person here. Neither action is available: an invitation would be refused
+                 *   (`USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION`) and linking would silently
+                 *   steal the other person's account. Someone has to unlink it first.
                  * `UserExists` — the person has an AVUT account but is not a member here; invite.
                  * `NoUser` — no account anywhere; invite.
                  */
-                state: z.enum(["Linked", "AlreadyMember", "UserExists", "NoUser"]),
+                state: z.enum([
+                    "Linked",
+                    "AlreadyMember",
+                    "MemberLinkedElsewhere",
+                    "UserExists",
+                    "NoUser",
+                ]),
                 user: UserData.schema.nullable(),
                 pendingInvitation: z
                     .object({ id: InvitationId.schema, createdAt: z.iso.datetime() })
@@ -248,7 +259,13 @@ export const personnelRouter = createTrpcRouter({
                     include: {
                         organizationUsers: {
                             where: { organizationId: ctx.organizationId },
-                            select: { id: true },
+                            // `personId` distinguishes `AlreadyMember` from
+                            // `MemberLinkedElsewhere`. Selecting it is why this does not filter on
+                            // `personId: null` the way `findLinkableMember` does — that filter
+                            // would make a member already linked to someone else look like a
+                            // non-member, and the dialog would offer an invitation better-auth
+                            // refuses.
+                            select: { id: true, personId: true },
                         },
                     },
                 }),
@@ -262,13 +279,17 @@ export const personnelRouter = createTrpcRouter({
                 }),
             ]);
 
+            const membership = user?.organizationUsers[0] ?? null;
+
             const state = person.organizationUser
                 ? "Linked"
                 : !user
                   ? "NoUser"
-                  : user.organizationUsers.length > 0
-                    ? "AlreadyMember"
-                    : "UserExists";
+                  : !membership
+                    ? "UserExists"
+                    : membership.personId
+                      ? "MemberLinkedElsewhere"
+                      : "AlreadyMember";
 
             return {
                 state,

@@ -28,6 +28,7 @@ describe("personnel.getInviteState", () => {
     //   stranger   → no user account anywhere
     //   cased      → account email differs only in case
     //   invited    → no account, but a pending invitation already exists
+    //   elsewhere  → a member holds that email, but their account is linked to `holder`
     const T = {
         org: OrganizationId.create(),
         otherOrg: OrganizationId.create(),
@@ -36,12 +37,15 @@ describe("personnel.getInviteState", () => {
         linkedUser: UserId.create(),
         outsiderUser: UserId.create(),
         casedUser: UserId.create(),
+        elsewhereUser: UserId.create(),
         linked: PersonId.create(),
         member: PersonId.create(),
         outsider: PersonId.create(),
         stranger: PersonId.create(),
         cased: PersonId.create(),
         invited: PersonId.create(),
+        elsewhere: PersonId.create(),
+        holder: PersonId.create(),
         invitation: InvitationId.create(),
     };
 
@@ -76,6 +80,8 @@ describe("personnel.getInviteState", () => {
         await person(T.stranger, "Stranger Sam", "sam@example.com");
         await person(T.cased, "Cased Cass", "Cass@Example.com");
         await person(T.invited, "Invited Ivy", "ivy@example.com");
+        await person(T.elsewhere, "Elsewhere Eli", "eli@example.com");
+        await person(T.holder, "Holder Hana", "hana@example.com");
 
         await user(T.callerUser, "Caller", "caller@example.com");
         await user(T.linkedUser, "Linked Lucy", "lucy@example.com");
@@ -83,6 +89,7 @@ describe("personnel.getInviteState", () => {
         await user(T.outsiderUser, "Outsider Ozzy", "ozzy@example.com");
         // Registered all-lowercase; the person record has it mixed-case.
         await user(T.casedUser, "Cased Cass", "cass@example.com");
+        await user(T.elsewhereUser, "Elsewhere Eli", "eli@example.com");
 
         await db.organizationUser.create({
             data: {
@@ -115,6 +122,16 @@ describe("personnel.getInviteState", () => {
                 organizationId: T.org,
                 userId: T.casedUser,
                 role: "member",
+            },
+        });
+        // A member whose account is already spoken for by a different person record.
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.elsewhereUser,
+                role: "member",
+                personId: T.holder,
             },
         });
         // Ozzy belongs to a different organization, so he is not a member *here*.
@@ -176,6 +193,18 @@ describe("personnel.getInviteState", () => {
         // better-auth would reject an invitation here, so the dialog must offer a link instead.
         expect(result.state).toBe("AlreadyMember");
         expect(result.user?.id).toBe(T.memberUser);
+    });
+
+    it("reports MemberLinkedElsewhere when that member is already linked to another person", async () => {
+        // Not AlreadyMember: offering "Link Account" here would overwrite the holder's link.
+        // Not UserExists either — better-auth refuses an invitation for an existing member.
+        const state = await caller().getInviteState({
+            organizationId: T.org,
+            personId: T.elsewhere,
+        });
+
+        expect(state.state).toBe("MemberLinkedElsewhere");
+        expect(state.user?.id).toBe(T.elsewhereUser);
     });
 
     it("reports UserExists when the account is real but belongs to another organization", async () => {

@@ -26,7 +26,10 @@ import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
 import { LogAction, LogObjectType, LogRefRoleInput, LogScope } from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
-import type { UserId } from "@/lib/schemas/user";
+import { UserId } from "@/lib/schemas/user";
+import type { AuthSession } from "@/server/auth";
+// NOTE: import type only — @/server/auth loads server-only modules and must not be imported at
+// runtime from this file, which is deliberately reachable from the jsdom test environment.
 
 /** The slice of the Prisma client this module needs. */
 export type LogEntryPrisma = Pick<PrismaClient, "logEntry" | "logBatch">;
@@ -88,6 +91,35 @@ export class LogEntryInvariantError extends Error {
 /** The denormalized actor label format. One place, so entries render consistently. */
 export function formatActorLabel(name: string, email: string): string {
     return `${name} <${email}>`;
+}
+
+/**
+ * Resolve the acting user from a session, centrally.
+ *
+ * Impersonation is resolved here rather than at call sites: every `logEvent` caller gets
+ * `impersonatorId` populated without passing anything, and none of them can forget it.
+ * Without this, an action taken while impersonating is attributed to the impersonated
+ * user — the log blames the victim.
+ *
+ * `impersonatedBy` is read structurally: the `Session` model has the column and the
+ * `admin` plugin declares it, but better-auth's `$Infer` chain is not guaranteed to
+ * surface it, and a cast is cheaper here than a compile break in a file every router
+ * imports.
+ *
+ * Lives here rather than in `@/trpc/init` so the test helpers can share it: `init.ts` imports
+ * `@/server/prisma` at runtime and so cannot be imported from the jsdom environment, which is
+ * why `createOrganizationMockContext` used to carry a second copy of this logic.
+ */
+export function resolveActor(auth: AuthSession): { actor: LogActor; actorLabel: string } {
+    const impersonatedBy = (auth.session as { impersonatedBy?: string | null }).impersonatedBy;
+
+    return {
+        actor: {
+            userId: UserId.schema.parse(auth.user.id),
+            impersonatorId: impersonatedBy ? UserId.schema.parse(impersonatedBy) : undefined,
+        },
+        actorLabel: formatActorLabel(auth.user.name, auth.user.email),
+    };
 }
 
 /**

@@ -177,6 +177,21 @@ describe("user↔person linking", () => {
         const unlinked = await personnel().listUnlinkedPersonnel({ organizationId: T.org });
         expect(unlinked.map((p) => p.id)).toContain(T.person1);
     });
+
+    it("rejects linking a user already linked to another person", async () => {
+        // The mirror of "rejects linking a person already linked to another user", and it has to
+        // run after the unlink above: while person1 is still taken the *person-side* guard fires
+        // first and this would pass either way. With person1 free, only the user-side guard can
+        // reject it — without that guard the update silently overwrites
+        // `OrganizationUser.personId`, unlinking person2 with no conflict and no audit entry.
+        await expect(
+            users().linkPerson({ organizationId: T.org, userId: T.user2, personId: T.person1 }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+
+        // person2 kept its account.
+        const linked = await users().getLinkedPerson({ organizationId: T.org, userId: T.user2 });
+        expect(linked?.id).toBe(T.person2);
+    });
 });
 
 describe("usersRouter session management", () => {
