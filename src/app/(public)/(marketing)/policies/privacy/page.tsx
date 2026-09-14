@@ -211,7 +211,8 @@ export default function PrivacyPolicy_Page() {
                         data.
                     </p>
                     <p className="mb-4">
-                        <strong>Account information</strong> is deleted when you close your account.
+                        <strong>Account information</strong> is deleted when you ask us to close
+                        your account. Email us at the address in section 1 and we will action it.
                     </p>
                     <p className="mb-4">
                         <strong>Audit log entries are retained after the account or record they
