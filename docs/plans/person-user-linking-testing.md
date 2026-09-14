@@ -23,6 +23,7 @@ the new settings card are equally unobserved.
 | I   | Everything with both switches off                 | partly             | yes                                    |
 | J   | Re-invite (the dropped unique constraint)         | ✗ (SQL only)       | yes                                    |
 | K   | Permission gating and the new hotkey              | ✗                  | yes                                    |
+| §0  | Email delivery guard rail                         | ✓ unit             | yes — check the Resend dashboard       |
 
 ---
 
@@ -54,6 +55,30 @@ identity. You need `owner` or `admin` in the target org — the only roles holdi
 **Both settings default off**, so §C and §D need them switched on in
 `/orgs/<slug>/admin/organization/settings` → Personnel. §I is the check that off really means
 off.
+
+### No mail reaches a real person
+
+The dev database holds records for **real people with their real email addresses**, and this
+plan clicks "Send Invitation" and "Resend" repeatedly. `sendEmail` (`src/server/email.ts`) is
+the single choke point every message passes through, and it now fails closed: unless
+`VERCEL_ENV === "production"`, every `to`/`cc`/`bcc` is rewritten onto Resend's sink at
+`delivered+<address>@resend.dev`.
+
+So a message sent while testing is accepted by Resend, appears in its dashboard, and is handed
+to no mailbox. Nothing needs to be switched on for this — it is the default everywhere except
+the production deployment.
+
+To confirm an invitation went to the right person without one being emailed, read the message
+in the [Resend dashboard](https://resend.com/emails):
+
+- the **subject** is prefixed `[dev → alex@example.com]` with the intended recipients;
+- the **`X-AVUT-Intended-Recipients` header** carries the full list;
+- the **recipient** is `delivered+alex_at_example.com@resend.dev` — the intended address
+  encoded into the sink's tag, so the dashboard row is still readable at a glance.
+
+Seeing a real address in the "To" column of that dashboard means the guard rail failed; stop
+and treat it as a defect. `EMAIL_DELIVERY=live` is the only thing that disables it, and this
+plan never sets it.
 
 ---
 
