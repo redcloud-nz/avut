@@ -25,26 +25,26 @@ const organizationRoles = {
     owner: {
         displayName: "Owner",
         description:
-            "Has full access to all organization settings and data. Can even delete the organization. This role is not assignable by admins.",
+            "Has full access to all organisation settings and data. Can even delete the organisation. This role is not assignable by admins.",
         isAdminAssignable: false,
         isPrimary: true,
     },
     admin: {
         displayName: "Admin",
         description:
-            "Has full access to all organization settings and data. Can manage users and roles.",
+            "Has full access to all organisation settings and data. Can manage users and roles.",
         isAdminAssignable: true,
         isPrimary: true,
     },
     member: {
         displayName: "Member",
-        description: "Can view and interact with organization resources.",
+        description: "Can view and interact with organisation resources.",
         isAdminAssignable: true,
         isPrimary: true,
     },
     "i3-editor": {
         displayName: "I3 Editor",
-        description: "Can edit I3 content within the organization.",
+        description: "Can edit I3 content within the organisation.",
         isAdminAssignable: true,
         isPrimary: false,
     },
