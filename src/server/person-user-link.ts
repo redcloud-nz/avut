@@ -18,9 +18,26 @@
  */
 
 import type { Person, PrismaClient, User } from "@/generated/prisma/client";
+import type { OrganizationId } from "@/lib/schemas/organization";
+import type { UserId } from "@/lib/schemas/user";
 
-/** The slice of the Prisma client this module needs. */
+import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "./log-entry";
+import { readOrganizationSettings } from "./organization-settings-store";
+
+/** The slice of the Prisma client the lookups need. */
 export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser" | "user">;
+
+/** Additionally what writing a link and its audit entry needs. */
+export type PersonUserLinkWritePrisma = PersonUserLinkPrisma &
+    LogEntryPrisma &
+    Pick<PrismaClient, "organizationConfig" | "$transaction">;
+
+/** The person who caused the link, denormalised onto the audit entry. */
+export interface LinkActor {
+    id: UserId;
+    name: string;
+    email: string;
+}
 
 /**
  * A person is **linkable** to a user when all of:
@@ -138,4 +155,84 @@ export async function tryLinkPersonToMember(
     });
 
     return count === 1 ? membership.id : null;
+}
+
+/**
+ * Attach a person to the membership created by accepting an invitation, and record it.
+ *
+ * Two ways here, and only the second is a setting:
+ *
+ * 1. **The invitation names a person** (`invitationPersonId`) — sent from that person's own
+ *    record, so an admin already decided. Always applied, regardless of settings.
+ * 2. **Nothing named** — fall back to an email match, but only when the organization has
+ *    `personnel.autoLinkOnInviteAccept` on.
+ *
+ * The link and its audit entry share one transaction, so the entry can never claim a link that
+ * did not happen — which matters more here than in a tRPC procedure, because `tryLinkPersonToMember`
+ * is allowed to write nothing when it loses a race.
+ *
+ * Settings are read uncached: an admin who turns the switch on and immediately has someone accept
+ * should get the new behaviour, and this runs once per accepted invitation.
+ *
+ * @returns what was linked, or null if nothing was.
+ */
+export async function linkPersonOnInvitationAccept(
+    prisma: PersonUserLinkWritePrisma,
+    {
+        organizationId,
+        actor,
+        invitationPersonId,
+    }: {
+        organizationId: OrganizationId;
+        /** The user accepting the invitation — also the actor on the audit entry. */
+        actor: LinkActor;
+        /** `OrganizationInvitation.personId`, when the invitation named one. */
+        invitationPersonId: string | null;
+    },
+): Promise<{ personId: string; organizationUserId: string } | null> {
+    let personId = invitationPersonId;
+    let reason = "the invitation named the person";
+
+    if (!personId) {
+        const settings = await readOrganizationSettings(prisma, organizationId);
+        if (!settings.personnel.autoLinkOnInviteAccept) return null;
+
+        const person = await findLinkablePerson(prisma, { organizationId, email: actor.email });
+        if (!person) return null;
+
+        personId = person.id;
+        reason = "matched on email address";
+    }
+
+    const resolvedPersonId = personId;
+
+    return prisma.$transaction(async (tx) => {
+        const organizationUserId = await tryLinkPersonToMember(tx, {
+            organizationId,
+            userId: actor.id,
+            personId: resolvedPersonId,
+        });
+
+        // Already linked, or the person was taken since we looked — leave it alone and say so.
+        if (!organizationUserId) return null;
+
+        const person = await tx.person.findFirst({ where: { id: resolvedPersonId } });
+
+        await recordLogEntry(
+            {
+                scope: "organization",
+                organizationId,
+                actor: { userId: actor.id },
+                actorLabel: formatActorLabel(actor.name, actor.email),
+                action: "Update",
+                objectType: "OrganizationMembership",
+                objectId: organizationUserId,
+                description: `Linked person (${resolvedPersonId}${person ? `, ${person.name}` : ""}) to user (${actor.id}) on invitation accept — ${reason}.`,
+                refs: [{ objectType: "Person", objectId: resolvedPersonId, role: "context" }],
+            },
+            tx,
+        );
+
+        return { personId: resolvedPersonId, organizationUserId };
+    });
 }

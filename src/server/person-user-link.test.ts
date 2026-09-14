@@ -11,7 +11,12 @@ import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
-import { findLinkableMember, findLinkablePerson, tryLinkPersonToMember } from "./person-user-link";
+import {
+    findLinkableMember,
+    findLinkablePerson,
+    linkPersonOnInvitationAccept,
+    tryLinkPersonToMember,
+} from "./person-user-link";
 
 describe("person↔user link matching", () => {
     // One organization, plus a second to prove the scope holds.
@@ -257,6 +262,225 @@ describe("person↔user link matching", () => {
                     personId: T.erin,
                 }),
             ).toBeNull();
+        });
+    });
+
+    describe("linkPersonOnInvitationAccept", () => {
+        // A second organization with its own fixtures, so these tests can write freely without
+        // disturbing the shared dataset the lookup tests assert against.
+        const A = {
+            org: OrganizationId.create(),
+            named: PersonId.create(),
+            byEmail: PersonId.create(),
+            unmatched: PersonId.create(),
+            namedUser: UserId.create(),
+            byEmailUser: UserId.create(),
+            unmatchedUser: UserId.create(),
+            namedMembership: nanoId16(),
+            byEmailMembership: nanoId16(),
+            unmatchedMembership: nanoId16(),
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: { id: A.org, name: A.org, slug: A.org, createdAt: new Date() },
+            });
+
+            await db.person.create({
+                data: {
+                    id: A.named,
+                    organizationId: A.org,
+                    name: "Named Nadia",
+                    // Deliberately unlike the user's address: the invitation names her outright,
+                    // so no email match is involved.
+                    email: "nadia.personal@example.com",
+                    status: "Active",
+                    tags: [],
+                    properties: {},
+                },
+            });
+            await db.person.create({
+                data: {
+                    id: A.byEmail,
+                    organizationId: A.org,
+                    name: "Matched Mika",
+                    email: "Mika@Example.com",
+                    status: "Active",
+                    tags: [],
+                    properties: {},
+                },
+            });
+            await db.person.create({
+                data: {
+                    id: A.unmatched,
+                    organizationId: A.org,
+                    name: "Unmatched Uli",
+                    email: "uli@example.com",
+                    status: "Active",
+                    tags: [],
+                    properties: {},
+                },
+            });
+
+            await db.user.create({
+                data: {
+                    id: A.namedUser,
+                    name: "Nadia",
+                    email: "nadia.work@example.com",
+                    emailVerified: true,
+                },
+            });
+            await db.user.create({
+                data: {
+                    id: A.byEmailUser,
+                    name: "Mika",
+                    email: "mika@example.com",
+                    emailVerified: true,
+                },
+            });
+            await db.user.create({
+                data: {
+                    id: A.unmatchedUser,
+                    name: "Nobody",
+                    email: "nobody@example.com",
+                    emailVerified: true,
+                },
+            });
+
+            for (const [id, userId] of [
+                [A.namedMembership, A.namedUser],
+                [A.byEmailMembership, A.byEmailUser],
+                [A.unmatchedMembership, A.unmatchedUser],
+            ] as const) {
+                await db.organizationUser.create({
+                    data: { id, organizationId: A.org, userId, role: "member" },
+                });
+            }
+        });
+
+        const actor = (id: UserId, name: string, email: string) => ({ id, name, email });
+
+        async function setAutoLink(enabled: boolean) {
+            await db.organizationConfig.deleteMany({ where: { organizationId: A.org } });
+            await db.organizationConfig.create({
+                data: {
+                    organizationId: A.org,
+                    key: "personnel.autoLinkOnInviteAccept",
+                    value: enabled,
+                },
+            });
+        }
+
+        it("applies the person the invitation names, ignoring the setting", async () => {
+            // Off — an explicit invitation is an admin's decision, not an automation.
+            await setAutoLink(false);
+
+            const result = await linkPersonOnInvitationAccept(db, {
+                organizationId: A.org,
+                actor: actor(A.namedUser, "Nadia", "nadia.work@example.com"),
+                invitationPersonId: A.named,
+            });
+
+            expect(result).toEqual({
+                personId: A.named,
+                organizationUserId: A.namedMembership,
+            });
+
+            const membership = await db.organizationUser.findFirst({
+                where: { id: A.namedMembership },
+            });
+            expect(membership?.personId).toBe(A.named);
+        });
+
+        it("writes an audit entry naming the trigger", async () => {
+            const entries = await db.logEntry.findMany({
+                where: { objectId: A.namedMembership },
+            });
+
+            expect(entries).toHaveLength(1);
+            expect(entries[0]).toMatchObject({
+                scope: "organization",
+                organizationId: A.org,
+                userId: A.namedUser,
+                action: "Update",
+                objectType: "OrganizationMembership",
+            });
+            expect(entries[0].description).toContain("the invitation named the person");
+            expect(entries[0].actorLabel).toBe("Nadia <nadia.work@example.com>");
+        });
+
+        it("does nothing on an email match while the setting is off", async () => {
+            await setAutoLink(false);
+
+            expect(
+                await linkPersonOnInvitationAccept(db, {
+                    organizationId: A.org,
+                    actor: actor(A.byEmailUser, "Mika", "mika@example.com"),
+                    invitationPersonId: null,
+                }),
+            ).toBeNull();
+
+            const membership = await db.organizationUser.findFirst({
+                where: { id: A.byEmailMembership },
+            });
+            expect(membership?.personId).toBeNull();
+        });
+
+        it("links on an email match once the setting is on", async () => {
+            await setAutoLink(true);
+
+            const result = await linkPersonOnInvitationAccept(db, {
+                organizationId: A.org,
+                actor: actor(A.byEmailUser, "Mika", "mika@example.com"),
+                invitationPersonId: null,
+            });
+
+            // The person record's address is mixed case; the user's is not.
+            expect(result).toEqual({
+                personId: A.byEmail,
+                organizationUserId: A.byEmailMembership,
+            });
+
+            const entries = await db.logEntry.findMany({
+                where: { objectId: A.byEmailMembership },
+            });
+            expect(entries).toHaveLength(1);
+            expect(entries[0].description).toContain("matched on email address");
+        });
+
+        it("does nothing when no person matches, even with the setting on", async () => {
+            await setAutoLink(true);
+
+            expect(
+                await linkPersonOnInvitationAccept(db, {
+                    organizationId: A.org,
+                    actor: actor(A.unmatchedUser, "Nobody", "nobody@example.com"),
+                    invitationPersonId: null,
+                }),
+            ).toBeNull();
+        });
+
+        it("writes no audit entry when the link is not made", async () => {
+            expect(
+                await db.logEntry.findMany({ where: { objectId: A.unmatchedMembership } }),
+            ).toHaveLength(0);
+        });
+
+        it("no-ops when the named person is already linked to someone else", async () => {
+            await setAutoLink(false);
+
+            // Uli's membership is still unlinked, but Nadia's person record is taken.
+            expect(
+                await linkPersonOnInvitationAccept(db, {
+                    organizationId: A.org,
+                    actor: actor(A.unmatchedUser, "Nobody", "nobody@example.com"),
+                    invitationPersonId: A.named,
+                }),
+            ).toBeNull();
+
+            expect(
+                await db.logEntry.findMany({ where: { objectId: A.unmatchedMembership } }),
+            ).toHaveLength(0);
         });
     });
 });

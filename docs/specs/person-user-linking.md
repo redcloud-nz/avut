@@ -236,14 +236,30 @@ In `afterAcceptInvitation`, after the existing `invitation.personId` branch:
 3. `findLinkablePerson(prisma, { organizationId, email: user.email })`; if null, stop.
 4. `tryLinkPersonToMember(...)`; on success write the audit entry.
 
-### Work
+### Work — **done**
 
-- Rewrite the hook body in `src/server/auth.ts` to call the §3.2 helpers. The existing
-  explicit-`personId` branch also moves onto `tryLinkPersonToMember`, which fixes its
-  current unguarded `updateMany` (today it will throw P2002 if that person is already
-  linked to someone else) and gives it the audit entry it never had.
+- All of it lives in `linkPersonOnInvitationAccept` (`src/server/person-user-link.ts`); the
+  hook in `src/server/auth.ts` is a call site. Keeping the logic out of `auth.ts` is what
+  makes it testable — that module imports `server-only` transitively.
+- The explicit-`personId` branch moved onto `tryLinkPersonToMember` too, which fixes its
+  unguarded `updateMany` (today it throws P2002 if that person is already linked to someone
+  else) and gives it the audit entry it never had.
 - Keep the existing `revalidateOrganizationUser(user.id)` call, unconditional.
-- Settings are read with `getOrganizationSettings(organizationId)` (cached).
+
+Three decisions that were not in the original draft:
+
+- **Settings are read uncached** (`readOrganizationSettings`, not `getOrganizationSettings`).
+  An admin who turns the switch on and immediately has someone accept should get the new
+  behaviour, and a `"use cache"` read inside a POST handler is a needless risk for a query
+  that runs once per accepted invitation.
+- **The link and its audit entry share one interactive transaction**, so the entry can never
+  claim a link that did not happen. That matters more here than in a tRPC procedure, because
+  `tryLinkPersonToMember` is *allowed* to write nothing when it loses a race —
+  `$transaction([...])` would commit the entry regardless. (`prisma-mock` supports the
+  callback form, so this stays testable.)
+- **The hook never fails the accept.** The membership is already committed by the time it
+  runs, so a linking failure is logged and swallowed rather than thrown — otherwise the user
+  sees an error for an invitation that did in fact work.
 
 ---
 
@@ -360,10 +376,10 @@ a four-line call site.
 
 | Phase | Contents | Notes |
 | --- | --- | --- |
-| 0 | `db:branch person-user-linking`; §2 schema change + migration | Needs explicit go-ahead before `migrate dev` |
-| 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` | No behaviour change yet — both switches default off |
-| 2 | **Part 1** — `getInviteState`, invite dialog, menu action | Independently shippable and the highest-value piece |
-| 3 | **Part 2** — rewrite `afterAcceptInvitation` | Also fixes the unguarded `updateMany` and adds its missing audit entry |
+| 0 | `db:branch person-user-linking`; §2 schema change + migration ✅ | Needs explicit go-ahead before `migrate dev` |
+| 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` ✅ | No behaviour change yet — both switches default off |
+| 2 | **Part 1** — `getInviteState`, invite dialog, menu action ✅ | Independently shippable and the highest-value piece |
+| 3 | **Part 2** — rewrite `afterAcceptInvitation` ✅ | Also fixes the unguarded `updateMany` and adds its missing audit entry |
 | 4 | **Part 3** — `createPerson` helper; collapse the duplicated procedure body | Gives D4H import auto-linking for free |
 
 Phases 2–4 are independent of each other once 0 and 1 land, so they can be separate PRs.
@@ -382,4 +398,8 @@ Phases 2–4 are independent of each other once 0 and 1 land, so they can be sep
 | `getInviteState` output shape | Flat `{ state, user, pendingInvitation }`, not a discriminated union. |
 | `OrganizationInvitation.personId @unique` | Dropped, replaced by a plain index (§2). |
 | Audit batching | None — both automations have a human actor. D4H-import links join the import's existing batch. |
+| Does the explicit `personId` path check the setting? | No. An invitation sent from a person's record is an admin's decision, not an automation. |
+| Settings read for Part 2 | Uncached, so a just-flipped switch takes effect immediately. |
+| Link + audit atomicity | One interactive transaction — the write is conditional, so an array transaction would log a link that may not have happened. |
+| A linking failure on accept | Logged and swallowed. The membership is already committed; failing the accept would misreport a working invitation. |
 | Invitation creation audit entries | Still none, unchanged from today. |
