@@ -41,7 +41,7 @@ export default async function Organization_Index_Page() {
                             <ItemContent>
                                 <ItemTitle>Skill Track</ItemTitle>
                                 <ItemDescription>
-                                    Track and manage skills within your organization.
+                                    Track and manage skills within your organisation.
                                 </ItemDescription>
                             </ItemContent>
                             <ItemActions>

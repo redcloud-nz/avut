@@ -179,7 +179,7 @@ function PersonCompetencyReportView({
                         <UserXIcon className="size-12 text-muted-foreground" />
                     </EmptyMedia>
                     <EmptyDescription>
-                        This person is not an active member of the organization.
+                        This person is not an active member of the organisation.
                     </EmptyDescription>
                 </Empty>
             </Glorious.Root>

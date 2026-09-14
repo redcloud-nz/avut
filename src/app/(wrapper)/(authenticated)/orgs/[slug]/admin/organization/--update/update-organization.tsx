@@ -88,7 +88,7 @@ export function AdminModule_UpdateOrganization_Form({
         <form id="update-organization-form" onSubmit={handleSubmit}>
             <FieldGroup>
                 <Field orientation="responsive">
-                    <FieldLabel>Organization ID</FieldLabel>
+                    <FieldLabel>Organisation ID</FieldLabel>
                     <FieldValue className="min-w-1/2" format="id">
                         {organization.id}
                     </FieldValue>

@@ -44,7 +44,7 @@ export async function assertNotLastOwner(
     if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
         throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Cannot remove or demote the last owner of an organization.",
+            message: "Cannot remove or demote the last owner of an organisation.",
         });
     }
 }
@@ -113,7 +113,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (existing) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That user is already a member of this organization.",
+                    message: "That user is already a member of this organisation.",
                 });
             }
 
@@ -164,7 +164,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (existing) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: `An organization with the slug "${input.slug}" already exists.`,
+                    message: `An organisation with the slug "${input.slug}" already exists.`,
                 });
             }
 
@@ -585,7 +585,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (!membership) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "That user is not a member of this organization.",
+                    message: "That user is not a member of this organisation.",
                 });
             }
 
@@ -631,7 +631,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (!membership) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "That user is not a member of this organization.",
+                    message: "That user is not a member of this organisation.",
                 });
             }
 

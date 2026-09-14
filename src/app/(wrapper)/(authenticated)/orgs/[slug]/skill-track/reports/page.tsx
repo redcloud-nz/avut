@@ -72,7 +72,7 @@ export default async function SkillsTrack_Reports_Page(
                                     <ItemContent>
                                         <ItemTitle>Team Competency</ItemTitle>
                                         <ItemDescription>
-                                            Competency gaps across a team or the whole organization,
+                                            Competency gaps across a team or the whole organisation,
                                             summarised per skill.
                                         </ItemDescription>
                                     </ItemContent>

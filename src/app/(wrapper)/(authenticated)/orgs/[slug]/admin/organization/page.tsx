@@ -39,7 +39,7 @@ export default async function AdminModule_Organization_Page(
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>Organization</Saratoga.Title>
+                        <Saratoga.Title>Organisation</Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ organization: ["update"] }}>
                                 <Button variant="outline" size="icon" asChild>
@@ -77,7 +77,7 @@ export default async function AdminModule_Organization_Page(
                                 </CardHeader>
                                 <CardContent>
                                     <DL>
-                                        <DLTerm>Organization ID</DLTerm>
+                                        <DLTerm>Organisation ID</DLTerm>
                                         <DLDetails>{organization.id}</DLDetails>
                                         <DLTerm>Name</DLTerm>
                                         <DLDetails>{organization.name}</DLDetails>

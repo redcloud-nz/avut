@@ -67,7 +67,7 @@ export function SkillTrack_SubscribeToPackage_Dialog({
                     <DialogTitle>Subscribe to Package</DialogTitle>
                     <DialogDescription>
                         You will be subscribed to <ObjectName>{skillPackage.name}</ObjectName>.
-                        Skills from this package will become available to your organization.
+                        Skills from this package will become available to your organisation.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

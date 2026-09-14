@@ -95,7 +95,7 @@ export async function getConfiguredD4HAccessToken(
     const settings = await getOrganizationSettings(organizationId);
 
     if (settings.integrations.d4h.enabled === false) {
-        throw new NotConfiguredError("D4H integration is not enabled for this organization.");
+        throw new NotConfiguredError("D4H integration is not enabled for this organisation.");
     }
 
     const personalToken = await getPersonalD4HAccessTokenForUser(organizationId, userId);

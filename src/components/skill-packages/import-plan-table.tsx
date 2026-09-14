@@ -55,7 +55,7 @@ export function SkillPackageImportPlanTable({
                         <AlertTitle>Done</AlertTitle>
                         <AlertDescription>
                             The package was imported as <strong>unpublished</strong>. Publish it in
-                            the target organization when ready.
+                            the target organisation when ready.
                         </AlertDescription>
                     </Alert>
                 ) : (

@@ -119,7 +119,7 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                 <DialogHeader>
                     <DialogTitle>Import team from D4H</DialogTitle>
                     <DialogDescription>
-                        Create a team that is synchronized with a team in D4H.
+                        Create a team that is synchronised with a team in D4H.
                     </DialogDescription>
                 </DialogHeader>
                 <form

@@ -152,7 +152,7 @@ export const teamsRouter = createTrpcRouter({
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organization.",
+                    message: "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -546,7 +546,7 @@ export const teamsRouter = createTrpcRouter({
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organization.",
+                    message: "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -703,7 +703,7 @@ export const teamsRouter = createTrpcRouter({
             if (!orgD4H) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
-                    message: "This organization is not linked to D4H.",
+                    message: "This organisation is not linked to D4H.",
                 });
             }
 

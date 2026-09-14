@@ -173,7 +173,7 @@ export async function prepareSkillPackageImport(
     if (existing && existing.organizationId !== targetOrganizationId) {
         throw new TRPCError({
             code: "CONFLICT",
-            message: `Skill package ${incoming.id} already exists under a different organization. A package ID belongs to exactly one organization per instance.`,
+            message: `Skill package ${incoming.id} already exists under a different organisation. A package ID belongs to exactly one organisation per instance.`,
         });
     }
 

@@ -70,7 +70,7 @@ export function SystemAdmin_SkillPackageImport_Content() {
             <div className="flex flex-col gap-6">
                 <p className="text-muted-foreground text-sm">
                     Import a skill-package export (produced by the &quot;Export .json&quot; action
-                    on a package) into an organization. Groups and skills are matched by ID: an
+                    on a package) into an organisation. Groups and skills are matched by ID: an
                     existing package is updated in place and anything the file omits is archived
                     (never deleted). Imported packages always land unpublished.
                 </p>
@@ -79,7 +79,7 @@ export function SystemAdmin_SkillPackageImport_Content() {
                     <CardHeader>
                         <CardTitle>Import</CardTitle>
                         <CardDescription>
-                            Choose an export file and a target organization, preview the changes,
+                            Choose an export file and a target organisation, preview the changes,
                             then run the import.
                         </CardDescription>
                     </CardHeader>
@@ -111,7 +111,7 @@ export function SystemAdmin_SkillPackageImport_Content() {
                         </Field>
 
                         <Field>
-                            <FieldLabel htmlFor="target-org">Target organization</FieldLabel>
+                            <FieldLabel htmlFor="target-org">Target organisation</FieldLabel>
                             <Select
                                 value={targetOrganizationId}
                                 onValueChange={(value) => {
@@ -120,7 +120,7 @@ export function SystemAdmin_SkillPackageImport_Content() {
                                 }}
                             >
                                 <SelectTrigger id="target-org">
-                                    <SelectValue placeholder="Select an organization…" />
+                                    <SelectValue placeholder="Select an organisation…" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {orgData.organizations.map((org) => (

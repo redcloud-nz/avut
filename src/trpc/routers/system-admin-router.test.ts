@@ -1207,6 +1207,6 @@ describe("systemAdmin.importSkillPackage", () => {
                 targetOrganizationId: T.otherOrg,
                 dryRun: true,
             }),
-        ).rejects.toThrow(/different organization/i);
+        ).rejects.toThrow(/different organisation/i);
     });
 });

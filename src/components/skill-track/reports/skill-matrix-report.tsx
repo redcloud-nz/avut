@@ -75,7 +75,7 @@ export function SkillTrack_SkillMatrixReport({
                 </Glorious.Header>
                 <Empty>
                     <EmptyDescription>
-                        Select a team, or the whole organization, to view the matrix.
+                        Select a team, or the whole organisation, to view the matrix.
                     </EmptyDescription>
                 </Empty>
             </Glorious.Root>

@@ -93,7 +93,7 @@ export function SkillTrack_TeamScopeDialog({
             <DialogContent className="gap-0 p-0">
                 <DialogHeader className="border-b px-4 py-3">
                     <DialogTitle>Select a scope</DialogTitle>
-                    <DialogDescription>Choose a team, or the whole organization.</DialogDescription>
+                    <DialogDescription>Choose a team, or the whole organisation.</DialogDescription>
                 </DialogHeader>
                 <Command>
                     <CommandInput placeholder="Search teams…" />
@@ -104,7 +104,7 @@ export function SkillTrack_TeamScopeDialog({
                             onSelect={() => handleSelect("all")}
                         >
                             <Building2Icon />
-                            <span>Whole Organization</span>
+                            <span>Whole Organisation</span>
                         </CommandItem>
                         {sortedTeams.map((team) => (
                             <CommandItem

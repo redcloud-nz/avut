@@ -275,7 +275,7 @@ describe("skillPackageBuilderRouter.importPackage", () => {
                 envelope,
                 dryRun: true,
             }),
-        ).rejects.toThrow(/different organization/i);
+        ).rejects.toThrow(/different organisation/i);
     });
 
     it("requires the skillPackageBuilder create permission", async () => {

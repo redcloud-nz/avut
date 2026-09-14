@@ -70,7 +70,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/organization", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Organization</ItemTitle>
+                                        <ItemTitle>Organisation</ItemTitle>
                                         <ItemDescription>
                                             Manage your organisation&apos;s details.
                                         </ItemDescription>

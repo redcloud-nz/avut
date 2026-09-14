@@ -366,7 +366,7 @@ export function SkillTrack_SessionBySkill_Content({
                                 <AlertTitle>No linked person record</AlertTitle>
                                 <AlertDescription>
                                     Your account is not linked to a person record in this
-                                    organization. Contact an administrator to link your account
+                                    organisation. Contact an administrator to link your account
                                     before recording skill checks.
                                 </AlertDescription>
                             </Alert>
