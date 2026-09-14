@@ -58,7 +58,7 @@ export default function EmailAddressChangedTemplate({
                             All future sign-ins and notifications will use the new address.
                         </Text>
                         <Text className="text-[14px] text-black leading-6">
-                            If you didn&apos;t make this change, contact your organization
+                            If you didn&apos;t make this change, contact your organisation
                             administrator immediately.
                         </Text>
                         <Hr className="mx-0 my-[26px] w-full border border-[#eaeaea] border-solid" />
