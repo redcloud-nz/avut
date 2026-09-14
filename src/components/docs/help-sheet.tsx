@@ -12,6 +12,7 @@ import { parseAsString, useQueryState } from "nuqs";
 import { MDXContent } from "@content-collections/mdx/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
 import { Spinner } from "@/components/ui/spinner";
@@ -75,7 +76,9 @@ export function HelpSheet() {
                             No help content is available for this page yet.
                         </p>
                     ) : (
-                        <>
+                        <DocsFlagsProvider
+                            syntheticChecksEnabled={query.data.syntheticChecksEnabled}
+                        >
                             <MDXContent
                                 code={query.data.introCode}
                                 components={sheetMdxComponents}
@@ -87,7 +90,7 @@ export function HelpSheet() {
                                     components={sheetMdxComponents}
                                 />
                             )}
-                        </>
+                        </DocsFlagsProvider>
                     )}
                 </div>
 

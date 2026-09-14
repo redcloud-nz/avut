@@ -11,6 +11,7 @@ import { Std } from "@/components/blocks/std";
 import { SkillTrack_TeamCompetencyReport } from "@/components/skill-track/reports/team-competency-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { requireOrganization } from "@/server/organization-access";
@@ -26,6 +27,7 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
     const { team } = await props.searchParams;
+    const syntheticChecksEnabled = await syntheticChecksFlag();
 
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
 
@@ -67,7 +69,9 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
                     ]}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
-                    <SkillTrack_TeamCompetencyReport />
+                    <SkillTrack_TeamCompetencyReport
+                        syntheticChecksEnabled={syntheticChecksEnabled}
+                    />
                 </Suspense>
             </>
         </HydrateClient>

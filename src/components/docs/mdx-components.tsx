@@ -14,6 +14,7 @@ import Link from "next/link";
 import { DocsAssessmentRowDemo } from "@/components/docs/demo-assessment-row";
 import { DocsIcon } from "@/components/docs/icon-swatch";
 import { Screenshot, UnsupportedImg } from "@/components/docs/screenshot";
+import { SyntheticChecksCallout } from "@/components/docs/synthetic-checks-callout";
 import { Alert } from "@/components/ui/alert";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
@@ -118,4 +119,5 @@ export const docsMdxComponents = {
     Screenshot,
     DocsAssessmentRowDemo,
     DocsIcon,
+    SyntheticChecksCallout,
 };

@@ -11,6 +11,7 @@ import { Std } from "@/components/blocks/std";
 import { SkillTrack_PersonCompetencyReport } from "@/components/skill-track/reports/person-competency-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { requireOrganization } from "@/server/organization-access";
@@ -26,6 +27,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
     const { person } = await props.searchParams;
+    const syntheticChecksEnabled = await syntheticChecksFlag();
 
     prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
 
@@ -62,7 +64,9 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
                     ]}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
-                    <SkillTrack_PersonCompetencyReport />
+                    <SkillTrack_PersonCompetencyReport
+                        syntheticChecksEnabled={syntheticChecksEnabled}
+                    />
                 </Suspense>
             </>
         </HydrateClient>

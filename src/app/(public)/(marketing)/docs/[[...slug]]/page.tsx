@@ -14,10 +14,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MDXContent } from "@content-collections/mdx/react";
 
+import { getAllDocSlugs } from "@/lib/docs";
+import { syntheticChecksFlag } from "@/lib/flags";
 import { DocsArticle_Skeleton } from "@/components/docs/docs-article-skeleton";
+import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
-import { getAllDocSlugs } from "@/lib/docs";
 import { getVisibleDocBySlug } from "@/server/docs";
 
 interface DocsPageProps {
@@ -54,12 +56,15 @@ async function DocsArticle({ params }: DocsPageProps) {
     const { slug } = await params;
     const doc = await getVisibleDocBySlug((slug ?? []).join("/"));
     if (!doc) notFound();
+    const syntheticChecksEnabled = await syntheticChecksFlag();
 
     return (
-        <article>
-            <MDXContent code={doc.introMdx} components={docsMdxComponents} />
-            <KeyTerms slugs={doc.keyTerms} />
-            {doc.restMdx && <MDXContent code={doc.restMdx} components={docsMdxComponents} />}
-        </article>
+        <DocsFlagsProvider syntheticChecksEnabled={syntheticChecksEnabled}>
+            <article>
+                <MDXContent code={doc.introMdx} components={docsMdxComponents} />
+                <KeyTerms slugs={doc.keyTerms} />
+                {doc.restMdx && <MDXContent code={doc.restMdx} components={docsMdxComponents} />}
+            </article>
+        </DocsFlagsProvider>
     );
 }

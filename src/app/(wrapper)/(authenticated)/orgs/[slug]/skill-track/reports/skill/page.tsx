@@ -11,6 +11,7 @@ import { Std } from "@/components/blocks/std";
 import { SkillTrack_SkillCoverageReport } from "@/components/skill-track/reports/skill-coverage-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
+import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
@@ -27,6 +28,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     const { slug } = await props.params;
     const { organization } = await requireOrganization(slug);
     const { skill, team } = await props.searchParams;
+    const syntheticChecksEnabled = await syntheticChecksFlag();
 
     // The scope dialog (rendered in both the blank and loaded states) lists teams and
     // assessable skills, so both are always needed; the matrix itself only once a valid
@@ -63,7 +65,9 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                     ]}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
-                    <SkillTrack_SkillCoverageReport />
+                    <SkillTrack_SkillCoverageReport
+                        syntheticChecksEnabled={syntheticChecksEnabled}
+                    />
                 </Suspense>
             </>
         </HydrateClient>
