@@ -81,7 +81,11 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
 
     const mutation = useMutation({
         async mutationFn(formData: { name: string; email: string; password: string }) {
-            return await authClient.signUp.email(formData, { throw: true });
+            const { data, error } = await authClient.signUp.email(formData);
+            if (error) {
+                throw new Error(error.message ?? "Unable to create account.");
+            }
+            return data;
         },
         onSuccess(_, variables) {
             router.push(`/auth/verify-email/${encodeURIComponent(variables.email)}`);

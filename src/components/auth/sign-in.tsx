@@ -85,7 +85,11 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
 
     const mutation = useMutation({
         async mutationFn(formData: { email: string; password: string; rememberMe: boolean }) {
-            return await authClient.signIn.email(formData, { throw: true });
+            const { data, error } = await authClient.signIn.email(formData);
+            if (error) {
+                throw new Error(error.message ?? "Invalid email or password.");
+            }
+            return data;
         },
         onSuccess(data, variables) {
             if (data.user.emailVerified) {
@@ -167,9 +171,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                         text={{ idle: "Login", pending: "Signing in...", success: "Signing in..." }}
                     />
                 </Field>
-                {mutation.isError && (
-                    <FieldError errors={[mutation.error as { message?: string }]} />
-                )}
+                {mutation.isError && <FieldError errors={[mutation.error]} />}
             </FieldGroup>
         </form>
     );
