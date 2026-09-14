@@ -22,7 +22,7 @@ describe("person↔user link matching", () => {
     // One organization, plus a second to prove the scope holds.
     //
     //   alice    Active, unlinked, alice@example.com     → the happy path
-    //   bruno    Active, unlinked, Bruno@Example.com     → mixed-case person record
+    //   bruno    Active, unlinked, bruno@example.com     → mixed-case *needle* in both lookups
     //   cara     Active, LINKED to caraUser              → already taken
     //   dev      Archived, unlinked                      → not linkable
     //   erin     Active, unlinked, but in the other org  → out of scope
@@ -64,7 +64,7 @@ describe("person↔user link matching", () => {
             });
 
         await person(T.alice, T.org, "Alice", "alice@example.com");
-        await person(T.bruno, T.org, "Bruno", "Bruno@Example.com");
+        await person(T.bruno, T.org, "Bruno", "bruno@example.com");
         await person(T.cara, T.org, "Cara", "cara@example.com");
         await person(T.dev, T.org, "Dev", "dev@example.com", "Archived");
         await person(T.erin, T.otherOrg, "Erin", "erin@example.com");
@@ -107,12 +107,12 @@ describe("person↔user link matching", () => {
             expect(person?.id).toBe(T.alice);
         });
 
-        it("matches a person record whose email is mixed case", async () => {
-            // The column is admin-typed and unnormalised — this is the case an index-backed
-            // exact match would miss.
+        it("matches whatever casing the caller passes", async () => {
+            // `personnel.email` is stored lowercase now, so the stored side can no longer vary.
+            // The needle still can: it arrives from a form, from better-auth, or from D4H.
             const person = await findLinkablePerson(db, {
                 organizationId: T.org,
-                email: "bruno@example.com",
+                email: "Bruno@Example.COM",
             });
 
             expect(person?.id).toBe(T.bruno);
@@ -304,7 +304,7 @@ describe("person↔user link matching", () => {
                     id: A.byEmail,
                     organizationId: A.org,
                     name: "Matched Mika",
-                    email: "Mika@Example.com",
+                    email: "mika@example.com",
                     status: "Active",
                     tags: [],
                     properties: {},
@@ -435,7 +435,7 @@ describe("person↔user link matching", () => {
                 invitationPersonId: null,
             });
 
-            // The person record's address is mixed case; the user's is not.
+            // Matched on email alone — this invitation carried no personId.
             expect(result).toEqual({
                 personId: A.byEmail,
                 organizationUserId: A.byEmailMembership,

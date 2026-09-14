@@ -18,13 +18,13 @@ That idea's fourth part — offering membership at signup on an email match — 
 
 The link is `OrganizationUser.personId` — nullable, `@unique`, `onDelete: SetNull`.
 
-| Surface | File | Behaviour |
-| --- | --- | --- |
+| Surface            | File                                                                                  | Behaviour                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Manual link/unlink | `users.linkPerson` / `users.unlinkPerson` (`src/trpc/routers/users-router.ts:63,252`) | Admin picks a person from `personnel.listUnlinkedPersonnel` on the **user** detail page. The only way to create a link today. |
-| Invite creation | `src/components/admin/invitations/create-invitation.tsx` | Calls `authClient.organization.inviteMember` directly — no tRPC, no audit entry. Email + roles only. |
-| Invite accept | `organizationHooks.afterAcceptInvitation` (`src/server/auth.ts:130-145`) | **Already copies `invitation.personId` onto the new `OrganizationUser`.** Unguarded `updateMany`, no audit entry. |
-| Person detail page | `src/components/admin/personnel/person-content.tsx` | Renders a read-only "Linked User Account" card when `personnel.getLinkedUser` returns a row. No action to create the link. |
-| Person dropdown | `src/components/admin/personnel/person-menu.tsx` | Edit / Archive / Restore / Delete. |
+| Invite creation    | `src/components/admin/invitations/create-invitation.tsx`                              | Calls `authClient.organization.inviteMember` directly — no tRPC, no audit entry. Email + roles only.                          |
+| Invite accept      | `organizationHooks.afterAcceptInvitation` (`src/server/auth.ts:130-145`)              | **Already copies `invitation.personId` onto the new `OrganizationUser`.** Unguarded `updateMany`, no audit entry.             |
+| Person detail page | `src/components/admin/personnel/person-content.tsx`                                   | Renders a read-only "Linked User Account" card when `personnel.getLinkedUser` returns a row. No action to create the link.    |
+| Person dropdown    | `src/components/admin/personnel/person-menu.tsx`                                      | Edit / Archive / Restore / Delete.                                                                                            |
 
 Two facts verified against `node_modules/better-auth` (1.7.3) that the plan leans on:
 
@@ -44,7 +44,7 @@ Two facts verified against `node_modules/better-auth` (1.7.3) that the plan lean
 invitation rows are **never deleted** — `cancelPendingInvitationsOnReInvite: true` sets
 `status: "canceled"` and keeps the row, and accepted invitations persist too.
 
-So the *second* person-scoped invite for the same person — a re-invite, or an invite after
+So the _second_ person-scoped invite for the same person — a re-invite, or an invite after
 an unlink — hits a P2002 on a constraint the user cannot see or clear. Part 1 is unusable
 until this is fixed.
 
@@ -66,7 +66,7 @@ constraint as a trap for the next caller — not recommended.)
 
 ### 3.1 The matching rule, defined once
 
-A person is **linkable** to a user when *all* of:
+A person is **linkable** to a user when _all_ of:
 
 1. Same organization.
 2. `Person.status === "Active"`.
@@ -79,17 +79,24 @@ A person is **linkable** to a user when *all* of:
 and 3; the original draft said to use it). `prisma-mock` ignores the `{ equals: … }` filter
 object on a string field entirely — not just the `mode` key — so a query written that way
 returns `null` in every test while working in Postgres. That is a silent gap, not a failing
-test. How rule 3 is satisfied therefore depends on which side is the column:
+test.
 
-| Direction | Implementation | Why |
-| --- | --- | --- |
-| user email → **person** (`findLinkablePerson`) | narrow to org + `Active` + unlinked in SQL, fold case in JS | `Person.email` is admin-typed and unnormalised, so the **column** may be mixed case. There is no functional index on `lower(personnel.email)`, so Postgres would scan that candidate set either way — the JS fold costs nothing extra and is testable. |
-| person email → **user** (`findLinkableMember`, `getInviteState`) | lowercase the needle, match the column exactly | `User.email` is lowercase by construction: better-auth normalises it at sign-up (`api/routes/sign-up.mjs:165`) and in the OAuth link path (`oauth2/link-account.mjs:92`), which then compares `userInfo.email.toLowerCase()` against the stored value. An exact match also uses the unique index on `users.email`. |
+> **Updated 2026-09-15.** This section used to carry a two-row table, because `Person.email`
+> was stored unnormalised and so the _column_ could be mixed case in one of the two
+> directions. [`person-email-normalisation.md`](person-email-normalisation.md) has since
+> landed, and both columns are now lowercase in the database. One rule covers both:
 
-The pre-existing `getPersonByEmail` (`personnel-router.ts`) still uses `mode: "insensitive"`
-for the first direction and is therefore not unit-testable. Normalising `Person.email` at
-write time would collapse both rows into one index-backed exact match, and remains **out of
-scope** (see §8).
+**Lowercase the needle, match the column exactly, in both directions.** The needle is folded
+rather than trusted because it arrives from a form, from better-auth, or from D4H; the column
+is not, because both sides are normalised on write — `User.email` by better-auth at sign-up
+(`api/routes/sign-up.mjs:165`) and in the OAuth link path (`oauth2/link-account.mjs:92`),
+`Person.email` by `PersonData.modifiableSchema` plus the shared `createPerson` helper.
+
+That applies to `findLinkablePerson`, `findLinkableMember`, `getInviteState` and
+`getPersonByEmail` alike. Every one is index-backed — `@@unique([organizationId, email])` and
+the unique index on `users.email` — and behaves identically under `prisma-mock`, which is what
+made `getPersonByEmail` unit-testable for the first time. `findLinkablePerson` no longer scans
+every Active unlinked person in the organization.
 
 Rules 4 and 5 are also the two `@unique` constraints, so violating them is a P2002 rather
 than a silent overwrite. Every automation below checks them explicitly and **no-ops** on
@@ -164,10 +171,10 @@ Every automatic link is a state change on `OrganizationMembership` and gets an e
 automations have a real human actor, so **no `LogBatch` is needed** (the idea file guessed
 otherwise):
 
-| Automation | Actor | Written via |
-| --- | --- | --- |
-| Part 2 — invite accept | the accepting user | `recordLogEntry` directly (the better-auth hook is outside any tRPC procedure) |
-| Part 3 — person create | the admin creating the person | `ctx.logEvent` inside the existing `$transaction` |
+| Automation             | Actor                         | Written via                                                                    |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
+| Part 2 — invite accept | the accepting user            | `recordLogEntry` directly (the better-auth hook is outside any tRPC procedure) |
+| Part 3 — person create | the admin creating the person | `ctx.logEvent` inside the existing `$transaction`                              |
 
 Entries use `action: "Update"`, `objectType: "OrganizationMembership"`, `objectId` the
 `OrganizationUser.id`, and a description naming the person and the trigger, e.g.
@@ -255,7 +262,7 @@ Three decisions that were not in the original draft:
   that runs once per accepted invitation.
 - **The link and its audit entry share one interactive transaction**, so the entry can never
   claim a link that did not happen. That matters more here than in a tRPC procedure, because
-  `tryLinkPersonToMember` is *allowed* to write nothing when it loses a race —
+  `tryLinkPersonToMember` is _allowed_ to write nothing when it loses a race —
   `$transaction([...])` would commit the entry regardless. (`prisma-mock` supports the
   callback form, so this stays testable.)
 - **The hook never fails the accept.** The membership is already committed by the time it
@@ -284,7 +291,7 @@ an email match from being an authorisation decision.
 
 - `createPerson` gains the link step and a second `ctx.logEvent`, and its `$transaction`
   becomes **interactive**. The link write is conditional on itself (`updateMany … where
-  personId: null` may match nothing), so an array transaction would commit an audit entry for
+personId: null` may match nothing), so an array transaction would commit an audit entry for
   a link that did not happen. `ctx.logEvent` takes a transaction client as its second
   argument, so both entries still go through the one sanctioned path.
 - **`personnel.createPerson` (the procedure) duplicated the helper's body** and now calls it,
@@ -331,11 +338,11 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
   weight. Parts 1–3 cover the common cases; someone who signs up without an invite still
   gets linked the moment an admin invites them (Part 1) or the org's data catches up
   (Part 2). Revisit if orgs actually ask for self-service joining.
-- Normalising `Person.email` at write time — now specced separately in
-  [`person-email-normalisation.md`](person-email-normalisation.md), which also records that
-  the `@@unique([organizationId, email])` invariant is currently false. Landing it collapses
-  §3.1's two-row strategy table to a single rule and removes `findLinkablePerson`'s scan.
-  `User.email` needs nothing; better-auth already normalises it.
+- Normalising `Person.email` at write time — specced separately in
+  [`person-email-normalisation.md`](person-email-normalisation.md) and **landed on
+  2026-09-15**, after this branch. It made the `@@unique([organizationId, email])` invariant
+  true, collapsed §3.1's two-row strategy table to a single rule, and removed
+  `findLinkablePerson`'s scan. `User.email` needed nothing; better-auth already normalises it.
 - Auto-linking on `updatePerson` (§6).
 - Bulk "link all matching" admin action.
 - Auditing invitation creation. No `OrganizationInvitation` value exists in `LogObjectType`
@@ -379,13 +386,13 @@ a four-line call site.
 
 ## 10. Implementation order
 
-| Phase | Contents | Notes |
-| --- | --- | --- |
-| 0 | `db:branch person-user-linking`; §2 schema change + migration ✅ | Needs explicit go-ahead before `migrate dev` |
-| 1 | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` ✅ | No behaviour change yet — both switches default off |
-| 2 | **Part 1** — `getInviteState`, invite dialog, menu action ✅ | Independently shippable and the highest-value piece |
-| 3 | **Part 2** — rewrite `afterAcceptInvitation` ✅ | Also fixes the unguarded `updateMany` and adds its missing audit entry |
-| 4 | **Part 3** — `createPerson` helper; collapse the duplicated procedure body ✅ | Gives D4H import auto-linking for free |
+| Phase | Contents                                                                               | Notes                                                                  |
+| ----- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 0     | `db:branch person-user-linking`; §2 schema change + migration ✅                       | Needs explicit go-ahead before `migrate dev`                           |
+| 1     | `person-user-link.ts` + tests; `personnel` settings group; `Personnel_SettingsCard` ✅ | No behaviour change yet — both switches default off                    |
+| 2     | **Part 1** — `getInviteState`, invite dialog, menu action ✅                           | Independently shippable and the highest-value piece                    |
+| 3     | **Part 2** — rewrite `afterAcceptInvitation` ✅                                        | Also fixes the unguarded `updateMany` and adds its missing audit entry |
+| 4     | **Part 3** — `createPerson` helper; collapse the duplicated procedure body ✅          | Gives D4H import auto-linking for free                                 |
 
 Phases 2–4 are independent of each other once 0 and 1 land, so they can be separate PRs.
 
@@ -393,19 +400,19 @@ Phases 2–4 are independent of each other once 0 and 1 land, so they can be sep
 
 ## 11. Decisions
 
-| Question | Decision |
-| --- | --- |
-| Does an email match ever grant membership? | **No.** Parts 2 and 3 only fill in a link on a membership that already exists. |
-| Part 3, user exists but is not a member | Do nothing. Invite via Part 1. |
-| Membership offers at signup | **Dropped** — complexity out of proportion to the benefit (§8). |
-| Default setting values | Both `false`. |
-| Email comparison | Lowercase the needle, match the column exactly (§3.1). No column normalisation. |
-| `getInviteState` output shape | Flat `{ state, user, pendingInvitation }`, not a discriminated union. |
-| `OrganizationInvitation.personId @unique` | Dropped, replaced by a plain index (§2). |
-| Audit batching | None — both automations have a human actor. D4H-import links join the import's existing batch. |
-| Does the explicit `personId` path check the setting? | No. An invitation sent from a person's record is an admin's decision, not an automation. |
-| Settings read for Part 2 | Uncached, so a just-flipped switch takes effect immediately. |
-| Link + audit atomicity | One interactive transaction, in both Part 2 and Part 3 — the write is conditional, so an array transaction would log a link that may not have happened. |
-| A failed auto-link on person create | Not swallowed: it shares the create's transaction, so the whole create rolls back. Unlike Part 2 there is no already-committed work to protect, and a create that silently half-succeeded would be worse. |
-| A linking failure on accept | Logged and swallowed. The membership is already committed; failing the accept would misreport a working invitation. |
-| Invitation creation audit entries | Still none, unchanged from today. |
+| Question                                             | Decision                                                                                                                                                                                                  |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does an email match ever grant membership?           | **No.** Parts 2 and 3 only fill in a link on a membership that already exists.                                                                                                                            |
+| Part 3, user exists but is not a member              | Do nothing. Invite via Part 1.                                                                                                                                                                            |
+| Membership offers at signup                          | **Dropped** — complexity out of proportion to the benefit (§8).                                                                                                                                           |
+| Default setting values                               | Both `false`.                                                                                                                                                                                             |
+| Email comparison                                     | Lowercase the needle, match the column exactly (§3.1). No column normalisation.                                                                                                                           |
+| `getInviteState` output shape                        | Flat `{ state, user, pendingInvitation }`, not a discriminated union.                                                                                                                                     |
+| `OrganizationInvitation.personId @unique`            | Dropped, replaced by a plain index (§2).                                                                                                                                                                  |
+| Audit batching                                       | None — both automations have a human actor. D4H-import links join the import's existing batch.                                                                                                            |
+| Does the explicit `personId` path check the setting? | No. An invitation sent from a person's record is an admin's decision, not an automation.                                                                                                                  |
+| Settings read for Part 2                             | Uncached, so a just-flipped switch takes effect immediately.                                                                                                                                              |
+| Link + audit atomicity                               | One interactive transaction, in both Part 2 and Part 3 — the write is conditional, so an array transaction would log a link that may not have happened.                                                   |
+| A failed auto-link on person create                  | Not swallowed: it shares the create's transaction, so the whole create rolls back. Unlike Part 2 there is no already-committed work to protect, and a create that silently half-succeeded would be worse. |
+| A linking failure on accept                          | Logged and swallowed. The membership is already committed; failing the accept would misreport a working invitation.                                                                                       |
+| Invitation creation audit entries                    | Still none, unchanged from today.                                                                                                                                                                         |

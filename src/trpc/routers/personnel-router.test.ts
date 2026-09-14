@@ -18,7 +18,7 @@ import { createLogBatch } from "@/server/log-entry";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { createPerson, personnelRouter } from "./personnel-router";
+import { createPerson, getPersonByEmail, personnelRouter } from "./personnel-router";
 
 describe("personnel.getInviteState", () => {
     // Dataset — one person per state the dialog has to render:
@@ -631,5 +631,123 @@ describe("createPerson during a D4H team import", () => {
             }),
         ).toHaveLength(0);
         expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
+    });
+});
+
+describe("personnel email normalisation", () => {
+    // `personnel.email` is stored lowercase so that `@@unique([organizationId, email])` means what
+    // it says — Postgres unique indexes are case-sensitive, so before this both conflict checks
+    // below let a case-variant through and one human ended up split across two person records.
+    // See docs/specs/person-email-normalisation.md.
+    const T = {
+        org: OrganizationId.create(),
+        adminUser: UserId.create(),
+        dana: PersonId.create(),
+        evan: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        await db.user.create({
+            data: { id: T.adminUser, name: "Admin", email: "admin@example.com" },
+        });
+        await db.organizationUser.create({
+            data: { id: nanoId16(), organizationId: T.org, userId: T.adminUser, role: "admin" },
+        });
+
+        for (const [id, name, email] of [
+            [T.dana, "Dana Reed", "dana.reed@example.com"],
+            [T.evan, "Evan Stone", "evan.stone@example.com"],
+        ] as const) {
+            await db.person.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name,
+                    email,
+                    status: "Active",
+                    tags: [],
+                    properties: {},
+                },
+            });
+        }
+    });
+
+    function caller() {
+        return personnelRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.adminUser },
+                permissions: { organization: ["view"], person: ["create", "update", "view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("stores a new person's email lowercased", async () => {
+        const personId = PersonId.create();
+
+        const { created } = await caller().createPerson({
+            organizationId: T.org,
+            personId,
+            create: {
+                name: "Farah Nabi",
+                email: "Farah.Nabi@Example.COM",
+                tags: [],
+                properties: {},
+            },
+        });
+
+        expect(created.email).toBe("farah.nabi@example.com");
+        expect((await db.person.findUnique({ where: { id: personId } }))?.email).toBe(
+            "farah.nabi@example.com",
+        );
+    });
+
+    it("rejects a new person whose email differs from an existing one only by case", async () => {
+        await expect(
+            caller().createPerson({
+                organizationId: T.org,
+                personId: PersonId.create(),
+                create: {
+                    name: "Dana Reed",
+                    email: "Dana.Reed@Example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("rejects an update that turns an email into a case-variant of another person's", async () => {
+        await expect(
+            caller().updatePerson({
+                organizationId: T.org,
+                personId: T.evan,
+                update: {
+                    name: "Evan Stone",
+                    email: "DANA.REED@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("finds a person by a mixed-case needle", async () => {
+        // Only possible now that the stored side cannot vary: the previous
+        // `mode: "insensitive"` form returned null under prisma-mock, so this was untestable.
+        const ctx = createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.adminUser },
+            prisma: db,
+        });
+
+        expect((await getPersonByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
+        expect(await getPersonByEmail(ctx, "nobody@example.com")).toBeNull();
     });
 });

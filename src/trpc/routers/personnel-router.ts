@@ -521,6 +521,15 @@ export async function createPerson(
     /** Set when this create is part of a multi-entry operation, so the entries join its batch. */
     batchId?: string,
 ): Promise<{ created: PersonData }> {
+    /*
+     * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
+     * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
+     * person object in code and hands it straight to this helper (`teams-router.d4h.ts`), so the
+     * one write site that the schema cannot reach normalises here. Done before `changes`, so the
+     * audit entry records the value actually stored.
+     */
+    create = { ...create, email: create.email.toLowerCase() };
+
     // Calculate changes from empty record
     const changes = diffObject({ tags: [], properties: {} }, create);
 
@@ -586,9 +595,7 @@ export async function createPerson(
                         objectType: "OrganizationMembership",
                         objectId: linkable.organizationUserId,
                         description: `Linked person (${personId}, ${create.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
-                        refs: [
-                            { objectType: "Person", objectId: personId, role: "context" },
-                        ],
+                        refs: [{ objectType: "Person", objectId: personId, role: "context" }],
                         batchId,
                     },
                     tx,
@@ -614,10 +621,20 @@ export async function getPersonByEmail(
     ctx: AuthenticatedOrganizationContext,
     email: string,
 ): Promise<PersonData | null> {
+    /*
+     * Lowercase the needle and match exactly. The stored column is normalised
+     * (docs/specs/person-email-normalisation.md), so this is index-backed via
+     * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it
+     * replaces, it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }`
+     * filter object on a string field. That is what makes this function testable at all.
+     *
+     * Callers may still pass a mixed-case needle: the D4H sync plan carries the raw address it
+     * got from D4H.
+     */
     const person = await ctx.prisma.person.findFirst({
         where: {
             organizationId: ctx.organizationId,
-            email: { equals: email, mode: "insensitive" },
+            email: email.toLowerCase(),
         },
     });
 
