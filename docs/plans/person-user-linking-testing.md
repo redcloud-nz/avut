@@ -1,22 +1,28 @@
 # Testing plan: person ↔ user linking
 
 **Date:** 2026-09-14
-**Covers:** [`docs/specs/person-user-linking.md`](../specs/person-user-linking.md) Part 1
-(invite a person from their own record) and the §2 constraint fix.
+**Covers:** the whole of [`docs/specs/person-user-linking.md`](../specs/person-user-linking.md)
+— the §2 constraint fix, and Parts 1, 2 and 3 — plus the incidental changes the branch made
+along the way.
 **Branch:** `feat/person-user-linking`, worktree `.claude/worktrees/person-user-linking`.
 
-Part 1 is committed with unit coverage of `personnel.getInviteState`, but **the end-to-end
-path it exists to serve has never been run** — nobody has watched an invitation created from
-a person record actually arrive, be accepted, and produce a link. §A is that gap; everything
-else is the surrounding surface.
+All three parts are committed with unit coverage. **None of it has run in a browser.** §A is
+the sharpest gap — the end-to-end path the feature exists to serve — but Parts 2 and 3 and
+the new settings card are equally unobserved.
 
-| # | Area | Automated today | Needs a human/browser |
-| --- | --- | --- | --- |
-| A | Invite → accept → link, end to end | ✗ | **yes — the headline gap** |
-| B | The four `getInviteState` states in the dialog | ✓ (router only) | yes (rendering) |
-| C | Invitations page after the role-fields refactor | ✗ | yes |
-| D | Re-invite (the dropped unique constraint) | ✗ (proven in SQL only) | yes |
-| E | Permission gating | ✗ | yes |
+| #   | Area                                              | Automated          | Needs a human/browser                  |
+| --- | ------------------------------------------------- | ------------------ | -------------------------------------- |
+| A   | Invite → accept → link, end to end                | ✗                  | **yes — the headline gap**             |
+| B   | The four `getInviteState` states in the dialog    | ✓ router           | yes (rendering)                        |
+| C   | Part 2 — auto-link on invitation accept           | ✓ helper           | yes (through real accept)              |
+| D   | Part 3 — auto-link on person create               | ✓ router           | yes                                    |
+| E   | D4H team import auto-links                        | ✗                  | **yes — no automated coverage at all** |
+| F   | Personnel settings card                           | ✓ store round-trip | yes (the card itself)                  |
+| G   | Audit entries                                     | ✓ shape            | yes, **by SQL — no UI exists**         |
+| H   | Invitations page after the role-fields extraction | ✗                  | yes                                    |
+| I   | Everything with both switches off                 | partly             | yes                                    |
+| J   | Re-invite (the dropped unique constraint)         | ✗ (SQL only)       | yes                                    |
+| K   | Permission gating and the new hotkey              | ✗                  | yes                                    |
 
 ---
 
@@ -24,21 +30,16 @@ else is the surrounding surface.
 
 **The dev server must run from this worktree.** `.env.local` here points at the branch
 database `avut_person_user_linking`; the main checkout still points at shared `avut`, which
-does **not** have the migration. A dev server started in the wrong directory will fail on
-`organization_invitations_personId_idx` or silently exercise the old constraint.
+does **not** have the migration. A dev server started in the wrong directory will either fail
+or quietly exercise the old constraint.
 
 ```bash
 cd .claude/worktrees/person-user-linking
-npm run dev -- -p 3100          # 3000/3001 belong to the main checkout
-```
-
-Confirm the target database before anything else:
-
-```bash
 grep POSTGRES_DATABASE .env.local     # expect avut_person_user_linking
+npm run dev -- -p 3100                # 3000/3001 belong to the main checkout
 ```
 
-A psql shell against that database, used throughout below:
+A psql shell against that database, used throughout:
 
 ```bash
 url="$(sed -nE 's/^POSTGRES_URL_NON_POOLING="?([^"]+)"?.*/\1/p' .env.local)"
@@ -47,22 +48,25 @@ psql "$url" -c '\d organization_invitations'   # personId should be an index, no
 
 Signing in follows [`.claude/skills/avut-test-in-browser`](../../.claude/skills/avut-test-in-browser/SKILL.md):
 `window.avut.signIn(...)` with the admin test account, then `impersonateUser` to change
-identity. You need an account with `owner` or `admin` in the target org — those are the only
-roles holding `invitation: ["create"]`.
+identity. You need `owner` or `admin` in the target org — the only roles holding
+`invitation: ["create"]`.
+
+**Both settings default off**, so §C and §D need them switched on in
+`/orgs/<slug>/admin/organization/settings` → Personnel. §I is the check that off really means
+off.
 
 ---
 
 ## A. Invite → accept → link (the unverified path)
 
-This is the whole point of Part 1: the invitation carries `personId`, and
-`organizationHooks.afterAcceptInvitation` (`src/server/auth.ts`) copies it onto the new
-membership. Both halves are believed correct from reading better-auth's
-`crud-invites.mjs` — that it spreads unknown body fields into the row — but neither has been
-observed.
+The point of Part 1: the invitation carries `personId`, and
+`organizationHooks.afterAcceptInvitation` applies it. Both halves are believed correct from
+reading better-auth's `crud-invites.mjs` — that it spreads unknown body fields into the row —
+but neither has been observed.
 
 ### A1. The invitation is created and carries `personId`
 
-**Precondition:** a person in the org with **no** AVUT account. Find or make one:
+**Precondition:** a person in the org with **no** AVUT account:
 
 ```sql
 SELECT p.id, p.name, p.email
@@ -76,14 +80,12 @@ LIMIT 5;
 **Steps**
 
 1. Open `/orgs/<slug>/admin/personnel/<person_id>`.
-2. Open the ⋮ menu. Expect **Invite to AVUT** present, above Archive.
-3. Select it. The dialog should read *Invite to AVUT*, name the person's email, and show
-   the primary-role radios (Owner/Admin/Member, defaulting to Member).
-4. Leave Member selected, press **Send Invitation**.
+2. ⋮ menu → **Invite to AVUT** should be present, above Archive.
+3. Dialog reads _Invite to AVUT_, names the person's email, shows the role radios
+   (defaulting to Member).
+4. **Send Invitation.**
 
-**Expect:** success toast, dialog closes.
-
-**Verify — this is the assertion that matters:**
+**Verify — the assertion that matters:**
 
 ```sql
 SELECT id, email, role, status, "personId"
@@ -91,26 +93,21 @@ FROM organization_invitations
 WHERE "personId" = '<person_id>' AND status = 'pending';
 ```
 
-`personId` must be **non-null and equal to the person's id**. A null here means better-auth
-dropped the additional field and the whole feature is inert — everything downstream would
-still "work" while silently producing no link.
-
-Also check the stored `email` is **lowercase**, even if the person record is mixed-case.
+`personId` must be **non-null and equal to the person's id**. Null means better-auth dropped
+the additional field and the whole feature is inert while every visible step still succeeds.
+Also confirm the stored `email` is **lowercase** even when the person record is mixed case.
 
 ### A2. Accepting the invitation creates the link
 
-Don't wait for the email — take the invitation id from A1 and hit the accept route directly,
-which is what the email's link does anyway.
+Take the invitation id from A1 and hit the accept route directly — that is what the email's
+link does.
 
-**Steps**
-
-1. In the browser, navigate to `/auth/accept-invitation/<invitation_id>`.
-   - It signs out any current session, sets the `avut.invitation_to_accept` cookie, and
-     redirects to `/auth/sign-up?email=…` (no account) or `/auth/sign-in?email=…` (account
-     exists). Confirm the email is pre-filled.
-2. Complete sign-up. Email verification is required (`requireEmailVerification: true`), and
-   the OTP is **not** printed to the console — only "Sending verification OTP". Read it from
-   the database (`storeOTP` is unset in `auth.ts`, so better-auth stores it in plain text):
+1. Navigate to `/auth/accept-invitation/<invitation_id>`. It signs out any session, sets the
+   `avut.invitation_to_accept` cookie, and redirects to `/auth/sign-up?email=…` (no account)
+   or `/auth/sign-in?email=…`. Confirm the email is pre-filled.
+2. Complete sign-up. Email verification is required and the OTP is **not** printed to the
+   console — only "Sending verification OTP". Read it from the database (`storeOTP` is unset
+   in `auth.ts`, so better-auth stores it plaintext):
 
    ```sql
    SELECT identifier, split_part(value, ':', 1) AS otp, "expiresAt"
@@ -118,8 +115,8 @@ which is what the email's link does anyway.
    ```
 
    The stored `value` is `<otp>:<attempt-count>` — type only the part before the colon.
-3. After verification the app lands on `/auth/post-sign-in`, which accepts the pending
-   invitation, then redirects.
+
+3. The app lands on `/auth/post-sign-in`, which accepts the pending invitation.
 
 **Verify:**
 
@@ -129,45 +126,43 @@ FROM organization_users ou JOIN users u ON u.id = ou."userId"
 WHERE ou."personId" = '<person_id>';
 ```
 
-One row, `personId` set, `role` = what was chosen in A1.
-
-4. Reload `/orgs/<slug>/admin/personnel/<person_id>`. The **Linked User Account** card
-   should now render, and **Invite to AVUT** should be gone from the ⋮ menu.
+One row, `personId` set, `role` as chosen in A1. Then reload the person page: the **Linked
+User Account** card renders and **Invite to AVUT** is gone from the ⋮ menu.
 
 ### A3. Mixed-case email survives the round trip
 
-The reason the dialog lowercases the address: `getEntryControl` looks invitations up by the
-session user's (lowercase) email, so an invitation stored mixed-case is invisible to its
-recipient.
+Why the dialog lowercases: `getEntryControl` looks invitations up by the session user's
+(lowercase) email, so an invitation stored mixed-case is invisible to its recipient.
 
-**Steps:** pick (or edit) a person whose email has capitals — `Dana.Reed@Example.com`.
-Invite them, then sign up as `dana.reed@example.com`.
+Pick or edit a person whose email has capitals (`Dana.Reed@Example.com`), invite them, sign up
+as `dana.reed@example.com`. The invitation should still appear and be accepted, and `personId`
+should land on the membership.
 
-**Expect:** the invitation still appears and is accepted; `personId` lands on the membership.
-Before this change the invitation row would have been stored mixed-case and the pending-
-invitation lookup in `getEntryControl` would have missed it.
+### A4. The explicit path ignores the setting
+
+Turn `personnel.autoLinkOnInviteAccept` **off**, then run A1+A2. The link must still happen —
+an invitation sent from a person's record is an admin's decision, not an automation.
 
 ---
 
 ## B. The dialog's four states
 
-Router-level behaviour is covered by `src/trpc/routers/personnel-router.test.ts`. What is
-untested is that each state renders the right controls.
+Router behaviour is covered by `personnel-router.test.ts`. What is untested is that each state
+renders the right controls.
 
-| State | How to set it up | Expect in the dialog |
-| --- | --- | --- |
-| `NoUser` | Person with no matching account (A1) | Title *Invite to AVUT*, role fields, **Send Invitation** |
-| `UserExists` | Person whose email matches a user who is **not** a member of this org | Same, plus the note *"They already have an AVUT account but are not a member of this organization yet."* |
-| `AlreadyMember` | Person whose email matches a user who **is** already a member here | Title *Link User Account*, **no role fields**, button **Link Account** |
-| `Linked` | Already-linked person | Menu item absent; dialog not reachable |
+| State           | Setup                                             | Expect                                                                                          |
+| --------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NoUser`        | Person with no matching account (A1)              | Title _Invite to AVUT_, role fields, **Send Invitation**                                        |
+| `UserExists`    | Email matches a user who is **not** a member here | Same, plus _"They already have an AVUT account but are not a member of this organization yet."_ |
+| `AlreadyMember` | Email matches a user who **is** a member here     | Title _Link User Account_, **no role fields**, button **Link Account**                          |
+| `Linked`        | Already-linked person                             | Menu item absent                                                                                |
 
-`AlreadyMember` is the one worth care — it exists because better-auth rejects the invite in
-that case. Verify pressing **Link Account** writes `organization_users.personId` and that the
-Linked User Account card appears without a page reload (the mutation's cache effects).
-
-Find an `AlreadyMember` candidate:
+`AlreadyMember` is the one to watch — it exists because better-auth rejects the invite in that
+case. Pressing **Link Account** must write `organization_users.personId` and the Linked User
+Account card must appear without a page reload (the mutation's cache effects).
 
 ```sql
+-- an AlreadyMember candidate
 SELECT p.id AS person, p.email, ou."userId"
 FROM personnel p
 JOIN users u ON lower(u.email) = lower(p.email)
@@ -176,96 +171,229 @@ WHERE ou."personId" IS NULL AND p.status = 'Active'
 LIMIT 5;
 ```
 
-**Pending-invitation warning:** invite a person (A1), reopen the dialog without accepting.
-Expect *"An invitation is already pending (sent …). Sending a new one replaces it."*
+**Pending-invitation warning:** invite a person, reopen the dialog without accepting. Expect
+_"An invitation is already pending (sent …). Sending a new one replaces it."_
 
 ---
 
-## C. Regression — the Invitations page
+## C. Part 2 — auto-link on invitation accept
 
-`create-invitation.tsx` was refactored onto the shared `InvitationRoleFields`. It is the only
-behaviour in this branch that existed before and could have broken.
+The case A1 does **not** cover: an invitation created from the **Invitations page**, carrying
+no `personId`, that finds its person by email on accept.
+
+1. Settings → Personnel → **Link on invitation accept** on.
+2. `/orgs/<slug>/admin/invitations` → **New Invitation**, using the email of an existing
+   Active, unlinked person. (Confirm `personId IS NULL` on the created row — this is the whole
+   difference from §A.)
+3. Accept it as in A2.
+
+**Expect:** the membership comes out with `personId` set, and an audit entry saying _matched
+on email address_ (§G).
+
+**Then the negative:** switch it off, repeat with another person. No link, no membership audit
+entry — and the invitation must still be accepted normally.
+
+**Failure isolation.** A linking failure must never fail the accept; the membership is already
+committed when the hook runs. Hard to force deliberately — watch the dev-server console for
+`Failed to link a person to User(...)` and confirm the user still lands in the org if it ever
+appears.
+
+---
+
+## D. Part 3 — auto-link on person create
+
+1. Settings → Personnel → **Link when a person is added** on.
+2. Find a member of the org with no person attached:
+
+   ```sql
+   SELECT ou."userId", u.email FROM organization_users ou
+   JOIN users u ON u.id = ou."userId"
+   WHERE ou."organizationId" = '<org_id>' AND ou."personId" IS NULL;
+   ```
+
+3. `/orgs/<slug>/admin/personnel` → **New Person** with that email.
+
+**Expect:** the person page shows the Linked User Account card immediately; the Personnel and
+Users lists agree without a manual reload (the widened `personnelEffects.createPerson`).
+
+**The important negative — an email match must never grant membership.** Create a person whose
+email belongs to a user who is **not** a member of this org. Expect: person created, _no_
+link, and **no new row in `organization_users`**:
+
+```sql
+SELECT * FROM organization_users WHERE "organizationId" = '<org_id>' AND "userId" = '<that_user>';
+-- must stay empty
+```
+
+**Rollback.** `createPerson` now runs in one interactive transaction, so a failure in the link
+step rolls back the person too. There is no easy way to force this from the UI; if a create
+ever errors, confirm no orphan person row was left behind.
+
+---
+
+## E. D4H team import — no automated coverage at all
+
+Part 3 put the auto-link in the shared `createPerson` helper, which the D4H team import also
+calls. **The import therefore auto-links as a side effect, and nothing in the test suite
+exercises that path.** It is also the only path that passes a `batchId`.
+
+1. An org with D4H configured and a valid sync token, **Link when a person is added** on.
+2. `/orgs/<slug>/admin/teams` → import a team whose D4H members include the email of an
+   existing AVUT member of that org.
+3. Confirm the import completes and creates people as before.
+
+**Verify both entries joined the import's batch:**
+
+```sql
+SELECT e."objectType", e.action, e."batchId", b."operationKey"
+FROM log_entries e LEFT JOIN log_batches b ON b.id = e."batchId"
+WHERE e."organizationId" = '<org_id>'
+ORDER BY e.sequence DESC LIMIT 20;
+```
+
+The `OrganizationMembership` link entry should carry the same `batchId` as the `Person` create
+entries.
+
+**Watch for:** the import loop now opens one interactive transaction per person instead of an
+array transaction. On a large team, confirm it does not slow noticeably or hit a transaction
+timeout.
+
+---
+
+## F. Personnel settings card
+
+New UI, on `/orgs/<slug>/admin/organization/settings` under a new **Personnel** heading
+between General and Integrations.
+
+- Both switches read **off** on an org that has never set them.
+- Toggling one shows **Reset**; Reset restores the saved values.
+- **Save** persists; reload and the values stick.
+- Each card saves independently — saving Personnel must not disturb unsaved edits in another
+  card, or clobber other settings.
+
+```sql
+SELECT key, value FROM organization_config
+WHERE "organizationId" = '<org_id>' AND key LIKE 'personnel.%';
+```
+
+Only the leaves that differ from the defaults should be materialised.
+
+---
+
+## G. Audit entries — verify by SQL
+
+**There is no UI for this.** The person History page renders `NotImplemented` and its menu
+item is disabled, so every audit assertion below is a query.
+
+```sql
+SELECT scope, "organizationId", "userId", "actorLabel", action, "objectType", "objectId",
+       description, "batchId"
+FROM log_entries
+WHERE "objectType" = 'OrganizationMembership'
+ORDER BY sequence DESC LIMIT 10;
+```
+
+| Trigger                | Expect in `description`                                   |
+| ---------------------- | --------------------------------------------------------- |
+| Part 1 invite accepted | `on invitation accept — the invitation named the person.` |
+| Part 2 email match     | `on invitation accept — matched on email address.`        |
+| Part 3 person create   | `on creation — matched on email address.`                 |
+
+In all three, `userId` is the **acting human** — the accepting user for Parts 1 and 2, the
+admin who created the person for Part 3 (_not_ the user being linked). `actorLabel` should read
+`Name <email>`.
+
+**The negative that matters:** when no link is made, there must be **no** membership entry.
+Run the §C-off and §D-no-match cases and confirm nothing new appears above.
+
+These entries are new — before this branch the explicit-`personId` path wrote none at all.
+
+---
+
+## H. Regression — the Invitations page
+
+`create-invitation.tsx` was refactored onto the shared `InvitationRoleFields` (reached through
+`useFormContext`). It is the main pre-existing behaviour this branch could have broken.
 
 1. `/orgs/<slug>/admin/invitations` → **New Invitation**.
-2. Email field still validates (submit an invalid address; expect a field error, and the
-   `console.error` from the `onInvalid` handler).
-3. Primary-role radios and every secondary-role checkbox still render and toggle.
-4. **Secondary roles are module-gated** — the regression most likely to slip through. In an
-   org with I3 **off**, the I3 Editor checkbox must be absent; with Skill Track **off**,
-   Skills Assessor and Skill Package Author must be absent. Toggle a module in
-   `/orgs/<slug>/admin/organization/settings` and re-open the dialog.
-5. Send an invitation; confirm it appears in the list and that `personId` is **null** (this
-   path must not attach a person).
+2. Email validation still fires (submit an invalid address; expect a field error plus the
+   `onInvalid` console log).
+3. Primary-role radios and every secondary-role checkbox render and toggle.
+4. **Secondary roles are module-gated** — the likeliest regression. With I3 off, no I3 Editor
+   checkbox; with Skill Track off, no Skills Assessor or Skill Package Author. Toggle a module
+   in settings and re-open the dialog.
+5. Send one; it appears in the list with `personId` **null**.
 
 ---
 
-## D. The dropped unique constraint
+## I. Regression — both switches off
 
-Proven in SQL against the branch database (two invitations, one canceled and one pending,
-sharing a `personId`), but not through the app — which is where the P2002 would actually
-have surfaced.
+The promise is that an organization that does not opt in behaves exactly as it did before.
 
-1. Invite person X from their page (A1).
-2. Without accepting, invite X **again** with a different role.
-3. **Expect:** success. `cancelPendingInvitationsOnReInvite` cancels the first; the second is
-   created carrying the same `personId`.
+- Create a person whose email matches an existing member → **not** linked.
+- Accept an invitation with no `personId` whose email matches a person → **not** linked.
+- No `OrganizationMembership` audit entries from either.
+- The D4H team import creates people and memberships as before, with no link entries.
+
+---
+
+## J. The dropped unique constraint
+
+Proven in SQL against the branch database (a canceled and a pending invitation sharing a
+`personId`), but not through the app — which is where the P2002 would have surfaced.
+
+1. Invite person X from their page.
+2. Without accepting, invite X **again** with a different role. **Expect success**;
+   `cancelPendingInvitationsOnReInvite` cancels the first.
 
 ```sql
 SELECT id, status, role, "personId" FROM organization_invitations
 WHERE "personId" = '<person_id>' ORDER BY "createdAt";
 ```
 
-Two rows — one `canceled`, one `pending` — both with the same `personId`. On `integration`
-this step fails with a unique-violation.
+Two rows — one `canceled`, one `pending` — sharing a `personId`. On `integration` this step
+fails with a unique violation.
 
-4. Second shape of the same bug: accept an invitation, unlink the person from the user page,
-   then invite them again. Also previously a P2002.
+3. Second shape: accept an invitation, unlink the person on the user page, invite again. Also
+   previously a P2002.
 
 ---
 
-## E. Permission gating
+## K. Permission gating and the hotkey
 
-`Invite to AVUT` is gated on `invitation: ["create"]`, which only `owner` and `admin` hold.
+`Invite to AVUT` is gated on `invitation: ["create"]`, which only `owner` and `admin` hold
+(`memberAc` grants `invitation: []`).
 
-- Impersonate a plain `member` of the org → the menu item is **disabled**.
-- Impersonate `skills-assessor` → also disabled.
+- Impersonate a plain `member` → the menu item is **disabled**. Same for `skills-assessor`.
 - The real guard is server-side: `getInviteState` requires `invitation: ["view"]`,
-  `member: ["view"]`, `person: ["view"]`. Confirm a member calling it over tRPC is rejected
-  rather than merely not shown the button.
+  `member: ["view"]`, `person: ["view"]`. Confirm a member calling it over tRPC is rejected,
+  not merely not shown the button.
+- **New hotkey:** `invite` was added to the `ActionHotkey` registry as **Alt+V** (Alt+I was
+  already `import`). On the person page, Alt+V should open the invite dialog, and the shortcut
+  should appear under Personnel in the `?` help overlay. Confirm it does not collide with
+  another registered chord.
 
 ---
 
-## F. Automated coverage, and what it cannot reach
+## L. Automated coverage, and what it cannot reach
 
-**Covered** (`personnel-router.test.ts`, 8 cases): all four states, the mixed-case person
-email, pending-invitation surfacing, absent pending invitation, NOT_FOUND for a foreign
-person.
+**Covered:** `person-user-link.test.ts` (23 cases — both lookups, every no-op branch of the
+linker, and both Part 2 triggers); `personnel-router.test.ts` (14 — `getInviteState`'s four
+states, mixed case, pending invitations, and Part 3's link/no-link/no-membership cases);
+`organization-settings-store.test.ts` (the `personnel` group round-trip and its off defaults).
 
-**Not reachable by unit tests, hence §A:**
+**Not reachable by unit tests:**
 
-- Whether better-auth actually persists `personId` through `inviteMember`. This is a property
-  of the library's request pipeline, not of our code — a mocked Prisma can't see it.
-- `afterAcceptInvitation`. `src/server/auth.ts` pulls in `server-only` transitively, so the
-  hook is not importable in jsdom. This is the argument in the spec for moving its logic into
-  `person-user-link.ts` when Part 2 lands, leaving the hook a thin call site.
-- `prisma-mock` ignores the `{ equals: … }` filter object on string fields entirely, so any
-  query written that way returns `null` in tests while working in Postgres. Part 1 avoids the
-  shape; `getPersonByEmail` still uses it and is therefore **not** unit-testable.
-
----
-
-## G. Forward — what Parts 2 and 3 will add
-
-Not yet built; listed so the coverage is planned rather than retrofitted.
-
-- **Part 2 (auto-link on accept):** unit-test `person-user-link.ts` directly. Browser check:
-  with `personnel.autoLinkOnInviteAccept` on, an invitation created from the *Invitations*
-  page (no `personId`) still links on accept when a person shares the email; with it off, it
-  does not. Also confirm the audit entry now written by that path.
-- **Part 3 (auto-link on create):** router tests for the setting on/off and the
-  member-vs-non-member split. Browser check: create a person whose email matches an existing
-  **member** → linked immediately; matches a **non-member** → not linked, and the person
-  page offers Invite. Plus a D4H team import, which reaches the same helper and should link
-  matching members as a side effect with its entries in the import's log batch.
-- **Regression for both:** with both settings off (the defaults), behaviour must be
-  byte-identical to today.
+- Whether better-auth actually persists `personId` through `inviteMember`. A property of the
+  library's request pipeline; a mocked Prisma cannot see it. → §A1.
+- `afterAcceptInvitation` itself. `src/server/auth.ts` imports `server-only` transitively, so
+  the hook is not importable under jsdom — which is exactly why its logic lives in
+  `person-user-link.ts` and the hook is a four-line call site. → §A2, §C.
+- The D4H import path end to end. → §E.
+- Anything rendered. → §B, §F, §H.
+- `prisma-mock` ignores the `{ equals: … }` filter object on string fields, so queries written
+  that way return `null` in tests while working in Postgres. The branch avoids that shape;
+  `getPersonByEmail` still uses it and is therefore untestable. See
+  [`person-email-normalisation.md`](../specs/person-email-normalisation.md).
+- `prisma-mock` reports an unset optional column as `undefined` rather than `null`, so assert
+  on _what is linked_ rather than on a column's empty value.
