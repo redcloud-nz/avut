@@ -46,4 +46,53 @@ describe("writeOrganizationSettings", () => {
             },
         ]);
     });
+
+    // The personnel group is the first top-level addition since `general`/`integrations`/
+    // `modules`, so this pins that a new group flattens, persists, and resolves like the rest —
+    // and that both switches default off, which is the promise that no existing organization
+    // changes behaviour when this ships.
+    it("round-trips the personnel group and defaults it off", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+
+        const defaults = OrganizationSettings.default();
+        expect(defaults.personnel).toEqual({
+            autoLinkOnInviteAccept: false,
+            autoLinkOnPersonCreate: false,
+        });
+
+        let recorded: DiffChange[] = [];
+        const settings = await writeOrganizationSettings(
+            db,
+            orgId,
+            { ...defaults, personnel: { ...defaults.personnel, autoLinkOnPersonCreate: true } },
+            (changes) => {
+                recorded = changes;
+                return db.organizationConfig.findMany({ where: { organizationId: orgId } });
+            },
+        );
+
+        expect(recorded).toEqual([
+            {
+                type: "obj_mod",
+                path: ["personnel", "autoLinkOnPersonCreate"],
+                prev: false,
+                curr: true,
+            },
+        ]);
+        expect(settings.personnel.autoLinkOnPersonCreate).toBe(true);
+        expect(settings.personnel.autoLinkOnInviteAccept).toBe(false);
+
+        // Only the changed leaf is materialised; the rest still resolves from defaults.
+        const records = await db.organizationConfig.findMany({ where: { organizationId: orgId } });
+        expect(records.map((r) => r.key)).toEqual(["personnel.autoLinkOnPersonCreate"]);
+        expect(OrganizationSettings.fromRecords(records).personnel).toEqual({
+            autoLinkOnInviteAccept: false,
+            autoLinkOnPersonCreate: true,
+        });
+    });
 });

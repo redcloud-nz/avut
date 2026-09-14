@@ -10,6 +10,7 @@ import { D4HViewsModule_SettingsCard } from "@/components/admin-settings/d4h-vie
 import { EmailIntegration_SettingsCard } from "@/components/admin-settings/email-integration-card";
 import { General_SettingsCard } from "@/components/admin-settings/general-settings-card";
 import { I3Module_SettingsCard } from "@/components/admin-settings/i3-module-card";
+import { Personnel_SettingsCard } from "@/components/admin-settings/personnel-card";
 import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin-settings/skill-package-builder-module-card";
 import { SkillTrackModule_SettingsCard } from "@/components/admin-settings/skill-track-module-card";
 
@@ -40,6 +41,11 @@ export function OrganizationSettingsForm({
         <>
             <div className="space-y-4">
                 <General_SettingsCard />
+            </div>
+
+            <div className="space-y-4 pt-6">
+                <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
+                <Personnel_SettingsCard organizationId={organizationId} settings={settings} />
             </div>
 
             <div className="space-y-4 pt-6">

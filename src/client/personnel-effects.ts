@@ -26,6 +26,8 @@ export const personnelEffects = createEffects<"personnel">()({
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
+    // A create can now also link the new person to an existing member (auto-link), so it
+    // touches the same link-shaped queries `users.linkPerson` does.
     createPerson: (vars) => [
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
@@ -35,6 +37,8 @@ export const personnelEffects = createEffects<"personnel">()({
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.users.listPersonLinks.queryFilter({ organizationId: vars.organizationId })),
+        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
     ],
     deletePerson: (vars) => [
         invalidate(

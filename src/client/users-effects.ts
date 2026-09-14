@@ -35,6 +35,12 @@ export const usersEffects = createEffects<"users">()({
                 personId: vars.personId,
             }),
         ),
+        invalidate(
+            trpc.personnel.getInviteState.queryFilter({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+        ),
     ],
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.

@@ -9,10 +9,13 @@ import { beforeEach, vi } from "vitest";
 import { TRPCError } from "@trpc/server";
 
 import type { AuthSession } from "@/server/auth";
-import { PrismaClient } from "@/generated/prisma/client";
+import type { LogEventOptions } from "@/trpc/init";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
+import { recordLogEntry, resolveActor } from "@/server/log-entry";
 
 const mockDate = new Date("2020-01-01T00:00:00.000Z");
 const nowDate = new Date();
@@ -75,6 +78,36 @@ export const createAuthenticatedMockContext = ({
         },
         headers: new Headers(),
     };
+};
+
+/**
+ * A context as `organizationProcedure` builds it — the authenticated context plus the
+ * `organizationId` and `logEvent` that the middleware injects.
+ *
+ * Use this to call an exported router helper directly, rather than through `createCaller`, when
+ * the helper takes arguments the procedure does not expose. The D4H team import is the case that
+ * needs it: it calls `createPerson(ctx, id, create, batchId)` with a `batchId` that no procedure
+ * ever passes, so the batched path is unreachable through a caller.
+ *
+ * `logEvent` shares `resolveActor` with `src/trpc/init.ts` rather than restating it, so the
+ * impersonation rule — an action taken while impersonating is attributed to the impersonator —
+ * cannot drift between the two.
+ */
+export const createOrganizationMockContext = ({
+    organizationId,
+    ...overrides
+}: CreateAuthenticatedMockContextOverrides & { organizationId: OrganizationId }) => {
+    const ctx = createAuthenticatedMockContext(overrides);
+    const { auth } = ctx;
+
+    function logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+        return recordLogEntry(
+            { scope: "organization", organizationId, ...resolveActor(auth), ...options },
+            tx,
+        );
+    }
+
+    return { ...ctx, organizationId, userId: UserId.schema.parse(auth.user.id), logEvent };
 };
 
 // Reset all mocks before each test

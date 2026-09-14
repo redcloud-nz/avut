@@ -98,6 +98,7 @@ export const ObjectIcons = {
     Export: DownloadIcon,
     History: HistoryIcon,
     Import: UploadIcon,
+    Invite: SendIcon,
     Link: LinkIcon,
     Move: MoveIcon,
     Publish: BookUpIcon,

@@ -2403,7 +2403,7 @@ export const models = [
                 kind: "scalar",
                 isList: false,
                 isRequired: false,
-                isUnique: true,
+                isUnique: false,
                 isId: false,
                 isReadOnly: true,
                 hasDefaultValue: false,
@@ -3420,10 +3420,10 @@ export const models = [
                 isUpdatedAt: false,
             },
             {
-                name: "organizationInvitation",
+                name: "organizationInvitations",
                 kind: "object",
-                isList: false,
-                isRequired: false,
+                isList: true,
+                isRequired: true,
                 isUnique: false,
                 isId: false,
                 isReadOnly: false,
@@ -6953,16 +6953,6 @@ export const indexes = [
     },
     {
         model: "OrganizationInvitation",
-        type: "unique",
-        isDefinedOnField: true,
-        fields: [
-            {
-                name: "personId",
-            },
-        ],
-    },
-    {
-        model: "OrganizationInvitation",
         type: "normal",
         isDefinedOnField: false,
         fields: [
@@ -6978,6 +6968,16 @@ export const indexes = [
         fields: [
             {
                 name: "email",
+            },
+        ],
+    },
+    {
+        model: "OrganizationInvitation",
+        type: "normal",
+        isDefinedOnField: false,
+        fields: [
+            {
+                name: "personId",
             },
         ],
     },
