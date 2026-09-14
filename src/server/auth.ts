@@ -90,7 +90,7 @@ export const auth = betterAuth({
                 return;
             }
 
-            sendEmail({
+            await sendEmail({
                 from: NoReplyEmailAddress,
                 to: previousEmail,
                 subject: "Your AVUT email address was changed",
@@ -113,7 +113,7 @@ export const auth = betterAuth({
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
                 console.log(`Sending verification OTP (type: ${type}) to:`, email);
-                sendEmail({
+                await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
                     subject: "Your verification code",
@@ -208,7 +208,7 @@ export const auth = betterAuth({
                 console.log(
                     `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
                 );
-                sendEmail({
+                await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
                     subject: `Invitation to join ${organization.name} on AVUT`,
