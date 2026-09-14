@@ -1,6 +1,6 @@
 # Spec: Documentation screenshots
 
-**Date:** 2026-09-10
+**Date:** 2026-09-13
 **Status:** Phase 1 implemented; Phase 2 pending
 
 Covers how screenshots are captured, stored, and rendered — in the end-user

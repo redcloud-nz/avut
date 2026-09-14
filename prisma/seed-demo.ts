@@ -34,6 +34,7 @@ import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import prisma from "@/server/prisma";
@@ -106,6 +107,7 @@ function pick<T>(items: T[]): T {
 /** A training night: the 12th of the month, 19:00 local. */
 function sessionDate(monthsAgo: number): Date {
     const d = new Date();
+    d.setDate(1); // avoid month-overflow when today's date doesn't exist in the target month
     d.setMonth(d.getMonth() - monthsAgo);
     d.setDate(12);
     d.setHours(19, 0, 0, 0);
@@ -173,7 +175,7 @@ function emailLocalPart(name: string): string {
     const ascii = (s: string) =>
         s
             .normalize("NFD")
-            .replace(/[̀-ͯ]/g, "")
+            .replace(/[̀-ͯ]/g, "") // combining diacritical marks
             .replace(/[^a-zA-Z]/g, "")
             .toLowerCase();
     return `${ascii(first)}.${ascii(rest.join(""))}`;
@@ -422,7 +424,7 @@ async function subscribeToPackages(organizationId: string): Promise<SeedSkillGro
 
     await prisma.skillPackageSubscription.createMany({
         data: packages.map((pkg) => ({
-            id: nanoId16(),
+            id: SkillPackageSubscriptionId.create(),
             organizationId,
             skillPackageId: pkg.id,
         })),
@@ -449,7 +451,7 @@ async function subscribeToPackages(organizationId: string): Promise<SeedSkillGro
     return groups;
 }
 
-const RESULT_WEIGHTS: [string, number][] = [
+const RESULT_WEIGHTS: [Prisma.SkillCheckCreateManyInput["result"], number][] = [
     ["Pass", 45],
     ["StrongPass", 28],
     ["NotTaught", 15],
@@ -517,7 +519,7 @@ async function createSessions(
                 sessionNumber: i + 1,
                 status: "Include",
                 startsAt: when,
-                endsAt: isCurrent ? null : when,
+                endsAt: isCurrent ? null : new Date(when.getTime() + 3 * 60 * 60 * 1000),
                 // Nullable in the DB, but the app's Zod schema requires a string.
                 notes: isCurrent ? "" : `Covered ${sessionGroups.map((g) => g.name).join(", ")}.`,
                 assessees: { connect: assessees.map((p) => ({ id: p.id })) },
@@ -542,7 +544,7 @@ async function createSessions(
                     assesseeId: assessee.id,
                     assessorId: assessor.id,
                     skillId,
-                    result: result as Prisma.SkillCheckCreateManyInput["result"],
+                    result,
                     notes: result === "Pass" || result === "StrongPass" ? "" : pick(FAIL_NOTES),
                     status: "Include",
                     createdAt: when,

@@ -83,6 +83,9 @@ gives PNG, no cursor, and can capture a single element by `uid`.
 ```
 new_page          → opens a page in its own Chrome (separate profile; you will sign in again)
 resize_page       → sets the VIEWPORT, not the window
+emulate           → sets the viewport via CDP — use this for the 390×844 phone shots; a real
+                     Chrome window clamps to ~500px wide, so resize_page silently yields a
+                     500px "phone" instead of 390px
 take_screenshot   → format: "png", optional uid, filePath
 ```
 
@@ -222,6 +225,8 @@ together — the index is the only record of the upload.
 - Using the claude-in-chrome screenshot tools — JPEG, with a mouse cursor drawn in.
 - Impersonating instead of signing in, and capturing the impersonation banner.
 - Trusting `resize_window`/`resize_page` without checking `innerWidth`/`innerHeight`/`devicePixelRatio`.
+- Using `resize_page` for a phone viewport — a real Chrome window clamps to ~500px wide, so it
+  silently yields a 500px "phone" shot instead of 390px. Use `emulate`'s `viewport` param instead.
 - Trimming a page capture down to its content, so two shots in one doc render at different sizes.
 - Forgetting the CSS injection after a hard navigation, and shipping the Next dev badge.
 - Saving PNGs outside the workspace root — the DevTools MCP rejects the path.
