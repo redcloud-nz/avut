@@ -29,10 +29,7 @@ export default function PrivacyPolicy_Page() {
                         AVUT is operated by Alex Westphal, Christchurch, New Zealand. For anything
                         in this policy, including access and correction requests and privacy
                         complaints, contact{" "}
-                        <a
-                            href="mailto:support@avut.nz"
-                            className="text-blue-500 hover:underline"
-                        >
+                        <a href="mailto:support@avut.nz" className="text-blue-500 hover:underline">
                             support@avut.nz
                         </a>
                         . Alex Westphal is also the privacy officer for the purposes of section 201
@@ -80,12 +77,12 @@ export default function PrivacyPolicy_Page() {
                     </p>
                     <p className="mb-4">
                         <strong>Organisation records</strong> — information an organisation enters
-                        or uploads about its personnel. This is usually names, email addresses,
-                        team memberships, skill and assessment results, and equipment issued. We do
-                        not collect this from the individuals concerned; it comes from the
-                        organisation. This is permitted by IPP 2(2), which allows collection from
-                        another source where collecting directly would not be reasonably
-                        practicable for the purpose.
+                        or uploads about its personnel. This is usually names, email addresses, team
+                        memberships, skill and assessment results, and equipment issued. We do not
+                        collect this from the individuals concerned; it comes from the organisation.
+                        This is permitted by IPP 2(2), which allows collection from another source
+                        where collecting directly would not be reasonably practicable for the
+                        purpose.
                     </p>
                     <p className="mb-4">
                         <strong>D4H data</strong> — if an organisation connects a D4H account, we
@@ -172,11 +169,11 @@ export default function PrivacyPolicy_Page() {
                     </h2>
                     <p className="mb-4">
                         System administrators can sign in as another user in order to diagnose
-                        faults and provide support. While doing so they can see what that user
-                        sees, including that organisation&rsquo;s records. Every such session is
-                        recorded in the audit log, identifying both the administrator and the
-                        account being accessed. We use this only where it is necessary to operate or
-                        support the service.
+                        faults and provide support. While doing so they can see what that user sees,
+                        including that organisation&rsquo;s records. Every such session is recorded
+                        in the audit log, identifying both the administrator and the account being
+                        accessed. We use this only where it is necessary to operate or support the
+                        service.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">
@@ -215,13 +212,15 @@ export default function PrivacyPolicy_Page() {
                         your account. Email us at the address in section 1 and we will action it.
                     </p>
                     <p className="mb-4">
-                        <strong>Audit log entries are retained after the account or record they
-                        describe has been deleted.</strong>{" "}
+                        <strong>
+                            Audit log entries are retained after the account or record they describe
+                            has been deleted.
+                        </strong>{" "}
                         An audit log that disappears along with its subject cannot serve its
                         purpose, which is to let an organisation establish what happened to its
-                        records. When an account is deleted, entries describing that
-                        account&rsquo;s actions are de-identified: the link to the account is
-                        removed and only a stored display label remains.
+                        records. When an account is deleted, entries describing that account&rsquo;s
+                        actions are de-identified: the link to the account is removed and only a
+                        stored display label remains.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-4">11. Your rights</h2>
@@ -285,9 +284,7 @@ export default function PrivacyPolicy_Page() {
                         .
                     </p>
 
-                    <h2 className="text-2xl font-semibold mt-6 mb-4">
-                        15. Changes to this policy
-                    </h2>
+                    <h2 className="text-2xl font-semibold mt-6 mb-4">15. Changes to this policy</h2>
                     <p className="mb-4">
                         We may update this policy. If a change materially affects how we handle your
                         personal information, we will tell account holders by email before it takes

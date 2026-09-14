@@ -24,14 +24,13 @@ export default function TermsOfService_Page() {
                         you in respect of other people&rsquo;s information.
                     </p>
 
-                    <h2 className="text-2xl font-semibold mt-6 mb-4">1. Who you are dealing with</h2>
+                    <h2 className="text-2xl font-semibold mt-6 mb-4">
+                        1. Who you are dealing with
+                    </h2>
                     <p className="mb-4">
                         AVUT is operated by Alex Westphal, Christchurch, New Zealand
                         (&ldquo;we&rdquo;, &ldquo;us&rdquo;). You can reach us at{" "}
-                        <a
-                            href="mailto:support@avut.nz"
-                            className="text-blue-500 hover:underline"
-                        >
+                        <a href="mailto:support@avut.nz" className="text-blue-500 hover:underline">
                             support@avut.nz
                         </a>
                         .
@@ -46,7 +45,9 @@ export default function TermsOfService_Page() {
                         has enabled.
                     </p>
                     <p className="mb-4">
-                        <strong>AVUT is provided free of charge and is under active development.</strong>{" "}
+                        <strong>
+                            AVUT is provided free of charge and is under active development.
+                        </strong>{" "}
                         We do not promise any particular level of availability, we may change or
                         remove features, and some features are explicitly experimental. It is not a
                         system of record for anything you cannot afford to lose, and you should keep
@@ -121,12 +122,10 @@ export default function TermsOfService_Page() {
                     <p className="mb-4">You must not use AVUT to:</p>
                     <ul className="mb-4 list-disc pl-6 space-y-1">
                         <li>
-                            <strong>
-                                record health information about an identifiable person
-                            </strong>{" "}
-                            — including medical conditions, injuries, treatment, or
-                            fitness-for-duty assessments — or information about criminal history.
-                            AVUT is not built to handle information governed by the{" "}
+                            <strong>record health information about an identifiable person</strong>{" "}
+                            — including medical conditions, injuries, treatment, or fitness-for-duty
+                            assessments — or information about criminal history. AVUT is not built
+                            to handle information governed by the{" "}
                             <span className="italic">Health Information Privacy Code 2020</span>,
                             and free-text fields such as notes, tags and custom properties are not
                             an exception;
@@ -146,7 +145,9 @@ export default function TermsOfService_Page() {
                         </li>
                     </ul>
 
-                    <h2 className="text-2xl font-semibold mt-6 mb-4">7. D4H and other third parties</h2>
+                    <h2 className="text-2xl font-semibold mt-6 mb-4">
+                        7. D4H and other third parties
+                    </h2>
                     <p className="mb-4">
                         D4H is a separate platform operated by someone else. If you connect a D4H
                         account you do so under your own agreement with D4H, and you are responsible
@@ -155,7 +156,9 @@ export default function TermsOfService_Page() {
                         data, and D4H integration may stop working if D4H changes its service.
                     </p>
 
-                    <h2 className="text-2xl font-semibold mt-6 mb-4">8. Suspension and termination</h2>
+                    <h2 className="text-2xl font-semibold mt-6 mb-4">
+                        8. Suspension and termination
+                    </h2>
                     <p className="mb-4">
                         You may stop using AVUT and close your account at any time.
                     </p>
@@ -199,7 +202,9 @@ export default function TermsOfService_Page() {
                         full.
                     </p>
 
-                    <h2 className="text-2xl font-semibold mt-6 mb-4">11. Limitation of liability</h2>
+                    <h2 className="text-2xl font-semibold mt-6 mb-4">
+                        11. Limitation of liability
+                    </h2>
                     <p className="mb-4">
                         Subject to section 10, and to the extent the law permits, we are not liable
                         for indirect or consequential loss, for loss of profits or goodwill, or for
@@ -243,10 +248,7 @@ export default function TermsOfService_Page() {
                     <h2 className="text-2xl font-semibold mt-6 mb-4">15. Contact us</h2>
                     <p className="mb-4">
                         If you have any questions about these Terms of Service, please contact us at{" "}
-                        <a
-                            href="mailto:support@avut.nz"
-                            className="text-blue-500 hover:underline"
-                        >
+                        <a href="mailto:support@avut.nz" className="text-blue-500 hover:underline">
                             support@avut.nz
                         </a>
                         .
