@@ -19,9 +19,7 @@ import {
     Text,
 } from "@react-email/components";
 
-const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+import { assetBaseUrl, baseUrl } from "./base-url";
 
 interface OrganizationInviteTemplateProps {
     invitation: { id: string; email: string };
@@ -64,7 +62,7 @@ export default function OrganizationInviteTemplate({
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
-                                src={`${baseUrl}/avut-logo.png`}
+                                src={`${assetBaseUrl}/avut-logo.png`}
                                 width="150"
                                 height="50"
                                 alt="AVUT Logo"
