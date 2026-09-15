@@ -178,7 +178,7 @@ export function SkillTrack_CreateCheck_Dialog() {
                     <Alert variant="warning">
                         <AlertTitle>No linked person record</AlertTitle>
                         <AlertDescription>
-                            Your account is not linked to a person record in this organization.
+                            Your account is not linked to a person record in this organisation.
                             Contact an administrator to link your account before recording skill
                             checks.
                         </AlertDescription>

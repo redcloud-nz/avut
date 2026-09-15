@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# content-collections (generated from content/docs at build/dev time)
+/.content-collections/
+
 # production
 /build
 
@@ -43,10 +46,13 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
-src/app/(authenticated)/orgs/\[slug\]/system/scratch/*
-!src/app/(authenticated)/orgs/\[slug\]/system/scratch/README.md
+src/app/(wrapper)/(authenticated)/orgs/\[slug\]/system/scratch/*
+!src/app/(wrapper)/(authenticated)/orgs/\[slug\]/system/scratch/README.md
 src/app/scratch/
 
 # claude code — personal overrides (.claude/settings.json IS shared)
 .claude/settings.local.json
 .claude/worktrees/
+
+# scratch PNGs from the docs screenshot capture skill (uploaded to Blob, never committed)
+.screenshots/

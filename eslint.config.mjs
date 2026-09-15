@@ -7,6 +7,8 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
 
+import nzSpelling from "./eslint-rules/nz-spelling.mjs";
+
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
@@ -35,7 +37,7 @@ const config = [
     //
     // Restricting only the `auth` binding keeps `import type { AuthSession }` working.
     files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
-    ignores: ["src/app/trpc/**", "src/app/auth/**", "src/app/api/**"],
+    ignores: ["src/app/trpc/**", "src/app/(public)/auth/**", "src/app/api/**"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -66,6 +68,31 @@ const config = [
             "Use useSession() from @/client/auth-queries instead of authClient.useSession().",
         },
       ],
+    },
+  },
+  {
+    // en-NZ copy sweep guardrail (docs/ideas/2026-09-10-nz-english-and-te-reo.md). The sweep is
+    // clean as of the commit that flipped this to `error` — a regression should fail CI, not
+    // just warn. Scoped to rendered JSX text and a handful of text-bearing attributes — never
+    // code identifiers or class names — so it can safely cover all app/component/email source.
+    files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/emails/**/*.tsx"],
+    plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
+    rules: {
+      "avut/nz-spelling": "error",
+    },
+  },
+  {
+    // Centralised label/description files — small and fully user-facing, so every string
+    // literal (not just JSX text) is worth checking here.
+    files: [
+      "src/lib/modules.ts",
+      "src/lib/permissions.ts",
+      "src/lib/schemas/organization-role.ts",
+      "src/lib/glossary.ts",
+    ],
+    plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
+    rules: {
+      "avut/nz-spelling": ["error", { checkLabelProperties: true }],
     },
   },
 ];

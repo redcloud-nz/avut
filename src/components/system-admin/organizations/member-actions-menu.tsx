@@ -157,7 +157,7 @@ export function SystemAdmin_MemberActionsMenu({
                     <DialogHeader>
                         <DialogTitle>Change role</DialogTitle>
                         <DialogDescription>
-                            Change the organization role for <ObjectName>{member.name}</ObjectName>.
+                            Change the organisation role for <ObjectName>{member.name}</ObjectName>.
                         </DialogDescription>
                     </DialogHeader>
                     <Field>
@@ -203,7 +203,7 @@ export function SystemAdmin_MemberActionsMenu({
                         <AlertDialogTitle>Remove member</AlertDialogTitle>
                         <AlertDialogDescription>
                             Remove <ObjectName>{member.name}</ObjectName> ({member.email}) from this
-                            organization. This does not delete the user account.
+                            organisation. This does not delete the user account.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

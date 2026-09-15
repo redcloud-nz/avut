@@ -28,7 +28,7 @@ export function UserSettings_PageContent() {
             <TabsList>
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="security">Security</TabsTrigger>
-                <TabsTrigger value="organizations">Organizations</TabsTrigger>
+                <TabsTrigger value="organizations">Organisations</TabsTrigger>
                 <TabsTrigger value="integrations">Integrations</TabsTrigger>
             </TabsList>
             <TabsContent value="account">

@@ -64,19 +64,25 @@ function InputGroupAddon({
     );
 }
 
-const inputGroupButtonVariants = cva("flex items-center gap-2 text-sm shadow-none", {
-    variants: {
-        size: {
-            xs: "h-6 gap-1 rounded-[calc(var(--radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
-            sm: "",
-            "icon-xs": "size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0",
-            "icon-sm": "size-8 p-0 has-[>svg]:p-0",
+// The button sits flush against InputGroup's own border, so on focus its ring needs to draw
+// toward the button's own center rather than outward, or it bleeds into that border and reads
+// as two concentric shapes.
+const inputGroupButtonVariants = cva(
+    "flex items-center gap-2 text-sm shadow-none focus-visible:ring-inset",
+    {
+        variants: {
+            size: {
+                xs: "h-6 gap-1 rounded-[calc(var(--radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
+                sm: "",
+                "icon-xs": "size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0",
+                "icon-sm": "size-8 p-0 has-[>svg]:p-0",
+            },
+        },
+        defaultVariants: {
+            size: "xs",
         },
     },
-    defaultVariants: {
-        size: "xs",
-    },
-});
+);
 
 function InputGroupButton({
     className,

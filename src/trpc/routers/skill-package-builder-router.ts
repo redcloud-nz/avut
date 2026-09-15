@@ -9,8 +9,10 @@ import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
 import { Skill, SkillId } from "@/lib/schemas/skill";
+import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import { buildSkillPackageExport, prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -373,6 +375,32 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
+     * Export a skill package's authoring tree (`SkillPackage → SkillGroup → Skill`) as a
+     * portable envelope for moving it to another AVUT instance or into the bundled library.
+     * Carries the authoring tree only — no checks, sessions, subscriptions, or overrides.
+     * @param skillPackageId The ID of the skill package to export.
+     * @throws TRPCError(NOT_FOUND) if the package does not exist or does not belong to the organization.
+     */
+    exportPackage: organizationProcedure({ skillPackageBuilder: ["view"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(SkillPackageExport.schema)
+        .query(async ({ ctx, input: { organizationId, skillPackageId } }) => {
+            const pkg = await ctx.prisma.skillPackage.findUnique({
+                where: { id: skillPackageId, organizationId },
+                include: { groups: true, skills: true },
+            });
+
+            if (!pkg) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillPackageNotFound(skillPackageId),
+                });
+            }
+
+            return buildSkillPackageExport(pkg, pkg.groups, pkg.skills);
+        }),
+
+    /**
      * Get a single skill group by ID, including its parent skill package.
      * @param skillGroupId The ID of the skill group to retrieve.
      * @returns The skill group with its parent skill package.
@@ -451,6 +479,55 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 skillGroup: SkillGroup.fromRecord(skill.skillGroup),
                 skillPackage: SkillPackage.fromRecord(skill.skillPackage),
             };
+        }),
+
+    /**
+     * Import a skill-package export envelope (produced by `exportPackage`) into this
+     * organization, moving a package authored on another AVUT instance across, or re-syncing
+     * one already here.
+     *
+     * Create-or-sync keyed on the record IDs in the envelope (see `prepareSkillPackageImport`):
+     * the tree is created if the package ID is new to this organization, otherwise groups/
+     * skills are upserted by ID and anything the envelope omits is **archived** (never
+     * deleted — `SkillCheck.skillId` cascades and would take assessment history with it). A
+     * package ID already owned by a different organization is rejected. Imported packages
+     * always land `published: false`.
+     *
+     * `dryRun: true` computes and returns the plan without writing — the UI shows it for
+     * confirmation before a real import.
+     *
+     * A single-package import is one package-shaped event, so it writes exactly **one** log
+     * entry (`organizationId` arm); the group/skill row-writes are an implementation detail.
+     * @throws TRPCError(BAD_REQUEST) if the envelope repeats a group or skill ID.
+     * @throws TRPCError(CONFLICT) if the package ID belongs to a different organization.
+     */
+    importPackage: organizationProcedure({ skillPackageBuilder: ["create"] })
+        .input(
+            z.object({ envelope: SkillPackageExport.schema, dryRun: z.boolean().default(false) }),
+        )
+        .mutation(async ({ ctx, input: { organizationId, envelope, dryRun } }) => {
+            const { plan, buildWrites } = await prepareSkillPackageImport(
+                ctx.prisma,
+                envelope,
+                organizationId,
+            );
+
+            if (dryRun) return { plan, applied: false as const };
+
+            const { counts } = plan;
+            const description = `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`;
+
+            await ctx.prisma.$transaction([
+                ...buildWrites(ctx.prisma),
+                ctx.logEvent({
+                    action: plan.packageAction,
+                    objectType: "SkillPackage",
+                    objectId: envelope.package.id,
+                    description,
+                }),
+            ]);
+
+            return { plan, applied: true as const };
         }),
 
     /**

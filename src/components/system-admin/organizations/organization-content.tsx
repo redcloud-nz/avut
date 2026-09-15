@@ -86,7 +86,7 @@ export function SystemAdmin_Organization_Content({
                                 </CardHeader>
                                 <CardContent>
                                     <DL>
-                                        <DLTerm>Organization ID</DLTerm>
+                                        <DLTerm>Organisation ID</DLTerm>
                                         <DLDetails className="font-mono">
                                             {organization.id}
                                         </DLDetails>

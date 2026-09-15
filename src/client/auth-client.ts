@@ -15,6 +15,24 @@ export const authClient = createAuthClient({
         organizationClient({
             ac,
             roles: Roles,
+            /*
+             * Mirrors the `schema.invitation` / `schema.member` additionalFields declared on the
+             * server in `src/server/auth.ts`. Declared again here because the client plugin types
+             * `inviteMember`'s body from its own options — without this, passing `personId` is a
+             * type error even though the server route accepts it. Keep the two in step.
+             */
+            schema: {
+                invitation: {
+                    additionalFields: {
+                        personId: { type: "string", input: true, required: false },
+                    },
+                },
+                member: {
+                    additionalFields: {
+                        personId: { type: "string", input: true, required: false },
+                    },
+                },
+            },
         }),
     ],
 });

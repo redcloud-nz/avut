@@ -34,14 +34,15 @@ export function ResetPassword_Card({ email }: { email: string }) {
 
     const mutation = useMutation({
         async mutationFn(formData: { code: string; newPassword: string }) {
-            return await authClient.emailOtp.resetPassword(
-                {
-                    email,
-                    otp: formData.code,
-                    password: formData.newPassword,
-                },
-                { throw: true },
-            );
+            const { data, error } = await authClient.emailOtp.resetPassword({
+                email,
+                otp: formData.code,
+                password: formData.newPassword,
+            });
+            if (error) {
+                throw new Error(error.message ?? "Unable to reset password.");
+            }
+            return data;
         },
         onSuccess() {
             router.push(`/auth/sign-in?email=${encodeURIComponent(email)}`);
@@ -126,9 +127,7 @@ export function ResetPassword_Card({ email }: { email: string }) {
                                 }}
                             />
                         </Field>
-                        {mutation.isError && (
-                            <FieldError errors={[mutation.error as { message?: string }]} />
-                        )}
+                        {mutation.isError && <FieldError errors={[mutation.error]} />}
                     </FieldGroup>
                 </form>
             </CardContent>

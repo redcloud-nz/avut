@@ -233,6 +233,8 @@ export type D4HAccessTokenWhereInput = {
         Prisma.OrganizationWhereInput
     > | null;
     user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+    linkedTeams?: Prisma.Team_D4HListRelationFilter;
+    syncingOrganizations?: Prisma.Organization_D4HListRelationFilter;
 };
 
 export type D4HAccessTokenOrderByWithRelationInput = {
@@ -249,6 +251,8 @@ export type D4HAccessTokenOrderByWithRelationInput = {
     updatedAt?: Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
     user?: Prisma.UserOrderByWithRelationInput;
+    linkedTeams?: Prisma.Team_D4HOrderByRelationAggregateInput;
+    syncingOrganizations?: Prisma.Organization_D4HOrderByRelationAggregateInput;
 };
 
 export type D4HAccessTokenWhereUniqueInput = Prisma.AtLeast<
@@ -272,6 +276,8 @@ export type D4HAccessTokenWhereUniqueInput = Prisma.AtLeast<
             Prisma.OrganizationWhereInput
         > | null;
         user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+        linkedTeams?: Prisma.Team_D4HListRelationFilter;
+        syncingOrganizations?: Prisma.Organization_D4HListRelationFilter;
     },
     "id"
 >;
@@ -326,6 +332,8 @@ export type D4HAccessTokenCreateInput = {
     updatedAt?: Date | string;
     organization?: Prisma.OrganizationCreateNestedOneWithoutD4hAccessTokensInput;
     user?: Prisma.UserCreateNestedOneWithoutD4hAccessTokensInput;
+    linkedTeams?: Prisma.Team_D4HCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenUncheckedCreateInput = {
@@ -340,6 +348,8 @@ export type D4HAccessTokenUncheckedCreateInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenUpdateInput = {
@@ -354,6 +364,8 @@ export type D4HAccessTokenUpdateInput = {
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneWithoutD4hAccessTokensNestedInput;
     user?: Prisma.UserUpdateOneWithoutD4hAccessTokensNestedInput;
+    linkedTeams?: Prisma.Team_D4HUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenUncheckedUpdateInput = {
@@ -368,6 +380,8 @@ export type D4HAccessTokenUncheckedUpdateInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenCreateManyInput = {
@@ -418,6 +432,11 @@ export type D4HAccessTokenListRelationFilter = {
 
 export type D4HAccessTokenOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
+};
+
+export type D4HAccessTokenNullableScalarRelationFilter = {
+    is?: Prisma.D4HAccessTokenWhereInput | null;
+    isNot?: Prisma.D4HAccessTokenWhereInput | null;
 };
 
 export type D4HAccessTokenCountOrderByAggregateInput = {
@@ -632,6 +651,62 @@ export type D4HAccessTokenUncheckedUpdateManyWithoutOrganizationNestedInput = {
     deleteMany?: Prisma.D4HAccessTokenScalarWhereInput | Prisma.D4HAccessTokenScalarWhereInput[];
 };
 
+export type D4HAccessTokenCreateNestedOneWithoutSyncingOrganizationsInput = {
+    create?: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutSyncingOrganizationsInput
+    >;
+    connectOrCreate?: Prisma.D4HAccessTokenCreateOrConnectWithoutSyncingOrganizationsInput;
+    connect?: Prisma.D4HAccessTokenWhereUniqueInput;
+};
+
+export type D4HAccessTokenUpdateOneWithoutSyncingOrganizationsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutSyncingOrganizationsInput
+    >;
+    connectOrCreate?: Prisma.D4HAccessTokenCreateOrConnectWithoutSyncingOrganizationsInput;
+    upsert?: Prisma.D4HAccessTokenUpsertWithoutSyncingOrganizationsInput;
+    disconnect?: Prisma.D4HAccessTokenWhereInput | boolean;
+    delete?: Prisma.D4HAccessTokenWhereInput | boolean;
+    connect?: Prisma.D4HAccessTokenWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.D4HAccessTokenUpdateToOneWithWhereWithoutSyncingOrganizationsInput,
+            Prisma.D4HAccessTokenUpdateWithoutSyncingOrganizationsInput
+        >,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutSyncingOrganizationsInput
+    >;
+};
+
+export type D4HAccessTokenCreateNestedOneWithoutLinkedTeamsInput = {
+    create?: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutLinkedTeamsInput
+    >;
+    connectOrCreate?: Prisma.D4HAccessTokenCreateOrConnectWithoutLinkedTeamsInput;
+    connect?: Prisma.D4HAccessTokenWhereUniqueInput;
+};
+
+export type D4HAccessTokenUpdateOneWithoutLinkedTeamsNestedInput = {
+    create?: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutLinkedTeamsInput
+    >;
+    connectOrCreate?: Prisma.D4HAccessTokenCreateOrConnectWithoutLinkedTeamsInput;
+    upsert?: Prisma.D4HAccessTokenUpsertWithoutLinkedTeamsInput;
+    disconnect?: Prisma.D4HAccessTokenWhereInput | boolean;
+    delete?: Prisma.D4HAccessTokenWhereInput | boolean;
+    connect?: Prisma.D4HAccessTokenWhereUniqueInput;
+    update?: Prisma.XOR<
+        Prisma.XOR<
+            Prisma.D4HAccessTokenUpdateToOneWithWhereWithoutLinkedTeamsInput,
+            Prisma.D4HAccessTokenUpdateWithoutLinkedTeamsInput
+        >,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutLinkedTeamsInput
+    >;
+};
+
 export type D4HAccessTokenCreateWithoutUserInput = {
     id: string;
     label: string;
@@ -643,6 +718,8 @@ export type D4HAccessTokenCreateWithoutUserInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization?: Prisma.OrganizationCreateNestedOneWithoutD4hAccessTokensInput;
+    linkedTeams?: Prisma.Team_D4HCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenUncheckedCreateWithoutUserInput = {
@@ -656,6 +733,8 @@ export type D4HAccessTokenUncheckedCreateWithoutUserInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenCreateOrConnectWithoutUserInput = {
@@ -727,6 +806,8 @@ export type D4HAccessTokenCreateWithoutOrganizationInput = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     user?: Prisma.UserCreateNestedOneWithoutD4hAccessTokensInput;
+    linkedTeams?: Prisma.Team_D4HCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenUncheckedCreateWithoutOrganizationInput = {
@@ -740,6 +821,8 @@ export type D4HAccessTokenUncheckedCreateWithoutOrganizationInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedCreateNestedManyWithoutLinkTokenInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedCreateNestedManyWithoutSyncTokenInput;
 };
 
 export type D4HAccessTokenCreateOrConnectWithoutOrganizationInput = {
@@ -785,6 +868,182 @@ export type D4HAccessTokenUpdateManyWithWhereWithoutOrganizationInput = {
     >;
 };
 
+export type D4HAccessTokenCreateWithoutSyncingOrganizationsInput = {
+    id: string;
+    label: string;
+    token: string;
+    serverCode: string;
+    status: string;
+    expiresAt: Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    organization?: Prisma.OrganizationCreateNestedOneWithoutD4hAccessTokensInput;
+    user?: Prisma.UserCreateNestedOneWithoutD4hAccessTokensInput;
+    linkedTeams?: Prisma.Team_D4HCreateNestedManyWithoutLinkTokenInput;
+};
+
+export type D4HAccessTokenUncheckedCreateWithoutSyncingOrganizationsInput = {
+    id: string;
+    organizationId?: string | null;
+    userId?: string | null;
+    label: string;
+    token: string;
+    serverCode: string;
+    status: string;
+    expiresAt: Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedCreateNestedManyWithoutLinkTokenInput;
+};
+
+export type D4HAccessTokenCreateOrConnectWithoutSyncingOrganizationsInput = {
+    where: Prisma.D4HAccessTokenWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutSyncingOrganizationsInput
+    >;
+};
+
+export type D4HAccessTokenUpsertWithoutSyncingOrganizationsInput = {
+    update: Prisma.XOR<
+        Prisma.D4HAccessTokenUpdateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutSyncingOrganizationsInput
+    >;
+    create: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutSyncingOrganizationsInput
+    >;
+    where?: Prisma.D4HAccessTokenWhereInput;
+};
+
+export type D4HAccessTokenUpdateToOneWithWhereWithoutSyncingOrganizationsInput = {
+    where?: Prisma.D4HAccessTokenWhereInput;
+    data: Prisma.XOR<
+        Prisma.D4HAccessTokenUpdateWithoutSyncingOrganizationsInput,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutSyncingOrganizationsInput
+    >;
+};
+
+export type D4HAccessTokenUpdateWithoutSyncingOrganizationsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    label?: Prisma.StringFieldUpdateOperationsInput | string;
+    token?: Prisma.StringFieldUpdateOperationsInput | string;
+    serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    organization?: Prisma.OrganizationUpdateOneWithoutD4hAccessTokensNestedInput;
+    user?: Prisma.UserUpdateOneWithoutD4hAccessTokensNestedInput;
+    linkedTeams?: Prisma.Team_D4HUpdateManyWithoutLinkTokenNestedInput;
+};
+
+export type D4HAccessTokenUncheckedUpdateWithoutSyncingOrganizationsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    label?: Prisma.StringFieldUpdateOperationsInput | string;
+    token?: Prisma.StringFieldUpdateOperationsInput | string;
+    serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedUpdateManyWithoutLinkTokenNestedInput;
+};
+
+export type D4HAccessTokenCreateWithoutLinkedTeamsInput = {
+    id: string;
+    label: string;
+    token: string;
+    serverCode: string;
+    status: string;
+    expiresAt: Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    organization?: Prisma.OrganizationCreateNestedOneWithoutD4hAccessTokensInput;
+    user?: Prisma.UserCreateNestedOneWithoutD4hAccessTokensInput;
+    syncingOrganizations?: Prisma.Organization_D4HCreateNestedManyWithoutSyncTokenInput;
+};
+
+export type D4HAccessTokenUncheckedCreateWithoutLinkedTeamsInput = {
+    id: string;
+    organizationId?: string | null;
+    userId?: string | null;
+    label: string;
+    token: string;
+    serverCode: string;
+    status: string;
+    expiresAt: Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedCreateNestedManyWithoutSyncTokenInput;
+};
+
+export type D4HAccessTokenCreateOrConnectWithoutLinkedTeamsInput = {
+    where: Prisma.D4HAccessTokenWhereUniqueInput;
+    create: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutLinkedTeamsInput
+    >;
+};
+
+export type D4HAccessTokenUpsertWithoutLinkedTeamsInput = {
+    update: Prisma.XOR<
+        Prisma.D4HAccessTokenUpdateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutLinkedTeamsInput
+    >;
+    create: Prisma.XOR<
+        Prisma.D4HAccessTokenCreateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedCreateWithoutLinkedTeamsInput
+    >;
+    where?: Prisma.D4HAccessTokenWhereInput;
+};
+
+export type D4HAccessTokenUpdateToOneWithWhereWithoutLinkedTeamsInput = {
+    where?: Prisma.D4HAccessTokenWhereInput;
+    data: Prisma.XOR<
+        Prisma.D4HAccessTokenUpdateWithoutLinkedTeamsInput,
+        Prisma.D4HAccessTokenUncheckedUpdateWithoutLinkedTeamsInput
+    >;
+};
+
+export type D4HAccessTokenUpdateWithoutLinkedTeamsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    label?: Prisma.StringFieldUpdateOperationsInput | string;
+    token?: Prisma.StringFieldUpdateOperationsInput | string;
+    serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    organization?: Prisma.OrganizationUpdateOneWithoutD4hAccessTokensNestedInput;
+    user?: Prisma.UserUpdateOneWithoutD4hAccessTokensNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUpdateManyWithoutSyncTokenNestedInput;
+};
+
+export type D4HAccessTokenUncheckedUpdateWithoutLinkedTeamsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    organizationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    label?: Prisma.StringFieldUpdateOperationsInput | string;
+    token?: Prisma.StringFieldUpdateOperationsInput | string;
+    serverCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedUpdateManyWithoutSyncTokenNestedInput;
+};
+
 export type D4HAccessTokenCreateManyUserInput = {
     id: string;
     organizationId?: string | null;
@@ -809,6 +1068,8 @@ export type D4HAccessTokenUpdateWithoutUserInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneWithoutD4hAccessTokensNestedInput;
+    linkedTeams?: Prisma.Team_D4HUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenUncheckedUpdateWithoutUserInput = {
@@ -822,6 +1083,8 @@ export type D4HAccessTokenUncheckedUpdateWithoutUserInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenUncheckedUpdateManyWithoutUserInput = {
@@ -861,6 +1124,8 @@ export type D4HAccessTokenUpdateWithoutOrganizationInput = {
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     user?: Prisma.UserUpdateOneWithoutD4hAccessTokensNestedInput;
+    linkedTeams?: Prisma.Team_D4HUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenUncheckedUpdateWithoutOrganizationInput = {
@@ -874,6 +1139,8 @@ export type D4HAccessTokenUncheckedUpdateWithoutOrganizationInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    linkedTeams?: Prisma.Team_D4HUncheckedUpdateManyWithoutLinkTokenNestedInput;
+    syncingOrganizations?: Prisma.Organization_D4HUncheckedUpdateManyWithoutSyncTokenNestedInput;
 };
 
 export type D4HAccessTokenUncheckedUpdateManyWithoutOrganizationInput = {
@@ -887,6 +1154,52 @@ export type D4HAccessTokenUncheckedUpdateManyWithoutOrganizationInput = {
     metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+/**
+ * Count Type D4HAccessTokenCountOutputType
+ */
+
+export type D4HAccessTokenCountOutputType = {
+    linkedTeams: number;
+    syncingOrganizations: number;
+};
+
+export type D4HAccessTokenCountOutputTypeSelect<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    linkedTeams?: boolean | D4HAccessTokenCountOutputTypeCountLinkedTeamsArgs;
+    syncingOrganizations?: boolean | D4HAccessTokenCountOutputTypeCountSyncingOrganizationsArgs;
+};
+
+/**
+ * D4HAccessTokenCountOutputType without action
+ */
+export type D4HAccessTokenCountOutputTypeDefaultArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the D4HAccessTokenCountOutputType
+     */
+    select?: Prisma.D4HAccessTokenCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * D4HAccessTokenCountOutputType without action
+ */
+export type D4HAccessTokenCountOutputTypeCountLinkedTeamsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.Team_D4HWhereInput;
+};
+
+/**
+ * D4HAccessTokenCountOutputType without action
+ */
+export type D4HAccessTokenCountOutputTypeCountSyncingOrganizationsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    where?: Prisma.Organization_D4HWhereInput;
 };
 
 export type D4HAccessTokenSelect<
@@ -906,6 +1219,9 @@ export type D4HAccessTokenSelect<
         updatedAt?: boolean;
         organization?: boolean | Prisma.D4HAccessToken$organizationArgs<ExtArgs>;
         user?: boolean | Prisma.D4HAccessToken$userArgs<ExtArgs>;
+        linkedTeams?: boolean | Prisma.D4HAccessToken$linkedTeamsArgs<ExtArgs>;
+        syncingOrganizations?: boolean | Prisma.D4HAccessToken$syncingOrganizationsArgs<ExtArgs>;
+        _count?: boolean | Prisma.D4HAccessTokenCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs["result"]["d4HAccessToken"]
 >;
@@ -987,6 +1303,9 @@ export type D4HAccessTokenInclude<
 > = {
     organization?: boolean | Prisma.D4HAccessToken$organizationArgs<ExtArgs>;
     user?: boolean | Prisma.D4HAccessToken$userArgs<ExtArgs>;
+    linkedTeams?: boolean | Prisma.D4HAccessToken$linkedTeamsArgs<ExtArgs>;
+    syncingOrganizations?: boolean | Prisma.D4HAccessToken$syncingOrganizationsArgs<ExtArgs>;
+    _count?: boolean | Prisma.D4HAccessTokenCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type D4HAccessTokenIncludeCreateManyAndReturn<
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
@@ -1008,6 +1327,8 @@ export type $D4HAccessTokenPayload<
     objects: {
         organization: Prisma.$OrganizationPayload<ExtArgs> | null;
         user: Prisma.$UserPayload<ExtArgs> | null;
+        linkedTeams: Prisma.$Team_D4HPayload<ExtArgs>[];
+        syncingOrganizations: Prisma.$Organization_D4HPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
         {
@@ -1589,6 +1910,28 @@ export interface Prisma__D4HAccessTokenClient<
         ExtArgs,
         GlobalOmitOptions
     >;
+    linkedTeams<T extends Prisma.D4HAccessToken$linkedTeamsArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.D4HAccessToken$linkedTeamsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$Team_D4HPayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
+    syncingOrganizations<T extends Prisma.D4HAccessToken$syncingOrganizationsArgs<ExtArgs> = {}>(
+        args?: Prisma.Subset<T, Prisma.D4HAccessToken$syncingOrganizationsArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+        | runtime.Types.Result.GetResult<
+              Prisma.$Organization_D4HPayload<ExtArgs>,
+              T,
+              "findMany",
+              GlobalOmitOptions
+          >
+        | Null
+    >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2110,6 +2453,60 @@ export type D4HAccessToken$userArgs<
      */
     include?: Prisma.UserInclude<ExtArgs> | null;
     where?: Prisma.UserWhereInput;
+};
+
+/**
+ * D4HAccessToken.linkedTeams
+ */
+export type D4HAccessToken$linkedTeamsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the Team_D4H
+     */
+    select?: Prisma.Team_D4HSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Team_D4H
+     */
+    omit?: Prisma.Team_D4HOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.Team_D4HInclude<ExtArgs> | null;
+    where?: Prisma.Team_D4HWhereInput;
+    orderBy?: Prisma.Team_D4HOrderByWithRelationInput | Prisma.Team_D4HOrderByWithRelationInput[];
+    cursor?: Prisma.Team_D4HWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.Team_D4HScalarFieldEnum | Prisma.Team_D4HScalarFieldEnum[];
+};
+
+/**
+ * D4HAccessToken.syncingOrganizations
+ */
+export type D4HAccessToken$syncingOrganizationsArgs<
+    ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+    /**
+     * Select specific fields to fetch from the Organization_D4H
+     */
+    select?: Prisma.Organization_D4HSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Organization_D4H
+     */
+    omit?: Prisma.Organization_D4HOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.Organization_D4HInclude<ExtArgs> | null;
+    where?: Prisma.Organization_D4HWhereInput;
+    orderBy?:
+        | Prisma.Organization_D4HOrderByWithRelationInput
+        | Prisma.Organization_D4HOrderByWithRelationInput[];
+    cursor?: Prisma.Organization_D4HWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.Organization_D4HScalarFieldEnum | Prisma.Organization_D4HScalarFieldEnum[];
 };
 
 /**

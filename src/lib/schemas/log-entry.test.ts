@@ -86,8 +86,12 @@ describe("objectTypesForModule", () => {
 });
 
 describe("Operations", () => {
-    it("names the two multi-entry operations that exist today", () => {
-        expect(Object.keys(Operations).sort()).toEqual(["d4h-team-import", "d4h-team-sync"]);
+    it("names the multi-entry operations that exist today", () => {
+        expect(Object.keys(Operations).sort()).toEqual([
+            "d4h-team-import",
+            "d4h-team-link",
+            "d4h-team-sync",
+        ]);
     });
 
     it("gives every operation a human label", () => {

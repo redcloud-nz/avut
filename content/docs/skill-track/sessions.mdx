@@ -1,0 +1,162 @@
+---
+title: Sessions
+description: Running a skill check session — from setup, through recording, to approval.
+section: skill-track
+order: 20
+keyTerms: ["skill-check-session", "skill-check", "assessor", "assessee"]
+---
+
+# Sessions
+
+A **skill check session** is the usual way to run assessments — for example,
+everything assessed on one training day. From there, a session moves through
+five steps.
+
+## 1. Create the session
+
+Start from the Sessions list with **New Session**, giving it a name, a date,
+and optional notes. Name and date are both optional — leave the name blank and
+it takes the next sequential number shown in the placeholder; leave the
+date and it defaults to today.
+
+<Screenshot
+  id="skill-track/create-session"
+  caption="Leave the name blank to take the suggested session number, and the date to take today."
+/>
+
+## Getting around a session
+
+Creating a session drops you straight onto its own page, and every step that
+follows starts from there. To come back to it later, open **Sessions** in the
+Skill Track nav and pick it out of the list.
+
+<Screenshot
+  id="skill-track/session-page"
+  caption="The session page. Everything else in this guide is one click from here."
+/>
+
+There are two places to go from:
+
+- The **Contents** card lists **Personnel**, **Skills** and **Skill checks**
+  with their current counts. Clicking a row opens that page — the first two are
+  steps 2 and 3 below, and Skill checks is the read-only log described at the
+  end of step 4.
+- The page header carries **Record**, a menu holding the two recording views,
+  and **Review**, which is step 5.
+
+<Screenshot
+  id="skill-track/session-record-menu"
+  caption="Record opens the two recording views; the Contents card behind it reaches the session's other pages."
+/>
+
+## 2. Choose skills
+
+Open **Skills** from the Contents card, then tick which catalogue skills apply
+to this session, grouped by package and skill group. Choices save automatically
+as you tick.
+
+<Screenshot
+  id="skill-track/session-skills"
+  caption="Skills to be assessed in this session, grouped by package and skill group."
+/>
+
+## 3. Choose personnel
+
+Open **Personnel** from the Contents card, then tick who is being assessed in
+this session, grouped by team. This also saves automatically.
+
+<Screenshot
+  id="skill-track/session-personnel"
+  caption="Who is being assessed, one section per team — the count in the team header tracks your ticks."
+/>
+
+## 4. Record results
+
+This is the actual assessing, done from either **By Person** or **By Skill** —
+the two entries in the header's **Record** menu. They are two views over the
+same recording control, both laid out as a picker on the left and a scrollable
+list of assessment rows on the right:
+
+- **By Person** — pick an assessee on the left; every skill assigned to them
+  lists on the right.
+- **By Skill** — pick a skill on the left; every person assigned to it lists
+  on the right.
+
+<Screenshot
+  id="skill-track/session-by-person"
+  caption="By Person — an assessee picked on the left, their assigned skills to record on the right."
+/>
+
+<Screenshot
+  id="skill-track/session-by-skill"
+  caption="By Skill — the same screen with the axes swapped: a skill on the left, everyone assigned to it on the right."
+/>
+
+For each row, record a result with the two quick buttons — one cycles through
+the fail tiers, the other through the pass tiers (e.g. Weak Pass → Pass →
+Strong Pass) — or open the **⋮** menu for the full list of enabled results
+(see [Skill Track](/docs/skill-track) for what each one means). You can add a
+free-text note per result too. Changes autosave a couple of seconds after you
+stop clicking or typing. Try it below — this is the same row you'll see in the
+app:
+
+<DocsAssessmentRowDemo />
+
+A menu in the page header (the small icon next to the picker) controls how the
+skill list is organised:
+
+- **Skill order** — **By Package/Group** (the default) nests skills under
+  their package and skill group, in catalogue order, with anything no longer
+  part of an assessable group collected under "Other." **Alphabetical** lists
+  skills by name instead.
+- **Show Skill Description** — when on, each skill's description appears
+  inline alongside its name while you're recording; off shows just the name.
+
+Both views work on a phone. The layout changes but nothing is dropped: the
+left-hand picker collapses into a dropdown above the results, and the rows
+below it behave exactly as they do on a laptop.
+
+<Screenshot
+  id="skill-track/session-by-person-phone"
+  caption="By Person on a phone — the assessee list becomes a Person dropdown."
+/>
+
+<Screenshot
+  id="skill-track/session-by-skill-phone"
+  caption="By Skill on a phone — the skill list becomes a Skill dropdown."
+/>
+
+<Callout type="warning">
+  Recording requires a [linked personal record](/docs/admin/user-vs-person), and you must be one of
+  the session's assigned assessors. Without both, you'll see a warning banner instead of the
+  recording controls.
+</Callout>
+
+**Skill checks** in the Contents card opens a read-only log of everything
+recorded so far in the session, filterable by result and status — useful for
+a quick sanity check before moving to review.
+
+## 5. Review and approve
+
+**Review**, in the session header, lists every recorded check grouped by
+assessee, with a checkbox on each one. Unchecking a check excludes it from the session's
+official results. Clicking **Approve** sets the session's status and stamps
+each check as included or excluded to match your selection.
+
+<Callout>
+  Approving isn't a lock. You can come back to Review, change which checks are included, and approve
+  again at any time — nothing prevents further edits after the first approval.
+</Callout>
+
+## Session status
+
+A session's status appears in the sessions list as one of three raw values —
+**Draft**, **Include**, or **Exclude** — while the per-check table on a
+session's Checks page shows the friendlier **Draft**, **Approved**, and
+**Excluded**. They're the same three states:
+
+| Status  | Meaning                                       |
+| ------- | --------------------------------------------- |
+| Draft   | Still being worked on; not yet approved.      |
+| Include | Approved — its results count in reports.      |
+| Exclude | Explicitly excluded; its results don't count. |

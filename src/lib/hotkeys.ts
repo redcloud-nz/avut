@@ -24,6 +24,10 @@ export const ActionHotkey = {
     publish: "Alt+P",
     unpublish: "Alt+U",
     move: "Alt+M",
+    export: "Alt+X",
+    import: "Alt+I",
+    // V for inVite — Alt+I is already `import`.
+    invite: "Alt+V",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;

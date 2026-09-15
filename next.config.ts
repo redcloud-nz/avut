@@ -2,6 +2,7 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+import { withContentCollections } from "@content-collections/next";
 import type { NextConfig } from "next";
 
 interface PackageData {
@@ -40,6 +41,13 @@ const appVersionName = isProduction ? appMetadata.versionName : "";
 
 const nextConfig: NextConfig = {
     cacheComponents: true,
+    images: {
+        // Product screenshots served from the Vercel Blob store (see
+        // docs/specs/docs-screenshots.md). Public, immutable pathnames.
+        remotePatterns: [
+            { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
+        ],
+    },
     env: {
         NEXT_PUBLIC_APP_VERSION: appVersion,
         NEXT_PUBLIC_APP_VERSION_NAME: appVersionName,
@@ -55,4 +63,4 @@ const nextConfig: NextConfig = {
     typedRoutes: true,
 };
 
-export default nextConfig;
+export default withContentCollections(nextConfig);

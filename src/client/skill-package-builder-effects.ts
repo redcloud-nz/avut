@@ -9,7 +9,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Cache effects for `skillPackageBuilder` router mutations, keyed by procedure name.
  *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `MutationInvalidator`.
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  * `getPackage` is flat, so package mutations write their response wholesale. `getGroup`/`getSkill`
  * are joined with their parent package/group, which group and skill mutations don't return — those
  * use an updater that merges the response into whatever's already cached, leaving the join alone.
@@ -101,6 +101,28 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
+    importPackage: (vars, { applied, plan }) =>
+        applied
+            ? [
+                  invalidate(
+                      trpc.skillPackageBuilder.listPackages.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillPackageBuilder.listGroups.queryFilter({
+                          organizationId: vars.organizationId,
+                          skillPackageId: plan.package.id,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillPackageBuilder.listSkills.queryFilter({
+                          organizationId: vars.organizationId,
+                          skillPackageId: plan.package.id,
+                      }),
+                  ),
+              ]
+            : [],
     moveSkill: (vars) => [
         invalidate(
             trpc.skillPackageBuilder.listSkills.queryFilter({

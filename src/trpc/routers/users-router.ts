@@ -59,6 +59,7 @@ export const usersRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the user is not part of the organization.
      * @throws TRPCError(NOT_FOUND) if the person does not exist in the organization.
      * @throws TRPCError(CONFLICT) if the person is already linked to a different user.
+     * @throws TRPCError(CONFLICT) if the user's membership is already linked to a different person.
      */
     linkPerson: organizationProcedure({ member: ["update"], person: ["update"] })
         .input(z.object({ userId: UserId.schema, personId: PersonId.schema }))
@@ -95,6 +96,21 @@ export const usersRouter = createTrpcRouter({
                     cause: new FieldConflictError(
                         "person",
                         "This person is already linked to another user.",
+                    ),
+                });
+
+            /*
+             * The mirror guard. Without it the update below overwrites `personId`, silently
+             * unlinking whoever held it — no conflict, and no audit entry recording the unlink.
+             * The person-side check above cannot catch this: it only asks whether the *incoming*
+             * person is taken.
+             */
+            if (orgUser.personId && orgUser.personId !== input.personId)
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    cause: new FieldConflictError(
+                        "user",
+                        "This user is already linked to another person.",
                     ),
                 });
 

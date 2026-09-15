@@ -101,6 +101,16 @@ npm run db:unbranch          # point .env.local back at avut, offer to drop the 
 
 `db:branch` needs zero other connections to `avut` (the `TEMPLATE` copy is exclusive) — stop the dev server and Prisma Studio first; it refuses otherwise. It converts a symlinked `.env.local` to a copy so the branch DB config stays local to that checkout. Running `migrate dev` against a branch DB still needs permission, but it's an easy yes — the blast radius is one throwaway database.
 
+## Outbound email
+
+The dev database holds records for **real people with their real email addresses**, so anything that sends — inviting, resending an invitation, changing an email — is one click away from mailing a stranger.
+
+`sendEmail` in `src/server/email.ts` is the single choke point every message passes through, and it fails closed: unless `VERCEL_ENV === "production"`, every `to`/`cc`/`bcc` is rewritten onto Resend's sink at `delivered+<encoded address>@resend.dev`, the subject is prefixed with the intended recipients, and they are repeated in an `X-AVUT-Intended-Recipients` header. The message still reaches Resend and still appears in its dashboard — it just never reaches a mailbox.
+
+- Local development, `vercel dev`, and preview deployments all redirect. Only the production deployment delivers as addressed.
+- `EMAIL_DELIVERY=live` forces real delivery (e.g. to test a preview against your own address) and `EMAIL_DELIVERY=redirect` mutes production. **Never set `EMAIL_DELIVERY=live` while pointed at the dev database.**
+- Send mail only through `sendEmail`. Calling the Resend client directly goes around the guard rail.
+
 ## Git
 
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.

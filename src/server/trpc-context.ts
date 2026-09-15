@@ -38,7 +38,7 @@ export const createTrpcContext = cache(async () => {
                 // organization at all.
                 throw new TRPCError({
                     code: "FORBIDDEN",
-                    message: "You are not a member of this organization.",
+                    message: "You are not a member of this organisation.",
                     cause: error,
                 });
             }

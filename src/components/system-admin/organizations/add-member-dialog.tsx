@@ -128,7 +128,7 @@ export function SystemAdmin_AddMember_Dialog({
                 <DialogHeader>
                     <DialogTitle>Add Member</DialogTitle>
                     <DialogDescription>
-                        Attach an existing user to this organization directly, bypassing the
+                        Attach an existing user to this organisation directly, bypassing the
                         invitation flow.
                     </DialogDescription>
                 </DialogHeader>

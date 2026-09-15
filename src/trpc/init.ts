@@ -15,12 +15,7 @@ import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
-import {
-    formatActorLabel,
-    recordLogEntry,
-    type LogActor,
-    type LogEntryRef,
-} from "@/server/log-entry";
+import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
 import prisma from "@/server/prisma";
 import { formatTrpcError } from "./error-formatter";
 import { UserId } from "@/lib/schemas/user";
@@ -91,31 +86,6 @@ export type AuthenticatedContext = Context & {
         tx?: Prisma.TransactionClient,
     ) => Prisma.PrismaPromise<LogEntry>;
 };
-
-/**
- * Resolve the acting user from a session, centrally.
- *
- * Impersonation is resolved here rather than at call sites: every `logEvent` caller gets
- * `impersonatorId` populated without passing anything, and none of them can forget it.
- * Without this, an action taken while impersonating is attributed to the impersonated
- * user — the log blames the victim.
- *
- * `impersonatedBy` is read structurally: the `Session` model has the column and the
- * `admin` plugin declares it, but better-auth's `$Infer` chain is not guaranteed to
- * surface it, and a cast is cheaper here than a compile break in a file every router
- * imports.
- */
-function resolveActor(auth: AuthSession): { actor: LogActor; actorLabel: string } {
-    const impersonatedBy = (auth.session as { impersonatedBy?: string | null }).impersonatedBy;
-
-    return {
-        actor: {
-            userId: UserId.schema.parse(auth.user.id),
-            impersonatorId: impersonatedBy ? UserId.schema.parse(impersonatedBy) : undefined,
-        },
-        actorLabel: formatActorLabel(auth.user.name, auth.user.email),
-    };
-}
 
 /**
  * Procedure that requires the user to be authenticated.

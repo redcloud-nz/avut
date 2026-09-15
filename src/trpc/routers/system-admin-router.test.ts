@@ -11,6 +11,13 @@ import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
+import {
+    SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+    type SkillPackageExport,
+} from "@/lib/schemas/skill-package-export";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 
@@ -19,6 +26,10 @@ import { UserId } from "@/lib/schemas/user";
 vi.mock("@/server/organization-settings-cache", () => ({
     organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
     revalidateOrganizationSettings: vi.fn(async () => {}),
+}));
+vi.mock("@/server/organization-user-cache", () => ({
+    organizationUserCacheTag: (id: string) => `organization-user-${id}`,
+    revalidateOrganizationUser: vi.fn(async () => {}),
 }));
 
 import { systemAdminRouter } from "./system-admin-router";
@@ -1061,5 +1072,141 @@ describe("systemAdmin.deleteUser — the deletion's own audit entry", () => {
             actorLabel: "Dana Okafor <dana@example.com>",
         });
         expect(entries[0].description).toContain("Kim Park <kim@example.com>");
+    });
+});
+
+describe("systemAdmin.importSkillPackage", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        admin: UserId.create(),
+    };
+    const db = createMockPrisma();
+
+    function makeEnvelope(): SkillPackageExport {
+        return {
+            formatVersion: SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            package: {
+                id: SkillPackageId.create(),
+                name: "Starter Package",
+                description: "A starter package for tests.",
+                tags: [],
+                properties: {},
+                groups: [
+                    {
+                        id: SkillGroupId.create(),
+                        name: "Group 1",
+                        description: "",
+                        tags: [],
+                        properties: {},
+                        sequence: 0,
+                        defaultInclude: true,
+                        skills: [
+                            {
+                                id: SkillId.create(),
+                                name: "Skill 1",
+                                description: "",
+                                tags: [],
+                                properties: {},
+                                sequence: 0,
+                                frequency: 12,
+                                defaultInclude: true,
+                                defaultRequired: true,
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: `acme-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: {
+                id: T.otherOrg,
+                name: "Other",
+                slug: `other-${nanoId16()}`,
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+    });
+
+    function makeCaller() {
+        return systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("dryRun computes a plan without writing", async () => {
+        const result = await makeCaller().importSkillPackage({
+            envelope: makeEnvelope(),
+            targetOrganizationId: T.org,
+            dryRun: true,
+        });
+        expect(result.applied).toBe(false);
+        expect(result.plan.packageAction).toBe("Create");
+        expect(await db.skillPackage.findMany({ where: { organizationId: T.org } })).toHaveLength(
+            0,
+        );
+    });
+
+    it("imports the tree unpublished and writes one SkillPackage log entry", async () => {
+        const result = await makeCaller().importSkillPackage({
+            envelope: makeEnvelope(),
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+        expect(result.applied).toBe(true);
+
+        const stored = await db.skillPackage.findUnique({
+            where: { id: result.plan.package.id },
+            include: { groups: true, skills: true },
+        });
+        expect(stored?.organizationId).toBe(T.org);
+        expect(stored?.published).toBe(false);
+        expect(stored?.groups.length).toBeGreaterThan(0);
+        expect(stored?.skills.length).toBeGreaterThan(0);
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId: result.plan.package.id },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            action: "Create",
+        });
+    });
+
+    it("refuses a package ID already owned by another organization", async () => {
+        const envelope = makeEnvelope();
+        await makeCaller().importSkillPackage({
+            envelope,
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+
+        await expect(
+            makeCaller().importSkillPackage({
+                envelope,
+                targetOrganizationId: T.otherOrg,
+                dryRun: true,
+            }),
+        ).rejects.toThrow(/different organisation/i);
     });
 });

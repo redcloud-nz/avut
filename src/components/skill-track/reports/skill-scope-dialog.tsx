@@ -161,7 +161,7 @@ export function SkillTrack_SkillScopeDialog({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Whole Organization</SelectItem>
+                            <SelectItem value="all">Whole Organisation</SelectItem>
                             {R.pipe(
                                 teams,
                                 R.sortBy((team) => team.name),

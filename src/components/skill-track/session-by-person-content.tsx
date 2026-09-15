@@ -21,6 +21,7 @@ import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
@@ -271,8 +272,9 @@ export function SkillTrack_SessionByPerson_Content({
                         "By Person",
                     ]}
                 />
-                <div className="flex justify-end grow">
+                <div className="flex items-center justify-end gap-1 grow">
                     <SaveStatusIndicator status={mutation.status} />
+                    <HelpButton slug="skill-track/sessions" />
                 </div>
             </Std.Navbar>
             <Std.ScrollContainer>
@@ -326,7 +328,7 @@ export function SkillTrack_SessionByPerson_Content({
                                 <AlertTitle>No linked person record</AlertTitle>
                                 <AlertDescription>
                                     Your account is not linked to a person record in this
-                                    organization. Contact an administrator to link your account
+                                    organisation. Contact an administrator to link your account
                                     before recording skill checks.
                                 </AlertDescription>
                             </Alert>

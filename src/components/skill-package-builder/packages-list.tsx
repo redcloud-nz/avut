@@ -37,6 +37,7 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreatePackage_Dialog } from "./create-package";
+import { SkillPackageBuilder_ImportPackage_Dialog } from "./import-package";
 
 interface SkillPackageBuilder_Packages_ListProps {
     organization: OrganizationData;
@@ -135,6 +136,7 @@ export function SkillPackageBuilder_Packages_List({
                 <Saratoga.Title>Skill Packages</Saratoga.Title>
                 <Saratoga.Actions>
                     <Protect permissions={{ skillPackageBuilder: ["create"] }}>
+                        <SkillPackageBuilder_ImportPackage_Dialog />
                         <SkillPackageBuilder_CreatePackage_Dialog />
                     </Protect>
                 </Saratoga.Actions>
@@ -149,7 +151,7 @@ export function SkillPackageBuilder_Packages_List({
                         <EmptyHeader>
                             <EmptyTitle>No skill packages yet.</EmptyTitle>
                             <EmptyDescription>
-                                Your organization does not have any skill packages yet.
+                                Your organisation does not have any skill packages yet.
                             </EmptyDescription>
                         </EmptyHeader>
                     </Empty>

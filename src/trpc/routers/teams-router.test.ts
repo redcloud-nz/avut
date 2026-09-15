@@ -10,38 +10,36 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 // under jsdom.
 vi.mock("server-only", () => ({}));
 
-// syncronizeD4HTeam calls neither auth.api.createTeam nor anything else requiring a
-// behavioral @/server/auth mock — only getPersonalD4HAccessTokenForUser and
-// getD4HTeam/getD4HFetchClient, which is why those two are stubbed here (same pattern as
+// The D4H linking procedures touch only getPersonalD4HAccessTokenForUser and the
+// cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
 // d4h-access-tokens-router.test.ts) rather than a live D4H client.
+const grace = {
+    id: 501,
+    resourceType: "Member" as const,
+    email: { value: "grace@example.com", verified: true },
+    name: "Grace Hopper",
+    owner: { id: 4242, resourceType: "Team" as const },
+    position: null,
+    ref: null,
+    role: { id: null, resourceType: "Role" as const },
+    status: "OPERATIONAL" as const,
+};
+
 vi.mock("@/server/d4h-api/client", () => ({
-    getD4HFetchClient: vi.fn(() => ({
-        GET: vi.fn(async () => ({
-            data: {
-                results: [
-                    {
-                        id: 501,
-                        resourceType: "Member",
-                        email: { value: "grace@example.com", verified: true },
-                        name: "Grace Hopper",
-                        owner: { id: 4242, resourceType: "Team" },
-                        position: null,
-                        ref: null,
-                        role: { id: null, resourceType: "Role" },
-                        status: "OPERATIONAL",
-                    },
-                ],
-                page: 1,
-                pageSize: 50,
-                totalSize: 1,
-            },
-            error: undefined,
-        })),
-    })),
     getD4HTokenMetadata: vi.fn(async () => ({
         d4HTeams: [{ id: 4242, resourceType: "Team", title: "Alpha D4H" }],
         d4HOrganisations: [],
     })),
+    fetchD4HTeamDetailCached: vi.fn(async () => ({
+        id: 4242,
+        resourceType: "Team",
+        title: "Alpha D4H",
+        timezone: "Pacific/Auckland",
+    })),
+    fetchD4HTeamMembersForSync: vi.fn(async () => [grace]),
+    fetchD4HOrganisationCached: vi.fn(async () => {
+        throw new Error("not expected for an org-less linked team");
+    }),
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({
@@ -143,16 +141,13 @@ describe("teamsRouter.getTeam", () => {
     });
 });
 
-describe("teamsRouter.syncronizeD4HTeam — batching", () => {
-    it("stamps every log entry from one run with the same LogBatch", async () => {
+describe("teamsRouter.applyD4HTeamSync", () => {
+    async function seed() {
         const db = createMockPrisma();
         const T = {
             org: OrganizationId.create(),
             user: nanoId16(),
             team: TeamId.create(),
-            // A person/membership already in our system whose D4H membership has been
-            // removed — d4hMemberId 999 never appears among the mocked D4H members
-            // (id 501), so this triggers the TeamMembership-Delete branch.
             departedPerson: PersonId.create(),
             departedMembership: TeamMembershipId.create(),
         };
@@ -166,19 +161,19 @@ describe("teamsRouter.syncronizeD4HTeam — batching", () => {
                 organizationId: T.org,
                 name: "Alpha",
                 description: "First team",
-                properties: { d4hTeamId: 4242 },
+                properties: {},
                 tags: [],
             },
         });
-        // The `d4h` relation is what `getTeam` checks to confirm the team is linked —
-        // separate from `properties.d4hTeamId`, which `syncronizeD4HTeam` reads directly.
         await db.team_D4H.create({
             data: {
                 teamId: T.team,
                 d4hTeamId: 4242,
                 d4hTeamName: "Alpha D4H",
-                d4hServer: "us",
-                d4hLastSyncedAt: null,
+                d4hServerCode: "us",
+                d4hOrganisationId: null,
+                d4hTimezone: null,
+                lastSyncedAt: null,
             },
         });
         await db.person.create({
@@ -189,6 +184,7 @@ describe("teamsRouter.syncronizeD4HTeam — batching", () => {
                 email: "departed@example.com",
                 tags: [],
                 properties: {},
+                status: "Active",
             },
         });
         await db.teamMembership.create({
@@ -198,7 +194,9 @@ describe("teamsRouter.syncronizeD4HTeam — batching", () => {
                 teamId: T.team,
                 personId: T.departedPerson,
                 tags: [],
-                properties: { d4hMemberId: 999 },
+                properties: {},
+                status: "Active",
+                d4h: { create: { d4hMemberId: 999, d4hStatus: "OPERATIONAL" } },
             },
         });
 
@@ -209,46 +207,342 @@ describe("teamsRouter.syncronizeD4HTeam — batching", () => {
                 prisma: db,
             }),
         );
+        return { db, T, caller };
+    }
 
-        await caller.syncronizeD4HTeam({ organizationId: T.org, teamId: T.team });
+    it("archives departed members, adds new ones, and batches every log entry", async () => {
+        const { db, T, caller } = await seed();
 
-        // Sanity check the wiring actually did what the fixture set it up to do: a
-        // departed member removed, a new one (from D4H member id 501, "grace@example.com")
-        // created via `createPerson`, and the team's `d4hLastSync` bumped.
-        expect(
-            await db.teamMembership.findUnique({
-                where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
-            }),
-        ).toBeNull();
-        const newPerson = await db.person.findFirst({
+        const plan = await caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team });
+        const { plan: applied } = await caller.applyD4HTeamSync({
+            organizationId: T.org,
+            teamId: T.team,
+            planToken: plan.planToken,
+        });
+
+        expect(applied.counts).toMatchObject({ additions: 1, archivals: 1 });
+
+        const departed = await db.teamMembership.findUnique({
+            where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
+        });
+        expect(departed?.status).toBe("Archived");
+
+        const grace = await db.person.findFirst({
             where: { organizationId: T.org, email: "grace@example.com" },
         });
-        expect(newPerson).not.toBeNull();
-        expect(
-            await db.teamMembership.findFirst({
-                where: { teamId: T.team, personId: newPerson!.id },
-            }),
-        ).not.toBeNull();
+        expect(grace).not.toBeNull();
+        const graceMembership = await db.teamMembership.findFirst({
+            where: { teamId: T.team, personId: grace!.id },
+            include: { d4h: true },
+        });
+        expect(graceMembership?.status).toBe("Active");
+        expect(graceMembership?.d4h?.d4hMemberId).toBe(501);
+
+        const teamD4H = await db.team_D4H.findUnique({ where: { teamId: T.team } });
+        expect(teamD4H?.lastSyncedAt).not.toBeNull();
 
         const entries = await db.logEntry.findMany({ where: { organizationId: T.org } });
-
-        // One TeamMembership-Delete, one Person-Create, one TeamMembership-Create, one
-        // Team-Update — a wiring change that silently drops one of these must fail here.
-        expect(entries).toHaveLength(4);
-        expect(entries.map((e) => e.objectType).sort()).toEqual(
-            ["Person", "Team", "TeamMembership", "TeamMembership"].sort(),
-        );
-
         const batchIds = new Set(entries.map((e) => e.batchId));
         expect(batchIds.size).toBe(1);
-        const [batchId] = batchIds;
-        expect(batchId).not.toBeNull();
+        const batch = await db.logBatch.findUnique({ where: { id: [...batchIds][0]! } });
+        expect(batch).toMatchObject({ operationKey: "d4h-team-sync", userId: T.user });
+    });
 
-        const batch = await db.logBatch.findUnique({ where: { id: batchId! } });
-        expect(batch).toMatchObject({
-            operationKey: "d4h-team-sync",
-            userId: T.user,
+    it("rejects a stale planToken with a StalePlanError and writes nothing", async () => {
+        const { db, T, caller } = await seed();
+
+        await expect(
+            caller.applyD4HTeamSync({
+                organizationId: T.org,
+                teamId: T.team,
+                planToken: "stale-token-that-will-not-match",
+            }),
+        ).rejects.toThrow();
+
+        const departed = await db.teamMembership.findUnique({
+            where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
         });
+        expect(departed?.status).toBe("Active");
+        expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
+    });
+});
+
+describe("teamsRouter.listTeamMemberships", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        zoe: PersonId.create(),
+        amy: PersonId.create(),
+        amyMembership: TeamMembershipId.create(),
+        zoeMembership: TeamMembershipId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        // Seeded Zoe-before-Amy so the name ordering assertion is meaningful.
+        await db.person.create({
+            data: {
+                id: T.zoe,
+                organizationId: T.org,
+                name: "Zoe Zebra",
+                email: "zoe@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.amy,
+                organizationId: T.org,
+                name: "Amy Adams",
+                email: "amy@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.zoeMembership,
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.zoe,
+                tags: [],
+                properties: {},
+                status: "Active",
+                d4h: {
+                    create: {
+                        d4hMemberId: 77,
+                        d4hStatus: "NON_OPERATIONAL",
+                        d4hPosition: "Medic",
+                    },
+                },
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.amyMembership,
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.amy,
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns rows ordered by person name", async () => {
+        const rows = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(rows.map((r) => r.person.name)).toEqual(["Amy Adams", "Zoe Zebra"]);
+    });
+
+    it("includes the person email", async () => {
+        const [amy] = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(amy.person.email).toBe("amy@example.com");
+    });
+
+    it("maps the D4H snapshot when present and null otherwise", async () => {
+        const rows = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        const byName = Object.fromEntries(rows.map((r) => [r.person.name, r]));
+
+        expect(byName["Amy Adams"].d4h).toBeNull();
+        expect(byName["Zoe Zebra"].d4h).toMatchObject({
+            d4hMemberId: 77,
+            d4hStatus: "NON_OPERATIONAL",
+            d4hPosition: "Medic",
+        });
+    });
+});
+
+describe("teamsRouter.getTeamMembership", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        d4hPerson: PersonId.create(),
+        manualPerson: PersonId.create(),
+        strangerPerson: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.d4hPerson,
+                organizationId: T.org,
+                name: "Dana D4H",
+                email: "dana@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.manualPerson,
+                organizationId: T.org,
+                name: "Manny Manual",
+                email: "manny@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.strangerPerson,
+                organizationId: T.org,
+                name: "Stan Stranger",
+                email: "stan@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: TeamMembershipId.create(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.d4hPerson,
+                tags: [],
+                properties: {},
+                status: "Active",
+                d4h: {
+                    create: {
+                        d4hMemberId: 12,
+                        d4hStatus: "OPERATIONAL",
+                        d4hPosition: "Lead",
+                        d4hRef: "R-12",
+                        d4hRoleId: 3,
+                    },
+                },
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: TeamMembershipId.create(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.manualPerson,
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns the row with the D4H snapshot (incl. ref / roleId)", async () => {
+        const row = await makeCaller().getTeamMembership({
+            organizationId: T.org,
+            teamId: T.team,
+            personId: T.d4hPerson,
+        });
+
+        expect(row.person).toMatchObject({ name: "Dana D4H", email: "dana@example.com" });
+        expect(row.team).toMatchObject({ id: T.team, name: "Alpha" });
+        expect(row.d4h).toMatchObject({
+            d4hMemberId: 12,
+            d4hStatus: "OPERATIONAL",
+            d4hPosition: "Lead",
+            d4hRef: "R-12",
+            d4hRoleId: 3,
+        });
+    });
+
+    it("returns d4h: null for a manually-added membership", async () => {
+        const row = await makeCaller().getTeamMembership({
+            organizationId: T.org,
+            teamId: T.team,
+            personId: T.manualPerson,
+        });
+
+        expect(row.d4h).toBeNull();
+    });
+
+    it("throws NOT_FOUND when the pair has no membership", async () => {
+        await expect(
+            makeCaller().getTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.strangerPerson,
+            }),
+        ).rejects.toThrow(/not found/i);
+    });
+
+    it("is organization-scoped", async () => {
+        await expect(
+            makeCaller().getTeamMembership({
+                organizationId: T.otherOrg,
+                teamId: T.team,
+                personId: T.d4hPerson,
+            }),
+        ).rejects.toThrow(/not found/i);
     });
 });
 

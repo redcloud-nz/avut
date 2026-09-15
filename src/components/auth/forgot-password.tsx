@@ -31,12 +31,13 @@ export function Auth_ForgotPassword_Card() {
 
     const mutation = useMutation({
         async mutationFn(formData: { email: string }) {
-            return await authClient.forgetPassword.emailOtp(
-                {
-                    email: formData.email,
-                },
-                { throw: true },
-            );
+            const { data, error } = await authClient.forgetPassword.emailOtp({
+                email: formData.email,
+            });
+            if (error) {
+                throw new Error(error.message ?? "Unable to send reset code.");
+            }
+            return data;
         },
         onSuccess(_, variables) {
             router.push(`/auth/reset-password?email=${encodeURIComponent(variables.email)}`);
@@ -80,15 +81,13 @@ export function Auth_ForgotPassword_Card() {
                                 form="forgot-password-form"
                                 status={mutation.status}
                                 text={{
-                                    idle: "Send reset link",
+                                    idle: "Send reset code",
                                     pending: "Sending...",
                                     success: "Sent!",
                                 }}
                             />
                         </Field>
-                        {mutation.isError && (
-                            <FieldError errors={[mutation.error as { message?: string }]} />
-                        )}
+                        {mutation.isError && <FieldError errors={[mutation.error]} />}
                     </FieldGroup>
                 </form>
             </CardContent>

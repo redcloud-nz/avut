@@ -398,6 +398,7 @@ export const ModelName = {
     Organization: "Organization",
     OrganizationConfig: "OrganizationConfig",
     Team: "Team",
+    Organization_D4H: "Organization_D4H",
     Team_D4H: "Team_D4H",
     TeamConfig: "TeamConfig",
     OrganizationUser: "OrganizationUser",
@@ -408,6 +409,7 @@ export const ModelName = {
     D4HAccessToken: "D4HAccessToken",
     Person: "Person",
     TeamMembership: "TeamMembership",
+    TeamMembership_D4H: "TeamMembership_D4H",
     Note: "Note",
     SkillPackage: "SkillPackage",
     SkillGroup: "SkillGroup",
@@ -451,6 +453,7 @@ export type TypeMap<
             | "organization"
             | "organizationConfig"
             | "team"
+            | "organization_D4H"
             | "team_D4H"
             | "teamConfig"
             | "organizationUser"
@@ -461,6 +464,7 @@ export type TypeMap<
             | "d4HAccessToken"
             | "person"
             | "teamMembership"
+            | "teamMembership_D4H"
             | "note"
             | "skillPackage"
             | "skillGroup"
@@ -1008,6 +1012,82 @@ export type TypeMap<
                     args: Prisma.TeamCountArgs<ExtArgs>;
                     result:
                         | runtime.Types.Utils.Optional<Prisma.TeamCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        Organization_D4H: {
+            payload: Prisma.$Organization_D4HPayload<ExtArgs>;
+            fields: Prisma.Organization_D4HFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.Organization_D4HFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.Organization_D4HFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                findFirst: {
+                    args: Prisma.Organization_D4HFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.Organization_D4HFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                findMany: {
+                    args: Prisma.Organization_D4HFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>[];
+                };
+                create: {
+                    args: Prisma.Organization_D4HCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                createMany: {
+                    args: Prisma.Organization_D4HCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.Organization_D4HCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>[];
+                };
+                delete: {
+                    args: Prisma.Organization_D4HDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                update: {
+                    args: Prisma.Organization_D4HUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.Organization_D4HDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.Organization_D4HUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.Organization_D4HUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>[];
+                };
+                upsert: {
+                    args: Prisma.Organization_D4HUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$Organization_D4HPayload>;
+                };
+                aggregate: {
+                    args: Prisma.Organization_D4HAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateOrganization_D4H>;
+                };
+                groupBy: {
+                    args: Prisma.Organization_D4HGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.Organization_D4HGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.Organization_D4HCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.Organization_D4HCountAggregateOutputType>
                         | number;
                 };
             };
@@ -1768,6 +1848,82 @@ export type TypeMap<
                     args: Prisma.TeamMembershipCountArgs<ExtArgs>;
                     result:
                         | runtime.Types.Utils.Optional<Prisma.TeamMembershipCountAggregateOutputType>
+                        | number;
+                };
+            };
+        };
+        TeamMembership_D4H: {
+            payload: Prisma.$TeamMembership_D4HPayload<ExtArgs>;
+            fields: Prisma.TeamMembership_D4HFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.TeamMembership_D4HFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.TeamMembership_D4HFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                findFirst: {
+                    args: Prisma.TeamMembership_D4HFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.TeamMembership_D4HFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                findMany: {
+                    args: Prisma.TeamMembership_D4HFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>[];
+                };
+                create: {
+                    args: Prisma.TeamMembership_D4HCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                createMany: {
+                    args: Prisma.TeamMembership_D4HCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.TeamMembership_D4HCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>[];
+                };
+                delete: {
+                    args: Prisma.TeamMembership_D4HDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                update: {
+                    args: Prisma.TeamMembership_D4HUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.TeamMembership_D4HDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.TeamMembership_D4HUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.TeamMembership_D4HUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>[];
+                };
+                upsert: {
+                    args: Prisma.TeamMembership_D4HUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$TeamMembership_D4HPayload>;
+                };
+                aggregate: {
+                    args: Prisma.TeamMembership_D4HAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateTeamMembership_D4H>;
+                };
+                groupBy: {
+                    args: Prisma.TeamMembership_D4HGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.TeamMembership_D4HGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.TeamMembership_D4HCountArgs<ExtArgs>;
+                    result:
+                        | runtime.Types.Utils.Optional<Prisma.TeamMembership_D4HCountAggregateOutputType>
                         | number;
                 };
             };
@@ -3125,12 +3281,31 @@ export const TeamScalarFieldEnum = {
 
 export type TeamScalarFieldEnum = (typeof TeamScalarFieldEnum)[keyof typeof TeamScalarFieldEnum];
 
+export const Organization_D4HScalarFieldEnum = {
+    organizationId: "organizationId",
+    serverCode: "serverCode",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hOrganisationName: "d4hOrganisationName",
+    d4hTimezone: "d4hTimezone",
+    d4hCurrency: "d4hCurrency",
+    d4hReportingStartDay: "d4hReportingStartDay",
+    d4hReportingStartMonth: "d4hReportingStartMonth",
+    syncTokenId: "syncTokenId",
+    lastSyncedAt: "lastSyncedAt",
+} as const;
+
+export type Organization_D4HScalarFieldEnum =
+    (typeof Organization_D4HScalarFieldEnum)[keyof typeof Organization_D4HScalarFieldEnum];
+
 export const Team_D4HScalarFieldEnum = {
     teamId: "teamId",
     d4hTeamId: "d4hTeamId",
     d4hTeamName: "d4hTeamName",
-    d4hServer: "d4hServer",
-    d4hLastSyncedAt: "d4hLastSyncedAt",
+    d4hServerCode: "d4hServerCode",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hTimezone: "d4hTimezone",
+    linkTokenId: "linkTokenId",
+    lastSyncedAt: "lastSyncedAt",
 } as const;
 
 export type Team_D4HScalarFieldEnum =
@@ -3257,12 +3432,25 @@ export const TeamMembershipScalarFieldEnum = {
     personId: "personId",
     tags: "tags",
     properties: "properties",
+    status: "status",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
 } as const;
 
 export type TeamMembershipScalarFieldEnum =
     (typeof TeamMembershipScalarFieldEnum)[keyof typeof TeamMembershipScalarFieldEnum];
+
+export const TeamMembership_D4HScalarFieldEnum = {
+    teamMembershipId: "teamMembershipId",
+    d4hMemberId: "d4hMemberId",
+    d4hStatus: "d4hStatus",
+    d4hPosition: "d4hPosition",
+    d4hRef: "d4hRef",
+    d4hRoleId: "d4hRoleId",
+} as const;
+
+export type TeamMembership_D4HScalarFieldEnum =
+    (typeof TeamMembership_D4HScalarFieldEnum)[keyof typeof TeamMembership_D4HScalarFieldEnum];
 
 export const NoteScalarFieldEnum = {
     id: "id",
@@ -3788,6 +3976,7 @@ export type GlobalOmitConfig = {
     organization?: Prisma.OrganizationOmit;
     organizationConfig?: Prisma.OrganizationConfigOmit;
     team?: Prisma.TeamOmit;
+    organization_D4H?: Prisma.Organization_D4HOmit;
     team_D4H?: Prisma.Team_D4HOmit;
     teamConfig?: Prisma.TeamConfigOmit;
     organizationUser?: Prisma.OrganizationUserOmit;
@@ -3798,6 +3987,7 @@ export type GlobalOmitConfig = {
     d4HAccessToken?: Prisma.D4HAccessTokenOmit;
     person?: Prisma.PersonOmit;
     teamMembership?: Prisma.TeamMembershipOmit;
+    teamMembership_D4H?: Prisma.TeamMembership_D4HOmit;
     note?: Prisma.NoteOmit;
     skillPackage?: Prisma.SkillPackageOmit;
     skillGroup?: Prisma.SkillGroupOmit;

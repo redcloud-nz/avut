@@ -29,7 +29,11 @@ export function VerifyEmail_Card({ email }: { email: string }) {
 
     const mutation = useMutation({
         async mutationFn(otp: string) {
-            return await authClient.emailOtp.verifyEmail({ email, otp }, { throw: true });
+            const { data, error } = await authClient.emailOtp.verifyEmail({ email, otp });
+            if (error) {
+                throw new Error(error.message ?? "Unable to verify email.");
+            }
+            return data;
         },
         onSuccess() {
             router.push("/auth/post-sign-in");

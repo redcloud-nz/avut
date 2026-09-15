@@ -13,7 +13,7 @@ export function route<AppRoute extends AppRoutes>(
     let path = route as string;
 
     for (const [key, value] of Object.entries(params)) {
-        path = path.replace(`[${key}]`, value);
+        path = path.replace(`[${key}]`, Array.isArray(value) ? value.join("/") : value);
     }
 
     return path as Route;

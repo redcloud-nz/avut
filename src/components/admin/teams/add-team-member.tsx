@@ -26,13 +26,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
 
 import { teamsEffects } from "@/client/teams-effects";
@@ -65,7 +59,10 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
     );
     const teamMemberships = teamMembershipsQuery.data ?? [];
 
-    const assignedIds = teamMemberships.map((tm) => tm.personId);
+    const assignedIds = new Set(teamMemberships.map((tm) => tm.personId));
+    const personOptions = personnel
+        .filter((person) => !assignedIds.has(person.id))
+        .map((person) => ({ value: person.id, label: person.name }));
 
     const form = useForm({
         resolver: zodResolver(
@@ -146,27 +143,17 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel>Person</FieldLabel>
-                                    <Select
-                                        value={field.value ?? ""}
+                                    <SearchableSelect
+                                        value={field.value ?? null}
                                         onValueChange={(value) =>
                                             field.onChange((value as PersonId) || null)
                                         }
-                                    >
-                                        <SelectTrigger aria-invalid={fieldState.invalid}>
-                                            <SelectValue placeholder="Select a person" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {personnel.map((person) => (
-                                                <SelectItem
-                                                    key={person.id}
-                                                    value={person.id}
-                                                    disabled={assignedIds.includes(person.id)}
-                                                >
-                                                    {person.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        options={personOptions}
+                                        placeholder="Select a person"
+                                        searchPlaceholder="Search personnel..."
+                                        emptyMessage="No personnel found."
+                                        aria-invalid={fieldState.invalid}
+                                    />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}

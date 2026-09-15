@@ -1,0 +1,220 @@
+{
+  "getting-started/forgot-password": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password.webp",
+      "width": 500,
+      "height": 384
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password-dark.webp",
+      "width": 500,
+      "height": 384
+    },
+    "alt": "The Forgot Password screen with a single email field and a Send reset code button",
+    "capturedAt": "2026-09-10T06:21:20.502Z"
+  },
+  "getting-started/module-switcher": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/module-switcher.webp",
+      "width": 255,
+      "height": 48
+    },
+    "alt": "The module switcher at the top of the sidebar, showing the current module, Skill Track, with an up-down chevron on the right",
+    "capturedAt": "2026-09-13T08:59:53.509Z"
+  },
+  "getting-started/reset-password": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password.webp",
+      "width": 500,
+      "height": 505
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/reset-password-dark.webp",
+      "width": 500,
+      "height": 505
+    },
+    "alt": "The Reset Password screen: a six-digit code input, a new password field, and an Update Password button",
+    "capturedAt": "2026-09-10T06:16:24.153Z"
+  },
+  "getting-started/sign-in": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in.webp",
+      "width": 500,
+      "height": 620
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in-dark.webp",
+      "width": 500,
+      "height": 620
+    },
+    "alt": "The AVUT sign-in screen: email and password fields with a \"Forgot password?\" link, and GitHub and Google social sign-in buttons below",
+    "capturedAt": "2026-09-10T06:15:55.203Z"
+  },
+  "getting-started/user-menu": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/user-menu.webp",
+      "width": 239,
+      "height": 48
+    },
+    "alt": "The user menu button in the sidebar footer, unopened: an avatar with the signed-in user's name and email and an up-down chevron on the right",
+    "capturedAt": "2026-09-13T08:59:55.433Z"
+  },
+  "getting-started/verify-email": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email.webp",
+      "width": 500,
+      "height": 456
+    },
+    "dark": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/verify-email-dark.webp",
+      "width": 500,
+      "height": 456
+    },
+    "alt": "The email verification screen with six single-digit code inputs and a Verify button",
+    "capturedAt": "2026-09-10T06:16:12.353Z"
+  },
+  "marketing/skill-track-session": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/marketing/skill-track-session.webp",
+      "width": 1440,
+      "height": 900
+    },
+    "alt": "Skill Track: recording a Rope Rescue Technician assessment session, assessing by person",
+    "capturedAt": "2026-09-10T07:28:21.231Z"
+  },
+  "skill-track/create-session": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/create-session.webp",
+      "width": 384,
+      "height": 426
+    },
+    "alt": "The New Session dialog: a name field whose placeholder offers the next session number, a date defaulting to today, and a notes field",
+    "capturedAt": "2026-09-13T08:24:52.879Z"
+  },
+  "skill-track/report-matrix": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-matrix.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Personnel x Skill Matrix report: skills down the left, people across the top with rotated name headers, and a colored status icon in every cell",
+    "capturedAt": "2026-09-13T20:18:27.870Z"
+  },
+  "skill-track/report-matrix-cell": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-matrix-cell.webp",
+      "width": 288,
+      "height": 168
+    },
+    "alt": "The popover from clicking a matrix cell: the recorded result, when it was assessed and when it expires with relative dates, the assessor, and the note left with the check",
+    "capturedAt": "2026-09-13T20:25:30.423Z"
+  },
+  "skill-track/report-matrix-skill": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-matrix-skill.webp",
+      "width": 288,
+      "height": 108
+    },
+    "alt": "The popover from clicking a skill name in the matrix: the skill's name, its description, and how often it needs reassessing",
+    "capturedAt": "2026-09-13T20:25:28.482Z"
+  },
+  "skill-track/report-person": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-person.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Personnel Competency report for one person: a summary line reading 50 current, 6 expired, 20 not competent, 8 not assessed, then a table of every subscribed skill with its status and last-checked date, grouped by package and skill group",
+    "capturedAt": "2026-09-13T20:18:17.883Z"
+  },
+  "skill-track/report-skill": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-skill.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Skill Coverage report for one skill: every person listed with their status and last-checked date, sorted with Not Competent and Expired above Current",
+    "capturedAt": "2026-09-13T20:18:30.294Z"
+  },
+  "skill-track/report-team": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/report-team.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Team Competency report: one row per skill with a stacked coverage bar and the percentage of the team currently competent, grouped by package and skill group",
+    "capturedAt": "2026-09-13T20:18:19.407Z"
+  },
+  "skill-track/session-by-person": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-person.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "Assess by Person on a laptop: a list of the session's assessees on the left with Douglas Renshaw selected, and his assigned skills on the right, each row carrying a fail button, a pass button, a note button and a menu",
+    "capturedAt": "2026-09-13T08:39:29.730Z"
+  },
+  "skill-track/session-by-person-phone": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-person-phone.webp",
+      "width": 390,
+      "height": 844
+    },
+    "alt": "Assess by Person on a phone: the assessee list has collapsed into a Person dropdown above the results, with Douglas Renshaw's skills listed below it",
+    "capturedAt": "2026-09-13T08:39:39.900Z"
+  },
+  "skill-track/session-by-skill": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-skill.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "Assess by Skill on a laptop: the session's skills on the left grouped by package and skill group with Effective sand bagging selected, and every person assigned to it on the right",
+    "capturedAt": "2026-09-13T08:39:31.736Z"
+  },
+  "skill-track/session-by-skill-phone": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-skill-phone.webp",
+      "width": 390,
+      "height": 844
+    },
+    "alt": "Assess by Skill on a phone: the skill list has collapsed into a Skill dropdown above the results, with everyone assigned to Effective sand bagging listed below it",
+    "capturedAt": "2026-09-13T08:39:41.902Z"
+  },
+  "skill-track/session-page": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-page.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The session page for August 2026 Training Night: session details on the left, a Contents card linking to Personnel, Skills and Skill checks on the right, and Record and Review buttons in the header",
+    "capturedAt": "2026-09-13T08:31:14.220Z"
+  },
+  "skill-track/session-personnel": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-personnel.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The session Personnel page: the Erehwon Response Team roster, each person with a checkbox marking who is being assessed, showing 20 of 32 selected",
+    "capturedAt": "2026-09-13T08:21:32.455Z"
+  },
+  "skill-track/session-record-menu": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-record-menu.webp",
+      "width": 352,
+      "height": 320
+    },
+    "alt": "The session header's Record menu opened, offering By Person and By Skill, with the Contents card behind it linking to Personnel, Skills and Skill checks",
+    "capturedAt": "2026-09-13T08:31:16.987Z"
+  },
+  "skill-track/session-skills": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-skills.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The session Skills page: catalogue skills grouped by package and skill group, each with a checkbox, showing the Flood Response package fully selected at 15 of 15",
+    "capturedAt": "2026-09-13T08:21:24.155Z"
+  }
+}

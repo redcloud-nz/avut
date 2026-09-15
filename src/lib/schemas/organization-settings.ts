@@ -69,6 +69,19 @@ const organizationSettingsSchema = z.object({
             enabled: z.boolean().default(true),
         }),
     }),
+    /*
+     * Personnel lives under the always-on `admin` module rather than a gated one, so these are
+     * top-level rather than a `modules.*` key.
+     *
+     * Both default to `false`: an organization that upgrades into this feature keeps doing
+     * exactly what it did before until someone opts in. See `docs/specs/person-user-linking.md`.
+     */
+    personnel: z.object({
+        /** Link a person on invitation accept when the org already has one with that email. */
+        autoLinkOnInviteAccept: z.boolean().default(false),
+        /** Link a newly-created person to an existing *member* holding the same email. */
+        autoLinkOnPersonCreate: z.boolean().default(false),
+    }),
     modules: z.object({
         "d4h-views": z.object({
             enabled: z.boolean().default(false),
@@ -103,6 +116,7 @@ export const OrganizationSettings = {
                 d4h: {},
                 email: {},
             },
+            personnel: {},
             modules: {
                 "d4h-views": {},
                 forms: {},

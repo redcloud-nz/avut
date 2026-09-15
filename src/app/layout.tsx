@@ -8,9 +8,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Jersey_10, Inter } from "next/font/google";
-import { Toaster } from "sonner";
 
-import { CommonProviders } from "@/components/providers";
+import { RootProviders } from "@/components/providers/root-providers";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -43,14 +42,13 @@ export const metadata: Metadata = {
     description: "Assorted Vaguely Useful Tools",
 };
 
-export default async function Root_Layout(props: LayoutProps<"/">) {
+export default function Root_Layout(props: LayoutProps<"/">) {
     return (
         <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
             <body
                 className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${jersey10.variable} antialiased`}
             >
-                <CommonProviders>{props.children}</CommonProviders>
-                <Toaster richColors />
+                <RootProviders>{props.children}</RootProviders>
             </body>
         </html>
     );

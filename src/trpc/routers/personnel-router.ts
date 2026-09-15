@@ -10,7 +10,12 @@ import { TRPCError } from "@trpc/server";
 import { diffObject } from "@/lib/diff";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 
+import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { PersonData, PersonId } from "@/lib/schemas/person";
+import { UserData } from "@/lib/schemas/user";
+
+import { findLinkableMember } from "@/server/person-user-link";
+import { readOrganizationSettings } from "@/server/organization-settings-store";
 
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
@@ -80,49 +85,25 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ created: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId, create } }) => {
-            // Check for conflicts
-            const [emailConflict] = await Promise.all([
-                ctx.prisma.person.findFirst({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        email: create.email,
-                    },
-                }),
-            ]);
+            const emailConflict = await ctx.prisma.person.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    email: create.email,
+                },
+            });
 
             if (emailConflict)
                 throw new TRPCError({
                     code: "CONFLICT",
                     cause: new FieldConflictError(
                         "email",
-                        "A person with this email address already exists in this organization.",
+                        "A person with this email address already exists in this organisation.",
                     ),
                 });
 
-            // Calculate changes from empty record
-            const changes = diffObject({ tags: [], properties: {} }, create);
-
-            const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.person.create({
-                    data: {
-                        id: personId,
-                        organizationId: ctx.organizationId,
-                        name: create.name,
-                        email: create.email,
-                        tags: create.tags,
-                        properties: create.properties,
-                        status: "Active",
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "Person",
-                    objectId: personId,
-                    changes,
-                }),
-            ]);
-
-            return { created: PersonData.fromRecord(created) };
+            // Delegates to the shared helper so this path and the D4H team import behave
+            // identically — in particular, both auto-link.
+            return await createPerson(ctx, personId, create);
         }),
 
     /**
@@ -197,6 +178,128 @@ export const personnelRouter = createTrpcRouter({
                     ...person,
                     status: "Deleted",
                 }),
+            };
+        }),
+
+    /**
+     * Describes what inviting this person to AVUT would mean right now, so the invite dialog can
+     * offer the right action.
+     *
+     * The `AlreadyMember` case is not cosmetic: better-auth's `createInvitation` rejects an invite
+     * outright when a member already holds that email
+     * (`USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION`), so the dialog has to link instead of
+     * invite.
+     *
+     * Emails are matched by lowercasing the needle and comparing exactly, NOT with
+     * `mode: "insensitive"`. `User.email` is lowercase by construction — better-auth lowercases it
+     * on sign-up (`api/routes/sign-up.mjs`) and in the OAuth link path
+     * (`oauth2/link-account.mjs`), which also compares `userInfo.email.toLowerCase()` against the
+     * stored value. `Person.email` is admin-typed and not normalised, so only the needle needs it.
+     * An exact match also uses the unique index on `users.email`, which a case-insensitive
+     * comparison could not.
+     *
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The invite state, the matching user account if one exists, and any pending invitation.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    getInviteState: organizationProcedure({
+        invitation: ["view"],
+        member: ["view"],
+        person: ["view"],
+    })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(
+            z.object({
+                /**
+                 * `Linked` — already attached to a user here, nothing to do.
+                 * `AlreadyMember` — a user with this email is already in the org and is not linked
+                 *   to anyone; link, don't invite.
+                 * `MemberLinkedElsewhere` — that member's account is already linked to a *different*
+                 *   person here. Neither action is available: an invitation would be refused
+                 *   (`USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION`) and linking would silently
+                 *   steal the other person's account. Someone has to unlink it first.
+                 * `UserExists` — the person has an AVUT account but is not a member here; invite.
+                 * `NoUser` — no account anywhere; invite.
+                 */
+                state: z.enum([
+                    "Linked",
+                    "AlreadyMember",
+                    "MemberLinkedElsewhere",
+                    "UserExists",
+                    "NoUser",
+                ]),
+                user: UserData.schema.nullable(),
+                pendingInvitation: z
+                    .object({ id: InvitationId.schema, createdAt: z.iso.datetime() })
+                    .nullable(),
+            }),
+        )
+        .query(async ({ ctx, input: { personId } }) => {
+            const person = await ctx.prisma.person.findUnique({
+                where: { organizationId: ctx.organizationId, id: personId },
+                include: { organizationUser: { select: { id: true } } },
+            });
+
+            if (!person)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personNotFound(personId),
+                });
+
+            const email = person.email.toLowerCase();
+
+            const [user, pendingInvitation] = await Promise.all([
+                ctx.prisma.user.findFirst({
+                    where: { email },
+                    include: {
+                        organizationUsers: {
+                            where: { organizationId: ctx.organizationId },
+                            // `personId` distinguishes `AlreadyMember` from
+                            // `MemberLinkedElsewhere`. Selecting it is why this does not filter on
+                            // `personId: null` the way `findLinkableMember` does — that filter
+                            // would make a member already linked to someone else look like a
+                            // non-member, and the dialog would offer an invitation better-auth
+                            // refuses.
+                            select: { id: true, personId: true },
+                        },
+                    },
+                }),
+                // Matches what the invite dialog writes, which lowercases for the same reason.
+                // An invitation typed mixed-case on the Invitations page will not be found here —
+                // it is also invisible to `getEntryControl`, which is a pre-existing gap in that
+                // flow rather than something this query should paper over.
+                ctx.prisma.organizationInvitation.findFirst({
+                    where: { organizationId: ctx.organizationId, email, status: "pending" },
+                    orderBy: { createdAt: "desc" },
+                }),
+            ]);
+
+            const membership = user?.organizationUsers[0] ?? null;
+
+            const state = person.organizationUser
+                ? "Linked"
+                : !user
+                  ? "NoUser"
+                  : !membership
+                    ? "UserExists"
+                    : membership.personId
+                      ? "MemberLinkedElsewhere"
+                      : "AlreadyMember";
+
+            return {
+                state,
+                user: user ? UserData.fromRecord(user) : null,
+                pendingInvitation: pendingInvitation
+                    ? {
+                          id: InvitationId.schema.parse(pendingInvitation.id),
+                          createdAt: pendingInvitation.createdAt.toISOString(),
+                      }
+                    : null,
             };
         }),
 
@@ -415,14 +518,48 @@ export async function createPerson(
     ctx: AuthenticatedOrganizationContext,
     personId: PersonId,
     create: z.infer<typeof PersonData.modifiableSchema>,
-    /** Set when this create is part of a multi-entry operation, so the entry joins its batch. */
+    /** Set when this create is part of a multi-entry operation, so the entries join its batch. */
     batchId?: string,
 ): Promise<{ created: PersonData }> {
+    /*
+     * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
+     * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
+     * person object in code and hands it straight to this helper (`teams-router.d4h.ts`), so the
+     * one write site that the schema cannot reach normalises here. Done before `changes`, so the
+     * audit entry records the value actually stored.
+     */
+    create = { ...create, email: create.email.toLowerCase() };
+
     // Calculate changes from empty record
     const changes = diffObject({ tags: [], properties: {} }, create);
 
-    const [created] = await ctx.prisma.$transaction([
-        ctx.prisma.person.create({
+    /*
+     * Auto-link (spec Part 3): if the organization opted in and an existing *member* holds this
+     * email, attach them as the person is created.
+     *
+     * Only a member. A user with an AVUT account who does not belong to this organization is left
+     * alone — linking them would mean granting membership on the strength of an email address.
+     * They get invited from the person's own page instead.
+     *
+     * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
+     * anyway, so a link landing in between loses the race rather than corrupting anything.
+     */
+    const settings = await readOrganizationSettings(ctx.prisma, ctx.organizationId);
+    const linkable = settings.personnel.autoLinkOnPersonCreate
+        ? await findLinkableMember(ctx.prisma, {
+              organizationId: ctx.organizationId,
+              email: create.email,
+          })
+        : null;
+
+    /*
+     * Interactive rather than `$transaction([...])` because the link is conditional on its own
+     * write succeeding — an array would commit the audit entry even when `updateMany` matched
+     * nothing. `ctx.logEvent` takes the transaction client, so both entries still go through the
+     * one sanctioned path.
+     */
+    const created = await ctx.prisma.$transaction(async (tx) => {
+        const person = await tx.person.create({
             data: {
                 id: personId,
                 organizationId: ctx.organizationId,
@@ -432,22 +569,42 @@ export async function createPerson(
                 properties: create.properties,
                 status: "Active",
             },
-            include: {
-                organizationUser: {
-                    include: {
-                        user: true,
-                    },
-                },
+        });
+
+        await ctx.logEvent(
+            {
+                action: "Create",
+                objectType: "Person",
+                objectId: personId,
+                changes,
+                batchId,
             },
-        }),
-        ctx.logEvent({
-            action: "Create",
-            objectType: "Person",
-            objectId: personId,
-            changes,
-            batchId,
-        }),
-    ]);
+            tx,
+        );
+
+        if (linkable) {
+            const { count } = await tx.organizationUser.updateMany({
+                where: { id: linkable.organizationUserId, personId: null },
+                data: { personId },
+            });
+
+            if (count === 1) {
+                await ctx.logEvent(
+                    {
+                        action: "Update",
+                        objectType: "OrganizationMembership",
+                        objectId: linkable.organizationUserId,
+                        description: `Linked person (${personId}, ${create.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
+                        refs: [{ objectType: "Person", objectId: personId, role: "context" }],
+                        batchId,
+                    },
+                    tx,
+                );
+            }
+        }
+
+        return person;
+    });
 
     return {
         created: PersonData.fromRecord(created),
@@ -464,8 +621,21 @@ export async function getPersonByEmail(
     ctx: AuthenticatedOrganizationContext,
     email: string,
 ): Promise<PersonData | null> {
+    /*
+     * Lowercase the needle and match exactly. The stored column is normalised
+     * (docs/specs/person-email-normalisation.md), so this is index-backed via
+     * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it
+     * replaces, it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }`
+     * filter object on a string field. That is what makes this function testable at all.
+     *
+     * Callers may still pass a mixed-case needle: the D4H sync plan carries the raw address it
+     * got from D4H.
+     */
     const person = await ctx.prisma.person.findFirst({
-        where: { organizationId: ctx.organizationId, email },
+        where: {
+            organizationId: ctx.organizationId,
+            email: email.toLowerCase(),
+        },
     });
 
     return person ? PersonData.fromRecord(person) : null;

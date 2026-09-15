@@ -19,3 +19,14 @@ export class InvalidD4HAccessTokenError extends Error {
         this.name = "InvalidD4HAccessTokenError";
     }
 }
+
+/**
+ * Error thrown when a module's own layout gate finds the module disabled for the current
+ * organization — either by its environment flag or by `settings.modules.<id>.enabled`.
+ */
+export class NotEnabledError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "NotEnabledError";
+    }
+}

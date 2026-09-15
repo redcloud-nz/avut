@@ -1,7 +1,27 @@
 # Spec: D4H linking & team synchronisation
 
 **Date:** 2026-09-10
-**Status:** Draft — approved for implementation of Phase 1 (manual sync).
+**Status:** Phase 1 implemented (branch `worktree-d4h-linking`). Phase 2 (scheduled
+sync, §9) deferred. Implementation notes below reflect decisions folded in from
+review — see `docs/plans/d4h-linking.md`.
+
+**Implementation deltas from the original draft:**
+
+- Departed memberships are **archived, not deleted** (`TeamMembership.status:
+RecordStatus @default(Active)`; sync toggles `Active` ⇄ `Archived`). A member
+  that reappears in D4H is **reactivated**. §7.2 / §7.3 / Appendix B updated.
+- `Team_D4H.d4hServer` → **`d4hServerCode`**; `Team_D4H.d4hLastSyncedAt` and
+  `Organization_D4H.orgSyncedAt` are both now **`lastSyncedAt DateTime?`** (pure
+  sync bookkeeping, never logged, written every sync). `TeamMembership_D4H` has
+  **no** `lastSyncedAt`.
+- `SyncPlan` has no `removals`; instead `additions` / `updates` / `archivals` /
+  `reactivations` / `teamMetadataChanges` plus a `planToken`. A stale `planToken`
+  at apply time throws `CONFLICT` (`StalePlanError` cause) and writes nothing —
+  the client re-previews and re-confirms.
+- No `properties.d4h*` backfill (prod/dev count is 0). One schema-only migration.
+- `createTeamFromD4H` is a single clean `$transaction` (team management is already
+  off better-auth) — Appendix A's orphan-batch caveat no longer applies to it.
+
 **Supersedes:** `importTeamFromD4H` / `syncronizeD4HTeam` in `teams-router.ts`, the
 `properties.d4h*` blobs on `Team` / `Person` / `TeamMembership`, and the unused
 `TeamType` enum.
@@ -100,7 +120,7 @@ data_, which does not belong in a JSON config blob.
 | `d4hReportingStartDay`   | `Int?`      | Cache                                                                         |
 | `d4hReportingStartMonth` | `Int?`      | Cache                                                                         |
 | `syncTokenId`            | `String?`   | FK → `D4HAccessToken` (an org token), `onDelete: SetNull`. Phase 2.           |
-| `orgSyncedAt`            | `DateTime?` | Last refresh of the cached attributes above                                   |
+| `lastSyncedAt`           | `DateTime?` | Last refresh of the cached attributes above (was `orgSyncedAt`)               |
 
 Created lazily on the first `linkTeamToD4H`.
 
@@ -123,19 +143,18 @@ Created lazily on the first `linkTeamToD4H`.
 | `d4hOrganisationId` | `Int?`      | **new** — the team's D4H org; null only if org-less                                              |
 | `d4hTimezone`       | `String?`   | **new**                                                                                          |
 | `linkTokenId`       | `String?`   | **new**, informational — token that created the link; FK → `D4HAccessToken`, `onDelete: SetNull` |
-| `d4hLastSyncedAt`   | `DateTime?` | exists; currently never written — sync writes it                                                 |
+| `lastSyncedAt`      | `DateTime?` | pure sync bookkeeping (was `d4hLastSyncedAt`); written every sync, never logged                  |
 
 ### 3.3 `TeamMembership_D4H` (new — replaces `properties.d4hMemberId`)
 
-| Field              | Type       | Notes                                                                     |
-| ------------------ | ---------- | ------------------------------------------------------------------------- |
-| `teamMembershipId` | `String`   | `@unique`, FK → `TeamMembership`, `onDelete: Cascade`                     |
-| `d4hMemberId`      | `Int`      | `@index`. The D4H `Member` id — team-scoped, so this is its correct home. |
-| `d4hStatus`        | `String`   | `OPERATIONAL` / `NON_OPERATIONAL` / `OBSERVER` / `RETIRED`                |
-| `d4hPosition`      | `String?`  | Snapshot                                                                  |
-| `d4hRef`           | `String?`  | Snapshot                                                                  |
-| `d4hRoleId`        | `Int?`     | Snapshot                                                                  |
-| `d4hLastSyncedAt`  | `DateTime` | Snapshot                                                                  |
+| Field              | Type      | Notes                                                                     |
+| ------------------ | --------- | ------------------------------------------------------------------------- |
+| `teamMembershipId` | `String`  | `@unique`, FK → `TeamMembership`, `onDelete: Cascade`                     |
+| `d4hMemberId`      | `Int`     | `@index`. The D4H `Member` id — team-scoped, so this is its correct home. |
+| `d4hStatus`        | `String`  | `OPERATIONAL` / `NON_OPERATIONAL` / `OBSERVER` / `RETIRED`                |
+| `d4hPosition`      | `String?` | Snapshot                                                                  |
+| `d4hRef`           | `String?` | Snapshot                                                                  |
+| `d4hRoleId`        | `Int?`    | Snapshot                                                                  |
 
 Presence of this row is the marker that a membership is D4H-managed. Memberships
 without it were added manually and are never touched by sync.
@@ -288,12 +307,12 @@ applyD4HTeamSync(teamId, planToken) // re-plans, then writes
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | in D4H, no AVUT membership                                      | resolve `Person` by `(orgId, email)` — **reuse if it exists** (join them to the team), else `createPerson`. Create `TeamMembership` + `TeamMembership_D4H`.                           |
 | in both                                                         | diff the `TeamMembership_D4H` snapshot fields (`d4hStatus`, `d4hPosition`, `d4hRef`, `d4hRoleId`). Write + `logEvent` `Update` **only if the diff is non-empty**. `Person` untouched. |
-| AVUT membership **with** a `TeamMembership_D4H` row, not in D4H | **hard delete** the `TeamMembership` (`_D4H` cascades) + `logEvent` `Delete`.                                                                                                         |
+| AVUT membership **with** a `TeamMembership_D4H` row, not in D4H | **archive** the `TeamMembership` (`status: Archived`) + `logEvent` `Update`. The `_D4H` row is kept so a reappearance can be detected and reactivated.                                |
 | AVUT membership **without** a `TeamMembership_D4H` row          | never touched.                                                                                                                                                                        |
 
 After reconciliation, refresh `Team_D4H` (`d4hTeamName`, `d4hOrganisationId`,
-`d4hTimezone`, `d4hLastSyncedAt`) and, for an org-bearing team, the
-`Organization_D4H` cached attributes + `orgSyncedAt`.
+`d4hTimezone`, `lastSyncedAt`) and, for an org-bearing team, the
+`Organization_D4H` cached attributes + `lastSyncedAt`.
 
 ### 7.3 `SyncPlan` shape (for the confirm dialog)
 
@@ -314,9 +333,15 @@ type SyncPlan = {
     personName: string;
     changes: Change[]; /* from diffObject */
   }[];
-  removals: { teamMembershipId: string; personName: string }[];
+  archivals: { teamMembershipId: string; personName: string }[];
+  reactivations: {
+    teamMembershipId: string;
+    d4hMemberId: number;
+    personName: string;
+    changes: Change[];
+  }[];
   teamMetadataChanges: Change[];
-  counts: { additions: number; updates: number; removals: number };
+  counts: { additions: number; updates: number; archivals: number; reactivations: number };
 };
 ```
 
@@ -349,14 +374,33 @@ shows "already in sync".
   `Protect team:["update"]`):
   - unlinked → "Link to D4H…" opens a dialog listing token-visible D4H teams
     (`d4hApi.listTeamsAccessibleToUser`), applying §4 rejections inline.
-  - linked → shows `d4hTeamName`, D4H org, `d4hLastSyncedAt`, a "Sync…" button
+  - linked → shows `d4hTeamName`, D4H org, `lastSyncedAt`, a "Sync…" button
     and an "Unlink" menu item.
 - **Sync dialog** (`?action=sync`, per `mutation-dialog.md`): calls
-  `planD4HTeamSync` on open, renders `additions` / `updates` / `removals` as
+  `planD4HTeamSync` on open, renders `additions` / `updates` / `archivals` / `reactivations` as
   three grouped lists, "Apply" calls `applyD4HTeamSync`. If the response comes
   back `stalePreview`, show a non-blocking notice and the recomputed counts.
 - **Create-from-D4H** replaces the current import dialog wiring, calling
   `createTeamFromD4H`.
+- **Admin → Organization page** gains a read-mostly "D4H Integration" card
+  (behind `integrations.d4h.enabled` and `Protect organization:["update"]`),
+  shown only when an `Organization_D4H` row exists — it is created as a
+  by-product of the first team link and is never user-created, so there is no
+  "Link" action. Surfaces the bound D4H organisation (name + id, or "org-less"),
+  server, cached timezone / currency / reporting-year start, linked-team count
+  and `lastSyncedAt`. Actions live both on the card and in a `⋮` menu beside the
+  page's Settings button (which also carries Edit and a placeholder Delete):
+  - **Sync** — `syncOrganizationD4H`, refreshes the cached org attributes from
+    D4H (metadata only; membership sync stays per-team). Shown only for an
+    org-linked link with ≥1 linked team (needs a team for D4H API context).
+  - **Unlink** — `unlinkOrganizationFromD4H`, disabled with an explanation while
+    any `Team_D4H` remains.
+    Backed by a `teams.getOrganizationD4H` query. There is no org-level "Link"
+    action — the `Organization_D4H` row is only ever created as a by-product of
+    linking a team.
+- **D4H action visibility** (team menu + org menu/card): actions that don't
+  apply to the current link state are hidden, not disabled — no Sync/Unlink when
+  unlinked, no Link when linked.
 
 ---
 
@@ -388,7 +432,7 @@ Not built now. When it lands:
 | 3   | Drop `enum TeamType` and the orphaned `teams.type` column. "Is a D4H team" = `Team_D4H != null`.                                                                                                                                                                                                                         |
 | 4   | `src/lib/schemas/team.ts` — `TeamData.d4h` gains `d4hOrganisationId`, `d4hTimezone`; rename `d4hServer` → `d4hServerCode`. New `TeamMembershipData` D4H sub-object.                                                                                                                                                      |
 | 5   | `src/lib/operations.ts` — add `d4h-team-link`; rename `d4h-team-import` away (or keep as a historical key — batches referencing it still exist). Keep `d4h-team-sync`.                                                                                                                                                   |
-| 6   | Delete `importTeamFromD4H`, `syncronizeD4HTeam`; add `linkTeamToD4H`, `createTeamFromD4H`, `unlinkTeamFromD4H`, `unlinkOrganizationFromD4H`, `planD4HTeamSync`, `applyD4HTeamSync` (alphabetical order in the router).                                                                                                   |
+| 6   | Delete `importTeamFromD4H`, `syncronizeD4HTeam`; add `linkTeamToD4H`, `createTeamFromD4H`, `unlinkTeamFromD4H`, `getOrganizationD4H`, `syncOrganizationD4H`, `unlinkOrganizationFromD4H`, `planD4HTeamSync`, `applyD4HTeamSync` (alphabetical order in the router).                                                      |
 | 7   | `src/lib/schemas/d4h/organisation.ts` / `team.ts` — ensure the org-detail fetch and its cache mapping are covered; add `D4HMemberStatus` export if not present.                                                                                                                                                          |
 | 8   | UI: team-detail D4H card, sync dialog, repoint `import-team-from-d4h.tsx`.                                                                                                                                                                                                                                               |
 | 9   | Tests: `buildSyncPlan` unit tests (pure); router tests for link invariants (§4) and apply reconciliation (§7.2) with `createMockPrisma`.                                                                                                                                                                                 |
@@ -427,7 +471,7 @@ it.
 | Question                           | Decision                                                                                      |
 | ---------------------------------- | --------------------------------------------------------------------------------------------- |
 | `Person` name/email after creation | AVUT authoritative — sync never overwrites                                                    |
-| Removed memberships                | hard delete                                                                                   |
+| Removed memberships                | archived (not deleted); reappearance reactivates                                              |
 | `TeamType` enum                    | remove; infer from `Team_D4H`                                                                 |
 | Multi-org tokens                   | assume possible; handled by the single-org-slot rule                                          |
 | `importTeamFromD4H`                | retire                                                                                        |

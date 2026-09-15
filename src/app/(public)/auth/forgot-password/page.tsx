@@ -1,0 +1,21 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Path: /auth/forgot-password
+ */
+
+import { Argus } from "@/components/blocks/argus";
+import { Auth_ForgotPassword_Card } from "@/components/auth/forgot-password";
+
+export const metadata = { title: "Forgot Password" };
+
+export default function Auth_ForgotPassword_Page() {
+    return (
+        <Argus.Root fullHeight={false}>
+            <Argus.Column>
+                <Auth_ForgotPassword_Card />
+            </Argus.Column>
+        </Argus.Root>
+    );
+}

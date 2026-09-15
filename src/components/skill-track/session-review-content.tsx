@@ -12,6 +12,7 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
@@ -156,6 +157,7 @@ export function SkillTrack_SessionReview_Content({
                     },
                     "Review",
                 ]}
+                actions={<HelpButton slug="skill-track/sessions" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

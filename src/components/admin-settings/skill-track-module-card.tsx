@@ -74,7 +74,7 @@ export function SkillTrackModule_SettingsCard({
                 <CardTitle>Skill Track Module</CardTitle>
                 <CardDescription>
                     The Skill Track module provides functionality for managing skills and
-                    competencies within your organization.
+                    competencies within your organisation.
                 </CardDescription>
                 <CardAction>
                     <Controller
@@ -96,7 +96,7 @@ export function SkillTrackModule_SettingsCard({
                         <FieldLegend>Skill Check Result Options</FieldLegend>
                         <FieldDescription>
                             Configure which skill check result options are available for use in your
-                            organization. You can enable or disable each option and customize its
+                            organisation. You can enable or disable each option and customise its
                             label.
                         </FieldDescription>
                         <FieldGroup>

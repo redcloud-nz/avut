@@ -1,0 +1,28 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Path: /orgs/[slug]/notes
+ */
+
+import { notFound } from "next/navigation";
+
+import { notesModuleFlag } from "@/lib/flags";
+import { requireOrganization } from "@/server/organization-access";
+
+export const metadata = {
+    title: "Notes",
+};
+
+export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/notes`>) {
+    const { slug } = await props.params;
+    const { settings } = await requireOrganization(slug);
+
+    if (!(await notesModuleFlag())) notFound();
+
+    if (!settings.modules.notes.enabled) {
+        throw new Error("Notes module is not enabled for this organization.");
+    }
+
+    return props.children;
+}

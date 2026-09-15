@@ -61,7 +61,17 @@ export const d4hApiRouter = createTrpcRouter({
      * List the D4H teams that are accessible to the user through their personal access token.
      */
     listTeamsAccessibleToUser: organizationProcedure({ organization: ["view"] })
-        .output(z.array(D4HTeamRef.schema.extend({ permissions: D4HTeamPermissions.schema })))
+        .output(
+            z.array(
+                D4HTeamRef.schema.extend({
+                    permissions: D4HTeamPermissions.schema,
+                    owner: z
+                        .object({ id: z.number(), title: z.string() })
+                        .nullish()
+                        .transform((v) => v ?? null),
+                }),
+            ),
+        )
         .query(async ({ ctx }) => {
             const accessToken = await getPersonalD4HAccessTokenForUser(
                 ctx.organizationId,

@@ -115,14 +115,14 @@ export function SystemAdmin_CreateOrganization_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Create Organization</span>
+                    <CreateNewIcon /> <span className="hidden md:inline">Create Organisation</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create Organization</DialogTitle>
+                    <DialogTitle>Create Organisation</DialogTitle>
                     <DialogDescription>
-                        Provision a new organization. Default module and integration settings are
+                        Provision a new organisation. Default module and integration settings are
                         seeded automatically.
                     </DialogDescription>
                 </DialogHeader>
@@ -189,7 +189,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                                             Add me as owner
                                         </FieldLabel>
                                         <FieldDescription>
-                                            Join the new organization as its owner. Leave unchecked
+                                            Join the new organisation as its owner. Leave unchecked
                                             to provision it without a membership.
                                         </FieldDescription>
                                     </FieldContent>

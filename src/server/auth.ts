@@ -16,8 +16,12 @@ import OrganizationInviteTemplate from "@/emails/organization-invite";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
 
 import { revalidateOrganization } from "./organization";
+import { revalidateOrganizationUser } from "./organization-user-cache";
+import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
 
 /**
@@ -86,7 +90,7 @@ export const auth = betterAuth({
                 return;
             }
 
-            sendEmail({
+            await sendEmail({
                 from: NoReplyEmailAddress,
                 to: previousEmail,
                 subject: "Your AVUT email address was changed",
@@ -109,7 +113,7 @@ export const auth = betterAuth({
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
                 console.log(`Sending verification OTP (type: ${type}) to:`, email);
-                sendEmail({
+                await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
                     subject: "Your verification code",
@@ -127,21 +131,47 @@ export const auth = betterAuth({
             cancelPendingInvitationsOnReInvite: true,
             organizationHooks: {
                 async afterAcceptInvitation({ invitation, organization, user }) {
-                    if (invitation.personId) {
-                        // Copy personId from invitation to organization user
-                        console.log(
-                            `Attaching User(${user.id}) to Person(${invitation.personId}) in Organization(${organization.id})`,
-                        );
-                        await prisma.organizationUser.updateMany({
-                            where: {
-                                organizationId: organization.id,
-                                userId: user.id,
+                    /*
+                     * Attach a person record to the membership Better Auth has just created —
+                     * the one named by the invitation, or (when the organization opted in) one
+                     * matching the accepting user's email.
+                     *
+                     * All of the logic lives in `person-user-link.ts` rather than here: this
+                     * module imports `server-only` transitively, so anything written inline
+                     * would be unreachable from the test environment.
+                     *
+                     * Never allowed to fail the accept. The membership itself is already
+                     * committed by this point, so throwing would leave the user staring at an
+                     * error for an invitation that did in fact work.
+                     */
+                    try {
+                        const linked = await linkPersonOnInvitationAccept(prisma, {
+                            organizationId: OrganizationId.schema.parse(organization.id),
+                            actor: {
+                                id: UserId.schema.parse(user.id),
+                                name: user.name,
+                                email: user.email,
                             },
-                            data: {
-                                personId: invitation.personId,
-                            },
+                            invitationPersonId: invitation.personId ?? null,
                         });
+
+                        if (linked) {
+                            console.log(
+                                `Attached User(${user.id}) to Person(${linked.personId}) in Organization(${organization.id})`,
+                            );
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Failed to link a person to User(${user.id}) in Organization(${organization.id}) on invitation accept:`,
+                            error,
+                        );
                     }
+
+                    // Better Auth creates the membership (and its initial role) internally as
+                    // part of accepting the invitation, before this hook runs — this is the one
+                    // place that happens outside our own tRPC mutations, so it needs the same
+                    // cache revalidation they do.
+                    await revalidateOrganizationUser(user.id);
                 },
                 async afterUpdateOrganization({ organization }) {
                     // Revalidate organization cache
@@ -178,7 +208,7 @@ export const auth = betterAuth({
                 console.log(
                     `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
                 );
-                sendEmail({
+                await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
                     subject: `Invitation to join ${organization.name} on AVUT`,

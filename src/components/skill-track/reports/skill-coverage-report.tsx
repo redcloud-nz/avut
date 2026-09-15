@@ -49,7 +49,11 @@ const stickyFirstCol = "sticky left-0 z-10 bg-background";
 const headCell =
     "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
-export function SkillTrack_SkillCoverageReport() {
+export function SkillTrack_SkillCoverageReport({
+    syntheticChecksEnabled,
+}: {
+    syntheticChecksEnabled: boolean;
+}) {
     const [skillParam] = useQueryState("skill");
     const parsedSkillId = skillParam ? SkillId.schema.safeParse(skillParam) : undefined;
 
@@ -73,10 +77,21 @@ export function SkillTrack_SkillCoverageReport() {
         );
     }
 
-    return <SkillCoverageReportView skillId={parsedSkillId.data} />;
+    return (
+        <SkillCoverageReportView
+            skillId={parsedSkillId.data}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+        />
+    );
 }
 
-function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
+function SkillCoverageReportView({
+    skillId,
+    syntheticChecksEnabled,
+}: {
+    skillId: SkillId;
+    syntheticChecksEnabled: boolean;
+}) {
     const organization = useOrganization();
 
     const [teamParam] = useQueryState("team");
@@ -104,7 +119,7 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
         syntheticActions,
         syntheticMenuItem,
         syntheticOpenMenuItem,
-    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies, syntheticChecksEnabled);
 
     const [showStatusCounts, setShowStatusCounts] = useState(true);
 
@@ -188,7 +203,7 @@ function SkillCoverageReportView({ skillId }: { skillId: SkillId }) {
                 {!skill ? (
                     <Empty>
                         <EmptyDescription>
-                            That skill is not in any of this organization&apos;s subscribed
+                            That skill is not in any of this organisation&apos;s subscribed
                             packages.
                         </EmptyDescription>
                     </Empty>

@@ -57,7 +57,11 @@ const stickyFirstCol = "sticky left-0 z-10 bg-background";
 const headCell =
     "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
-export function SkillTrack_TeamCompetencyReport() {
+export function SkillTrack_TeamCompetencyReport({
+    syntheticChecksEnabled,
+}: {
+    syntheticChecksEnabled: boolean;
+}) {
     const [team] = useQueryState("team");
 
     // An absent — or malformed — `?team=` means "nothing picked yet"; show the blank report
@@ -73,17 +77,28 @@ export function SkillTrack_TeamCompetencyReport() {
                 </Glorious.Header>
                 <Empty>
                     <EmptyDescription>
-                        Select a team, or the whole organization, to view competency gaps.
+                        Select a team, or the whole organisation, to view competency gaps.
                     </EmptyDescription>
                 </Empty>
             </Glorious.Root>
         );
     }
 
-    return <TeamCompetencyReportView teamParam={team} />;
+    return (
+        <TeamCompetencyReportView
+            teamParam={team}
+            syntheticChecksEnabled={syntheticChecksEnabled}
+        />
+    );
 }
 
-function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
+function TeamCompetencyReportView({
+    teamParam,
+    syntheticChecksEnabled,
+}: {
+    teamParam: string;
+    syntheticChecksEnabled: boolean;
+}) {
     const organization = useOrganization();
 
     const parsedTeamId = TeamId.schema.safeParse(teamParam);
@@ -108,7 +123,7 @@ function TeamCompetencyReportView({ teamParam }: { teamParam: string }) {
         syntheticActions,
         syntheticMenuItem,
         syntheticOpenMenuItem,
-    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies);
+    } = useSyntheticCompetencies(skills, personnel, recordedCompetencies, syntheticChecksEnabled);
 
     const [gapsOnly, setGapsOnly] = useState(false);
     const [showSkillDescription, setShowSkillDescription] = useState(false);

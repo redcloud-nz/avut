@@ -14,6 +14,7 @@ import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
 import { formatActorLabel } from "@/server/log-entry";
 import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
@@ -21,6 +22,8 @@ import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
+import { revalidateOrganizationUser } from "@/server/organization-user-cache";
+import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
 
@@ -41,7 +44,7 @@ export async function assertNotLastOwner(
     if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
         throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Cannot remove or demote the last owner of an organization.",
+            message: "Cannot remove or demote the last owner of an organisation.",
         });
     }
 }
@@ -110,7 +113,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (existing) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That user is already a member of this organization.",
+                    message: "That user is already a member of this organisation.",
                 });
             }
 
@@ -136,6 +139,8 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
             ]);
 
+            await revalidateOrganizationUser(input.userId);
+
             return { id };
         }),
 
@@ -159,7 +164,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (existing) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: `An organization with the slug "${input.slug}" already exists.`,
+                    message: `An organisation with the slug "${input.slug}" already exists.`,
                 });
             }
 
@@ -201,6 +206,10 @@ export const systemAdminRouter = createTrpcRouter({
                     changes: [],
                 }),
             ]);
+
+            if (input.addSelfAsOwner) {
+                await revalidateOrganizationUser(userId);
+            }
 
             return { id: organizationId, slug: input.slug };
         }),
@@ -326,6 +335,8 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.user.delete({ where: { id: input.userId } }),
             ]);
+
+            await revalidateOrganizationUser(input.userId);
 
             return { id: input.userId };
         }),
@@ -457,6 +468,57 @@ export const systemAdminRouter = createTrpcRouter({
 
     health: systemAdminProcedure.query(() => ({ ok: true as const })),
 
+    /**
+     * Import a skill-package export envelope (produced by `skillPackageBuilder.exportPackage`)
+     * into a target organization, moving a package across AVUT instances.
+     *
+     * Create-or-sync keyed on the record IDs in the envelope (see `prepareSkillPackageImport`):
+     * the tree is created if new, otherwise groups/skills are upserted and anything the
+     * envelope omits is archived. A package ID that already belongs to another organization is
+     * rejected. Imported packages always land `published: false`.
+     *
+     * `dryRun: true` computes and returns the plan without writing — the UI shows it for
+     * confirmation before a real import.
+     *
+     * A single-package import is one package-shaped event, so it writes exactly **one** log
+     * entry (`organizationId` arm); the group/skill row-writes are an implementation detail.
+     */
+    importSkillPackage: systemAdminProcedure
+        .input(
+            z.object({
+                envelope: SkillPackageExport.schema,
+                targetOrganizationId: OrganizationId.schema,
+                dryRun: z.boolean().default(false),
+            }),
+        )
+        .mutation(async ({ ctx, input: { envelope, targetOrganizationId, dryRun } }) => {
+            await assertOrganizationExists(ctx.prisma, targetOrganizationId);
+
+            const { plan, buildWrites } = await prepareSkillPackageImport(
+                ctx.prisma,
+                envelope,
+                targetOrganizationId,
+            );
+
+            if (dryRun) return { plan, applied: false as const };
+
+            const { counts } = plan;
+            const description = `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`;
+
+            await ctx.prisma.$transaction([
+                ...buildWrites(ctx.prisma),
+                ctx.logEvent({
+                    organizationId: targetOrganizationId,
+                    action: plan.packageAction,
+                    objectType: "SkillPackage",
+                    objectId: envelope.package.id,
+                    description,
+                }),
+            ]);
+
+            return { plan, applied: true as const };
+        }),
+
     listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.organization.findMany({
             select: {
@@ -523,7 +585,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (!membership) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "That user is not a member of this organization.",
+                    message: "That user is not a member of this organisation.",
                 });
             }
 
@@ -543,6 +605,8 @@ export const systemAdminRouter = createTrpcRouter({
                     description: `Removed user ${input.userId}`,
                 }),
             ]);
+
+            await revalidateOrganizationUser(input.userId);
 
             return { ok: true as const };
         }),
@@ -567,7 +631,7 @@ export const systemAdminRouter = createTrpcRouter({
             if (!membership) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "That user is not a member of this organization.",
+                    message: "That user is not a member of this organisation.",
                 });
             }
 
@@ -590,6 +654,8 @@ export const systemAdminRouter = createTrpcRouter({
                     description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
                 }),
             ]);
+
+            await revalidateOrganizationUser(input.userId);
 
             return { id: updated.id, role: updated.role };
         }),
