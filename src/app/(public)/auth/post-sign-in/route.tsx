@@ -38,6 +38,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(redirectPath, request.url));
     }
 
-    // Default redirect to the dashboard page.
-    return NextResponse.redirect(new URL("/orgs/--select-org", request.url));
+    // Default redirect to the personal dashboard.
+    return NextResponse.redirect(new URL("/user", request.url));
 }

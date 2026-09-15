@@ -12,6 +12,7 @@ import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NavSkeleton } from "@/components/nav/nav-skeleton";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
+import { ScopeSwitcher } from "@/components/nav/scope-switcher";
 import { UserMenu } from "@/components/nav/user-menu";
 import {
     Sidebar,
@@ -66,6 +67,7 @@ export default async function AuthenticatedLayout(props: {
                     </div>
                 </SidebarHeader>
                 <SidebarContent>
+                    <ScopeSwitcher />
                     <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
                 </SidebarContent>
                 <SidebarFooter>

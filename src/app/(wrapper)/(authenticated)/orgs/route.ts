@@ -13,5 +13,5 @@ export async function GET() {
     // Route handlers do not render layouts, so the group-level guard does not apply here.
     await requireSession();
 
-    redirect("/orgs/--select-org");
+    redirect("/user");
 }

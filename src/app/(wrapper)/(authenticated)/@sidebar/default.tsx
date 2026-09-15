@@ -4,8 +4,8 @@
  *
  * PROTOTYPE — root fallback for the lifted `@sidebar` slot: any authenticated route with no
  * more specific slot match (`/user/profile`, `/modules`, `/orgs/--create`,
- * `/orgs/--select-org`, …). No org or system module switcher here — `OrgModuleListMenu` only
- * covers the org scope, and none of these routes are inside one.
+ * `/orgs/--select-org`, …). The `ScopeSwitcher` in the authenticated layout is always
+ * rendered above this slot, so these routes are never left without any nav at all.
  */
 
 export default function Sidebar_Default() {

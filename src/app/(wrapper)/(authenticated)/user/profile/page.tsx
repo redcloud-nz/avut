@@ -17,7 +17,7 @@ export default async function Settings_Page() {
     return (
         <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
             <div>
-                <Link href="/orgs/--select-org">
+                <Link href="/user">
                     <AVUTLogo />
                 </Link>
             </div>

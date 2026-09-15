@@ -13,7 +13,6 @@
 
 import { ReactNode } from "react";
 
-import { OrgModuleListMenu } from "@/components/nav/org-module-list-menu";
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";
@@ -27,7 +26,6 @@ export default async function OrganizationSidebarLayout(
 
     return (
         <OrganizationProvider organizationId={organization.id} moduleFlags={moduleFlags}>
-            <OrgModuleListMenu />
             {props.children}
         </OrganizationProvider>
     );

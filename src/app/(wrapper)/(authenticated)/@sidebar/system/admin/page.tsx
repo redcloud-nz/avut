@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * PROTOTYPE — see `../../orgs/[slug]/i3/page.tsx` for the caveats this pattern still needs
- * solving. No module switcher here yet — `OrgModuleListMenu` only covers the org scope; a
- * system-scope equivalent can follow the same pattern when needed.
+ * solving. The `ScopeSwitcher` (in the authenticated layout) covers picking a scope; this is
+ * only the system module's own nav within it.
  */
 
 import { SystemAdmin_Sidebar_Menu } from "@/components/system-admin/sidebar-menu";

@@ -95,7 +95,7 @@ async function HeroCta() {
     return (
         <>
             <Button asChild size="lg">
-                <Link href="/orgs/--select-org">Open AVUT</Link>
+                <Link href="/user">Open AVUT</Link>
             </Button>
             <span className="text-sm text-muted-foreground">You&apos;re signed in.</span>
         </>
