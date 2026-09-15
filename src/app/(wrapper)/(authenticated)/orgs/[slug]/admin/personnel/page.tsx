@@ -11,7 +11,7 @@ import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 
 import { AdminModule_Personnel_List } from "@/components/admin/personnel/personnel-list";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -22,7 +22,7 @@ export default async function AdminModule_PersonnelList_Page(
     props: PageProps<"/orgs/[slug]/admin/personnel">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
 

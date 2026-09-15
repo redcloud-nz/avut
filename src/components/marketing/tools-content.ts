@@ -16,7 +16,7 @@ import { Modules } from "@/lib/modules";
 /**
  * `available` — shipped, no badge shown. `in-development` / `planned` both need a visible
  * badge so a not-yet-real tool is never mistaken for one that works today (see
- * docs/ideas/2026-09-12-tools-index-and-subpages.md).
+ * https://github.com/redcloud-nz/avut/issues/207).
  */
 export type ToolStatus = "available" | "in-development" | "planned";
 

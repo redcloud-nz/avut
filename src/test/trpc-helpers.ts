@@ -76,7 +76,7 @@ export const createAuthenticatedMockContext = ({
                 }
             }
         },
-        headers: new Headers(),
+        getHeaders: async () => new Headers(),
     };
 };
 

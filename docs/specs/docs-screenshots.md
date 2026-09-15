@@ -7,7 +7,7 @@ Covers how screenshots are captured, stored, and rendered — in the end-user
 documentation (`content/docs/**`, the public `/docs` site, and the in-app
 `?help=` sheet) and on the public marketing home page (`src/app/page.tsx`).
 Builds on the end-user documentation system introduced in
-`docs/ideas/2026-09-10-end-user-documentation.md`.
+<https://github.com/redcloud-nz/avut/issues/194>.
 
 The storage and capture machinery is shared; only the rendering component
 differs — `<Screenshot>` in docs, `<ProductShot>` on the marketing page.

@@ -23,15 +23,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
  * writes that cookie itself but never reads it, so without this the sidebar starts expanded on
  * every hard navigation no matter what the user last chose.
  */
-export function AppProviders({
-    children,
-    defaultSidebarOpen,
-}: Readonly<{ children: ReactNode; defaultSidebarOpen: boolean }>) {
+export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
     return (
         <NuqsAdapter>
             <HotkeysProvider>
                 <TooltipProvider>
-                    <SidebarProvider defaultOpen={defaultSidebarOpen}>{children}</SidebarProvider>
+                    <SidebarProvider>{children}</SidebarProvider>
                 </TooltipProvider>
                 <HotkeyHelp />
                 <Suspense fallback={null}>

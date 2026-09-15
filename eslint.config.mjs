@@ -71,7 +71,7 @@ const config = [
     },
   },
   {
-    // en-NZ copy sweep guardrail (docs/ideas/2026-09-10-nz-english-and-te-reo.md). The sweep is
+    // en-NZ copy sweep guardrail (https://github.com/redcloud-nz/avut/issues/197). The sweep is
     // clean as of the commit that flipped this to `error` — a regression should fail CI, not
     // just warn. Scoped to rendered JSX text and a handful of text-bearing attributes — never
     // code identifiers or class names — so it can safely cover all app/component/email source.

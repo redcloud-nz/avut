@@ -10,7 +10,7 @@ import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
 
 import { AdminModule_D4HAccessTokensList } from "./d4h-access-tokens-list";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -21,7 +21,7 @@ export default async function AdminModule_D4HAccessTokens_Page(
     props: PageProps<"/orgs/[slug]/admin/d4h-access-tokens">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(
         trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({

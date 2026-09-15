@@ -23,9 +23,7 @@ import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 
-const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+import { assetBaseUrl } from "./base-url";
 
 interface I3IssueItemsNotificationEmailProps {
     issuer: {
@@ -86,7 +84,7 @@ export default function I3IssueItemsNotificationEmail({
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
-                                src={`${baseUrl}/avut-logo.png`}
+                                src={`${assetBaseUrl}/avut-logo.png`}
                                 width="150"
                                 height="50"
                                 alt="AVUT Logo"

@@ -57,7 +57,7 @@ export function OrgModuleListMenu() {
                             <OrganizationModuleOptions />
                             {/* Global modules are admin-only; they follow the org modules
                                 under a divider. */}
-                            <GlobalModuleOptions separated />
+                            {/* <GlobalModuleOptions separated /> */}
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>

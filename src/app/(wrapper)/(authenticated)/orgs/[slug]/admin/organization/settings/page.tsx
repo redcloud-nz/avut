@@ -5,7 +5,7 @@
  * Paths: /orgs/[slug]/admin/settings/--update
  */
 
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { AdminModule_Settings_Content } from "@/components/admin-settings/settings-content";
@@ -13,7 +13,7 @@ import { AdminModule_Settings_Content } from "@/components/admin-settings/settin
 export default async function AdminModule_Settings_Page(
     props: PageProps<`/orgs/[slug]/admin/organization/settings`>,
 ) {
-    const { organization } = await requireOrganization((await props.params).slug);
+    const organization = await getOrganizationBySlug((await props.params).slug);
 
     prefetch(
         trpc.settings.getOrganizationSettings.queryOptions({ organizationId: organization.id }),

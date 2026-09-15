@@ -10,14 +10,10 @@ import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
 
-import { requireOrganization } from "@/server/organization-access";
-
 import { playgroundRegistry } from "./_registry";
 
 export default async function Playground_Index_Page(props: PageProps<"/orgs/[slug]/playground">) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
-
     return (
         <>
             <Std.Navbar breadcrumbs={["Playground"]} />

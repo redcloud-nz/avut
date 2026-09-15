@@ -10,7 +10,8 @@ import { Std } from "@/components/blocks/std";
 import { D4HToday_Content } from "@/components/d4h-today/d4h-today-content";
 import { UserId } from "@/lib/schemas/user";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationSettings } from "@/server/organization-settings";
 import { requireSession } from "@/server/session";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -20,8 +21,11 @@ export const metadata = {
 
 export default async function D4HToday_Page(props: PageProps<"/orgs/[slug]/d4h-today">) {
     const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
-    const session = await requireSession();
+    const organization = await getOrganizationBySlug(slug);
+    const [settings, session] = await Promise.all([
+        getOrganizationSettings(organization.id),
+        requireSession(),
+    ]);
 
     let availability: "d4h-disabled" | "no-personal-token" | "ready";
     if (settings.integrations.d4h.enabled === false) {
