@@ -22,14 +22,11 @@ import {
 } from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
 
 export default async function SkillsTrack_Reports_Page(
     props: PageProps<`/orgs/[slug]/skill-track/reports`>,
 ) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
-
     return (
         <>
             <Std.Navbar

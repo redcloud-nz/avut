@@ -12,14 +12,14 @@ import { AdminModule_TeamMembership_Content } from "@/components/admin/teams/tea
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, team_id, person_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const teamId = TeamId.schema.parse(team_id);
     const personId = PersonId.schema.parse(person_id);
@@ -39,7 +39,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_TeamMembership_Page(props: Props) {
     const { slug, team_id, person_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const teamId = TeamId.schema.parse(team_id);
     const personId = PersonId.schema.parse(person_id);

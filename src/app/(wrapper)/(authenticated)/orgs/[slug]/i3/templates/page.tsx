@@ -13,7 +13,6 @@ import { route } from "@/lib/routes";
 
 import { I3Module_CreateTemplate_Dialog } from "./create-template";
 import { I3Module_TemplateList } from "./templates-list";
-import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: "I3 Templates",
@@ -23,8 +22,6 @@ export default async function I3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
-
     return (
         <>
             <>

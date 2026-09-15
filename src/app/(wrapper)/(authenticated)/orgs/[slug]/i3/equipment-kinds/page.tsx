@@ -17,14 +17,18 @@ import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
+import { requireSession } from "@/server/session";
 
 export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/i3/equipment-kinds">,
 ) {
     const { slug } = await props.params;
 
-    const { session, organization } = await requireOrganization(slug);
+    const [organization, session] = await Promise.all([
+        getOrganizationBySlug(slug),
+        requireSession(),
+    ]);
 
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
