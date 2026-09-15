@@ -96,7 +96,10 @@ function GloriousScrollFrame({ children, className, ...props }: ComponentProps<"
     return (
         <div
             data-component="GloriousScrollFrame"
-            className={cn("min-h-0 min-w-0 flex-1 overflow-auto rounded-md border", className)}
+            className={cn(
+                "min-h-0 min-w-0 flex-1 overflow-auto rounded-md border [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)]",
+                className,
+            )}
             {...props}
         >
             {children}
