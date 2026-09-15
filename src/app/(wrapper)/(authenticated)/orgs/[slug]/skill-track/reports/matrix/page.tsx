@@ -8,6 +8,7 @@
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { SkillTrack_SkillMatrixReport } from "@/components/skill-track/reports/skill-matrix-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
@@ -67,6 +68,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                             href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-track/reports" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillMatrixReport syntheticChecksEnabled={syntheticChecksEnabled} />

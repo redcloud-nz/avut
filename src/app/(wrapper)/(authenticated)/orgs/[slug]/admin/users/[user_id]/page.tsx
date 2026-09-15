@@ -21,6 +21,7 @@ import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/users/unlink
 import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ export default function AdminModule_User_Page(
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                     { label: member.user.name },
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

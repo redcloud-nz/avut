@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 
@@ -196,6 +197,7 @@ export function SkillTrack_SessionChecks_Content({
                     },
                     "Checks",
                 ]}
+                actions={<HelpButton slug="skill-track/sessions" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

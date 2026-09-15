@@ -10,6 +10,7 @@ import { OrganizationSettingsForm } from "@/components/admin-settings/organizati
 import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/settings-scope";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -39,6 +40,7 @@ export function AdminModule_Settings_Content() {
                     },
                     "Settings",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

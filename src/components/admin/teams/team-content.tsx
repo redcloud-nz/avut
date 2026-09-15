@@ -8,6 +8,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
@@ -43,6 +44,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                     },
                     { label: team.name },
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

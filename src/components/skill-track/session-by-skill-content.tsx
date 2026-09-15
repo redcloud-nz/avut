@@ -21,6 +21,7 @@ import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
@@ -311,8 +312,9 @@ export function SkillTrack_SessionBySkill_Content({
                         "By Skill",
                     ]}
                 />
-                <div className="flex justify-end grow">
+                <div className="flex items-center justify-end gap-1 grow">
                     <SaveStatusIndicator status={mutation.status} />
+                    <HelpButton slug="skill-track/sessions" />
                 </div>
             </Std.Navbar>
             <Std.ScrollContainer>

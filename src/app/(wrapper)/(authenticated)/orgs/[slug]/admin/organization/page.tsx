@@ -11,6 +11,7 @@ import { AdminModule_Organization_D4HCard } from "@/components/admin/organizatio
 import { AdminModule_OrganizationMenu } from "@/components/admin/organization/organization-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
@@ -35,6 +36,7 @@ export default async function AdminModule_Organization_Page(
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     "Organization",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

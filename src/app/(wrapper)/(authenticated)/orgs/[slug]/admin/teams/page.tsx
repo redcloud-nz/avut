@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { route } from "@/lib/routes";
 
@@ -33,6 +34,7 @@ export default async function AdminModule_TeamsList_Page(
                         { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                         { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
                     ]}
+                    actions={<HelpButton slug="admin" />}
                 />
                 <Std.ScrollContainer>
                     <AdminModule_Teams_List />

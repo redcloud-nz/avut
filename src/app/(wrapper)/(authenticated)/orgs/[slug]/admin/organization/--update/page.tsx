@@ -9,6 +9,7 @@
 import { use } from "react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -35,6 +36,7 @@ export default function AdminModule_OrganizationUpdate_Page(
                     },
                     "Update",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Card>

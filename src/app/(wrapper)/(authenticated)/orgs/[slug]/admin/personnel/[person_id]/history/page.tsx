@@ -9,6 +9,7 @@
 import { use } from "react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { NotImplemented } from "@/components/nav/errors";
 
 import { usePerson } from "@/hooks/use-person";
@@ -37,6 +38,7 @@ export default function AdminModule_PersonHistory_Page(
                     },
                     "History",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <NotImplemented />

@@ -7,6 +7,7 @@
 
 import { AdminModule_Users_List } from "@/components/admin/users/users-list";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 
 import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
@@ -26,6 +27,7 @@ export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[sl
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <AdminModule_Users_List />

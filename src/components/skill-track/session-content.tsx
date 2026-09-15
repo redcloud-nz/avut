@@ -12,6 +12,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
@@ -68,6 +69,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     },
                     { label: session.name || session.id },
                 ]}
+                actions={<HelpButton slug="skill-track/sessions" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

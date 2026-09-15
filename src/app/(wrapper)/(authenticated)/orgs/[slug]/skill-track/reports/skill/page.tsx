@@ -8,6 +8,7 @@
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { SkillTrack_SkillCoverageReport } from "@/components/skill-track/reports/skill-coverage-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
@@ -63,6 +64,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                             href: route("/orgs/[slug]/skill-track/reports/skill", { slug }),
                         },
                     ]}
+                    actions={<HelpButton slug="skill-track/reports" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillCoverageReport

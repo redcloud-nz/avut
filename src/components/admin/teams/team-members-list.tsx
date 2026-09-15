@@ -20,6 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
+import { HelpButton } from "@/components/docs/help-button";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 
@@ -210,6 +211,7 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     },
                     "Members",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
