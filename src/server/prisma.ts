@@ -43,6 +43,7 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
                         Math.random() *
                             (DEVELOPMENT_QUERY_DELAY.max - DEVELOPMENT_QUERY_DELAY.min + 1),
                     ) + DEVELOPMENT_QUERY_DELAY.min;
+
                 await new Promise((resolve) => setTimeout(resolve, delay));
 
                 const result = await query(args);
