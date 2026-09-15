@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-// Flags American spellings in user-visible copy so the en-NZ sweep (docs/ideas/2026-09-10-nz-english-and-te-reo.md)
+// Flags American spellings in user-visible copy so the en-NZ sweep (https://github.com/redcloud-nz/avut/issues/197)
 // can be tracked to zero and PRs can't reintroduce it afterwards.
 //
 // Deliberately narrow: it only inspects JSXText, a small allowlist of text-bearing JSX

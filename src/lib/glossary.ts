@@ -5,7 +5,7 @@
  * Single source of truth for AVUT's domain glossary. Backs the `/docs/glossary`
  * page and the `<KeyTerms>` callout doc pages opt into via a `keyTerms`
  * frontmatter array. Plain data — no MDX, no rich content — see
- * docs/ideas/2026-09-11-docs-glossary.md for why.
+ * https://github.com/redcloud-nz/avut/issues/203 for why.
  */
 
 import type { ModuleId } from "@/lib/modules";

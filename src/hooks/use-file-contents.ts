@@ -29,7 +29,7 @@ export interface UseFileContentsResult extends FileContentsState {
 /**
  * Reads a picked file's text content in the browser, no server round-trip. Pairs with a
  * `Zod.safeParse` at the call site for inline validation before the parsed object is sent as
- * an ordinary tRPC mutation input — see `docs/ideas/2026-09-10-generic-file-upload.md`.
+ * an ordinary tRPC mutation input — see https://github.com/redcloud-nz/avut/issues/195.
  */
 export function useFileContents(options: UseFileContentsOptions = {}): UseFileContentsResult {
     const maxSizeBytes = options.maxSizeBytes ?? DEFAULT_MAX_SIZE_BYTES;
