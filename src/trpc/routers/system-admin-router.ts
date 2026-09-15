@@ -184,7 +184,7 @@ export const systemAdminRouter = createTrpcRouter({
                         createdAt: new Date(),
                     },
                 }),
-                ...configRows.map((data) => ctx.prisma.organizationConfig.create({ data })),
+                ctx.prisma.organizationConfig.createMany({ data: configRows }),
                 ...(input.addSelfAsOwner
                     ? [
                           ctx.prisma.organizationUser.create({
