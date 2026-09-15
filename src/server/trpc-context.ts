@@ -9,7 +9,9 @@ import { cache } from "react";
 
 import { TRPCError } from "@trpc/server";
 
-import { auth } from "@/server/auth";
+import { Roles } from "@/lib/permissions";
+import { getOrganizationUserRolesOrNull } from "@/server/organization-user";
+import { getSession } from "@/server/session";
 import { createInnerTrpcContext } from "@/trpc/init";
 import { assertHasPermissionResult } from "@/trpc/permissions";
 
@@ -22,30 +24,36 @@ import { assertHasPermissionResult } from "@/trpc/permissions";
 export const createTrpcContext = cache(async () => {
     const headers = await nextHeaders();
 
-    const authSession = await auth.api.getSession({ headers });
+    const authSession = await getSession();
 
     return createInnerTrpcContext({
         auth: authSession,
         hasPermission: async (organizationId, requiredPermissions) => {
-            let result;
-            try {
-                result = await auth.api.hasPermission({
-                    headers,
-                    body: { organizationId, permissions: requiredPermissions },
-                });
-            } catch (error) {
-                // Better Auth throws UNAUTHORIZED when the user is not a member of the
-                // organization at all.
+            // Evaluated locally against the cached role lookup rather than calling Better
+            // Auth's `auth.api.hasPermission` — that would be a second DB round trip doing
+            // the same membership lookup `getOrganizationUserRolesOrNull` already does, just
+            // to re-derive a result `Roles[role].authorize(...)` (same access-control config,
+            // see `src/lib/permissions.ts`) can compute in memory. `roles.some(...)` mirrors
+            // `useHasPermission`'s client-side union of roles: granted if *any* role the user
+            // holds in this org satisfies every requested permission.
+            const roles = await getOrganizationUserRolesOrNull(
+                organizationId,
+                authSession!.user.id,
+            );
+
+            if (!roles) {
+                // Not a member of the organization at all.
                 throw new TRPCError({
                     code: "FORBIDDEN",
                     message: "You are not a member of this organisation.",
-                    cause: error,
                 });
             }
 
-            // ...and returns `{ success: false }` when they are a member but lack the
-            // permission. Both have to be checked.
-            assertHasPermissionResult(result, requiredPermissions);
+            const granted = roles.some(
+                (role) => Roles[role].authorize(requiredPermissions).success,
+            );
+
+            assertHasPermissionResult({ success: granted }, requiredPermissions);
         },
         headers,
     });
