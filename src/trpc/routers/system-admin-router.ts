@@ -16,7 +16,7 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
-import { formatActorLabel } from "@/server/log-entry";
+import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
@@ -480,8 +480,12 @@ export const systemAdminRouter = createTrpcRouter({
      * `dryRun: true` computes and returns the plan without writing — the UI shows it for
      * confirmation before a real import.
      *
-     * A single-package import is one package-shaped event, so it writes exactly **one** log
-     * entry (`organizationId` arm); the group/skill row-writes are an implementation detail.
+     * Each changed package/group/skill is its own `ctx.prisma.$transaction([write, logEvent])`
+     * rather than one transaction for the whole import — a package with many groups/skills
+     * would otherwise risk tripping Prisma's interactive-transaction timeout. The entries are
+     * independently meaningful (each lands on its own group's/skill's timeline), so they're
+     * correlated by a `LogBatch` instead of one combined entry. Unchanged nodes are skipped
+     * entirely — no write, no log entry.
      */
     importSkillPackage: systemAdminProcedure
         .input(
@@ -494,27 +498,36 @@ export const systemAdminRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { envelope, targetOrganizationId, dryRun } }) => {
             await assertOrganizationExists(ctx.prisma, targetOrganizationId);
 
-            const { plan, buildWrites } = await prepareSkillPackageImport(
+            const { plan, writeItems } = await prepareSkillPackageImport(
                 ctx.prisma,
                 envelope,
                 targetOrganizationId,
             );
 
             if (dryRun) return { plan, applied: false as const };
+            if (writeItems.length === 0) return { plan, applied: true as const };
 
             const { counts } = plan;
-            const description = `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`;
+            const batch = await createLogBatch(
+                {
+                    operationKey: "skill-package-import",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" into another organisation (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`,
+                },
+                ctx.prisma,
+            );
 
-            await ctx.prisma.$transaction([
-                ...buildWrites(ctx.prisma),
-                ctx.logEvent({
-                    organizationId: targetOrganizationId,
-                    action: plan.packageAction,
-                    objectType: "SkillPackage",
-                    objectId: envelope.package.id,
-                    description,
-                }),
-            ]);
+            for (const item of writeItems) {
+                await ctx.prisma.$transaction([
+                    item.write(ctx.prisma),
+                    ctx.logEvent({
+                        organizationId: targetOrganizationId,
+                        ...item.log,
+                        batchId: batch.id,
+                    }),
+                ]);
+            }
 
             return { plan, applied: true as const };
         }),

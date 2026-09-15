@@ -92,12 +92,10 @@ describe("prepareSkillPackageImport", () => {
     });
 
     async function apply(env: SkillPackageExport, targetOrganizationId: string) {
-        const { plan, buildWrites } = await prepareSkillPackageImport(
-            db,
-            env,
-            targetOrganizationId,
-        );
-        await db.$transaction(buildWrites(db));
+        const { plan, writeItems } = await prepareSkillPackageImport(db, env, targetOrganizationId);
+        for (const item of writeItems) {
+            await item.write(db);
+        }
         return plan;
     }
 
