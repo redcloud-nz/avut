@@ -8,7 +8,6 @@
 import { notFound } from "next/navigation";
 
 import { playgroundFlag } from "@/lib/flags";
-import { requireOrganization } from "@/server/organization-access";
 
 export const metadata = {
     title: "Playground",
@@ -16,10 +15,12 @@ export const metadata = {
 
 // PROTOTYPE — the sidebar menu now comes from `../@sidebar/playground/page.tsx`, hoisted up to
 // `orgs/[slug]/layout.tsx`.
+//
+// No `requireOrganization` call here — its result was unused, kept only for the org-access
+// side effect, and every page under `playground/` already calls it independently (same as
+// every other module's pages). Dropping it here removes a blocking DB round trip from every
+// navigation into this module without weakening the actual security gate. See issue #212.
 export default async function Playground_Layout(props: LayoutProps<"/orgs/[slug]/playground">) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
-
     // Flag-only gate — not a settings-gated module, so there is no
     // `settings.modules.*.enabled` check. When the flag is on, any signed-in org
     // member can reach the playground; individual pages add their own <Protect>

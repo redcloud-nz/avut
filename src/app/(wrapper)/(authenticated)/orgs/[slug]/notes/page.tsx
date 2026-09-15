@@ -10,6 +10,10 @@ import { HelpButton } from "@/components/docs/help-button";
 
 import { requireOrganization } from "@/server/organization-access";
 
+export const metadata = {
+    title: "Notes",
+};
+
 export default async function Notes_Index_Page(props: PageProps<"/orgs/[slug]/notes">) {
     const { slug } = await props.params;
     await requireOrganization(slug);
