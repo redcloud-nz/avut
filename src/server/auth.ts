@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { networkInterfaces } from "node:os";
+
 import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -33,6 +35,22 @@ import prisma from "./prisma";
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
 
+const DEV_PORTS = ["3000", "3001", "3002", "3100"];
+
+/**
+ * This machine's LAN IPv4 addresses, so a phone on the same network can sign in
+ * against a dev server started with e.g. `npm run dev` and reached over
+ * `http://192.168.x.x:3000` — better-auth's origin check otherwise rejects it since
+ * only `localhost` is trusted below.
+ */
+function localNetworkOrigins(): string[] {
+    const addresses = Object.values(networkInterfaces())
+        .flat()
+        .filter((info) => info != null && info.family === "IPv4" && !info.internal)
+        .map((info) => info!.address);
+    return addresses.flatMap((address) => DEV_PORTS.map((port) => `http://${address}:${port}`));
+}
+
 export const auth = betterAuth({
     account: {
         accountLinking: {
@@ -61,12 +79,7 @@ export const auth = betterAuth({
             : []),
         ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
         ...(process.env.NODE_ENV === "development"
-            ? [
-                  "http://localhost:3000",
-                  "http://localhost:3001",
-                  "http://localhost:3002",
-                  "http://localhost:3100", // worktree dev servers
-              ]
+            ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],
     database: prismaAdapter(prisma, {

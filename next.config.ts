@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 import { execSync } from "node:child_process";
+import { networkInterfaces } from "node:os";
 
 import { withContentCollections } from "@content-collections/next";
 import type { NextConfig } from "next";
@@ -79,8 +80,19 @@ const environmentLabel =
 const appVersion = isProduction ? `v${appMetadata.version}` : environmentLabel;
 const appVersionName = isProduction ? appMetadata.versionName : "";
 
+// So a phone on the same network can reach this machine's dev server (e.g.
+// `http://192.168.x.x:3000`) without Next.js blocking its HMR/asset requests as
+// cross-origin. Mirrors the LAN-origin detection in `src/server/auth.ts`.
+function localNetworkHostnames(): string[] {
+    return Object.values(networkInterfaces())
+        .flat()
+        .filter((info) => info != null && info.family === "IPv4" && !info.internal)
+        .map((info) => info!.address);
+}
+
 const nextConfig: NextConfig = {
     cacheComponents: true,
+    ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see
         // docs/specs/docs-screenshots.md). Public, immutable pathnames.
