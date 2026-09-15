@@ -21,13 +21,13 @@ import { useOrganization } from "@/hooks/use-organization";
 import { Show } from "../show";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { globalModules, moduleBySegment, orgModules } from "@/lib/modules";
+import { orgModuleBySegment, orgModules, systemModules } from "@/lib/modules";
 import { useUser } from "@/client/auth-queries";
 
 function useCurrentModule() {
     // Org paths are /orgs/<slug>/<module>/...
     const segment = usePathname().split("/")[3];
-    return segment ? moduleBySegment[segment] : undefined;
+    return segment ? orgModuleBySegment[segment] : undefined;
 }
 
 /** Module switcher for the org scope — only usable within an `OrganizationProvider`. */
@@ -55,12 +55,9 @@ export function OrgModuleListMenu() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Modules</DropdownMenuLabel>
                             <OrganizationModuleOptions />
-                            {/* Global modules are admin-only; they follow the org modules
+                            {/* System modules are admin-only; they follow the org modules
                                 under a divider. */}
-                            {/* TODO(#213): GlobalModuleOptions is unwired pending the sidebar/
-                                session restructuring in this PR — rewire once that work settles,
-                                or delete the function below if it's superseded instead. */}
-                            {/* <GlobalModuleOptions separated /> */}
+                            {/* <SystemModuleOptions separated /> */}
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -93,22 +90,22 @@ function OrganizationModuleOptions() {
     );
 }
 
-function GlobalModuleOptions({ separated = false }: { separated?: boolean }) {
+function SystemModuleOptions({ separated = false }: { separated?: boolean }) {
     const { data: user } = useUser();
 
     // The admin check is invariant across the list, so gate once up front rather
     // than per item — avoids rendering an empty dropdown group for non-admins.
-    if (user?.role !== "admin" || globalModules.length === 0) return null;
+    if (user?.role !== "admin" || systemModules.length === 0) return null;
 
     return (
         <>
             {separated && (
                 <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Global</DropdownMenuLabel>
+                    <DropdownMenuLabel>System</DropdownMenuLabel>
                 </>
             )}
-            {globalModules.map((mod) => {
+            {systemModules.map((mod) => {
                 const Icon = mod.icon;
 
                 return (

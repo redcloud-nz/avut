@@ -25,7 +25,7 @@ import { requireSession } from "./session";
  * mirror. Coverage comes from the `system-admin/layout.tsx` integration and the
  * `systemAdminProcedure` tests, which exercise the same `role === "admin"` gate.
  */
-export async function requireGlobalAdmin() {
+export async function requireSystemAdmin() {
     const session = await requireSession();
     if (session.user.role !== "admin") forbidden();
     return { user: session.user };

@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /system-admin/users/[user_id]
+ * Path: /system/admin/users/[user_id]
  */
 
 import { Metadata } from "next";
@@ -11,13 +11,13 @@ import { SystemAdmin_User_Content } from "@/components/system-admin/users/user-c
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { UserId } from "@/lib/schemas/user";
-import { requireGlobalAdmin } from "@/server/system-admin-access";
+import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-type Props = PageProps<"/system-admin/users/[user_id]">;
+type Props = PageProps<"/system/admin/users/[user_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     const { user_id } = await props.params;
     const userId = UserId.schema.parse(user_id);
@@ -30,7 +30,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function SystemAdmin_User_Page(props: Props) {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     const { user_id } = await props.params;
     const userId = UserId.schema.parse(user_id);

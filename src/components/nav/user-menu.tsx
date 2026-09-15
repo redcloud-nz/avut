@@ -93,7 +93,7 @@ export function UserMenu() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href="/user-settings">
+                                <Link href="/user/profile">
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>
@@ -104,7 +104,7 @@ export function UserMenu() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/system-admin">
+                                        <Link href="/system/admin">
                                             <ShieldIcon />
                                             <span>System Admin</span>
                                         </Link>

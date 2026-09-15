@@ -2,13 +2,13 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /system-admin/users
+ * Path: /system/admin/users
  */
 
 import { Std } from "@/components/blocks/std";
 import { SystemAdmin_Users_List } from "@/components/system-admin/users/users-list";
 
-import { requireGlobalAdmin } from "@/server/system-admin-access";
+import { requireSystemAdmin } from "@/server/system-admin-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -16,7 +16,7 @@ export const metadata = {
 };
 
 export default async function SystemAdmin_Users_Page() {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     prefetch(trpc.systemAdmin.listUsers.queryOptions());
 
@@ -25,8 +25,8 @@ export default async function SystemAdmin_Users_Page() {
             <>
                 <Std.Navbar
                     breadcrumbs={[
-                        { label: "System Admin", href: "/system-admin" },
-                        { label: "Users", href: "/system-admin/users" },
+                        { label: "System Admin", href: "/system/admin" },
+                        { label: "Users", href: "/system/admin/users" },
                     ]}
                 />
                 <Std.ScrollContainer>

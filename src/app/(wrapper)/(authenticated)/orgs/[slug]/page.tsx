@@ -33,7 +33,7 @@ export default async function Organization_Index_Page(props: LayoutProps<"/orgs/
     const availableModules = orgModules.filter(
         (mod) =>
             moduleFlags[mod.id] !== false &&
-            (mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled)),
+            (mod.alwaysOn || (mod.id !== "org-admin" && modules[mod.id].enabled)),
     );
 
     return (

@@ -26,8 +26,8 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "System Admin", href: "/system-admin" },
-                    { label: "Users", href: "/system-admin/users" },
+                    { label: "System Admin", href: "/system/admin" },
+                    { label: "Users", href: "/system/admin/users" },
                     { label: user.name },
                 ]}
             />
@@ -90,7 +90,7 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                                         <td className="py-1 pr-4">
                                                             <Link
                                                                 href={route(
-                                                                    "/system-admin/organizations/[organizationId]",
+                                                                    "/system/admin/organizations/[organizationId]",
                                                                     { organizationId: org.id },
                                                                 )}
                                                                 className="underline-offset-2 hover:underline"

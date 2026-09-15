@@ -48,7 +48,7 @@ export function SystemAdmin_Users_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/system-admin/users/[user_id]", {
+                            href={route("/system/admin/users/[user_id]", {
                                 user_id: ctx.row.original.id,
                             })}
                         >

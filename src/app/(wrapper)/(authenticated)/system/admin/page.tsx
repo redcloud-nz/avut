@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /system-admin
+ * Path: /system/admin
  */
 
 import { ChevronRightIcon } from "lucide-react";
@@ -18,10 +18,10 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 
-import { requireGlobalAdmin } from "@/server/system-admin-access";
+import { requireSystemAdmin } from "@/server/system-admin-access";
 
 export default async function SystemAdmin_Index_Page() {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     return (
         <>
@@ -30,7 +30,7 @@ export default async function SystemAdmin_Index_Page() {
                 <Std.IndexPage title="System Administration">
                     <ItemGroup>
                         <Item asChild>
-                            <Link href="/system-admin/organizations">
+                            <Link href="/system/admin/organizations">
                                 <ItemContent>
                                     <ItemTitle>Organisations</ItemTitle>
                                     <ItemDescription>
@@ -44,7 +44,7 @@ export default async function SystemAdmin_Index_Page() {
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href="/system-admin/users">
+                            <Link href="/system/admin/users">
                                 <ItemContent>
                                     <ItemTitle>Users</ItemTitle>
                                     <ItemDescription>

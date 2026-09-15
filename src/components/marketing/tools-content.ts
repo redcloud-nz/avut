@@ -35,8 +35,8 @@ export interface ToolSection {
 export const TOOLS_CONTENT: readonly ToolSection[] = [
     {
         id: "admin",
-        label: Modules.admin.label,
-        icon: Modules.admin.icon,
+        label: Modules["org-admin"].label,
+        icon: Modules["org-admin"].icon,
         status: "available",
         description:
             "The organisational backbone every AVUT org runs on. Manage who's in the org, what teams they belong to, and how they connect to D4H — always on, never gated by settings.",

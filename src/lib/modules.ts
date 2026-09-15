@@ -10,6 +10,7 @@ import {
     PocketKnifeIcon,
     ShieldIcon,
     ShirtIcon,
+    UserIcon,
     WrenchIcon,
     type LucideIcon,
 } from "lucide-react";
@@ -22,10 +23,10 @@ import { route } from "@/lib/routes";
  *
  * For the settings-gated ones this matches the key under
  * `OrganizationSettings.modules`, so the same id indexes both this registry and
- * the org's enabled flags. `admin` is always-on and has no settings entry.
+ * the org's enabled flags. `org-admin` is always-on and has no settings entry.
  */
 export type OrganizationModuleId =
-    | "admin"
+    | "org-admin"
     | "d4h-views"
     | "forms"
     | "i3"
@@ -33,25 +34,29 @@ export type OrganizationModuleId =
     | "skill-track"
     | "skill-package-builder";
 
-/** Identifier for a site-wide module (gated on the Better Auth `admin` role). */
-export type GlobalModuleId = "system-admin";
+/** Identifier for a user-scoped module (lives under `/user/…`), always available. */
+export type UserModuleId = "profile";
+
+/** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
+export type SystemModuleId = "system-admin";
 
 /** Canonical identifier for any module. */
-export type ModuleId = OrganizationModuleId | GlobalModuleId;
+export type ModuleId = OrganizationModuleId | UserModuleId | SystemModuleId;
 
 /**
- * Whether a module lives under an organization (`/orgs/[slug]/…`) or is a
- * site-wide area (`/system-admin`) gated on the Better Auth `admin` role.
+ * Which of the three real scope roots a module lives under: an organization
+ * (`/orgs/[slug]/…`), the current user (`/user/…`, always available), or the
+ * site-wide system area (`/system/…`, gated on the Better Auth `admin` role).
  */
-export type ModuleScope = "organization" | "global";
+export type ModuleScope = "organization" | "user" | "system";
 
 interface BaseModuleDef {
     /** Display name shown in nav, dashboard, breadcrumbs, etc. */
     label: string;
     icon: LucideIcon;
-    /** Path segment (under `/orgs/[slug]/…` for org modules). Can differ from `id` (e.g. `skills` → `skill-track`). */
+    /** Path segment under the module's scope root. Can differ from `id` (e.g. `skills` → `skill-track`). */
     segment: string;
-    /** Always available, not gated by org settings (i.e. `admin`). */
+    /** Always available, not gated by org settings (i.e. `org-admin`). */
     alwaysOn?: boolean;
     scope: ModuleScope;
 }
@@ -63,24 +68,32 @@ export interface OrganizationModuleDef extends BaseModuleDef {
     href?: (slug: string) => Route;
 }
 
-export interface GlobalModuleDef extends BaseModuleDef {
-    id: GlobalModuleId;
-    scope: "global";
+export interface UserModuleDef extends BaseModuleDef {
+    id: UserModuleId;
+    scope: "user";
+    /** Builds the user-scoped href. */
+    href: () => Route;
+}
+
+export interface SystemModuleDef extends BaseModuleDef {
+    id: SystemModuleId;
+    scope: "system";
     /** Builds the site-wide href. */
     href: () => Route;
 }
 
-export type ModuleDef = OrganizationModuleDef | GlobalModuleDef;
+export type ModuleDef = OrganizationModuleDef | UserModuleDef | SystemModuleDef;
 
 /**
- * Single source of truth for every module — org-scoped and site-wide — with their
- * names, icons, route segments and hrefs. Insertion order is the display order used
- * by the nav switcher and dashboard. Derive `orgModules` / `globalModules` /
- * `configurableModuleIds` from here rather than hardcoding module ids elsewhere.
+ * Single source of truth for every module — organization, user, and system — with
+ * their names, icons, route segments and hrefs. Insertion order is the display
+ * order used by the nav switcher and dashboard. Derive `orgModules` / `userModules`
+ * / `systemModules` / `configurableModuleIds` from here rather than hardcoding
+ * module ids elsewhere.
  */
 export const Modules = {
-    admin: {
-        id: "admin",
+    "org-admin": {
+        id: "org-admin",
         label: "Admin",
         icon: WrenchIcon,
         segment: "admin",
@@ -135,24 +148,33 @@ export const Modules = {
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-package-builder", { slug }),
     },
+    profile: {
+        id: "profile",
+        label: "Profile",
+        icon: UserIcon,
+        segment: "profile",
+        alwaysOn: true,
+        scope: "user",
+        href: () => "/user/profile",
+    },
     "system-admin": {
         id: "system-admin",
         label: "System Admin",
         icon: ShieldIcon,
-        segment: "system-admin",
-        scope: "global",
-        href: () => "/system-admin",
+        segment: "admin",
+        scope: "system",
+        href: () => "/system/admin",
     },
 } satisfies Record<ModuleId, ModuleDef>;
 
 /** All modules in display order. */
 export const moduleList: readonly ModuleDef[] = Object.values(Modules);
 
-/** Settings-gated module ids (org-scoped modules except always-on `admin`). */
+/** Settings-gated module ids (org-scoped modules except always-on `org-admin`). */
 export const configurableModuleIds = moduleList
     .filter(
-        (m): m is OrganizationModuleDef & { id: Exclude<OrganizationModuleId, "admin"> } =>
-            m.scope === "organization" && m.id !== "admin",
+        (m): m is OrganizationModuleDef & { id: Exclude<OrganizationModuleId, "org-admin"> } =>
+            m.scope === "organization" && m.id !== "org-admin",
     )
     .map((m) => m.id);
 
@@ -170,10 +192,18 @@ export const orgModules = moduleList.filter(
     (m): m is OrgModuleDef => m.scope === "organization" && Boolean(m.href),
 );
 
-/** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
-export const globalModules = moduleList.filter((m): m is GlobalModuleDef => m.scope === "global");
+/** User-scoped modules (always available), in display order. */
+export const userModules = moduleList.filter((m): m is UserModuleDef => m.scope === "user");
 
-/** Look up a module by its route segment (as found in the pathname). */
-export const moduleBySegment: Record<string, ModuleDef> = Object.fromEntries(
-    moduleList.map((m) => [m.segment, m]),
+/** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
+export const systemModules = moduleList.filter((m): m is SystemModuleDef => m.scope === "system");
+
+/**
+ * Look up an org-scoped module by its route segment, as found in an org pathname
+ * (`/orgs/[slug]/<segment>`). Scoped to org modules only — `segment` is unique
+ * only within a scope (e.g. both the org and system scopes have an `admin`
+ * module using segment `"admin"`), so a flat cross-scope map would collide.
+ */
+export const orgModuleBySegment: Record<string, OrgModuleDef> = Object.fromEntries(
+    orgModules.map((m) => [m.segment, m]),
 );

@@ -2,13 +2,13 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /system-admin/skill-packages
+ * Path: /system/admin/skill-packages
  */
 
 import { Std } from "@/components/blocks/std";
 import { SystemAdmin_SkillPackageImport_Content } from "@/components/system-admin/skill-packages/skill-package-import-content";
 
-import { requireGlobalAdmin } from "@/server/system-admin-access";
+import { requireSystemAdmin } from "@/server/system-admin-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -16,7 +16,7 @@ export const metadata = {
 };
 
 export default async function SystemAdmin_SkillPackages_Page() {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     prefetch(trpc.systemAdmin.listOrganizations.queryOptions());
 
@@ -25,8 +25,8 @@ export default async function SystemAdmin_SkillPackages_Page() {
             <>
                 <Std.Navbar
                     breadcrumbs={[
-                        { label: "System Admin", href: "/system-admin" },
-                        { label: "Skill Packages", href: "/system-admin/skill-packages" },
+                        { label: "System Admin", href: "/system/admin" },
+                        { label: "Skill Packages", href: "/system/admin/skill-packages" },
                     ]}
                 />
                 <Std.ScrollContainer>

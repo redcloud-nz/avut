@@ -50,7 +50,7 @@ export function SystemAdmin_Organizations_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/system-admin/organizations/[organizationId]", {
+                            href={route("/system/admin/organizations/[organizationId]", {
                                 organizationId: ctx.row.original.id,
                             })}
                         >

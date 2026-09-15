@@ -2,23 +2,22 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /system-admin/organizations/[organizationId]/settings
+ * Path: /system/admin/organizations/[organizationId]
  */
 
 import { Metadata } from "next";
 
-import { SystemAdmin_OrganizationSettings_Content } from "@/components/system-admin/organizations/organization-settings-content";
+import { SystemAdmin_Organization_Content } from "@/components/system-admin/organizations/organization-content";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { resolveModuleFlags } from "@/server/module-flags";
-import { requireGlobalAdmin } from "@/server/system-admin-access";
+import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-type Props = PageProps<"/system-admin/organizations/[organizationId]/settings">;
+type Props = PageProps<"/system/admin/organizations/[organizationId]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-    await requireGlobalAdmin();
+    await requireSystemAdmin();
 
     const { organizationId: raw } = await props.params;
     const organizationId = OrganizationId.schema.parse(raw);
@@ -28,27 +27,21 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     );
 
     return {
-        title: `Settings ${TITLE_SEPARATOR} ${organization.name}`,
+        title: `${organization.name} ${TITLE_SEPARATOR} Organizations`,
     };
 }
 
-export default async function SystemAdmin_OrganizationSettings_Page(props: Props) {
-    await requireGlobalAdmin();
+export default async function SystemAdmin_Organization_Page(props: Props) {
+    await requireSystemAdmin();
 
     const { organizationId: raw } = await props.params;
     const organizationId = OrganizationId.schema.parse(raw);
 
     prefetch(trpc.systemAdmin.getOrganization.queryOptions({ organizationId }));
-    prefetch(trpc.systemAdmin.getOrganizationSettings.queryOptions({ organizationId }));
-
-    const moduleFlags = await resolveModuleFlags();
 
     return (
         <HydrateClient>
-            <SystemAdmin_OrganizationSettings_Content
-                organizationId={organizationId}
-                moduleFlags={moduleFlags}
-            />
+            <SystemAdmin_Organization_Content organizationId={organizationId} />
         </HydrateClient>
     );
 }
