@@ -21,6 +21,7 @@ export const Operations = {
     "d4h-team-import": { label: "D4H team import" },
     "d4h-team-link": { label: "D4H team link" },
     "d4h-team-sync": { label: "D4H team sync" },
+    "skill-package-import": { label: "Skill package import" },
 } as const;
 
 /** Identifier for a named multi-entry operation. */

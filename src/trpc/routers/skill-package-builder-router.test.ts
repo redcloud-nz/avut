@@ -233,7 +233,7 @@ describe("skillPackageBuilderRouter.importPackage", () => {
         );
     });
 
-    it("imports the tree unpublished into the caller's organization and writes one log entry", async () => {
+    it("imports the tree unpublished into the caller's organization, one log entry per created row", async () => {
         const result = await makeCaller().importPackage({
             organizationId: T.org,
             envelope: makeEnvelope(),
@@ -250,15 +250,25 @@ describe("skillPackageBuilderRouter.importPackage", () => {
         expect(stored?.groups.length).toBeGreaterThan(0);
         expect(stored?.skills.length).toBeGreaterThan(0);
 
-        const entries = await db.logEntry.findMany({
+        const packageEntries = await db.logEntry.findMany({
             where: { objectType: "SkillPackage", objectId: result.plan.package.id },
         });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
+        expect(packageEntries).toHaveLength(1);
+        expect(packageEntries[0]).toMatchObject({
             scope: "organization",
             organizationId: T.org,
             action: "Create",
         });
+
+        // One entry per package/group/skill row, all correlated by one batch.
+        const allEntries = await db.logEntry.findMany({
+            where: { organizationId: T.org, batchId: { not: null } },
+        });
+        expect(allEntries).toHaveLength(1 + stored!.groups.length + stored!.skills.length);
+        const batchIds = new Set(allEntries.map((e) => e.batchId));
+        expect(batchIds.size).toBe(1);
+        const batch = await db.logBatch.findUnique({ where: { id: [...batchIds][0]! } });
+        expect(batch).toMatchObject({ operationKey: "skill-package-import", userId: T.user });
     });
 
     it("refuses a package ID already owned by another organization", async () => {

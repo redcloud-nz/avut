@@ -91,6 +91,7 @@ describe("Operations", () => {
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",
+            "skill-package-import",
         ]);
     });
 
