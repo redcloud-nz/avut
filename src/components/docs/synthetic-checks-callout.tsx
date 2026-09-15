@@ -20,13 +20,15 @@ export function SyntheticChecksCallout() {
 
     return (
         <Alert variant="warning" className="my-4 text-sm [&_p]:my-0">
-            Every report&rsquo;s <strong>⋮</strong> menu carries a{" "}
-            <strong>Use Synthetic Checks</strong> toggle. Turning it on throws away the recorded
-            results and fills the report with generated ones, so the numbers stop being about your
-            people. Two things tell you it&rsquo;s on: a <strong>Synthetic Data</strong> button
-            appears next to <strong>Change scope</strong>, and the address bar picks up{" "}
-            <code>?synthetic</code>. Untick it — or drop that from the URL — to get the real data
-            back.
+            <div>
+                Every report&rsquo;s <strong>⋮</strong> menu carries a{" "}
+                <strong>Use Synthetic Checks</strong> toggle. Turning it on throws away the recorded
+                results and fills the report with generated ones, so the numbers stop being about
+                your people. Two things tell you it&rsquo;s on: a <strong>Synthetic Data</strong>{" "}
+                button appears next to <strong>Change scope</strong>, and the address bar picks up{" "}
+                <code>?synthetic</code>. Untick it — or drop that from the URL — to get the real
+                data back.
+            </div>
         </Alert>
     );
 }

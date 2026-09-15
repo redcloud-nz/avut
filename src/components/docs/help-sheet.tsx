@@ -58,7 +58,7 @@ export function HelpSheet() {
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-full gap-0 overflow-y-auto sm:max-w-lg">
+            <SheetContent side="right" className="w-full gap-0 sm:max-w-lg">
                 <SheetHeader className="border-b">
                     <SheetTitle>{query.data?.title ?? "Help"}</SheetTitle>
                     <SheetDescription>
@@ -66,7 +66,7 @@ export function HelpSheet() {
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="min-h-0 flex-1 px-4 py-2">
+                <div className="min-h-0 flex-1 px-4 py-2 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)]">
                     {query.isPending ? (
                         <div className="flex justify-center py-12">
                             <Spinner />

@@ -31,7 +31,7 @@ export function Callout({
 }) {
     return (
         <Alert variant={type} className="my-4 text-sm [&_p]:my-0">
-            {children}
+            <div>{children}</div>
         </Alert>
     );
 }
