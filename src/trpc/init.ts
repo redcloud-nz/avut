@@ -34,17 +34,22 @@ const DEVELOPMENT_DELAY = { min: 20, max: 80 }; // ms
 export function createInnerTrpcContext({
     auth,
     hasPermission,
-    headers,
+    getHeaders,
 }: {
     auth: AuthSession | null;
     hasPermission(organizationId: OrganizationId, permissions: Permissions): Promise<void>;
-    headers: Headers;
+    /**
+     * Lazily resolves the request's headers — only two procedures need them (passthroughs to
+     * Better Auth calls that want the raw request), so this stays unread rather than costing
+     * every call an unconditional `next/headers` read it has no use for.
+     */
+    getHeaders(): Promise<Headers>;
 }) {
     return {
         prisma,
         auth,
         hasPermission,
-        headers,
+        getHeaders,
     };
 }
 

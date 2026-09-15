@@ -78,7 +78,7 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             await auth.api.updateOrganization({
-                headers: ctx.headers,
+                headers: await ctx.getHeaders(),
                 body: {
                     organizationId: ctx.organizationId,
                     data: {

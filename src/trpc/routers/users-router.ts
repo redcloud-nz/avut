@@ -253,7 +253,7 @@ export const usersRouter = createTrpcRouter({
             // session caching it has configured.
             await auth.api.revokeSession({
                 body: { token: session.token },
-                headers: ctx.headers,
+                headers: await ctx.getHeaders(),
             });
         }),
 

@@ -22,8 +22,6 @@ import { assertHasPermissionResult } from "@/trpc/permissions";
  * HTTP handler or a server component prefetching through `@/trpc/server`.
  */
 export const createTrpcContext = cache(async () => {
-    const headers = await nextHeaders();
-
     const authSession = await getSession();
 
     return createInnerTrpcContext({
@@ -55,6 +53,6 @@ export const createTrpcContext = cache(async () => {
 
             assertHasPermissionResult({ success: granted }, requiredPermissions);
         },
-        headers,
+        getHeaders: nextHeaders,
     });
 });
