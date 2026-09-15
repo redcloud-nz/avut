@@ -11,7 +11,7 @@ import { auth } from "@/server/auth";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
-import { UserId } from "@/lib/schemas/user";
+import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
 
 import { FieldConflictError } from "../errors";
@@ -50,6 +50,17 @@ export const usersRouter = createTrpcRouter({
 
             return user.person ? PersonData.fromRecord(user.person) : null;
         }),
+
+    getSelf: authenticatedProcedure.output(UserData.schema).query(async ({ ctx }) => {
+        const user = ctx.auth.user;
+
+        return {
+            id: UserId.schema.parse(user.id),
+            name: user.name,
+            email: user.email,
+            image: user.image || null,
+        };
+    }),
 
     /**
      * Links a personnel record to a user account within the organization.

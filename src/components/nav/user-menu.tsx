@@ -5,9 +5,11 @@
 
 "use client";
 
-import { ChevronsUpDown, LogOutIcon, ShieldIcon } from "lucide-react";
+import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+
+import { useQuery } from "@tanstack/react-query";
 
 import { PersonalSettingsIcon, SwitchOrganizationIcon } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,19 +29,17 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 
-import { useSession } from "@/client/auth-queries";
 import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
+import { trpc } from "@/trpc/client";
 
 export function UserMenu() {
     const { isMobile } = useSidebar();
 
-    const { data: session } = useSession();
+    const { data: user } = useQuery(trpc.users.getSelf.queryOptions());
     const signOut = useSignOut();
 
-    if (!session) return null;
-
-    const user = session.user;
+    if (!user) return null;
 
     const initials = getUserInitials(user.name);
 
@@ -101,7 +101,7 @@ export function UserMenu() {
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        {user.role === "admin" && (
+                        {/* {user.role === "admin" && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuGroup>
@@ -113,7 +113,7 @@ export function UserMenu() {
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>
                             </>
-                        )}
+                        )} */}
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>
