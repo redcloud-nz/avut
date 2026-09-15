@@ -5,7 +5,7 @@
  *  Path: /
  */
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Jersey_10, Inter } from "next/font/google";
 
@@ -40,6 +40,16 @@ export const metadata: Metadata = {
         default: "AVUT",
     },
     description: "Assorted Vaguely Useful Tools",
+};
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    // Without this, Chrome on Android only shrinks the visual viewport when the
+    // on-screen keyboard opens — the layout viewport (and `dvh` units) stay full-height,
+    // so fixed-position dialogs centered on 100dvh can end up with their lower fields
+    // behind the keyboard. "resizes-content" makes the layout viewport shrink too.
+    interactiveWidget: "resizes-content",
 };
 
 export default function Root_Layout(props: LayoutProps<"/">) {
