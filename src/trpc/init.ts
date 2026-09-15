@@ -20,8 +20,13 @@ import prisma from "@/server/prisma";
 import { formatTrpcError } from "./error-formatter";
 import { UserId } from "@/lib/schemas/user";
 
-// Artificial delay in development to simulate real-world conditions
-const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
+// Artificial delay in development approximating the client-to-server network round trip for a
+// real user (as opposed to `localhost`, which has none). Deliberately small — this fires once
+// per tRPC call regardless of how many DB queries it makes; the per-query DB round trip is
+// simulated separately in `server/prisma.ts`, additively, so sequential vs. parallel query
+// patterns actually show up as different wall-clock time in dev instead of being masked by one
+// flat delay per procedure.
+const DEVELOPMENT_DELAY = { min: 20, max: 80 }; // ms
 
 /**
  * Create the inner tRPC context.
@@ -60,14 +65,14 @@ export const publicProcedure = t.procedure.use(async function artificialDelayInD
     const res = opts.next(opts);
 
     if (process.env.NODE_ENV === "development") {
+        const start = performance.now();
         const delay =
             Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
             DEVELOPMENT_DELAY.min;
 
-        console.debug(
-            `ℹ️  doing artificial delay of ${delay}ms before returning result for ${opts.path}`,
-        );
         await new Promise((resolve) => setTimeout(resolve, delay));
+        const durationMs = Math.round(performance.now() - start);
+        console.debug(`[trpc] ${opts.path} — ${durationMs}ms (+${delay}ms artificial)`);
     }
 
     return res;
