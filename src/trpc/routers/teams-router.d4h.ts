@@ -14,7 +14,7 @@ import { diffObject } from "@/lib/diff";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HLinkAction } from "@/server/d4h-link-invariants";
-import { buildSyncPlan, snapshotFromD4HMember } from "@/server/d4h-sync";
+import { buildSyncPlan, D4HMembershipSnapshot, snapshotFromD4HMember } from "@/server/d4h-sync";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
@@ -337,6 +337,48 @@ export async function planD4HSync(
     return planFromInputs(await fetchD4HSyncInputs(ctx, args));
 }
 
+/**
+ * Adopt an already-existing `TeamMembership` row as D4H-managed — the "found on lookup"
+ * path of an addition, and also the recovery path when a concurrent sync/manual add wins
+ * the race to create the row first (see the `P2002` catch below).
+ */
+async function adoptExistingMembership(
+    ctx: AuthenticatedOrganizationContext,
+    args: {
+        existing: { id: string; status: string };
+        personId: string;
+        teamId: string;
+        d4hMemberId: number;
+        snap: D4HMembershipSnapshot;
+        batchId: string;
+    },
+): Promise<void> {
+    const { existing, personId, teamId, d4hMemberId, snap, batchId } = args;
+    await ctx.prisma.$transaction([
+        ctx.prisma.teamMembership.update({
+            where: { id: existing.id },
+            data: {
+                status: "Active",
+                d4h: {
+                    upsert: {
+                        create: { d4hMemberId, ...snap },
+                        update: { d4hMemberId, ...snap },
+                    },
+                },
+            },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "TeamMembership",
+            objectId: existing.id,
+            description: "Adopted a manual membership as D4H-managed.",
+            changes: diffObject({ status: existing.status }, { status: "Active" }),
+            batchId,
+            refs: personTeamRefs(personId, teamId),
+        }),
+    ]);
+}
+
 /** Apply an already-computed plan. One `$transaction` per independently-meaningful row. */
 async function applyD4HSyncPlan(
     ctx: AuthenticatedOrganizationContext,
@@ -369,51 +411,56 @@ async function applyD4HSyncPlan(
         });
 
         if (existing) {
-            await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.update({
-                    where: { id: existing.id },
-                    data: {
-                        status: "Active",
-                        d4h: {
-                            upsert: {
-                                create: { d4hMemberId: add.d4hMemberId, ...snap },
-                                update: { d4hMemberId: add.d4hMemberId, ...snap },
-                            },
-                        },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "TeamMembership",
-                    objectId: existing.id,
-                    description: "Adopted a manual membership as D4H-managed.",
-                    changes: diffObject({ status: existing.status }, { status: "Active" }),
-                    batchId,
-                    refs: personTeamRefs(person.id, teamId),
-                }),
-            ]);
+            await adoptExistingMembership(ctx, {
+                existing,
+                personId: person.id,
+                teamId,
+                d4hMemberId: add.d4hMemberId,
+                snap,
+                batchId,
+            });
         } else {
             const tmId = TeamMembershipId.create();
-            await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.create({
-                    data: {
-                        id: tmId,
-                        organizationId: ctx.organizationId,
-                        teamId,
-                        personId: person.id,
-                        status: "Active",
-                        d4h: { create: { d4hMemberId: add.d4hMemberId, ...snap } },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "TeamMembership",
-                    objectId: tmId,
-                    description: "Added from linked D4H team.",
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.teamMembership.create({
+                        data: {
+                            id: tmId,
+                            organizationId: ctx.organizationId,
+                            teamId,
+                            personId: person.id,
+                            status: "Active",
+                            d4h: { create: { d4hMemberId: add.d4hMemberId, ...snap } },
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Create",
+                        objectType: "TeamMembership",
+                        objectId: tmId,
+                        description: "Added from linked D4H team.",
+                        batchId,
+                        refs: personTeamRefs(person.id, teamId),
+                    }),
+                ]);
+            } catch (e) {
+                // Lost a race with a concurrent sync (or a manual add) that created this
+                // membership between our findUnique above and this create — adopt the row
+                // it created instead of failing the whole sync.
+                if (!(e instanceof Object && "code" in e && e.code === "P2002")) throw e;
+
+                const raced = await ctx.prisma.teamMembership.findUniqueOrThrow({
+                    where: { teamId_personId: { teamId, personId: person.id } },
+                    select: { id: true, status: true },
+                });
+                await adoptExistingMembership(ctx, {
+                    existing: raced,
+                    personId: person.id,
+                    teamId,
+                    d4hMemberId: add.d4hMemberId,
+                    snap,
                     batchId,
-                    refs: personTeamRefs(person.id, teamId),
-                }),
-            ]);
+                });
+            }
         }
     }
 

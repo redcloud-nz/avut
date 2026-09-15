@@ -248,6 +248,59 @@ describe("teamsRouter.applyD4HTeamSync", () => {
         expect(batch).toMatchObject({ operationKey: "d4h-team-sync", userId: T.user });
     });
 
+    it("adopts a membership a concurrent sync created first instead of crashing", async () => {
+        const { db, T, caller } = await seed();
+
+        const plan = await caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team });
+
+        // Simulate a second, concurrent applyD4HTeamSync call winning the race: it creates
+        // the TeamMembership row for Grace between our findUnique and our own create, so our
+        // create loses to the unique constraint on (teamId, personId) — see issue #164.
+        const originalCreate = db.teamMembership.create.bind(db.teamMembership) as (
+            args: unknown,
+        ) => Promise<unknown>;
+        const createSpy = vi.spyOn(db.teamMembership, "create") as unknown as {
+            mockImplementationOnce: (
+                fn: (args: { data: Record<string, unknown> }) => unknown,
+            ) => void;
+            mockRestore: () => void;
+        };
+        createSpy.mockImplementationOnce((args) => {
+            return (async () => {
+                await originalCreate({
+                    ...args,
+                    data: { ...args.data, id: TeamMembershipId.create() },
+                });
+                const raceError = new Error("Unique constraint failed on (teamId, personId)");
+                Object.assign(raceError, { code: "P2002" });
+                throw raceError;
+            })();
+        });
+
+        const { plan: applied } = await caller.applyD4HTeamSync({
+            organizationId: T.org,
+            teamId: T.team,
+            planToken: plan.planToken,
+        });
+
+        expect(applied.counts).toMatchObject({ additions: 1 });
+        createSpy.mockRestore();
+
+        const grace = await db.person.findFirstOrThrow({
+            where: { organizationId: T.org, email: "grace@example.com" },
+        });
+        const memberships = await db.teamMembership.findMany({
+            where: { teamId: T.team, personId: grace.id },
+        });
+        expect(memberships).toHaveLength(1);
+        expect(memberships[0]?.status).toBe("Active");
+
+        const d4h = await db.teamMembership_D4H.findUnique({
+            where: { teamMembershipId: memberships[0]!.id },
+        });
+        expect(d4h?.d4hMemberId).toBe(501);
+    });
+
     it("rejects a stale planToken with a StalePlanError and writes nothing", async () => {
         const { db, T, caller } = await seed();
 
