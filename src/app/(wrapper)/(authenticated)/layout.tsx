@@ -87,7 +87,7 @@ export default async function AuthenticatedLayout(props: {
                     </SidebarContent>
                     <SidebarFooter>
                         <div className="py-1 text-center text-xs text-muted-foreground">
-                            <VersionString />
+                            <VersionString layout="stacked" />
                         </div>
                         <UserMenu />
                     </SidebarFooter>
