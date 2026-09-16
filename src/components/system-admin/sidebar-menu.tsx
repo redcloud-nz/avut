@@ -5,20 +5,15 @@
 
 "use client";
 
-import { NavItem } from "@/components/nav/nav-section";
-import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
+import { NavSubItem } from "@/components/nav/nav-section";
 
-/**
- * Site-wide admin sidebar.
- */
+/** Nested pages for the System Admin module's `NavCollapsible` section — not a standalone sidebar group. */
 export function SystemAdmin_Sidebar_Menu() {
     return (
-        <SidebarGroup>
-            <SidebarMenu>
-                <NavItem label="Organisations" href="/system/admin/organizations" />
-                <NavItem label="Users" href="/system/admin/users" />
-                <NavItem label="Skill Packages" href="/system/admin/skill-packages" />
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            <NavSubItem label="Organisations" href="/system/admin/organizations" />
+            <NavSubItem label="Users" href="/system/admin/users" />
+            <NavSubItem label="Skill Packages" href="/system/admin/skill-packages" />
+        </>
     );
 }

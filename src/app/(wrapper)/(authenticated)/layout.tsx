@@ -6,13 +6,14 @@
  */
 
 import Image from "next/image";
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
-import { NavSkeleton } from "@/components/nav/nav-skeleton";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
+import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher } from "@/components/nav/scope-switcher";
+import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
 import { UserMenu } from "@/components/nav/user-menu";
 import {
     Sidebar,
@@ -35,11 +36,7 @@ import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 // layout already blocks on it.
 export const instant = false;
 
-export default async function AuthenticatedLayout(props: {
-    modal: ReactNode;
-    sidebar: ReactNode;
-    children: ReactNode;
-}) {
+export default async function AuthenticatedLayout(props: { modal: ReactNode; children: ReactNode }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
     const session = await requireSession();
@@ -49,37 +46,44 @@ export default async function AuthenticatedLayout(props: {
 
     return (
         <HydrateClient>
-            <Sidebar>
-                <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                    <div className="w-[100px]">
-                        <Image
-                            src="/avut-logo.svg"
-                            alt="A.V.U.T. Logo"
-                            width={100}
-                            height={100 / 3}
-                            loading="eager"
-                            className="dark:invert"
-                        />
-                    </div>
-                    <div>
-                        <NotificationsMenu />
-                        <ModeToggle />
-                    </div>
-                </SidebarHeader>
-                <SidebarContent>
-                    <ScopeSwitcher />
-                    <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
-                </SidebarContent>
-                <SidebarFooter>
-                    <div className="py-1 text-center text-xs text-muted-foreground">
-                        <VersionString layout="stacked" />
-                    </div>
-                    <UserMenu />
-                </SidebarFooter>
-                <SidebarRail />
-            </Sidebar>
-            {props.modal}
-            <Std.SidebarInset>{props.children}</Std.SidebarInset>
+            <SidebarPortalProvider>
+                <Sidebar>
+                    <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
+                        <div className="w-[100px]">
+                            <Image
+                                src="/avut-logo.svg"
+                                alt="A.V.U.T. Logo"
+                                width={100}
+                                height={100 / 3}
+                                loading="eager"
+                                className="dark:invert"
+                            />
+                        </div>
+                        <div>
+                            <NotificationsMenu />
+                            <ModeToggle />
+                        </div>
+                    </SidebarHeader>
+                    <SidebarContent className="overflow-hidden">
+                        <div className="px-1 pt-1">
+                            <ScopeSwitcher />
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
+                            <ScopeSidebar_Modules />
+                            <SidebarPortalOutlet />
+                        </div>
+                    </SidebarContent>
+                    <SidebarFooter>
+                        <div className="py-1 text-center text-xs text-muted-foreground">
+                            <VersionString layout="stacked" />
+                        </div>
+                        <UserMenu />
+                    </SidebarFooter>
+                    <SidebarRail />
+                </Sidebar>
+                {props.modal}
+                <Std.SidebarInset>{props.children}</Std.SidebarInset>
+            </SidebarPortalProvider>
         </HydrateClient>
     );
 }

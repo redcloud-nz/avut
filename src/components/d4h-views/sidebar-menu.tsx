@@ -5,30 +5,24 @@
 
 "use client";
 
-import { NavItem } from "@/components/nav/nav-section";
-import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
+import { NavSubItem } from "@/components/nav/nav-section";
 
 import { route } from "@/lib/routes";
 
 import { useOrganization } from "@/hooks/use-organization";
 
+/** Nested pages for the D4H Views module's `NavCollapsible` section — not a standalone sidebar group. */
 export function D4HViews_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    if (!organization.isModuleEnabled("d4h-views")) {
-        return null;
-    }
-
     return (
-        <SidebarGroup>
-            <SidebarMenu>
-                <NavItem
-                    label="Equipment"
-                    href={route("/orgs/[slug]/d4h-views/equipment", { slug })}
-                />
-                <NavItem label="Members" href={route("/orgs/[slug]/d4h-views/members", { slug })} />
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            <NavSubItem
+                label="Equipment"
+                href={route("/orgs/[slug]/d4h-views/equipment", { slug })}
+            />
+            <NavSubItem label="Members" href={route("/orgs/[slug]/d4h-views/members", { slug })} />
+        </>
     );
 }

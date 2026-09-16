@@ -21,8 +21,17 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+
+/** Navigating away should close the sidebar sheet on mobile — it's a full-screen overlay there. */
+function useCloseMobileSidebarOnNavigate() {
+    const { isMobile, setOpenMobile } = useSidebar();
+    return () => {
+        if (isMobile) setOpenMobile(false);
+    };
+}
 
 export type NavSectionProps = ComponentProps<typeof SidebarGroup> & {
     title?: string;
@@ -55,11 +64,12 @@ export function NavItem<T extends string>({
     ...props
 }: NavItemProps<T>) {
     const pathname = usePathname();
+    const closeMobileSidebar = useCloseMobileSidebarOnNavigate();
 
     return (
         <SidebarMenuItem {...props}>
             <SidebarMenuButton asChild size={size} isActive={pathname == href}>
-                <Link href={href}>
+                <Link href={href} onClick={closeMobileSidebar}>
                     {icon}
                     <span>{label}</span>
                 </Link>
@@ -77,6 +87,11 @@ interface NavCollapsibleProps<T extends string> extends Omit<
     href: Route<T>;
 }
 
+/**
+ * Each instance tracks its own `open` state independently, so several sections can be
+ * expanded at once (multi-open, not accordion) — appropriate now that a scope's sidebar
+ * renders every enabled module's section together rather than swapping one in per route.
+ */
 export function NavCollapsible<T extends string>({
     children,
     className,
@@ -86,12 +101,18 @@ export function NavCollapsible<T extends string>({
     ...props
 }: NavCollapsibleProps<T>) {
     const pathname = usePathname();
+    const closeMobileSidebar = useCloseMobileSidebarOnNavigate();
 
     const [open, setOpen] = useState<boolean>(false);
 
-    const isActive = pathname == href;
+    // Expanded (auto-open) for the section's own page or any page nested under it, not just an
+    // exact match — a collapsible groups a whole module's pages, not one page. The header button
+    // itself is only marked `isActive` (highlighted) on an exact match — a descendant page being
+    // active is what the expanded sub-items are for showing, not the header.
+    const isExactMatch = pathname == href;
+    const isExpanded = isExactMatch || pathname.startsWith(`${href}/`);
 
-    if (isActive && !open) {
+    if (isExpanded && !open) {
         setOpen(true);
     }
 
@@ -99,22 +120,27 @@ export function NavCollapsible<T extends string>({
         <Collapsible
             asChild
             className={cn("group/collapsible", className)}
-            open={open || isActive}
+            open={open || isExpanded}
             onOpenChange={setOpen}
             {...props}
         >
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip={label} asChild>
-                    <Link href={href}>
+                <SidebarMenuButton tooltip={label} asChild isActive={isExactMatch}>
+                    <Link href={href} onClick={closeMobileSidebar}>
                         {icon}
                         <span>{label}</span>
                     </Link>
                 </SidebarMenuButton>
-                <CollapsibleTrigger asChild>
-                    <SidebarMenuAction>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuAction>
-                </CollapsibleTrigger>
+                {/* Hidden while forced open by the active route — toggling `open` wouldn't
+                    actually close it (`open={open || isExpanded}` below), so a visible toggle
+                    here would look broken rather than just inert. */}
+                {!isExpanded && (
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuAction>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuAction>
+                    </CollapsibleTrigger>
+                )}
                 <CollapsibleContent>
                     <SidebarMenuSub>{children}</SidebarMenuSub>
                 </CollapsibleContent>
@@ -134,11 +160,12 @@ interface NavSubItemProps<T extends string> extends Omit<
 
 export function NavSubItem<T extends string>({ href, icon, label, ...props }: NavSubItemProps<T>) {
     const pathname = usePathname();
+    const closeMobileSidebar = useCloseMobileSidebarOnNavigate();
 
     return (
         <SidebarMenuSubItem {...props}>
             <SidebarMenuSubButton asChild isActive={pathname == href}>
-                <Link href={href}>
+                <Link href={href} onClick={closeMobileSidebar}>
                     {icon}
                     <span>{label}</span>
                 </Link>

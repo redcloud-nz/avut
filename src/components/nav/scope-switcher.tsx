@@ -85,7 +85,9 @@ export function ScopeSwitcher() {
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <CurrentIcon className="size-4" />
+                            <div className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent">
+                                <CurrentIcon className="size-4" />
+                            </div>
                             <div className="font-semibold text-md truncate">{currentLabel}</div>
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>

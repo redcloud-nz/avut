@@ -20,19 +20,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 import { useUser } from "@/client/auth-queries";
 import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
-    const { isMobile } = useSidebar();
 
     const { data: user } = useUser();
     const signOut = useSignOut();
@@ -71,7 +65,7 @@ export function UserMenu() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        side={isMobile ? "bottom" : "right"}
+                        side="top"
                         align="end"
                         sideOffset={4}
                     >

@@ -13,9 +13,6 @@ export const metadata = {
     title: "Playground",
 };
 
-// PROTOTYPE — the sidebar menu now comes from `../@sidebar/playground/page.tsx`, hoisted up to
-// `orgs/[slug]/layout.tsx`.
-//
 // No `requireOrganization` call here — its result was unused, kept only for the org-access
 // side effect, and every page under `playground/` already calls it independently (same as
 // every other module's pages). Dropping it here removes a blocking DB round trip from every
