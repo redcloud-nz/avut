@@ -15,7 +15,7 @@ import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -26,7 +26,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
     props: PageProps<"/orgs/[slug]/skill-track/reports/matrix">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
     const { team } = await props.searchParams;
     const syntheticChecksEnabled = await syntheticChecksFlag();
 

@@ -11,7 +11,7 @@ import { SkillPackageBuilder_Group_Content } from "@/components/skill-package-bu
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props =
@@ -19,7 +19,7 @@ type Props =
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, group_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const skillGroupId = SkillGroupId.schema.parse(group_id);
     const skillGroup = await fetchQuery(
@@ -34,7 +34,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillPackageBuilder_Group_Page(props: Props) {
     const { slug, group_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const skillGroupId = SkillGroupId.schema.parse(group_id);
 

@@ -5,23 +5,16 @@
  * Path: /orgs/[slug]/notes
  */
 
-import { notFound } from "next/navigation";
+"use client";
 
-import { notesModuleFlag } from "@/lib/flags";
-import { requireOrganization } from "@/server/organization-access";
+import { useOrganization } from "@/hooks/use-organization";
+import { NotEnabledError } from "@/lib/errors";
 
-export const metadata = {
-    title: "Notes",
-};
+export default function Notes_Layout(props: LayoutProps<"/orgs/[slug]/notes">) {
+    const organization = useOrganization();
 
-export default async function Notes_Layout(props: LayoutProps<`/orgs/[slug]/notes`>) {
-    const { slug } = await props.params;
-    const { settings } = await requireOrganization(slug);
-
-    if (!(await notesModuleFlag())) notFound();
-
-    if (!settings.modules.notes.enabled) {
-        throw new Error("Notes module is not enabled for this organization.");
+    if (!organization.isModuleEnabled("notes")) {
+        throw new NotEnabledError("The Notes module is not enabled for this organization.");
     }
 
     return props.children;

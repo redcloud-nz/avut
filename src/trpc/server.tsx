@@ -5,6 +5,7 @@
 import "server-only";
 
 import { forbidden, notFound } from "next/navigation";
+import { connection } from "next/server";
 import { cache, type ReactNode } from "react";
 
 import {
@@ -94,8 +95,16 @@ export async function fetchQuery<TQueryFnData, TError, TData, TQueryKey extends 
  * Nesting is additive and safe. Note that in RSC a layout's body runs before its page's
  * body, so a `HydrateClient` in a layout captures only what that layout prefetched — a page
  * that prefetches needs its own.
+ *
+ * `dehydrate()` stamps each query with `dataUpdatedAt` (`Date.now()`), which Cache Components
+ * flags as an unstable value if it's evaluated while building the static prerender shell.
+ * The `connection()` call forces this component to run at request time regardless of where
+ * an ancestor boundary happens to sit, rather than relying on every call site nesting it
+ * correctly under a `<Suspense>`.
  */
-export function HydrateClient({ children }: { children: ReactNode }) {
+export async function HydrateClient({ children }: { children: ReactNode }) {
+    await connection();
+
     return (
         <HydrationBoundary state={dehydrate(getServerQueryClient())}>{children}</HydrationBoundary>
     );

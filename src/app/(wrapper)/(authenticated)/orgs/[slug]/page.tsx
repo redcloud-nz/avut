@@ -20,11 +20,13 @@ import {
 import Link from "next/link";
 import { orgModules } from "@/lib/modules";
 import { resolveModuleFlags } from "@/server/module-flags";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationSettings } from "@/server/organization-settings";
 
 export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
+    const settings = await getOrganizationSettings(organization.id);
     const { modules } = settings;
     const moduleFlags = await resolveModuleFlags();
 

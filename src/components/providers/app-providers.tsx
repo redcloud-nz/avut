@@ -15,9 +15,10 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 /**
- * App-shell providers — mounted in `(wrapper)/(authenticated)/layout.tsx`. Everything here has no
- * consumers outside the authenticated app: nuqs-driven dialogs/params, hotkeys, tooltips (used by
- * `HelpButton`), the sidebar context, and the `?help=` sheet itself.
+ * App-shell providers — mounted once in `(wrapper)/layout.tsx`, above both the authenticated and
+ * any future public-scope trees. Everything here has no consumers outside that shell: nuqs-driven
+ * dialogs/params, hotkeys, tooltips (used by `HelpButton`), the sidebar context, and the `?help=`
+ * sheet itself.
  *
  * `defaultSidebarOpen` comes from the `sidebar_state` cookie, read by the layout. `SidebarProvider`
  * writes that cookie itself but never reads it, so without this the sidebar starts expanded on

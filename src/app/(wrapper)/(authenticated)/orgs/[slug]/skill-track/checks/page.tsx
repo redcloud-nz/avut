@@ -8,7 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { route } from "@/lib/routes";
 
 import SkillTrack_ChecksList from "./checks-list";
@@ -22,7 +22,7 @@ export default async function SkillTrack_Checks_Page(
     props: PageProps<"/orgs/[slug]/skill-track/checks">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.skillChecks.listRecentChecks.queryOptions({ organizationId: organization.id }));
 

@@ -21,13 +21,13 @@ import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 
 export default async function AdminModule_Organization_Page(
     props: PageProps<`/orgs/[slug]/admin/organization`>,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     return (
         <>

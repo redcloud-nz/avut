@@ -115,26 +115,36 @@ production is the only place it appears).
 
 ## Hotfixes
 
-For a fix that can't wait for the next `integration` release train:
+For fixes that can't wait for the next `integration` release train, use a
+shared branch per production minor, named after the version it patches
+(`hotfix/0.9` while `production` is on `0.9.x`):
 
 ```bash
 git switch production && git pull
-git switch -c hotfix/<slug>
+git switch -c hotfix/0.9        # only if it doesn't already exist — otherwise git switch hotfix/0.9 && git pull
 ```
 
-Fix, PR **into `production`** directly, admin-merge. Then bring it back so
-`integration` doesn't regress:
+Land one or more fixes on that branch over time (PRs into `hotfix/0.9`, or
+direct commits — it's a working branch, not `production`). When the
+accumulated fixes are ready to ship, bring them to both branches:
 
 ```bash
+# Into production (this IS the release — bump version first if it warrants one)
+git switch production && git pull
+git merge --no-ff hotfix/0.9
+git push
+
+# Back into integration, so it doesn't regress
 git switch integration && git pull
-git merge origin/production          # merge commit
+git merge hotfix/0.9
 git push
 ```
 
-A hotfix does **not** bump `version` unless you intend it to be its own release
-(`v0.8.1`) — and the current `manage-release-version.yml` only understands
-`v{version}` from the `nz.avut` block, so patch releases would need that workflow
-extended first.
+Bump `nz.avut.version` (e.g. `0.9.2` → `0.9.3`) on whichever branch you merge
+into `production` first, following the same version-bump-then-release-PR shape
+as `docs/releases/` — see the `avut-release` skill. The branch survives the
+merge; keep accumulating on it and repeat until `production` moves to the next
+minor, at which point cut a fresh `hotfix/<minor>` branch.
 
 ## Notes
 

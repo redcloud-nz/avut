@@ -27,19 +27,17 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 
-import { useSession } from "@/client/auth-queries";
+import { useUser } from "@/client/auth-queries";
 import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
     const { isMobile } = useSidebar();
 
-    const { data: session } = useSession();
+    const { data: user } = useUser();
     const signOut = useSignOut();
 
-    if (!session) return null;
-
-    const user = session.user;
+    if (!user) return null;
 
     const initials = getUserInitials(user.name);
 
