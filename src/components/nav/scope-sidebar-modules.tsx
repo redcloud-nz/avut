@@ -20,24 +20,31 @@ import { systemModules, userModules } from "@/lib/modules";
 export function ScopeSidebar_Modules() {
     const pathname = usePathname();
 
-    if (pathname.startsWith("/user")) {
+    if (pathname === "/user" || pathname.startsWith("/user/")) {
         return (
             <NavSection>
                 {userModules.map((mod) => {
                     const Icon = mod.icon;
-                    return <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()} />;
+                    return (
+                        <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()} />
+                    );
                 })}
             </NavSection>
         );
     }
 
-    if (pathname.startsWith("/system")) {
+    if (pathname === "/system" || pathname.startsWith("/system/")) {
         return (
             <NavSection>
                 {systemModules.map((mod) => {
                     const Icon = mod.icon;
                     return (
-                        <NavCollapsible key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()}>
+                        <NavCollapsible
+                            key={mod.id}
+                            icon={<Icon />}
+                            label={mod.label}
+                            href={mod.href()}
+                        >
                             <SystemAdmin_Sidebar_Menu />
                         </NavCollapsible>
                     );

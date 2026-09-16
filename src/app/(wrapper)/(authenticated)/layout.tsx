@@ -25,7 +25,7 @@ import {
 import { VersionString } from "@/components/ui/version-string";
 import { serverSessionQueryOptions } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
-import { getServerQueryClient, HydrateClient } from "@/trpc/server";
+import { getServerQueryClient, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
 // this layout satisfies *build-time* prerender validation for it (see that file's docstring),
@@ -36,13 +36,20 @@ import { getServerQueryClient, HydrateClient } from "@/trpc/server";
 // layout already blocks on it.
 export const instant = false;
 
-export default async function AuthenticatedLayout(props: { modal: ReactNode; children: ReactNode }) {
+export default async function AuthenticatedLayout(props: {
+    modal: ReactNode;
+    children: ReactNode;
+}) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
     const session = await requireSession();
 
     const queryClient = getServerQueryClient();
     queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
+
+    // `ScopeSwitcher` reads this via a client `useQuery` on every authenticated page —
+    // prefetching here removes the round trip that would otherwise show as its skeleton.
+    prefetch(trpc.users.listMemberships.queryOptions());
 
     return (
         <HydrateClient>

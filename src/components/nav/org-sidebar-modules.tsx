@@ -55,7 +55,9 @@ export function OrgSidebar_Modules() {
                     const subItems = MODULE_SIDEBAR[mod.id];
 
                     if (!subItems) {
-                        return <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={href} />;
+                        return (
+                            <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={href} />
+                        );
                     }
 
                     return (

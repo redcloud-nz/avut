@@ -20,16 +20,16 @@ import {
 
 import { systemModules } from "@/lib/modules";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { EntryControlSelect } from "@/server/entry-control";
+import { OrganizationMembershipsAndInvitations } from "@/server/entry-control";
 
 export function OrgSelector_Card({
-    entryControl,
+    data,
     module,
 }: {
-    entryControl: EntryControlSelect;
+    data: OrganizationMembershipsAndInvitations;
     module?: string;
 }) {
-    const { session, memberships, invitations } = entryControl.data;
+    const { session, memberships, invitations } = data;
 
     return (
         <Card>

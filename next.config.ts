@@ -84,7 +84,11 @@ const nextConfig: NextConfig = {
         // `system-admin` and `user-settings` moved under the real `/system` and `/user`
         // scope roots (#92) — keep old bookmarks/links working.
         return [
-            { source: "/system-admin/:path*", destination: "/system/admin/:path*", permanent: true },
+            {
+                source: "/system-admin/:path*",
+                destination: "/system/admin/:path*",
+                permanent: true,
+            },
             { source: "/user-settings", destination: "/user/profile", permanent: true },
         ];
     },

@@ -28,15 +28,14 @@ import {
 } from "@/components/ui/sidebar";
 
 import { useUser } from "@/client/auth-queries";
-import { systemModules } from "@/lib/modules";
 import { trpc } from "@/trpc/client";
 
 /** Which of the three scope roots the current pathname is inside, or `null` for a route above all of them. */
 function useCurrentScope(): "organization" | "user" | "system" | null {
     const pathname = usePathname();
     if (pathname.startsWith("/orgs/")) return "organization";
-    if (pathname.startsWith("/user")) return "user";
-    if (pathname.startsWith("/system")) return "system";
+    if (pathname === "/user" || pathname.startsWith("/user/")) return "user";
+    if (pathname === "/system" || pathname.startsWith("/system/")) return "system";
     return null;
 }
 
@@ -112,18 +111,14 @@ export function ScopeSwitcher() {
                                     Personal Account
                                 </Link>
                             </DropdownMenuItem>
-                            {user.role === "admin" &&
-                                systemModules.map((mod) => {
-                                    const Icon = mod.icon;
-                                    return (
-                                        <DropdownMenuItem key={mod.id} asChild>
-                                            <Link href={mod.href()}>
-                                                <Icon />
-                                                System
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    );
-                                })}
+                            {user.role === "admin" && (
+                                <DropdownMenuItem asChild>
+                                    <Link href="/system/admin">
+                                        <ShieldIcon />
+                                        System Admin
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>

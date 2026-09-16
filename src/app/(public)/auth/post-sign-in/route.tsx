@@ -9,7 +9,9 @@ import { cookies as nextCookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { safeRedirectPath } from "@/lib/auth-redirect";
+import { route } from "@/lib/routes";
 import { auth } from "@/server/auth";
+import { getEntryControl } from "@/server/entry-control";
 import prisma from "@/server/prisma";
 
 export async function GET(request: NextRequest) {
@@ -38,6 +40,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(redirectPath, request.url));
     }
 
-    // Default redirect to the personal dashboard.
-    return NextResponse.redirect(new URL("/user", request.url));
+    // No explicit destination: proceed straight to the org for a single-org account, otherwise
+    // land on the personal dashboard to pick one.
+    const entryControl = await getEntryControl();
+    const destination =
+        entryControl.status === "Proceed"
+            ? route("/orgs/[slug]", { slug: entryControl.slug })
+            : "/user";
+    return NextResponse.redirect(new URL(destination, request.url));
 }

@@ -27,7 +27,6 @@ import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
-
     const { data: user } = useUser();
     const signOut = useSignOut();
 

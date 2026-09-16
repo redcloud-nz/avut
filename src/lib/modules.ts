@@ -197,13 +197,3 @@ export const userModules = moduleList.filter((m): m is UserModuleDef => m.scope 
 
 /** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
 export const systemModules = moduleList.filter((m): m is SystemModuleDef => m.scope === "system");
-
-/**
- * Look up an org-scoped module by its route segment, as found in an org pathname
- * (`/orgs/[slug]/<segment>`). Scoped to org modules only — `segment` is unique
- * only within a scope (e.g. both the org and system scopes have an `admin`
- * module using segment `"admin"`), so a flat cross-scope map would collide.
- */
-export const orgModuleBySegment: Record<string, OrgModuleDef> = Object.fromEntries(
-    orgModules.map((m) => [m.segment, m]),
-);

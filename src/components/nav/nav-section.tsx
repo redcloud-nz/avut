@@ -112,10 +112,6 @@ export function NavCollapsible<T extends string>({
     const isExactMatch = pathname == href;
     const isExpanded = isExactMatch || pathname.startsWith(`${href}/`);
 
-    if (isExpanded && !open) {
-        setOpen(true);
-    }
-
     return (
         <Collapsible
             asChild

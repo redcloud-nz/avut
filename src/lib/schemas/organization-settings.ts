@@ -70,7 +70,7 @@ const organizationSettingsSchema = z.object({
         }),
     }),
     /*
-     * Personnel lives under the always-on `admin` module rather than a gated one, so these are
+     * Personnel lives under the always-on `org-admin` module rather than a gated one, so these are
      * top-level rather than a `modules.*` key.
      *
      * Both default to `false`: an organization that upgrades into this feature keeps doing

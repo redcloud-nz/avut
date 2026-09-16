@@ -18,8 +18,9 @@ A Next.js web application providing organizational management tools with optiona
 ```
 src/
   app/                        # Next.js App Router pages
-    (authenticated)/orgs/[slug]/   # Org-scoped pages (admin, i3, skill-track, notes, …)
-    (authenticated)/user-settings/ # Account settings (not org-scoped)
+    (authenticated)/orgs/[slug]/   # Organization scope root (org-admin, i3, skill-track, notes, …)
+    (authenticated)/user/      # User scope root — personal dashboard, profile, settings
+    (authenticated)/system/    # System scope root — site-wide admin
     (public)/policies/        # Privacy / terms pages (no auth)
     api/                      # API routes (auth)
     trpc/[trpc]/              # tRPC HTTP handler
@@ -376,23 +377,27 @@ For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and
 
 `Saratoga.Root` is a fixed `max-w-5xl`; it has no width variants. Constrain narrower content with `className` on a case-by-case basis.
 
-## Modules (per org)
+## Scope roots and modules
 
-`src/lib/modules.ts` is the single source of truth — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
+The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
-| `ModuleId`              | Path                                 | Description                                                      |
-| ----------------------- | ------------------------------------ | ---------------------------------------------------------------- |
-| `admin`                 | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations. Always on |
-| `d4h-views`             | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
-| `forms`                 | —                                    | Vestigial — form machinery lives under the `i3` module           |
-| `i3`                    | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates              |
-| `notes`                 | `/orgs/[slug]/notes`                 | Rich-text notes                                                  |
-| `skill-track`           | `/orgs/[slug]/skill-track`           | Skill checks, sessions, catalogue, reports                       |
-| `skill-package-builder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |
+`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
 
-- A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry
-- All modules except `admin` are gated by org settings (`OrganizationSettings.modules`, keyed by `ModuleId`); `admin` is `alwaysOn`
-- Only modules with an `href` appear in the nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
+| `ModuleId`              | Scope        | Path                                 | Description                                                      |
+| ----------------------- | ------------ | ------------------------------------ | ---------------------------------------------------------------- |
+| `org-admin`             | organization | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations. Always on |
+| `d4h-views`             | organization | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
+| `forms`                 | organization | —                                    | Vestigial — form machinery lives under the `i3` module           |
+| `i3`                    | organization | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates              |
+| `notes`                 | organization | `/orgs/[slug]/notes`                 | Rich-text notes                                                  |
+| `skill-track`           | organization | `/orgs/[slug]/skill-track`           | Skill checks, sessions, catalogue, reports                       |
+| `skill-package-builder` | organization | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |
+| `profile`               | user         | `/user/profile`                      | Personal profile settings. Always on                             |
+| `system-admin`          | system       | `/system/admin`                      | Site-wide admin — organizations, users, skill packages           |
+
+- A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
+- Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
+- Only org modules with an `href` appear in the org nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
 - The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `i3`. It's retained only because it's a settings-gated key
 
 <!-- BEGIN:nextjs-agent-rules -->

@@ -5,26 +5,23 @@
  * Path: /user
  */
 
-import { redirect } from "next/navigation";
-
 import { Std } from "@/components/blocks/std";
 import { OrgSelector_Card } from "@/components/cards/org-selector";
-import { route } from "@/lib/routes";
-import { getEntryControl } from "@/server/entry-control";
+import { getOrganizationMembershipsAndInvitations } from "@/server/entry-control";
+
+export const metadata = {
+    title: `Dashboard`,
+};
 
 export default async function UserDashboard_Page() {
-    const entryControl = await getEntryControl();
-
-    if (entryControl.status == "Proceed") {
-        redirect(route("/orgs/[slug]", { slug: entryControl.slug }));
-    }
+    const data = await getOrganizationMembershipsAndInvitations();
 
     return (
         <>
             <Std.Navbar breadcrumbs={["Dashboard"]} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Dashboard">
-                    <OrgSelector_Card entryControl={entryControl} />
+                    <OrgSelector_Card data={data} />
                 </Std.IndexPage>
             </Std.ScrollContainer>
         </>
