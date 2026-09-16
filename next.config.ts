@@ -80,6 +80,18 @@ const appVersion = isProduction ? `v${appMetadata.version}` : environmentLabel;
 const appVersionName = isProduction ? appMetadata.versionName : "";
 
 const nextConfig: NextConfig = {
+    async redirects() {
+        // `system-admin` and `user-settings` moved under the real `/system` and `/user`
+        // scope roots (#92) — keep old bookmarks/links working.
+        return [
+            {
+                source: "/system-admin/:path*",
+                destination: "/system/admin/:path*",
+                permanent: true,
+            },
+            { source: "/user-settings", destination: "/user/profile", permanent: true },
+        ];
+    },
     cacheComponents: true,
     images: {
         // Product screenshots served from the Vercel Blob store (see

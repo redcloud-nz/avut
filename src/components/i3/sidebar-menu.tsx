@@ -5,56 +5,47 @@
 
 "use client";
 
-import { NavItem } from "@/components/nav/nav-section";
+import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
-import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 import { route } from "@/lib/routes";
 
 import { useOrganization } from "@/hooks/use-organization";
 
+/** Nested pages for the I3 module's `NavCollapsible` section — not a standalone sidebar group. */
 export function I3_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    if (!organization.isModuleEnabled("i3")) {
-        return null;
-    }
-
     return (
-        <SidebarGroup>
-            <SidebarMenu>
-                <Protect permissions={{ i3Item: ["view"] }}>
-                    <NavItem
-                        label="By Equipment Kind"
-                        href={route("/orgs/[slug]/i3/equipment-kinds", { slug })}
-                    />
-                </Protect>
-                <Protect permissions={{ i3Item: ["view"] }}>
-                    <NavItem label="By Member" href={route("/orgs/[slug]/i3/members", { slug })} />
-                </Protect>
-                <Protect permissions={{ i3Item: ["inspect"] }}>
-                    <NavItem label="Inspect" href={route("/orgs/[slug]/i3/inspect", { slug })} />
-                </Protect>
-                <Protect permissions={{ i3Item: ["issue"] }}>
-                    <NavItem
-                        label="Issue"
-                        href={route("/orgs/[slug]/i3/forms/issue-items", { slug })}
-                    />
-                </Protect>
-                <Protect permissions={{ i3Item: ["return"] }}>
-                    <NavItem
-                        label="Return"
-                        href={route("/orgs/[slug]/i3/forms/return-items", { slug })}
-                    />
-                </Protect>
-                <Protect permissions={{ i3Template: ["view"] }}>
-                    <NavItem
-                        label="Templates"
-                        href={route("/orgs/[slug]/i3/templates", { slug })}
-                    />
-                </Protect>
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            <Protect permissions={{ i3Item: ["view"] }}>
+                <NavSubItem
+                    label="By Equipment Kind"
+                    href={route("/orgs/[slug]/i3/equipment-kinds", { slug })}
+                />
+            </Protect>
+            <Protect permissions={{ i3Item: ["view"] }}>
+                <NavSubItem label="By Member" href={route("/orgs/[slug]/i3/members", { slug })} />
+            </Protect>
+            <Protect permissions={{ i3Item: ["inspect"] }}>
+                <NavSubItem label="Inspect" href={route("/orgs/[slug]/i3/inspect", { slug })} />
+            </Protect>
+            <Protect permissions={{ i3Item: ["issue"] }}>
+                <NavSubItem
+                    label="Issue"
+                    href={route("/orgs/[slug]/i3/forms/issue-items", { slug })}
+                />
+            </Protect>
+            <Protect permissions={{ i3Item: ["return"] }}>
+                <NavSubItem
+                    label="Return"
+                    href={route("/orgs/[slug]/i3/forms/return-items", { slug })}
+                />
+            </Protect>
+            <Protect permissions={{ i3Template: ["view"] }}>
+                <NavSubItem label="Templates" href={route("/orgs/[slug]/i3/templates", { slug })} />
+            </Protect>
+        </>
     );
 }

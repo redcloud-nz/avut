@@ -12,6 +12,16 @@ import { AuthSession } from "@/server/auth";
 import prisma from "@/server/prisma";
 import { requireSession } from "@/server/session";
 
+export interface OrganizationMembershipsAndInvitations {
+    session: AuthSession;
+    memberships: (OrganizationUser & {
+        organization: OrganizationData;
+    })[];
+    invitations: (OrganizationInvitationData & {
+        organization: OrganizationData;
+    })[];
+}
+
 export interface EntryControlProceed {
     status: "Proceed";
     slug: string;
@@ -21,19 +31,12 @@ export interface EntryControlProceed {
 export interface EntryControlSelect {
     status: "Select";
     slug?: never;
-    data: {
-        session: AuthSession;
-        memberships: (OrganizationUser & {
-            organization: OrganizationData;
-        })[];
-        invitations: (OrganizationInvitationData & {
-            organization: OrganizationData;
-        })[];
-    };
+    data: OrganizationMembershipsAndInvitations;
 }
 export type EntryControl = EntryControlProceed | EntryControlSelect;
 
-export async function getEntryControl(): Promise<EntryControl> {
+/** The personal dashboard's own data — every account gets it, regardless of membership count. */
+export async function getOrganizationMembershipsAndInvitations(): Promise<OrganizationMembershipsAndInvitations> {
     const session = await requireSession();
 
     const [memberships, invitations] = await Promise.all([
@@ -57,26 +60,33 @@ export async function getEntryControl(): Promise<EntryControl> {
         }),
     ]);
 
-    if (memberships.length == 1 && invitations.length == 0) {
+    return {
+        session,
+        memberships: memberships.map((membership) => ({
+            ...OrganizationUser.fromRecord(membership.user, membership),
+            organization: OrganizationData.fromRecord(membership.organization),
+        })),
+        invitations: invitations.map((invitation) => ({
+            ...OrganizationInvitationData.fromRecord(invitation),
+            organization: OrganizationData.fromRecord(invitation.organization),
+        })),
+    };
+}
+
+/**
+ * The single-org shortcut for landing pages (post-sign-in, `/orgs`) — never called by `/user`
+ * itself, which always renders the dashboard so it's a real destination rather than a bounce.
+ */
+export async function getEntryControl(): Promise<EntryControl> {
+    const data = await getOrganizationMembershipsAndInvitations();
+
+    if (data.memberships.length == 1 && data.invitations.length == 0) {
         // User only has one organization and no pending invitations, proceed directly to that org
         return {
             status: "Proceed",
-            slug: memberships[0].organization.slug,
+            slug: data.memberships[0].organization.slug,
         };
     }
 
-    return {
-        status: "Select",
-        data: {
-            session,
-            memberships: memberships.map((membership) => ({
-                ...OrganizationUser.fromRecord(membership.user, membership),
-                organization: OrganizationData.fromRecord(membership.organization),
-            })),
-            invitations: invitations.map((invitation) => ({
-                ...OrganizationInvitationData.fromRecord(invitation),
-                organization: OrganizationData.fromRecord(invitation.organization),
-            })),
-        },
-    };
+    return { status: "Select", data };
 }

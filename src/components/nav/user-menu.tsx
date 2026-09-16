@@ -20,20 +20,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 import { useUser } from "@/client/auth-queries";
 import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
-    const { isMobile } = useSidebar();
-
     const { data: user } = useUser();
     const signOut = useSignOut();
 
@@ -71,7 +64,7 @@ export function UserMenu() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        side={isMobile ? "bottom" : "right"}
+                        side="top"
                         align="end"
                         sideOffset={4}
                     >
@@ -93,7 +86,7 @@ export function UserMenu() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href="/user-settings">
+                                <Link href="/user/profile">
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>
@@ -104,7 +97,7 @@ export function UserMenu() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/system-admin">
+                                        <Link href="/system/admin">
                                             <ShieldIcon />
                                             <span>System Admin</span>
                                         </Link>
@@ -115,7 +108,7 @@ export function UserMenu() {
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>
-                                <Link href="/orgs/--select-org">
+                                <Link href="/user">
                                     <SwitchOrganizationIcon />
                                     <span>Switch Organisation</span>
                                 </Link>

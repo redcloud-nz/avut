@@ -38,7 +38,7 @@ async function HeaderCta() {
     if (!(await hasActiveSession())) return <SignedOutCta />;
     return (
         <Button asChild size="sm">
-            <Link href="/orgs/--select-org">Open AVUT</Link>
+            <Link href="/user">Open AVUT</Link>
         </Button>
     );
 }

@@ -40,11 +40,11 @@ export function SystemAdmin_OrganizationSettings_Content({
         <OrganizationSettingsScopeProvider scope="system-admin">
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "System Admin", href: "/system-admin" },
-                    { label: "Organizations", href: "/system-admin/organizations" },
+                    { label: "System Admin", href: "/system/admin" },
+                    { label: "Organizations", href: "/system/admin/organizations" },
                     {
                         label: organization.name,
-                        href: route("/system-admin/organizations/[organizationId]", {
+                        href: route("/system/admin/organizations/[organizationId]", {
                             organizationId,
                         }),
                     },

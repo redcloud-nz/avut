@@ -18,18 +18,18 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 
-import { globalModules } from "@/lib/modules";
+import { systemModules } from "@/lib/modules";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { EntryControlSelect } from "@/server/entry-control";
+import { OrganizationMembershipsAndInvitations } from "@/server/entry-control";
 
 export function OrgSelector_Card({
-    entryControl,
+    data,
     module,
 }: {
-    entryControl: EntryControlSelect;
+    data: OrganizationMembershipsAndInvitations;
     module?: string;
 }) {
-    const { session, memberships, invitations } = entryControl.data;
+    const { session, memberships, invitations } = data;
 
     return (
         <Card>
@@ -94,14 +94,14 @@ export function OrgSelector_Card({
                     ))}
                 </Show>
 
-                {/* Global (non-org) modules. Today these are all admin-gated, so a plain
-                    role check is enough; a per-module permission model comes with the
-                    "phantom global org" work. Gives a global admin with no/many org
-                    memberships a way out of this screen. */}
-                <Show when={session.user.role === "admin" && globalModules.length > 0}>
-                    <div className="mt-4 mb-2 border-t pt-4 font-medium">Global</div>
+                {/* System (non-org) modules. Today these are all admin-gated, so a plain
+                    role check is enough; a per-module permission model comes with a
+                    future per-user enable/configure split. Gives a system admin with
+                    no/many org memberships a way out of this screen. */}
+                <Show when={session.user.role === "admin" && systemModules.length > 0}>
+                    <div className="mt-4 mb-2 border-t pt-4 font-medium">System</div>
 
-                    {globalModules.map((mod) => {
+                    {systemModules.map((mod) => {
                         const Icon = mod.icon;
 
                         return (

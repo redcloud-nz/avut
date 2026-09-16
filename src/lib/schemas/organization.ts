@@ -39,9 +39,8 @@ export const OrganizationData = {
     }),
 
     /**
-     * Input schema for creating a new organization (name + slug). Mirrors the slug refinement used
-     * by the user-facing `CreateOrganization_Card` (`/orgs/--create`) — lowercase letters, digits,
-     * and hyphens — so system-admin-created orgs validate identically to user-created ones.
+     * Input schema for creating a new organization (name + slug) — lowercase letters, digits,
+     * and hyphens.
      */
     createSchema: z.object({
         name: z.string().min(2).max(100),

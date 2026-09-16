@@ -5,44 +5,42 @@
 
 "use client";
 
-import { NavItem } from "@/components/nav/nav-section";
+import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
-import { SidebarGroup, SidebarMenu } from "@/components/ui/sidebar";
 
 import { route } from "@/lib/routes";
 
 import { useOrganization } from "@/hooks/use-organization";
 
+/** Nested pages for the Admin module's `NavCollapsible` section — not a standalone sidebar group. */
 export function Admin_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
     return (
-        <SidebarGroup>
-            <SidebarMenu>
-                <Protect permissions={{ invitation: ["view"] }}>
-                    <NavItem
-                        label="Invitations"
-                        href={route("/orgs/[slug]/admin/invitations", { slug })}
-                    />
-                </Protect>
-                <NavItem
-                    label="Organisation"
-                    href={route("/orgs/[slug]/admin/organization", { slug })}
+        <>
+            <Protect permissions={{ invitation: ["view"] }}>
+                <NavSubItem
+                    label="Invitations"
+                    href={route("/orgs/[slug]/admin/invitations", { slug })}
                 />
-                <Protect permissions={{ person: ["view"] }}>
-                    <NavItem
-                        label="Personnel"
-                        href={route("/orgs/[slug]/admin/personnel", { slug })}
-                    />
-                </Protect>
-                <Protect permissions={{ team: ["view"] }}>
-                    <NavItem label="Teams" href={route("/orgs/[slug]/admin/teams", { slug })} />
-                </Protect>
-                <Protect permissions={{ member: ["view"] }}>
-                    <NavItem label="Users" href={route("/orgs/[slug]/admin/users", { slug })} />
-                </Protect>
-            </SidebarMenu>
-        </SidebarGroup>
+            </Protect>
+            <NavSubItem
+                label="Organisation"
+                href={route("/orgs/[slug]/admin/organization", { slug })}
+            />
+            <Protect permissions={{ person: ["view"] }}>
+                <NavSubItem
+                    label="Personnel"
+                    href={route("/orgs/[slug]/admin/personnel", { slug })}
+                />
+            </Protect>
+            <Protect permissions={{ team: ["view"] }}>
+                <NavSubItem label="Teams" href={route("/orgs/[slug]/admin/teams", { slug })} />
+            </Protect>
+            <Protect permissions={{ member: ["view"] }}>
+                <NavSubItem label="Users" href={route("/orgs/[slug]/admin/users", { slug })} />
+            </Protect>
+        </>
     );
 }
