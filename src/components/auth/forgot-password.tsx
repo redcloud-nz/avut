@@ -17,7 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 
-import { Button, MutationButton } from "@/components/ui/button";
+import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -247,14 +247,6 @@ function ResetPassword_Form({ email }: { email: string }) {
                 {resetPassword.isError && <FieldError errors={[resetPassword.error]} />}
                 {resendCode.isError && <FieldError errors={[resendCode.error]} />}
                 <Field orientation="horizontal" className="justify-end">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={resendCode.isPending || resetPassword.isSuccess}
-                        onClick={() => resendCode.mutate()}
-                    >
-                        Resend code
-                    </Button>
                     <MutationButton
                         type="submit"
                         form="reset-password-form"
@@ -266,6 +258,16 @@ function ResetPassword_Form({ email }: { email: string }) {
                         }}
                     />
                 </Field>
+                <FieldDescription className="text-center">
+                    Didn&apos;t receive the code?{" "}
+                    <a
+                        aria-disabled={resendCode.isPending || resetPassword.isSuccess}
+                        className="cursor-pointer aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                        onClick={() => resendCode.mutate()}
+                    >
+                        Resend
+                    </a>
+                </FieldDescription>
             </FieldGroup>
         </form>
     );
