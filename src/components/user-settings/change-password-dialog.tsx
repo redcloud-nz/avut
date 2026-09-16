@@ -187,7 +187,9 @@ function SetPassword_DialogBody({
                     </Alert>
                 ) : !codeSent ? (
                     <>
-                        {sendCode.isError && <Alert variant="error">{sendCode.error.message}</Alert>}
+                        {sendCode.isError && (
+                            <Alert variant="error">{sendCode.error.message}</Alert>
+                        )}
                         <Field orientation="horizontal">
                             <MutationButton
                                 type="button"
@@ -233,7 +235,9 @@ function SetPassword_DialogBody({
                                                 <InputOTPSlot index={5} />
                                             </InputOTPGroup>
                                         </InputOTP>
-                                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
                                     </Field>
                                 )}
                             />
@@ -249,7 +253,9 @@ function SetPassword_DialogBody({
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
-                                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
                                     </Field>
                                 )}
                             />
@@ -267,7 +273,9 @@ function SetPassword_DialogBody({
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
-                                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
                                     </Field>
                                 )}
                             />

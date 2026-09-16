@@ -4,6 +4,8 @@
  */
 "use client";
 
+import { notFound } from "next/navigation";
+
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -26,7 +28,7 @@ export function UserSettings_OrganizationContent({
     const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
     const membership = memberships.find((m) => m.organization.id === organizationId);
 
-    if (!membership) return null;
+    if (!membership) notFound();
 
     const { organization } = membership;
 

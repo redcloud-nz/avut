@@ -37,9 +37,10 @@ export function UserSettings_LeaveOrganization_Dialog({
 
     const mutation = useMutation({
         mutationFn: async () => {
-            await authClient.organization.leave({
-                organizationId: membership.organization.id,
-            });
+            await authClient.organization.leave(
+                { organizationId: membership.organization.id },
+                { throw: true },
+            );
         },
         onError(error) {
             toast.error(`Failed to leave organisation: ${error.message}`);

@@ -27,10 +27,7 @@ import { UserSettings_RemoveD4HAccessToken_Dialog } from "./remove-d4h-access-to
 type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTokens"][number];
 
 export function UserSettings_D4HAccessTokenMenu({ token }: { token: PersonalAccessToken }) {
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["remove"] as const),
-    );
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["remove"] as const));
 
     const actions: MenuActionProps[] = [
         {

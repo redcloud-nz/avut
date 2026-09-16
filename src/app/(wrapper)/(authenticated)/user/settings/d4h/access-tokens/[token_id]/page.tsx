@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 import { UserSettings_D4HAccessTokenContent } from "@/components/user-settings/d4h-access-token-content";
 
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
-import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/user/settings/d4h/access-tokens/[token_id]">;
 
@@ -31,8 +31,6 @@ export default async function UserSettings_D4HAccessToken_Page(props: Props) {
 
     const tokens = await fetchQuery(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
     if (!tokens.some((t) => t.id === tokenId)) notFound();
-
-    prefetch(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
 
     return (
         <HydrateClient>

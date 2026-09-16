@@ -36,7 +36,7 @@ export type OrganizationModuleId =
     | "skill-package-builder";
 
 /** Identifier for a user-scoped module (lives under `/user/…`), always available. */
-export type UserModuleId = "user-dashboard" | "profile";
+export type UserModuleId = "profile" | "user-dashboard";
 
 /** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
 export type SystemModuleId = "system-admin";
@@ -153,6 +153,7 @@ export const Modules = {
         id: "user-dashboard",
         label: "Dashboard",
         icon: LayoutDashboardIcon,
+        // Empty because this module *is* the `/user` scope root, not a sub-page under it.
         segment: "",
         alwaysOn: true,
         scope: "user",

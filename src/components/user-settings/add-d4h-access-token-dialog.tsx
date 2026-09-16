@@ -111,7 +111,11 @@ export function UserSettings_AddD4HAccessToken_Dialog() {
         (formData) => {
             const tokenId = D4HAccessTokenId.create();
 
-            logger.log("Creating personal D4H access token", { tokenId, ...formData });
+            logger.log("Creating personal D4H access token", {
+                tokenId,
+                organizationId: formData.organizationId,
+                serverCode: formData.serverCode,
+            });
 
             mutation.mutate({
                 organizationId: formData.organizationId,

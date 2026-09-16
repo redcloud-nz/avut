@@ -45,7 +45,7 @@ export default async function UserDashboard_Page() {
                     </Card>
                     <Saratoga.Columns variant="1-1">
                         <Saratoga.Column slot="main">
-                            <OrgSelector_Card session={session} />
+                            <OrgSelector_Card />
                             <Invitations_Card />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">

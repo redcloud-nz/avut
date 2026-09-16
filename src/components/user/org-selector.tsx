@@ -22,13 +22,17 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 
+import { useUser } from "@/client/auth-queries";
+import { route } from "@/lib/routes";
 import { systemModules } from "@/lib/modules";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { AuthSession } from "@/server/auth";
 import { trpc } from "@/trpc/client";
 
-export function OrgSelector_Card({ session }: { session: AuthSession }) {
+export function OrgSelector_Card() {
+    const { data: user } = useUser();
     const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
+
+    if (!user) return null;
 
     return (
         <Card>
@@ -51,7 +55,9 @@ export function OrgSelector_Card({ session }: { session: AuthSession }) {
                 >
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
-                            <Link href={`/orgs/${membership.organization.slug}`}>
+                            <Link
+                                href={route("/orgs/[slug]", { slug: membership.organization.slug })}
+                            >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
                                 </ItemMedia>
@@ -73,7 +79,7 @@ export function OrgSelector_Card({ session }: { session: AuthSession }) {
                     role check is enough; a per-module permission model comes with a
                     future per-user enable/configure split. Gives a system admin with
                     no/many org memberships a way out of this screen. */}
-                <Show when={session.user.role === "admin" && systemModules.length > 0}>
+                <Show when={user.role === "admin" && systemModules.length > 0}>
                     <div className="mt-4 mb-2 border-t pt-4 font-medium">System</div>
 
                     {systemModules.map((mod) => {

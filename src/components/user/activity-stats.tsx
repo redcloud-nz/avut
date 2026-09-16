@@ -25,7 +25,10 @@ import { trpc } from "@/trpc/client";
  */
 export function ActivityStats_Card() {
     const [{ data: memberships }, { data: stats }] = useSuspenseQueries({
-        queries: [trpc.users.listMemberships.queryOptions(), trpc.users.getActivityStats.queryOptions()],
+        queries: [
+            trpc.users.listMemberships.queryOptions(),
+            trpc.users.getActivityStats.queryOptions(),
+        ],
     });
 
     const groups = useMemo(
@@ -55,7 +58,10 @@ export function ActivityStats_Card() {
                             <div className="font-medium">{organization.name}</div>
                             <div className="mt-1 flex flex-wrap gap-2">
                                 {stats.map((row) => (
-                                    <Badge key={`${row.objectType}-${row.action}`} variant="secondary">
+                                    <Badge
+                                        key={`${row.objectType}-${row.action}`}
+                                        variant="secondary"
+                                    >
                                         {row.action} {row.objectType} ({row.count})
                                     </Badge>
                                 ))}

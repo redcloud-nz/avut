@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 import { UserSettings_OrganizationContent } from "@/components/user-settings/organization-content";
 
 import { OrganizationId } from "@/lib/schemas/organization";
-import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/user/settings/organizations/[organization_id]">;
 
@@ -31,8 +31,6 @@ export default async function UserSettings_Organization_Page(props: Props) {
 
     const memberships = await fetchQuery(trpc.users.listMemberships.queryOptions());
     if (!memberships.some((m) => m.organization.id === organizationId)) notFound();
-
-    prefetch(trpc.users.listMemberships.queryOptions());
 
     return (
         <HydrateClient>

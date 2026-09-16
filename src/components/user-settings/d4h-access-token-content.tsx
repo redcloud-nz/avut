@@ -5,6 +5,7 @@
 "use client";
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -35,7 +36,7 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: D4HAc
     );
     const token = tokens.find((t) => t.id === tokenId);
 
-    if (!token) return null;
+    if (!token) notFound();
 
     return (
         <>
@@ -72,13 +73,14 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: D4HAc
                                                     "/user/settings/organizations/[organization_id]",
                                                     { organization_id: token.organization.id },
                                                 )}
-                                                
                                             >
                                                 {token.organization.name}
                                             </Link>
                                         </DLDetails>
                                         <DLTerm>Server</DLTerm>
-                                        <DLDetails>{getD4HServer(token.serverCode)?.name}</DLDetails>
+                                        <DLDetails>
+                                            {getD4HServer(token.serverCode)?.name}
+                                        </DLDetails>
                                         <DLTerm>Status</DLTerm>
                                         <DLDetails>
                                             <Badge variant="outline">{token.status}</Badge>

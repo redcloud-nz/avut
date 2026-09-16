@@ -20,9 +20,7 @@ export default async function UserSettings_D4H_Page() {
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "D4H"]}
-            />
+            <Std.Navbar breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "D4H"]} />
             <Std.ScrollContainer>
                 <UserSettings_D4HAccessTokensList />
             </Std.ScrollContainer>

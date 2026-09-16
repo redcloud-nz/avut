@@ -177,7 +177,9 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                         </FieldContent>
                     </Field>
                     {step.name === "start" && sendCurrentOtpMutation.isError && (
-                        <FieldError errors={[sendCurrentOtpMutation.error as { message?: string }]} />
+                        <FieldError
+                            errors={[sendCurrentOtpMutation.error as { message?: string }]}
+                        />
                     )}
 
                     {step.name !== "start" && (
@@ -187,7 +189,10 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                                 control={changeEmailForm.control}
                                 name="code"
                                 render={({ field, fieldState }) => (
-                                    <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                    <Field
+                                        orientation="responsive"
+                                        data-invalid={fieldState.invalid}
+                                    >
                                         <FieldContent>
                                             <FieldLabel htmlFor="current-email-code">
                                                 Verification Code
@@ -235,7 +240,10 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                                 control={changeEmailForm.control}
                                 name="newEmail"
                                 render={({ field, fieldState }) => (
-                                    <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                                    <Field
+                                        orientation="responsive"
+                                        data-invalid={fieldState.invalid}
+                                    >
                                         <FieldContent>
                                             <FieldLabel htmlFor="user-new-email">
                                                 New Email
@@ -260,13 +268,16 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                                     </Field>
                                 )}
                             />
-                            {step.name === "verify-current" && requestEmailChangeMutation.isError && (
-                                <FieldError
-                                    errors={[
-                                        requestEmailChangeMutation.error as { message?: string },
-                                    ]}
-                                />
-                            )}
+                            {step.name === "verify-current" &&
+                                requestEmailChangeMutation.isError && (
+                                    <FieldError
+                                        errors={[
+                                            requestEmailChangeMutation.error as {
+                                                message?: string;
+                                            },
+                                        ]}
+                                    />
+                                )}
                         </>
                     )}
 
@@ -301,7 +312,9 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                                 </FieldContent>
                             </Field>
                             {changeEmailMutation.isError && (
-                                <FieldError errors={[changeEmailMutation.error as { message?: string }]} />
+                                <FieldError
+                                    errors={[changeEmailMutation.error as { message?: string }]}
+                                />
                             )}
                         </>
                     )}

@@ -56,8 +56,8 @@ export const usersRouter = createTrpcRouter({
             const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
             // Skill checks aren't written through `ctx.logEvent` (no `LogEntry` row per
-            // check), so they're invisible to the mocked/log-entry-backed counts below —
-            // count them directly off `SkillCheck` instead. This part is real data.
+            // check), so they're invisible to the log-entry-backed counts below — count
+            // them directly off `SkillCheck` instead.
             const skillCheckCounts = await ctx.prisma.skillCheck.groupBy({
                 by: ["organizationId"],
                 where: {

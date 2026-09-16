@@ -42,9 +42,7 @@ export default async function UserSettings_IndexPage() {
                             <Link href="/user/settings/organizations">
                                 <ItemContent>
                                     <ItemTitle>Organisations</ItemTitle>
-                                    <ItemDescription>
-                                        Organisations you belong to.
-                                    </ItemDescription>
+                                    <ItemDescription>Organisations you belong to.</ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
                                     <ChevronRightIcon className="size-4" />
