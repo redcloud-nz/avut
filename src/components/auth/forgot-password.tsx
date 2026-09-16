@@ -246,7 +246,15 @@ function ResetPassword_Form({ email }: { email: string }) {
                 />
                 {resetPassword.isError && <FieldError errors={[resetPassword.error]} />}
                 {resendCode.isError && <FieldError errors={[resendCode.error]} />}
-                <Field orientation="horizontal">
+                <Field orientation="horizontal" className="justify-end">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={resendCode.isPending || resetPassword.isSuccess}
+                        onClick={() => resendCode.mutate()}
+                    >
+                        Resend code
+                    </Button>
                     <MutationButton
                         type="submit"
                         form="reset-password-form"
@@ -257,14 +265,6 @@ function ResetPassword_Form({ email }: { email: string }) {
                             success: "Password updated!",
                         }}
                     />
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={resendCode.isPending || resetPassword.isSuccess}
-                        onClick={() => resendCode.mutate()}
-                    >
-                        Resend code
-                    </Button>
                 </Field>
             </FieldGroup>
         </form>
