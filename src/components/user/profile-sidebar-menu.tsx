@@ -13,7 +13,7 @@ export function Profile_Sidebar_Menu() {
         <>
             <NavSubItem label="Account" href="/user/settings/account" />
             <NavSubItem label="Organisations" href="/user/settings/organizations" />
-            <NavSubItem label="D4H" href="/user/settings/integrations" />
+            <NavSubItem label="D4H" href="/user/settings/d4h" />
         </>
     );
 }

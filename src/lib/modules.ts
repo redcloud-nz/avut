@@ -5,6 +5,7 @@
 
 import {
     CableIcon,
+    LayoutDashboardIcon,
     NotebookPenIcon,
     PackageIcon,
     PocketKnifeIcon,
@@ -35,7 +36,7 @@ export type OrganizationModuleId =
     | "skill-package-builder";
 
 /** Identifier for a user-scoped module (lives under `/user/…`), always available. */
-export type UserModuleId = "profile";
+export type UserModuleId = "user-dashboard" | "profile";
 
 /** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
 export type SystemModuleId = "system-admin";
@@ -147,6 +148,15 @@ export const Modules = {
         segment: "skill-package-builder",
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-package-builder", { slug }),
+    },
+    "user-dashboard": {
+        id: "user-dashboard",
+        label: "Dashboard",
+        icon: LayoutDashboardIcon,
+        segment: "",
+        alwaysOn: true,
+        scope: "user",
+        href: () => "/user",
     },
     profile: {
         id: "profile",

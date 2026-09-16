@@ -2,31 +2,20 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm, Watch } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { ObjectIcons, PersonalD4HAccessTokensIcon } from "@/components/icons";
-import { Alert } from "@/components/ui/alert";
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Dialog,
     DialogCloseButton,
@@ -37,24 +26,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from "@/components/ui/empty";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemMedia,
-    ItemTitle,
-} from "@/components/ui/item";
 import { ExternalLink } from "@/components/ui/link";
-import { RainbowSpinner } from "@/components/ui/loading";
 import {
     Select,
     SelectContent,
@@ -64,137 +37,28 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { useLogger } from "@/hooks/use-logger";
-import { D4HServerCode, D4HServerList, getD4HServer } from "@/lib/d4h-servers";
+import { D4HServerCode, D4HServerList } from "@/lib/d4h-servers";
+import { route } from "@/lib/routes";
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
-export function D4HAccessTokens_Card() {
-    const tokensQuery = useQuery(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>D4H Access Tokens</CardTitle>
-                <CardAction>
-                    <PersonalD4HAccessToken_Add_Dialog />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                {tokensQuery.isPending && (
-                    <div className="p-4">
-                        <RainbowSpinner className="mx-auto" />
-                    </div>
-                )}
-                {tokensQuery.isError && (
-                    <Alert variant="error">
-                        Failed to load access tokens: {tokensQuery.error.message}
-                    </Alert>
-                )}
-                {tokensQuery.data?.length === 0 && (
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <PersonalD4HAccessTokensIcon />
-                            </EmptyMedia>
-                            <EmptyTitle>No Personal D4H Access Tokens</EmptyTitle>
-                            <EmptyDescription>
-                                You do not have any personal D4H access tokens configured. Add one
-                                to access your D4H data in AVUT.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                )}
-                {tokensQuery.data && tokensQuery.data.length > 0 && (
-                    <div>
-                        {tokensQuery.data.map((token) => (
-                            <Item key={token.id}>
-                                <ItemMedia>
-                                    <PersonalD4HAccessTokensIcon className="size-5" />
-                                </ItemMedia>
-                                <ItemContent>
-                                    <ItemTitle>{token.organization.name}</ItemTitle>
-                                    <ItemDescription>
-                                        {getD4HServer(token.serverCode).name} &middot;{" "}
-                                        {token.status}
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <PersonalD4HAccessToken_Remove_Button
-                                        organizationId={token.organization.id}
-                                    />
-                                </ItemActions>
-                            </Item>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function PersonalD4HAccessToken_Remove_Button(props: { organizationId: OrganizationId }) {
-    const logger = useLogger("Common", "PersonalD4HAccessToken_Remove_Button");
-    const queryClient = useQueryClient();
-
-    const [open, setOpen] = useState(false);
-
-    const mutation = useMutation(
-        trpc.d4hAccessTokens.deletePersonalAccessToken.mutationOptions({
-            onError(error) {
-                logger.error("Failed to remove personal D4H access token", error);
-                toast.error(`Failed to remove personal D4H access token: ${error.message}`);
-            },
-            onSuccess() {
-                queryClient.invalidateQueries(
-                    trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter(),
-                );
-                mutation.reset();
-                setOpen(false);
-            },
-        }),
-    );
-
-    return (
-        <AlertDialog open={open} onOpenChange={setOpen}>
-            <AlertDialogTrigger asChild>
-                <Button variant="destructive">Remove</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Remove D4H Access Token</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Are you sure you want to remove this D4H access token? This cannot be
-                        undone.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <MutationButton
-                        variant="destructive"
-                        status={mutation.status}
-                        text={{
-                            idle: "Remove",
-                            pending: "Removing",
-                            success: "Removed",
-                        }}
-                        onClick={() => mutation.mutate({ organizationId: props.organizationId })}
-                    />
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
-}
-
 /**
- * Dialog to add a personal D4H access token for one of the user's organizations.
+ * Self-triggered create dialog for a personal D4H access token — safe because it navigates away
+ * (to the new token's detail page) on success rather than closing in place, so there's no stale
+ * mounted state to worry about.
  */
-function PersonalD4HAccessToken_Add_Dialog() {
-    const logger = useLogger("Common", "PersonalD4HAccessToken_Add_Dialog");
-    const queryClient = useQueryClient();
+export function UserSettings_AddD4HAccessToken_Dialog() {
+    const logger = useLogger("Common", "UserSettings_AddD4HAccessToken_Dialog");
+    const router = useRouter();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-token"] as const),
+    );
+    const dialogOpen = action === "add-token";
 
     const membershipsQuery = useQuery(trpc.users.listMemberships.queryOptions());
 
@@ -215,32 +79,39 @@ function PersonalD4HAccessToken_Add_Dialog() {
 
     const mutation = useMutation(
         trpc.d4hAccessTokens.createPersonalAccessToken.mutationOptions({
+            meta: { effects: d4hAccessTokensEffects.createPersonalAccessToken },
             onError(error) {
                 logger.error("Error creating D4H access token:", error);
                 toast.error(`Failed to create D4H access token: ${error.message}`);
             },
-            async onSuccess() {
-                await queryClient.invalidateQueries(
-                    trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter(),
+            onSuccess(_data, variables) {
+                toast.success("D4H access token created");
+                router.push(
+                    route("/user/settings/d4h/access-tokens/[token_id]", {
+                        token_id: variables.tokenId,
+                    }),
                 );
-                handleOpenChange(false);
             },
         }),
     );
 
     function handleOpenChange(open: boolean) {
-        if (!open) {
+        void setAction(open ? "add-token" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
             form.reset();
             mutation.reset();
         }
-        setDialogOpen(open);
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
             const tokenId = D4HAccessTokenId.create();
 
-            logger.log("Creating D4H Access Token", { tokenId, ...formData });
+            logger.log("Creating personal D4H access token", { tokenId, ...formData });
 
             mutation.mutate({
                 organizationId: formData.organizationId,

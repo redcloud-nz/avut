@@ -68,7 +68,7 @@ function D4HToday_NotConfigured({
                         <>
                             Add a personal D4H access token in your{" "}
                             <Link
-                                href="/user/settings/integrations"
+                                href="/user/settings/d4h"
                                 className="underline underline-offset-4"
                             >
                                 account settings

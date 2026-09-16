@@ -52,7 +52,7 @@ export default async function UserSettings_IndexPage() {
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href="/user/settings/integrations">
+                            <Link href="/user/settings/d4h">
                                 <ItemContent>
                                     <ItemTitle>D4H</ItemTitle>
                                     <ItemDescription>Your D4H access tokens.</ItemDescription>
