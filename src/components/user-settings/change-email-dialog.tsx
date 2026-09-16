@@ -6,24 +6,28 @@
 "use client";
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { authClient } from "@/client/auth-client";
+import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+    Dialog,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import {
     Field,
     FieldContent,
@@ -36,6 +40,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
+import { authQueryKeys } from "@/lib/auth-query-keys";
 import { type AuthSession } from "@/server/auth";
 
 type ChangeEmailStep =
@@ -43,13 +48,16 @@ type ChangeEmailStep =
     | { name: "verify-current" }
     | { name: "verify-new"; newEmail: string };
 
-export function UserEmail_Card({
-    session,
-    refetchSession,
-}: {
-    session: AuthSession;
-    refetchSession: () => Promise<void>;
-}) {
+/** `?action=change-email` — self-triggered (Recipe A): the trigger button lives in this dialog. */
+export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSession }) {
+    const queryClient = useQueryClient();
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["change-email"] as const),
+    );
+    const dialogOpen = action === "change-email";
+
     const [step, setStep] = useState<ChangeEmailStep>({ name: "start" });
     const [newCode, setNewCode] = useState("");
 
@@ -99,11 +107,12 @@ export function UserEmail_Card({
         },
         async onSuccess() {
             // /email-otp/change-email isn't in the client's atomListeners, so the shared
-            // session store won't auto-refresh on its own - explicitly refetch it so this
-            // card (and the rest of the UI, e.g. nav) picks up the new email immediately.
-            await refetchSession();
+            // session store won't auto-refresh on its own - explicitly invalidate it so this
+            // dialog (and the rest of the UI, e.g. nav) picks up the new email immediately.
+            void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
             toast.success("Your email address has been updated.");
             restart();
+            handleDialogOpenChange(false);
         },
     });
 
@@ -124,15 +133,29 @@ export function UserEmail_Card({
         toast("Verification code resent to your current email.");
     }
 
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "change-email" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) restart();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Change Email</CardTitle>
-                <CardDescription>
-                    Update the email address associated with your account.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Change email">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Change email</DialogTitle>
+                    <DialogDescription>
+                        Update the email address associated with your account.
+                    </DialogDescription>
+                </DialogHeader>
                 <FieldGroup>
                     <Field orientation="responsive">
                         <FieldContent>
@@ -154,9 +177,7 @@ export function UserEmail_Card({
                         </FieldContent>
                     </Field>
                     {step.name === "start" && sendCurrentOtpMutation.isError && (
-                        <FieldError
-                            errors={[sendCurrentOtpMutation.error as { message?: string }]}
-                        />
+                        <FieldError errors={[sendCurrentOtpMutation.error as { message?: string }]} />
                     )}
 
                     {step.name !== "start" && (
@@ -166,10 +187,7 @@ export function UserEmail_Card({
                                 control={changeEmailForm.control}
                                 name="code"
                                 render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
+                                    <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                         <FieldContent>
                                             <FieldLabel htmlFor="current-email-code">
                                                 Verification Code
@@ -217,10 +235,7 @@ export function UserEmail_Card({
                                 control={changeEmailForm.control}
                                 name="newEmail"
                                 render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
+                                    <Field orientation="responsive" data-invalid={fieldState.invalid}>
                                         <FieldContent>
                                             <FieldLabel htmlFor="user-new-email">
                                                 New Email
@@ -245,16 +260,13 @@ export function UserEmail_Card({
                                     </Field>
                                 )}
                             />
-                            {step.name === "verify-current" &&
-                                requestEmailChangeMutation.isError && (
-                                    <FieldError
-                                        errors={[
-                                            requestEmailChangeMutation.error as {
-                                                message?: string;
-                                            },
-                                        ]}
-                                    />
-                                )}
+                            {step.name === "verify-current" && requestEmailChangeMutation.isError && (
+                                <FieldError
+                                    errors={[
+                                        requestEmailChangeMutation.error as { message?: string },
+                                    ]}
+                                />
+                            )}
                         </>
                     )}
 
@@ -289,72 +301,63 @@ export function UserEmail_Card({
                                 </FieldContent>
                             </Field>
                             {changeEmailMutation.isError && (
-                                <FieldError
-                                    errors={[changeEmailMutation.error as { message?: string }]}
-                                />
+                                <FieldError errors={[changeEmailMutation.error as { message?: string }]} />
                             )}
                         </>
                     )}
                 </FieldGroup>
-            </CardContent>
-            {step.name === "start" && (
-                <CardFooter className="flex justify-end">
-                    <MutationButton
-                        type="button"
-                        onClick={() => sendCurrentOtpMutation.mutate()}
-                        status={sendCurrentOtpMutation.status}
-                        text={{
-                            idle: "Send code",
-                            pending: "Sending code...",
-                            success: "Code sent!",
-                        }}
-                    />
-                </CardFooter>
-            )}
-            {step.name === "verify-current" && (
-                <CardFooter className="flex justify-end gap-2">
-                    <Button variant="ghost" type="button" onClick={restart}>
-                        Cancel
-                    </Button>
-                    <MutationButton
-                        type="button"
-                        onClick={changeEmailForm.handleSubmit((data) =>
-                            requestEmailChangeMutation.mutate({
-                                newEmail: data.newEmail,
-                                otp: data.code,
-                            }),
-                        )}
-                        status={requestEmailChangeMutation.status}
-                        text={{
-                            idle: "Verify",
-                            pending: "Verifying...",
-                            success: "Verified!",
-                        }}
-                    />
-                </CardFooter>
-            )}
-            {step.name === "verify-new" && (
-                <CardFooter className="flex justify-end gap-2">
-                    <Button variant="ghost" type="button" onClick={restart}>
-                        Start over
-                    </Button>
-                    <MutationButton
-                        type="button"
-                        onClick={() =>
-                            changeEmailMutation.mutate({
-                                newEmail: step.newEmail,
-                                otp: newCode,
-                            })
-                        }
-                        status={changeEmailMutation.status}
-                        text={{
-                            idle: "Verify",
-                            pending: "Verifying...",
-                            success: "Verified!",
-                        }}
-                    />
-                </CardFooter>
-            )}
-        </Card>
+                {step.name === "start" && (
+                    <DialogFooter>
+                        <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                        <MutationButton
+                            type="button"
+                            onClick={() => sendCurrentOtpMutation.mutate()}
+                            status={sendCurrentOtpMutation.status}
+                            text={{
+                                idle: "Send code",
+                                pending: "Sending code...",
+                                success: "Code sent!",
+                            }}
+                        />
+                    </DialogFooter>
+                )}
+                {step.name === "verify-current" && (
+                    <DialogFooter>
+                        <Button variant="ghost" type="button" onClick={restart}>
+                            Cancel
+                        </Button>
+                        <MutationButton
+                            type="button"
+                            onClick={changeEmailForm.handleSubmit((data) =>
+                                requestEmailChangeMutation.mutate({
+                                    newEmail: data.newEmail,
+                                    otp: data.code,
+                                }),
+                            )}
+                            status={requestEmailChangeMutation.status}
+                            text={{ idle: "Verify", pending: "Verifying...", success: "Verified!" }}
+                        />
+                    </DialogFooter>
+                )}
+                {step.name === "verify-new" && (
+                    <DialogFooter>
+                        <Button variant="ghost" type="button" onClick={restart}>
+                            Start over
+                        </Button>
+                        <MutationButton
+                            type="button"
+                            onClick={() =>
+                                changeEmailMutation.mutate({
+                                    newEmail: step.newEmail,
+                                    otp: newCode,
+                                })
+                            }
+                            status={changeEmailMutation.status}
+                            text={{ idle: "Verify", pending: "Verifying...", success: "Verified!" }}
+                        />
+                    </DialogFooter>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -86,7 +86,7 @@ export function UserMenu() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href="/user/profile">
+                                <Link href="/user/settings">
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>

@@ -10,12 +10,21 @@
 
 "use client";
 
+import { ReactNode } from "react";
+
 import { usePathname } from "next/navigation";
 
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
 import { SystemAdmin_Sidebar_Menu } from "@/components/system-admin/sidebar-menu";
+import { Profile_Sidebar_Menu } from "@/components/user/profile-sidebar-menu";
 
-import { systemModules, userModules } from "@/lib/modules";
+import { systemModules, userModules, type UserModuleId } from "@/lib/modules";
+
+/** Sub-pages for a user module's `NavCollapsible`, keyed by module id — same idea as the org
+ *  scope's `MODULE_SIDEBAR` in `org-sidebar-modules.tsx`. */
+const USER_MODULE_SIDEBAR: Partial<Record<UserModuleId, ReactNode>> = {
+    profile: <Profile_Sidebar_Menu />,
+};
 
 export function ScopeSidebar_Modules() {
     const pathname = usePathname();
@@ -25,8 +34,18 @@ export function ScopeSidebar_Modules() {
             <NavSection>
                 {userModules.map((mod) => {
                     const Icon = mod.icon;
+                    const subItems = USER_MODULE_SIDEBAR[mod.id];
+
+                    if (!subItems) {
+                        return (
+                            <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()} />
+                        );
+                    }
+
                     return (
-                        <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()} />
+                        <NavCollapsible key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()}>
+                            {subItems}
+                        </NavCollapsible>
                     );
                 })}
             </NavSection>

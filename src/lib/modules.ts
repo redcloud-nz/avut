@@ -150,12 +150,12 @@ export const Modules = {
     },
     profile: {
         id: "profile",
-        label: "Profile",
+        label: "User Settings",
         icon: UserIcon,
-        segment: "profile",
+        segment: "settings",
         alwaysOn: true,
         scope: "user",
-        href: () => "/user/profile",
+        href: () => "/user/settings",
     },
     "system-admin": {
         id: "system-admin",
