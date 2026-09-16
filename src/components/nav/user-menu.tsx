@@ -109,7 +109,7 @@ export function UserMenu() {
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>
-                                <Link href="/orgs/--select-org">
+                                <Link href="/user">
                                     <SwitchOrganizationIcon />
                                     <span>Switch Organisation</span>
                                 </Link>

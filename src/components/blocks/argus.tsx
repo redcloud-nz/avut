@@ -20,7 +20,7 @@ function ArgusRoot({
      * Off when nested inside a shell that already provides the surrounding height (e.g. the
      * shared public header/footer) — otherwise this forces `min-h-svh` on top of that shell's
      * own height, pushing the page taller than the viewport regardless of how short the
-     * content is. Default on for the standalone full-page usages (`/orgs/--create`, etc.).
+     * content is. Default on for the standalone full-page usages (`/auth/sign-in`, etc.).
      */
     fullHeight?: boolean;
 }) {
