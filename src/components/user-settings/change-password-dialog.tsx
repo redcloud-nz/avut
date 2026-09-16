@@ -91,7 +91,7 @@ export function UserProfile_ChangePassword_Dialog() {
  * For users signed in only through a social provider: there is no current password to
  * verify, so a password is set via an email OTP. `authClient.emailOtp.resetPassword`
  * creates the `credential` account when the user has none, so no server-only endpoint is
- * needed — the same client calls that back `/auth/forgot-password` → `/auth/reset-password`.
+ * needed — the same client calls that back `/auth/forgot-password`.
  */
 function SetPassword_DialogBody({
     dialogOpen,
