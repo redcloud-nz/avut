@@ -34,7 +34,7 @@ import { getQueryClient } from "@/trpc/query-client";
  * procedure and no `ctx.logEvent`. On confirm we call `authClient.admin.impersonateUser`
  * directly; on success the operator now holds the target's session, so we drop the stale
  * session cache and navigate to `/user` — inside the `(authenticated)` layout so the
- * impersonation banner is visible, and it re-runs entry control for the new identity rather
+ * impersonation banner is visible, and it lands on the dashboard for the new identity rather
  * than assuming the target has the same landing org. Stopping impersonation is handled by the
  * Phase 10 banner.
  */

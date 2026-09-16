@@ -95,8 +95,8 @@ export function AdminModule_InvitePerson_Dialog({
                 {
                     // Lowercased to match how better-auth stores `User.email` at sign-up. An
                     // invitation kept at the person record's own casing would never be found by
-                    // `getEntryControl`, which looks invitations up by the session user's
-                    // (lowercase) email.
+                    // the dashboard's invitation lookup, which looks invitations up by the
+                    // session user's (lowercase) email.
                     email: person.email.toLowerCase(),
                     role: roles,
                     organizationId: organization.id,

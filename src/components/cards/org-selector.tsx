@@ -57,7 +57,7 @@ export function OrgSelector_Card({
                     {memberships.map((membership) => (
                         <Item key={membership.organization.id} asChild>
                             <Link
-                                href={`/orgs/${membership.organization.slug}${module ? `/${module}` : ""}`}
+                                href={`/orgs/${membership.organization.slug}`}
                             >
                                 <ItemMedia>
                                     <Building2Icon className="size-5" />
