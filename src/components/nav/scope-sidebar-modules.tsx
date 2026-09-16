@@ -38,12 +38,22 @@ export function ScopeSidebar_Modules() {
 
                     if (!subItems) {
                         return (
-                            <NavItem key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()} />
+                            <NavItem
+                                key={mod.id}
+                                icon={<Icon />}
+                                label={mod.label}
+                                href={mod.href()}
+                            />
                         );
                     }
 
                     return (
-                        <NavCollapsible key={mod.id} icon={<Icon />} label={mod.label} href={mod.href()}>
+                        <NavCollapsible
+                            key={mod.id}
+                            icon={<Icon />}
+                            label={mod.label}
+                            href={mod.href()}
+                        >
                             {subItems}
                         </NavCollapsible>
                     );
