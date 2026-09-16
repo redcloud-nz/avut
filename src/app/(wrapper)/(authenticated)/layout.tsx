@@ -8,7 +8,6 @@
 import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
-import { AppProviders } from "@/components/providers/app-providers";
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NavSkeleton } from "@/components/nav/nav-skeleton";
@@ -49,38 +48,36 @@ export default async function AuthenticatedLayout(props: {
 
     return (
         <HydrateClient>
-            <AppProviders>
-                <Sidebar>
-                    <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                        <div className="w-[100px]">
-                            <Image
-                                src="/avut-logo.svg"
-                                alt="A.V.U.T. Logo"
-                                width={100}
-                                height={100 / 3}
-                                loading="eager"
-                                className="dark:invert"
-                            />
-                        </div>
-                        <div>
-                            <NotificationsMenu />
-                            <ModeToggle />
-                        </div>
-                    </SidebarHeader>
-                    <SidebarContent>
-                        <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
-                    </SidebarContent>
-                    <SidebarFooter>
-                        <div className="py-1 text-center text-xs text-muted-foreground">
-                            <VersionString layout="stacked" />
-                        </div>
-                        <UserMenu />
-                    </SidebarFooter>
-                    <SidebarRail />
-                </Sidebar>
-                {props.modal}
-                <Std.SidebarInset>{props.children}</Std.SidebarInset>
-            </AppProviders>
+            <Sidebar>
+                <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
+                    <div className="w-[100px]">
+                        <Image
+                            src="/avut-logo.svg"
+                            alt="A.V.U.T. Logo"
+                            width={100}
+                            height={100 / 3}
+                            loading="eager"
+                            className="dark:invert"
+                        />
+                    </div>
+                    <div>
+                        <NotificationsMenu />
+                        <ModeToggle />
+                    </div>
+                </SidebarHeader>
+                <SidebarContent>
+                    <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
+                </SidebarContent>
+                <SidebarFooter>
+                    <div className="py-1 text-center text-xs text-muted-foreground">
+                        <VersionString layout="stacked" />
+                    </div>
+                    <UserMenu />
+                </SidebarFooter>
+                <SidebarRail />
+            </Sidebar>
+            {props.modal}
+            <Std.SidebarInset>{props.children}</Std.SidebarInset>
         </HydrateClient>
     );
 }
