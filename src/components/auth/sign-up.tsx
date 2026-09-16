@@ -67,16 +67,25 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
 
     const form = useForm({
         resolver: zodResolver(
-            z.object({
-                name: z.string().min(2, "Name is required."),
-                email: z.email("Invalid email address"),
-                password: z.string().min(8, "Password must be at least 8 characters long"),
-            }),
+            z
+                .object({
+                    name: z.string().min(2, "Name is required."),
+                    email: z.email("Invalid email address"),
+                    password: z.string().min(8, "Password must be at least 8 characters long"),
+                    confirmPassword: z
+                        .string()
+                        .nonempty({ message: "Please confirm your password" }),
+                })
+                .refine((data) => data.password === data.confirmPassword, {
+                    message: "Passwords do not match",
+                    path: ["confirmPassword"],
+                }),
         ),
         defaultValues: {
             name: "",
             email: email || "",
             password: "",
+            confirmPassword: "",
         },
     });
 
@@ -145,6 +154,25 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                                 {...field}
                             />
                             <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                    )}
+                />
+                <Controller
+                    name="confirmPassword"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="sign-up-confirm-password">
+                                Confirm Password
+                            </FieldLabel>
+                            <PasswordInput
+                                id="sign-up-confirm-password"
+                                placeholder="Enter your password again"
+                                aria-invalid={fieldState.invalid}
+                                disabled={mutation.isPending}
+                                {...field}
+                            />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
