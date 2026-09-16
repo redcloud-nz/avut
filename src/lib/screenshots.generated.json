@@ -36,6 +36,15 @@
     "alt": "The Reset Password screen: a six-digit code input, a new password field, and an Update Password button",
     "capturedAt": "2026-09-10T06:16:24.153Z"
   },
+  "getting-started/scope-switcher": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/scope-switcher.webp",
+      "width": 247,
+      "height": 48
+    },
+    "alt": "The scope switcher at the top of the sidebar, showing the current organisation, Erehwon CDEM, with a building icon and an up-down chevron on the right",
+    "capturedAt": "2026-09-16T05:05:11.278Z"
+  },
   "getting-started/sign-in": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/sign-in.webp",

@@ -5,11 +5,11 @@
 
 "use client";
 
-import { ChevronsUpDown, LogOutIcon, ShieldIcon } from "lucide-react";
+import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import { PersonalSettingsIcon, SwitchOrganizationIcon } from "@/components/icons";
+import { PersonalSettingsIcon } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -92,27 +92,8 @@ export function UserMenu() {
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        {user.role === "admin" && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/system/admin">
-                                            <ShieldIcon />
-                                            <span>System Admin</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </>
-                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link href="/user">
-                                    <SwitchOrganizationIcon />
-                                    <span>Switch Organisation</span>
-                                </Link>
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleSignOut}>
                                 <LogOutIcon />
                                 <span>Sign Out</span>
