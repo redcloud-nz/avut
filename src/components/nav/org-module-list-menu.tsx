@@ -57,6 +57,9 @@ export function OrgModuleListMenu() {
                             <OrganizationModuleOptions />
                             {/* Global modules are admin-only; they follow the org modules
                                 under a divider. */}
+                            {/* TODO(#213): GlobalModuleOptions is unwired pending the sidebar/
+                                session restructuring in this PR — rewire once that work settles,
+                                or delete the function below if it's superseded instead. */}
                             {/* <GlobalModuleOptions separated /> */}
                         </DropdownMenuGroup>
                     </DropdownMenuContent>

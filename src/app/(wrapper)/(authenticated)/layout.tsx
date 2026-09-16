@@ -21,15 +21,15 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
+import { serverSessionQueryOptions } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
 import { getServerQueryClient, HydrateClient } from "@/trpc/server";
-import { authQueryKeys } from "@/lib/auth-query-keys";
 
-// `requireSession()` below is a blocking request read, and every authenticated route still
-// reports uncached-data-during-navigation despite `(wrapper)/loading.tsx` sitting above this
-// layout — the boundary covers the initial prerender's static shell, not client-side
-// navigations between authenticated routes, which is what `instant` validation actually checks.
-// Suppress it here rather than fight it per-route: session data is inherently per-request and
+// `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
+// this layout satisfies *build-time* prerender validation for it (see that file's docstring),
+// but not *runtime* instant-navigation validation for client-side navigations between
+// authenticated routes — that's a separate check this suppresses directly. Suppress it here
+// rather than fight it per-route: session data is inherently per-request and
 // security-sensitive, so it isn't a good `"use cache"` candidate, and every route under this
 // layout already blocks on it.
 export const instant = false;
@@ -44,7 +44,7 @@ export default async function AuthenticatedLayout(props: {
     const session = await requireSession();
 
     const queryClient = getServerQueryClient();
-    queryClient.setQueryData(authQueryKeys.session, session);
+    queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
 
     return (
         <HydrateClient>

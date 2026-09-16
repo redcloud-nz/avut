@@ -24,6 +24,7 @@ import { route } from "@/lib/routes";
 
 export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]/d4h-views`>) {
     const { slug } = await props.params;
+
     return (
         <>
             <Std.Navbar breadcrumbs={["D4H Views"]} actions={<HelpButton slug="d4h-views" />} />

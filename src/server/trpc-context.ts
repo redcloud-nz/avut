@@ -9,11 +9,10 @@ import { cache } from "react";
 
 import { TRPCError } from "@trpc/server";
 
-import { Roles } from "@/lib/permissions";
 import { getOrganizationUserRolesOrNull } from "@/server/organization-user";
 import { getSession } from "@/server/session";
 import { createInnerTrpcContext } from "@/trpc/init";
-import { assertHasPermissionResult } from "@/trpc/permissions";
+import { assertHasPermissionResult, hasAnyRoleWithPermissions } from "@/trpc/permissions";
 
 /**
  * Build the tRPC context for the current request.
@@ -27,17 +26,16 @@ export const createTrpcContext = cache(async () => {
     return createInnerTrpcContext({
         auth: authSession,
         hasPermission: async (organizationId, requiredPermissions) => {
+            if (!authSession) {
+                throw new TRPCError({ code: "UNAUTHORIZED" });
+            }
+
             // Evaluated locally against the cached role lookup rather than calling Better
             // Auth's `auth.api.hasPermission` — that would be a second DB round trip doing
             // the same membership lookup `getOrganizationUserRolesOrNull` already does, just
-            // to re-derive a result `Roles[role].authorize(...)` (same access-control config,
-            // see `src/lib/permissions.ts`) can compute in memory. `roles.some(...)` mirrors
-            // `useHasPermission`'s client-side union of roles: granted if *any* role the user
-            // holds in this org satisfies every requested permission.
-            const roles = await getOrganizationUserRolesOrNull(
-                organizationId,
-                authSession!.user.id,
-            );
+            // to re-derive a result `hasAnyRoleWithPermissions` (same access-control config,
+            // see `src/lib/permissions.ts`) can compute in memory.
+            const roles = await getOrganizationUserRolesOrNull(organizationId, authSession.user.id);
 
             if (!roles) {
                 // Not a member of the organization at all.
@@ -47,9 +45,7 @@ export const createTrpcContext = cache(async () => {
                 });
             }
 
-            const granted = roles.some(
-                (role) => Roles[role].authorize(requiredPermissions).success,
-            );
+            const granted = hasAnyRoleWithPermissions(roles, requiredPermissions);
 
             assertHasPermissionResult({ success: granted }, requiredPermissions);
         },

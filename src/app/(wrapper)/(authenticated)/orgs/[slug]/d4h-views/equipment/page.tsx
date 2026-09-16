@@ -24,6 +24,7 @@ export default async function D4HViewsModule_Equipment_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/equipment`>,
 ) {
     const { slug } = await props.params;
+
     return (
         <>
             <Std.Navbar

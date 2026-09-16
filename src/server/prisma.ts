@@ -37,7 +37,6 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
             async $allOperations({ model, operation, args, query }) {
                 if (process.env.NODE_ENV !== "development") return query(args);
 
-                const start = performance.now();
                 const delay =
                     Math.floor(
                         Math.random() *
@@ -46,6 +45,7 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
 
                 await new Promise((resolve) => setTimeout(resolve, delay));
 
+                const start = performance.now();
                 const result = await query(args);
                 const durationMs = Math.round(performance.now() - start);
 

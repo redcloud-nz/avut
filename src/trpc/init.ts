@@ -67,20 +67,22 @@ export const createTrpcRouter = t.router;
 export type PublicContext = Context;
 
 export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    const res = opts.next(opts);
-
     if (process.env.NODE_ENV === "development") {
         const start = performance.now();
         const delay =
             Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
             DEVELOPMENT_DELAY.min;
 
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        const [res] = await Promise.all([
+            opts.next(opts),
+            new Promise((resolve) => setTimeout(resolve, delay)),
+        ]);
         const durationMs = Math.round(performance.now() - start);
         console.debug(`[trpc] ${opts.path} — ${durationMs}ms (+${delay}ms artificial)`);
+        return res;
     }
 
-    return res;
+    return opts.next(opts);
 });
 
 export type AuthenticatedContext = Context & {
