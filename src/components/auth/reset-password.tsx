@@ -17,8 +17,8 @@ import { authClient } from "@/client/auth-client";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function ResetPassword_Card({ email }: { email: string }) {
     const router = useRouter();
@@ -102,9 +102,8 @@ export function ResetPassword_Card({ email }: { email: string }) {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="new-password">New Password</FieldLabel>
-                                    <Input
+                                    <PasswordInput
                                         id="new-password"
-                                        type="password"
                                         placeholder="Enter your new password"
                                         aria-invalid={fieldState.invalid}
                                         {...field}

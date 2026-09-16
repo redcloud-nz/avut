@@ -23,6 +23,7 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 import { authClient } from "@/client/auth-client";
 
@@ -136,9 +137,8 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                             <FieldLabel htmlFor="sign-up-password">Password</FieldLabel>
-                            <Input
+                            <PasswordInput
                                 id="sign-up-password"
-                                type="password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
                                 disabled={mutation.isPending}

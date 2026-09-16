@@ -29,6 +29,7 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 /**
  * Card for a user to sign in to the application.
@@ -136,9 +137,8 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                                 </Link>
                             </div>
 
-                            <Input
+                            <PasswordInput
                                 id="sign-in-password"
-                                type="password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
                                 {...field}
