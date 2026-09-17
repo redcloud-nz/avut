@@ -35,6 +35,11 @@ import { RainbowSpinner } from "@/components/ui/loading";
 import { PasswordInput } from "@/components/ui/password-input";
 
 import { authQueryKeys } from "@/lib/auth-query-keys";
+import {
+    ConfirmPasswordSchema,
+    ExistingPasswordSchema,
+    PasswordSchema,
+} from "@/lib/schemas/password";
 
 /**
  * `?action=change-password` — self-triggered (Recipe A). Branches on whether the caller has
@@ -91,7 +96,7 @@ export function UserProfile_ChangePassword_Dialog() {
  * For users signed in only through a social provider: there is no current password to
  * verify, so a password is set via an email OTP. `authClient.emailOtp.resetPassword`
  * creates the `credential` account when the user has none, so no server-only endpoint is
- * needed — the same client calls that back `/auth/forgot-password` → `/auth/reset-password`.
+ * needed — the same client calls that back `/auth/forgot-password`.
  */
 function SetPassword_DialogBody({
     dialogOpen,
@@ -121,16 +126,8 @@ function SetPassword_DialogBody({
             z
                 .object({
                     code: z.string().length(6, "Enter the 6-digit code"),
-                    newPassword: z
-                        .string()
-                        .nonempty({ message: "New password is required" })
-                        .min(8, "Password must be at least 8 characters")
-                        .max(100, "Password must be at most 100 characters"),
-                    confirmNewPassword: z
-                        .string()
-                        .nonempty({ message: "Please confirm your new password" })
-                        .min(8, "Password must be at least 8 characters")
-                        .max(100, "Password must be at most 100 characters"),
+                    newPassword: PasswordSchema,
+                    confirmNewPassword: ConfirmPasswordSchema,
                 })
                 .refine((data) => data.newPassword === data.confirmNewPassword, {
                     message: "Passwords do not match",
@@ -206,7 +203,10 @@ function SetPassword_DialogBody({
                 ) : (
                     <form
                         id="set-password-form"
-                        onSubmit={form.handleSubmit((data) => setPassword.mutate(data))}
+                        onSubmit={form.handleSubmit(
+                            ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
+                                setPassword.mutate(data),
+                        )}
                     >
                         <FieldGroup>
                             <Controller
@@ -327,21 +327,9 @@ function ChangePassword_DialogBody({
         resolver: zodResolver(
             z
                 .object({
-                    currentPassword: z
-                        .string()
-                        .nonempty({ message: "Current password is required" })
-                        .min(1)
-                        .max(100),
-                    newPassword: z
-                        .string()
-                        .nonempty({ message: "New password is required" })
-                        .min(8)
-                        .max(100),
-                    confirmNewPassword: z
-                        .string()
-                        .nonempty({ message: "Please confirm your new password" })
-                        .min(8)
-                        .max(100),
+                    currentPassword: ExistingPasswordSchema,
+                    newPassword: PasswordSchema,
+                    confirmNewPassword: ConfirmPasswordSchema,
                     revokeOtherSessions: z.boolean(),
                 })
                 .refine((data) => data.newPassword === data.confirmNewPassword, {
@@ -393,7 +381,9 @@ function ChangePassword_DialogBody({
             </DialogHeader>
             <form
                 id="change-password-form"
-                onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+                onSubmit={form.handleSubmit(
+                    ({ confirmNewPassword: _confirmNewPassword, ...data }) => mutation.mutate(data),
+                )}
             >
                 <FieldGroup>
                     <Controller

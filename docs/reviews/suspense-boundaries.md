@@ -289,7 +289,7 @@ calling it, and nuqs wraps its own `NavigationSpy` in a `<Suspense>`.
 | Route(s)                                                 | Problem                                                             | Fix                                                                 |
 | -------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `/policies/*`, `/auth/forgot-password`, `/auth/sign-out` | None — already fully prerendered                                    | None                                                                |
-| `/auth/sign-in`, `/auth/sign-up`, `/auth/reset-password` | Top-level `await searchParams` → E1439                              | Sync shell + async child in `<Suspense>`                            |
+| `/auth/sign-in`, `/auth/sign-up`                         | Top-level `await searchParams` → E1439                              | Sync shell + async child in `<Suspense>`                            |
 | `/auth/verify-email/[email]`                             | Top-level `await params` → same class                               | Same                                                                |
 | `/docs/[[...slug]]`                                      | Flag reads block in **both** layout and page                        | A `<Suspense>` in each — not `loading.tsx`                          |
 | `/`                                                      | `new Date()` in a Client Component, masked by the boundary above it | Hoist to module scope + move the boundary into `(wrapper)` (step 4) |

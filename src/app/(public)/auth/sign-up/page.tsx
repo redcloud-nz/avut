@@ -21,7 +21,7 @@ export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
     return (
         <Argus.Root fullHeight={false}>
             <Argus.Column>
-                <Suspense fallback={<AuthCard_Skeleton fields={3} />}>
+                <Suspense fallback={<AuthCard_Skeleton fields={4} />}>
                     <SignUp_CardFromParams searchParams={props.searchParams} />
                 </Suspense>
                 <Argus.Footer>
