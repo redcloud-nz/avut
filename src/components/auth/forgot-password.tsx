@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +46,7 @@ export function Auth_ForgotPassword_Card() {
             <CardContent>
                 <FieldGroup>
                     {sentTo ? (
-                        <ResetPassword_Form email={sentTo} />
+                        <ResetPassword_Form email={sentTo} onChangeEmail={() => setSentTo(null)} />
                     ) : (
                         <RequestCode_Form onSent={setSentTo} />
                     )}
@@ -83,7 +84,10 @@ function RequestCode_Form({ onSent }: { onSent: (email: string) => void }) {
     });
 
     return (
-        <form id="forgot-password-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
+        <form
+            id="forgot-password-form"
+            onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+        >
             <FieldGroup>
                 <Controller
                     name="email"
@@ -120,7 +124,13 @@ function RequestCode_Form({ onSent }: { onSent: (email: string) => void }) {
     );
 }
 
-function ResetPassword_Form({ email }: { email: string }) {
+function ResetPassword_Form({
+    email,
+    onChangeEmail,
+}: {
+    email: string;
+    onChangeEmail: () => void;
+}) {
     const router = useRouter();
 
     const form = useForm({
@@ -128,14 +138,8 @@ function ResetPassword_Form({ email }: { email: string }) {
             z
                 .object({
                     code: z.string().length(6, "Invalid code"),
-                    newPassword: z
-                        .string()
-                        .nonempty({ message: "New password is required" })
-                        .min(8, "Password must be at least 8 characters")
-                        .max(100, "Password must be at most 100 characters"),
-                    confirmNewPassword: z
-                        .string()
-                        .nonempty({ message: "Please confirm your new password" }),
+                    newPassword: PasswordSchema,
+                    confirmNewPassword: ConfirmPasswordSchema,
                 })
                 .refine((data) => data.newPassword === data.confirmNewPassword, {
                     message: "Passwords do not match",
@@ -177,7 +181,9 @@ function ResetPassword_Form({ email }: { email: string }) {
     return (
         <form
             id="reset-password-form"
-            onSubmit={form.handleSubmit((data) => resetPassword.mutate(data))}
+            onSubmit={form.handleSubmit(({ confirmNewPassword: _confirmNewPassword, ...data }) =>
+                resetPassword.mutate(data),
+            )}
         >
             <FieldGroup>
                 <Controller
@@ -260,13 +266,28 @@ function ResetPassword_Form({ email }: { email: string }) {
                 </Field>
                 <FieldDescription className="text-center">
                     Didn&apos;t receive the code?{" "}
-                    <a
+                    <button
+                        type="button"
                         aria-disabled={resendCode.isPending || resetPassword.isSuccess}
-                        className="cursor-pointer aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                        onClick={() => resendCode.mutate()}
+                        className="cursor-pointer underline-offset-4 hover:underline aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                        onClick={() => {
+                            if (!resendCode.isPending && !resetPassword.isSuccess) {
+                                resendCode.mutate();
+                            }
+                        }}
                     >
                         Resend
-                    </a>
+                    </button>
+                </FieldDescription>
+                <FieldDescription className="text-center">
+                    Wrong email?{" "}
+                    <button
+                        type="button"
+                        className="cursor-pointer underline-offset-4 hover:underline"
+                        onClick={onChangeEmail}
+                    >
+                        Start over
+                    </button>
                 </FieldDescription>
             </FieldGroup>
         </form>

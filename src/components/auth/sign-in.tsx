@@ -139,6 +139,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
 
                             <PasswordInput
                                 id="sign-in-password"
+                                autoComplete="current-password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
                                 {...field}

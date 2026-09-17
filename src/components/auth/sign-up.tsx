@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 
 import { authClient } from "@/client/auth-client";
+import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
@@ -71,10 +72,8 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                 .object({
                     name: z.string().min(2, "Name is required."),
                     email: z.email("Invalid email address"),
-                    password: z.string().min(8, "Password must be at least 8 characters long"),
-                    confirmPassword: z
-                        .string()
-                        .nonempty({ message: "Please confirm your password" }),
+                    password: PasswordSchema,
+                    confirmPassword: ConfirmPasswordSchema,
                 })
                 .refine((data) => data.password === data.confirmPassword, {
                     message: "Passwords do not match",
@@ -103,7 +102,12 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
     });
 
     return (
-        <form id="sign-up-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
+        <form
+            id="sign-up-form"
+            onSubmit={form.handleSubmit(({ confirmPassword: _confirmPassword, ...data }) =>
+                mutation.mutate(data),
+            )}
+        >
             <FieldGroup>
                 <Controller
                     name="name"
@@ -148,6 +152,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                             <FieldLabel htmlFor="sign-up-password">Password</FieldLabel>
                             <PasswordInput
                                 id="sign-up-password"
+                                autoComplete="new-password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
                                 disabled={mutation.isPending}
@@ -168,6 +173,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                             </FieldLabel>
                             <PasswordInput
                                 id="sign-up-confirm-password"
+                                autoComplete="new-password"
                                 placeholder="Enter your password again"
                                 aria-invalid={fieldState.invalid}
                                 disabled={mutation.isPending}
