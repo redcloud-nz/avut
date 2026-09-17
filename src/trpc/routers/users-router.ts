@@ -8,7 +8,8 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { auth } from "@/server/auth";
-import { OrganizationData } from "@/lib/schemas/organization";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData, UserId } from "@/lib/schemas/user";
@@ -23,6 +24,79 @@ import { Messages } from "../messages";
  * a user account and a personnel record.
  */
 export const usersRouter = createTrpcRouter({
+    /**
+     * Counts log entries by organization, object type, and action over the last 24 hours,
+     * across every organization the caller belongs to. For a dashboard-level activity
+     * summary — not a substitute for an org's own (permission-checked) activity feed, since
+     * this only ever returns counts, never entry details.
+     *
+     * @param ctx The authenticated context.
+     * @returns One row per (organization, object type, action) combination with a nonzero count.
+     */
+    getActivityStats: authenticatedProcedure
+        .output(
+            z.array(
+                z.object({
+                    organizationId: OrganizationId.schema,
+                    objectType: z.string(),
+                    action: z.string(),
+                    count: z.number(),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const memberships = await ctx.prisma.organizationUser.findMany({
+                where: { userId: ctx.userId },
+                select: { organizationId: true },
+            });
+
+            if (memberships.length === 0) return [];
+
+            const organizationIds = memberships.map((m) => m.organizationId);
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+            // Skill checks aren't written through `ctx.logEvent` (no `LogEntry` row per
+            // check), so they're invisible to the log-entry-backed counts below — count
+            // them directly off `SkillCheck` instead.
+            const skillCheckCounts = await ctx.prisma.skillCheck.groupBy({
+                by: ["organizationId"],
+                where: {
+                    organizationId: { in: organizationIds },
+                    createdAt: { gte: since },
+                },
+                _count: true,
+            });
+
+            const skillCheckRows = skillCheckCounts
+                .filter((row) => row._count > 0)
+                .map((row) => ({
+                    organizationId: OrganizationId.schema.parse(row.organizationId),
+                    objectType: "SkillCheck",
+                    action: "Create",
+                    count: row._count,
+                }));
+
+            const logEntryCounts = await ctx.prisma.logEntry.groupBy({
+                by: ["organizationId", "objectType", "action"],
+                where: {
+                    organizationId: { in: organizationIds },
+                    timestamp: { gte: since },
+                },
+                _count: true,
+            });
+
+            const logEntryRows = logEntryCounts.map((row) => ({
+                // `organizationId` is guaranteed non-null: the `where` clause only matches
+                // rows already filtered to the caller's (non-null) organization memberships.
+                organizationId: OrganizationId.schema.parse(row.organizationId),
+                objectType: row.objectType,
+                action: row.action,
+                count: row._count,
+            }));
+
+            return [...skillCheckRows, ...logEntryRows];
+        }),
+
     /**
      * Retrieves the personnel record linked to a user, if any.
      * @param ctx The authenticated context.
@@ -142,6 +216,38 @@ export const usersRouter = createTrpcRouter({
                     description: `Linked person (${person.id}, ${person.name}) to user (${input.userId}).`,
                 }),
             ]);
+        }),
+
+    /**
+     * Lists the authenticated user's pending organization invitations, for the dashboard's
+     * invitations card.
+     *
+     * @param ctx The authenticated context.
+     * @returns Pending invitations addressed to the caller's (session) email.
+     */
+    listInvitations: authenticatedProcedure
+        .output(
+            z.array(
+                OrganizationInvitationData.schema.extend({
+                    organization: OrganizationData.schema.pick({
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                    }),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const invitations = await ctx.prisma.organizationInvitation.findMany({
+                where: { email: ctx.auth.user.email, status: "pending" },
+                include: { organization: true },
+            });
+
+            return invitations.map((invitation) => ({
+                ...OrganizationInvitationData.fromRecord(invitation),
+                organization: OrganizationData.fromRecord(invitation.organization),
+            }));
         }),
 
     /**

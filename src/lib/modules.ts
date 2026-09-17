@@ -5,6 +5,7 @@
 
 import {
     CableIcon,
+    LayoutDashboardIcon,
     NotebookPenIcon,
     PackageIcon,
     PocketKnifeIcon,
@@ -35,7 +36,7 @@ export type OrganizationModuleId =
     | "skill-package-builder";
 
 /** Identifier for a user-scoped module (lives under `/user/…`), always available. */
-export type UserModuleId = "profile";
+export type UserModuleId = "profile" | "user-dashboard";
 
 /** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
 export type SystemModuleId = "system-admin";
@@ -148,14 +149,24 @@ export const Modules = {
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-package-builder", { slug }),
     },
-    profile: {
-        id: "profile",
-        label: "Profile",
-        icon: UserIcon,
-        segment: "profile",
+    "user-dashboard": {
+        id: "user-dashboard",
+        label: "Dashboard",
+        icon: LayoutDashboardIcon,
+        // Empty because this module *is* the `/user` scope root, not a sub-page under it.
+        segment: "",
         alwaysOn: true,
         scope: "user",
-        href: () => "/user/profile",
+        href: () => "/user",
+    },
+    profile: {
+        id: "profile",
+        label: "User Settings",
+        icon: UserIcon,
+        segment: "settings",
+        alwaysOn: true,
+        scope: "user",
+        href: () => "/user/settings",
     },
     "system-admin": {
         id: "system-admin",
