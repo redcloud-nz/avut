@@ -6,13 +6,13 @@
  */
 
 import Image from "next/image";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
 import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
-import { ScopeSwitcher } from "@/components/nav/scope-switcher";
+import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
 import { UserMenu } from "@/components/nav/user-menu";
 import {
@@ -73,7 +73,9 @@ export default async function AuthenticatedLayout(props: {
                     </SidebarHeader>
                     <SidebarContent className="overflow-hidden">
                         <div className="px-1 pt-1">
-                            <ScopeSwitcher />
+                            <Suspense fallback={<ScopeSwitcher_Skeleton />}>
+                                <ScopeSwitcher />
+                            </Suspense>
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
                             <ScopeSidebar_Modules />
