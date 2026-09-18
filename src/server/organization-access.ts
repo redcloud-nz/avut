@@ -4,6 +4,7 @@
  */
 import "server-only";
 
+import { APIError } from "better-auth/api";
 import { headers as nextHeaders } from "next/headers";
 import { forbidden } from "next/navigation";
 import { cache } from "react";
@@ -51,9 +52,11 @@ export async function assertPermission(
             body: { organizationId, permissions },
         });
         granted = result.success;
-    } catch {
-        // Not a member of the organization at all.
-        forbidden();
+    } catch (error) {
+        // Only UNAUTHORIZED means "not a member" — anything else is a real failure and must
+        // surface as one rather than masquerade as a permission denial.
+        if (!(error instanceof APIError && error.status === "UNAUTHORIZED")) throw error;
+        granted = false;
     }
 
     if (!granted) forbidden();

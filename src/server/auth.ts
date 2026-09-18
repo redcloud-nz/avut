@@ -48,6 +48,14 @@ export const auth = betterAuth({
     },
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
     /*
+     * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
+     * names from the joined model's name (`organizationusers`, `organizationinvitations`),
+     * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
+     * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
+     * app never calls it; keep it off until upstream fixes the key naming (#97).
+     */
+    disabledPaths: ["/organization/get-full-organization"],
+    /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
      * from local dev servers on a non-3000 port. `src/trpc/client.ts` and the
