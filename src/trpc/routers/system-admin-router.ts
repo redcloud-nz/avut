@@ -79,6 +79,14 @@ async function assertUserExists(prisma: Pick<PrismaClient, "user">, userId: stri
 }
 
 /**
+ * Whether `error` is a Prisma unique-constraint violation (`P2002`) — what a concurrent duplicate
+ * insert raises after a `findFirst` pre-check has already passed.
+ */
+function isUniqueViolation(error: unknown): boolean {
+    return error instanceof Object && "code" in error && error.code === "P2002";
+}
+
+/**
  * Site-wide administration router. Gated by `systemAdminProcedure`
  * (`session.user.role === "admin"`), not by org-scoped permissions.
  *
@@ -119,25 +127,36 @@ export const systemAdminRouter = createTrpcRouter({
 
             const id = nanoId16();
 
-            await ctx.prisma.$transaction([
-                ctx.prisma.organizationUser.create({
-                    data: {
-                        id,
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.organizationUser.create({
+                        data: {
+                            id,
+                            organizationId: input.organizationId,
+                            userId: input.userId,
+                            role: input.role,
+                            createdAt: new Date(),
+                        },
+                    }),
+                    ctx.logEvent({
                         organizationId: input.organizationId,
-                        userId: input.userId,
-                        role: input.role,
-                        createdAt: new Date(),
-                    },
-                }),
-                ctx.logEvent({
-                    organizationId: input.organizationId,
-                    action: "Create",
-                    objectType: "OrganizationMembership",
-                    objectId: id,
-                    changes: [],
-                    description: `Added user ${input.userId} as ${input.role}`,
-                }),
-            ]);
+                        action: "Create",
+                        objectType: "OrganizationMembership",
+                        objectId: id,
+                        changes: [],
+                        description: `Added user ${input.userId} as ${input.role}`,
+                    }),
+                ]);
+            } catch (error) {
+                // A concurrent add slipped in between the check above and this insert.
+                if (isUniqueViolation(error)) {
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message: "That user is already a member of this organisation.",
+                    });
+                }
+                throw error;
+            }
 
             await revalidateOrganizationUser(input.userId);
 
@@ -175,37 +194,48 @@ export const systemAdminRouter = createTrpcRouter({
                 OrganizationSettings.flatten(OrganizationSettings.default()),
             ).map(([key, value]) => ({ organizationId, key, value }));
 
-            await ctx.prisma.$transaction([
-                ctx.prisma.organization.create({
-                    data: {
-                        id: organizationId,
-                        name: input.name,
-                        slug: input.slug,
-                        createdAt: new Date(),
-                    },
-                }),
-                ctx.prisma.organizationConfig.createMany({ data: configRows }),
-                ...(input.addSelfAsOwner
-                    ? [
-                          ctx.prisma.organizationUser.create({
-                              data: {
-                                  id: nanoId16(),
-                                  organizationId,
-                                  userId,
-                                  role: "owner",
-                                  createdAt: new Date(),
-                              },
-                          }),
-                      ]
-                    : []),
-                ctx.logEvent({
-                    organizationId,
-                    action: "Create",
-                    objectType: "Organization",
-                    objectId: organizationId,
-                    changes: [],
-                }),
-            ]);
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.organization.create({
+                        data: {
+                            id: organizationId,
+                            name: input.name,
+                            slug: input.slug,
+                            createdAt: new Date(),
+                        },
+                    }),
+                    ctx.prisma.organizationConfig.createMany({ data: configRows }),
+                    ...(input.addSelfAsOwner
+                        ? [
+                              ctx.prisma.organizationUser.create({
+                                  data: {
+                                      id: nanoId16(),
+                                      organizationId,
+                                      userId,
+                                      role: "owner",
+                                      createdAt: new Date(),
+                                  },
+                              }),
+                          ]
+                        : []),
+                    ctx.logEvent({
+                        organizationId,
+                        action: "Create",
+                        objectType: "Organization",
+                        objectId: organizationId,
+                        changes: [],
+                    }),
+                ]);
+            } catch (error) {
+                // A concurrent create took the slug between the check above and this insert.
+                if (isUniqueViolation(error)) {
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message: `An organisation with the slug "${input.slug}" already exists.`,
+                    });
+                }
+                throw error;
+            }
 
             if (input.addSelfAsOwner) {
                 await revalidateOrganizationUser(userId);
@@ -440,9 +470,17 @@ export const systemAdminRouter = createTrpcRouter({
         .query(async ({ ctx, input }) => {
             const user = await ctx.prisma.user.findUnique({
                 where: { id: input.userId },
-                include: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    banned: true,
+                    emailVerified: true,
+                    createdAt: true,
                     organizationUsers: {
-                        include: {
+                        select: {
+                            role: true,
                             organization: { select: { id: true, name: true, slug: true } },
                         },
                     },
