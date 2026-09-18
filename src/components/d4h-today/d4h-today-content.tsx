@@ -67,7 +67,10 @@ function D4HToday_NotConfigured({
                     ) : (
                         <>
                             Add a personal D4H access token in your{" "}
-                            <Link href="/user-settings" className="underline underline-offset-4">
+                            <Link
+                                href="/user/settings/d4h"
+                                className="underline underline-offset-4"
+                            >
                                 account settings
                             </Link>{" "}
                             to see your schedule.

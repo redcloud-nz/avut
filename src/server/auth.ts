@@ -190,6 +190,17 @@ export const auth = betterAuth({
                     // Revalidate organization cache
                     revalidateOrganization(organization!.slug);
                 },
+                async afterUpdateMemberRole({ user }) {
+                    // `organizationProcedure`'s permission check reads through
+                    // `getOrganizationUserRolesOrNull`'s cache — without this, a demoted member
+                    // keeps their old permissions on every org-scoped mutation until it expires.
+                    await revalidateOrganizationUser(user.id);
+                },
+                async afterRemoveMember({ user }) {
+                    // As above: a removed member must lose access to the organization
+                    // immediately, not once the cache entry happens to expire.
+                    await revalidateOrganizationUser(user.id);
+                },
             },
             roles: Roles,
             schema: {

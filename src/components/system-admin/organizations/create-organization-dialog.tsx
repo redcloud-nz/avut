@@ -83,7 +83,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
             },
             onSuccess({ id }) {
                 router.push(
-                    route("/system-admin/organizations/[organizationId]", { organizationId: id }),
+                    route("/system/admin/organizations/[organizationId]", { organizationId: id }),
                 );
             },
         }),

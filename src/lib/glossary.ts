@@ -5,7 +5,7 @@
  * Single source of truth for AVUT's domain glossary. Backs the `/docs/glossary`
  * page and the `<KeyTerms>` callout doc pages opt into via a `keyTerms`
  * frontmatter array. Plain data — no MDX, no rich content — see
- * docs/ideas/2026-09-11-docs-glossary.md for why.
+ * https://github.com/redcloud-nz/avut/issues/203 for why.
  */
 
 import type { ModuleId } from "@/lib/modules";
@@ -47,7 +47,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "What a user is allowed to do within an organisation.",
         longDefinition:
             "Decides what a signed-in user can do inside an organisation. `owner` and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
-        modules: ["admin"],
+        modules: ["org-admin"],
         relatedTerms: ["organization", "user", "person"],
     },
     {
@@ -56,7 +56,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition: "An account that can sign in, and the role it holds.",
         longDefinition:
             "An account that can sign in to AVUT, with a role that decides what it can do in an organisation. A user is distinct from a person: a person record can exist without a user account attached, and one user can belong to several organisations.",
-        modules: ["admin"],
+        modules: ["org-admin"],
         relatedTerms: ["person", "role"],
     },
     {

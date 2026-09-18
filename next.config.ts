@@ -91,6 +91,18 @@ function localNetworkHostnames(): string[] {
 }
 
 const nextConfig: NextConfig = {
+    async redirects() {
+        // `system-admin` and `user-settings` moved under the real `/system` and `/user`
+        // scope roots (#92) — keep old bookmarks/links working.
+        return [
+            {
+                source: "/system-admin/:path*",
+                destination: "/system/admin/:path*",
+                permanent: true,
+            },
+            { source: "/user-settings", destination: "/user/profile", permanent: true },
+        ];
+    },
     cacheComponents: true,
     ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
@@ -113,6 +125,14 @@ const nextConfig: NextConfig = {
         // and message across the RSC boundary, so an interrupt is the only way a
         // permission failure can carry its own copy into production.
         authInterrupts: true,
+        // Cache Components' default ("warning") implicitly validates every Page/layout
+        // segment for instant navigation, which flags routes we haven't restructured yet
+        // (e.g. the whole authenticated tree, blocked on `requireSession()`). Switch to
+        // only validating segments that opt in explicitly via `export const instant`, so
+        // the warning stops firing app-wide and we can turn it on route-by-route instead.
+        instantInsights: {
+            validationLevel: "manual-warning",
+        },
     },
     typedRoutes: true,
 };

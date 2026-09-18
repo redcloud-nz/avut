@@ -20,9 +20,7 @@ import {
     Text,
 } from "@react-email/components";
 
-const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+import { assetBaseUrl } from "./base-url";
 
 interface VerifyEmailAddressTemplateProps {
     verificationUrl: string;
@@ -51,7 +49,7 @@ export default function VerifyEmailAddressTemplate({
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
-                                src={`${baseUrl}/avut-logo.png`}
+                                src={`${assetBaseUrl}/avut-logo.png`}
                                 width="150"
                                 height="50"
                                 alt="AVUT Logo"
@@ -62,8 +60,7 @@ export default function VerifyEmailAddressTemplate({
                             Email verification
                         </Heading>
                         <Text className="text-[14px] text-black leading-6">
-                            Please verify your email address by clicking the
-                            button below:
+                            Please verify your email address by clicking the button below:
                         </Text>
                         <Section className="mt-8 mb-8 text-center">
                             <Button
@@ -75,17 +72,14 @@ export default function VerifyEmailAddressTemplate({
                         </Section>
                         <Text className="text-[14px] text-black leading-6">
                             or copy and paste this URL into your browser:{" "}
-                            <Link
-                                href={verificationUrl}
-                                className="text-blue-600 no-underline"
-                            >
+                            <Link href={verificationUrl} className="text-blue-600 no-underline">
                                 {verificationUrl}
                             </Link>
                         </Text>
                         <Hr className="mx-0 my-[26px] w-full border border-[#eaeaea] border-solid" />
                         <Text className="text-[#666666] text-[12px] leading-6">
-                            This email was sent to {user.email}. If you did not
-                            request this, please ignore it.
+                            This email was sent to {user.email}. If you did not request this, please
+                            ignore it.
                         </Text>
                     </Container>
                 </Body>

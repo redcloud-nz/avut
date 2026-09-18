@@ -11,14 +11,14 @@ import { AdminModule_Person_Content } from "@/components/admin/personnel/person-
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/admin/personnel/[person_id]`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, person_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const personId = PersonId.schema.parse(person_id);
     const person = await fetchQuery(
@@ -32,7 +32,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_Person_Page(props: Props) {
     const { slug, person_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const personId = PersonId.schema.parse(person_id);
 

@@ -2,21 +2,19 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- *  Path: /
+ *  Path: /(wrapper)/(authenticated)
  */
 
-import { cookies } from "next/headers";
 import Image from "next/image";
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 
-import { SIDEBAR_COOKIE_NAME } from "@/lib/constants";
-import { AppProviders } from "@/components/providers/app-providers";
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
-import { NavSkeleton } from "@/components/nav/nav-skeleton";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
+import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
+import { ScopeSwitcher } from "@/components/nav/scope-switcher";
+import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
 import { UserMenu } from "@/components/nav/user-menu";
-import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
 import {
     Sidebar,
     SidebarContent,
@@ -25,46 +23,37 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
-import { ensureSession } from "@/server/auth-queries";
+import { serverSessionQueryOptions } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
-import { getServerQueryClient, HydrateClient } from "@/trpc/server";
+import { getServerQueryClient, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-// This layout used to carry `export const instant = { unstable_disableValidation: true }` to
-// suppress E1437 for the whole authenticated subtree, because `requireSession()` below is a
-// blocking request read. That suppression is no longer needed: `(wrapper)/loading.tsx` now sits
-// above this layout, so the read happens *inside* a Suspense boundary and validation is
-// satisfied honestly. Verified by removing that file — the build then fails on every
-// `/orgs/[slug]/…` route. Keep the two facts together: this layout may block only for as long
-// as a boundary stays above it.
+// `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
+// this layout satisfies *build-time* prerender validation for it (see that file's docstring),
+// but not *runtime* instant-navigation validation for client-side navigations between
+// authenticated routes — that's a separate check this suppresses directly. Suppress it here
+// rather than fight it per-route: session data is inherently per-request and
+// security-sensitive, so it isn't a good `"use cache"` candidate, and every route under this
+// layout already blocks on it.
+export const instant = false;
+
 export default async function AuthenticatedLayout(props: {
     modal: ReactNode;
-    sidebar: ReactNode;
     children: ReactNode;
 }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
-    await requireSession();
+    const session = await requireSession();
 
-    // Seed the session into the request-scoped cache once, here, so every client
-    // `useSession()` below renders it on first paint with no fetch on mount.
-    await ensureSession(getServerQueryClient());
+    const queryClient = getServerQueryClient();
+    queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
 
-    // `SidebarProvider` persists the collapsed/expanded choice to this cookie but never reads it
-    // back, so the server has to seed it. Absent cookie = expanded, matching a first-time visitor.
-    const sidebarOpen = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
+    // `ScopeSwitcher` reads this via a client `useQuery` on every authenticated page —
+    // prefetching here removes the round trip that would otherwise show as its skeleton.
+    prefetch(trpc.users.listMemberships.queryOptions());
 
     return (
         <HydrateClient>
-            <AppProviders defaultSidebarOpen={sidebarOpen}>
-                <ImpersonationBanner />
-                {/*
-                 * PROTOTYPE — this used to be a separate `ModuleSidebar` component, rendered
-                 * inside `orgs/[slug]/layout.tsx`, `system-admin/layout.tsx`, and
-                 * `notes/layout.tsx`. It's inlined here so every authenticated route shares one
-                 * sidebar shell; the `@sidebar` slot (mirroring the main tree's structure under
-                 * this same directory) supplies the per-route menu content. See the
-                 * suspense-boundary-review discussion for the tradeoffs.
-                 */}
+            <SidebarPortalProvider>
                 <Sidebar>
                     <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
                         <div className="w-[100px]">
@@ -82,8 +71,14 @@ export default async function AuthenticatedLayout(props: {
                             <ModeToggle />
                         </div>
                     </SidebarHeader>
-                    <SidebarContent>
-                        <Suspense fallback={<NavSkeleton />}>{props.sidebar}</Suspense>
+                    <SidebarContent className="overflow-hidden">
+                        <div className="px-1 pt-1">
+                            <ScopeSwitcher />
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
+                            <ScopeSidebar_Modules />
+                            <SidebarPortalOutlet />
+                        </div>
                     </SidebarContent>
                     <SidebarFooter>
                         <div className="py-1 text-center text-xs text-muted-foreground">
@@ -95,7 +90,7 @@ export default async function AuthenticatedLayout(props: {
                 </Sidebar>
                 {props.modal}
                 <Std.SidebarInset>{props.children}</Std.SidebarInset>
-            </AppProviders>
+            </SidebarPortalProvider>
         </HydrateClient>
     );
 }

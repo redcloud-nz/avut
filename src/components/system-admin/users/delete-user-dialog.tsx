@@ -59,7 +59,7 @@ export function SystemAdmin_DeleteUser_Dialog({
                         User <ObjectName>{user.name}</ObjectName> deleted.
                     </>,
                 );
-                router.push("/system-admin/users");
+                router.push("/system/admin/users");
             },
         }),
     );

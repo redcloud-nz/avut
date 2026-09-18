@@ -7,16 +7,9 @@
 
 import { Std } from "@/components/blocks/std";
 
-import { requireOrganization } from "@/server/organization-access";
-
 import { Select_Sandbox } from "./sandbox";
 
-export default async function Playground_Select_Page(
-    props: PageProps<"/orgs/[slug]/playground/select">,
-) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
-
+export default async function Playground_Select_Page() {
     return (
         <Std.SidebarInset>
             <Std.Navbar breadcrumbs={["Playground", "Select"]} />

@@ -271,8 +271,8 @@ export const personnelRouter = createTrpcRouter({
                 }),
                 // Matches what the invite dialog writes, which lowercases for the same reason.
                 // An invitation typed mixed-case on the Invitations page will not be found here —
-                // it is also invisible to `getEntryControl`, which is a pre-existing gap in that
-                // flow rather than something this query should paper over.
+                // it is also invisible to the dashboard's own invitation lookup, which is a
+                // pre-existing gap in that flow rather than something this query should paper over.
                 ctx.prisma.organizationInvitation.findFirst({
                     where: { organizationId: ctx.organizationId, email, status: "pending" },
                     orderBy: { createdAt: "desc" },

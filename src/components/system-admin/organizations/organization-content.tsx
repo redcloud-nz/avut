@@ -47,8 +47,8 @@ export function SystemAdmin_Organization_Content({
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "System Admin", href: "/system-admin" },
-                    { label: "Organizations", href: "/system-admin/organizations" },
+                    { label: "System Admin", href: "/system/admin" },
+                    { label: "Organizations", href: "/system/admin/organizations" },
                     { label: organization.name },
                 ]}
             />
@@ -60,7 +60,7 @@ export function SystemAdmin_Organization_Content({
                             <Button asChild variant="outline">
                                 <Link
                                     href={route(
-                                        "/system-admin/organizations/[organizationId]/settings",
+                                        "/system/admin/organizations/[organizationId]/settings",
                                         { organizationId },
                                     )}
                                 >
@@ -133,7 +133,7 @@ export function SystemAdmin_Organization_Content({
                                                         <td className="py-1 pr-4">
                                                             <Link
                                                                 href={route(
-                                                                    "/system-admin/users/[user_id]",
+                                                                    "/system/admin/users/[user_id]",
                                                                     { user_id: member.userId },
                                                                 )}
                                                                 className="underline-offset-2 hover:underline"

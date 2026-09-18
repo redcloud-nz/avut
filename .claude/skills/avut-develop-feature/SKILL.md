@@ -1,32 +1,27 @@
 ---
 name: avut-develop-feature
-description: Start building a feature from a captured idea (docs/ideas/) or a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup from AGENTS.md, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an idea slug or an issue number/URL.
+description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup from AGENTS.md, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
 effort: high
 manual: true
 ---
 
 # Develop Feature
 
-Takes a feature from "captured somewhere" to "worktree set up and ready to implement." `$ARGUMENTS` is either:
+Takes a feature from "captured somewhere" to "worktree set up and ready to implement." `$ARGUMENTS` is a GitHub issue — a bare number, `#123`, or an issue URL.
 
-- an idea reference — a slug or partial filename under `docs/ideas/` (e.g. `organization-groups` or `2026-09-10-organization-groups`)
-- a GitHub issue — a bare number, `#123`, or an issue URL
-
-If `$ARGUMENTS` is missing or doesn't resolve to either, ask the user which idea or issue to build from and stop.
+If it doesn't parse as one, try it as a fuzzy title search against open `brainstorm`-labeled issues (`gh issue list --repo redcloud-nz/avut --label brainstorm --search "<text>"`). If more than one matches, list them and ask which. If `$ARGUMENTS` is missing or nothing matches, ask the user which issue to build from and stop.
 
 ## Step 1 — Resolve the source
 
-**Idea**: find the matching file under `docs/ideas/` (fuzzy on the slug portion — dates prefix every filename). If more than one matches, list them and ask which. Read the whole file — `## Idea`/`## Context`, `## Options considered`, `## Open questions`, and any `## Review` section from `/avut-review-ideas`.
+`gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,comments`. Read the body and comments — a `brainstorm` issue carries `## Idea`/`## Context`, `## Options considered`, `## Open questions`, and any `## Review` comment from `/avut-review-ideas`; a bug issue filed via `avut-bug` carries its own structure (What happened / Steps to reproduce / Expected behavior / Environment); a feature issue via `avut-draft-feature` carries its own (Proposed solution / Alternatives considered / Related module).
 
-**Issue**: `gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,comments`. Read the body and comments — a bug issue filed via `avut-bug` carries its own structure (What happened / Steps to reproduce / Expected behavior / Environment); a feature issue via `avut-draft-feature` carries its own (Proposed solution / Alternatives considered / Related module).
+Show the user a one-line summary and confirm this is the right source before continuing:
 
-Either way, show the user a one-line summary and confirm this is the right source before continuing:
-
-> Building from docs/ideas/2026-09-10-organization-groups.md — "Organization groups". Proceed?
+> Building from #142 — "Organization groups". Proceed?
 
 ## Step 2 — Check for unresolved ambiguity
 
-If the source has open questions that materially change scope (an idea's `## Open questions`, or a feature issue's `Alternatives considered` left unresolved), surface them and ask before setting up a worktree — don't build the wrong shape of the thing. Skip this if the source is already concrete (most bug reports are).
+If the source has open questions that materially change scope (a `brainstorm` issue's `## Open questions`, or a feature issue's `Alternatives considered` left unresolved), surface them and ask before setting up a worktree — don't build the wrong shape of the thing. Skip this if the source is already concrete (most bug reports are).
 
 ## Step 3 — Pick a name and check for an existing worktree
 

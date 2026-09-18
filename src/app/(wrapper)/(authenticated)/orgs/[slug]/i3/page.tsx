@@ -21,12 +21,9 @@ import {
 } from "@/components/ui/item";
 
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
 
 export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>) {
     const { slug } = await props.params;
-
-    await requireOrganization(slug);
 
     return (
         <>

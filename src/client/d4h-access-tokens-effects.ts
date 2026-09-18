@@ -12,6 +12,12 @@ import { trpc } from "@/trpc/client";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
+    createPersonalAccessToken: () => [
+        invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
+    ],
+    deletePersonalAccessToken: () => [
+        invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
+    ],
     refreshToken: (vars) => [
         invalidate(
             trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({

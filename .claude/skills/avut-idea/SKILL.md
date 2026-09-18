@@ -1,6 +1,6 @@
 ---
 name: avut-idea
-description: Capture, refine, and save a project improvement idea with clarifying questions. Trigger when the user types /avut-idea or says they have an idea to capture.
+description: Capture, refine, and file a project improvement idea as a GitHub issue with clarifying questions. Trigger only when the user types /avut-idea.
 effort: low
 manual: true
 ---
@@ -13,32 +13,15 @@ Their raw idea: $ARGUMENTS
 
 Follow these steps carefully:
 
-## Step 1 — Orient yourself
-
-- Identify the current project name from the working directory (e.g. if cwd is `/Users/alex/projects/my-app`, the project is `my-app`)
-- Note the current date and time for the filename and entry
-
-## Step 2 — Ask clarifying questions
+## Step 1 — Ask clarifying questions
 
 Ask the user 1-2 short, focused questions to make the idea more actionable. Keep them brief — they're mid-coding. Only ask what isn't already clear from the raw idea. Wait for their answers before proceeding.
 
-## Step 3 — Save the idea
+## Step 2 — Draft the issue
 
-Once they've answered, do all of the following:
-
-**a) Create the `docs/ideas/` directory** if it doesn't exist yet. It's a tracked
-part of the repo — do not add it to `.gitignore`.
-
-**b) Generate a filename** in the format `YYYY-MM-DD-short-slug.md` using today's date and a 3-5 word kebab-case slug summarising the idea (e.g. `2025-06-16-refactor-auth-middleware.md`).
-
-**c) Write the idea file** at `docs/ideas/<filename>` using this format:
+Draft a title and a body in this format:
 
 ```
-# <Short descriptive title>
-
-**Project:** <project name>
-**Date:** <YYYY-MM-DD HH:MM>
-
 ## Idea
 
 <2-4 sentences describing the idea and its value, written clearly enough to make sense when read weeks later>
@@ -48,6 +31,24 @@ part of the repo — do not add it to `.gitignore`.
 <Any implementation details, constraints, or context from the user's answers. If nothing relevant, omit this section.>
 ```
 
+Show the drafted title + body to the user and get explicit confirmation before creating anything — filing an issue is visible, public state, unlike a local file. A quick "here's the draft, filing now unless you want changes" satisfies this without blocking on a full back-and-forth.
+
+## Step 3 — File it
+
+```bash
+gh issue create --repo redcloud-nz/avut \
+  --title "<title>" \
+  --label "brainstorm" \
+  --body-file <tmpfile>
+```
+
+Use `--body-file`, not inline `--body` — the body is multi-paragraph markdown and inline quoting mangles it.
+
 ## Step 4 — Confirm
 
-Tell the user the filename it was saved to. Keep it to one line.
+Tell the user the issue URL it was filed at. Keep it to one line.
+
+## Common mistakes
+
+- Skipping confirmation because the ask sounded final ("just file it")
+- Inventing labels beyond `brainstorm` that don't exist in the repo's label set

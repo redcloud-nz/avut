@@ -29,9 +29,10 @@ const OrganizationContext = createContext<OrganizationIdentity | null>(null);
  * full organization/settings/roles (`requireOrganization`) should seed the query cache directly
  * (`queryClient.setQueryData`) rather than pass them through here as props.
  *
- * Rendered independently in more than one subtree (the main org layout and the `@sidebar` slot
- * layout) is expected and fine: both key their queries identically, so they share one cache
- * entry per query rather than each fetching their own copy.
+ * Rendered independently in more than one subtree is expected and fine — e.g. the org layout's
+ * own consumers and the sidebar's `OrgSidebar_Modules` (portalled in via `SidebarPortal`, see
+ * `components/nav/sidebar-portal.tsx`) both key their queries identically, so they share one
+ * cache entry per query rather than each fetching their own copy.
  */
 export function OrganizationProvider({
     children,

@@ -14,11 +14,11 @@ import type { ModuleId } from "@/lib/modules";
  * owner invariant can be guarded on write and the per-scope feeds can be
  * indexed.
  *
- * Intended to match a realigned `modules.ts` `ModuleScope`, which it does NOT
- * today: `ModuleScope` is `"organization" | "global"` and has no `user` member,
- * where this is `"organization" | "user" | "system"`. So `"system"` and
- * `"global"` name the same idea in two vocabularies. Do not map one onto the
- * other until they are actually realigned.
+ * `modules.ts`'s `ModuleScope` now uses the same three values, but the two
+ * types remain intentionally separate — a log entry's scope is a fact about
+ * where the entry lives (which FK is set, which feed it appears in), not a
+ * derived property of the module that produced it. Don't collapse them into
+ * one shared type without checking that invariant still holds.
  */
 const logScopeValues = ["organization", "user", "system"] as const;
 
@@ -157,20 +157,20 @@ export type LogRefRoleInput = z.infer<typeof logRefRoleInputSchema>;
  */
 const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Account: null,
-    D4HAccessToken: "admin",
+    D4HAccessToken: "org-admin",
     I3Template: "i3",
     I3TemplateVariant: "i3",
-    Organization: "admin",
-    OrganizationMembership: "admin",
-    OrganizationSettings: "admin",
-    Person: "admin",
+    Organization: "org-admin",
+    OrganizationMembership: "org-admin",
+    OrganizationSettings: "org-admin",
+    Person: "org-admin",
     Session: null,
     Skill: "skill-package-builder",
     SkillCheckSession: "skill-track",
     SkillGroup: "skill-package-builder",
     SkillPackage: "skill-package-builder",
-    Team: "admin",
-    TeamMembership: "admin",
+    Team: "org-admin",
+    TeamMembership: "org-admin",
     User: null,
 };
 

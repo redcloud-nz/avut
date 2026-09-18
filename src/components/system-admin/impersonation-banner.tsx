@@ -55,7 +55,7 @@ export function ImpersonationBanner() {
         },
         onSuccess() {
             getQueryClient().clear();
-            router.push("/system-admin/users");
+            router.push("/system/admin/users");
             router.refresh();
         },
     });

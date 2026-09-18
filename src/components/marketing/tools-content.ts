@@ -16,7 +16,7 @@ import { Modules } from "@/lib/modules";
 /**
  * `available` — shipped, no badge shown. `in-development` / `planned` both need a visible
  * badge so a not-yet-real tool is never mistaken for one that works today (see
- * docs/ideas/2026-09-12-tools-index-and-subpages.md).
+ * https://github.com/redcloud-nz/avut/issues/207).
  */
 export type ToolStatus = "available" | "in-development" | "planned";
 
@@ -35,8 +35,8 @@ export interface ToolSection {
 export const TOOLS_CONTENT: readonly ToolSection[] = [
     {
         id: "admin",
-        label: Modules.admin.label,
-        icon: Modules.admin.icon,
+        label: Modules["org-admin"].label,
+        icon: Modules["org-admin"].icon,
         status: "available",
         description:
             "The organisational backbone every AVUT org runs on. Manage who's in the org, what teams they belong to, and how they connect to D4H — always on, never gated by settings.",

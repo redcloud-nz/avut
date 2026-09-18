@@ -12,6 +12,8 @@ import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";
 import { requireOrganization } from "@/server/organization-access";
 import { OrganizationProvider } from "@/hooks/use-organization";
+import { OrgSidebar_Modules } from "@/components/nav/org-sidebar-modules";
+import { SidebarPortal } from "@/components/nav/sidebar-portal";
 import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 // NOTE: metadata generation deliberately uses the plain cached lookup rather than
@@ -56,13 +58,14 @@ export default async function Organization_Layout(props: LayoutProps<"/orgs/[slu
 
     return (
         <HydrateClient>
-            {/*
-             * This is a *separate* `OrganizationProvider` instance from the one the lifted
-             * `@sidebar` slot sets up in `(authenticated)/@sidebar/orgs/[slug]/layout.tsx` — both
-             * key their `useOrganization` reads by the same `organizationId`, so they share one
-             * query-cache entry per query rather than each fetching their own copy.
-             */}
             <OrganizationProvider organizationId={organization.id} moduleFlags={moduleFlags}>
+                {/*
+                 * Portals into the sidebar shell in `(authenticated)/layout.tsx` — see
+                 * `sidebar-portal.tsx` for why this isn't a `@sidebar` parallel route.
+                 */}
+                <SidebarPortal>
+                    <OrgSidebar_Modules />
+                </SidebarPortal>
                 {props.children}
             </OrganizationProvider>
         </HydrateClient>

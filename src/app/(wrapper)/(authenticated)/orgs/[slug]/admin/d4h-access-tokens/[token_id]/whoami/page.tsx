@@ -12,7 +12,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/organization";
 import { getD4HFetchClient } from "@/server/d4h-api/client";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
@@ -33,7 +33,7 @@ export default async function Admin_D4HAccessToken_Whoami_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/whoami`>,
 ) {
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

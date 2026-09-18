@@ -25,7 +25,7 @@ import { hasActiveSession } from "@/server/session";
  * `href` and never appears in `orgModules`) still needs an entry here to satisfy it.
  */
 const MODULE_COPY = {
-    admin: "Users, teams, personnel and invitations for your organisation.",
+    "org-admin": "Users, teams, personnel and invitations for your organisation.",
     "d4h-views": "Read-only views of the D4H data you already maintain.",
     forms: "",
     i3: "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
@@ -95,7 +95,7 @@ async function HeroCta() {
     return (
         <>
             <Button asChild size="lg">
-                <Link href="/orgs/--select-org">Open AVUT</Link>
+                <Link href="/user">Open AVUT</Link>
             </Button>
             <span className="text-sm text-muted-foreground">You&apos;re signed in.</span>
         </>

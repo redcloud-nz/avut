@@ -4,7 +4,7 @@
  */
 import "server-only";
 
-import { QueryClient, queryOptions } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 
 import { authQueryKeys } from "@/lib/auth-query-keys";
 
@@ -22,15 +22,4 @@ export function serverSessionQueryOptions() {
         queryKey: authQueryKeys.session,
         queryFn: () => getSession(),
     });
-}
-
-/**
- * Seed a query client with the current session, ready to be dehydrated into a
- * `<HydrationBoundary>`.
- *
- * `getSession` is React `cache`-deduped and any guard on the same request has already
- * called it, so this costs nothing beyond writing the cache entry.
- */
-export function ensureSession(queryClient: QueryClient) {
-    return queryClient.ensureQueryData(serverSessionQueryOptions());
 }
