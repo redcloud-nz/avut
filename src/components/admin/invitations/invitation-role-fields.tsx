@@ -52,19 +52,38 @@ const PRIMARY_ROLES = ["owner", "admin", "member"] as const;
  */
 export function InvitationRoleFields() {
     const organization = useOrganization();
-    const { control } = useFormContext<InvitationRolesFormValues>();
 
-    const secondaryRoles = [
-        { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
-        {
-            role: "skills-assessor",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-        {
-            role: "skill-package-author",
-            enabled: organization.settings.modules["skill-package-builder"].enabled,
-        },
-    ] as const;
+    return (
+        <RoleFields
+            secondaryRoles={[
+                { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
+                {
+                    role: "skills-assessor",
+                    enabled: organization.settings.modules["skill-track"].enabled,
+                },
+                {
+                    role: "skill-package-author",
+                    enabled: organization.settings.modules["skill-package-builder"].enabled,
+                },
+            ]}
+        />
+    );
+}
+
+/** The secondary roles a role form offers, and whether each is currently available. */
+export type SecondaryRoleOptions = readonly {
+    role: z.infer<typeof OrganizationRole.secondaryRoleSchema>;
+    enabled: boolean;
+}[];
+
+/**
+ * The role fields themselves, with no dependency on an organization provider — the caller says
+ * which secondary roles are available. `InvitationRoleFields` supplies them from the current
+ * organization's settings; the system-admin screens, which sit outside any one organization,
+ * supply them from the organization they are acting on.
+ */
+export function RoleFields({ secondaryRoles }: { secondaryRoles: SecondaryRoleOptions }) {
+    const { control } = useFormContext<InvitationRolesFormValues>();
 
     return (
         <>

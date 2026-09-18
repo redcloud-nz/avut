@@ -81,6 +81,33 @@ export const OrganizationRole = {
 
     values: Object.keys(organizationRoles) as OrganizationRole[],
 
+    /**
+     * A member's complete role set as submitted from a form: exactly one primary role plus any
+     * secondary roles, no repeats. Membership rows store this comma-joined — see `serialize`.
+     */
+    assignmentSchema: z
+        .array(organizationRoleSchema)
+        .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.")
+        .refine(
+            (roles) => roles.filter((role) => organizationRoles[role].isPrimary).length === 1,
+            "Choose exactly one primary role (owner, admin or member).",
+        ),
+
+    /** The stored `OrganizationUser.role` value for a role set: comma-joined, primary role first. */
+    serialize(roles: OrganizationRole[]): string {
+        return [...roles]
+            .sort(
+                (a, b) =>
+                    Number(organizationRoles[b].isPrimary) - Number(organizationRoles[a].isPrimary),
+            )
+            .join(",");
+    },
+
+    /** Whether a stored (comma-joined) `OrganizationUser.role` value includes `role`. */
+    includes(stored: string, role: OrganizationRole): boolean {
+        return stored.split(",").includes(role);
+    },
+
     formatList(roles: OrganizationRole[] | string) {
         if (typeof roles === "string") {
             roles = roles.split(",").map((role) => role.trim()) as OrganizationRole[];
