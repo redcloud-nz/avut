@@ -18,6 +18,12 @@ export type PlaygroundEntry = {
 
 export const playgroundRegistry: readonly PlaygroundEntry[] = [
     {
+        slug: "bottom-sheet",
+        title: "Bottom sheet",
+        description:
+            "Prototype: a mutation dialogue pinned to the bottom edge on small screens instead of centered, next to the current dialogue for comparison.",
+    },
+    {
         slug: "person-picker",
         title: "Person picker",
         description:
