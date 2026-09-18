@@ -66,7 +66,7 @@ export function AdminModule_CreatePerson_Dialog() {
 
     const mutation = useMutation(
         trpc.personnel.createPerson.mutationOptions({
-            meta: { effects: personnelEffects.createPerson },
+            meta: { effects: personnelEffects.createPerson, navigates: true },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {

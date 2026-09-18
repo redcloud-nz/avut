@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { D4HServerList } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { D4HAccessToken, D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
@@ -41,7 +42,6 @@ interface CreateD4HAccessTokenFormProps {
 export function AdminModule_CreateD4HAccessToken_Form({
     organization,
 }: CreateD4HAccessTokenFormProps) {
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const form = useForm({
@@ -62,19 +62,17 @@ export function AdminModule_CreateD4HAccessToken_Form({
 
     const createTokenMutation = useMutation(
         trpc.d4hAccessTokens.createOrganizationAccessToken.mutationOptions({
+            meta: {
+                effects: d4hAccessTokensEffects.createOrganizationAccessToken,
+                navigates: true,
+            },
             onError(error) {
                 console.error("Error creating D4H access token:", error);
                 toast.error(
                     `Failed to create D4H access token: ${error.message || "Unknown error"}`,
                 );
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
+            onSuccess({ created }) {
                 router.push(
                     route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
                         slug: organization.slug,
