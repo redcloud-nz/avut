@@ -42,13 +42,17 @@ export async function readOrganizationSettings(
 }
 
 /**
- * Persist an organization's settings, upserting only the `OrganizationConfig` rows whose value
+ * Persist an organization's settings, writing only the `OrganizationConfig` rows whose value
  * actually changed relative to the currently-resolved settings.
  *
  * Because the comparison is against resolved settings (defaults included), a config-less
  * organization only materialises the leaves that differ from the defaults, while a fully
  * materialised organization only rewrites the leaves that genuinely changed. Both end up
  * resolving to the same settings object.
+ *
+ * A changed leaf whose new value equals its default has its row deleted rather than upserted, so
+ * a setting that is toggled and then reverted goes back to inheriting the default. Keeping a row
+ * holding the default would silently pin that organization if the default ever changes.
  *
  * `logEntry` is invoked with the computed changes and its `PrismaPromise` is executed inside the
  * same `$transaction` as the config writes, so the audit entry can never drift from the write.
@@ -72,21 +76,25 @@ export async function writeOrganizationSettings(
     const flattenedExisting = OrganizationSettings.flatten(existing);
     const flattenedNext = OrganizationSettings.flatten(parsed);
 
-    const upserts = R.pipe(
+    const flattenedDefaults = OrganizationSettings.flatten(OrganizationSettings.default());
+
+    const writes = R.pipe(
         R.entries(flattenedNext),
         R.filter(([key, newValue]) => newValue !== flattenedExisting[key]),
         R.map(([key, value]) =>
-            prisma.organizationConfig.upsert({
-                where: { organizationId_key: { organizationId, key } },
-                create: { organizationId, key, value },
-                update: { value },
-            }),
+            value === flattenedDefaults[key]
+                ? prisma.organizationConfig.deleteMany({ where: { organizationId, key } })
+                : prisma.organizationConfig.upsert({
+                      where: { organizationId_key: { organizationId, key } },
+                      create: { organizationId, key, value },
+                      update: { value },
+                  }),
         ),
     );
 
     const changes = diffObject(existing, parsed);
 
-    await prisma.$transaction([...upserts, ...(logEntry ? [logEntry(changes)] : [])]);
+    await prisma.$transaction([...writes, ...(logEntry ? [logEntry(changes)] : [])]);
 
     return await readOrganizationSettings(prisma, organizationId);
 }
