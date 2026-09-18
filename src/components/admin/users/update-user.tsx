@@ -275,7 +275,10 @@ export function AdminModule_UpdateUser_Dialog({
                                         </Field>
                                     </Show>
                                     <Show
-                                        when={organization.settings.modules["skill-track"].enabled}
+                                        when={
+                                            organization.settings.modules["skill-package-builder"]
+                                                .enabled
+                                        }
                                     >
                                         <Field orientation="horizontal">
                                             <Checkbox

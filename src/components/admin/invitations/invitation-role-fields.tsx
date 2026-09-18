@@ -48,7 +48,7 @@ const PRIMARY_ROLES = ["owner", "admin", "member"] as const;
  * without generic plumbing — the caller wraps its `useForm` in a `<FormProvider>`.
  *
  * Secondary roles are gated on the module that grants them being enabled, so an org that does not
- * run I3 or Skill Track never offers their roles.
+ * run I3, Skill Track or the Skill Package Builder never offers their roles.
  */
 export function InvitationRoleFields() {
     const organization = useOrganization();
@@ -62,7 +62,7 @@ export function InvitationRoleFields() {
         },
         {
             role: "skill-package-author",
-            enabled: organization.settings.modules["skill-track"].enabled,
+            enabled: organization.settings.modules["skill-package-builder"].enabled,
         },
     ] as const;
 
@@ -72,7 +72,11 @@ export function InvitationRoleFields() {
                 name="primaryRole"
                 control={control}
                 render={({ field, fieldState }) => (
-                    <RadioGroup value={field.value} onValueChange={field.onChange} className="w-fit">
+                    <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="w-fit"
+                    >
                         <FieldLegend variant="label">Primary Role</FieldLegend>
                         {PRIMARY_ROLES.map((role) => (
                             <Field key={role} orientation="horizontal">
