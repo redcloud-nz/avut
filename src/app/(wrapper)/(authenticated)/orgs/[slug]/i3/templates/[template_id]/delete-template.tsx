@@ -23,8 +23,8 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 
-import { useLogger } from "@/hooks/use-logger";
 import { i3Effects } from "@/client/i3-effects";
+import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { I3Template } from "@/lib/schemas/i3-template";

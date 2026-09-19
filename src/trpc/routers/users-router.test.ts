@@ -20,6 +20,7 @@ vi.mock("@/server/auth", () => ({
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { UserSessionId } from "@/lib/schemas/user-session";
@@ -319,9 +320,9 @@ describe("users.listMemberships", () => {
         org2: OrganizationId.create(),
         caller: UserId.create(),
         other: UserId.create(),
-        membership1: nanoId16(),
-        membership2: nanoId16(),
-        membershipOther: nanoId16(),
+        membership1: OrganizationUserId.create(),
+        membership2: OrganizationUserId.create(),
+        membershipOther: OrganizationUserId.create(),
         person: PersonId.create(),
     };
 

@@ -108,11 +108,23 @@ export const OrganizationRole = {
         return stored.split(",").includes(role);
     },
 
+    /**
+     * The recognised roles in a stored (comma-joined) `OrganizationUser.role` value. Unknown
+     * entries (whitespace, a retired role) are dropped so display code can't crash on them.
+     */
+    parseStored(stored: string): OrganizationRole[] {
+        return stored.split(",").flatMap((value) => {
+            const parsed = organizationRoleSchema.safeParse(value.trim());
+            return parsed.success ? [parsed.data] : [];
+        });
+    },
+
+    /** Display names for a role list; an unrecognised stored role is shown as-is. */
     formatList(roles: OrganizationRole[] | string) {
-        if (typeof roles === "string") {
-            roles = roles.split(",").map((role) => role.trim()) as OrganizationRole[];
-        }
-        return roles.map((role) => this.displayNames[role]).join(", ");
+        const list = typeof roles === "string" ? roles.split(",").map((r) => r.trim()) : roles;
+        return list
+            .map((role) => (this.displayNames as Record<string, string>)[role] ?? role)
+            .join(", ");
     },
 
     getPrimaryRole(roles: OrganizationRole[]): "owner" | "admin" | "member" {

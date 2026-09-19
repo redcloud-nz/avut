@@ -10,6 +10,7 @@ import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import {
@@ -1148,7 +1149,7 @@ describe("systemAdminRouter — audit entries", () => {
         const adminId = UserId.create();
         const ownerId = UserId.create();
         const memberId = UserId.create();
-        const membershipId = nanoId16();
+        const membershipId = OrganizationUserId.create();
 
         await db.organization.create({
             data: { id: orgId, name: "Org", slug: `org-${nanoId16()}`, createdAt: new Date() },

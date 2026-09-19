@@ -63,7 +63,7 @@ interface Member {
 
 /** The role form's values for a stored role set; a legacy set with no primary role reads as `member`. */
 function roleFormValues(stored: string): InvitationRolesFormValues {
-    const roles = OrganizationRole.schema.array().parse(stored.split(","));
+    const roles = OrganizationRole.parseStored(stored);
     const primary = roles.find((role) => OrganizationRole.roles[role].isPrimary);
     return {
         primaryRole: OrganizationRole.primaryRoleSchema.catch("member").parse(primary),

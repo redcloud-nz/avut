@@ -47,7 +47,7 @@ export default async function AuthenticatedLayout(props: {
     const queryClient = getServerQueryClient();
     queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
 
-    // `ScopeSwitcher` reads this via a client `useQuery` on every authenticated page —
+    // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.users.listMemberships.queryOptions());
 

@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -100,7 +101,12 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
             onSuccess({ created }) {
                 handleDialogOpenChange(false);
 
-                router.push(`/orgs/${organization.slug}/admin/teams/${created.id}`);
+                router.push(
+                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: created.id,
+                    }),
+                );
             },
         }),
     );

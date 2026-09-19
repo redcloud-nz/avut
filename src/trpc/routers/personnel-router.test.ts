@@ -12,6 +12,7 @@ vi.mock("server-only", () => ({}));
 import { nanoId16 } from "@/lib/id";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { createLogBatch } from "@/server/log-entry";
@@ -759,7 +760,7 @@ describe("personnel.getLinkedUser", () => {
         user: UserId.create(),
         linked: PersonId.create(),
         unlinked: PersonId.create(),
-        membership: nanoId16(),
+        membership: OrganizationUserId.create(),
     };
 
     const db = createMockPrisma();

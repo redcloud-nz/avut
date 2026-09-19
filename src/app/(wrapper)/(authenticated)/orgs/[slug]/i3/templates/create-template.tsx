@@ -36,8 +36,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useLogger } from "@/hooks/use-logger";
 import { i3Effects } from "@/client/i3-effects";
+import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { route } from "@/lib/routes";
