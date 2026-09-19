@@ -15,6 +15,15 @@ import { trpc } from "@/trpc/client";
  * remember all five affected queries.
  */
 export const usersEffects = createEffects<"users">()({
+    // Joining an organization adds a membership (and its activity feed) to the dashboard.
+    acceptInvitation: () => [
+        invalidate(trpc.users.listInvitations.queryFilter()),
+        invalidate(trpc.users.listMemberships.queryFilter()),
+        invalidate(trpc.users.getActivityStats.queryFilter()),
+    ],
+
+    rejectInvitation: () => [invalidate(trpc.users.listInvitations.queryFilter())],
+
     linkPerson: (vars) => [
         invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
         invalidate(

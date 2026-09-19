@@ -32,20 +32,16 @@ export async function GET(
     // If the user is already signed in, sign them out before accepting the invitation, since we want to ensure they sign in with the correct account.
     if (session) await auth.api.signOut({ headers: request.headers });
 
-    // Redirect to sign in or sign up page with the invitation email pre-filled, and set a cookie to indicate which invitation is being accepted.
+    // Redirect to sign in or sign up page with the invitation email pre-filled. Accepting is left to
+    // the invitations card on `/user`, which is where signing in lands.
+    const email = encodeURIComponent(invitation.email);
     const url =
         session || user
-            ? new URL(`/auth/sign-in?email=${encodeURIComponent(invitation.email)}`, request.url)
-            : new URL(`/auth/sign-up?email=${encodeURIComponent(invitation.email)}`, request.url);
+            ? new URL(
+                  `/auth/sign-in?email=${email}&redirectTo=${encodeURIComponent("/user")}`,
+                  request.url,
+              )
+            : new URL(`/auth/sign-up?email=${email}`, request.url);
 
-    const response = NextResponse.redirect(url);
-    response.cookies.set({
-        name: "avut.invitation_to_accept",
-        value: invitation_id,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60, // 1 hour
-    });
-
-    return response;
+    return NextResponse.redirect(url);
 }
