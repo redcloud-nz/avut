@@ -510,7 +510,7 @@ describe("users invitations", () => {
         expect(result.map((i) => i.id).sort()).toEqual([T.pending, T.pendingToReject].sort());
     });
 
-    it("accepts through Better Auth and logs the new membership on the caller's own log", async () => {
+    it("accepts through Better Auth and logs the new membership on both the caller's and the organization's timeline", async () => {
         acceptInvitationMock.mockResolvedValueOnce({ member: { id: "member_1" } });
 
         const result = await users().acceptInvitation({ invitationId: T.pending });
@@ -519,17 +519,32 @@ describe("users invitations", () => {
         expect(acceptInvitationMock).toHaveBeenCalledWith(
             expect.objectContaining({ body: { invitationId: T.pending } }),
         );
+
         const entries = await db.logEntry.findMany({ where: { objectId: "member_1" } });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "user",
+        expect(entries).toHaveLength(2);
+
+        const userEntry = entries.find((e) => e.scope === "user");
+        const orgEntry = entries.find((e) => e.scope === "organization");
+        expect(userEntry).toMatchObject({
             ownerId: T.caller,
             action: "Create",
             objectType: "OrganizationMembership",
         });
+        expect(orgEntry).toMatchObject({
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Create",
+            objectType: "OrganizationMembership",
+        });
+
+        // Two independently meaningful events, correlated by one batch.
+        expect(userEntry?.batchId).toBeTruthy();
+        expect(orgEntry?.batchId).toBe(userEntry?.batchId);
+        const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
+        expect(batch).toMatchObject({ operationKey: "invitation-accept", userId: T.caller });
     });
 
-    it("rejects through Better Auth and logs it", async () => {
+    it("rejects through Better Auth and logs it on both timelines", async () => {
         rejectInvitationMock.mockResolvedValueOnce({});
 
         await users().rejectInvitation({ invitationId: T.pendingToReject });
@@ -537,14 +552,27 @@ describe("users invitations", () => {
         expect(rejectInvitationMock).toHaveBeenCalledWith(
             expect.objectContaining({ body: { invitationId: T.pendingToReject } }),
         );
+
         const entries = await db.logEntry.findMany({ where: { objectId: T.pendingToReject } });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "user",
+        expect(entries).toHaveLength(2);
+
+        const userEntry = entries.find((e) => e.scope === "user");
+        const orgEntry = entries.find((e) => e.scope === "organization");
+        expect(userEntry).toMatchObject({
             ownerId: T.caller,
             action: "Update",
             objectType: "OrganizationInvitation",
         });
+        expect(orgEntry).toMatchObject({
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Update",
+            objectType: "OrganizationInvitation",
+        });
+
+        expect(orgEntry?.batchId).toBe(userEntry?.batchId);
+        const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
+        expect(batch).toMatchObject({ operationKey: "invitation-reject", userId: T.caller });
     });
 
     it.each([

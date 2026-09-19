@@ -8,6 +8,8 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { auth } from "@/server/auth";
+import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
+import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
@@ -52,6 +54,53 @@ async function findOwnPendingInvitation(
 }
 
 /**
+ * Records that the caller answered an invitation, on both timelines it belongs to: their own
+ * (`ctx.logEvent` is user-scoped for an `authenticatedProcedure`) and the organization's, which
+ * would otherwise never learn that a member joined or an invitation was turned down.
+ *
+ * Two independently meaningful events, so they share a `LogBatch`. Written in one interactive
+ * transaction — the batch has to exist before the entries that reference it, and its id is only
+ * known once it is created.
+ */
+async function logInvitationAnswer(
+    ctx: AuthenticatedContext,
+    input: {
+        operationKey: "invitation-accept" | "invitation-reject";
+        organizationId: string;
+        action: LogAction;
+        objectType: LogObjectType;
+        objectId: string;
+        description: string;
+    },
+) {
+    const { operationKey, organizationId, ...entry } = input;
+
+    await ctx.prisma.$transaction(async (tx) => {
+        const batch = await createLogBatch(
+            {
+                operationKey,
+                userId: ctx.userId,
+                actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                description: entry.description,
+            },
+            tx,
+        );
+
+        await ctx.logEvent({ ...entry, batchId: batch.id }, tx);
+        await recordLogEntry(
+            {
+                scope: "organization",
+                organizationId: OrganizationId.schema.parse(organizationId),
+                ...resolveActor(ctx.auth),
+                ...entry,
+                batchId: batch.id,
+            },
+            tx,
+        );
+    });
+}
+
+/**
  * Router for organization user (member) management, including the link between
  * a user account and a personnel record.
  */
@@ -73,13 +122,15 @@ export const usersRouter = createTrpcRouter({
 
             // Better Auth creates the membership and runs `afterAcceptInvitation` (person link,
             // role cache revalidation). It isn't a Prisma operation, so it can't join a
-            // $transaction with the log entry — log only once it has succeeded.
+            // $transaction with the log entries — log only once it has succeeded.
             const { member } = await auth.api.acceptInvitation({
                 body: { invitationId: invitation.id },
                 headers: await ctx.getHeaders(),
             });
 
-            await ctx.logEvent({
+            await logInvitationAnswer(ctx, {
+                operationKey: "invitation-accept",
+                organizationId: invitation.organizationId,
                 action: "Create",
                 objectType: "OrganizationMembership",
                 objectId: member.id,
@@ -415,13 +466,15 @@ export const usersRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
 
-            // Not a Prisma operation, so it can't join a $transaction with the log entry.
+            // Not a Prisma operation, so it can't join a $transaction with the log entries.
             await auth.api.rejectInvitation({
                 body: { invitationId: invitation.id },
                 headers: await ctx.getHeaders(),
             });
 
-            await ctx.logEvent({
+            await logInvitationAnswer(ctx, {
+                operationKey: "invitation-reject",
+                organizationId: invitation.organizationId,
                 action: "Update",
                 objectType: "OrganizationInvitation",
                 objectId: invitation.id,
