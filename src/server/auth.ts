@@ -21,6 +21,7 @@ import { UserId } from "@/lib/schemas/user";
 
 import { revalidateOrganization } from "./organization";
 import { revalidateOrganizationUser } from "./organization-user-cache";
+import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
 
@@ -55,6 +56,10 @@ export const auth = betterAuth({
      * app never calls it; keep it off until upstream fixes the key naming (#97).
      */
     disabledPaths: ["/organization/get-full-organization"],
+    hooks: {
+        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
+        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
+    },
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
@@ -194,6 +199,12 @@ export const auth = betterAuth({
                 async afterRemoveMember({ user }) {
                     // As above: a removed member must lose access to the organization
                     // immediately, not once the cache entry happens to expire.
+                    await revalidateOrganizationUser(user.id);
+                },
+                async afterAddMember({ user }) {
+                    // The lookup caches "not a member" too, so a member added outside our own
+                    // mutations (Better Auth's server-side `addMember`) would otherwise stay
+                    // locked out until the cached `null` expires.
                     await revalidateOrganizationUser(user.id);
                 },
             },
