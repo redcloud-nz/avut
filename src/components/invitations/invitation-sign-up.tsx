@@ -80,7 +80,7 @@ export function InvitationSignUp_Form({
             <FieldGroup>
                 <Field>
                     <FieldLabel htmlFor="invitation-sign-up-email">Email Address</FieldLabel>
-                    <Input id="invitation-sign-up-email" type="email" value={email} readOnly />
+                    <Input id="invitation-sign-up-email" type="email" value={email} disabled />
                     <FieldDescription>
                         You&apos;re verified by following the link we emailed you.
                     </FieldDescription>

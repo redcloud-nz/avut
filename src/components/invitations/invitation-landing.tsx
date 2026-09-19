@@ -148,6 +148,12 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
                         name={personName}
                     />
                 </CardContent>
+            ) : viewer.kind === "other" ? (
+                <CardContent className="text-sm text-muted-foreground">
+                    This invitation is for <span className="text-foreground">{email}</span>, but
+                    you&apos;re signed in as <span className="text-foreground">{viewer.email}</span>
+                    .
+                </CardContent>
             ) : (
                 <CardContent className="text-sm text-muted-foreground">
                     Invitation for <span className="text-foreground">{email}</span>
@@ -176,13 +182,7 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
                         .
                     </p>
                 )}
-                {viewer.kind === "other" && (
-                    <SwitchAccount_Notice
-                        email={email}
-                        viewerEmail={viewer.email}
-                        returnTo={returnTo}
-                    />
-                )}
+                {viewer.kind === "other" && <SwitchAccount_Button returnTo={returnTo} />}
             </CardFooter>
         </Card>
     );
@@ -250,28 +250,12 @@ function Respond_Actions({
     );
 }
 
-function SwitchAccount_Notice({
-    email,
-    viewerEmail,
-    returnTo,
-}: {
-    email: string;
-    viewerEmail: string;
-    returnTo: string;
-}) {
+function SwitchAccount_Button({ returnTo }: { returnTo: string }) {
     const signOut = useSignOut(returnTo);
 
     return (
-        <div className="flex flex-col gap-3 text-sm">
-            <p>
-                This invitation is for <span className="font-semibold">{email}</span>, but
-                you&apos;re signed in as <span className="font-semibold">{viewerEmail}</span>.
-            </p>
-            <div>
-                <Button type="button" variant="outline" onClick={() => void signOut()}>
-                    Sign out and continue
-                </Button>
-            </div>
-        </div>
+        <Button type="button" variant="outline" onClick={() => void signOut()}>
+            Sign out and continue
+        </Button>
     );
 }
