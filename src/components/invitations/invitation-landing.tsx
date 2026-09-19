@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/card";
 import { ObjectName } from "@/components/ui/typography";
 
+import { InvitationSignUp_Form } from "./invitation-sign-up";
+
 import { useSignOut } from "@/client/use-sign-out";
 import { usersEffects } from "@/client/users-effects";
 import { useLogger } from "@/hooks/use-logger";
@@ -127,6 +129,7 @@ function Message({
 function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; landing: Landing }) {
     const { organization, inviterName, email, personName, hasAccount, viewer } = landing;
     const returnTo = `/invitations/${invitationId}`;
+    const signingUp = viewer.kind === "anonymous" && !hasAccount;
 
     return (
         <Card>
@@ -137,33 +140,42 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
                     on AVUT.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-                Invitation for <span className="text-foreground">{email}</span>
-            </CardContent>
+            {signingUp ? (
+                <CardContent>
+                    <InvitationSignUp_Form
+                        invitationId={invitationId}
+                        email={email}
+                        name={personName}
+                    />
+                </CardContent>
+            ) : (
+                <CardContent className="text-sm text-muted-foreground">
+                    Invitation for <span className="text-foreground">{email}</span>
+                </CardContent>
+            )}
             <CardFooter className="flex-wrap gap-2">
                 {viewer.kind === "recipient" && (
                     <Respond_Actions invitationId={invitationId} landing={landing} />
                 )}
-                {viewer.kind === "anonymous" &&
-                    (hasAccount ? (
-                        <Button asChild>
-                            <Link href={authUrl(SIGN_IN_PATH, { email, returnTo })}>
-                                Sign in to respond
-                            </Link>
-                        </Button>
-                    ) : (
-                        <Button asChild>
-                            <Link
-                                href={authUrl(SIGN_UP_PATH, {
-                                    email,
-                                    name: personName,
-                                    returnTo,
-                                })}
-                            >
-                                Create an account to respond
-                            </Link>
-                        </Button>
-                    ))}
+                {viewer.kind === "anonymous" && hasAccount && (
+                    <Button asChild>
+                        <Link href={authUrl(SIGN_IN_PATH, { email, returnTo })}>
+                            Sign in to respond
+                        </Link>
+                    </Button>
+                )}
+                {signingUp && (
+                    <p className="text-sm text-muted-foreground">
+                        Prefer to sign up with a social account?{" "}
+                        <Link
+                            className="underline underline-offset-4"
+                            href={authUrl(SIGN_UP_PATH, { email, name: personName, returnTo })}
+                        >
+                            Use the standard sign-up
+                        </Link>
+                        .
+                    </p>
+                )}
                 {viewer.kind === "other" && (
                     <SwitchAccount_Notice
                         email={email}
