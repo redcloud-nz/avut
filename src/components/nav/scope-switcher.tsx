@@ -9,7 +9,7 @@ import { Building2Icon, ChevronsUpDown, ShieldIcon, UserIcon } from "lucide-reac
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import {
     DropdownMenu,
@@ -20,12 +20,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarMenuSkeleton,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useUser } from "@/client/auth-queries";
 import { trpc } from "@/trpc/client";
@@ -40,6 +36,21 @@ function useCurrentScope(): "organization" | "user" | "system" | null {
 }
 
 /**
+ * Placeholder for `ScopeSwitcher` — the `<Suspense>` fallback in `(authenticated)/layout.tsx`.
+ * Deliberately not `SidebarMenuSkeleton`: that picks a random width per render, which never
+ * matches between the server HTML and hydration.
+ */
+export function ScopeSwitcher_Skeleton() {
+    return (
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <Skeleton className="h-12 w-full" />
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
+}
+
+/**
  * Always-rendered scope switcher: the persistent indicator of which of the three scope roots
  * (an organization, the user's own `/user`, or the site-wide `/system`) the current route is
  * in, and a way to jump directly to any of them. Replaces the old org-only module switcher
@@ -50,19 +61,10 @@ export function ScopeSwitcher() {
     const scope = useCurrentScope();
     const pathname = usePathname();
     const { data: user } = useUser();
-    const membershipsQuery = useQuery(trpc.users.listMemberships.queryOptions());
+    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
 
-    if (membershipsQuery.isPending || !user) {
-        return (
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuSkeleton showIcon />
-                </SidebarMenuItem>
-            </SidebarMenu>
-        );
-    }
+    if (!user) return <ScopeSwitcher_Skeleton />;
 
-    const memberships = membershipsQuery.data ?? [];
     const currentOrgSlug = scope === "organization" ? pathname.split("/")[2] : undefined;
     const currentMembership = memberships.find((m) => m.organization.slug === currentOrgSlug);
 

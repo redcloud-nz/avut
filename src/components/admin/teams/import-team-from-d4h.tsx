@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
@@ -36,13 +36,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const [{ data: availableTeams = [], isSuccess }, { data: existingTeams = [] }] = useQueries({
@@ -86,6 +87,7 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
 
     const mutation = useMutation(
         trpc.teams.createTeamFromD4H.mutationOptions({
+            meta: { effects: teamsEffects.createTeamFromD4H, navigates: true },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
@@ -96,16 +98,15 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                     console.error("Failed to create team:", error);
                 }
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
+            onSuccess({ created }) {
                 handleDialogOpenChange(false);
 
-                router.push(`/orgs/${organization.slug}/admin/teams/${created.id}`);
+                router.push(
+                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: created.id,
+                    }),
+                );
             },
         }),
     );
