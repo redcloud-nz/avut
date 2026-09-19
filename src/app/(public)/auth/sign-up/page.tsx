@@ -53,7 +53,7 @@ async function SignUp_CardFromParams({
 
     return (
         <SignUp_Card
-            email={email ? decodeURIComponent(email) : undefined}
+            email={email || undefined}
             name={name || undefined}
             redirectTo={safeRedirectPath(redirectTo) ?? undefined}
         />

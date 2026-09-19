@@ -157,6 +157,28 @@ export const invitationsRouter = createTrpcRouter({
             const userId = UserId.schema.parse(user.id);
 
             /*
+             * With `requireEmailVerification`, Better Auth answers a duplicate sign-up with a
+             * synthetic user whose id was never written. The pre-check above makes that rare, but
+             * a concurrent sign-up for the same address can slip past it — so confirm the row is
+             * real before touching it, and report the same friendly conflict rather than an opaque
+             * failure from the update below.
+             */
+            const created = await ctx.prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true },
+            });
+            if (!created)
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "An account already exists for this email address. Sign in instead.",
+                });
+
+            /*
+             * From here the account exists but is unverified until the transaction below commits.
+             * If anything after this point fails, a retry hits the CONFLICT check at the top, and
+             * signing in is refused for want of verification — recovering means going through the
+             * normal sign-in flow, which re-sends the verification code.
+             *
              * `logEvent` isn't available on a public procedure — there is no session to attribute
              * it to yet — so this goes straight through `recordLogEntry`, the same single writer
              * `logEvent` delegates to. The new user is both owner and actor.

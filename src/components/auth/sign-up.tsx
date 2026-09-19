@@ -26,7 +26,8 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 
 import { authClient } from "@/client/auth-client";
-import { authUrl, SIGN_IN_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth-redirect";
+import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
+import { route } from "@/lib/routes";
 import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 import { SocialSignInButtons_Field } from "./sign-in";
@@ -124,9 +125,12 @@ function Auth_EmailPasswordSignUp_Form({
         },
         onSuccess(_, variables) {
             router.push(
-                authUrl(`${VERIFY_EMAIL_PATH}/${encodeURIComponent(variables.email)}`, {
-                    returnTo: redirectTo,
-                }),
+                authUrl(
+                    route("/auth/verify-email/[email]", {
+                        email: encodeURIComponent(variables.email),
+                    }),
+                    { returnTo: redirectTo },
+                ),
             );
         },
     });

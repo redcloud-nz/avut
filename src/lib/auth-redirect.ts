@@ -7,7 +7,6 @@ import { Route } from "next";
 
 export const SIGN_IN_PATH = "/auth/sign-in";
 export const SIGN_UP_PATH = "/auth/sign-up";
-export const VERIFY_EMAIL_PATH = "/auth/verify-email";
 export const POST_SIGN_IN_PATH = "/auth/post-sign-in";
 
 /**
@@ -51,7 +50,7 @@ export function postSignInUrl(returnTo?: string | null): Route {
  * Cast to `Route` for the same reason as `signInUrl`: typed routes cannot express a query string.
  */
 export function authUrl(
-    path: string,
+    path: Route,
     options: { email?: string | null; name?: string | null; returnTo?: string | null } = {},
 ): Route {
     const query = new URLSearchParams();

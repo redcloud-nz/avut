@@ -326,6 +326,20 @@ describe("invitations.signUp", () => {
         expect(signUpEmailMock).not.toHaveBeenCalled();
     });
 
+    it("reports a conflict when Better Auth answers with a user that was never written", async () => {
+        // A concurrent sign-up for the same address gets Better Auth's generic duplicate response:
+        // a synthetic user with an id that isn't in the database.
+        signUpEmailMock.mockImplementation(async () => ({
+            token: null,
+            user: { id: UserId.create(), name: "Nia Newcomer", email: freshEmail },
+        }));
+
+        await expect(
+            caller().signUp({ invitationId: fresh, name: "Nia Newcomer", password }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+        expect(signInEmailMock).not.toHaveBeenCalled();
+    });
+
     it.each([
         ["expired", T.expired],
         ["already accepted", T.accepted],

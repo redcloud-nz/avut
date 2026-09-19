@@ -418,13 +418,16 @@ describe("users.listMemberships", () => {
 });
 
 describe("users invitations", () => {
-    // Dataset: the caller has a pending, an expired and an already-accepted invitation, plus
-    // someone else has a pending one; only the first is actionable by the caller.
+    // Dataset: the caller has two pending invitations (one to accept, one to reject, so neither
+    // test leans on the mocked Better Auth leaving the other's fixture untouched), an expired and
+    // an already-accepted one, plus someone else has a pending one; only the first two are
+    // actionable by the caller.
     const T = {
         org: OrganizationId.create(),
         inviter: UserId.create(),
         caller: UserId.create(),
         pending: InvitationId.create(),
+        pendingToReject: InvitationId.create(),
         expired: InvitationId.create(),
         accepted: InvitationId.create(),
         someoneElses: InvitationId.create(),
@@ -449,6 +452,15 @@ describe("users invitations", () => {
             data: {
                 ...base,
                 id: T.pending,
+                email: "caller@example.com",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.pendingToReject,
                 email: "caller@example.com",
                 status: "pending",
                 expiresAt: future,
@@ -495,7 +507,7 @@ describe("users invitations", () => {
     it("lists only the caller's pending, unexpired invitations", async () => {
         const result = await users().listInvitations();
 
-        expect(result.map((i) => i.id)).toEqual([T.pending]);
+        expect(result.map((i) => i.id).sort()).toEqual([T.pending, T.pendingToReject].sort());
     });
 
     it("accepts through Better Auth and logs the new membership on the caller's own log", async () => {
@@ -520,12 +532,12 @@ describe("users invitations", () => {
     it("rejects through Better Auth and logs it", async () => {
         rejectInvitationMock.mockResolvedValueOnce({});
 
-        await users().rejectInvitation({ invitationId: T.pending });
+        await users().rejectInvitation({ invitationId: T.pendingToReject });
 
         expect(rejectInvitationMock).toHaveBeenCalledWith(
-            expect.objectContaining({ body: { invitationId: T.pending } }),
+            expect.objectContaining({ body: { invitationId: T.pendingToReject } }),
         );
-        const entries = await db.logEntry.findMany({ where: { objectId: T.pending } });
+        const entries = await db.logEntry.findMany({ where: { objectId: T.pendingToReject } });
         expect(entries).toHaveLength(1);
         expect(entries[0]).toMatchObject({
             scope: "user",

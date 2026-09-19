@@ -5,6 +5,7 @@
 
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -128,7 +129,7 @@ function Message({
 
 function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; landing: Landing }) {
     const { organization, inviterName, email, personName, hasAccount, viewer } = landing;
-    const returnTo = `/invitations/${invitationId}`;
+    const returnTo = route("/invitations/[invitation_id]", { invitation_id: invitationId });
     const signingUp = viewer.kind === "anonymous" && !hasAccount;
 
     return (
@@ -250,7 +251,7 @@ function Respond_Actions({
     );
 }
 
-function SwitchAccount_Button({ returnTo }: { returnTo: string }) {
+function SwitchAccount_Button({ returnTo }: { returnTo: Route }) {
     const signOut = useSignOut(returnTo);
 
     return (

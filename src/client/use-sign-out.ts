@@ -26,7 +26,7 @@ import { getQueryClient } from "@/trpc/query-client";
  * @param destination Where to go afterwards. Defaults to the sign-in page; pass the current path
  *   to stay put (e.g. the invitation landing page, which renders differently once signed out).
  */
-export function useSignOut(destination: string = SIGN_IN_PATH) {
+export function useSignOut(destination: Route = SIGN_IN_PATH) {
     const router = useRouter();
 
     return useCallback(async () => {
@@ -34,7 +34,7 @@ export function useSignOut(destination: string = SIGN_IN_PATH) {
 
         getQueryClient().clear();
 
-        router.replace(destination as Route);
+        router.replace(destination);
         router.refresh();
     }, [router, destination]);
 }
