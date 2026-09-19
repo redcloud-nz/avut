@@ -17,6 +17,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -213,11 +214,14 @@ function UnlinkDialog({
                         to D4H.
                     </DialogDescription>
                 </DialogHeader>
-                {orgD4H.linkedTeamCount > 0 && (
-                    <p className="text-destructive text-sm">
-                        {orgD4H.linkedTeamCount} team(s) are still linked to D4H. Unlink them first.
-                    </p>
-                )}
+                <DialogBody>
+                    {orgD4H.linkedTeamCount > 0 && (
+                        <p className="text-destructive text-sm">
+                            {orgD4H.linkedTeamCount} team(s) are still linked to D4H. Unlink them
+                            first.
+                        </p>
+                    )}
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

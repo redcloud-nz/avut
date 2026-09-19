@@ -20,6 +20,7 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -192,48 +193,48 @@ export function AdminModule_InvitePerson_Dialog({
                         )}
                     </DialogDescription>
                 </DialogHeader>
-
-                {inviteStatePending ? (
-                    <FieldDescription>Checking for an existing account…</FieldDescription>
-                ) : inviteState?.state === "Linked" ? (
-                    <FieldDescription>
-                        This person is already linked to a user account.
-                    </FieldDescription>
-                ) : alreadyMember || linkedElsewhere ? (
-                    <FieldDescription>
-                        Account: <ObjectName>{inviteState.user?.name}</ObjectName>
-                    </FieldDescription>
-                ) : (
-                    <FormProvider {...form}>
-                        <form
-                            id="invite-person-form"
-                            onSubmit={form.handleSubmit(
-                                (data) => inviteMutation.mutate(invitationRoles(data)),
-                                (errors) => console.error("Form validation errors:", errors),
-                            )}
-                        >
-                            <FieldGroup>
-                                {inviteState?.state === "UserExists" && (
-                                    <FieldDescription>
-                                        They already have an AVUT account but are not a member of
-                                        this organisation yet.
-                                    </FieldDescription>
+                <DialogBody>
+                    {inviteStatePending ? (
+                        <FieldDescription>Checking for an existing account…</FieldDescription>
+                    ) : inviteState?.state === "Linked" ? (
+                        <FieldDescription>
+                            This person is already linked to a user account.
+                        </FieldDescription>
+                    ) : alreadyMember || linkedElsewhere ? (
+                        <FieldDescription>
+                            Account: <ObjectName>{inviteState.user?.name}</ObjectName>
+                        </FieldDescription>
+                    ) : (
+                        <FormProvider {...form}>
+                            <form
+                                id="invite-person-form"
+                                onSubmit={form.handleSubmit(
+                                    (data) => inviteMutation.mutate(invitationRoles(data)),
+                                    (errors) => console.error("Form validation errors:", errors),
                                 )}
-                                {inviteState?.pendingInvitation && (
-                                    <FieldDescription>
-                                        An invitation is already pending (sent{" "}
-                                        {formatRelativeDateTime(
-                                            inviteState.pendingInvitation.createdAt,
-                                        )}
-                                        ). Sending a new one replaces it.
-                                    </FieldDescription>
-                                )}
-                                <InvitationRoleFields />
-                            </FieldGroup>
-                        </form>
-                    </FormProvider>
-                )}
-
+                            >
+                                <FieldGroup>
+                                    {inviteState?.state === "UserExists" && (
+                                        <FieldDescription>
+                                            They already have an AVUT account but are not a member
+                                            of this organisation yet.
+                                        </FieldDescription>
+                                    )}
+                                    {inviteState?.pendingInvitation && (
+                                        <FieldDescription>
+                                            An invitation is already pending (sent{" "}
+                                            {formatRelativeDateTime(
+                                                inviteState.pendingInvitation.createdAt,
+                                            )}
+                                            ). Sending a new one replaces it.
+                                        </FieldDescription>
+                                    )}
+                                    <InvitationRoleFields />
+                                </FieldGroup>
+                            </form>
+                        </FormProvider>
+                    )}
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     {linkedElsewhere ? null : alreadyMember ? (

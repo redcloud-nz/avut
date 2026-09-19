@@ -18,6 +18,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -146,41 +147,49 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                         Create a new skill group within the package {skillPackage.name}.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="create-skill-group-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="group-name">Name</FieldLabel>
-                                    <Input
-                                        id="group-name"
-                                        autoFocus
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="description"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="group-description">Description</FieldLabel>
-                                    <Textarea
-                                        id="group-description"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="create-skill-group-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="group-name">Name</FieldLabel>
+                                        <Input
+                                            id="group-name"
+                                            autoFocus
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="group-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="group-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

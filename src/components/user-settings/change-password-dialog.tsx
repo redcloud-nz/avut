@@ -22,6 +22,7 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogFooter,
@@ -71,11 +72,15 @@ export function UserProfile_ChangePassword_Dialog() {
             </DialogTrigger>
             <DialogContent>
                 {accountsQuery.isPending ? (
-                    <RainbowSpinner className="mx-auto" />
+                    <DialogBody>
+                        <RainbowSpinner className="mx-auto" />
+                    </DialogBody>
                 ) : accountsQuery.isError ? (
-                    <Alert variant="error">
-                        Failed to load account info: {accountsQuery.error.message}
-                    </Alert>
+                    <DialogBody>
+                        <Alert variant="error">
+                            Failed to load account info: {accountsQuery.error.message}
+                        </Alert>
+                    </DialogBody>
                 ) : hasCredentialAccount ? (
                     <ChangePassword_DialogBody
                         dialogOpen={dialogOpen}
@@ -170,125 +175,129 @@ function SetPassword_DialogBody({
             <DialogHeader>
                 <DialogTitle>Set Password</DialogTitle>
             </DialogHeader>
-            <FieldGroup>
-                <Alert variant="warning">
-                    You are currently signed in with a third-party provider and do not have a
-                    password set. Set one to be able to sign in with your email address.
-                </Alert>
-
-                {sessionQuery.isPending ? (
-                    <RainbowSpinner className="mx-auto" />
-                ) : !email ? (
-                    <Alert variant="error">
-                        Could not determine your email address. Please reload the page.
+            <DialogBody>
+                <FieldGroup>
+                    <Alert variant="warning">
+                        You are currently signed in with a third-party provider and do not have a
+                        password set. Set one to be able to sign in with your email address.
                     </Alert>
-                ) : !codeSent ? (
-                    <>
-                        {sendCode.isError && (
-                            <Alert variant="error">{sendCode.error.message}</Alert>
-                        )}
-                        <Field orientation="horizontal">
-                            <MutationButton
-                                type="button"
-                                status={sendCode.status}
-                                onClick={() => sendCode.mutate(email)}
-                                text={{
-                                    idle: "Send verification code",
-                                    pending: "Sending...",
-                                    success: "Code sent",
-                                }}
-                            />
-                        </Field>
-                    </>
-                ) : (
-                    <form
-                        id="set-password-form"
-                        onSubmit={form.handleSubmit(
-                            ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
-                                setPassword.mutate(data),
-                        )}
-                    >
-                        <FieldGroup>
-                            <Controller
-                                control={form.control}
-                                name="code"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="set-password-code">
-                                            Verification Code
-                                        </FieldLabel>
-                                        <InputOTP
-                                            id="set-password-code"
-                                            maxLength={6}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            pattern={REGEXP_ONLY_DIGITS}
-                                            disabled={setPassword.isPending}
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                                <InputOTPSlot index={0} />
-                                                <InputOTPSlot index={1} />
-                                                <InputOTPSlot index={2} />
-                                                <InputOTPSlot index={3} />
-                                                <InputOTPSlot index={4} />
-                                                <InputOTPSlot index={5} />
-                                            </InputOTPGroup>
-                                        </InputOTP>
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                control={form.control}
-                                name="newPassword"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
-                                        <PasswordInput
-                                            id={field.name}
-                                            autoComplete="new-password"
-                                            aria-invalid={fieldState.invalid}
-                                            {...field}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                control={form.control}
-                                name="confirmNewPassword"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Confirm New Password
-                                        </FieldLabel>
-                                        <PasswordInput
-                                            id={field.name}
-                                            autoComplete="new-password"
-                                            aria-invalid={fieldState.invalid}
-                                            {...field}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                            {setPassword.isError && (
-                                <Alert variant="error">{setPassword.error.message}</Alert>
-                            )}
+
+                    {sessionQuery.isPending ? (
+                        <RainbowSpinner className="mx-auto" />
+                    ) : !email ? (
+                        <Alert variant="error">
+                            Could not determine your email address. Please reload the page.
+                        </Alert>
+                    ) : !codeSent ? (
+                        <>
                             {sendCode.isError && (
                                 <Alert variant="error">{sendCode.error.message}</Alert>
                             )}
-                        </FieldGroup>
-                    </form>
-                )}
-            </FieldGroup>
+                            <Field orientation="horizontal">
+                                <MutationButton
+                                    type="button"
+                                    status={sendCode.status}
+                                    onClick={() => sendCode.mutate(email)}
+                                    text={{
+                                        idle: "Send verification code",
+                                        pending: "Sending...",
+                                        success: "Code sent",
+                                    }}
+                                />
+                            </Field>
+                        </>
+                    ) : (
+                        <form
+                            id="set-password-form"
+                            onSubmit={form.handleSubmit(
+                                ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
+                                    setPassword.mutate(data),
+                            )}
+                        >
+                            <FieldGroup>
+                                <Controller
+                                    control={form.control}
+                                    name="code"
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor="set-password-code">
+                                                Verification Code
+                                            </FieldLabel>
+                                            <InputOTP
+                                                id="set-password-code"
+                                                maxLength={6}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                pattern={REGEXP_ONLY_DIGITS}
+                                                disabled={setPassword.isPending}
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                                    <InputOTPSlot index={0} />
+                                                    <InputOTPSlot index={1} />
+                                                    <InputOTPSlot index={2} />
+                                                    <InputOTPSlot index={3} />
+                                                    <InputOTPSlot index={4} />
+                                                    <InputOTPSlot index={5} />
+                                                </InputOTPGroup>
+                                            </InputOTP>
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    control={form.control}
+                                    name="newPassword"
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                New Password
+                                            </FieldLabel>
+                                            <PasswordInput
+                                                id={field.name}
+                                                autoComplete="new-password"
+                                                aria-invalid={fieldState.invalid}
+                                                {...field}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    control={form.control}
+                                    name="confirmNewPassword"
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Confirm New Password
+                                            </FieldLabel>
+                                            <PasswordInput
+                                                id={field.name}
+                                                autoComplete="new-password"
+                                                aria-invalid={fieldState.invalid}
+                                                {...field}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                                {setPassword.isError && (
+                                    <Alert variant="error">{setPassword.error.message}</Alert>
+                                )}
+                                {sendCode.isError && (
+                                    <Alert variant="error">{sendCode.error.message}</Alert>
+                                )}
+                            </FieldGroup>
+                        </form>
+                    )}
+                </FieldGroup>
+            </DialogBody>
             {codeSent && email && (
                 <DialogFooter>
                     <Button
@@ -379,75 +388,84 @@ function ChangePassword_DialogBody({
             <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
             </DialogHeader>
-            <form
-                id="change-password-form"
-                onSubmit={form.handleSubmit(
-                    ({ confirmNewPassword: _confirmNewPassword, ...data }) => mutation.mutate(data),
-                )}
-            >
-                <FieldGroup>
-                    <Controller
-                        control={form.control}
-                        name="currentPassword"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
-                                <PasswordInput
-                                    id={field.name}
-                                    aria-invalid={fieldState.invalid}
-                                    {...field}
-                                />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
+            <DialogBody>
+                <form
+                    id="change-password-form"
+                    onSubmit={form.handleSubmit(
+                        ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
+                            mutation.mutate(data),
+                    )}
+                >
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="currentPassword"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
+                                    <PasswordInput
+                                        id={field.name}
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="newPassword"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                                    <PasswordInput
+                                        id={field.name}
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="confirmNewPassword"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor={field.name}>
+                                        Confirm New Password
+                                    </FieldLabel>
+                                    <PasswordInput
+                                        id={field.name}
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="revokeOtherSessions"
+                            render={({ field }) => (
+                                <Field orientation="horizontal">
+                                    <Checkbox
+                                        id={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                    <FieldLabel htmlFor={field.name}>
+                                        Revoke other sessions
+                                    </FieldLabel>
+                                </Field>
+                            )}
+                        />
+                        {mutation.isError && (
+                            <Alert variant="error">{mutation.error.message}</Alert>
                         )}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="newPassword"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
-                                <PasswordInput
-                                    id={field.name}
-                                    aria-invalid={fieldState.invalid}
-                                    {...field}
-                                />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="confirmNewPassword"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor={field.name}>Confirm New Password</FieldLabel>
-                                <PasswordInput
-                                    id={field.name}
-                                    aria-invalid={fieldState.invalid}
-                                    {...field}
-                                />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="revokeOtherSessions"
-                        render={({ field }) => (
-                            <Field orientation="horizontal">
-                                <Checkbox
-                                    id={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                                <FieldLabel htmlFor={field.name}>Revoke other sessions</FieldLabel>
-                            </Field>
-                        )}
-                    />
-                    {mutation.isError && <Alert variant="error">{mutation.error.message}</Alert>}
-                </FieldGroup>
-            </form>
+                    </FieldGroup>
+                </form>
+            </DialogBody>
             <DialogFooter>
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton

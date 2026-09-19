@@ -16,6 +16,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -110,31 +111,35 @@ export function AdminModule_AddPersonToTeam_Dialog({ person }: { person: PersonR
                         Add <ObjectName>{person.name}</ObjectName> to a team.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="add-person-to-team-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="teamId"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Team</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value ?? null}
-                                        onValueChange={(value) =>
-                                            field.onChange((value as TeamId) || null)
-                                        }
-                                        options={teamOptions}
-                                        placeholder="Select a team"
-                                        searchPlaceholder="Search teams..."
-                                        emptyMessage="No teams found."
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="add-person-to-team-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                control={form.control}
+                                name="teamId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Team</FieldLabel>
+                                        <SearchableSelect
+                                            value={field.value ?? null}
+                                            onValueChange={(value) =>
+                                                field.onChange((value as TeamId) || null)
+                                            }
+                                            options={teamOptions}
+                                            placeholder="Select a team"
+                                            searchPlaceholder="Search teams..."
+                                            emptyMessage="No teams found."
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

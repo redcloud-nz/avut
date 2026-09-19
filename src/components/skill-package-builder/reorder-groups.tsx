@@ -20,6 +20,7 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -57,7 +58,6 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
                         <ObjectName>{skillPackage.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-
                 {/* Radix only mounts DialogContent's children while the dialog is
                     open, so the body (and its `order` state) is created fresh on
                     each open — always seeded from the current groups, with no
@@ -75,11 +75,13 @@ export function SkillPackageBuilder_ReorderGroups_Dialog({
 
 function ReorderGroups_Skeleton() {
     return (
-        <div className="space-y-2">
-            <Skeleton className="w-full h-11" />
-            <Skeleton className="w-full h-11" />
-            <Skeleton className="w-full h-11" />
-        </div>
+        <DialogBody>
+            <div className="space-y-2">
+                <Skeleton className="w-full h-11" />
+                <Skeleton className="w-full h-11" />
+                <Skeleton className="w-full h-11" />
+            </div>
+        </DialogBody>
     );
 }
 
@@ -126,64 +128,66 @@ function ReorderGroups_Body({
 
     return (
         <>
-            <Show
-                when={skillGroups.length > 0}
-                fallback={
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyTitle>No groups to reorder</EmptyTitle>
-                            <EmptyDescription>
-                                This skill package does not contain any groups to reorder. Please
-                                add groups to this package before attempting to reorder.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                }
-            >
-                <DragDropProvider
-                    onDragEnd={(event) => {
-                        if (event.canceled) return;
-
-                        const { source } = event.operation;
-
-                        if (isSortable(source)) {
-                            const { initialIndex, index } = source;
-
-                            if (initialIndex != index) {
-                                setOrder((prevOrder) => {
-                                    const newOrder = [...prevOrder];
-                                    const [removed] = newOrder.splice(initialIndex, 1);
-                                    newOrder.splice(index, 0, removed);
-                                    return newOrder;
-                                });
-                            }
-                        }
-                    }}
+            <DialogBody>
+                <Show
+                    when={skillGroups.length > 0}
+                    fallback={
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyTitle>No groups to reorder</EmptyTitle>
+                                <EmptyDescription>
+                                    This skill package does not contain any groups to reorder.
+                                    Please add groups to this package before attempting to reorder.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
                 >
-                    <div className="space-y-2" id="sortable-group-list">
-                        {order.map((groupId, index) => {
-                            const group = skillGroups.find((g) => g.id === groupId)!;
+                    <DragDropProvider
+                        onDragEnd={(event) => {
+                            if (event.canceled) return;
 
-                            return (
-                                <SortableGroup
-                                    key={groupId}
-                                    group={group}
-                                    index={index}
-                                    isLast={index === order.length - 1}
-                                    onSwap={(fromIndex, toIndex) => {
-                                        setOrder((prevOrder) => {
-                                            const newOrder = [...prevOrder];
-                                            const [moved] = newOrder.splice(fromIndex, 1);
-                                            newOrder.splice(toIndex, 0, moved);
-                                            return newOrder;
-                                        });
-                                    }}
-                                />
-                            );
-                        })}
-                    </div>
-                </DragDropProvider>
-            </Show>
+                            const { source } = event.operation;
+
+                            if (isSortable(source)) {
+                                const { initialIndex, index } = source;
+
+                                if (initialIndex != index) {
+                                    setOrder((prevOrder) => {
+                                        const newOrder = [...prevOrder];
+                                        const [removed] = newOrder.splice(initialIndex, 1);
+                                        newOrder.splice(index, 0, removed);
+                                        return newOrder;
+                                    });
+                                }
+                            }
+                        }}
+                    >
+                        <div className="space-y-2" id="sortable-group-list">
+                            {order.map((groupId, index) => {
+                                const group = skillGroups.find((g) => g.id === groupId)!;
+
+                                return (
+                                    <SortableGroup
+                                        key={groupId}
+                                        group={group}
+                                        index={index}
+                                        isLast={index === order.length - 1}
+                                        onSwap={(fromIndex, toIndex) => {
+                                            setOrder((prevOrder) => {
+                                                const newOrder = [...prevOrder];
+                                                const [moved] = newOrder.splice(fromIndex, 1);
+                                                newOrder.splice(toIndex, 0, moved);
+                                                return newOrder;
+                                            });
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </DragDropProvider>
+                </Show>
+            </DialogBody>
             <DialogFooter>
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton

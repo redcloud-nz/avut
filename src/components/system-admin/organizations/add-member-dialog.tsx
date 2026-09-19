@@ -18,6 +18,7 @@ import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -132,55 +133,64 @@ export function SystemAdmin_AddMember_Dialog({
                         invitation flow.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="add-member-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="userId"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>User</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value}
-                                        onValueChange={(value) => field.onChange(value)}
-                                        options={options}
-                                        placeholder="Select a user"
-                                        searchPlaceholder="Search users..."
-                                        emptyMessage={
-                                            usersQuery.isLoading
-                                                ? "Loading..."
-                                                : "No eligible users."
-                                        }
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="role"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Role</FieldLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger aria-invalid={fieldState.invalid}>
-                                            <SelectValue placeholder="Select a role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {OrganizationRole.options.map((option) => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="add-member-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                control={form.control}
+                                name="userId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>User</FieldLabel>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={(value) => field.onChange(value)}
+                                            options={options}
+                                            placeholder="Select a user"
+                                            searchPlaceholder="Search users..."
+                                            emptyMessage={
+                                                usersQuery.isLoading
+                                                    ? "Loading..."
+                                                    : "No eligible users."
+                                            }
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="role"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Role</FieldLabel>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <SelectTrigger aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {OrganizationRole.options.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

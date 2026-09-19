@@ -17,6 +17,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -144,151 +145,165 @@ export function I3Module_CreateTemplate_Dialog() {
                     <DialogTitle>New I3 Template</DialogTitle>
                     <DialogDescription>Create a new I3 item template.</DialogDescription>
                 </DialogHeader>
-                <form id="create-template-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-name">Name</FieldLabel>
-                                    <Input
-                                        id="template-name"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="description"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-description">
-                                        Description
-                                    </FieldLabel>
-                                    <Textarea
-                                        id="template-description"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
+                <DialogBody>
+                    <form id="create-template-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="template-name">Name</FieldLabel>
+                                        <Input
+                                            id="template-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="template-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="template-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
 
-                        <Controller
-                            name="d4h.categoryId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-category">
-                                        D4H Category
-                                    </FieldLabel>
-                                    <Select
-                                        value={field.value ? field.value.toString() : ""}
-                                        onValueChange={(v) => {
-                                            const newCategoryId = parseInt(v, 10);
-                                            field.onChange(newCategoryId);
-                                            form.setValue(
-                                                "d4h.categoryTitle",
-                                                categories?.find((cat) => cat.id === newCategoryId)
-                                                    ?.title || "",
-                                            );
-                                            form.setValue("d4h.kindId", 0);
-                                            form.setValue("d4h.kindTitle", "");
-                                        }}
-                                    >
-                                        <SelectTrigger
-                                            id="template-category"
-                                            aria-invalid={fieldState.invalid}
+                            <Controller
+                                name="d4h.categoryId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="template-category">
+                                            D4H Category
+                                        </FieldLabel>
+                                        <Select
+                                            value={field.value ? field.value.toString() : ""}
+                                            onValueChange={(v) => {
+                                                const newCategoryId = parseInt(v, 10);
+                                                field.onChange(newCategoryId);
+                                                form.setValue(
+                                                    "d4h.categoryTitle",
+                                                    categories?.find(
+                                                        (cat) => cat.id === newCategoryId,
+                                                    )?.title || "",
+                                                );
+                                                form.setValue("d4h.kindId", 0);
+                                                form.setValue("d4h.kindTitle", "");
+                                            }}
                                         >
-                                            <SelectValue placeholder="Select a category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {categories?.map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                    {cat.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="d4h.kindId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-kind">D4H Kind</FieldLabel>
-                                    <Select
-                                        value={field.value ? field.value.toString() : ""}
-                                        onValueChange={(v) => {
-                                            const newKindId = parseInt(v, 10);
-                                            field.onChange(newKindId);
-                                            form.setValue(
-                                                "d4h.kindTitle",
-                                                filteredKinds?.find((k) => k.id === newKindId)
-                                                    ?.title || "",
-                                            );
-                                        }}
-                                        disabled={!selectedCategoryId}
-                                    >
-                                        <SelectTrigger
-                                            id="template-kind"
-                                            aria-invalid={fieldState.invalid}
+                                            <SelectTrigger
+                                                id="template-category"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories?.map((cat) => (
+                                                    <SelectItem
+                                                        key={cat.id}
+                                                        value={cat.id.toString()}
+                                                    >
+                                                        {cat.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="d4h.kindId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="template-kind">D4H Kind</FieldLabel>
+                                        <Select
+                                            value={field.value ? field.value.toString() : ""}
+                                            onValueChange={(v) => {
+                                                const newKindId = parseInt(v, 10);
+                                                field.onChange(newKindId);
+                                                form.setValue(
+                                                    "d4h.kindTitle",
+                                                    filteredKinds?.find((k) => k.id === newKindId)
+                                                        ?.title || "",
+                                                );
+                                            }}
+                                            disabled={!selectedCategoryId}
                                         >
-                                            <SelectValue placeholder="Select a kind" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredKinds?.map((kind) => (
-                                                <SelectItem
-                                                    key={kind.id}
-                                                    value={kind.id.toString()}
-                                                >
-                                                    {kind.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="d4h.requireSN"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-require-sn">
-                                        Require Serial Number
-                                    </FieldLabel>
-                                    <Select
-                                        value={field.value ? "yes" : "no"}
-                                        onValueChange={(v) => field.onChange(v === "yes")}
-                                    >
-                                        <SelectTrigger
-                                            id="template-require-sn"
-                                            aria-invalid={fieldState.invalid}
+                                            <SelectTrigger
+                                                id="template-kind"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a kind" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {filteredKinds?.map((kind) => (
+                                                    <SelectItem
+                                                        key={kind.id}
+                                                        value={kind.id.toString()}
+                                                    >
+                                                        {kind.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="d4h.requireSN"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="template-require-sn">
+                                            Require Serial Number
+                                        </FieldLabel>
+                                        <Select
+                                            value={field.value ? "yes" : "no"}
+                                            onValueChange={(v) => field.onChange(v === "yes")}
                                         >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                                            <SelectTrigger
+                                                id="template-require-sn"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="yes">Yes</SelectItem>
+                                                <SelectItem value="no">No</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

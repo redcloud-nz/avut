@@ -15,6 +15,7 @@ import {
 
 import {
     Dialog,
+    DialogBody,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -51,7 +52,7 @@ export function HotkeyHelp() {
                     <DialogTitle>Keyboard shortcuts</DialogTitle>
                     <DialogDescription>Shortcuts available on this page.</DialogDescription>
                 </DialogHeader>
-                {open && <HotkeyHelpList />}
+                <DialogBody>{open && <HotkeyHelpList />}</DialogBody>
             </DialogContent>
         </Dialog>
     );
