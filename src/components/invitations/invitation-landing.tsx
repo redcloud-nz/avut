@@ -24,12 +24,12 @@ import {
 } from "@/components/ui/card";
 import { ObjectName } from "@/components/ui/typography";
 
+import { InvitationSignIn_Form } from "./invitation-sign-in";
 import { InvitationSignUp_Form } from "./invitation-sign-up";
 
 import { useSignOut } from "@/client/use-sign-out";
 import { usersEffects } from "@/client/users-effects";
 import { useLogger } from "@/hooks/use-logger";
-import { authUrl, SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
 import type { InvitationId } from "@/lib/schemas/organization-invitation";
 import { trpc } from "@/trpc/client";
@@ -130,7 +130,7 @@ function Message({
 function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; landing: Landing }) {
     const { organization, inviterName, email, personName, hasAccount, viewer } = landing;
     const returnTo = route("/invitations/[invitation_id]", { invitation_id: invitationId });
-    const signingUp = viewer.kind === "anonymous" && !hasAccount;
+    const signedOut = viewer.kind === "anonymous";
 
     return (
         <Card>
@@ -141,13 +141,17 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
                     on AVUT.
                 </CardDescription>
             </CardHeader>
-            {signingUp ? (
+            {signedOut && !hasAccount ? (
                 <CardContent>
                     <InvitationSignUp_Form
                         invitationId={invitationId}
                         email={email}
                         name={personName}
                     />
+                </CardContent>
+            ) : signedOut ? (
+                <CardContent>
+                    <InvitationSignIn_Form invitationId={invitationId} email={email} />
                 </CardContent>
             ) : viewer.kind === "other" ? (
                 <CardContent className="text-sm text-muted-foreground">
@@ -160,31 +164,14 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
                     Invitation for <span className="text-foreground">{email}</span>
                 </CardContent>
             )}
-            <CardFooter className="flex-wrap gap-2">
-                {viewer.kind === "recipient" && (
-                    <Respond_Actions invitationId={invitationId} landing={landing} />
-                )}
-                {viewer.kind === "anonymous" && hasAccount && (
-                    <Button asChild>
-                        <Link href={authUrl(SIGN_IN_PATH, { email, returnTo })}>
-                            Sign in to respond
-                        </Link>
-                    </Button>
-                )}
-                {signingUp && (
-                    <p className="text-sm text-muted-foreground">
-                        Prefer to sign up with a social account?{" "}
-                        <Link
-                            className="underline underline-offset-4"
-                            href={authUrl(SIGN_UP_PATH, { email, name: personName, returnTo })}
-                        >
-                            Use the standard sign-up
-                        </Link>
-                        .
-                    </p>
-                )}
-                {viewer.kind === "other" && <SwitchAccount_Button returnTo={returnTo} />}
-            </CardFooter>
+            {viewer.kind !== "anonymous" && (
+                <CardFooter className="flex-wrap gap-2">
+                    {viewer.kind === "recipient" && (
+                        <Respond_Actions invitationId={invitationId} landing={landing} />
+                    )}
+                    {viewer.kind === "other" && <SwitchAccount_Button returnTo={returnTo} />}
+                </CardFooter>
+            )}
         </Card>
     );
 }
