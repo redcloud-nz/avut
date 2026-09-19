@@ -13,6 +13,7 @@ import { Argus } from "@/components/blocks/argus";
 
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { SignUp_Card } from "@/components/auth/sign-up";
+import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Sign Up" };
 
@@ -47,6 +48,14 @@ async function SignUp_CardFromParams({
 }) {
     const params = await searchParams;
     const email = Array.isArray(params.email) ? params.email[0] : params.email;
+    const name = Array.isArray(params.name) ? params.name[0] : params.name;
+    const redirectTo = Array.isArray(params.redirectTo) ? params.redirectTo[0] : params.redirectTo;
 
-    return <SignUp_Card email={email ? decodeURIComponent(email) : undefined} />;
+    return (
+        <SignUp_Card
+            email={email || undefined}
+            name={name || undefined}
+            redirectTo={safeRedirectPath(redirectTo) ?? undefined}
+        />
+    );
 }

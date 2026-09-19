@@ -14,12 +14,21 @@ vi.mock("server-only", () => ({}));
 // invalidated properly. The tests assert on that delegation rather than standing up a real
 // auth instance.
 const revokeSessionMock = vi.fn();
+const acceptInvitationMock = vi.fn();
+const rejectInvitationMock = vi.fn();
 vi.mock("@/server/auth", () => ({
-    auth: { api: { revokeSession: (...args: unknown[]) => revokeSessionMock(...args) } },
+    auth: {
+        api: {
+            revokeSession: (...args: unknown[]) => revokeSessionMock(...args),
+            acceptInvitation: (...args: unknown[]) => acceptInvitationMock(...args),
+            rejectInvitation: (...args: unknown[]) => rejectInvitationMock(...args),
+        },
+    },
 }));
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
@@ -405,5 +414,182 @@ describe("users.listMemberships", () => {
         expect(membership).not.toHaveProperty("name");
         expect(membership).not.toHaveProperty("email");
         expect(membership).not.toHaveProperty("user");
+    });
+});
+
+describe("users invitations", () => {
+    // Dataset: the caller has two pending invitations (one to accept, one to reject, so neither
+    // test leans on the mocked Better Auth leaving the other's fixture untouched), an expired and
+    // an already-accepted one, plus someone else has a pending one; only the first two are
+    // actionable by the caller.
+    const T = {
+        org: OrganizationId.create(),
+        inviter: UserId.create(),
+        caller: UserId.create(),
+        pending: InvitationId.create(),
+        pendingToReject: InvitationId.create(),
+        expired: InvitationId.create(),
+        accepted: InvitationId.create(),
+        someoneElses: InvitationId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Invite Org", slug: "invite-org", createdAt: new Date() },
+        });
+        for (const [id, email] of [
+            [T.inviter, "inviter@example.com"],
+            [T.caller, "caller@example.com"],
+        ] as const) {
+            await db.user.create({ data: { id, name: email, email, emailVerified: true } });
+        }
+
+        const base = { organizationId: T.org, inviterId: T.inviter, role: "member" };
+        const future = new Date("2099-01-01T00:00:00Z");
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.pending,
+                email: "caller@example.com",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.pendingToReject,
+                email: "caller@example.com",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.expired,
+                email: "caller@example.com",
+                status: "pending",
+                expiresAt: new Date("2020-01-01T00:00:00Z"),
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.accepted,
+                email: "caller@example.com",
+                status: "accepted",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.someoneElses,
+                email: "other@example.com",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+    });
+
+    function users() {
+        return usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.caller, email: "caller@example.com" },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("lists only the caller's pending, unexpired invitations", async () => {
+        const result = await users().listInvitations();
+
+        expect(result.map((i) => i.id).sort()).toEqual([T.pending, T.pendingToReject].sort());
+    });
+
+    it("accepts through Better Auth and logs the new membership on both the caller's and the organization's timeline", async () => {
+        acceptInvitationMock.mockResolvedValueOnce({ member: { id: "member_1" } });
+
+        const result = await users().acceptInvitation({ invitationId: T.pending });
+
+        expect(result).toEqual({ organizationSlug: "invite-org" });
+        expect(acceptInvitationMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { invitationId: T.pending } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectId: "member_1" } });
+        expect(entries).toHaveLength(2);
+
+        const userEntry = entries.find((e) => e.scope === "user");
+        const orgEntry = entries.find((e) => e.scope === "organization");
+        expect(userEntry).toMatchObject({
+            ownerId: T.caller,
+            action: "Create",
+            objectType: "OrganizationMembership",
+        });
+        expect(orgEntry).toMatchObject({
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Create",
+            objectType: "OrganizationMembership",
+        });
+
+        // Two independently meaningful events, correlated by one batch.
+        expect(userEntry?.batchId).toBeTruthy();
+        expect(orgEntry?.batchId).toBe(userEntry?.batchId);
+        const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
+        expect(batch).toMatchObject({ operationKey: "invitation-accept", userId: T.caller });
+    });
+
+    it("rejects through Better Auth and logs it on both timelines", async () => {
+        rejectInvitationMock.mockResolvedValueOnce({});
+
+        await users().rejectInvitation({ invitationId: T.pendingToReject });
+
+        expect(rejectInvitationMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { invitationId: T.pendingToReject } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.pendingToReject } });
+        expect(entries).toHaveLength(2);
+
+        const userEntry = entries.find((e) => e.scope === "user");
+        const orgEntry = entries.find((e) => e.scope === "organization");
+        expect(userEntry).toMatchObject({
+            ownerId: T.caller,
+            action: "Update",
+            objectType: "OrganizationInvitation",
+        });
+        expect(orgEntry).toMatchObject({
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Update",
+            objectType: "OrganizationInvitation",
+        });
+
+        expect(orgEntry?.batchId).toBe(userEntry?.batchId);
+        const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
+        expect(batch).toMatchObject({ operationKey: "invitation-reject", userId: T.caller });
+    });
+
+    it.each([
+        ["expired", T.expired],
+        ["already accepted", T.accepted],
+        ["addressed to someone else", T.someoneElses],
+    ])("refuses to act on an invitation that is %s", async (_label, invitationId) => {
+        acceptInvitationMock.mockClear();
+        rejectInvitationMock.mockClear();
+
+        await expect(users().acceptInvitation({ invitationId })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+        await expect(users().rejectInvitation({ invitationId })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+        expect(acceptInvitationMock).not.toHaveBeenCalled();
+        expect(rejectInvitationMock).not.toHaveBeenCalled();
     });
 });

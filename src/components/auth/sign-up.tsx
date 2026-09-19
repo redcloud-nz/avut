@@ -26,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 
 import { authClient } from "@/client/auth-client";
+import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
+import { route } from "@/lib/routes";
 import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 import { SocialSignInButtons_Field } from "./sign-in";
@@ -33,8 +35,18 @@ import { SocialSignInButtons_Field } from "./sign-in";
 /**
  *
  * @param email Optional email to pre-fill in the form.
+ * @param name Optional name to pre-fill in the form.
+ * @param redirectTo Optional path to return to once the account is verified and signed in.
  */
-export function SignUp_Card({ email }: { email?: string }) {
+export function SignUp_Card({
+    email,
+    name,
+    redirectTo,
+}: {
+    email?: string;
+    name?: string;
+    redirectTo?: string;
+}) {
     return (
         <Card>
             <CardHeader>
@@ -43,16 +55,23 @@ export function SignUp_Card({ email }: { email?: string }) {
             </CardHeader>
             <CardContent>
                 <FieldGroup>
-                    <Auth_EmailPasswordSignUp_Form email={email} />
+                    <Auth_EmailPasswordSignUp_Form
+                        email={email}
+                        name={name}
+                        redirectTo={redirectTo}
+                    />
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                         Or continue with
                     </FieldSeparator>
 
-                    <SocialSignInButtons_Field />
+                    <SocialSignInButtons_Field redirectTo={redirectTo} />
 
                     <FieldDescription className="text-center">
-                        Already have an account? <Link href="/auth/sign-in">Sign in</Link>
+                        Already have an account?{" "}
+                        <Link href={authUrl(SIGN_IN_PATH, { email, returnTo: redirectTo })}>
+                            Sign in
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -63,7 +82,15 @@ export function SignUp_Card({ email }: { email?: string }) {
 /**
  * Form form signing up with email and password.
  */
-function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
+function Auth_EmailPasswordSignUp_Form({
+    email,
+    name,
+    redirectTo,
+}: {
+    email?: string;
+    name?: string;
+    redirectTo?: string;
+}) {
     const router = useRouter();
 
     const form = useForm({
@@ -81,7 +108,7 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
                 }),
         ),
         defaultValues: {
-            name: "",
+            name: name || "",
             email: email || "",
             password: "",
             confirmPassword: "",
@@ -97,7 +124,14 @@ function Auth_EmailPasswordSignUp_Form({ email }: { email?: string }) {
             return data;
         },
         onSuccess(_, variables) {
-            router.push(`/auth/verify-email/${encodeURIComponent(variables.email)}`);
+            router.push(
+                authUrl(
+                    route("/auth/verify-email/[email]", {
+                        email: encodeURIComponent(variables.email),
+                    }),
+                    { returnTo: redirectTo },
+                ),
+            );
         },
     });
 
