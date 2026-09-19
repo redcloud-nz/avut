@@ -501,8 +501,9 @@ describe("users invitations", () => {
     it("accepts through Better Auth and logs the new membership on the caller's own log", async () => {
         acceptInvitationMock.mockResolvedValueOnce({ member: { id: "member_1" } });
 
-        await users().acceptInvitation({ invitationId: T.pending });
+        const result = await users().acceptInvitation({ invitationId: T.pending });
 
+        expect(result).toEqual({ organizationSlug: "invite-org" });
         expect(acceptInvitationMock).toHaveBeenCalledWith(
             expect.objectContaining({ body: { invitationId: T.pending } }),
         );

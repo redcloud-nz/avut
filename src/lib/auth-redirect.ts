@@ -6,6 +6,8 @@
 import { Route } from "next";
 
 export const SIGN_IN_PATH = "/auth/sign-in";
+export const SIGN_UP_PATH = "/auth/sign-up";
+export const VERIFY_EMAIL_PATH = "/auth/verify-email";
 export const POST_SIGN_IN_PATH = "/auth/post-sign-in";
 
 /**
@@ -40,4 +42,25 @@ export function postSignInUrl(returnTo?: string | null): Route {
     const path = safeRedirectPath(returnTo);
     if (!path) return POST_SIGN_IN_PATH as Route;
     return `${POST_SIGN_IN_PATH}?redirectTo=${encodeURIComponent(path)}` as Route;
+}
+
+/**
+ * Build a URL to one of the `/auth/*` pages, with optional prefill values and a validated return
+ * path preserved as `?redirectTo=`.
+ *
+ * Cast to `Route` for the same reason as `signInUrl`: typed routes cannot express a query string.
+ */
+export function authUrl(
+    path: string,
+    options: { email?: string | null; name?: string | null; returnTo?: string | null } = {},
+): Route {
+    const query = new URLSearchParams();
+    if (options.email) query.set("email", options.email);
+    if (options.name) query.set("name", options.name);
+
+    const returnPath = safeRedirectPath(options.returnTo);
+    if (returnPath) query.set("redirectTo", returnPath);
+
+    const queryString = query.toString();
+    return (queryString ? `${path}?${queryString}` : path) as Route;
 }

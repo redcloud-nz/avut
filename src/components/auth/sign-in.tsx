@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
-import { postSignInUrl } from "@/lib/auth-redirect";
+import { authUrl, postSignInUrl, SIGN_UP_PATH } from "@/lib/auth-redirect";
 
 import { SocialProviderId, SocialProviders } from "@/components/auth/social-providers";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -52,7 +52,10 @@ export function SignIn_Card({ email, redirectTo }: { email?: string; redirectTo?
                     </FieldSeparator>
                     <SocialSignInButtons_Field redirectTo={redirectTo} />
                     <FieldDescription className="text-center">
-                        Don&apos;t have an account? <Link href="/auth/sign-up">Sign Up</Link>
+                        Don&apos;t have an account?{" "}
+                        <Link href={authUrl(SIGN_UP_PATH, { email, returnTo: redirectTo })}>
+                            Sign Up
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>

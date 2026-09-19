@@ -39,7 +39,7 @@ async function findOwnPendingInvitation(
             status: "pending",
             expiresAt: { gt: new Date() },
         },
-        include: { organization: { select: { name: true } } },
+        include: { organization: { select: { name: true, slug: true } } },
     });
 
     if (!invitation)
@@ -61,11 +61,13 @@ export const usersRouter = createTrpcRouter({
      *
      * @param ctx The authenticated context.
      * @param input The invitation to accept.
+     * @returns The joined organization's slug, so the caller can navigate into it.
      * @throws TRPCError(NOT_FOUND) if the invitation is not pending, has expired, or is addressed
      *   to someone else.
      */
     acceptInvitation: authenticatedProcedure
         .input(z.object({ invitationId: InvitationId.schema }))
+        .output(z.object({ organizationSlug: z.string() }))
         .mutation(async ({ ctx, input }) => {
             const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
 
@@ -83,6 +85,8 @@ export const usersRouter = createTrpcRouter({
                 objectId: member.id,
                 description: `Accepted invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
             });
+
+            return { organizationSlug: invitation.organization.slug };
         }),
 
     /**

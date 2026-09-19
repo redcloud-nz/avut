@@ -5,6 +5,7 @@
 
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
@@ -21,8 +22,11 @@ import { getQueryClient } from "@/trpc/query-client";
  * the client-side RSC cache.
  *
  * Awaiting `signOut` matters too — navigating first races the cookie clear.
+ *
+ * @param destination Where to go afterwards. Defaults to the sign-in page; pass the current path
+ *   to stay put (e.g. the invitation landing page, which renders differently once signed out).
  */
-export function useSignOut() {
+export function useSignOut(destination: string = SIGN_IN_PATH) {
     const router = useRouter();
 
     return useCallback(async () => {
@@ -30,7 +34,7 @@ export function useSignOut() {
 
         getQueryClient().clear();
 
-        router.replace(SIGN_IN_PATH);
+        router.replace(destination as Route);
         router.refresh();
-    }, [router]);
+    }, [router, destination]);
 }
