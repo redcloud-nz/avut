@@ -310,3 +310,99 @@ describe("usersRouter session management", () => {
         expect(revokeSessionMock).not.toHaveBeenCalled();
     });
 });
+
+describe("users.listMemberships", () => {
+    // Dataset: caller belongs to two orgs (one with two roles); another user belongs to org1
+    // and must not appear in the caller's list.
+    const T = {
+        org1: OrganizationId.create(),
+        org2: OrganizationId.create(),
+        caller: UserId.create(),
+        other: UserId.create(),
+        membership1: nanoId16(),
+        membership2: nanoId16(),
+        membershipOther: nanoId16(),
+        person: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, name, slug] of [
+            [T.org1, "First Org", "first-org"],
+            [T.org2, "Second Org", "second-org"],
+        ] as const) {
+            await db.organization.create({ data: { id, name, slug, createdAt: new Date() } });
+        }
+        await db.user.create({
+            data: {
+                id: T.caller,
+                name: "Caller",
+                email: "caller@example.com",
+                emailVerified: true,
+            },
+        });
+        await db.user.create({
+            data: { id: T.other, name: "Other", email: "other@example.com", emailVerified: true },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org1,
+                name: "Caller Person",
+                email: "caller@example.com",
+                status: "Active",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: T.membership1,
+                organizationId: T.org1,
+                userId: T.caller,
+                role: "admin,i3-editor",
+                personId: T.person,
+            },
+        });
+        await db.organizationUser.create({
+            data: { id: T.membership2, organizationId: T.org2, userId: T.caller, role: "member" },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: T.membershipOther,
+                organizationId: T.org1,
+                userId: T.other,
+                role: "member",
+            },
+        });
+    });
+
+    it("returns only the caller's memberships, with their organization and roles", async () => {
+        const result = await usersRouter
+            .createCaller(createAuthenticatedMockContext({ user: { id: T.caller }, prisma: db }))
+            .listMemberships();
+
+        expect(result).toHaveLength(2);
+
+        const first = result.find((m) => m.organizationId === T.org1);
+        expect(first).toMatchObject({
+            organizationUserId: T.membership1,
+            userId: T.caller,
+            personId: T.person,
+            roles: ["admin", "i3-editor"],
+            organization: { id: T.org1, name: "First Org" },
+        });
+        expect(result.find((m) => m.organizationId === T.org2)?.roles).toEqual(["member"]);
+    });
+
+    it("does not carry the member's user identity", async () => {
+        const [membership] = await usersRouter
+            .createCaller(createAuthenticatedMockContext({ user: { id: T.caller }, prisma: db }))
+            .listMemberships();
+
+        expect(membership).not.toHaveProperty("name");
+        expect(membership).not.toHaveProperty("email");
+        expect(membership).not.toHaveProperty("user");
+    });
+});

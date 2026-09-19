@@ -316,7 +316,11 @@ export const personnelRouter = createTrpcRouter({
                 personId: PersonId.schema,
             }),
         )
-        .output(OrganizationUser.schema.nullable())
+        .output(
+            OrganizationUser.schema
+                .extend({ user: UserData.schema.pick({ id: true, name: true, email: true }) })
+                .nullable(),
+        )
         .query(async ({ ctx, input: { personId } }) => {
             const person = await ctx.prisma.person.findUnique({
                 where: { organizationId: ctx.organizationId, id: personId },
@@ -330,7 +334,10 @@ export const personnelRouter = createTrpcRouter({
                 });
 
             return person.organizationUser
-                ? OrganizationUser.fromRecord(person.organizationUser.user, person.organizationUser)
+                ? {
+                      ...OrganizationUser.fromRecord(person.organizationUser),
+                      user: UserData.fromRecord(person.organizationUser.user),
+                  }
                 : null;
         }),
 

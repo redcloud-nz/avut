@@ -271,11 +271,11 @@ export const usersRouter = createTrpcRouter({
                 where: {
                     userId: ctx.auth.user.id,
                 },
-                include: { organization: true, user: true },
+                include: { organization: true },
             });
 
             return memberships.map((membership) => ({
-                ...OrganizationUser.fromRecord(membership.user, membership),
+                ...OrganizationUser.fromRecord(membership),
                 organization: OrganizationData.fromRecord(membership.organization),
             }));
         }),
