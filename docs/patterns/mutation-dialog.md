@@ -83,6 +83,35 @@ Controlled by the param, keeps the `…_Dialog` name (it renders a `Dialog` /
 `AlertDialog`). It may keep its own `<DialogTrigger>` **or** be fully
 prop-driven — see [triggers](#triggers).
 
+### Structure: header, body, footer
+
+`DialogContent` owns no padding of its own. Compose it from three regions, each
+of which owns its own padding:
+
+```tsx
+<DialogContent>
+  <DialogHeader>…title and description…</DialogHeader>
+  <DialogBody>…fields…</DialogBody>
+  <DialogFooter>…buttons…</DialogFooter>
+</DialogContent>
+```
+
+- **`DialogBody` is the only part that scrolls.** The header and footer stay put
+  at every size, so a tall form never pushes the buttons off a small screen. Keep
+  the `<form>` inside the body and submit from the footer with the `form="…"`
+  attribute, as above — the footer is never inside the `<form>`.
+- **Below `sm` the dialog is full screen** (slides up, with a visible close
+  button, since there's no overlay left to tap; the footer buttons share the
+  row). From `sm` up it's the usual centred modal. `AlertDialog` is different: it
+  stays a compact bottom sheet below `sm`, as tall as its content.
+- **A header directly above a footer, with nothing between them** (a plain
+  confirm) needs no `DialogBody` — the header supplies the space below it.
+- **Dialogs that lay themselves out** (a `Command` picker with its own scrolling
+  list, an image lightbox) can skip the three regions and pass `p-0` to
+  `DialogContent`. They aren't full-screen-aware yet, so check them on a phone.
+- If a region's content is conditional (a different footer per step, say), put a
+  `DialogBody` in each branch rather than wrapping the whole conditional.
+
 ### Create / update (non-destructive) — `Dialog` + form
 
 ```tsx
@@ -144,9 +173,11 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
         <DialogHeader>
           <DialogTitle>Update person</DialogTitle>
         </DialogHeader>
-        <form id="update-person-form" onSubmit={handleSubmit}>
-          {/* fields */}
-        </form>
+        <DialogBody>
+          <form id="update-person-form" onSubmit={handleSubmit}>
+            {/* fields */}
+          </form>
+        </DialogBody>
         <DialogFooter>
           <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
           <MutationButton type="submit" form="update-person-form" status={mutation.status} />

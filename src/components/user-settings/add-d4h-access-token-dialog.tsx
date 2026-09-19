@@ -18,6 +18,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -145,103 +146,114 @@ export function UserSettings_AddD4HAccessToken_Dialog() {
                         Allows you to connect to your D4H account from AVUT.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="create-personal-d4h-access-token-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="organizationId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-organization">
-                                        Organisation
-                                    </FieldLabel>
-                                    <Select {...field} onValueChange={field.onChange}>
-                                        <SelectTrigger
-                                            id="access-token-organization"
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <SelectValue placeholder="Select organisation" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {membershipsQuery.data?.map((membership) => (
-                                                <SelectItem
-                                                    key={membership.organization.id}
-                                                    value={membership.organization.id}
-                                                >
-                                                    {membership.organization.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="serverCode"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-server-code">
-                                        D4H Server
-                                    </FieldLabel>
-                                    <Select {...field} onValueChange={field.onChange}>
-                                        <SelectTrigger
-                                            id="access-token-server-code"
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <SelectValue placeholder="Select D4H server" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {D4HServerList.map((server) => (
-                                                <SelectItem key={server.code} value={server.code}>
-                                                    {server.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Watch
-                            control={form.control}
-                            names={["serverCode"]}
-                            render={([serverCode]) => {
-                                const server = D4HServerList.find((s) => s.code === serverCode);
+                <DialogBody>
+                    <form id="create-personal-d4h-access-token-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="organizationId"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="access-token-organization">
+                                            Organisation
+                                        </FieldLabel>
+                                        <Select {...field} onValueChange={field.onChange}>
+                                            <SelectTrigger
+                                                id="access-token-organization"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select organisation" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {membershipsQuery.data?.map((membership) => (
+                                                    <SelectItem
+                                                        key={membership.organization.id}
+                                                        value={membership.organization.id}
+                                                    >
+                                                        {membership.organization.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="serverCode"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="access-token-server-code">
+                                            D4H Server
+                                        </FieldLabel>
+                                        <Select {...field} onValueChange={field.onChange}>
+                                            <SelectTrigger
+                                                id="access-token-server-code"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select D4H server" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {D4HServerList.map((server) => (
+                                                    <SelectItem
+                                                        key={server.code}
+                                                        value={server.code}
+                                                    >
+                                                        {server.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Watch
+                                control={form.control}
+                                names={["serverCode"]}
+                                render={([serverCode]) => {
+                                    const server = D4HServerList.find((s) => s.code === serverCode);
 
-                                return server ? (
-                                    <div className="text-xs/relaxed text-muted-foreground">
-                                        Generate a D4H access token at:{" "}
-                                        <ExternalLink
-                                            className="text-xs pl-1"
-                                            href={server?.tokensUrl}
-                                        >
-                                            {server?.tokensUrl}
-                                        </ExternalLink>
-                                    </div>
-                                ) : null;
-                            }}
-                        />
-                        <FieldSeparator />
-                        <Controller
-                            name="token"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token">Token</FieldLabel>
-                                    <Textarea
-                                        id="access-token"
-                                        aria-invalid={fieldState.invalid}
-                                        placeholder="Paste token here"
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                                    return server ? (
+                                        <div className="text-xs/relaxed text-muted-foreground">
+                                            Generate a D4H access token at:{" "}
+                                            <ExternalLink
+                                                className="text-xs pl-1"
+                                                href={server?.tokensUrl}
+                                            >
+                                                {server?.tokensUrl}
+                                            </ExternalLink>
+                                        </div>
+                                    ) : null;
+                                }}
+                            />
+                            <FieldSeparator />
+                            <Controller
+                                name="token"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="access-token">Token</FieldLabel>
+                                        <Textarea
+                                            id="access-token"
+                                            aria-invalid={fieldState.invalid}
+                                            placeholder="Paste token here"
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

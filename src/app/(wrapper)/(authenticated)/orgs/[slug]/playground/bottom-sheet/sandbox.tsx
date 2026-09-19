@@ -5,23 +5,30 @@
 
 "use client";
 
-import { XIcon } from "lucide-react";
-import { Dialog as DialogPrimitive } from "radix-ui";
-import { type ComponentProps, useState } from "react";
+import { useState } from "react";
 
 import { DatePicker } from "@/components/controls/date-picker";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogOverlay,
-    DialogPortal,
-    DialogScrollableBody,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
@@ -37,90 +44,19 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 
 import { Harness } from "../_components/harness";
 
 /**
- * Prototype only — not the shared `DialogContent`. Same Radix Dialog primitive as
- * the real one (identical focus trap / Escape / overlay behaviour), styled to sit
- * flush against the bottom edge below `sm` and fall back to the normal centered
- * modal at `sm` and up.
- *
- * This intentionally does NOT respond to the Harness width toggle above — that
- * only resizes a container, while this positions against the real viewport via
- * `sm:` (a media query, not a container query). Judge it by narrowing the actual
- * browser window, or better, opening this page on a phone.
- */
-function BottomSheetDialogContent({
-    className,
-    children,
-    showCloseButton = true,
-    ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
-    return (
-        <DialogPortal>
-            <DialogOverlay />
-            <DialogPrimitive.Content
-                data-slot="dialog-content"
-                className={cn(
-                    "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] w-full flex-col gap-4 overflow-y-auto rounded-t-2xl bg-popover p-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
-                    "sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:pt-4 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0",
-                    className,
-                )}
-                {...props}
-            >
-                <div
-                    aria-hidden
-                    // Above: pt-3, offset by -mt-1, nets 0.5rem to the sheet's top edge. Below:
-                    // the parent's own gap-4 (1rem) applies too, on top of any margin here — -mb-2
-                    // nets 1rem - 0.5rem = 0.5rem, matching the top gap.
-                    className="mx-auto -mt-1 -mb-2 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/25 sm:hidden"
-                />
-                {children}
-                {showCloseButton && (
-                    <DialogPrimitive.Close data-slot="dialog-close" asChild>
-                        <Button
-                            variant="ghost"
-                            // Hidden below sm — dismiss via the overlay tap or Escape instead. A
-                            // real bottom sheet would also support swipe-to-dismiss, but that's a
-                            // drag gesture this prototype doesn't wire up (the handle below is
-                            // decorative only) — e.g. `vaul`, which shadcn's own Drawer wraps.
-                            className="absolute top-2 right-2 hidden sm:inline-flex"
-                            size="icon-sm"
-                        >
-                            <XIcon />
-                            <span className="sr-only">Close</span>
-                        </Button>
-                    </DialogPrimitive.Close>
-                )}
-            </DialogPrimitive.Content>
-        </DialogPortal>
-    );
-}
-
-/**
  * Same "New Session" fields as `skill-track/create-session.tsx`, minus the form wiring — this is
- * a layout comparison, not a real mutation.
- *
- * `DialogFooter` is always a `shrink-0` flex sibling, so its buttons never scroll away — that part
- * matches `create-session.tsx` and most other current mutation dialogs, which render their fields
- * directly rather than through `DialogScrollableBody` and so have the same latent "footer scrolls
- * away" gap today; it just doesn't show up until a dialog's content is tall enough, or the
- * viewport is squeezed by the keyboard, to need scrolling at all.
- *
- * `pinHeader` controls whether `DialogHeader` sits outside the scrollable body (pinned, like the
- * footer) or scrolls away with the fields. Pinning both ends leaves very little room for content
- * once the keyboard has also eaten a chunk of the viewport — the sheet variant passes `false` and
- * only keeps the footer fixed, trading "title always visible" for more usable field space.
+ * a layout comparison, not a real mutation. Header / Body / Footer: the body is the only part
+ * that scrolls, and the header and footer stay put.
  */
 function SandboxSessionFields({
     idPrefix,
-    pinHeader = true,
     longForm = false,
 }: {
     idPrefix: string;
-    pinHeader?: boolean;
     longForm?: boolean;
 }) {
     const [name, setName] = useState("");
@@ -249,17 +185,8 @@ function SandboxSessionFields({
 
     return (
         <>
-            {pinHeader ? (
-                <>
-                    {header}
-                    <DialogScrollableBody>{fields}</DialogScrollableBody>
-                </>
-            ) : (
-                <DialogScrollableBody>
-                    {header}
-                    {fields}
-                </DialogScrollableBody>
-            )}
+            {header}
+            <DialogBody>{fields}</DialogBody>
             <DialogFooter>
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <Button type="button">Create</Button>
@@ -268,44 +195,36 @@ function SandboxSessionFields({
     );
 }
 
-const CODE = `// sm and up: unchanged from the real DialogContent
-"fixed top-1/2 left-1/2 ... -translate-x-1/2 -translate-y-1/2 rounded-xl"
+const CODE = `// DialogContent has no padding of its own — compose it from three regions.
+// The body is the only part that scrolls; header and footer stay put.
+<DialogContent>
+  <DialogHeader>…</DialogHeader>
+  <DialogBody>…fields…</DialogBody>
+  <DialogFooter>…buttons…</DialogFooter>
+</DialogContent>
 
-// below sm: pinned to the bottom edge instead of centered
-"fixed inset-x-0 bottom-0 w-full rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]"
-// + a drag-handle affordance, shown only below sm
-<div className="mx-auto h-1.5 w-10 rounded-full bg-muted-foreground/25 sm:hidden" />
-// the close button is hidden below sm — dismiss via the overlay tap or Escape instead
-// (a real sheet would add swipe-to-dismiss too, e.g. via vaul; not wired up here)
-<Button className="absolute top-2 right-2 hidden sm:inline-flex" ... />
+// below sm: DialogContent is full screen (slides up, visible close button,
+//           footer buttons share the row, safe-area aware)
+// sm and up: the centred modal (fade + zoom), close button top-right
 
-// only the footer is pinned (shrink-0) — the header goes through
-// DialogScrollableBody with the fields, so pinning both ends doesn't
-// squeeze content space once the keyboard has also shrunk the viewport
-<DialogScrollableBody>{header}{fields}</DialogScrollableBody>
-<DialogFooter>...</DialogFooter>`;
+// AlertDialogContent stays compact: a bottom sheet below sm, centred from sm up.`;
 
 export function BottomSheet_Sandbox() {
-    const [openCurrent, setOpenCurrent] = useState(false);
-    const [openSheet, setOpenSheet] = useState(false);
     const [longForm, setLongForm] = useState(true);
 
     return (
         <Harness
-            title="Bottom sheet on mobile"
+            title="Dialogues on mobile"
             description={
-                "Same form, two DialogContent variants: the current centered modal, and a prototype " +
-                "that pins to the bottom edge below sm with rounded top corners, a (currently " +
-                "decorative) drag-handle affordance, safe-area-aware bottom padding, no close " +
-                "button (dismiss via the overlay or Escape instead — swipe-to-dismiss isn't " +
-                "wired up here), and a footer that stays put while everything above it — title, " +
-                "description, and fields together — scrolls as one region. Only the footer is " +
-                "pinned: pinning the header too left very little room for content once the " +
-                "keyboard also ate a chunk of the viewport. Both variants use the same Radix " +
-                "Dialog primitive underneath, so accessibility behaviour is identical — only " +
-                "shape and position differ. Best judged on an actual phone; the width toggle " +
-                "above won't trigger this, since it's a viewport media query (sm:), not a " +
-                "container query."
+                "The real DialogContent, composed from DialogHeader / DialogBody / DialogFooter. " +
+                "Below sm it takes over the whole screen (with a close button, since there's no " +
+                "overlay left to tap); from sm up it's the centred modal. Only the body scrolls — " +
+                "the header and footer stay put at every size. Alert dialogues stay compact: a " +
+                "bottom sheet below sm, centred from sm up. The width toggle above won't trigger " +
+                "any of this, since it's a viewport media query (sm:), not a container query — " +
+                "judge it by narrowing the browser window or, better, opening this page on a " +
+                "phone. Toggle the long form to check scrolling, and tap into a field to check the " +
+                "on-screen keyboard doesn't hide the footer."
             }
             code={CODE}
             controls={
@@ -320,27 +239,51 @@ export function BottomSheet_Sandbox() {
             onReset={() => setLongForm(true)}
         >
             <div className="flex flex-wrap items-center gap-3">
-                <Dialog open={openCurrent} onOpenChange={setOpenCurrent}>
+                <Dialog>
                     <DialogTrigger asChild>
-                        <Button variant="outline">Open current dialogue</Button>
+                        <Button variant="outline">Dialogue</Button>
                     </DialogTrigger>
                     <DialogContent>
-                        <SandboxSessionFields idPrefix="current" longForm={longForm} />
+                        <SandboxSessionFields idPrefix="dialogue" longForm={longForm} />
                     </DialogContent>
                 </Dialog>
 
-                <Dialog open={openSheet} onOpenChange={setOpenSheet}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline">Open bottom sheet concept</Button>
-                    </DialogTrigger>
-                    <BottomSheetDialogContent>
-                        <SandboxSessionFields
-                            idPrefix="sheet"
-                            pinHeader={false}
-                            longForm={longForm}
-                        />
-                    </BottomSheetDialogContent>
-                </Dialog>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline">Alert dialogue</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This permanently removes the session and its skill checks. This
+                                can&apos;t be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction variant="destructive">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline">Alert dialogue (size sm)</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                You have unsaved changes.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+                            <AlertDialogAction>Discard</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </Harness>
     );

@@ -17,6 +17,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -135,31 +136,35 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
                         Select a person to add to <ObjectName>{team.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="add-person-to-team-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="personId"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Person</FieldLabel>
-                                    <SearchableSelect
-                                        value={field.value ?? null}
-                                        onValueChange={(value) =>
-                                            field.onChange((value as PersonId) || null)
-                                        }
-                                        options={personOptions}
-                                        placeholder="Select a person"
-                                        searchPlaceholder="Search personnel..."
-                                        emptyMessage="No personnel found."
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="add-person-to-team-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                control={form.control}
+                                name="personId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Person</FieldLabel>
+                                        <SearchableSelect
+                                            value={field.value ?? null}
+                                            onValueChange={(value) =>
+                                                field.onChange((value as PersonId) || null)
+                                            }
+                                            options={personOptions}
+                                            placeholder="Select a person"
+                                            searchPlaceholder="Search personnel..."
+                                            emptyMessage="No personnel found."
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

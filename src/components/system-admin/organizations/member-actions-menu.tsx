@@ -24,6 +24,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -160,21 +161,23 @@ export function SystemAdmin_MemberActionsMenu({
                             Change the organisation role for <ObjectName>{member.name}</ObjectName>.
                         </DialogDescription>
                     </DialogHeader>
-                    <Field>
-                        <FieldLabel>Role</FieldLabel>
-                        <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {OrganizationRole.options.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </Field>
+                    <DialogBody>
+                        <Field>
+                            <FieldLabel>Role</FieldLabel>
+                            <Select value={role} onValueChange={setRole}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {OrganizationRole.options.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </Field>
+                    </DialogBody>
                     <DialogFooter>
                         <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         <MutationButton

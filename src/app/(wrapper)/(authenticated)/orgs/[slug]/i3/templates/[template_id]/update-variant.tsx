@@ -16,6 +16,7 @@ import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-mod
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -117,73 +118,79 @@ export function I3Module_UpdateVariant_Dialog({
                         <ObjectName>{template.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="update-template-variant-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="variant-name">Name</FieldLabel>
-                                    <Input
-                                        id="variant-name"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="d4h.brandId"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
+                <DialogBody>
+                    <form id="update-template-variant-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-name">Name</FieldLabel>
+                                        <Input
+                                            id="variant-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="d4h.brandId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
 
-                                    <D4HEquipmentBrandSelect
-                                        value={field.value}
-                                        onChange={(brand) => {
-                                            field.onChange(brand.id);
-                                            form.setValue("d4h.brandTitle", brand.title);
+                                        <D4HEquipmentBrandSelect
+                                            value={field.value}
+                                            onChange={(brand) => {
+                                                field.onChange(brand.id);
+                                                form.setValue("d4h.brandTitle", brand.title);
 
-                                            // Reset model selection when brand changes
-                                            form.setValue("d4h.modelId", 0);
-                                            form.setValue("d4h.modelTitle", "");
-                                        }}
-                                        slotProps={{
-                                            trigger: { id: "variant-brand" },
-                                        }}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="d4h.modelId"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="variant-model">Model</FieldLabel>
-                                    <D4HEquipmentModelSelect
-                                        value={field.value}
-                                        onChange={(model) => {
-                                            field.onChange(model.id);
-                                            form.setValue("d4h.modelTitle", model.title);
-                                        }}
-                                        brandId={selectedBrandId}
-                                        slotProps={{
-                                            trigger: { id: "variant-model" },
-                                        }}
-                                    />
+                                                // Reset model selection when brand changes
+                                                form.setValue("d4h.modelId", 0);
+                                                form.setValue("d4h.modelTitle", "");
+                                            }}
+                                            slotProps={{
+                                                trigger: { id: "variant-brand" },
+                                            }}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="d4h.modelId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-model">Model</FieldLabel>
+                                        <D4HEquipmentModelSelect
+                                            value={field.value}
+                                            onChange={(model) => {
+                                                field.onChange(model.id);
+                                                form.setValue("d4h.modelTitle", model.title);
+                                            }}
+                                            brandId={selectedBrandId}
+                                            slotProps={{
+                                                trigger: { id: "variant-model" },
+                                            }}
+                                        />
 
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

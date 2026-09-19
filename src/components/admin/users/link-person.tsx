@@ -12,6 +12,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -83,22 +84,24 @@ export function AdminModule_LinkPerson_Dialog({
                         Link a personnel record to user <ObjectName>{userName}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-                <FieldGroup>
-                    <Field>
-                        <FieldLabel>Person</FieldLabel>
-                        <SearchableSelect
-                            value={personId}
-                            onValueChange={setPersonId}
-                            options={unlinkedPersonnel.map((person) => ({
-                                value: person.id,
-                                label: `${person.name} (${person.email})`,
-                            }))}
-                            placeholder="Select a person to link"
-                            searchPlaceholder="Search personnel..."
-                            emptyMessage="No unlinked personnel found."
-                        />
-                    </Field>
-                </FieldGroup>
+                <DialogBody>
+                    <FieldGroup>
+                        <Field>
+                            <FieldLabel>Person</FieldLabel>
+                            <SearchableSelect
+                                value={personId}
+                                onValueChange={setPersonId}
+                                options={unlinkedPersonnel.map((person) => ({
+                                    value: person.id,
+                                    label: `${person.name} (${person.email})`,
+                                }))}
+                                placeholder="Select a person to link"
+                                searchPlaceholder="Search personnel..."
+                                emptyMessage="No unlinked personnel found."
+                            />
+                        </Field>
+                    </FieldGroup>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

@@ -14,6 +14,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -217,87 +218,94 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
                 </DialogHeader>
 
                 {loading ? (
-                    <div className="flex flex-col gap-2">
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                    </div>
+                    <DialogBody>
+                        <div className="flex flex-col gap-2">
+                            <Skeleton className="w-full h-14" />
+                            <Skeleton className="w-full h-14" />
+                            <Skeleton className="w-full h-14" />
+                            <Skeleton className="w-full h-14" />
+                        </div>
+                    </DialogBody>
                 ) : !originPackage || !originGroup ? (
                     <>
-                        <p className="text-sm text-muted-foreground">
-                            This skill&rsquo;s current package or group could not be found. It may
-                            have been moved or deleted. Reload the page and try again.
-                        </p>
+                        <DialogBody>
+                            <p className="text-sm text-muted-foreground">
+                                This skill&rsquo;s current package or group could not be found. It
+                                may have been moved or deleted. Reload the page and try again.
+                            </p>
+                        </DialogBody>
                         <DialogFooter>
                             <DialogCloseButton variant="outline">Close</DialogCloseButton>
                         </DialogFooter>
                     </>
                 ) : (
                     <>
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel>Origin Package</FieldLabel>
-                                <FieldValue value={originPackage.name} />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Origin Group</FieldLabel>
-                                <FieldValue value={originGroup.name} />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Destination Package</FieldLabel>
-                                <Select
-                                    value={destinationPackageId}
-                                    onValueChange={(value) => {
-                                        setDestinationPackageId(value);
-                                        setDestinationGroupId(null);
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {skillPackages.map((skillPackage) => (
-                                            <SelectItem
-                                                key={skillPackage.id}
-                                                value={skillPackage.id}
-                                            >
-                                                {skillPackage.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                            <Field>
-                                <FieldLabel>Destination Group</FieldLabel>
-                                <Select
-                                    value={destinationGroupId ?? ""}
-                                    onValueChange={(value) =>
-                                        setDestinationGroupId(value as SkillGroupId)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {skillGroups
-                                            .filter(
-                                                (group) =>
-                                                    group.skillPackageId === destinationPackageId,
-                                            )
-                                            .map((group) => (
+                        <DialogBody>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel>Origin Package</FieldLabel>
+                                    <FieldValue value={originPackage.name} />
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Origin Group</FieldLabel>
+                                    <FieldValue value={originGroup.name} />
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Destination Package</FieldLabel>
+                                    <Select
+                                        value={destinationPackageId}
+                                        onValueChange={(value) => {
+                                            setDestinationPackageId(value);
+                                            setDestinationGroupId(null);
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {skillPackages.map((skillPackage) => (
                                                 <SelectItem
-                                                    key={group.id}
-                                                    value={group.id}
-                                                    disabled={group.id == skill.skillGroupId}
+                                                    key={skillPackage.id}
+                                                    value={skillPackage.id}
                                                 >
-                                                    {group.name}
+                                                    {skillPackage.name}
                                                 </SelectItem>
                                             ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        </FieldGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Destination Group</FieldLabel>
+                                    <Select
+                                        value={destinationGroupId ?? ""}
+                                        onValueChange={(value) =>
+                                            setDestinationGroupId(value as SkillGroupId)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a group" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {skillGroups
+                                                .filter(
+                                                    (group) =>
+                                                        group.skillPackageId ===
+                                                        destinationPackageId,
+                                                )
+                                                .map((group) => (
+                                                    <SelectItem
+                                                        key={group.id}
+                                                        value={group.id}
+                                                        disabled={group.id == skill.skillGroupId}
+                                                    >
+                                                        {group.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            </FieldGroup>
+                        </DialogBody>
                         <DialogFooter>
                             <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                             <MutationButton

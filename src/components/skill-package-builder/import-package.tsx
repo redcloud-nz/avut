@@ -15,6 +15,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -108,39 +109,42 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                         omits is archived. The package always lands unpublished.
                     </DialogDescription>
                 </DialogHeader>
+                <DialogBody>
+                    <div className="flex flex-col gap-4">
+                        <Field data-invalid={!!file.error}>
+                            <FieldLabel htmlFor="import-package-file">Export file</FieldLabel>
+                            <FileDropzone
+                                id="import-package-file"
+                                accept="application/json"
+                                aria-invalid={!!file.error}
+                                hint="Up to 1 MB · .json"
+                                onFileSelected={(selected) => {
+                                    file.handleFile(selected);
+                                    setResult(null);
+                                }}
+                            />
+                            {file.error && <FieldError errors={[{ message: file.error }]} />}
+                            {file.envelope && !file.error && (
+                                <p className="text-muted-foreground text-xs">
+                                    {file.envelope.package.name} —{" "}
+                                    {file.envelope.package.groups.length} groups,{" "}
+                                    {file.envelope.package.groups.reduce(
+                                        (n, g) => n + g.skills.length,
+                                        0,
+                                    )}{" "}
+                                    skills
+                                </p>
+                            )}
+                        </Field>
 
-                <div className="flex flex-col gap-4">
-                    <Field data-invalid={!!file.error}>
-                        <FieldLabel htmlFor="import-package-file">Export file</FieldLabel>
-                        <FileDropzone
-                            id="import-package-file"
-                            accept="application/json"
-                            aria-invalid={!!file.error}
-                            hint="Up to 1 MB · .json"
-                            onFileSelected={(selected) => {
-                                file.handleFile(selected);
-                                setResult(null);
-                            }}
-                        />
-                        {file.error && <FieldError errors={[{ message: file.error }]} />}
-                        {file.envelope && !file.error && (
-                            <p className="text-muted-foreground text-xs">
-                                {file.envelope.package.name} — {file.envelope.package.groups.length}{" "}
-                                groups,{" "}
-                                {file.envelope.package.groups.reduce(
-                                    (n, g) => n + g.skills.length,
-                                    0,
-                                )}{" "}
-                                skills
-                            </p>
+                        {result && (
+                            <SkillPackageImportPlanTable
+                                plan={result.plan}
+                                applied={result.applied}
+                            />
                         )}
-                    </Field>
-
-                    {result && (
-                        <SkillPackageImportPlanTable plan={result.plan} applied={result.applied} />
-                    )}
-                </div>
-
+                    </div>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">
                         {result?.applied ? "Close" : "Cancel"}
