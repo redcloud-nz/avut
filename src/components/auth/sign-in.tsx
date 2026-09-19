@@ -185,13 +185,18 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
  * Social sign-In buttons field
  *
  * @param redirectTo Optional path to return to once signed in.
+ * @param loginHint Optional address passed to the provider so it preselects the matching account.
  */
-export function SocialSignInButtons_Field({ redirectTo }: { redirectTo?: string } = {}) {
+export function SocialSignInButtons_Field({
+    redirectTo,
+    loginHint,
+}: { redirectTo?: string; loginHint?: string } = {}) {
     async function handleSignIn(provider: SocialProviderId) {
         try {
             const { error } = await authClient.signIn.social({
                 provider,
                 callbackURL: postSignInUrl(redirectTo),
+                loginHint,
             });
 
             if (error) {
