@@ -2,111 +2,45 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/d4h-ppe/templates/[template_id]
+ * Path: /orgs/[slug]/i3/templates/[template_id]
  */
-"use client";
 
-import { use } from "react";
+import { Metadata } from "next";
 
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
-import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { getOrganizationBySlug } from "@/server/organization";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-import { useI3Template } from "@/hooks/use-i3-template";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
-import { route } from "@/lib/routes";
+import { I3Module_Template_Content } from "./template-content";
 
-import { I3Module_Template_Menu } from "./template-menu";
-import { I3Module_UpdateTemplate_Dialog } from "./update-template";
-import { I3Module_Template_Variants_List } from "./template-variants";
+type Props = PageProps<"/orgs/[slug]/i3/templates/[template_id]">;
 
-export default function I3Module_Template_Page(
-    props: PageProps<"/orgs/[slug]/i3/templates/[template_id]">,
-) {
-    const { slug, template_id } = use(props.params);
-    const template = useI3Template(template_id);
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { slug, template_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    const templateId = I3TemplateId.schema.parse(template_id);
+    const template = await fetchQuery(
+        trpc.i3.getTemplate.queryOptions({ organizationId: organization.id, templateId }),
+    );
+
+    return { title: `${template.name} ${TITLE_SEPARATOR} I3 Templates` };
+}
+
+// A server page, so the `?action=` dialogs on this page don't remount it: a client page that read
+// its params with `use(props.params)` re-suspended and flashed the page spinner (#76).
+export default async function I3Module_Template_Page(props: Props) {
+    const { slug, template_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    const templateId = I3TemplateId.schema.parse(template_id);
+
+    prefetch(trpc.i3.getTemplate.queryOptions({ organizationId: organization.id, templateId }));
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
-                    { label: "Templates", href: route("/orgs/[slug]/i3/templates", { slug }) },
-                    template.name,
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>{template.name}</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <I3Module_Template_Menu template={template} />
-                        </Saratoga.Actions>
-                    </Saratoga.Header>
-
-                    <Saratoga.Columns>
-                        <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Template Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ i3Template: ["update"] }}>
-                                            <I3Module_UpdateTemplate_Dialog template={template} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    <DL>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{template.name}</DLDetails>
-                                        {template.description && (
-                                            <>
-                                                <DLTerm>Description</DLTerm>
-                                                <DLDetails>{template.description}</DLDetails>
-                                            </>
-                                        )}
-                                        <DLTerm>D4H Category</DLTerm>
-                                        <DLDetails>{template.d4h?.categoryTitle}</DLDetails>
-                                        <DLTerm>D4H Kind</DLTerm>
-                                        <DLDetails>{template.d4h?.kindTitle}</DLDetails>
-                                        <DLTerm>Require Serial Number</DLTerm>
-                                        <DLDetails>
-                                            {template.d4h?.requireSN ? "Yes" : "No"}
-                                        </DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{template.status}</DLDetails>
-                                    </DL>
-                                </CardContent>
-                            </Card>
-                            <I3Module_Template_Variants_List template={template} />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(template.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(template.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(template.updatedAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(template.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                    </Saratoga.Columns>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <HydrateClient>
+            <I3Module_Template_Content templateId={templateId} />
+        </HydrateClient>
     );
 }

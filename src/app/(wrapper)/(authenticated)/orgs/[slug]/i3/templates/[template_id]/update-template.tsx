@@ -79,11 +79,19 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
 
                 handleDialogOpenChange(false);
 
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplates.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+                await Promise.all([
+                    queryClient.invalidateQueries(
+                        trpc.i3.listTemplates.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.i3.getTemplate.queryFilter({
+                            organizationId: organization.id,
+                            templateId: template.id,
+                        }),
+                    ),
+                ]);
             },
         }),
     );
