@@ -112,6 +112,66 @@ of which owns its own padding:
 - If a region's content is conditional (a different footer per step, say), put a
   `DialogBody` in each branch rather than wrapping the whole conditional.
 
+### Loading data inside a dialog
+
+A dialog that fetches its own data (a list to pick from, the current state of
+something) wraps the part that waits in **`DialogBoundary`**, between the header and
+the body/footer. The query lives in a child component rendered inside
+`DialogContent`, not in the host:
+
+```tsx
+export function SkillPackageBuilder_MoveSkill_Dialog({ skill, ...props }: Props) {
+  return (
+    <Dialog {...props}>
+      <DialogContent>
+        <DialogHeader>…title and description from props…</DialogHeader>
+        <DialogBoundary>
+          <MoveSkill_Body skill={skill} />
+        </DialogBoundary>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MoveSkill_Body({ skill }: { skill: Skill }) {
+  const { data: packages } = useSuspenseQuery(…);
+  const form = useForm(…);
+  const mutation = useMutation(…);
+
+  return (
+    <>
+      <DialogBody>…</DialogBody>
+      <DialogFooter>…</DialogFooter>
+    </>
+  );
+}
+```
+
+- **Loading and errors are the boundary's job.** While the child suspends it shows
+  a spinner where the body will be and no footer; if the child throws it shows the
+  message with a Close button. The header, the close button and Escape are
+  unaffected in both.
+- **Use `useSuspenseQuery` in the child**, not `useQuery` with an `isPending`
+  branch — that is what keeps the child free of loading ternaries, and lets its body
+  and footer sit together.
+- **Form and other local state live in the child.** Radix only mounts
+  `DialogContent`'s children while the dialog is open, so the child starts fresh on
+  every open: no `useEffect(() => { form.reset(); mutation.reset(); }, [open])`. The
+  host passes down what the child needs to close the dialog (`onDone`).
+- **A header that depends on the fetched data** (`invite-person`, whose title
+  depends on whether the email already belongs to a member) goes inside the child
+  instead. Give the boundary a neutral `fallbackHeader` so the loading and error
+  states still have a title (`DialogTitle` is required for accessibility). Most
+  headers are built from props and belong above the boundary; check first.
+- **Always-mounted dialogs** (one rendered in a report header, say) pay for their
+  query on every page load if it runs in the host. Putting it in the child makes it
+  lazy, because the child is only mounted while open — see the scope pickers in
+  `skill-track/reports/`.
+- **Prefetch a dialog's list only when the dialog will be open on the first render.**
+  In a `page.tsx`, that means the dialog opens on arrival (nothing picked yet, so it
+  is forced open) or `searchParams.action` names it. Otherwise the list isn't needed
+  until the user opens it, and the client fetches it then behind the spinner.
+
 ### Create / update (non-destructive) — `Dialog` + form
 
 ```tsx
@@ -412,6 +472,12 @@ jump to `<body>` mid-interaction. Call `preventDefault()` on the dialog's
   the mutation.
 - Always `ctx.logEvent(...)` in the tRPC procedure inside the `$transaction`, per
   [transactional-writes.md](transactional-writes.md).
+- **Host `?action=` dialogs from a Server-Component `page.tsx`** (or a client component
+  that reads route params with `useParams()`), never a client page that reads them with
+  `use(props.params)`. The URL change hands that page a fresh `params` promise, and
+  `use()` on it suspends the whole page: it flashes `PageLoadingSpinner` every time a
+  dialog opens or closes. Server pages are unaffected — see
+  [detail-page-data-fetching.md](detail-page-data-fetching.md).
 - The pages themselves (`page.tsx`, `layout.tsx`, list/detail content components,
   sibling subpages, `generateMetadata`) are **not touched** by adding a dialog —
   no route groups, no bare `page.tsx`, no metadata moves.
