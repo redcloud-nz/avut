@@ -28,7 +28,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/client/auth-client";
 import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
-import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
+import { PasswordSchema } from "@/lib/schemas/password";
 
 import { SocialSignInButtons_Field } from "./sign-in";
 
@@ -95,23 +95,16 @@ function Auth_EmailPasswordSignUp_Form({
 
     const form = useForm({
         resolver: zodResolver(
-            z
-                .object({
-                    name: z.string().min(2, "Name is required."),
-                    email: z.email("Invalid email address"),
-                    password: PasswordSchema,
-                    confirmPassword: ConfirmPasswordSchema,
-                })
-                .refine((data) => data.password === data.confirmPassword, {
-                    message: "Passwords do not match",
-                    path: ["confirmPassword"],
-                }),
+            z.object({
+                name: z.string().min(2, "Name is required."),
+                email: z.email("Invalid email address"),
+                password: PasswordSchema,
+            }),
         ),
         defaultValues: {
             name: name || "",
             email: email || "",
             password: "",
-            confirmPassword: "",
         },
     });
 
@@ -136,12 +129,7 @@ function Auth_EmailPasswordSignUp_Form({
     });
 
     return (
-        <form
-            id="sign-up-form"
-            onSubmit={form.handleSubmit(({ confirmPassword: _confirmPassword, ...data }) =>
-                mutation.mutate(data),
-            )}
-        >
+        <form id="sign-up-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
             <FieldGroup>
                 <Controller
                     name="name"
@@ -193,26 +181,6 @@ function Auth_EmailPasswordSignUp_Form({
                                 {...field}
                             />
                             <FieldDescription>Must be at least 8 characters long.</FieldDescription>
-                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                        </Field>
-                    )}
-                />
-                <Controller
-                    name="confirmPassword"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="sign-up-confirm-password">
-                                Confirm Password
-                            </FieldLabel>
-                            <PasswordInput
-                                id="sign-up-confirm-password"
-                                autoComplete="new-password"
-                                placeholder="Enter your password again"
-                                aria-invalid={fieldState.invalid}
-                                disabled={mutation.isPending}
-                                {...field}
-                            />
                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                     )}
