@@ -37,8 +37,8 @@ import { trpc } from "@/trpc/client";
  * takes it from the invitation, so this only ever sends the id, a name and a password.
  *
  * On success the new account is signed in and the landing page re-renders with Accept/Decline.
- * Google/GitHub buttons below the form sign in with the invited address as the provider's login
- * hint and come back to the same page.
+ * Google/GitHub buttons below the form come back to the same page; the invited address is sent
+ * as a login hint, which Google honours and GitHub ignores.
  *
  * @param invitationId The invitation from the link.
  * @param email The address the invitation was sent to (shown, not editable).

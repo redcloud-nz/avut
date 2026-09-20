@@ -5,14 +5,13 @@
 
 "use client";
 
-import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { SocialSignInButtons_Field } from "@/components/auth/sign-in";
 import { MutationButton } from "@/components/ui/button";
@@ -22,12 +21,15 @@ import { PasswordInput } from "@/components/ui/password-input";
 
 import { authClient } from "@/client/auth-client";
 import { authUrl } from "@/lib/auth-redirect";
+import { authQueryKeys } from "@/lib/auth-query-keys";
 import { route } from "@/lib/routes";
 import type { InvitationId } from "@/lib/schemas/organization-invitation";
+import { trpc } from "@/trpc/client";
 
 /**
  * Signs an existing account in from the invitation landing page, so the person never leaves it:
- * password, or Google/GitHub with the invited address as the provider's login hint.
+ * password, or Google/GitHub. The invited address goes to the provider as a login hint, which
+ * Google honours and GitHub ignores.
  *
  * On success the landing page re-renders with Accept/Decline. An account that never verified its
  * email is sent a code and continues through the verify-email page, which returns here.
@@ -43,6 +45,7 @@ export function InvitationSignIn_Form({
     email: string;
 }) {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const returnTo = route("/invitations/[invitation_id]", { invitation_id: invitationId });
 
     const form = useForm({
@@ -68,13 +71,19 @@ export function InvitationSignIn_Form({
         },
         onSuccess({ verified }) {
             if (verified) {
-                // The session cookie changed; re-render the server tree that reads it.
+                // The session cookie changed: drop the cached copies that were fetched signed
+                // out, and re-render the server tree that reads it.
+                void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
+                void queryClient.invalidateQueries(
+                    trpc.invitations.getLanding.queryFilter({ invitationId }),
+                );
                 router.refresh();
             } else {
                 router.push(
-                    authUrl(`/auth/verify-email/${encodeURIComponent(email)}` as Route, {
-                        returnTo,
-                    }),
+                    authUrl(
+                        route("/auth/verify-email/[email]", { email: encodeURIComponent(email) }),
+                        { returnTo },
+                    ),
                 );
             }
         },
@@ -89,7 +98,13 @@ export function InvitationSignIn_Form({
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="invitation-sign-in-email">Email Address</FieldLabel>
-                        <Input id="invitation-sign-in-email" type="email" value={email} disabled />
+                        <Input
+                            id="invitation-sign-in-email"
+                            type="email"
+                            autoComplete="username"
+                            value={email}
+                            readOnly
+                        />
                     </Field>
                     <Controller
                         name="password"

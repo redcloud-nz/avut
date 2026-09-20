@@ -185,7 +185,8 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
  * Social sign-In buttons field
  *
  * @param redirectTo Optional path to return to once signed in.
- * @param loginHint Optional address passed to the provider so it preselects the matching account.
+ * @param loginHint Optional address sent as the OIDC `login_hint`. Google preselects the matching
+ *   account; GitHub ignores it.
  */
 export function SocialSignInButtons_Field({
     redirectTo,
