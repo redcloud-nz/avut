@@ -27,15 +27,21 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
-    const { person } = await props.searchParams;
+    const { person, action } = await props.searchParams;
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
-    prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
+    const parsedPersonId =
+        typeof person === "string" ? PersonId.schema.safeParse(person) : undefined;
+
+    // Only the scope dialog lists personnel, and it only fetches them once it's open. It opens on
+    // arrival when no valid person is picked yet (`forceOpen`) or via `?action=select-scope`;
+    // otherwise the list isn't needed until the user opens it, so don't pay for it here.
+    if (!parsedPersonId?.success || action === "select-scope") {
+        prefetch(trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }));
+    }
 
     // Only prefetch the competency matrix for a well-formed person id — an invalid `?person=`
     // falls back to the picker client-side, so fetching a matrix here is wasted work.
-    const parsedPersonId =
-        typeof person === "string" ? PersonId.schema.safeParse(person) : undefined;
     if (parsedPersonId?.success) {
         prefetch(
             trpc.skillChecks.getCompetencyMatrix.queryOptions({

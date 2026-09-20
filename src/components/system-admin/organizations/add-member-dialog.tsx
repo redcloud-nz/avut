@@ -6,13 +6,12 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
     Select,
@@ -66,10 +66,50 @@ export function SystemAdmin_AddMember_Dialog({
     );
     const dialogOpen = action === "add-member";
 
-    const usersQuery = useQuery(trpc.systemAdmin.listUsers.queryOptions());
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
+    }
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Member</DialogTitle>
+                    <DialogDescription>
+                        Attach an existing user to this organisation directly, bypassing the
+                        invitation flow.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <AddMember_Body
+                        organizationId={organizationId}
+                        memberUserIds={memberUserIds}
+                        onDone={() => handleOpenChange(false)}
+                    />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function AddMember_Body({
+    organizationId,
+    memberUserIds,
+    onDone,
+}: {
+    organizationId: OrganizationId;
+    memberUserIds: string[];
+    onDone: () => void;
+}) {
+    const { data: usersData } = useSuspenseQuery(trpc.systemAdmin.listUsers.queryOptions());
 
     const existing = new Set(memberUserIds);
-    const options = (usersQuery.data?.users ?? [])
+    const options = usersData.users
         .filter((u) => !existing.has(u.id))
         .map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }));
 
@@ -91,22 +131,10 @@ export function SystemAdmin_AddMember_Dialog({
             },
             onSuccess() {
                 toast.success("Member added.");
-                handleOpenChange(false);
+                onDone();
             },
         }),
     );
-
-    function handleOpenChange(open: boolean) {
-        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset({ userId: undefined, role: "member" });
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) =>
@@ -119,88 +147,63 @@ export function SystemAdmin_AddMember_Dialog({
     );
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Member</DialogTitle>
-                    <DialogDescription>
-                        Attach an existing user to this organisation directly, bypassing the
-                        invitation flow.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                    <form id="add-member-form" onSubmit={handleSubmit}>
-                        <FieldGroup>
-                            <Controller
-                                control={form.control}
-                                name="userId"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>User</FieldLabel>
-                                        <SearchableSelect
-                                            value={field.value}
-                                            onValueChange={(value) => field.onChange(value)}
-                                            options={options}
-                                            placeholder="Select a user"
-                                            searchPlaceholder="Search users..."
-                                            emptyMessage={
-                                                usersQuery.isLoading
-                                                    ? "Loading..."
-                                                    : "No eligible users."
-                                            }
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                control={form.control}
-                                name="role"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>Role</FieldLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger aria-invalid={fieldState.invalid}>
-                                                <SelectValue placeholder="Select a role" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {OrganizationRole.options.map((option) => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                        </FieldGroup>
-                    </form>
-                </DialogBody>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="add-member-form"
-                        status={mutation.status}
-                        text={{ idle: "Add", pending: "Adding", success: "Added" }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <>
+            <DialogBody>
+                <form id="add-member-form" onSubmit={handleSubmit}>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="userId"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel>User</FieldLabel>
+                                    <SearchableSelect
+                                        value={field.value}
+                                        onValueChange={(value) => field.onChange(value)}
+                                        options={options}
+                                        placeholder="Select a user"
+                                        searchPlaceholder="Search users..."
+                                        emptyMessage="No eligible users."
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="role"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel>Role</FieldLabel>
+                                    <Select value={field.value} onValueChange={field.onChange}>
+                                        <SelectTrigger aria-invalid={fieldState.invalid}>
+                                            <SelectValue placeholder="Select a role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {OrganizationRole.options.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </form>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="submit"
+                    form="add-member-form"
+                    status={mutation.status}
+                    text={{ idle: "Add", pending: "Adding", success: "Added" }}
+                />
+            </DialogFooter>
+        </>
     );
 }

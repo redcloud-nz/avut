@@ -29,6 +29,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -58,14 +59,11 @@ export function SkillTrack_SkillScopeDialog({
     /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
     compact?: boolean;
 }) {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["select-scope"] as const),
     );
     const [, setSkill] = useQueryState("skill");
-    const [teamParam, setTeamParam] = useQueryState("team");
 
     // `forceOpen` (report has no scope yet) shows the dialog on arrival, but it stays
     // dismissable — Escape leaves the blank report with its prompt and the trigger button to
@@ -73,6 +71,50 @@ export function SkillTrack_SkillScopeDialog({
     // Back-button navigation that clears the param always closes it.
     const [dismissed, setDismissed] = useState(false);
     const open = action === "select-scope" || (forceOpen && !dismissed);
+
+    function handleOpenChange(next: boolean) {
+        if (!next) setDismissed(true);
+        void setAction(next ? "select-scope" : null, { history: next ? "push" : "replace" });
+    }
+
+    function handleSelectSkill(skillId: string) {
+        setDismissed(true);
+        void setSkill(skillId, { history: "push" });
+        void setAction(null, { history: "replace" });
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <Button
+                variant="outline"
+                onClick={() => handleOpenChange(true)}
+                className={cn(compact && "max-sm:hidden")}
+            >
+                <TelescopeIcon />
+                <span className="sr-only sm:not-sr-only">{label}</span>
+            </Button>
+            <DialogContent className="gap-0 p-0">
+                <DialogHeader className="border-b px-4 py-3">
+                    <DialogTitle>Select a skill</DialogTitle>
+                    <DialogDescription>
+                        Choose a skill to see who currently holds it.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <SkillScope_Picker onSelect={handleSelectSkill} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
+ * The team filter and skill list, rendered inside `DialogContent` so their queries only run once
+ * the dialog opens — the dialog is always mounted in the report header.
+ */
+function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }) {
+    const organization = useOrganization();
+    const [teamParam, setTeamParam] = useQueryState("team");
 
     const { data: teams } = useSuspenseQuery(
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
@@ -117,83 +159,56 @@ export function SkillTrack_SkillScopeDialog({
     const currentTeamValue =
         teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
 
-    function handleOpenChange(next: boolean) {
-        if (!next) setDismissed(true);
-        void setAction(next ? "select-scope" : null, { history: next ? "push" : "replace" });
-    }
-
-    function handleSelectSkill(skillId: string) {
-        setDismissed(true);
-        void setSkill(skillId, { history: "push" });
-        void setAction(null, { history: "replace" });
-    }
-
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <Button
-                variant="outline"
-                onClick={() => handleOpenChange(true)}
-                className={cn(compact && "max-sm:hidden")}
-            >
-                <TelescopeIcon />
-                <span className="sr-only sm:not-sr-only">{label}</span>
-            </Button>
-            <DialogContent className="gap-0 p-0">
-                <DialogHeader className="border-b px-4 py-3">
-                    <DialogTitle>Select a skill</DialogTitle>
-                    <DialogDescription>
-                        Choose a skill to see who currently holds it.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="flex items-center gap-2 border-b px-4 py-3">
-                    <Label htmlFor="skill-scope-team" className="text-muted-foreground">
-                        Team
-                    </Label>
-                    <Select
-                        value={currentTeamValue}
-                        onValueChange={(value) =>
-                            void setTeamParam(value === "all" ? null : value, {
-                                history: "replace",
-                            })
-                        }
-                    >
-                        <SelectTrigger id="skill-scope-team" size="sm" className="flex-1">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Whole Organisation</SelectItem>
-                            {R.pipe(
-                                teams,
-                                R.sortBy((team) => team.name),
-                                R.map((team) => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                        {team.name}
-                                    </SelectItem>
-                                )),
-                            )}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <Command>
-                    <CommandInput placeholder="Search skills…" />
-                    <CommandList className="h-72">
-                        <CommandEmpty>No skills match your search.</CommandEmpty>
-                        {groupSections.map((section) => (
-                            <CommandGroup key={section.id} heading={section.label}>
-                                {section.skills.map((skill) => (
-                                    <CommandItem
-                                        key={skill.id}
-                                        value={`${skill.name} ${section.label}`}
-                                        onSelect={() => handleSelectSkill(skill.id)}
-                                    >
-                                        {skill.name}
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        ))}
-                    </CommandList>
-                </Command>
-            </DialogContent>
-        </Dialog>
+        <>
+            <div className="flex items-center gap-2 border-b px-4 py-3">
+                <Label htmlFor="skill-scope-team" className="text-muted-foreground">
+                    Team
+                </Label>
+                <Select
+                    value={currentTeamValue}
+                    onValueChange={(value) =>
+                        void setTeamParam(value === "all" ? null : value, {
+                            history: "replace",
+                        })
+                    }
+                >
+                    <SelectTrigger id="skill-scope-team" size="sm" className="flex-1">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Whole Organisation</SelectItem>
+                        {R.pipe(
+                            teams,
+                            R.sortBy((team) => team.name),
+                            R.map((team) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </SelectItem>
+                            )),
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+            <Command>
+                <CommandInput placeholder="Search skills…" />
+                <CommandList className="h-72">
+                    <CommandEmpty>No skills match your search.</CommandEmpty>
+                    {groupSections.map((section) => (
+                        <CommandGroup key={section.id} heading={section.label}>
+                            {section.skills.map((skill) => (
+                                <CommandItem
+                                    key={skill.id}
+                                    value={`${skill.name} ${section.label}`}
+                                    onSelect={() => onSelect(skill.id)}
+                                >
+                                    {skill.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    ))}
+                </CommandList>
+            </Command>
+        </>
     );
 }
