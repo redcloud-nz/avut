@@ -4,12 +4,11 @@
  */
 "use client";
 
-import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import {
@@ -29,6 +28,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { FieldDescription, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 
@@ -62,6 +62,30 @@ export function AdminModule_InvitePerson_Dialog({
     person,
     ...props
 }: DialogProps & { person: PersonData }) {
+    return (
+        <Dialog {...props}>
+            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                {/* The header depends on `getInviteState`, so it lives in the body component; this
+                    neutral one covers loading and a failed load. Radix only mounts the body while
+                    the dialog is open, which also keeps the query and form state fresh per open. */}
+                <DialogBoundary
+                    fallbackHeader={
+                        <DialogHeader>
+                            <DialogTitle>Invite to AVUT</DialogTitle>
+                            <DialogDescription>
+                                <ObjectName>{person.email}</ObjectName>
+                            </DialogDescription>
+                        </DialogHeader>
+                    }
+                >
+                    <InvitePerson_Body person={person} close={() => props.onOpenChange?.(false)} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function InvitePerson_Body({ person, close }: { person: PersonData; close: () => void }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
@@ -70,21 +94,12 @@ export function AdminModule_InvitePerson_Dialog({
         personId: person.id,
     });
 
-    const { data: inviteState, isPending: inviteStatePending } = useQuery({
-        ...inviteStateQueryOptions,
-        // Only the open dialog needs this; the menu decides whether to offer the action from the
-        // linked-user query the detail page already holds.
-        enabled: props.open,
-    });
+    const { data: inviteState } = useSuspenseQuery(inviteStateQueryOptions);
 
     const form = useForm({
         resolver: zodResolver(invitationRolesSchema),
         defaultValues: { primaryRole: "member", secondaryRoles: [] } as const,
     });
-
-    function close() {
-        props.onOpenChange?.(false);
-    }
 
     function invalidateInviteState() {
         void queryClient.invalidateQueries({ queryKey: inviteStateQueryOptions.queryKey });
@@ -145,132 +160,119 @@ export function AdminModule_InvitePerson_Dialog({
         }),
     );
 
-    useEffect(() => {
-        if (props.open) {
-            form.reset();
-            inviteMutation.reset();
-            linkMutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [props.open]);
-
-    const alreadyMember = inviteState?.state === "AlreadyMember";
+    const alreadyMember = inviteState.state === "AlreadyMember";
     // A member holds this email, but their account is already linked to a different person.
     // Neither action is available — see `getInviteState`'s output docs.
-    const linkedElsewhere = inviteState?.state === "MemberLinkedElsewhere";
+    const linkedElsewhere = inviteState.state === "MemberLinkedElsewhere";
 
     return (
-        <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                <DialogHeader>
-                    <DialogTitle>
-                        {linkedElsewhere
-                            ? "Account Already Linked"
-                            : alreadyMember
-                              ? "Link User Account"
-                              : "Invite to AVUT"}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {linkedElsewhere ? (
-                            <>
-                                <ObjectName>{person.email}</ObjectName> belongs to a member of{" "}
-                                <ObjectName>{organization.name}</ObjectName>, but that account is
-                                already linked to a different person record. Unlink it there first
-                                if it should belong to this person.
-                            </>
-                        ) : alreadyMember ? (
-                            <>
-                                <ObjectName>{person.email}</ObjectName> already belongs to a member
-                                of <ObjectName>{organization.name}</ObjectName>. Link that account
-                                to this person record instead of sending an invitation.
-                            </>
-                        ) : (
-                            <>
-                                Invite <ObjectName>{person.email}</ObjectName> to join{" "}
-                                <ObjectName>{organization.name}</ObjectName>. Accepting the
-                                invitation links their account to this person record.
-                            </>
-                        )}
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                    {inviteStatePending ? (
-                        <FieldDescription>Checking for an existing account…</FieldDescription>
-                    ) : inviteState?.state === "Linked" ? (
-                        <FieldDescription>
-                            This person is already linked to a user account.
-                        </FieldDescription>
-                    ) : alreadyMember || linkedElsewhere ? (
-                        <FieldDescription>
-                            Account: <ObjectName>{inviteState.user?.name}</ObjectName>
-                        </FieldDescription>
+        <>
+            <DialogHeader>
+                <DialogTitle>
+                    {linkedElsewhere
+                        ? "Account Already Linked"
+                        : alreadyMember
+                          ? "Link User Account"
+                          : "Invite to AVUT"}
+                </DialogTitle>
+                <DialogDescription>
+                    {linkedElsewhere ? (
+                        <>
+                            <ObjectName>{person.email}</ObjectName> belongs to a member of{" "}
+                            <ObjectName>{organization.name}</ObjectName>, but that account is
+                            already linked to a different person record. Unlink it there first if it
+                            should belong to this person.
+                        </>
+                    ) : alreadyMember ? (
+                        <>
+                            <ObjectName>{person.email}</ObjectName> already belongs to a member of{" "}
+                            <ObjectName>{organization.name}</ObjectName>. Link that account to this
+                            person record instead of sending an invitation.
+                        </>
                     ) : (
-                        <FormProvider {...form}>
-                            <form
-                                id="invite-person-form"
-                                onSubmit={form.handleSubmit(
-                                    (data) => inviteMutation.mutate(invitationRoles(data)),
-                                    (errors) => console.error("Form validation errors:", errors),
+                        <>
+                            Invite <ObjectName>{person.email}</ObjectName> to join{" "}
+                            <ObjectName>{organization.name}</ObjectName>. Accepting the invitation
+                            links their account to this person record.
+                        </>
+                    )}
+                </DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+                {inviteState.state === "Linked" ? (
+                    <FieldDescription>
+                        This person is already linked to a user account.
+                    </FieldDescription>
+                ) : alreadyMember || linkedElsewhere ? (
+                    <FieldDescription>
+                        Account: <ObjectName>{inviteState.user?.name}</ObjectName>
+                    </FieldDescription>
+                ) : (
+                    <FormProvider {...form}>
+                        <form
+                            id="invite-person-form"
+                            onSubmit={form.handleSubmit(
+                                (data) => inviteMutation.mutate(invitationRoles(data)),
+                                (errors) => console.error("Form validation errors:", errors),
+                            )}
+                        >
+                            <FieldGroup>
+                                {inviteState.state === "UserExists" && (
+                                    <FieldDescription>
+                                        They already have an AVUT account but are not a member of
+                                        this organisation yet.
+                                    </FieldDescription>
                                 )}
-                            >
-                                <FieldGroup>
-                                    {inviteState?.state === "UserExists" && (
-                                        <FieldDescription>
-                                            They already have an AVUT account but are not a member
-                                            of this organisation yet.
-                                        </FieldDescription>
-                                    )}
-                                    {inviteState?.pendingInvitation && (
-                                        <FieldDescription>
-                                            An invitation is already pending (sent{" "}
-                                            {formatRelativeDateTime(
-                                                inviteState.pendingInvitation.createdAt,
-                                            )}
-                                            ). Sending a new one replaces it.
-                                        </FieldDescription>
-                                    )}
-                                    <InvitationRoleFields />
-                                </FieldGroup>
-                            </form>
-                        </FormProvider>
-                    )}
-                </DialogBody>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    {linkedElsewhere ? null : alreadyMember ? (
-                        <MutationButton
-                            type="button"
-                            status={linkMutation.status}
-                            disabled={!inviteState.user}
-                            onClick={() => {
-                                if (!inviteState.user) return;
-                                linkMutation.mutate({
-                                    organizationId: organization.id,
-                                    userId: inviteState.user.id,
-                                    personId: person.id,
-                                });
-                            }}
-                            text={{
-                                idle: "Link Account",
-                                pending: "Linking Account",
-                                success: "Account Linked",
-                            }}
-                        />
-                    ) : (
-                        <MutationButton
-                            type="submit"
-                            form="invite-person-form"
-                            status={inviteMutation.status}
-                            disabled={inviteStatePending || inviteState?.state === "Linked"}
-                            text={{
-                                idle: "Send Invitation",
-                                pending: "Sending Invitation",
-                                success: "Invitation Sent",
-                            }}
-                        />
-                    )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                                {inviteState.pendingInvitation && (
+                                    <FieldDescription>
+                                        An invitation is already pending (sent{" "}
+                                        {formatRelativeDateTime(
+                                            inviteState.pendingInvitation.createdAt,
+                                        )}
+                                        ). Sending a new one replaces it.
+                                    </FieldDescription>
+                                )}
+                                <InvitationRoleFields />
+                            </FieldGroup>
+                        </form>
+                    </FormProvider>
+                )}
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                {linkedElsewhere ? null : alreadyMember ? (
+                    <MutationButton
+                        type="button"
+                        status={linkMutation.status}
+                        disabled={!inviteState.user}
+                        onClick={() => {
+                            if (!inviteState.user) return;
+                            linkMutation.mutate({
+                                organizationId: organization.id,
+                                userId: inviteState.user.id,
+                                personId: person.id,
+                            });
+                        }}
+                        text={{
+                            idle: "Link Account",
+                            pending: "Linking Account",
+                            success: "Account Linked",
+                        }}
+                    />
+                ) : (
+                    <MutationButton
+                        type="submit"
+                        form="invite-person-form"
+                        status={inviteMutation.status}
+                        disabled={inviteState.state === "Linked"}
+                        text={{
+                            idle: "Send Invitation",
+                            pending: "Sending Invitation",
+                            success: "Invitation Sent",
+                        }}
+                    />
+                )}
+            </DialogFooter>
+        </>
     );
 }

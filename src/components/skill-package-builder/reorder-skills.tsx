@@ -6,7 +6,7 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
@@ -29,8 +29,8 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
 
 import { useOrganization } from "@/hooks/use-organization";
@@ -65,27 +65,15 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                     open, so the body (and its `order` state) is created fresh on
                     each open — always seeded from the current skills, with no
                     reseeding effect needed. */}
-                <Suspense fallback={<ReorderSkills_Skeleton />}>
+                <DialogBoundary>
                     <ReorderSkills_Body
                         skillGroup={skillGroup}
                         skillPackage={skillPackage}
                         onSaved={() => props.onOpenChange?.(false)}
                     />
-                </Suspense>
+                </DialogBoundary>
             </DialogContent>
         </Dialog>
-    );
-}
-
-function ReorderSkills_Skeleton() {
-    return (
-        <DialogBody>
-            <div className="space-y-2">
-                <Skeleton className="w-full h-11" />
-                <Skeleton className="w-full h-11" />
-                <Skeleton className="w-full h-11" />
-            </div>
-        </DialogBody>
     );
 }
 
