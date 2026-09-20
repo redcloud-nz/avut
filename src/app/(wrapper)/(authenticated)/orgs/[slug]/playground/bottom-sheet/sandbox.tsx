@@ -7,6 +7,8 @@
 
 import { useState } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
+
 import { DatePicker } from "@/components/controls/date-picker";
 import {
     AlertDialog,
@@ -32,6 +34,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,6 +198,55 @@ function SandboxSessionFields({
     );
 }
 
+/**
+ * Stand-in for a dialogue that fetches its own data: a suspense query that resolves after a
+ * delay (or throws). `gcTime: 0` so every open fetches afresh, like a dialogue mounted on open.
+ * With `headerFromData` the header depends on the result, so it lives in here and the boundary is
+ * given a `fallbackHeader` for the loading and error states.
+ */
+function SandboxSlowData({
+    delayMs,
+    fail,
+    headerFromData,
+}: {
+    delayMs: number;
+    fail: boolean;
+    headerFromData: boolean;
+}) {
+    const { data } = useSuspenseQuery({
+        queryKey: ["playground", "slow-dialogue", delayMs, fail],
+        queryFn: async () => {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            if (fail) throw new Error("Couldn't load the list. The server said no.");
+            return { title: "Three people found", people: ["Ada", "Grace", "Katherine"] };
+        },
+        gcTime: 0,
+        retry: false,
+    });
+
+    return (
+        <>
+            {headerFromData && (
+                <DialogHeader>
+                    <DialogTitle>{data.title}</DialogTitle>
+                    <DialogDescription>The header came from the fetched data.</DialogDescription>
+                </DialogHeader>
+            )}
+            <DialogBody>
+                <ul className="list-disc pl-5">
+                    {data.people.map((person) => (
+                        <li key={person}>{person}</li>
+                    ))}
+                </ul>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <Button type="button">Choose</Button>
+            </DialogFooter>
+        </>
+    );
+}
+
 const CODE = `// DialogContent has no padding of its own — compose it from three regions.
 // The body is the only part that scrolls; header and footer stay put.
 <DialogContent>
@@ -207,10 +259,23 @@ const CODE = `// DialogContent has no padding of its own — compose it from thr
 //           footer buttons share the row, safe-area aware)
 // sm and up: the centred modal (fade + zoom), close button top-right
 
-// AlertDialogContent stays compact: a bottom sheet below sm, centred from sm up.`;
+// AlertDialogContent stays compact: a bottom sheet below sm, centred from sm up.
+
+// A dialogue that waits on data puts a DialogBoundary between the header and the body/footer.
+// While it loads: header stays, spinner where the body will be, no footer. If it throws: the
+// error and a Close button. A header that depends on the data lives inside and is repeated
+// (neutral) as fallbackHeader.
+<DialogContent>
+  <DialogHeader>…</DialogHeader>
+  <DialogBoundary>
+    <Inner /> {/* useSuspenseQuery; returns <DialogBody> + <DialogFooter> */}
+  </DialogBoundary>
+</DialogContent>`;
 
 export function BottomSheet_Sandbox() {
     const [longForm, setLongForm] = useState(true);
+    const [slowMs, setSlowMs] = useState(1500);
+    const [failFetch, setFailFetch] = useState(false);
 
     return (
         <Harness
@@ -228,15 +293,39 @@ export function BottomSheet_Sandbox() {
             }
             code={CODE}
             controls={
-                <div className="flex items-center gap-2">
-                    <Switch id="long-form" checked={longForm} onCheckedChange={setLongForm} />
-                    <Label htmlFor="long-form">
-                        Long form (adds Location, Duration, Team, Lead assessor, Instructions, and
-                        two checkboxes — tall enough to force scrolling on a phone)
-                    </Label>
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                        <Switch id="long-form" checked={longForm} onCheckedChange={setLongForm} />
+                        <Label htmlFor="long-form">
+                            Long form (adds Location, Duration, Team, Lead assessor, Instructions,
+                            and two checkboxes — tall enough to force scrolling on a phone)
+                        </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            id="fail-fetch"
+                            checked={failFetch}
+                            onCheckedChange={setFailFetch}
+                        />
+                        <Label htmlFor="fail-fetch">Make the “slow data” fetch fail</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="slow-ms">Fetch delay (ms)</Label>
+                        <Input
+                            id="slow-ms"
+                            type="number"
+                            className="w-28"
+                            value={slowMs}
+                            onChange={(e) => setSlowMs(Number(e.target.value) || 0)}
+                        />
+                    </div>
                 </div>
             }
-            onReset={() => setLongForm(true)}
+            onReset={() => {
+                setLongForm(true);
+                setFailFetch(false);
+                setSlowMs(1500);
+            }}
         >
             <div className="flex flex-wrap items-center gap-3">
                 <Dialog>
@@ -245,6 +334,47 @@ export function BottomSheet_Sandbox() {
                     </DialogTrigger>
                     <DialogContent>
                         <SandboxSessionFields idPrefix="dialogue" longForm={longForm} />
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline">Slow data</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Choose a person</DialogTitle>
+                            <DialogDescription>
+                                The header is static, so it sits outside the boundary.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogBoundary>
+                            <SandboxSlowData
+                                delayMs={slowMs}
+                                fail={failFetch}
+                                headerFromData={false}
+                            />
+                        </DialogBoundary>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline">Slow data (header from data)</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogBoundary
+                            fallbackHeader={
+                                <DialogHeader>
+                                    <DialogTitle>People</DialogTitle>
+                                    <DialogDescription>
+                                        Neutral wording: this also shows if loading fails.
+                                    </DialogDescription>
+                                </DialogHeader>
+                            }
+                        >
+                            <SandboxSlowData delayMs={slowMs} fail={failFetch} headerFromData />
+                        </DialogBoundary>
                     </DialogContent>
                 </Dialog>
 
