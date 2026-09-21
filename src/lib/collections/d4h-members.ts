@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
 
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeamRef } from "@/lib/schemas/d4h/team";

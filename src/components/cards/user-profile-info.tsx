@@ -5,7 +5,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { requireSession } from "@/server/session";
 
 export async function UserProfileInfo_Card() {

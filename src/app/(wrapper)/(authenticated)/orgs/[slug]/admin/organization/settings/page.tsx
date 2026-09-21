@@ -5,10 +5,9 @@
  * Paths: /orgs/[slug]/admin/settings/--update
  */
 
+import { AdminModule_Settings_Content } from "@/components/admin-settings/settings-content";
 import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { AdminModule_Settings_Content } from "@/components/admin-settings/settings-content";
 
 export default async function AdminModule_Settings_Page(
     props: PageProps<`/orgs/[slug]/admin/organization/settings`>,

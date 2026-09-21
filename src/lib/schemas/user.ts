@@ -29,9 +29,7 @@ const userSchema = z.object({
 export const UserData = {
     schema: userSchema,
 
-    fromRecord: (
-        record: Pick<UserRecord, "id" | "name" | "email" | "image">,
-    ): UserData =>
+    fromRecord: (record: Pick<UserRecord, "id" | "name" | "email" | "image">): UserData =>
         userSchema.parse({
             ...record,
         }),

@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { useLiveSuspenseQuery } from "@tanstack/react-db";
@@ -20,8 +21,6 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import Link from "next/link";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HMembersCollection } from "@/lib/collections/d4h-members";
 import { route } from "@/lib/routes";

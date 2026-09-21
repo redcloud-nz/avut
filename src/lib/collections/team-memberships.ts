@@ -6,8 +6,8 @@
 
 import { pick } from "remeda";
 
-import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
 
 import { TeamMembershipData } from "@/lib/schemas/team-membership";
 import { perOrganization } from "@/lib/utils";
@@ -29,8 +29,7 @@ export const getTeamMembershipsCollection = perOrganization((organizationId) =>
                 id: true,
                 organizationId: true,
             }),
-            getKey: (membership) =>
-                `${membership.teamId}-${membership.personId}`,
+            getKey: (membership) => `${membership.teamId}-${membership.personId}`,
 
             onInsert: async ({ transaction }) => {
                 await Promise.all(
@@ -47,10 +46,7 @@ export const getTeamMembershipsCollection = perOrganization((organizationId) =>
             onUpdate: async ({ transaction }) => {
                 await Promise.all(
                     transaction.mutations.map(async (mutation) => {
-                        const data = pick(mutation.modified, [
-                            "tags",
-                            "properties",
-                        ]);
+                        const data = pick(mutation.modified, ["tags", "properties"]);
                         await trpcClient.teams.updateTeamMembership.mutate({
                             organizationId: organizationId,
                             teamId: mutation.original.teamId,

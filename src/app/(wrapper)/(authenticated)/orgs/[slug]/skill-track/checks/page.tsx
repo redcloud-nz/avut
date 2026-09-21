@@ -7,12 +7,11 @@
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-
-import { getOrganizationBySlug } from "@/server/organization";
 import { route } from "@/lib/routes";
+import { getOrganizationBySlug } from "@/server/organization";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import SkillTrack_ChecksList from "./checks-list";
-import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: "Skill Checks",

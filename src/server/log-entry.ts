@@ -28,6 +28,7 @@ import { LogAction, LogObjectType, LogRefRoleInput, LogScope } from "@/lib/schem
 import type { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
+
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at
 // runtime from this file, which is deliberately reachable from the jsdom test environment.
 

@@ -6,6 +6,7 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Argus } from "@/components/blocks/argus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,6 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
-import Link from "next/link";
 import { orgModules } from "@/lib/modules";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { getOrganizationBySlug } from "@/server/organization";

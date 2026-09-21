@@ -4,12 +4,13 @@
  */
 "use client";
 
-import { ComponentProps } from "react";
 import { useRouter } from "next/navigation";
+import { ComponentProps } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,8 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 

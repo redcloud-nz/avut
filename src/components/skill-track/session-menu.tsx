@@ -19,7 +19,6 @@ import {
     useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
-
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 

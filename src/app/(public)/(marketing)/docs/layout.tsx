@@ -10,8 +10,8 @@
  * sub-bar (title + search) and the sidebar/main split.
  */
 
-import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
+import { Suspense, type ReactNode } from "react";
 
 import { DocsNav_Skeleton } from "@/components/docs/docs-nav-skeleton";
 import { DocsSearch } from "@/components/docs/docs-search";

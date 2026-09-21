@@ -6,12 +6,12 @@ import "server-only";
 
 import { cacheTag } from "next/cache";
 
+import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
-import prisma from "./prisma";
 import { organizationSettingsCacheTag } from "./organization-settings-cache";
 import { readOrganizationSettings } from "./organization-settings-store";
-import { OrganizationId } from "@/lib/schemas/organization";
+import prisma from "./prisma";
 
 export { revalidateOrganizationSettings } from "./organization-settings-cache";
 export { readOrganizationSettings, writeOrganizationSettings } from "./organization-settings-store";

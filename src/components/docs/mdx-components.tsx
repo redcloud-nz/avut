@@ -7,9 +7,9 @@
  * `<Callout>` and `<Keys>` are the custom components authors may use directly.
  */
 
-import type { ComponentProps, ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
+import type { ComponentProps, ReactNode } from "react";
 
 import { DocsAssessmentRowDemo } from "@/components/docs/demo-assessment-row";
 import { DocsIcon } from "@/components/docs/icon-swatch";

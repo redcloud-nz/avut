@@ -5,6 +5,15 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { D4HServerCode } from "@/lib/d4h-servers";
+import { nanoId16 } from "@/lib/id";
+import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
+
 // d4h-access-tokens-router reaches @/server/auth at import time via ../init. It also imports
 // @/server/d4h-api/client and @/server/d4h-access-token, both of which pull in next/cache and
 // are not exercised by these tests (they cover the audit-log redaction, not live D4H calls or
@@ -26,15 +35,6 @@ vi.mock("@/server/encrypt", () => ({
     encryptDBValue: (value: string) => `encrypted:${value}`,
     decryptDBValue: (value: string) => value.replace(/^encrypted:/, ""),
 }));
-
-import { nanoId16 } from "@/lib/id";
-import { D4HServerCode } from "@/lib/d4h-servers";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
-import { createMockPrisma } from "@/test/create-prisma-mock";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
-
-import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 
 describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
     const T = {

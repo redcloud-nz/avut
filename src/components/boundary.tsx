@@ -30,11 +30,7 @@ export function Boundary({ children, slotProps = {} }: BoundaryProps) {
                 return <Alert {...alertProps}>{error.message}</Alert>;
             }}
         >
-            <Suspense
-                fallback={
-                    <LoadingFallback {...(slotProps.loadingFallback ?? {})} />
-                }
-            >
+            <Suspense fallback={<LoadingFallback {...(slotProps.loadingFallback ?? {})} />}>
                 {children}
             </Suspense>
         </ErrorBoundary>

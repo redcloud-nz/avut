@@ -5,13 +5,9 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// The router reaches server-only modules at import time. The procedures exercised here use
-// ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
-vi.mock("server-only", () => ({}));
-
 import { nanoId16 } from "@/lib/id";
-import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
@@ -20,6 +16,10 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import { createPerson, getPersonByEmail, personnelRouter } from "./personnel-router";
+
+// The router reaches server-only modules at import time. The procedures exercised here use
+// ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
+vi.mock("server-only", () => ({}));
 
 describe("personnel.getInviteState", () => {
     // Dataset — one person per state the dialog has to render:

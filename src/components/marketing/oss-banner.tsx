@@ -9,7 +9,7 @@
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { ExternalLink } from "@/components/ui/link";
-import { REPO_URL, REPO_SLUG } from "@/lib/site";
+import { REPO_SLUG, REPO_URL } from "@/lib/site";
 
 export function OssBanner() {
     return (

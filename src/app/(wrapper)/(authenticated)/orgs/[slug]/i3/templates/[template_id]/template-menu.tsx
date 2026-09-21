@@ -16,7 +16,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { I3Template } from "@/lib/schemas/i3-template";
 
 import { I3Module_DeleteTemplate_Dialog } from "./delete-template";

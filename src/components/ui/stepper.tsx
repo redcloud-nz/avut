@@ -8,10 +8,7 @@ import React from "react";
 
 import { cn } from "@/lib/utils";
 
-export type StepperProps = Omit<
-    React.ComponentPropsWithRef<"nav">,
-    "children"
-> & {
+export type StepperProps = Omit<React.ComponentPropsWithRef<"nav">, "children"> & {
     activeStep: number;
     steps: { name: string }[];
 };
@@ -29,11 +26,7 @@ export function Stepper({ activeStep, steps, ...props }: StepperProps) {
                         name={step.name}
                         stepIndex={index}
                         status={
-                            activeStep > index
-                                ? "Complete"
-                                : activeStep == index
-                                  ? "Current"
-                                  : null
+                            activeStep > index ? "Complete" : activeStep == index ? "Current" : null
                         }
                         isLast={index == steps.length - 1}
                     />
@@ -57,10 +50,7 @@ function Step({ name, stepIndex, status, isLast }: StepProps) {
                 <a className={cn("group flex w-full items-center")}>
                     <span className="flex items-center px-6 py-4 text-sm font-medium">
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 group-hover:bg-indigo-800">
-                            <CheckIcon
-                                aria-hidden="true"
-                                className="size-6 text-white"
-                            />
+                            <CheckIcon aria-hidden="true" className="size-6 text-white" />
                         </span>
                         <span className="ml-4 text-sm font-medium text-gray-900 select-none">
                             {name}
@@ -69,15 +59,11 @@ function Step({ name, stepIndex, status, isLast }: StepProps) {
                 </a>
             ) : status == "Current" ? (
                 <a
-                    className={cn(
-                        "flex items-center px-6 py-4 text-sm font-medium",
-                    )}
+                    className={cn("flex items-center px-6 py-4 text-sm font-medium")}
                     aria-current="step"
                 >
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-indigo-600">
-                        <span className="text-indigo-600 select-none">
-                            {stepIndex + 1}
-                        </span>
+                        <span className="text-indigo-600 select-none">{stepIndex + 1}</span>
                     </span>
                     <span className="ml-4 text-sm font-medium text-indigo-600 select-none">
                         {name}

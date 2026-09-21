@@ -6,8 +6,8 @@
 
 import * as z from "zod";
 
-import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
 
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { perOrganization } from "@/lib/utils";

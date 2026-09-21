@@ -9,6 +9,8 @@ import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { useUser } from "@/client/auth-queries";
+import { useSignOut } from "@/client/use-sign-out";
 import { PersonalSettingsIcon } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,9 +23,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-
-import { useUser } from "@/client/auth-queries";
-import { useSignOut } from "@/client/use-sign-out";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {

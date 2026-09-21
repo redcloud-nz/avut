@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { type ReactNode, Suspense } from "react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { Suspense, type ReactNode } from "react";
 
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 

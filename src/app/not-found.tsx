@@ -5,6 +5,8 @@
  *  Path: /
  */
 
+import Link from "next/link";
+
 import Artie from "@/components/art/artie";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +17,6 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-import Link from "next/link";
 
 export default function Root_NotFound() {
     return (

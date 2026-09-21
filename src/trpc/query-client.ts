@@ -3,12 +3,13 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import superjson from "superjson";
+
 import {
     defaultShouldDehydrateQuery,
     environmentManager,
     QueryClient,
 } from "@tanstack/react-query";
-import superjson from "superjson";
 
 import { authQueryKeys, authQueryRetryOptions } from "@/lib/auth-query-keys";
 

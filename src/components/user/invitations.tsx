@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { usersEffects } from "@/client/users-effects";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,8 +24,6 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { ObjectName } from "@/components/ui/typography";
-
-import { usersEffects } from "@/client/users-effects";
 import { useLogger } from "@/hooks/use-logger";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";

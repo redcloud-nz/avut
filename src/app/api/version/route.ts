@@ -18,9 +18,9 @@
  */
 
 import { execSync } from "node:child_process";
-
 import { NextResponse } from "next/server";
 
+// eslint-disable-next-line avut/no-deep-relative-imports -- package.json lives outside src/, so it has no @/ alias
 import appPackage from "../../../../package.json" with { type: "json" };
 
 const meta = (appPackage as { "nz.avut": { version: string; versionName: string } })["nz.avut"];

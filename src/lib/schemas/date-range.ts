@@ -4,6 +4,7 @@
  */
 
 import * as z from "zod";
+
 import { formatDate } from "../datetime";
 
 export type DateRange = z.infer<typeof DateRange.schema>;
@@ -15,10 +16,7 @@ export const DateRange = {
     }),
 } as const;
 
-export function formatDateRange(range: {
-    from?: string | Date;
-    to?: string | Date;
-}) {
+export function formatDateRange(range: { from?: string | Date; to?: string | Date }) {
     if (range.from) {
         const fromStr = formatDate(range.from);
         if (range.to) {

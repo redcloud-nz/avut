@@ -7,7 +7,6 @@
 
 import { Std } from "@/components/blocks/std";
 import { UserSettings_D4HAccessTokensList } from "@/components/user-settings/d4h-access-tokens-list";
-
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {

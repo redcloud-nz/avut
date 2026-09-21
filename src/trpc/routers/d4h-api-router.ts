@@ -6,22 +6,23 @@
 import * as R from "remeda";
 import * as z from "zod";
 
+import { TRPCError } from "@trpc/server";
+
+import {
+    buildD4HToday,
+    D4HTodayActivityInput,
+    d4hTodayTeamGroupSchema,
+    zonedTodayRange,
+} from "@/lib/d4h-today";
+import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
+import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
-import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
-import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
-import {
-    buildD4HToday,
-    d4hTodayTeamGroupSchema,
-    D4HTodayActivityInput,
-    zonedTodayRange,
-} from "@/lib/d4h-today";
-
 import {
     getConfiguredD4HAccessToken,
     getPersonalD4HAccessTokenForUser,
@@ -36,7 +37,6 @@ import {
 } from "@/server/d4h-api/client";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
-import { TRPCError } from "@trpc/server";
 
 export const d4hApiRouter = createTrpcRouter({
     /**

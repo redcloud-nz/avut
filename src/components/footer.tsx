@@ -5,13 +5,7 @@
 
 import { ReactNode } from "react";
 
-export function FloatingFooter({
-    children,
-    open = true,
-}: {
-    children: ReactNode;
-    open?: boolean;
-}) {
+export function FloatingFooter({ children, open = true }: { children: ReactNode; open?: boolean }) {
     return (
         <div className="fixed bottom-1 left-0 w-full flex justify-center">
             <div

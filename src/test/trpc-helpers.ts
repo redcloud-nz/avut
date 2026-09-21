@@ -8,14 +8,14 @@ import { beforeEach, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
-import type { AuthSession } from "@/server/auth";
-import type { LogEventOptions } from "@/trpc/init";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+import type { AuthSession } from "@/server/auth";
 import { recordLogEntry, resolveActor } from "@/server/log-entry";
+import type { LogEventOptions } from "@/trpc/init";
 
 const mockDate = new Date("2020-01-01T00:00:00.000Z");
 const nowDate = new Date();

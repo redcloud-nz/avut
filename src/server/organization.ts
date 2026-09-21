@@ -11,9 +11,7 @@ import { OrganizationData } from "@/lib/schemas/organization";
 
 import prisma from "./prisma";
 
-export async function getOrganizationBySlug(
-    slug: string,
-): Promise<OrganizationData> {
+export async function getOrganizationBySlug(slug: string): Promise<OrganizationData> {
     "use cache";
     cacheTag(`organization-${slug}`);
 

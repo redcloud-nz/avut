@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogBody,
@@ -21,11 +22,9 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { MutationButton } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
-
 import type { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 

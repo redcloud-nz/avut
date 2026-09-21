@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { SkillTrack_SessionBySkill_Content } from "@/components/skill-track/session-by-skill-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { getOrganizationBySlug } from "@/server/organization";

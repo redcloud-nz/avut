@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { AdminModule_Team_Content } from "@/components/admin/teams/team-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { TeamId } from "@/lib/schemas/team";
 import { getOrganizationBySlug } from "@/server/organization";

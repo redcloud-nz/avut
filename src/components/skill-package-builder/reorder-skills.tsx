@@ -32,7 +32,6 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";

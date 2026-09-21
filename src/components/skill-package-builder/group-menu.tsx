@@ -20,7 +20,6 @@ import {
     useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
-
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";

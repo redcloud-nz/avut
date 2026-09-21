@@ -14,7 +14,7 @@ import {
     SunIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

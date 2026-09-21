@@ -1,7 +1,7 @@
 import createPrismaMock from "prisma-mock/client";
 
-import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import * as dmmf from "@/generated/dmmf";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
 
 export function createMockPrisma(): PrismaClient {
     return createPrismaMock(Prisma as never, {

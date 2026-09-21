@@ -7,10 +7,9 @@
 
 import { Suspense } from "react";
 
-import { Argus } from "@/components/blocks/argus";
-
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { VerifyEmail_Card } from "@/components/auth/verify-email";
+import { Argus } from "@/components/blocks/argus";
 import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Verify Email" };

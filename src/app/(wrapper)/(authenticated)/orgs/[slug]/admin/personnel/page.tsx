@@ -5,12 +5,10 @@
  * Paths: /orgs/[slug]/admin/personnel
  */
 
+import { AdminModule_Personnel_List } from "@/components/admin/personnel/personnel-list";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-
 import { route } from "@/lib/routes";
-
-import { AdminModule_Personnel_List } from "@/components/admin/personnel/personnel-list";
 import { getOrganizationBySlug } from "@/server/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

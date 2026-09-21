@@ -13,12 +13,13 @@ import { DiffChange } from "@/lib/diff";
 import { Permissions } from "@/lib/permissions";
 import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
 import prisma from "@/server/prisma";
+
 import { formatTrpcError } from "./error-formatter";
-import { UserId } from "@/lib/schemas/user";
 
 // Artificial delay in development approximating the client-to-server network round trip for a
 // real user (as opposed to `localhost`, which has none). Deliberately small — this fires once

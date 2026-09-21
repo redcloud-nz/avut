@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
 
 import { PersonData } from "@/lib/schemas/person";
 import { perOrganization } from "@/lib/utils";

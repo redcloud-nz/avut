@@ -5,10 +5,10 @@
  */
 "use client";
 
+import { ListFilterIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
-import { ListFilterIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { cn } from "@/lib/utils";

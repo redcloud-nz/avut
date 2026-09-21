@@ -4,8 +4,8 @@
  */
 
 import { SkillsIcons } from "@/components/icons";
-import { cn } from "@/lib/utils";
 import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { cn } from "@/lib/utils";
 
 /** Distinct icon + color per exact result value, so tiers within a family read at a glance. */
 export const RESULT_ICONS: Record<

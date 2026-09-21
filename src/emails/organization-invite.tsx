@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { AuthOrganization } from "@/server/auth";
 import {
     Body,
     Button,
@@ -18,6 +17,8 @@ import {
     Tailwind,
     Text,
 } from "@react-email/components";
+
+import type { AuthOrganization } from "@/server/auth";
 
 import { assetBaseUrl, baseUrl } from "./base-url";
 

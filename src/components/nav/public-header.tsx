@@ -8,10 +8,10 @@
  * its own `<Suspense>` so pages using this header stay otherwise prerenderable.
  */
 
-import { Suspense } from "react";
-
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { ModeToggle } from "@/components/nav/mode-toggle";

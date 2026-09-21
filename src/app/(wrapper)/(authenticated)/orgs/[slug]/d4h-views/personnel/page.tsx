@@ -6,10 +6,9 @@
  */
 
 import { Std } from "@/components/blocks/std";
-
-import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { route } from "@/lib/routes";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 

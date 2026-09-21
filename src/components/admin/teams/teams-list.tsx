@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -19,16 +18,14 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { Protect } from "@/components/protect";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateTeam_Dialog } from "./create-team";
-import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 
 /**
  * List of teams in the organization.

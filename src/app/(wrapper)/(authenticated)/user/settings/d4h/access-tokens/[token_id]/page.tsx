@@ -9,7 +9,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { UserSettings_D4HAccessTokenContent } from "@/components/user-settings/d4h-access-token-content";
-
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 

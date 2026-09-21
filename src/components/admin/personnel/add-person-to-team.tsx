@@ -12,6 +12,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -27,8 +28,6 @@ import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonRef } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";

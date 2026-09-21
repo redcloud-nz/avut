@@ -13,9 +13,8 @@ import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
-
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 
 import { UserSettings_OrganizationMenu } from "./organization-menu";

@@ -3,13 +3,12 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { CircleCheckIcon, CircleXIcon, ClockIcon, MinusIcon } from "lucide-react";
 import { match } from "ts-pattern";
 
-import { CircleCheckIcon, CircleXIcon, ClockIcon, MinusIcon } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { isCompetentResult, type SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { cn } from "@/lib/utils";
 
 export type CompetencyStatus = "current" | "expired" | "not-competent" | "not-assessed";
 

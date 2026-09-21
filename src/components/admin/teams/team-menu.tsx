@@ -22,7 +22,6 @@ import {
     useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
-
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";

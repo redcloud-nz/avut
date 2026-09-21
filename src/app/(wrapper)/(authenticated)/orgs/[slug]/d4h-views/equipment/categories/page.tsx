@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { count, eq, useLiveSuspenseQuery } from "@tanstack/react-db";
@@ -20,11 +21,9 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import Link from "next/link";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
+import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_EquipmentCategories_Page() {

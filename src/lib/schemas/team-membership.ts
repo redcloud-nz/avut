@@ -6,8 +6,8 @@
 import * as z from "zod";
 
 import {
-    TeamMembership as TeamMembershipRecord,
     TeamMembership_D4H as TeamMembershipD4HRecord,
+    TeamMembership as TeamMembershipRecord,
 } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";

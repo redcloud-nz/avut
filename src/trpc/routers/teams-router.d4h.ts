@@ -9,13 +9,10 @@
 import { TRPCError } from "@trpc/server";
 
 import { Prisma, Team_D4H as TeamD4HRecord } from "@/generated/prisma/client";
-
 import { diffObject } from "@/lib/diff";
-import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HLinkAction } from "@/server/d4h-link-invariants";
-import { buildSyncPlan, D4HMembershipSnapshot, snapshotFromD4HMember } from "@/server/d4h-sync";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
@@ -25,6 +22,8 @@ import {
     fetchD4HTeamMembersForSync,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
+import { D4HLinkAction } from "@/server/d4h-link-invariants";
+import { buildSyncPlan, D4HMembershipSnapshot, snapshotFromD4HMember } from "@/server/d4h-sync";
 import { StalePlanError } from "@/trpc/errors";
 
 import { AuthenticatedOrganizationContext } from "../init";

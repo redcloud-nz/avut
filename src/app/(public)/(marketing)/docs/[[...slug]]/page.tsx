@@ -8,18 +8,18 @@
  * The same MDX is reused by the in-app `?help=<slug>` dialog.
  */
 
-import { Suspense } from "react";
-
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
 import { MDXContent } from "@content-collections/mdx/react";
 
-import { getAllDocSlugs } from "@/lib/docs";
-import { syntheticChecksFlag } from "@/lib/flags";
 import { DocsArticle_Skeleton } from "@/components/docs/docs-article-skeleton";
 import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
+import { getAllDocSlugs } from "@/lib/docs";
+import { syntheticChecksFlag } from "@/lib/flags";
 import { getVisibleDocBySlug } from "@/server/docs";
 
 interface DocsPageProps {

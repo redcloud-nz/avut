@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { SkillPackageBuilder_Package_Content } from "@/components/skill-package-builder/package-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { getOrganizationBySlug } from "@/server/organization";

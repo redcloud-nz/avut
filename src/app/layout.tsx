@@ -6,8 +6,8 @@
  */
 
 import type { Metadata, Viewport } from "next";
+import { Inter, Jersey_10 } from "next/font/google";
 import localFont from "next/font/local";
-import { Jersey_10, Inter } from "next/font/google";
 
 import { RootProviders } from "@/components/providers/root-providers";
 import { cn } from "@/lib/utils";

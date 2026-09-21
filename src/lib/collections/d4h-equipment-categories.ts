@@ -4,12 +4,13 @@
  */
 "use client";
 
-import { createCollection } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
 
-import { D4HEquipmentCategory } from "../schemas/d4h/equipment-category";
 import { perOrganization } from "@/lib/utils";
 import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
+
+import { D4HEquipmentCategory } from "../schemas/d4h/equipment-category";
 
 export const getD4HEquipmentCategoriesCollection = perOrganization((organizationId) =>
     createCollection(

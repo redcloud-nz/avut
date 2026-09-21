@@ -6,10 +6,9 @@
  */
 
 import { Std } from "@/components/blocks/std";
-
-import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { route } from "@/lib/routes";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
 import prisma from "@/server/prisma";

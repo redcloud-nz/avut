@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -25,8 +26,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";

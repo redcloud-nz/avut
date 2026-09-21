@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -22,8 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { i3Effects } from "@/client/i3-effects";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";

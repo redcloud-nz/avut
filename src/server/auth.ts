@@ -8,25 +8,24 @@ import { networkInterfaces } from "node:os";
 import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
+import { admin } from "better-auth/plugins/admin";
 
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
-
-import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
 import { revalidateOrganization } from "./organization";
 import { revalidateOrganizationUser } from "./organization-user-cache";
 import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
-import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 import prisma from "./prisma";
+import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
 /**
  * Bridges better-auth's `beforeEmailVerification` and `afterEmailVerification`

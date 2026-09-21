@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
 
 import { SkillCheck } from "@/lib/schemas/skill-check";
 import { perOrganization } from "@/lib/utils";

@@ -5,6 +5,7 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
+
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 

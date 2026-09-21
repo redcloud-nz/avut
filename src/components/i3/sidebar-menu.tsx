@@ -7,10 +7,8 @@
 
 import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
-
-import { route } from "@/lib/routes";
-
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 
 /** Nested pages for the I3 module's `NavCollapsible` section — not a standalone sidebar group. */
 export function I3_Sidebar_Menu() {

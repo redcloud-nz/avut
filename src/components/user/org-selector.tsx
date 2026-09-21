@@ -5,11 +5,12 @@
 
 "use client";
 
-import Link from "next/link";
 import { Building2Icon, ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { useUser } from "@/client/auth-queries";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -21,10 +22,8 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
-
-import { useUser } from "@/client/auth-queries";
-import { route } from "@/lib/routes";
 import { systemModules } from "@/lib/modules";
+import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 

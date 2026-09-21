@@ -8,7 +8,6 @@
 import { Metadata } from "next";
 
 import { AdminModule_Person_Content } from "@/components/admin/personnel/person-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
 import { getOrganizationBySlug } from "@/server/organization";

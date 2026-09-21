@@ -19,26 +19,26 @@ import {
 } from "lucide-react";
 
 import {
+    activeEditor$,
+    applyFormat$,
+    applyListType$,
+    ButtonWithTooltip,
+    Cell,
+    currentFormat$,
+    currentListType$,
+    insertTable$,
     IS_BOLD,
     IS_ITALIC,
-    IS_UNDERLINE,
     IS_STRIKETHROUGH,
     IS_SUBSCRIPT,
     IS_SUPERSCRIPT,
-    applyFormat$,
-    currentFormat$,
+    IS_UNDERLINE,
+    map,
+    MultipleChoiceToggleGroup,
+    openLinkEditDialog$,
+    SingleChoiceToggleGroup,
     useCellValues,
     usePublisher,
-    MultipleChoiceToggleGroup,
-    currentListType$,
-    applyListType$,
-    SingleChoiceToggleGroup,
-    insertTable$,
-    map,
-    activeEditor$,
-    Cell,
-    ButtonWithTooltip,
-    openLinkEditDialog$,
 } from "@mdxeditor/editor";
 
 // Format Text Toggles
@@ -83,14 +83,7 @@ const FormatOptionsMap = {
 };
 
 interface FormatTextToggleProps {
-    options?: (
-        | "bold"
-        | "italic"
-        | "underline"
-        | "strikethrough"
-        | "subscript"
-        | "superscript"
-    )[];
+    options?: ("bold" | "italic" | "underline" | "strikethrough" | "subscript" | "superscript")[];
 }
 
 export function FormatTextToggleGroup({
@@ -142,9 +135,7 @@ interface ListStyleToggleProps {
     options?: ("bullet" | "number" | "check")[];
 }
 
-export function ListStyleToggleGroup({
-    options = ["bullet", "number"],
-}: ListStyleToggleProps) {
+export function ListStyleToggleGroup({ options = ["bullet", "number"] }: ListStyleToggleProps) {
     const [currentListType] = useCellValues(currentListType$);
     const applyListType = usePublisher(applyListType$);
 
@@ -175,9 +166,7 @@ const disableInsertTableButton$ = Cell<boolean>(false, (r) => {
             activeEditor$,
             map((editor) =>
                 ["td", "th"].includes(
-                    editor
-                        ?.getRootElement()
-                        ?.parentNode?.nodeName.toLowerCase() ?? "",
+                    editor?.getRootElement()?.parentNode?.nodeName.toLowerCase() ?? "",
                 ),
             ),
         ),

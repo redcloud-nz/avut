@@ -8,7 +8,6 @@ import { ReactNode } from "react";
 
 import { DropdownMenuItem, DropdownMenuShortcut } from "@/components/ui/dropdown-menu";
 import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
-
 import { useActionHotkeys, type ActionHotkeyEntry } from "@/hooks/use-action-hotkeys";
 import { ActionHotkey, ActionVerb } from "@/lib/hotkeys";
 

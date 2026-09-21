@@ -7,11 +7,11 @@ import * as z from "zod";
 
 import { Skill as SkillRecord } from "@/generated/prisma/client";
 
-import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 import { nanoId16 } from "../id";
+import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 
-import { SkillPackageId } from "./skill-package";
 import { SkillGroupId } from "./skill-group";
+import { SkillPackageId } from "./skill-package";
 
 export const SkillId = {
     schema: zodNanoId16("SkillId expected").brand<"SkillId">(),

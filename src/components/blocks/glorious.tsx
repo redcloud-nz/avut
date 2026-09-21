@@ -11,9 +11,8 @@
 
 "use client";
 
-import { ComponentProps, ReactNode, useState } from "react";
-
 import { ChevronDownIcon } from "lucide-react";
+import { ComponentProps, ReactNode, useState } from "react";
 
 import { cn } from "@/lib/utils";
 

@@ -11,7 +11,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { trpc } from "@/trpc/client";
 
 /**

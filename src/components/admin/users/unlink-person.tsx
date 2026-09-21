@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { usersEffects } from "@/client/users-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,8 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { usersEffects } from "@/client/users-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";

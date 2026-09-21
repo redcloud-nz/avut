@@ -3,9 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import * as z from "zod";
-import { diffObject, DiffChange, DiffValueError } from "./diff";
+
+import { DiffChange, diffObject, DiffValueError } from "./diff";
 
 describe("diff", () => {
     it("should return empty array for identical objects", () => {

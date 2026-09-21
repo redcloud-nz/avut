@@ -9,14 +9,9 @@
 
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-
-import { useQueryState } from "nuqs";
-
 import { DicesIcon, FlaskConicalIcon } from "lucide-react";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { getEnabledSkillCheckResultOptions } from "@/lib/schemas/skill-check";
+import { useQueryState } from "nuqs";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +26,12 @@ import {
 import { DropdownMenuCheckboxItem, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
-
-import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { useOrganization } from "@/hooks/use-organization";
+import {
+    getEnabledSkillCheckResultOptions,
+    SKILL_CHECK_RESULT_VALUES,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { RouterOutput } from "@/trpc/client";
 
 type CompetencyMatrix = RouterOutput["skillChecks"]["getCompetencyMatrix"];

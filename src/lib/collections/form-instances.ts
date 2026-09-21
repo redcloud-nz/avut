@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection, parseLoadSubsetOptions } from "@tanstack/react-db";
 
 import { FormInstance, FormInstanceItem } from "@/lib/schemas/form-instance";
 import { perOrganization } from "@/lib/utils";

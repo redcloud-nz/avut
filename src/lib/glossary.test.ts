@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, expect, it } from "vitest";
 import { allDocs } from "content-collections";
+import { describe, expect, it } from "vitest";
 
 import { glossaryBySlug, glossaryEntries } from "@/lib/glossary";
 

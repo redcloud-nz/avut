@@ -3,10 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, expect, it, vi } from "vitest";
-
 import { organization } from "better-auth/plugins";
 import { getTestInstance } from "better-auth/test";
+import { describe, expect, it, vi } from "vitest";
 
 import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 

@@ -4,9 +4,11 @@
  */
 import { execSync } from "node:child_process";
 import { networkInterfaces } from "node:os";
+import type { NextConfig } from "next";
 
 import { withContentCollections } from "@content-collections/next";
-import type { NextConfig } from "next";
+
+import packageDataJson from "./package.json" with { type: "json" };
 
 interface PackageData {
     name: string;
@@ -24,7 +26,6 @@ interface PackageData {
     };
 }
 
-import packageDataJson from "./package.json" with { type: "json" };
 const packageData = packageDataJson as unknown as PackageData;
 
 const appMetadata = packageData["nz.avut"];

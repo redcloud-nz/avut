@@ -7,7 +7,6 @@
 
 import { Std } from "@/components/blocks/std";
 import { UserSettings_OrganizationsList } from "@/components/user-settings/organizations-list";
-
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {

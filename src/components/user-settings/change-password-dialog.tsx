@@ -6,6 +6,7 @@
 "use client";
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -13,7 +14,6 @@ import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { authClient } from "@/client/auth-client";
 import { linkedAccountsQueryOptions, useSession } from "@/client/auth-queries";
@@ -35,7 +35,6 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { PasswordInput } from "@/components/ui/password-input";
-
 import { authQueryKeys } from "@/lib/auth-query-keys";
 import {
     ConfirmPasswordSchema,
