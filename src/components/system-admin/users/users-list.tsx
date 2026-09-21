@@ -22,18 +22,9 @@ import { Badge } from "@/components/ui/badge";
 
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { trpc, type RouterOutput } from "@/trpc/client";
 
-type UserRow = {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    banned: boolean;
-    emailVerified: boolean;
-    createdAt: Date;
-    organizationCount: number;
-};
+type UserRow = RouterOutput["systemAdmin"]["listUsers"]["users"][number];
 
 export function SystemAdmin_Users_List() {
     const {

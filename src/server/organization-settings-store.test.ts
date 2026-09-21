@@ -47,6 +47,58 @@ describe("writeOrganizationSettings", () => {
         ]);
     });
 
+    it("deletes a leaf's row when it is set back to its default", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+
+        const defaults = OrganizationSettings.default();
+        const withI3 = (enabled: boolean): OrganizationSettings => ({
+            ...defaults,
+            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled } },
+        });
+
+        await writeOrganizationSettings(db, orgId, withI3(true));
+        expect(
+            (await db.organizationConfig.findMany({ where: { organizationId: orgId } })).map(
+                (r) => r.key,
+            ),
+        ).toEqual(["modules.i3.enabled"]);
+
+        const reverted = await writeOrganizationSettings(db, orgId, withI3(false));
+
+        expect(await db.organizationConfig.findMany({ where: { organizationId: orgId } })).toEqual(
+            [],
+        );
+        expect(reverted).toEqual(defaults);
+    });
+
+    it("leaves other materialised rows alone when one leaf reverts to its default", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+
+        const defaults = OrganizationSettings.default();
+        const settings = (i3: boolean, personnel: boolean): OrganizationSettings => ({
+            ...defaults,
+            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled: i3 } },
+            personnel: { ...defaults.personnel, autoLinkOnPersonCreate: personnel },
+        });
+
+        await writeOrganizationSettings(db, orgId, settings(true, true));
+        await writeOrganizationSettings(db, orgId, settings(false, true));
+
+        const records = await db.organizationConfig.findMany({ where: { organizationId: orgId } });
+        expect(records.map((r) => r.key)).toEqual(["personnel.autoLinkOnPersonCreate"]);
+        expect(OrganizationSettings.fromRecords(records)).toEqual(settings(false, true));
+    });
+
     // The personnel group is the first top-level addition since `general`/`integrations`/
     // `modules`, so this pins that a new group flattens, persists, and resolves like the rest —
     // and that both switches default off, which is the promise that no existing organization

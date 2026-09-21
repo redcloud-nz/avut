@@ -48,7 +48,7 @@ export function SystemAdmin_DeleteUser_Dialog({
 
     const mutation = useMutation(
         trpc.systemAdmin.deleteUser.mutationOptions({
-            meta: { effects: systemAdminEffects.deleteUser },
+            meta: { effects: systemAdminEffects.deleteUser, navigates: true },
             onError(error) {
                 console.error("Failed to delete user:", error);
                 toast.error(`Failed to delete user: ${error.message}`);

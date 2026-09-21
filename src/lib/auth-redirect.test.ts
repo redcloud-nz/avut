@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { postSignInUrl, safeRedirectPath, signInUrl } from "./auth-redirect";
+import { authUrl, postSignInUrl, safeRedirectPath, signInUrl } from "./auth-redirect";
 
 describe("safeRedirectPath", () => {
     it("accepts same-origin relative paths", () => {
@@ -55,5 +55,29 @@ describe("postSignInUrl", () => {
 
     it("falls back to the bare post-sign-in path for unsafe input", () => {
         expect(postSignInUrl("https://evil.example")).toBe("/auth/post-sign-in");
+    });
+});
+
+describe("authUrl", () => {
+    it("returns the bare path when there is nothing to carry", () => {
+        expect(authUrl("/auth/sign-up")).toBe("/auth/sign-up");
+    });
+
+    it("carries prefill values and a valid return path", () => {
+        expect(
+            authUrl("/auth/sign-up", {
+                email: "a+b@example.com",
+                name: "Ada Lovelace",
+                returnTo: "/invitations/abc",
+            }),
+        ).toBe(
+            "/auth/sign-up?email=a%2Bb%40example.com&name=Ada+Lovelace&redirectTo=%2Finvitations%2Fabc",
+        );
+    });
+
+    it("drops an unsafe return path but keeps the rest", () => {
+        expect(
+            authUrl("/auth/sign-in", { email: "a@example.com", returnTo: "//evil.example" }),
+        ).toBe("/auth/sign-in?email=a%40example.com");
     });
 });

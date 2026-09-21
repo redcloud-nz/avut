@@ -3,14 +3,40 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+const PRODUCTION_FALLBACK_URL = "https://www.avut.nz";
+
+type Env = Readonly<Record<string, string | undefined>>;
+
+/** The stable production domain — `VERCEL_PROJECT_PRODUCTION_URL`, or the hardcoded fallback. */
+function productionUrl(env: Env): string {
+    return env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : PRODUCTION_FALLBACK_URL;
+}
+
 /**
- * Base URL for links inside an email (accept-invitation, reset-password, …) that must land
- * back on the environment that sent the email. `VERCEL_URL` is the unique per-deployment host,
- * which is correct for that purpose.
+ * Where a link inside an email should point: the environment that sent it, as the recipient can
+ * actually reach it.
+ *
+ * - **Production** links to the production domain. `VERCEL_URL` there is still the unique
+ *   per-deployment host (`<deployment>.vercel.app`), which Vercel Deployment Protection puts
+ *   behind a Vercel login — an invitee who isn't a member of the Vercel team never reaches AVUT.
+ * - **Preview** deployments link to their own `VERCEL_URL`, so a link lands back on the
+ *   environment that sent it.
+ * - **Local** (`next dev`, or `vercel dev`, which reports `VERCEL_ENV=development` and may also
+ *   export a `VERCEL_URL`) links to the dev server.
+ *
+ * Reads `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_PROJECT_PRODUCTION_URL` and `PORT` from `env`.
  */
-export const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+export function resolveBaseUrl(env: Env): string {
+    if (env.VERCEL_ENV === "production") return productionUrl(env);
+
+    if (!env.VERCEL_ENV || env.VERCEL_ENV === "development" || !env.VERCEL_URL) {
+        return `http://localhost:${env.PORT ?? 3000}`;
+    }
+
+    return `https://${env.VERCEL_URL}`;
+}
 
 /**
  * Base URL for static assets referenced in an email (the AVUT logo). Unlike action links,
@@ -19,6 +45,15 @@ export const baseUrl = process.env.VERCEL_URL
  * simply not the assigned domain), which is why the logo failed to load in delivered emails.
  * Always point these at the stable production domain.
  */
-export const assetBaseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "https://www.avut.nz";
+export function resolveAssetBaseUrl(env: Env): string {
+    return productionUrl(env);
+}
+
+/**
+ * Base URL for the link in the invitation email, which the invitee has to be able to open.
+ * See `resolveBaseUrl` for how it depends on the environment.
+ */
+export const baseUrl = resolveBaseUrl(process.env);
+
+/** Base URL for static assets in an email. See `resolveAssetBaseUrl`. */
+export const assetBaseUrl = resolveAssetBaseUrl(process.env);

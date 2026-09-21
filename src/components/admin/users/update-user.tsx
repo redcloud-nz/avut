@@ -290,7 +290,9 @@ export function AdminModule_UpdateUser_Dialog({
                                         </Show>
                                         <Show
                                             when={
-                                                organization.settings.modules["skill-track"].enabled
+                                                organization.settings.modules[
+                                                    "skill-package-builder"
+                                                ].enabled
                                             }
                                         >
                                             <Field orientation="horizontal">

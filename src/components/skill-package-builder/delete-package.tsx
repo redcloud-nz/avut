@@ -37,7 +37,7 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deletePackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.deletePackage },
+            meta: { effects: skillPackageBuilderEffects.deletePackage, navigates: true },
             onError(error) {
                 console.error("Failed to delete skill package:", error);
                 toast.error(`Failed to delete skill package: ${error.message}`);

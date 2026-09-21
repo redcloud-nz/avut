@@ -42,7 +42,7 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deleteGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.deleteGroup },
+            meta: { effects: skillPackageBuilderEffects.deleteGroup, navigates: true },
             onError(error) {
                 console.error("Failed to delete skill group:", error);
                 toast.error(`Failed to delete skill group: ${error.message}`);

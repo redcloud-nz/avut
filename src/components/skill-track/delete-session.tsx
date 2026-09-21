@@ -37,7 +37,7 @@ export function SkillsModule_DeleteSession_Dialog({
 
     const mutation = useMutation(
         trpc.skills.deleteSession.mutationOptions({
-            meta: { effects: skillsEffects.deleteSession },
+            meta: { effects: skillsEffects.deleteSession, navigates: true },
             onError(error) {
                 console.error("Failed to delete session:", error);
                 toast.error("Failed to delete session: " + error.message);

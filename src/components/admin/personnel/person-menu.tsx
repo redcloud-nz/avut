@@ -131,7 +131,7 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             disabled: !canUpdate,
         });
     }
-    if (person.status !== "Archived") {
+    if (person.status !== "Deleted") {
         actions.push({
             verb: "delete",
             label: "Delete",
