@@ -9,9 +9,35 @@ import type {
     LogBatch as LogBatchRecord,
     LogEntry as LogEntryRecord,
 } from "@/generated/prisma/client";
+import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
+import { zodNanoId16 } from "@/lib/validation";
 
 export type { LogBatchRecord, LogEntryRecord };
+
+export const LogEntryId = {
+    schema: zodNanoId16("LogEntryId expected").brand<"LogEntryId">(),
+
+    create: () => LogEntryId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryId = z.infer<typeof LogEntryId.schema>;
+
+export const LogEntryObjectId = {
+    schema: zodNanoId16("LogEntryObjectId expected").brand<"LogEntryObjectId">(),
+
+    create: () => LogEntryObjectId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryObjectId = z.infer<typeof LogEntryObjectId.schema>;
+
+export const LogBatchId = {
+    schema: zodNanoId16("LogBatchId expected").brand<"LogBatchId">(),
+
+    create: () => LogBatchId.schema.parse(nanoId16()),
+} as const;
+
+export type LogBatchId = z.infer<typeof LogBatchId.schema>;
 
 /**
  * Which log a `LogEntry` belongs to.

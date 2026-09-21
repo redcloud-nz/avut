@@ -24,10 +24,12 @@ import * as z from "zod";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
 import {
     LogAction,
+    LogBatchId,
+    LogEntryId,
+    LogEntryObjectId,
     LogObjectType,
     LogRefRoleInput,
     LogScope,
@@ -224,7 +226,7 @@ export function recordLogEntry(
     );
 
     const refRows = refs.map((ref) => ({
-        id: nanoId16(),
+        id: LogEntryObjectId.create(),
         objectType: parseOrThrow(
             LogObjectType.schema,
             ref.objectType,
@@ -242,7 +244,7 @@ export function recordLogEntry(
 
     return tx.logEntry.create({
         data: {
-            id: nanoId16(),
+            id: LogEntryId.create(),
             scope,
             organizationId: input.organizationId ?? null,
             ownerId: input.ownerId ?? null,
@@ -261,7 +263,7 @@ export function recordLogEntry(
             objects: {
                 create: [
                     {
-                        id: nanoId16(),
+                        id: LogEntryObjectId.create(),
                         objectType,
                         objectId: input.objectId,
                         role: "primary",
@@ -295,7 +297,7 @@ export function createLogBatch(
 
     return tx.logBatch.create({
         data: {
-            id: nanoId16(),
+            id: LogBatchId.create(),
             operationKey: input.operationKey,
             userId: input.userId ?? null,
             actorLabel: input.actorLabel ?? null,

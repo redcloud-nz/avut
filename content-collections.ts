@@ -8,7 +8,7 @@
  */
 
 import remarkGfm from "remark-gfm";
-import { z } from "zod";
+import * as z from "zod";
 
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";

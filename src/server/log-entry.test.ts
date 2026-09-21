@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { ZodError } from "zod";
+import * as z from "zod";
 
 import type { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
@@ -308,7 +308,7 @@ describe("recordLogEntry — changes parse", () => {
     it("rejects a malformed change", () => {
         const changes = [{ type: "obj_mod", path: ["name"], prev: "a" }] as never;
 
-        expect(() => recordLogEntry({ ...baseInput(), changes }, db)).toThrow(ZodError);
+        expect(() => recordLogEntry({ ...baseInput(), changes }, db)).toThrow(z.ZodError);
     });
 });
 

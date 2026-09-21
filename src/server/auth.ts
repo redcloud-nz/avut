@@ -15,6 +15,7 @@ import { admin } from "better-auth/plugins/admin";
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
+// eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";

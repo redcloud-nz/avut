@@ -9,7 +9,7 @@
 
 import { ComponentProps } from "react";
 import { cn } from "tailwind-variants";
-import { ZodSafeParseResult } from "zod";
+import * as z from "zod";
 
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
@@ -31,7 +31,7 @@ function EagleTitle({ className, ...props }: ComponentProps<"h4">) {
 
 type EagleContentProps = Omit<ComponentProps<"div">, "children"> & {
     raw: unknown;
-    parsed: ZodSafeParseResult<unknown>;
+    parsed: z.ZodSafeParseResult<unknown>;
 };
 
 function EagleContent({ className, raw, parsed, ...props }: EagleContentProps) {

@@ -11,8 +11,8 @@ export type DateRange = z.infer<typeof DateRange.schema>;
 
 export const DateRange = {
     schema: z.object({
-        from: z.string().date().optional(),
-        to: z.string().date().optional(),
+        from: z.iso.date().optional(),
+        to: z.iso.date().optional(),
     }),
 } as const;
 
