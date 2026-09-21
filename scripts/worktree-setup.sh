@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # worktree-setup — make a fresh git worktree ready to work in: copy .env.local, link .vercel,
-# install dependencies and generate the typed routes. Safe to re-run; steps already done are skipped.
+# install dependencies and generate the Prisma client and typed routes. Safe to re-run; the install
+# is skipped once done, and the generated code is refreshed every time.
 #
 # Usage:  npm run worktree:setup [<name>]
 #   e.g.  npm run worktree:setup                      # from inside the worktree
@@ -62,9 +63,13 @@ else
   echo "  – no .vercel in the main checkout, skipped"
 fi
 
-# node_modules is gitignored. `npm ci` installs exactly what package-lock.json says (no lockfile
-# churn in the new worktree), and its postinstall runs `prisma generate` and `husky`, which the
-# pre-commit hook needs.
+# node_modules is gitignored. Two ways to fill it, both ending with the root `postinstall`
+# (`prisma generate`) and `prepare` (`husky`, which the pre-commit hook needs):
+#
+#   1. macOS: clone the main checkout's node_modules with one clonefile(2) call (APFS, a couple of
+#      seconds, shares disk blocks so it costs almost no space), then `npm install --no-save` to
+#      reconcile it with this branch's package-lock.json. --no-save keeps the lockfile untouched.
+#   2. Otherwise, or if either step fails: `npm ci`, which installs exactly what the lockfile says.
 #
 # `prisma generate` never opens a connection, but prisma.config.ts reads only `.env` (not
 # `.env.local`) and insists the URL is set, so a bare install fails. Give it the same placeholder CI
@@ -72,22 +77,72 @@ fi
 #
 # node_modules can be left half-installed by a failed run, so "done" is a marker written at the end
 # rather than the directory existing.
+db_url="${POSTGRES_PRISMA_URL:-postgresql://user:password@localhost:5432/postgres}"
+
+# run_quiet <cmd...> — silent on success; on failure prints the captured output and returns 1.
+run_quiet() {
+  local log
+  log="$(mktemp)"
+  if POSTGRES_PRISMA_URL="$db_url" "$@" >"$log" 2>&1; then
+    rm -f "$log"
+    return 0
+  fi
+  cat "$log" >&2
+  rm -f "$log"
+  return 1
+}
+
+# Replace ./node_modules with a copy-on-write clone of the main checkout's. Fails (so the caller falls
+# back to `npm ci`) off macOS, without python3 (no shell command clones a directory tree in one call),
+# without a finished install to clone, or across volumes.
+clone_node_modules() {
+  [ "$(uname)" = Darwin ] && command -v python3 >/dev/null 2>&1 || return 1
+  [ -f "$root/node_modules/.package-lock.json" ] || return 1
+  rm -rf node_modules
+  python3 - "$root/node_modules" node_modules <<'PY' || return 1
+import ctypes, sys
+libc = ctypes.CDLL("libSystem.dylib", use_errno=True)
+sys.exit(0 if libc.clonefile(sys.argv[1].encode(), sys.argv[2].encode(), 0) == 0 else 1)
+PY
+}
+
+installed_now=0
 if [ -f node_modules/.avut-installed ]; then
   echo "  – dependencies already installed (delete node_modules to reinstall)"
 else
-  echo "  … npm ci"
-  install_log="$(mktemp)"
-  if POSTGRES_PRISMA_URL="${POSTGRES_PRISMA_URL:-postgresql://user:password@localhost:5432/postgres}" \
-    npm ci --no-audit --no-fund --loglevel=error >"$install_log" 2>&1; then
-    rm -f "$install_log"
-  else
-    cat "$install_log" >&2
-    rm -f "$install_log"
-    echo "error: npm ci failed (log above)" >&2
-    exit 1
+  installed_now=1
+  install_mode=""
+  if clone_node_modules; then
+    echo "  … node_modules cloned from the main checkout; npm install to reconcile"
+    if run_quiet npm install --no-save --prefer-offline --no-audit --no-fund --loglevel=error; then
+      install_mode="cloned"
+    else
+      echo "  ! reconcile failed (log above), falling back to npm ci" >&2
+      rm -rf node_modules
+    fi
+  fi
+  if [ -z "$install_mode" ]; then
+    echo "  … npm ci"
+    if ! run_quiet npm ci --no-audit --no-fund --loglevel=error; then
+      echo "error: npm ci failed (log above)" >&2
+      exit 1
+    fi
+    install_mode="npm ci"
   fi
   touch node_modules/.avut-installed
-  echo "  ✓ dependencies installed"
+  echo "  ✓ dependencies installed ($install_mode)"
+fi
+
+# A fresh install has just run `prisma generate` via postinstall. On a re-run it hasn't, and
+# src/generated is gitignored, so refresh it here — a schema change on the branch, or a deleted
+# directory, would otherwise leave a stale client that only shows up as type errors.
+if [ "$installed_now" = 0 ]; then
+  echo "  … prisma generate"
+  if ! run_quiet npx prisma generate; then
+    echo "error: prisma generate failed (log above)" >&2
+    exit 1
+  fi
+  echo "  ✓ prisma client generated"
 fi
 
 # .next is per-worktree; typed routes won't resolve until this has run.

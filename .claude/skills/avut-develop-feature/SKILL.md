@@ -42,7 +42,7 @@ git worktree list
 npm run worktree:setup
 ```
 
-It copies `.env.local`, links `.vercel`, installs dependencies and generates route types (see the Worktrees section of `AGENTS.md`).
+It copies `.env.local`, links `.vercel`, installs dependencies and generates the Prisma client and route types (see the Worktrees section of `AGENTS.md`).
 
 Don't start a dev server — check whether the user already has one running (elsewhere) and ask them to start one for this worktree on its own port (`npm run dev -- -p 3100` or similar) rather than launching one yourself.
 
