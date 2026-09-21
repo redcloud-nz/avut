@@ -4,10 +4,12 @@
  */
 
 /*
- * Deliberately NOT marked `server-only` and free of any prisma import — the revalidation callback
+ * Deliberately free of any prisma import — the revalidation callback
  * is injected so this can be exercised against a real Better Auth instance from the jsdom test
  * environment.
  */
+
+import "server-only";
 
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 
