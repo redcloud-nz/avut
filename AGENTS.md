@@ -146,7 +146,7 @@ Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `perm
 
 ## IDs
 
-Use `nanoId16()` from `src/lib/id.ts` for new record IDs.
+Create record IDs with `<Model>Id.create()` from the model's schema file in `src/lib/schemas/` (`PersonId.create()`, `TeamId.create()`, …). `nanoId16()` is only called inside those files — lint enforces it, so add an `Id` to the schema if a model lacks one.
 
 ## D4H Integration
 
@@ -177,7 +177,7 @@ route("/orgs/[slug]/admin/personnel/[person_id]", { slug, person_id: id });
 
 ## Testing
 
-Vitest with jsdom; tests live alongside source files. The conventions (prisma-mock, `createCaller` contexts, fixture IDs, dataset structure, the `server-only` constraint) are in [`.claude/rules/testing.md`](.claude/rules/testing.md), loaded when working on test files.
+Vitest with jsdom; tests live alongside source files. The conventions (prisma-mock, `createCaller` contexts, fixture IDs, dataset structure, which server modules to keep out of tests) are in [`.claude/rules/testing.md`](.claude/rules/testing.md), loaded when working on test files.
 
 ## UI Block Components
 

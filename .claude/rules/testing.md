@@ -59,4 +59,4 @@ describe("myRouter.someQuery", () => {
 });
 ```
 
-**`server-only` constraint**: `@/server/auth`, `@/server/prisma`, and anything that imports them will throw in the jsdom test environment. Never import them in test files or router files. `@/trpc/init.ts` is safe because it uses `import type` for server-only deps.
+**`server-only` and the real clients**: Vitest aliases `server-only` to an empty stub (`src/test/server-only.ts`), so marked server modules import fine in tests and no per-file `vi.mock("server-only")` is needed. Still keep `@/server/auth` and `@/server/prisma` out of test files and router files — they construct the real Better Auth and Prisma clients. Use `createMockPrisma()` and the injected-client seams instead.
