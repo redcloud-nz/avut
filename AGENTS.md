@@ -18,6 +18,7 @@ How to operate in this repo — commands, tooling gotchas, and git.
 
 ```bash
 npm run build                # Run migrations + build
+npm run lint                 # eslint . — CI fails on errors; enforces the rules marked (lint) below
 npx next typegen             # Regenerate typed routes — required after adding a page
 
 # Prisma (always uses .env.local) — see Database section before running migrations
@@ -60,7 +61,7 @@ The dev database holds records for **real people with their real email addresses
 
 - Local development, `vercel dev`, and preview deployments all redirect. Only the production deployment delivers as addressed.
 - `EMAIL_DELIVERY=live` forces real delivery (e.g. to test a preview against your own address) and `EMAIL_DELIVERY=redirect` mutes production. **Never set `EMAIL_DELIVERY=live` while pointed at the dev database.**
-- Send mail only through `sendEmail`. Calling the Resend client directly goes around the guard rail.
+- Send mail only through `sendEmail` (lint) — calling the Resend client directly goes around the guard rail.
 
 ## Git
 
@@ -87,13 +88,12 @@ Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec carries a
 
 Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `LogBatch`, the `Operations` registry) are in [`src/trpc/CLAUDE.md`](src/trpc/CLAUDE.md), loaded when working under `src/trpc/`. The rules that apply everywhere:
 
-- Always call `ctx.logEvent(...)` after state-changing operations on records — org-scoped, user-scoped, or system-wide
+- Always call `ctx.logEvent(...)` after state-changing operations on records — org-scoped, user-scoped, or system-wide. Log rows are never written by hand (lint): every entry goes through `ctx.logEvent`, which delegates to `recordLogEntry` in `src/server/log-entry.ts`
 - Pair a write with `ctx.logEvent(...)` inside `ctx.prisma.$transaction([...])`, not `Promise.all([...])` — see [`docs/patterns/transactional-writes.md`](docs/patterns/transactional-writes.md) for the shape and its gotchas (non-Prisma operations can't join the array)
-- Never write `prisma.logEntry.create` by hand. Every entry goes through a `ctx.logEvent`, which delegates to `recordLogEntry` in `src/server/log-entry.ts` — the one place the write-time invariants and the closed vocabularies are enforced
 
 ## Data Fetching
 
-AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP). Never use the `@/trpc/client` one in a Server Component — its `queryFn` arrives unauthenticated.
+AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP, so its `queryFn` arrives unauthenticated on the server). Lint catches the wrong one in Next entry files (`page`, `layout`, `route`, …); any other Server Component is on you.
 
 Mutations declare their cache side-effects once via `meta: { effects: ... }` (`src/trpc/mutation-effector.tsx`), not with manual `queryClient.setQueryData`/`invalidateQueries` calls at each call site.
 
@@ -141,18 +141,18 @@ Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `perm
 ## Zod Schemas
 
 - Domain schemas live in `src/lib/schemas/`
-- Use Zod 4 syntax (`.parse`, `.safeParse`, `z.object`, etc.)
+- Use Zod 4 — lint enforces `import * as z from "zod"` and the top-level string formats (`z.email()`, not `z.string().email()`); the rest of the Zod 3 → 4 changes are on you
 - Schemas shared between client and server go in `src/lib/schemas/`; server-only in `src/server/`
 
 ## IDs
 
-Create record IDs with `<Model>Id.create()` from the model's schema file in `src/lib/schemas/` (`PersonId.create()`, `TeamId.create()`, …). `nanoId16()` is only called inside those files — lint enforces it, so add an `Id` to the schema if a model lacks one.
+Create record IDs with `<Model>Id.create()` from the model's schema file in `src/lib/schemas/` (`PersonId.create()`, `TeamId.create()`, …). `nanoId16()` is only called inside those files (lint) — add an `Id` to the schema if a model lacks one.
 
 ## D4H Integration
 
 - D4H is an optional feature — code that depends on a D4H access token must handle the case where none is configured
 - D4H API client: `src/server/d4h-api/client.ts` — use `getD4HFetchClient(token)` (note the capital `H`)
-- The client is server-only; it takes a `D4HAccessToken_ServerOnly`. Never import it from a client component
+- The client is server-only; it takes a `D4HAccessToken_ServerOnly`. It lives in `src/server`, whose modules must import `server-only` (lint), so a client import fails the build
 - Cached D4H fetches use the standard Next.js 16 `"use cache"` directive with `cacheLife` + `cacheTag`
 - D4H resource schemas validated with Zod live in `src/lib/schemas/d4h/`
 

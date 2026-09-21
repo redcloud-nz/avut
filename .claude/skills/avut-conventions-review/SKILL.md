@@ -1,13 +1,24 @@
 ---
 name: avut-conventions-review
-description: Review AVUT code changes for compliance with this repo's own house conventions from AGENTS.md — tRPC router ordering and permissions, ctx.logEvent, transactional writes ($transaction vs Promise.all), D4H optionality and server-only boundaries, ID generation, Zod schema placement, route() usage, generated-file edits, server/client data-fetching boundaries (trpc/server vs trpc/client, prefetch+HydrateClient, useSuspenseQuery, mutation cache effects), and UI block/Protect usage. Use this whenever reviewing a diff, PR, or newly written code in this repo, especially after adding or changing a tRPC router, a D4H-backed feature, a new page/route, a mutation, or a server/client component pair — these are exactly the places generic bug-hunting reviews miss because the rules are specific to AVUT, not to Next.js or TypeScript in general. Complements (doesn't replace) a general correctness/simplification review.
+description: Review AVUT code changes for compliance with this repo's own house conventions from AGENTS.md that ESLint does not already enforce — tRPC router ordering and permissions, ctx.logEvent, transactional writes ($transaction vs Promise.all), D4H optionality and cache directives, Zod schema placement, route() usage, generated-file edits, data-fetching patterns (prefetch+HydrateClient, useSuspenseQuery, mutation cache effects), and UI block/Protect usage. Use this whenever reviewing a diff, PR, or newly written code in this repo, especially after adding or changing a tRPC router, a D4H-backed feature, a new page/route, a mutation, or a server/client component pair — these are exactly the places generic bug-hunting reviews miss because the rules are specific to AVUT, not to Next.js or TypeScript in general. Complements (doesn't replace) a general correctness/simplification review.
 ---
 
 # AVUT Conventions Review
 
-A generic code review catches bugs and bad patterns any TypeScript/Next.js reviewer would flag. It won't catch a tRPC procedure list going out of alphabetical order, a missing `ctx.logEvent`, a D4H import leaking into a client component, or a hand-built `/orgs/${slug}/...` string where `route()` was required — because none of those are wrong in general, only wrong _here_. This skill is the checklist for that second pass: the rules that only make sense with AGENTS.md conventions in hand.
+A generic code review catches bugs and bad patterns any TypeScript/Next.js reviewer would flag. It won't catch a tRPC procedure list going out of alphabetical order, a missing `ctx.logEvent`, a `Promise.all` where a `$transaction` was needed, or a hand-built `/orgs/${slug}/...` string where `route()` was required — because none of those are wrong in general, only wrong _here_. This skill is the checklist for that second pass: the rules that only make sense with AGENTS.md conventions in hand.
 
 Use it after (or alongside) a normal correctness review — run through the checks below against the actual diff, not the whole file, and only report what the diff touches or introduces.
+
+## Enforced by ESLint — don't re-check
+
+CI fails on `npm run lint` errors, so skip these; the rule message explains any fix (rules are in `eslint.config.mjs`):
+
+- ID creation via `<Model>Id.create()`; Zod import form and v3 string formats; `@/trpc/client` in a Next entry file without `"use client"`
+- `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`)
+- Hand-written `logEntry` writes
+- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling
+
+Check only that an added `eslint-disable` for one of these has a genuine exemption and a stated reason.
 
 ## tRPC routers (`src/trpc/routers/`)
 
@@ -23,18 +34,19 @@ Use it after (or alongside) a normal correctness review — run through the chec
 D4H is optional per-organization — no org is guaranteed to have an access token configured.
 
 - **Handles the no-token case.** Any code path that depends on a D4H access token must branch on its absence (skip the feature, show empty state, etc.) rather than assuming it exists. A new component or procedure that calls into D4H without checking for a token first is a finding.
-- **Server-only boundary.** `getD4HFetchClient` (`src/server/d4h-api/client.ts`) and anything that takes a `D4HAccessToken_ServerOnly` must never be imported into a client component (`"use client"` files, or anything under a client component's import graph). This is a hard rule, not a style preference — flag it even if it currently "works," since it's a build-time/bundle boundary violation waiting to surface.
 - **Cache directives on cached fetches.** D4H fetches that are cached should use the Next.js 16 `"use cache"` directive with `cacheLife` + `cacheTag`, not ad-hoc memoization.
 - **Resource shapes validated.** Data read from the D4H API should be validated against a Zod schema in `src/lib/schemas/d4h/`, not consumed as untyped/unvalidated JSON.
 
 ## IDs
 
-- New record IDs must come from `nanoId16()` (`src/lib/id.ts`) — not `crypto.randomUUID()`, not a Prisma default, not string concatenation. Check any `.create({ data: { id: ... } })` call for a new model.
-- Branded ID types in tests come from their type's `.create()` factory (`PersonId.create()`, `TeamId.create()`, etc.), not a cast (`as PersonId`) — a cast bypasses whatever the factory enforces and is worth flagging in test code too.
+Lint catches ID imports but not an ID built without one:
+
+- Check any `.create({ data: { id: ... } })` for a new model — not a Prisma default or string concatenation.
+- Branded IDs, in tests too (lint exempts them), come from the type's `.create()` (`PersonId.create()`), not a cast (`as PersonId`) — a cast bypasses whatever the factory enforces.
 
 ## Zod schemas
 
-- Zod 4 syntax throughout (`.parse`/`.safeParse`, `z.object({...})`) — watch for stale v3-era patterns copied from an older file or from training data.
+- Lint covers only Zod's import form and v3 string formats. Watch for other v3-era patterns copied from an older file or from training data (e.g. `.errors` where Zod 4 has `.issues`, `message:` where it has `error:`).
 - Placement: a schema used by both client and server belongs in `src/lib/schemas/`; a schema that only makes sense server-side (e.g. touching a `D4HAccessToken_ServerOnly`-shaped value) belongs under `src/server/`. A shared-looking schema added under `src/server/` (or vice versa) is worth double-checking against where it's actually imported from.
 
 ## Routes and internal links
@@ -47,16 +59,10 @@ D4H is optional per-organization — no org is guaranteed to have an access toke
 
 - `src/generated/prisma/` and `src/generated/dmmf.ts` must never be hand-edited. If a diff touches either, the real fix is a Prisma schema change followed by `npx prisma generate` (or `npm run prisma migrate dev`) — flag any direct edit as a finding regardless of how small it looks, and check that a schema change that should have regenerated these actually did.
 
-## Server-only boundaries
-
-- `@/server/auth`, `@/server/prisma`, and anything importing them are server-only. They must never be imported directly in test files (tests use `createMockPrisma()` / `createAuthenticatedMockContext` instead) or in a way that would pull them into a client bundle. `@/trpc/init.ts` is the one safe exception (it uses `import type` for these).
-- A test file importing from `@/server/*` directly, rather than through the test helpers in `src/test/`, will fail in the jsdom test environment — this is usually a correctness bug, not just a style issue, so treat it as one.
-
 ## Server/client data fetching
 
 The authoritative walkthrough (code + rationale) is [`docs/patterns/detail-page-data-fetching.md`](../../../docs/patterns/detail-page-data-fetching.md) and [`docs/patterns/mutation-dialog.md`](../../../docs/patterns/mutation-dialog.md) — read the relevant one fresh rather than relying on a summary here, since this file only tracks the checks, not the reasoning. What to verify against the diff:
 
-- **Caller boundary.** A Server Component (`page.tsx`, `layout.tsx`, etc.) must import `trpc` from `@/trpc/server`, never `@/trpc/client` — the latter's `queryFn` goes over HTTP and arrives unauthenticated. Check the import path whenever a server file calls `trpc.<router>.<procedure>`.
 - **`fetchQuery` vs `prefetch`.** `fetchQuery` (awaited, throws Next interrupts on `TRPCError`) is for when the Server Component needs the value itself (metadata title, a not-found/forbidden decision). `prefetch` (fire-and-forget, wrapped in `<HydrateClient>`) is for warming the cache ahead of a Client Component's `useSuspenseQuery`. Absence of `prefetch`/`HydrateClient` isn't itself a finding (it's opportunistic) — but a page that `fetchQuery`s for metadata and _also_ cold-fetches the same data client-side is double-fetching; worth a note.
 - **`useSuspenseQuery`, not `useQuery` + manual loading/error state.** Loading/error handling is structural here (ambient `Suspense` in `Std.SidebarInset`/`Std.ScrollContainer`, route-level `error.tsx`/`not-found.tsx`) — a component adding its own spinner or error branch is a deviation, not a style choice.
 - **Every mutation sets `meta: { effects: ... }`** sourced from a `src/client/<domain>-effects.ts` file. A `useMutation(...)` with no `meta.effects` and no manual `queryClient` call in `onSuccess` is a real bug (stale data everywhere else that reads it until reload/`staleTime` expiry), not a nit — check that a new mutation either has effects wired up or reuses an existing one that already covers it.
@@ -74,6 +80,7 @@ The authoritative walkthrough (code + rationale) is [`docs/patterns/detail-page-
 
 - New tests seed a single shared dataset in `beforeAll` inside the outer `describe` and assert against slices of it, reserving `beforeEach` for cases that genuinely need isolated/mutated state per test. A test file that reseeds the same fixtures in every `beforeEach` for no isolation reason is worth a simplification note (this is a `simplify`/style concern, not a correctness one).
 - Router tests call procedures via `router.createCaller(ctx)` with `createAuthenticatedMockContext(...)`, not by mocking tRPC's HTTP layer.
+- Tests don't import `@/server/auth` or `@/server/prisma` (they build the real clients) — use `createMockPrisma()`; routers don't import `@/server/auth` (lint already blocks the Prisma client). Other `src/server` modules are fine in tests. See `.claude/rules/testing.md`.
 
 ## Reporting findings
 
