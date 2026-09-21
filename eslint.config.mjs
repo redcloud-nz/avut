@@ -6,14 +6,25 @@
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
+import boundaries from "eslint-plugin-boundaries";
 
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
+import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
 
 // One shared plugin object: flat config rejects redefining a plugin name with a different object
 // when two blocks match the same file.
 const avut = {
-  rules: { "nz-spelling": nzSpelling, "no-deep-relative-imports": noDeepRelativeImports },
+  rules: {
+    "nz-spelling": nzSpelling,
+    "no-deep-relative-imports": noDeepRelativeImports,
+    "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
+  },
+};
+
+const resendRestriction = {
+  name: "resend",
+  message: "Send mail through sendEmail() in @/server/email — it is the outbound-email guard rail.",
 };
 
 /** @type {import("eslint").Linter.Config[]} */
@@ -38,12 +49,109 @@ const config = [
     },
   },
   {
+    // Layering. `src/lib` is the leaf: everything may depend on it, it depends on nothing above
+    // it. The server never reaches back up into UI code, and the client-side layers (`client`,
+    // `hooks`) only see server code as types — a value import would pull it into the browser
+    // bundle. `server-only` catches that too, but only for modules that carry the marker.
+    //
+    // `components` is deliberately not restricted from `@/server`: it mixes client components
+    // with server components (`cards/`, `nav/public-header`) that legitimately call the session
+    // helpers.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/generated/**"],
+    plugins: { boundaries },
+    settings: {
+      "boundaries/elements": [
+        { type: "generated", pattern: "src/generated/**", partialMatch: false },
+        { type: "lib", pattern: "src/lib/**", partialMatch: false },
+        { type: "server", pattern: "src/server/**", partialMatch: false },
+        { type: "trpc", pattern: "src/trpc/**", partialMatch: false },
+        { type: "forms", pattern: "src/forms/**", partialMatch: false },
+        { type: "emails", pattern: "src/emails/**", partialMatch: false },
+        { type: "client", pattern: "src/client/**", partialMatch: false },
+        { type: "hooks", pattern: "src/hooks/**", partialMatch: false },
+        { type: "components", pattern: "src/components/**", partialMatch: false },
+        { type: "app", pattern: "src/app/**", partialMatch: false },
+      ],
+      "boundaries/files": [
+        { category: "test", pattern: "**/*.test.{ts,tsx}", partialMatch: false },
+      ],
+    },
+    rules: {
+      "boundaries/dependencies": [
+        "error",
+        {
+          default: "allow",
+          policies: [
+            {
+              from: { element: { type: "lib" } },
+              disallow: {
+                to: {
+                  element: {
+                    types: [
+                      "server",
+                      "trpc",
+                      "forms",
+                      "emails",
+                      "client",
+                      "hooks",
+                      "components",
+                      "app",
+                    ],
+                  },
+                },
+              },
+              message: "src/lib is the leaf layer and must not import from {{ to.element.type }}.",
+            },
+            {
+              from: { element: { types: ["server", "trpc", "forms", "emails"] } },
+              disallow: { to: { element: { types: ["client", "hooks", "components", "app"] } } },
+              message: "Server-side code must not import UI code ({{ to.element.type }}).",
+            },
+            {
+              from: { element: { types: ["client", "hooks"] } },
+              disallow: { to: { element: { types: ["server", "forms"] } } },
+              message:
+                "Client-side code may only `import type` from {{ to.element.type }}; a value import pulls it into the browser bundle.",
+            },
+            {
+              from: { element: { types: ["client", "hooks"] } },
+              allow: {
+                to: { element: { types: ["server", "forms"] } },
+                dependency: { kind: "type" },
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Keep relative imports to one `../` at most — anything further uses the `@/` alias.
     files: ["**/*.{ts,tsx,mjs}"],
     ignores: [".content-collections/**"], // generated
     plugins: { avut },
     rules: {
       "avut/no-deep-relative-imports": "error",
+    },
+  },
+  {
+    // sendEmail() in src/server/email.ts is the only place allowed to talk to Resend; calling the
+    // client directly skips the redirect-to-sink guard rail. The block below re-lists this
+    // restriction because flat config replaces `no-restricted-imports` options per file rather
+    // than merging them.
+    files: ["**/*.{ts,tsx}"],
+    ignores: ["src/server/email.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [resendRestriction] }],
+    },
+  },
+  {
+    // Entry files are Server Components unless they say "use client".
+    files: ["src/app/**/{page,layout,template,default,not-found}.tsx", "src/app/**/route.ts"],
+    plugins: { avut },
+    rules: {
+      "avut/no-trpc-client-in-server-component": "error",
     },
   },
   {
@@ -59,6 +167,7 @@ const config = [
         "error",
         {
           paths: [
+            resendRestriction,
             {
               name: "@/server/auth",
               importNames: ["auth"],
