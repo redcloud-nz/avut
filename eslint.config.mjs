@@ -8,21 +8,29 @@ import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
 import boundaries from "eslint-plugin-boundaries";
 
+import idsViaSchemas from "./eslint-rules/ids-via-schemas.mjs";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
+import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
+import noDirectLogWrites from "./eslint-rules/no-direct-log-writes.mjs";
 import noPrismaModelImports from "./eslint-rules/no-prisma-model-imports.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
 import requireServerOnly from "./eslint-rules/require-server-only.mjs";
+import zodImportStyle from "./eslint-rules/zod-import-style.mjs";
 
 // One shared plugin object: flat config rejects redefining a plugin name with a different object
 // when two blocks match the same file.
 const avut = {
   rules: {
     "nz-spelling": nzSpelling,
+    "ids-via-schemas": idsViaSchemas,
     "no-deep-relative-imports": noDeepRelativeImports,
+    "no-deprecated-zod": noDeprecatedZod,
+    "no-direct-log-writes": noDirectLogWrites,
     "no-prisma-model-imports": noPrismaModelImports,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
     "require-server-only": requireServerOnly,
+    "zod-import-style": zodImportStyle,
   },
 };
 
@@ -208,6 +216,34 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/require-server-only": "error",
+    },
+  },
+  {
+    // Audit-log rows are written only by recordLogEntry, reached through ctx.logEvent.
+    files: ["{src,prisma}/**/*.{ts,tsx}"],
+    ignores: ["src/server/log-entry.ts", "**/*.test.{ts,tsx}", "src/test/**"],
+    plugins: { avut },
+    rules: {
+      "avut/no-direct-log-writes": "error",
+    },
+  },
+  {
+    // Record IDs come from `<Model>Id.create()` in the schema files. Tests build fixtures with
+    // whatever ID they like.
+    files: ["{src,prisma}/**/*.{ts,tsx}"],
+    ignores: ["src/lib/schemas/**", "src/lib/id.ts", "**/*.test.{ts,tsx}", "src/test/**"],
+    plugins: { avut },
+    rules: {
+      "avut/ids-via-schemas": "error",
+    },
+  },
+  {
+    // One way to import Zod, and no Zod 3 style string formats.
+    files: ["**/*.{ts,tsx}"],
+    plugins: { avut },
+    rules: {
+      "avut/zod-import-style": "error",
+      "avut/no-deprecated-zod": "error",
     },
   },
   {
