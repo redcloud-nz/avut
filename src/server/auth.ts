@@ -25,9 +25,9 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
+import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
-import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
 import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";

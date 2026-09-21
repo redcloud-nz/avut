@@ -62,8 +62,7 @@ import "server-only";
 
 import type { DiffChange } from "@/lib/diff";
 import { UserId } from "@/lib/schemas/user";
-
-import { formatActorLabel, type RecordLogEntryInput } from "./log-entry";
+import { formatActorLabel, type RecordLogEntryInput } from "@/server/log-entry";
 
 /** better-auth's credential provider id. Anything else is a social provider. */
 const CREDENTIAL_PROVIDER = "credential";
