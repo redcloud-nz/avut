@@ -6,7 +6,6 @@
 import * as z from "zod";
 
 import { Notification } from "@/lib/schemas/notification";
-import prisma from "@/server/prisma";
 
 import { authenticatedProcedure, createTrpcRouter } from "../init";
 
@@ -15,7 +14,7 @@ export const notificationsRouter = createTrpcRouter({
         .output(z.array(Notification.schema))
         .query(async ({ ctx }) => {
             // Fetch all pending invitations for the user
-            const invitations = await prisma.organizationInvitation.findMany({
+            const invitations = await ctx.prisma.organizationInvitation.findMany({
                 where: {
                     email: ctx.auth.user.email,
                     status: "pending",
