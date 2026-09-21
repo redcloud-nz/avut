@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
@@ -38,7 +38,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -62,7 +64,6 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
 
 function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const [{ data: availableTeams }, { data: existingTeams }] = useSuspenseQueries({
@@ -94,6 +95,7 @@ function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
 
     const mutation = useMutation(
         trpc.teams.createTeamFromD4H.mutationOptions({
+            meta: { effects: teamsEffects.createTeamFromD4H, navigates: true },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableTeamData, {
@@ -104,16 +106,15 @@ function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
                     console.error("Failed to create team:", error);
                 }
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
-
+            onSuccess({ created }) {
                 onDone();
 
-                router.push(`/orgs/${organization.slug}/admin/teams/${created.id}`);
+                router.push(
+                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                        slug: organization.slug,
+                        team_id: created.id,
+                    }),
+                );
             },
         }),
     );

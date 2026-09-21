@@ -37,7 +37,7 @@ export function AdminModule_DeletePerson_Dialog({
 
     const mutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
-            meta: { effects: personnelEffects.deletePerson },
+            meta: { effects: personnelEffects.deletePerson, navigates: true },
             onError(error) {
                 console.error("Failed to delete person:", error);
                 toast.error(`Failed to delete person: ${error.message}`);

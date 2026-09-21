@@ -75,7 +75,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.createGroup },
+            meta: { effects: skillPackageBuilderEffects.createGroup, navigates: true },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {

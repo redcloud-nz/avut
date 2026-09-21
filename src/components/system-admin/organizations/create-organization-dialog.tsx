@@ -73,7 +73,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
 
     const mutation = useMutation(
         trpc.systemAdmin.createOrganization.mutationOptions({
-            meta: { effects: systemAdminEffects.createOrganization },
+            meta: { effects: systemAdminEffects.createOrganization, navigates: true },
             onError(error) {
                 if (error.data?.code === "CONFLICT") {
                     form.setError("slug", { message: error.message });

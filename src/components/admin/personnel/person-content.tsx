@@ -107,9 +107,9 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                                 {linkedUser.userId}
                                             </DLDetails>
                                             <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedUser.name}</DLDetails>
+                                            <DLDetails>{linkedUser.user.name}</DLDetails>
                                             <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedUser.email}</DLDetails>
+                                            <DLDetails>{linkedUser.user.email}</DLDetails>
                                             <DLTerm>Roles</DLTerm>
                                             <DLDetails>
                                                 {linkedUser.roles

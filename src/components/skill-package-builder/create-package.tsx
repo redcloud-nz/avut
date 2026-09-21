@@ -69,7 +69,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createPackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.createPackage },
+            meta: { effects: skillPackageBuilderEffects.createPackage, navigates: true },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {

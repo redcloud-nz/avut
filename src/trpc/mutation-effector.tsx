@@ -65,6 +65,9 @@ export function write<
  * list/collection queries, where membership, sort order, or pagination may have changed. For a
  * single-entity query the mutation's response already *is* the new value — prefer `write()` for
  * those, so the UI updates instantly instead of waiting on a refetch.
+ *
+ * By default this awaits a refetch of every matching query that is currently mounted. A mutation
+ * whose `onSuccess` navigates away should set `meta.navigates` so it only marks them stale.
  */
 export function invalidate(filter: QueryFilters): MutationEffect {
     return { type: "invalidate", filter };
@@ -129,6 +132,23 @@ declare module "@tanstack/query-core" {
              * literal shape directly.
              */
             effects?: (variables: any, data: any) => MutationEffect[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+            /**
+             * Set this on a mutation whose own `onSuccess` navigates away (a create that
+             * redirects to the new record, a delete that returns to the list).
+             *
+             * The effector runs — and is awaited — before that `onSuccess`, and an `invalidate()`
+             * effect normally awaits a real refetch of every matching query that is still
+             * mounted. For a navigating mutation those are the queries on the page being left, so
+             * the redirect (and the button's spinner) would wait on a round trip nobody will see —
+             * and, after a delete, on refetching the very record that no longer exists. With this
+             * flag the effects still mark those queries stale, so they refetch the next time they
+             * are used, but nothing is fetched in the meantime.
+             *
+             * Queries that stay mounted across the navigation (a layout or sidebar query) are not
+             * refetched until their next trigger either, so don't set this for a mutation whose
+             * effects have to refresh something the destination page shows straight away.
+             */
+            navigates?: boolean;
         };
     }
 }
@@ -167,10 +187,15 @@ export function useMutationEffector(queryClient: QueryClient) {
                 if (isWriteEffect(effect)) queryClient.setQueryData(effect.queryKey, effect.data);
             }
 
+            // A navigating mutation marks queries stale without awaiting a refetch of them.
+            const refetchType = mutation.meta?.navigates ? ("none" as const) : undefined;
+
             await Promise.all(
                 effects
                     .filter(isInvalidateEffect)
-                    .map((effect) => queryClient.invalidateQueries(effect.filter)),
+                    .map((effect) =>
+                        queryClient.invalidateQueries({ ...effect.filter, refetchType }),
+                    ),
             );
         };
 

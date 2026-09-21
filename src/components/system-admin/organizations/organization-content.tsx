@@ -21,6 +21,9 @@ import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
+import type { SecondaryRoleOptions } from "@/components/admin/invitations/invitation-role-fields";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
+
 import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
 import { SystemAdmin_MemberActionsMenu } from "./member-actions-menu";
 
@@ -42,6 +45,17 @@ export function SystemAdmin_Organization_Content({
     const { data: organization } = useSuspenseQuery(
         trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
     );
+
+    // Which secondary roles are offered follows the organization's enabled modules, as it does
+    // for the organization's own admins.
+    const secondaryRoles: SecondaryRoleOptions = [
+        { role: "i3-editor", enabled: organization.enabledModules.includes("i3") },
+        { role: "skills-assessor", enabled: organization.enabledModules.includes("skill-track") },
+        {
+            role: "skill-package-author",
+            enabled: organization.enabledModules.includes("skill-package-builder"),
+        },
+    ];
 
     return (
         <>
@@ -111,6 +125,7 @@ export function SystemAdmin_Organization_Content({
                                             memberUserIds={organization.members.map(
                                                 (m) => m.userId,
                                             )}
+                                            secondaryRoles={secondaryRoles}
                                         />
                                     </div>
                                 </CardHeader>
@@ -145,14 +160,26 @@ export function SystemAdmin_Organization_Content({
                                                             {member.email}
                                                         </td>
                                                         <td className="py-1">
-                                                            <Badge variant="secondary">
-                                                                {member.role}
-                                                            </Badge>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {member.role
+                                                                    .split(",")
+                                                                    .map((role) => (
+                                                                        <Badge
+                                                                            key={role}
+                                                                            variant="secondary"
+                                                                        >
+                                                                            {OrganizationRole.formatList(
+                                                                                role,
+                                                                            )}
+                                                                        </Badge>
+                                                                    ))}
+                                                            </div>
                                                         </td>
                                                         <td className="py-1 text-right">
                                                             <SystemAdmin_MemberActionsMenu
                                                                 organizationId={organizationId}
                                                                 member={member}
+                                                                secondaryRoles={secondaryRoles}
                                                             />
                                                         </td>
                                                     </tr>

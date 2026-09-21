@@ -10,7 +10,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { i3Effects } from "@/client/i3-effects";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
@@ -74,7 +75,6 @@ export function I3Module_CreateTemplate_Dialog() {
 function CreateTemplate_Body() {
     const logger = useLogger("I3", "CreateTemplate");
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
@@ -106,16 +106,12 @@ function CreateTemplate_Body() {
 
     const mutation = useMutation(
         trpc.i3.createTemplate.mutationOptions({
+            meta: { effects: i3Effects.createTemplate, navigates: true },
             onError(error) {
                 logger.error(`Failed to create template`, error);
                 toast.error(`Failed to create template: ${error.message}`);
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplates.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+            onSuccess({ created }) {
                 router.push(
                     route("/orgs/[slug]/i3/templates/[template_id]", {
                         slug: organization.slug,

@@ -73,7 +73,7 @@ export function SkillTrack_CataloguePackage_Content({
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
                                     <Button
-                                        variant="outline"
+                                        variant="destructive"
                                         onClick={() =>
                                             void setAction("unsubscribe", { history: "push" })
                                         }

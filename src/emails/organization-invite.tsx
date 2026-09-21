@@ -52,7 +52,7 @@ export default function OrganizationInviteTemplate({
     organization = SAMPLE_PROPS.organization,
     inviter = SAMPLE_PROPS.inviter,
 }: OrganizationInviteTemplateProps) {
-    const acceptUrl = `${baseUrl}/auth/accept-invitation/${invitation.id}`;
+    const acceptUrl = `${baseUrl}/invitations/${invitation.id}`;
 
     return (
         <Html lang="en">

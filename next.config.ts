@@ -101,6 +101,12 @@ const nextConfig: NextConfig = {
                 permanent: true,
             },
             { source: "/user-settings", destination: "/user/profile", permanent: true },
+            // Invitation emails already sent link to the old accept route.
+            {
+                source: "/auth/accept-invitation/:invitation_id",
+                destination: "/invitations/:invitation_id",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,
