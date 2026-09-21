@@ -44,6 +44,8 @@ gh pr view "$ARGUMENTS" --repo redcloud-nz/avut --comments
 
 Read the full current version of any non-trivially-changed file from the working tree (the local checkout is assumed to be on or near `master`; if a changed file can't be found locally, fall back to `gh` blob fetch). Don't review from the diff hunk alone when surrounding context matters.
 
+**Read in parallel.** Once the diff shows which files matter, request all of them in a single message — one tool call per file, all in the same turn — rather than one file per turn. Every turn re-reads the whole conversation, so serial reads are the main cost of a review. Do the same for any follow-up lookups (callers, tests, the matching router/schema): list what you need, then fetch it together. If a later read genuinely depends on an earlier one, batch what you can and continue.
+
 ## Step 3 — Review
 
 Run two passes over the diff:
@@ -100,10 +102,13 @@ GH_TOKEN=$(gh auth token --user claude-avut) gh pr review "$ARGUMENTS" --repo re
 
 Use `--body-file`, never inline `--body` — the body is multi-paragraph markdown. Report back the review URL that `gh` prints.
 
+If the user then wants to review another PR, suggest they run `/clear` first — a review started on top of an earlier one carries all its diffs and reads in context on every turn. (Don't clear it yourself.)
+
 ## Common mistakes
 
 - Skipping the Step 1 confirmation and reviewing the wrong PR
 - Reviewing only the diff hunks without reading the surrounding code
+- Reading changed files one per turn instead of in one parallel batch — each turn re-reads the whole context, so this multiplies the cost of the review
 - Posting without showing the user the drafted review first
 - Running only the generic pass and missing AVUT-specific convention violations
 - Posting under the default `gh` account (`alexwestphal`) instead of `claude-avut` via scoped `GH_TOKEN` — besides missing the point, GitHub silently downgrades a same-author review request or rejects it outright
