@@ -7,16 +7,9 @@
 
 import { Std } from "@/components/blocks/std";
 
-import { requireOrganization } from "@/server/organization-access";
-
 import { BottomSheet_Sandbox } from "./sandbox";
 
-export default async function Playground_BottomSheet_Page(
-    props: PageProps<"/orgs/[slug]/playground/bottom-sheet">,
-) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
-
+export default async function Playground_BottomSheet_Page() {
     return (
         <Std.SidebarInset>
             <Std.Navbar breadcrumbs={["Playground", "Bottom sheet"]} />
