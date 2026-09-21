@@ -56,6 +56,11 @@ const config = [
     // `hooks`) only see server code as types — a value import would pull it into the browser
     // bundle. `server-only` catches that too, but only for modules that carry the marker.
     //
+    // Only `src/server` and the tRPC context (`src/trpc/init.ts`) may import the Prisma client
+    // singleton. Everything else reaches the database through a `src/server` function or, inside a
+    // procedure, `ctx.prisma` — so reads and writes go through the same permission and audit
+    // paths instead of a page or route handler querying directly.
+    //
     // `components` is deliberately not restricted from `@/server`: it mixes client components
     // with server components (`cards/`, `nav/public-header`) that legitimately call the session
     // helpers.
@@ -75,8 +80,11 @@ const config = [
         { type: "components", pattern: "src/components/**", partialMatch: false },
         { type: "app", pattern: "src/app/**", partialMatch: false },
       ],
+      // Element patterns match folders; single files are classified here instead.
       "boundaries/files": [
         { category: "test", pattern: "**/*.test.{ts,tsx}", partialMatch: false },
+        { category: "prisma-client", pattern: "src/server/prisma.ts", partialMatch: false },
+        { category: "trpc-context", pattern: "src/trpc/init.ts", partialMatch: false },
       ],
     },
     rules: {
@@ -106,13 +114,19 @@ const config = [
               message: "src/lib is the leaf layer and must not import from {{ to.element.type }}.",
             },
             {
-              from: { element: { types: ["server", "trpc", "forms", "emails"] } },
+              from: {
+                element: {
+                  types: ["server", "trpc", "forms", "emails"],
+                },
+              },
               disallow: { to: { element: { types: ["client", "hooks", "components", "app"] } } },
               message: "Server-side code must not import UI code ({{ to.element.type }}).",
             },
             {
               from: { element: { types: ["client", "hooks"] } },
-              disallow: { to: { element: { types: ["server", "forms"] } } },
+              disallow: {
+                to: { element: { types: ["server", "forms"] } },
+              },
               message:
                 "Client-side code may only `import type` from {{ to.element.type }}; a value import pulls it into the browser bundle.",
             },
@@ -122,6 +136,20 @@ const config = [
                 to: { element: { types: ["server", "forms"] } },
                 dependency: { kind: "type" },
               },
+            },
+            {
+              from: {
+                element: {
+                  types: ["lib", "trpc", "forms", "emails", "client", "hooks", "components", "app"],
+                },
+              },
+              disallow: { to: { file: { categories: "prisma-client" } } },
+              message:
+                "Don't import the Prisma client here. Use a function from src/server, or ctx.prisma inside a tRPC procedure.",
+            },
+            {
+              from: { file: { categories: "trpc-context" } },
+              allow: { to: { file: { categories: "prisma-client" } } },
             },
           ],
         },
