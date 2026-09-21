@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 import { MutationButton } from "@/components/ui/button";
@@ -29,8 +30,17 @@ import { PasswordInput } from "@/components/ui/password-input";
  * Single-card forgot/reset-password flow: an email step that sends a 6-digit code, then a
  * code + new-password step, both against `authClient.emailOtp`. Kept as one component (rather
  * than a page per step) so the in-flight email never has to round-trip through a URL param.
+ *
+ * @param email Optional email to pre-fill in the first step.
+ * @param redirectTo Optional path to carry through to the sign-in page after the reset.
  */
-export function Auth_ForgotPassword_Card() {
+export function Auth_ForgotPassword_Card({
+    email,
+    redirectTo,
+}: {
+    email?: string;
+    redirectTo?: string;
+} = {}) {
     const [sentTo, setSentTo] = useState<string | null>(null);
 
     return (
@@ -46,12 +56,19 @@ export function Auth_ForgotPassword_Card() {
             <CardContent>
                 <FieldGroup>
                     {sentTo ? (
-                        <ResetPassword_Form email={sentTo} onChangeEmail={() => setSentTo(null)} />
+                        <ResetPassword_Form
+                            email={sentTo}
+                            redirectTo={redirectTo}
+                            onChangeEmail={() => setSentTo(null)}
+                        />
                     ) : (
-                        <RequestCode_Form onSent={setSentTo} />
+                        <RequestCode_Form email={email} onSent={setSentTo} />
                     )}
                     <FieldDescription className="text-center">
-                        Remembered your password? <Link href="/auth/sign-in">Sign in</Link>
+                        Remembered your password?{" "}
+                        <Link href={authUrl(SIGN_IN_PATH, { email, returnTo: redirectTo })}>
+                            Sign in
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -59,13 +76,14 @@ export function Auth_ForgotPassword_Card() {
     );
 }
 
-function RequestCode_Form({ onSent }: { onSent: (email: string) => void }) {
+function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: string) => void }) {
     const form = useForm({
         resolver: zodResolver(
             z.object({
                 email: z.email("Invalid email address"),
             }),
         ),
+        defaultValues: { email: email ?? "" },
     });
 
     const mutation = useMutation({
@@ -126,9 +144,11 @@ function RequestCode_Form({ onSent }: { onSent: (email: string) => void }) {
 
 function ResetPassword_Form({
     email,
+    redirectTo,
     onChangeEmail,
 }: {
     email: string;
+    redirectTo?: string;
     onChangeEmail: () => void;
 }) {
     const router = useRouter();
@@ -162,7 +182,7 @@ function ResetPassword_Form({
             return data;
         },
         onSuccess() {
-            router.push(`/auth/sign-in?email=${encodeURIComponent(email)}`);
+            router.push(authUrl(SIGN_IN_PATH, { email, returnTo: redirectTo }));
         },
     });
 

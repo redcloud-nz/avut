@@ -68,7 +68,7 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const mutation = useMutation(
         trpc.teams.createTeam.mutationOptions({
-            meta: { effects: teamsEffects.createTeam },
+            meta: { effects: teamsEffects.createTeam, navigates: true },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiableTeamData, {

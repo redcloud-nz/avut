@@ -134,24 +134,26 @@ Also confirm the stored `email` is **lowercase** even when the person record is 
 
 ### A2. Accepting the invitation creates the link
 
-Take the invitation id from A1 and hit the accept route directly — that is what the email's
+Take the invitation id from A1 and open the landing page directly — that is what the email's
 link does.
 
-1. Navigate to `/auth/accept-invitation/<invitation_id>`. It signs out any session, sets the
-   `avut.invitation_to_accept` cookie, and redirects to `/auth/sign-up?email=…` (no account)
-   or `/auth/sign-in?email=…`. Confirm the email is pre-filled.
-2. Complete sign-up. Email verification is required and the OTP is **not** printed to the
-   console — only "Sending verification OTP". Read it from the database (`storeOTP` is unset
-   in `auth.ts`, so better-auth stores it plaintext):
+1. Navigate to `/invitations/<invitation_id>` while signed out. It names the organisation and
+   the inviter. With no account for the address it shows an inline sign-up form with the email
+   fixed and the name pre-filled from the person record; with an account it offers Sign in.
+2. Complete the form. The account is created already verified, so **no verification code is
+   sent** and no OTP step follows — you are signed in and the page now shows Accept/Decline.
+   (Signing up through `/auth/sign-up` instead still requires the OTP, which is **not** printed
+   to the console; read it from the database — `storeOTP` is unset in `auth.ts`, so
+   better-auth stores it plaintext:
 
    ```sql
    SELECT identifier, split_part(value, ':', 1) AS otp, "expiresAt"
    FROM user_verification ORDER BY "createdAt" DESC LIMIT 5;
    ```
 
-   The stored `value` is `<otp>:<attempt-count>` — type only the part before the colon.
+   The stored `value` is `<otp>:<attempt-count>` — type only the part before the colon.)
 
-3. The app lands on `/auth/post-sign-in`, which accepts the pending invitation.
+3. Click **Accept**. The membership is created and you land in the organisation.
 
 **Verify:**
 
@@ -318,20 +320,20 @@ by making the overlap real rather than contrived.
 
 Three preconditions, each worth knowing for the next time:
 
-- **The acting user must own a *personal* D4H token.** `resolveD4HTeamForLink` calls
+- **The acting user must own a _personal_ D4H token.** `resolveD4HTeamForLink` calls
   `getPersonalD4HAccessTokenForUser(organizationId, userId)` — the org's shared token does not
   satisfy it. The run therefore had to act as the token's owner.
 - **Impersonation cannot reach a global admin.** better-auth refuses admin-on-admin
   `impersonateUser` with `FORBIDDEN` (confirmed by impersonating a non-admin member successfully).
   The owner account's `users.role` was dropped to `user` for the run and restored afterwards; the
   import reads org roles, never the global flag, so nothing under test changed.
-- **Only a person the import *creates* can auto-link.** `applyD4HSyncPlan` calls `createPerson`
+- **Only a person the import _creates_ can auto-link.** `applyD4HSyncPlan` calls `createPerson`
   only when `getPersonByEmail` misses, and the auto-link lives inside `createPerson`. An email
   already on file is skipped entirely.
 
 That last point has a sharp edge worth remembering: `getPersonByEmail` does **not** filter on
 `status`, and `deletePerson` soft-deletes anyone referenced by a skill check. So deleting a person
-through the UI does *not* free their email for re-import — the import finds the `Deleted` row,
+through the UI does _not_ free their email for re-import — the import finds the `Deleted` row,
 skips creation, never auto-links, and adopts that person as an active team member without
 un-deleting them. The run sidestepped this by moving the existing person's email aside instead.
 
@@ -341,17 +343,17 @@ Four teams linked through the team menu → **Link to D4H** → `linkTeamToD4H`,
 itself. `organization_d4h` was empty beforehand, so the first link also exercised the
 `create-org-linked` path (D4H org 1, "CHCH").
 
-| AVUT team | D4H team | Imported | Note |
-| --------- | -------- | -------- | ---- |
-| NZ Response Team 11 | 6 | 25 | 20 manual memberships already present — 14 adopted |
-| NZ Response Team 10 | 5 | 33 | |
-| NZ Response Team 14 | 7 | 32 | |
-| Christchurch CDEM CDC Team | 8 | 42 | team created for the run; no manual members to adopt |
+| AVUT team                  | D4H team | Imported | Note                                                 |
+| -------------------------- | -------- | -------- | ---------------------------------------------------- |
+| NZ Response Team 11        | 6        | 25       | 20 manual memberships already present — 14 adopted   |
+| NZ Response Team 10        | 5        | 33       |                                                      |
+| NZ Response Team 14        | 7        | 32       |                                                      |
+| Christchurch CDEM CDC Team | 8        | 42       | team created for the run; no manual members to adopt |
 
 Totals: 116 → 154 people, 141 team memberships (132 D4H-managed), four `d4h-team-link` batches of
 40 / 45 / 44 / 55 entries. No `P2002`, no unhandled error in the server log.
 
-**The auto-link fired exactly once, and correctly.** A person created *during* the Team 11 import
+**The auto-link fired exactly once, and correctly.** A person created _during_ the Team 11 import
 (`PEDKqKw7gU0rywPW`, timestamped inside the run) was attached to the owner's membership, and the
 entry carries the batch:
 
@@ -373,15 +375,15 @@ testing also matches on description and is easily mistaken for a second link.
 The open concern was that the import now opens one interactive transaction per person instead of
 an array transaction. Measured wall time for `POST /trpc/teams.linkTeamToD4H`:
 
-| Team | Members | Total |
-| ---- | ------- | ----- |
-| NZ Response Team 14 | 32 | ~0.60s |
-| NZ Response Team 11 | 25 | ~0.71s |
-| Christchurch CDEM CDC Team | 42 | ≤1.00s |
-| NZ Response Team 10 | 33 | ~1.08s |
+| Team                       | Members | Total  |
+| -------------------------- | ------- | ------ |
+| NZ Response Team 14        | 32      | ~0.60s |
+| NZ Response Team 11        | 25      | ~0.71s |
+| Christchurch CDEM CDC Team | 42      | ≤1.00s |
+| NZ Response Team 10        | 33      | ~1.08s |
 
 **Do not subtract the dev-mode artificial delay from these.** `artificialDelayInDevelopment`
-(`src/trpc/init.ts:64`) calls `opts.next(opts)` *without* awaiting it, so the delay runs
+(`src/trpc/init.ts:64`) calls `opts.next(opts)` _without_ awaiting it, so the delay runs
 concurrently and the logged total is `max(work, delay)` — not their sum. The CDC figure is capped
 rather than measured because its 968ms delay masks the true value.
 
@@ -392,7 +394,7 @@ A team several times larger is still worth watching.
 
 - The duplicate guard works: linking a second AVUT team to an already-linked D4H team returns the
   friendly `CONFLICT` ("That D4H team is already linked to a team in this organization"), and does
-  so *before* `createLogBatch`, so no orphan batch is left behind.
+  so _before_ `createLogBatch`, so no orphan batch is left behind.
 - `AdminModule_Teams_ImportTeamFromD4H_Dialog` (`src/components/admin/teams/import-team-from-d4h.tsx`,
   the one-step `createTeamFromD4H` flow) is defined but mounted nowhere — on this branch and on
   `integration` alike. Pre-existing dead code; the reachable path is the team menu's Link to D4H.

@@ -5,10 +5,7 @@
 
 import * as z from "zod";
 
-import type {
-    OrganizationUser as OrganizationUserRecord,
-    User as UserRecord,
-} from "@/generated/prisma/client";
+import type { OrganizationUser as OrganizationUserRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
@@ -26,30 +23,30 @@ export const OrganizationUserId = {
 
 export type OrganizationUserId = z.infer<typeof OrganizationUserId.schema>;
 
+/**
+ * A membership row only. A router that also needs the member's `User` (or the `Organization`)
+ * composes it into its own output, e.g. `{ ...OrganizationUser.fromRecord(m), user: UserData.fromRecord(u) }`.
+ */
 export const OrganizationUser = {
     schema: z.object({
         userId: UserId.schema,
         organizationId: OrganizationId.schema,
         organizationUserId: OrganizationUserId.schema,
         personId: PersonId.schema.nullable(),
-        name: z.string(),
-        email: z.email(),
         roles: z.array(OrganizationRole.schema),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
     }),
 
-    fromRecord: (userRecord: UserRecord, organizationUserRecord: OrganizationUserRecord) =>
+    fromRecord: (record: OrganizationUserRecord) =>
         OrganizationUser.schema.parse({
-            userId: userRecord.id,
-            organizationId: organizationUserRecord.organizationId,
-            organizationUserId: organizationUserRecord.id,
-            personId: organizationUserRecord.personId,
-            name: userRecord.name,
-            email: userRecord.email,
-            roles: organizationUserRecord.role.split(","),
-            createdAt: organizationUserRecord.createdAt.toISOString(),
-            updatedAt: organizationUserRecord.updatedAt.toISOString(),
+            userId: record.userId,
+            organizationId: record.organizationId,
+            organizationUserId: record.id,
+            personId: record.personId,
+            roles: record.role.split(","),
+            createdAt: record.createdAt.toISOString(),
+            updatedAt: record.updatedAt.toISOString(),
         }),
 } as const;
 
