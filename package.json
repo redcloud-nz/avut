@@ -22,6 +22,7 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "check": "bash scripts/check.sh",
     "postinstall": "prisma generate",
     "test": "vitest",
     "test:watch": "vitest --watch",
